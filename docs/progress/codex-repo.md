@@ -163,4 +163,37 @@ Choose **one** completion recording path: HTTP POST ingestion or the direct auth
 - Hall code and the exact `Handoff to codex-net` above remain ready. No server/shared/design/client changes, dependencies, or commits by codex-repo.
 - All assigned work complete.
 
+
+## Token follow-up scope
+- Add `analyzeRepo(slugOrUrl, opts?: { token?: string })`.
+- Use the explicit token (over env token) for REST and authenticated API tarball downloads.
+- Skip disk cache for all token-authenticated analyses, and partition memory/in-flight jobs by slug + SHA-256 token hash; never persist token strings.
+- Keep anonymous codeload + shared public disk caching; add mocked-fetch and isolation tests.
+
+
+## Optional GitHub token delivered (14:38 local)
+- Public signature is now `analyzeRepo(slugOrUrl: string, opts?: { token?: string }): Promise<RepoProfile>`. Existing one-argument callers continue to work.
+- Explicit request token overrides `GITHUB_TOKEN`; an explicit empty string opts out of the env default. Normalized effective token is used consistently for request authorization and cache partitioning.
+- With a token (explicit or env), both REST and archive requests go to GitHub API with Bearer authorization. Archive URL: `https://api.github.com/repos/<slug>/tarball`; fetch handles GitHub's authorized archive redirect. Anonymous archives retain public codeload.
+- Authenticated analyses **skip all disk cache reads/writes**, including shared slug-cache lookup. Memory/in-flight jobs are partitioned by slug + SHA-256(token), so same-token requests deduplicate but anonymous callers/different credentials never reuse private source, README, tree, metadata, or stale results. No raw token is persisted or placed in URLs.
+- Added five mocked-fetch integration tests through the real `analyzeRepo` → GitHub → tar/graph path: explicit-vs-env token, API archive/header behavior, identical-token job de-duplication, separate-token/anonymous isolation, public disk-cache bypass, invalid-token fallback isolation, and env/empty-token behavior. No real private-repo credentials used; live private-repo acceptance is not claimed.
+- Updated anonymous tests to stub the environment token so test behavior does not depend on the developer's credentials. README documents the new API and cache rules.
+- `npx vitest run analysis hall`: **57/57 PASS**, 9 files.
+- `npm run typecheck`: **PASS** across the complete current workspace. Explicit strict analysis/Hall/shared check: **PASS**.
+- `npm test`: **156 PASS / 2 skipped**, 18 files. Earlier parallel-owner typecheck blockers are resolved in this run.
+- No dependencies, shared/server/client/design edits, snapshot changes, or commits for this card. No open contract requests.
+
+### Token handoff to codex-net
+
+```ts
+// Existing anonymous/default-token integration remains valid:
+await analyzeRepo(slugOrUrl);
+// Server-owned per-request GitHub credential:
+await analyzeRepo(slugOrUrl, { token: githubToken });
+// Explicit anonymous call when the server has a GITHUB_TOKEN default:
+await analyzeRepo(slugOrUrl, { token: '' });
+```
+
+Server service wrappers can expose the same optional second argument. No changes to shared gameplay/profile contracts are required. The existing Hall HTTP handoff above is unchanged.
+
 DONE

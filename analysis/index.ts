@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -88,32 +89,35 @@ async function loadCache(slug: string): Promise<{ profile: RepoProfile; fresh: b
   } catch { return null; }
 }
 
-export async function analyzeRepo(slugOrUrl: string): Promise<RepoProfile> {
+export async function analyzeRepo(slugOrUrl: string, opts: { token?: string } = {}): Promise<RepoProfile> {
   const slug = normalizeSlug(slugOrUrl);
-  const cachedMemory = memory.get(slug);
+  const token = (opts.token ?? process.env.GITHUB_TOKEN)?.trim() || undefined;
+  // Authenticated results never enter public disk cache or another credential's jobs.
+  const cacheKey = token ? `${slug}:${createHash('sha256').update(token).digest('hex')}` : slug;
+  const cachedMemory = memory.get(cacheKey);
   // Callers can mutate their kits without corrupting a future caller's cached profile.
   if (cachedMemory && cachedMemory.expires > Date.now()) return structuredClone(cachedMemory.profile);
-  let pending = inFlight.get(slug);
+  let pending = inFlight.get(cacheKey);
   if (!pending) {
     pending = (async () => {
-      const cached = await loadCache(slug);
+      const cached = token ? null : await loadCache(slug);
       let profile: RepoProfile;
       if (cached?.fresh) profile = cached.profile;
       else {
         try {
-          profile = await analyzeGitHubRepo(slug);
-          try {
+          profile = await analyzeGitHubRepo(slug, { token: token ?? '' });
+          if (!token) try {
             const file = join(CACHE_ROOT, `${slug}.json`);
             await mkdir(dirname(file), { recursive: true });
             await writeFile(file, JSON.stringify(profile) + '\n');
           } catch { /* A read-only cache must not stop the demo. */ }
         } catch { profile = cached ? { ...cached.profile, fallback: true } : offlineProfile(slug); }
       }
-      memory.set(slug, { profile, expires: Date.now() + (profile.fallback ? 60_000 : CACHE_TTL) });
+      memory.set(cacheKey, { profile, expires: Date.now() + (profile.fallback ? 60_000 : CACHE_TTL) });
       return profile;
     })();
-    inFlight.set(slug, pending);
+    inFlight.set(cacheKey, pending);
   }
   try { return structuredClone(await pending); }
-  finally { if (inFlight.get(slug) === pending) inFlight.delete(slug); }
+  finally { if (inFlight.get(cacheKey) === pending) inFlight.delete(cacheKey); }
 }

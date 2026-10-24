@@ -52,3 +52,25 @@ To smoke-test while keeping certificate verification enabled:
 ```sh
 NODE_EXTRA_CA_CERTS="$PWD/.cache/tls/cert.pem" SMOKE_URL=https://localhost:5173 npx tsx server/smoke.ts
 ```
+
+## Public HTTPS tunnel (primary phone workflow)
+
+`npm run dev` defaults `PUBLIC_URL` to `https://repokaiju.wilflin.me`. The server continues to serve HTTP locally on 5173; the public tunnel provides HTTPS/WSS to phones. Printed room links, big-screen links and terminal QRs use `PUBLIC_URL` when present. Override it with your own tunnel URL, for example `PUBLIC_URL=https://my-tunnel.example npm run dev`. To force LAN links for a normal HTTP dev run, bypass the npm default with `npx tsx watch server/main.ts` and leave `PUBLIC_URL` unset.
+
+The UI's big-screen QR should build the room URL from `location.origin`, so a big screen opened through the tunnel invites phones through that same HTTPS origin. `dev:https` remains available for direct LAN access and defaults to LAN URLs unless `PUBLIC_URL` is explicitly supplied. Restart an existing npm dev process to pick up the changed script default.
+
+## Designs, Hall and AI fill
+
+Player and boss kits become ready immediately with `design/`'s deterministic fallback appearance. Background Gemini/cache/bundled results update lobby appearance without changing combat stats or waiting to start. Boss appearance is reapplied after squad-size HP scaling; a running match keeps its original cloned appearance. Late results remain available in the retained lobby for rematch. Provider failures keep the seed design.
+
+`GET /api/hall` returns `{fastestKills, topDamage, bossRecords}` from `hall/`. Each authoritative match completion records its autopsy once, before broadcasting it. Clients should not upload that same result. A Hall persistence error is logged and does not stop autopsy delivery.
+
+The room owner can send `{t:'setBots',count:2}` in the lobby to add two AI teammates, or count 0 to remove them. Count is capped at 0..7 and eight total connected humans + bots. Lobby bot entries have `bot:true` and `[BOT]` names. Kits come from random offline fallback repos without network analysis; `sim/bots.ts` drives their authoritative 30Hz inputs. Humans take priority over bots when joining a full lobby. Ownership always belongs to a human, and a match needs at least one ready human. Boss scaling includes ready humans and bots; bot slots survive rematch.
+
+To test a two-judge squad through the public tunnel:
+
+```sh
+SMOKE_URL=https://repokaiju.wilflin.me SMOKE_PLAYERS=2 SMOKE_BOTS=2 npx tsx server/smoke.ts
+```
+
+Defaults remain four human clients and zero bots. Smoke checks also cover attached designs, authoritative heart/regions, bot movement when enabled, and the Hall endpoint shape.

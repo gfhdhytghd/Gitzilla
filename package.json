@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch server/main.ts",
+    "dev": "PUBLIC_URL=${PUBLIC_URL:-https://repokaiju.wilflin.me} tsx watch server/main.ts",
     "dev:https": "REPO_KAIJU_HTTPS=1 tsx watch server/main.ts",
     "start": "NODE_ENV=production tsx server/main.ts",
     "build": "vite build",

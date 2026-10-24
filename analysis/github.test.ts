@@ -1,9 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyzeGitHubRepo, countFromPage } from './github.ts';
 import { archive } from './fixtures.ts';
 
 const body = archive([{ path: 'README.md', text: '# Test Kaiju\n![Badge](https://badge.example/x.svg)\nA repo for graph tests.' }, { path: 'src/main.ts', text: "import './heart';" }, { path: 'src/heart.ts', text: 'export const heart = 1' }]);
 const json = (data: unknown, headers?: HeadersInit) => new Response(JSON.stringify(data), { headers });
+
+beforeEach(() => { vi.stubEnv('GITHUB_TOKEN', ''); });
+afterEach(() => { vi.unstubAllEnvs(); });
 
 describe('GitHub source and metadata requests', () => {
   it('combines a real archive with metadata and one-item pagination counts', async () => {

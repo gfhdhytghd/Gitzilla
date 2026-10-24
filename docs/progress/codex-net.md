@@ -1,4 +1,4 @@
-IN PROGRESS — HTTPS + terminal QR follow-up
+DONE
 
 # codex-net — server
 
@@ -50,3 +50,43 @@ None. Real autopsy heart is populated in server/ without a shared contract chang
 - Added a TLS test proving SAN coverage, cached-certificate reuse, regeneration for new LAN IP, and supplied-cert precedence. Focused server suite 6/6 PASS.
 - Full `npm test`: 89 PASS / 2 SKIPPED. Typecheck/build pending `client/app/{autopsy,game,lobby}.ts` from UI owner; idle-waiting as requested, then will rerun build + smoke.
 - iOS manual certificate trust documented with Apple Support source https://support.apple.com/en-us/102390; no physical iOS DeviceMotion acceptance claimed.
+- Server-side UI integration fix: UI renames by reconnecting with `hello.resume` + a new name; resumed sessions now refresh the lobby name instead of silently retaining the old one. Covered by the real-WS resume test.
+
+## Post-UI integration (14:32 local)
+- After game/autopsy/lobby modules landed: `npm run build` PASS (UI stylesheet still not written; Vite warning), `npm run typecheck` PASS, HTTPS smoke PASS with 100 snapshots/client over five seconds.
+- Latest full tests: 103 PASS / 2 SKIPPED / 1 sim test failing because bot runner now emits player counts [1,4,6,8] while test expects [1,4,8]. Not a server issue; leave sim owner files unchanged.
+- Coordinator follow-up: integrate design/ using codex-gemini's forthcoming exact handoff; keep lobby immediately ready on deterministic seed kits, then apply/broadcast cosmetic-only updates asynchronously. Stats must not change. No implementation guess before handoff exists.
+
+## Tunnel and production handoff (14:33 local)
+- `PUBLIC_URL` now overrides printed join URLs, terminal QR payloads and printed big-screen URLs. `npm run dev` defaults it to `https://repokaiju.wilflin.me`; an exported PUBLIC_URL takes precedence. Restart an existing npm dev watcher to load the changed package script environment.
+- `dev:https` remains secondary and uses LAN addresses unless PUBLIC_URL is explicitly exported.
+- **Handoff to claude-ui:** build big-screen join/QR payloads from `location.origin + '/r/' + room`, so the public tunnel's HTTPS origin is preserved automatically. Existing `/api/qr?text=...` accepts the URL unchanged. No client/ edits by codex-net.
+- Production HTTPS check PASS on isolated port 5174: `/`, `/r/ABCD`, `/r/ABCD?screen=1` return exact built index.html; built JS asset returns exact bytes + JavaScript MIME; HEAD returns no body. Production 4-client WSS smoke PASS, 100 snapshots/client over 5s.
+- Awaiting codex-gemini's exact API handoff before adding async cosmetic design wiring.
+
+## Gemini / Hall / AI-fill implementation (14:37 local)
+- Read codex-gemini's now-ready exact handoff and actual typed exports. Main wires fallbackHero/fallbackBoss/apply helpers for immediate ready seed kits; background designHero/designBoss results update only appearance fields. Async revision checks protect newer repo selections, and match-start boss scaling reapplies the existing design. Late results update retained lobby kits for the next rematch while running simulation keeps its cloned kit. No stats cross the cosmetic boundary.
+- Provider provenance: Gemini owner reports HTTP 402 on live generation and truthfully precomputed fallback designs. Integration works with bundled/cache/fallback data; successful live Gemini art remains externally blocked, not claimed here.
+- Hall: imported `recordMatch`/`top` per codex-repo handoff. GET `/api/hall` returns the board; authoritative match-completion branch records once after autopsy/heart correction and catches persistence errors so players still get results. No duplicate browser upload / POST ingestion path.
+- AI fill: shared `setBots` + LobbyPlayer.bot contract now supported; owner-only, lobby-only 0..7 bots with total squad <=8. Bots get random famous fallback repos via zero-network `offlineProfile`, ready seed design kits, `[BOT]` names, and 30Hz `sim/bots.ts` controllers. Humans displace a bot if a full lobby needs a human slot. Owner transfer only selects humans. Rematch retains bots; setBots 0 removes them. At least one ready human is required to start; boss HP scales for humans + bots.
+- UI handoff: owner stepper sends `{t:'setBots',count}` and derives current count from lobby.players.filter(p=>p.bot). Bot cards use `bot:true`; names also contain `[BOT]`. GET `/api/hall` is available; do not POST completed results from clients, since server records them authoritatively.
+- Expanded real-WS tests cover cosmetic readiness/stat isolation/stale jobs/start design preservation, bot authority/fill/controllers/removal/human-priority cap, and once-only Hall recording even on spectator reconnect.
+- `npx vitest run server`: 10 PASS. Latest `npm run typecheck`: PASS; `npm run build`: PASS including stylesheet; `npm test`: 133 PASS / 2 skipped.
+- Live final server checks underway on isolated HTTPS port 5174, including PUBLIC_URL tunnel QR payload and two humans + two bot movement.
+
+## Final follow-up result (14:38 local)
+- HTTPS/TLS certificates, Unicode terminal room QR, optional HTTP redirect, PUBLIC_URL tunnel default, async design integration, authoritative Hall recording/GET and AI-fill server work are complete.
+- Final public-tunnel smoke: **PASS**, two humans + two bots, 107 snapshots per human over the five-second input window, moving bots, attached designs, heart/regions, input acks and Hall endpoint shape.
+- Final isolated production HTTPS smoke: **PASS** for both four humans (100 snapshots/client) and two humans + two bots (100/client). TLS verification enabled via NODE_EXTRA_CA_CERTS.
+- Final build **PASS** including generated stylesheet; typecheck **PASS**; full tests **133 PASS / 2 opt-in browser tests skipped**. Server-focused **10 PASS**.
+- PUBLIC_URL override confirmed in actual boot output and new-room output: join/QR/big-screen links use `https://repokaiju.wilflin.me/r/<ROOM>`.
+- UI big-screen helper already uses `location.origin` (`client/app/app.ts`), so tunnel-origin QR handoff is satisfied without server agent editing client/.
+- Physical iOS motion/trust acceptance is not claimed. Public tunnel is the primary trusted HTTPS workflow; self-signed LAN TLS remains secondary.
+- Gemini live generation is externally blocked by provider HTTP 402 per Gemini owner's evidence; bundled/cache/fallback behavior is implemented and tested. Server lobby readiness never waits for it.
+- No commits or shared/client/design/hall/sim implementation edits by codex-net. Package changes are scripts only. Stopping only the isolated 5174/5181 test server; default teammate-owned 5173/tunnel server stays running.
+
+## Final coordinator / UI handoff
+- Default `npm run dev` now supplies PUBLIC_URL=https://repokaiju.wilflin.me unless the caller exports another URL; restart an existing npm watcher to pick up a package-script environment change.
+- AI stepper sends `{t:'setBots', count}`; derive count from `lobby.players.filter(p=>p.bot).length`; `bot:true` is authoritative. Bot names already carry `[BOT]`.
+- Hall uses GET `/api/hall`; no client match-result POST, because server records the authoritative autopsy once.
+- No outstanding server contract requests or implementation tasks.

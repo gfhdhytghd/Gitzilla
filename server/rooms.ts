@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
-import type { Autopsy, BossKit, ClientMsg, GameEvent, InputFrame, LobbyPlayer, LobbyState, MatchState, PlayerKit, RepoProfile, Role, ServerMsg } from '../shared/types.ts';
+import type { Autopsy, BossDesign, BossKit, ClientMsg, GameEvent, InputFrame, LobbyPlayer, LobbyState, MatchState, PlayerKit, PlayerState, RepoProfile, Role, ServerMsg } from '../shared/types.ts';
 
 export interface Match {
   step(dt: number, inputs: Map<string, InputFrame>): void;
@@ -12,7 +12,12 @@ export interface GameServices {
   analyzeRepo(repo: string): Promise<RepoProfile>;
   listFallbackRepos(): string[];
   playerKitFromProfile(profile: RepoProfile): PlayerKit;
-  bossKitFromProfile(profile: RepoProfile, count: number): BossKit;
+  bossKitFromProfile(profile: RepoProfile, count: number, design?: BossDesign): BossKit;
+  enhanceHeroKit?(profile: RepoProfile, kit: PlayerKit): Promise<PlayerKit>;
+  enhanceBossKit?(profile: RepoProfile, kit: BossKit): Promise<BossKit>;
+  recordMatch?(result: Autopsy, room: string, bossRepo: string): void;
+  botProfile?(repo: string): RepoProfile;
+  createBot?(seed: number): (state: MatchState, player: PlayerState) => InputFrame;
   createMatch(players: { id: string; name: string; kit: PlayerKit }[], boss: BossKit): Match;
 }
 interface Member {
@@ -23,6 +28,7 @@ interface Member {
   socket: WebSocket | null;
   lobby: LobbyPlayer;
   revision: number;
+  botInput?: (state: MatchState, player: PlayerState) => InputFrame;
   input?: InputFrame;
   inputAt: number;
 }
@@ -45,6 +51,8 @@ interface Room {
 
 const idle = (seq = 0): InputFrame => ({ seq, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard' });
 const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => m.role === 'player' && m.socket !== null);
+const bots = (room: Room) => [...room.members.values()].filter(m => m.lobby.bot);
+const squad = (room: Room) => [...connectedPlayers(room), ...bots(room)];
 const send = (ws: WebSocket | null, message: ServerMsg) => {
   if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(message));
 };
@@ -76,7 +84,7 @@ export class RoomServer {
   }
 
   lobby(room: Room): LobbyState {
-    return { room: room.code, ownerId: room.ownerId, players: connectedPlayers(room).map(m => ({ ...m.lobby })), boss: { ...room.boss }, phase: room.phase };
+    return { room: room.code, ownerId: room.ownerId, players: squad(room).map(m => ({ ...m.lobby })), boss: { ...room.boss }, phase: room.phase };
   }
 
   private broadcast(room: Room, message: ServerMsg) {
@@ -105,7 +113,7 @@ export class RoomServer {
       return;
     }
     if (member.role !== 'player') throw new Error('Spectators cannot change the room');
-    if (msg.t === 'setBoss' || msg.t === 'start' || msg.t === 'rematch') {
+    if (msg.t === 'setBoss' || msg.t === 'setBots' || msg.t === 'start' || msg.t === 'rematch') {
       if (room.ownerId !== member.id) throw new Error('Only the room owner can do that');
     }
     if (msg.t === 'rematch') {
@@ -116,7 +124,9 @@ export class RoomServer {
       return;
     }
     if (room.phase !== 'lobby') throw new Error('Wait until the lobby to change repos or start');
-    if (msg.t === 'setRepo') {
+    if (msg.t === 'setBots') {
+      await this.setBots(room, msg.count);
+    } else if (msg.t === 'setRepo') {
       const revision = ++member.revision;
       member.lobby = { id: member.id, name: member.name, repo: msg.repo, status: 'analyzing', kit: null };
       this.broadcastLobby(room);
@@ -124,6 +134,7 @@ export class RoomServer {
         const profile = await this.services.analyzeRepo(msg.repo);
         if (revision !== member.revision) return;
         member.lobby = { id: member.id, name: member.name, repo: profile.slug, status: 'ready', kit: this.services.playerKitFromProfile(profile) };
+        this.refineHero(room, member, revision, profile);
       } catch (error) {
         if (revision !== member.revision) return;
         member.lobby.status = 'error'; member.lobby.error = error instanceof Error ? error.message : 'Analysis failed';
@@ -137,8 +148,9 @@ export class RoomServer {
       try {
         const profile = await this.services.analyzeRepo(msg.repo);
         if (revision !== room.bossRevision) return;
-        const kit = this.services.bossKitFromProfile(profile, Math.max(1, connectedPlayers(room).length));
+        const kit = this.services.bossKitFromProfile(profile, Math.max(1, squad(room).length));
         room.bossProfile = profile; room.boss = { repo: profile.slug, status: 'ready', kit };
+        this.refineBoss(room, revision, profile, kit);
       } catch (error) {
         if (revision !== room.bossRevision) return;
         room.boss.status = 'error'; room.boss.error = error instanceof Error ? error.message : 'Analysis failed';
@@ -147,6 +159,69 @@ export class RoomServer {
     } else if (msg.t === 'start') {
       this.start(room);
     } else { throw new Error('Unknown message'); }
+  }
+
+  private refineHero(room: Room, member: Member, revision: number, profile: RepoProfile) {
+    if (!this.services.enhanceHeroKit || !member.lobby.kit) return;
+    void this.services.enhanceHeroKit(profile, structuredClone(member.lobby.kit)).then(decorated => {
+      if (revision !== member.revision || !member.lobby.kit || this.rooms.get(room.code) !== room) return;
+      // Only appearance fields cross this boundary; AI output cannot modify balance.
+      member.lobby.kit = { ...member.lobby.kit, design: decorated.design, title: decorated.title, palette: decorated.palette };
+      this.broadcastLobby(room);
+    }).catch(() => { /* Keep the immediately-ready seed design if art direction fails. */ });
+  }
+
+  private refineBoss(room: Room, revision: number, profile: RepoProfile, seedKit: BossKit) {
+    if (!this.services.enhanceBossKit) return;
+    void this.services.enhanceBossKit(profile, structuredClone(seedKit)).then(decorated => {
+      if (revision !== room.bossRevision || !room.boss.kit || this.rooms.get(room.code) !== room) return;
+      const kit = room.boss.kit;
+      room.boss.kit = { ...kit, design: decorated.design, name: decorated.name, palette: decorated.palette, theme: decorated.theme,
+        attacks: kit.attacks.map(attack => ({ ...attack, name: decorated.attacks.find(a => a.id === attack.id)?.name ?? attack.name })) };
+      // Running matches keep their cloned kit. A late result is ready for the next lobby/rematch.
+      this.broadcastLobby(room);
+    }).catch(() => { /* Art direction never changes readiness or prevents a fight. */ });
+  }
+
+  private makeRoomForHuman(room: Room) {
+    if (room.phase === 'lobby' && squad(room).length >= 8) {
+      const last = bots(room).at(-1);
+      if (last) { last.revision++; room.members.delete(last.id); }
+    }
+  }
+
+  private async setBots(room: Room, requested: number) {
+    if (!Number.isFinite(requested)) throw new Error('Choose 0–7 AI teammates');
+    const count = Math.min(7, 8 - connectedPlayers(room).length, Math.max(0, Math.floor(requested)));
+    const current = bots(room);
+    for (const member of current.slice(count)) { member.revision++; room.members.delete(member.id); }
+    const repos = this.services.listFallbackRepos();
+    if (bots(room).length < count && !repos.length) throw new Error('Fallback repos are not ready for AI teammates');
+    const pending: Promise<void>[] = [];
+    while (bots(room).length < count) {
+      const seed = randomBytes(4).readUInt32LE();
+      const repo = repos[seed % repos.length];
+      const id = `bot-${randomUUID()}`;
+      const name = `[BOT] ${repo.split('/').pop()}`.slice(0, 32);
+      const member: Member = { id, name, token: '', role: 'player', socket: null, revision: 1, inputAt: 0,
+        lobby: { id, name, repo, bot: true, status: 'analyzing', kit: null } };
+      room.members.set(id, member);
+      pending.push((async () => {
+        try {
+          const profile = this.services.botProfile ? this.services.botProfile(repo) : await this.services.analyzeRepo(repo);
+          if (room.members.get(id) !== member) return;
+          member.lobby = { ...member.lobby, repo: profile.slug, status: 'ready', kit: this.services.playerKitFromProfile(profile) };
+          member.botInput = this.services.createBot?.(seed);
+          this.refineHero(room, member, member.revision, profile);
+        } catch (error) {
+          if (room.members.get(id) !== member) return;
+          member.lobby.status = 'error'; member.lobby.error = error instanceof Error ? error.message : 'AI repo failed';
+        }
+        this.broadcastLobby(room);
+      })());
+    }
+    this.broadcastLobby(room);
+    await Promise.all(pending);
   }
 
   private hello(socket: WebSocket, msg: Extract<ClientMsg, { t: 'hello' }>) {
@@ -158,6 +233,7 @@ export class RoomServer {
     if (!member) {
       if (msg.role === 'player' && room.phase !== 'lobby') throw new Error('A match is in progress. Join as a screen or wait for the lobby.');
       if (msg.role === 'player' && connectedPlayers(room).length >= 8) throw new Error('Room is full (8 players)');
+      if (msg.role === 'player') this.makeRoomForHuman(room);
       const id = randomUUID();
       const name = String(msg.name || (msg.role === 'screen' ? 'Big screen' : 'Player')).slice(0, 32);
       member = { id, name, token: randomBytes(24).toString('hex'), role: msg.role, socket: null, revision: 0, inputAt: 0, lobby: { id, name, repo: null, status: 'empty', kit: null } };
@@ -168,6 +244,10 @@ export class RoomServer {
       this.sessions.delete(member.socket);
       member.socket.close(4001, 'Resumed in another tab');
     }
+    // The lobby's rename control reconnects with the same token and a new hello name.
+    if (member.role === 'player' && !member.socket) this.makeRoomForHuman(room);
+    member.name = String(msg.name || member.name).slice(0, 32);
+    member.lobby.name = member.name;
     member.socket = socket; member.input = undefined;
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
@@ -196,10 +276,12 @@ export class RoomServer {
   }
 
   private start(room: Room) {
-    const players = connectedPlayers(room).filter(p => p.lobby.status === 'ready' && p.lobby.kit);
-    if (!players.length) throw new Error('At least one player must choose a repo and finish analysis');
+    const humans = connectedPlayers(room).filter(p => p.lobby.status === 'ready' && p.lobby.kit);
+    if (!humans.length) throw new Error('At least one player must choose a repo and finish analysis');
     if (room.boss.status !== 'ready' || !room.bossProfile) throw new Error('Choose a boss repo and wait for analysis');
-    const boss = this.services.bossKitFromProfile(room.bossProfile, players.length);
+    if (bots(room).some(p => p.lobby.status !== 'ready' || !p.lobby.kit)) throw new Error('Wait for AI teammates to finish loading');
+    const players = [...humans, ...bots(room)];
+    const boss = this.services.bossKitFromProfile(room.bossProfile, players.length, room.boss.kit?.design);
     const match = this.services.createMatch(players.map(p => ({ id: p.id, name: p.name, kit: p.lobby.kit! })), boss);
     room.boss.kit = boss; room.match = match; room.phase = 'match'; room.events = [];
     for (const member of room.members.values()) member.input = undefined;
@@ -212,6 +294,11 @@ export class RoomServer {
         const inputs = new Map<string, InputFrame>();
         for (const m of room.members.values()) {
           if (m.role !== 'player') continue;
+          if (m.lobby.bot && m.botInput && room.state) {
+            const player = room.state.players.find(p => p.id === m.id);
+            if (player) inputs.set(m.id, m.botInput(room.state, player));
+            continue;
+          }
           inputs.set(m.id, m.socket && m.input && now - m.inputAt < 300 ? { ...m.input } : idle(m.input?.seq));
           if (m.input) { m.input.dash = false; m.input.skill = false; }
         }
@@ -221,8 +308,10 @@ export class RoomServer {
           this.stopMatch(room);
           this.publishSnapshot(room);
           room.result = match.autopsy();
-          // The transport still has the source profile; kits intentionally omit the real file path.
+          // Retain the source profile's exact heart file path for the autopsy.
           if (room.bossProfile) room.result.boss.heart = room.bossProfile.heart;
+          try { this.services.recordMatch?.(room.result, room.code, room.result.boss.repo); }
+          catch (error) { console.error('Hall persistence failed:', error); }
           room.phase = 'autopsy';
           this.broadcastLobby(room);
           this.broadcast(room, { t: 'autopsy', result: room.result });
