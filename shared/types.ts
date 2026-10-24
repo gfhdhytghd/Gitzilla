@@ -253,6 +253,7 @@ export type Role = "player" | "screen";   // screen = spectator big screen
 
 export interface LobbyPlayer {
   id: string; name: string; repo: string | null;
+  bot?: boolean;
   status: "empty" | "analyzing" | "ready" | "error";
   error?: string;
   kit: PlayerKit | null;
@@ -270,6 +271,7 @@ export type ClientMsg =
   | { t: "hello"; room: string; role: Role; name: string; resume?: string }
   | { t: "setRepo"; repo: string }
   | { t: "setBoss"; repo: string }          // owner only
+  | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
   | { t: "rematch" };                       // owner only
