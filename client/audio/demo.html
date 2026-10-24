@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Repo Kaiju // Audio Lab</title>
+    <link rel="icon" href="data:,">
+    <style>
+      :root { color-scheme:dark; font:14px ui-monospace,monospace; background:#080f1b; color:#bcebdc }
+      * { box-sizing:border-box }
+      body { max-width:1160px; margin:0 auto; padding:28px }
+      header { border-bottom:2px solid #5dd9ae; padding-bottom:18px; margin-bottom:20px }
+      h1 { font-size:26px; letter-spacing:2px; color:#a0ffd7; margin:0 0 8px }
+      h2 { color:#ffda7b; margin:0 0 14px; font-size:14px; letter-spacing:1px }
+      p { color:#89a69e; line-height:1.6; margin:8px 0 }
+      section { padding:18px; border:1px solid #26483f; background:#0d1925; margin-bottom:16px }
+      button,select { font:inherit; color:#c2ffe5; border:1px solid #3b7865; background:#122b2b; padding:10px 12px; cursor:pointer }
+      button:hover { background:#214f43; border-color:#9affce }
+      button:focus-visible,select:focus-visible,input:focus-visible { outline:2px solid #ffda7b; outline-offset:3px }
+      button.active { background:#3d5d26; border-color:#c4ff7b }
+      #unlock { background:#b8ffb6; color:#0d2920; font-weight:bold }
+      .row { display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+      .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px }
+      label { display:inline-flex; align-items:center; gap:8px }
+      .controls { margin-top:14px }
+      output { color:#ffda7b }
+      #status { color:#7bffd5; min-height:24px; white-space:pre-wrap; font-size:12px }
+      .hint { font-size:12px }
+      .music button { text-align:left }
+      .music small { display:block; color:#81b29c; font-size:10px; margin-top:6px; line-height:1.5 }
+      @media(max-width:650px) { body { padding:16px } h1 { font-size:20px } .grid { grid-template-columns:repeat(2,minmax(0,1fr)) } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>REPO KAIJU // AUDIO LAB</h1>
+      <p>Generated oscillators, crushed noise, and code-shaped melodies. Zero sound files.</p>
+      <div class="row controls">
+        <button id="unlock" data-testid="audio-unlock">$ enable audio</button>
+        <label><input id="muted" type="checkbox"> Mute</label>
+        <label>Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.6"><output id="volume-value">60%</output></label>
+      </div>
+    </header>
+    <section>
+      <h2>01 // MUSIC ROM</h2>
+      <div class="row" style="margin-bottom:14px">
+        <label>Boss phase <select id="phase"><option value="1">1: arpeggios + bass</option><option value="2">2: drums + tempo</option><option value="3">3: distortion + packet stutter</option></select></label>
+      </div>
+      <div id="music" class="grid music"></div>
+      <p class="hint">Arena phase 1 includes the modem summon sting. Re-selecting the same track preserves its playhead.</p>
+    </section>
+    <section>
+      <h2>02 // WEAPONS + MOVEMENT</h2>
+      <div id="weapons" class="grid"></div>
+    </section>
+    <section>
+      <h2>03 // SNAPSHOT EVENTS</h2>
+      <div class="row" style="margin-bottom:14px"><label><input id="personal" type="checkbox" checked> Self involvement (louder / +3 semitones)</label></div>
+      <div id="events" class="grid"></div>
+    </section>
+    <section>
+      <h2>04 // SKILLS + HACKER NOISE</h2>
+      <div id="skills" class="grid"></div>
+      <p class="hint">Eight-player burst exercises throttling, 12-voice priority limiting, master compression, and the final peak cap.</p>
+    </section>
+    <section aria-live="polite"><h2>OUTPUT</h2><div id="status" data-testid="audio-status">LOCKED // tap any audition button to begin</div></section>
+    <script type="module" src="./demo.ts"></script>
+  </body>
+</html>
