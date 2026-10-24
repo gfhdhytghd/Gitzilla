@@ -1,11 +1,12 @@
 import { posix as path } from 'node:path';
 import type { RepoProfile } from '../shared/types.ts';
 import { notableTree, readmeFromFiles } from './context.ts';
+import { extractCodeDNA } from './dna.ts';
 import { countLoc, isSourcePath, isTestFile, languageOf, selectPrimaryLanguage, type SourceFile } from './files.ts';
 
 export interface RepoMetadata {
   description?: string; stars?: number; primaryLanguage?: string;
-  languages?: Record<string, number>; commits?: number; contributors?: number; ageDays?: number;
+  languages?: Record<string, number>; commits?: number; contributors?: number; ageDays?: number; recentCommits?: string[];
 }
 const JS_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mts', '.cts', '.vue', '.svelte'];
 const SOURCE_EXTS = [...JS_EXTS, '.py', '.pyi', '.go', '.rs', '.java', '.kt', '.cs', '.c', '.h', '.cpp', '.hpp', '.cc', '.rb'];
@@ -340,5 +341,6 @@ export function profileFromFiles(slug: string, input: SourceFile[], metadata: Re
     testRatio: files.length ? files.filter(file => isTestFile(file.path)).length / files.length : 0,
     seed: fnv1a(slug.toLowerCase()),
     readme: readmeFromFiles(input), tree: notableTree(input, graph, heart),
+    dna: extractCodeDNA(files, { heart, componentForFile: file => components[fileComponent(file)].name, components: components.map(c => c.name), commits: metadata.recentCommits }),
   };
 }

@@ -286,5 +286,263 @@
     "tests/test_header_cookie_optional_models.py",
     "fastapi/exception_handlers.py",
     "tests/test_query_optional_models.py"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "app",
+      "Item",
+      "get",
+      "client",
+      "Model",
+      "endpoint",
+      "post",
+      "User",
+      "get_client",
+      "FastAPI",
+      "read_items",
+      "__init__",
+      "path",
+      "b",
+      "Profile",
+      "read",
+      "websocket",
+      "Depends",
+      "dependency",
+      "Query",
+      "name",
+      "Form",
+      "send",
+      "Path"
+    ],
+    "componentSymbols": {
+      "tests": [
+        "app",
+        "Item",
+        "get",
+        "client"
+      ],
+      "fastapi": [
+        "app",
+        "get",
+        "endpoint",
+        "post"
+      ],
+      "docs_src": [
+        "Item",
+        "get",
+        "User",
+        "read_items"
+      ],
+      "scripts": [
+        "__init__",
+        "main",
+        "run",
+        "Settings"
+      ],
+      "misc": [
+        "__init__",
+        "lifespan",
+        "default",
+        "alias"
+      ],
+      "fastapi/openapi": [
+        "Header",
+        "Response",
+        "HTTPBearer",
+        "HTTPBase"
+      ],
+      "fastapi/security": [
+        "__init__",
+        "__call__",
+        "make_not_authenticated_error",
+        "HTTPBearer"
+      ],
+      "docs": [
+        "main",
+        "configure",
+        "Termynal",
+        "type"
+      ]
+    },
+    "heartLines": [
+      "__version__ = \"0.162.0\""
+    ],
+    "snippets": [
+      {
+        "file": "tests/test_sub_callbacks.py",
+        "line": 96,
+        "code": "\"description\": 'Create an invoice.\\n\\nThis will "
+      },
+      {
+        "file": "tests/test_sub_callbacks.py",
+        "line": 203,
+        "code": "\"$ref\": \"#/components/schemas/InvoiceEventReceiv"
+      },
+      {
+        "file": "docs_src/query_params_str_validations/tutorial003_py310.py",
+        "line": 7,
+        "code": "async def read_items(q: str | None = Query(defau"
+      },
+      {
+        "file": "fastapi/telemetry/_api.py",
+        "line": 134,
+        "code": "def _get_request_telemetry(context: Context | No"
+      },
+      {
+        "file": "docs_src/dependency_testing/tutorial001_an_py310.py",
+        "line": 9,
+        "code": "async def common_parameters(q: str | None = None"
+      },
+      {
+        "file": "docs_src/dependency_testing/tutorial001_py310.py",
+        "line": 7,
+        "code": "async def common_parameters(q: str | None = None"
+      },
+      {
+        "file": "tests/test_request_params/test_default_validation.py",
+        "line": 314,
+        "code": "def read_parameter(value: Annotated[int, Query(g"
+      },
+      {
+        "file": "docs_src/path_params_numeric_validations/tutorial003_py310.py",
+        "line": 7,
+        "code": "async def read_items(*, item_id: int = Path(titl"
+      },
+      {
+        "file": "docs_src/query_params_str_validations/tutorial009_py310.py",
+        "line": 7,
+        "code": "async def read_items(q: str | None = Query(defau"
+      },
+      {
+        "file": "docs_src/query_params_str_validations/tutorial002_py310.py",
+        "line": 7,
+        "code": "async def read_items(q: str | None = Query(defau"
+      },
+      {
+        "file": "tests/main.py",
+        "line": 71,
+        "code": "def get_path_param_min_max_length(item_id: str ="
+      },
+      {
+        "file": "tests/test_schema_extra_examples.py",
+        "line": 26,
+        "code": "def example(item: Item = Body(example={\"data\": \""
+      }
+    ],
+    "todos": [
+      {
+        "file": "fastapi/_compat/shared.py",
+        "text": "TODO: remove this function once the required version of Pyda"
+      },
+      {
+        "file": "fastapi/_compat/shared.py",
+        "text": "TODO: remove this function once the required version of Pyda"
+      },
+      {
+        "file": "fastapi/_compat/v2.py",
+        "text": "TODO: remove when this is merged (or equivalent): https://gi"
+      },
+      {
+        "file": "fastapi/_compat/v2.py",
+        "text": "TODO: remove when dropping support for Pydantic < v2.12.3"
+      },
+      {
+        "file": "fastapi/_compat/v2.py",
+        "text": "TODO: remove when dropping support for Pydantic < v2.12.3"
+      },
+      {
+        "file": "fastapi/_compat/v2.py",
+        "text": "TODO: remove after setting the min Pydantic to v2.12.3"
+      },
+      {
+        "file": "fastapi/_compat/v2.py",
+        "text": "TODO remove when deprecating Pydantic v1"
+      },
+      {
+        "file": "fastapi/encoders.py",
+        "text": "TODO: pv2 should this return strings instead?"
+      },
+      {
+        "file": "fastapi/openapi/utils.py",
+        "text": "TODO: probably make status_code a default class attribute fo"
+      },
+      {
+        "file": "fastapi/routing.py",
+        "text": "TODO: Replace or deprecate this no-scope hook so included-ro"
+      },
+      {
+        "file": "fastapi/routing.py",
+        "text": "TODO: probably move this out of the Route / Route Group, sam"
+      },
+      {
+        "file": "fastapi/routing.py",
+        "text": "TODO: deprecate this once the lifespan (or alternative) inte"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      "{",
+      "}",
+      "=",
+      "assert",
+      "==",
+      "def",
+      "None",
+      "import",
+      "from",
+      "return",
+      "|",
+      "True"
+    ],
+    "bigFiles": [
+      {
+        "path": "tests/test_include_router_defaults_overrides.py",
+        "loc": 7207
+      },
+      {
+        "path": "fastapi/routing.py",
+        "loc": 5832
+      },
+      {
+        "path": "fastapi/applications.py",
+        "loc": 4154
+      },
+      {
+        "path": "fastapi/param_functions.py",
+        "loc": 2430
+      },
+      {
+        "path": "tests/test_generate_unique_id_function.py",
+        "loc": 1644
+      },
+      {
+        "path": "tests/test_application.py",
+        "loc": 1271
+      },
+      {
+        "path": "tests/test_frontend.py",
+        "loc": 1058
+      },
+      {
+        "path": "tests/test_request_params/test_form/test_nullable_and_defaults.py",
+        "loc": 1033
+      }
+    ],
+    "longestFunction": {
+      "name": "test_openapi",
+      "file": "tests/test_include_router_defaults_overrides.py",
+      "lines": 6866
+    },
+    "counts": {
+      "functions": 6014,
+      "classes": 950,
+      "todo": 23,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 1246
+    },
+    "maxNesting": 16,
+    "avgLineLength": 39.6,
+    "indent": "mixed"
+  }
 }

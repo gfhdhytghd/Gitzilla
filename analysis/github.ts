@@ -1,6 +1,7 @@
 import type { RepoProfile } from '../shared/types.ts';
 import { profileFromFiles, type RepoMetadata } from './graph.ts';
 import { extractTarGz, ARCHIVE_LIMITS } from './tar.ts';
+import { cleanCommitSubjects } from './dna.ts';
 
 export interface GitHubOptions {
   token?: string;
@@ -12,7 +13,9 @@ export interface GitHubOptions {
 /** A one-item page's last-page index is the approximate total count. */
 export function countFromPage(link: string | null, items: unknown[]): number {
   const last = link?.split(',').find(part => /rel="last"/.test(part))?.match(/<([^>]+)>/)?.[1];
-  return last ? Number(new URL(last).searchParams.get('page')) || items.length : items.length;
+  if (!last) return items.length;
+  const url = new URL(last);
+  return (Number(url.searchParams.get('page')) || 1) * (Number(url.searchParams.get('per_page')) || 1);
 }
 
 export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {}): Promise<RepoProfile> {
@@ -40,7 +43,13 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
     // Metadata can fail while an archive succeeds: keep the real source graph.
     const metaPromise = api('').catch(() => null);
     const languagesPromise = api('/languages').catch(() => null);
-    const commitsPromise = count('/commits?per_page=1');
+    const commitsPromise = api('/commits?per_page=10').then(result => {
+      const rows = Array.isArray(result.data) ? result.data : [];
+      return {
+        count: countFromPage(result.link, rows),
+        subjects: cleanCommitSubjects(rows.flatMap((row: { commit?: { message?: string } }) => typeof row.commit?.message === 'string' ? [row.commit.message] : [])),
+      };
+    }).catch(() => undefined);
     const contributorsPromise = count('/contributors?per_page=1&anon=true');
     const archivePromise = (async () => {
       // GitHub's API issues an authorized archive redirect for private repositories.
@@ -77,7 +86,7 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
       description: raw?.description ?? previous?.description ?? '', stars: raw?.stargazers_count ?? previous?.stars ?? 0,
       primaryLanguage: raw?.language ?? previous?.primaryLanguage,
       languages: (languageResult?.data as Record<string, number> | undefined) ?? previous?.languages,
-      commits: commits ?? previous?.commits ?? 0, contributors: contributors ?? previous?.contributors ?? 0,
+      commits: commits?.count ?? previous?.commits ?? 0, recentCommits: commits?.subjects ?? [], contributors: contributors ?? previous?.contributors ?? 0,
       ageDays: raw?.created_at ? Math.max(0, Math.floor((Date.now() - Date.parse(raw.created_at)) / 86_400_000)) : previous?.ageDays ?? 0,
     };
     const profile = profileFromFiles(slug, files, metadata);

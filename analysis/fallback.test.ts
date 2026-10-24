@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { listFallbackRepos, offlineProfile } from './index.ts';
 import { componentTopology, fnv1a } from './graph.ts';
+import { safeCodeText } from './dna.ts';
 
 describe('checked-in famous repository snapshots', () => {
   it('covers all fifteen requested repos with actual, consistent analyzed source profiles', () => {
@@ -12,6 +13,18 @@ describe('checked-in famous repository snapshots', () => {
       expect(p.slug).toBe(slug); expect(p.fallback).toBe(true);
       if (slug === 'spring-projects/spring-petclinic') expect(p.primaryLanguage).toBe('Java');
       expect(p.description).not.toContain('synthetic');
+      const d = p.dna!;
+      expect(d).toBeDefined(); expect(d.identifiers.length).toBeGreaterThan(0); expect(d.identifiers.length).toBeLessThanOrEqual(24);
+      expect(Object.keys(d.componentSymbols).sort()).toEqual(p.components.map(c => c.name).sort());
+      expect(Object.values(d.componentSymbols).every(symbols => symbols.length <= 4)).toBe(true);
+      expect(d.heartLines.length).toBeLessThanOrEqual(12); expect(d.heartLines.every(line => line.length <= 40 && safeCodeText(line))).toBe(true);
+      expect(d.snippets.length).toBeLessThanOrEqual(12); expect(d.snippets.length).toBeGreaterThan(0);
+      expect(d.snippets.every(s => s.line >= 1 && s.code.length <= 48 && safeCodeText(s.code))).toBe(true);
+      expect(d.todos.length).toBeLessThanOrEqual(12); expect(d.todos.every(t => t.text.length <= 60 && safeCodeText(t.text))).toBe(true);
+      expect(d.commits.length).toBeLessThanOrEqual(10); expect(d.commits.every(safeCodeText)).toBe(true);
+      expect(d.tokens.length).toBeLessThanOrEqual(12); expect(d.bigFiles.length).toBeLessThanOrEqual(8);
+      expect(d.counts.functions).toBeGreaterThan(0); expect(d.maxNesting).toBeGreaterThanOrEqual(0); expect(d.avgLineLength).toBeGreaterThan(0);
+      expect(['tabs', 'spaces2', 'spaces4', 'mixed']).toContain(d.indent);
       expect(typeof p.readme).toBe('string'); expect(Buffer.byteLength(p.readme!)).toBeLessThanOrEqual(4096);
       expect(p.tree!.length).toBeGreaterThan(0); expect(p.tree!.length).toBeLessThanOrEqual(120);
       expect(new Set(p.tree).size).toBe(p.tree!.length); expect(p.tree).toContain(p.heart);

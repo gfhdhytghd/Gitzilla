@@ -1,4 +1,6 @@
-DONE
+DONE (round 2)
+
+Round 2 summary: real-source CodeDNA is implemented and all 15 public snapshots are regenerated. Analysis/Hall tests 76/76 PASS; workspace typecheck PASS. The two current full-suite failures belong to design asset regeneration and input signed-zero handling; see the final handoff below. Privacy isolation and existing Hall/token behavior are preserved.
 
 # codex-repo — repository analysis
 
@@ -196,4 +198,55 @@ await analyzeRepo(slugOrUrl, { token: '' });
 
 Server service wrappers can expose the same optional second argument. No changes to shared gameplay/profile contracts are required. The existing Hall HTTP handoff above is unchanged.
 
-DONE
+
+## Infrastructure constraint — coordinator update
+- Port 5173 is the stable production/live server from `../gitzilla-live`, serving `https://gitzilla.wilflin.me`. Never start, stop, or test against 5173.
+- Shared development server: `http://localhost:5175`, tsx watch + Vite HMR, herdr pane `wQ:pT`. Use only this server for development smokes/playtests/screenshots.
+- Smoke command: `SMOKE_URL=http://localhost:5175 npx tsx server/smoke.ts`. Playtests: `--base http://localhost:5175` or the corresponding environment setting.
+- Only the coordinator deploys to live. Earlier port-5173 evidence in this log predates this infrastructure change and does not authorize future access.
+- Recorded this update without contacting, starting, or stopping either server.
+
+
+## Round 2 — CodeDNA scope
+- Read `docs/tasks/round2.md` and current `shared/types.ts`. RepoProfile.dna is currently optional in the shared file; analysis will always produce every CodeDNA field.
+- Own analysis/, data/fallback/, hall/ and this progress file; no edits to other agents' code or shared contracts.
+- Extract real per-language symbols, safe source excerpts, comment TODOs, keyword/operator frequencies, big files, function/nesting/indent metrics, and recent commit subjects.
+- Preserve credential-isolated memory caching and zero authenticated disk writes. Private DNA can return to its caller/room but is never logged, sent to Gemini/Hall, or persisted by analysis.
+- Regenerate all 15 public famous snapshots with bounded DNA; tests and current-workspace checks next. Dev only 5175; never access 5173/live.
+
+## Round 2 implementation / validation update
+- Added `analysis/dna.ts` with per-language definitions/reference ranking, comment/string masking (including Rust raw strings and Java/Kotlin text blocks), bounded exact source excerpts, TODO labels, lexical tokens/operators, function spans, nesting, indent and file metrics.
+- Integrated DNA into `profileFromFiles`; componentSymbols use the final merged component names. Source-free synthetic fallbacks get empty DNA, never invented identifiers/excerpts. Pre-DNA disk caches trigger refresh.
+- Replaced the one-item commit request with **one** `/commits?per_page=10` request: up to ten safe first-line subjects plus approximate total from Link page × page size. Contributors still use one-item pagination.
+- Source excerpt filtering inspects the full original line before truncation and drops credential/key/token/password/secret patterns, long hex/base64 and known credential prefixes. Sources retain exact file/1-based line; no ellipses or rewritten code.
+- Focused analysis + Hall tests: **75/75 PASS**, including eight language fixture variants, nested/multiline functions, false callback-definition prevention, raw strings/comments, bounded excerpts, credential filtering and cached/private DNA isolation. Hall additionally proves extra code/DNA properties never enter its persisted projection.
+- All 15 public snapshots were generated once; final regeneration is running after parser-quality fixes found by fixtures. No port 5173 access, live deployment, or cross-owner code edits.
+
+## Round 2 source snapshot / integration update (15:10 local)
+- Final source regeneration completed for all 15 public repos using explicitly anonymous downloads. Snapshots total **211,203 bytes** (about 206 KiB), largest 19,585 bytes; every repo has 12 bounded snippets, real identifiers/component symbols, complete metrics and safe excerpt fields.
+- Recent-subject requests were rate limited during the final public generation, so these snapshots currently have empty `dna.commits`. This is the required best-effort offline behavior, not invented history; the runtime/mock integration verifies the one-call ten-subject path and approximate count. Existing numeric metadata can still use the previous known snapshot values.
+- Current `npm run typecheck`: **PASS**. Explicit strict analysis/Hall/shared check: **PASS**.
+- Current full `npm test`: **237 PASS / 1 FAIL / 6 skipped**. The one failure is `design/index.test.ts:183`: checked-in offline art still quotes a recent-commit taunt from an earlier snapshot while the new public DNA commit list is empty. This requires the design owner's asset regeneration after DNA settles. No design files were edited or regenerated by codex-repo.
+- Own analysis/Hall focused suite: **75/75 PASS** before the final snapshot consistency expansion; final focused verification next.
+
+## Handoff round 2 — codex-sim / codex-gemini / codex-net
+- `profile.dna` is ready on all live analyses and on all 15 fallback profiles. All CodeDNA fields exist even when no source/symbols/heart lines/recent commits are available; those source fields are empty, not fabricated. Consumers still tolerate optional dna on older hand-authored mocks per the shared contract.
+- `componentSymbols` keys are the final component names, including the actual merged `misc` component; use them to populate limbSymbols. `snippets[].line` is 1-based; strings are verbatim trimmed prefixes. Import-only hearts legitimately have `heartLines: []`.
+- Rebuild `data/design` from the final new `data/fallback` DNA before asserting offline art equality. The current mismatch is the old ripgrep recent-sin commit taunt; generation must tolerate empty recent commits when API rate limited.
+- Private/credentialed profiles may feed the room's kits but **must not feed Gemini, public Hall payloads/logs or persistence**. Analysis already skips all authenticated disk cache IO and partitions memory/in-flight jobs by token hash. It does not invoke Gemini/Hall or log source. The server must carry request credential/privacy provenance through the art-direction branch; do not infer public safety from slug alone.
+- Public snapshot regeneration is anonymous-only; no credentialed source is written by the generator. No shared contract requests.
+
+## Round 2 final result (15:15 local)
+- All analysis-owned round-2 requirements are complete. Final parser includes next-line C/C++/Java/C# braces, scoped C++ methods, multiline Python signatures, callback false-positive prevention, raw/text-block string masking, and full-line credential filtering including snake_case/camelCase key/token fields and Authorization/Bearer headers.
+- Regenerated all 15 public fallback profiles after the final parser/filter changes. Total **211,211 bytes**; largest **19,585 bytes**. All have complete CodeDNA and 12 real snippets. Public GitHub commit API currently returns **403 / x-ratelimit-remaining: 0** (verified), so their recent-subject arrays are empty as specified for unavailable metadata.
+- Compared all 15 snapshots to HEAD: **no changes** in totalFiles, totalLoc, components, heart/fan-in, edges, cycles, maxDepth, testRatio, seed, or primaryLanguage. DNA additions do not alter the structural/balance inputs.
+- Direct uncached `analyzeGitHubRepo('facebook/react', { token: '' })`: **8,426 ms**, 4,227 retained source files, 24 identifiers, 12 snippets, 23,394 recognized function definitions. This downloaded and analyzed public source rather than reading cache. A separate public cache smoke also returned complete DNA.
+- Final `npx vitest run analysis hall`: **76/76 PASS**, 10 files (67 analysis / 9 Hall).
+- Final `npm run typecheck`: **PASS** across the workspace. Owned strict typecheck also passed.
+- Latest `npm test`: **253 PASS / 2 FAIL / 6 skipped**, 29 files. Both failures are outside ownership:
+  - `design/index.test.ts:184`: offline boss name/manifest source mismatch (`RIPGREP, THE UNMERGED` vs `RIPGREP, GUARDIAN OF LOST DIRS`) while the design owner updates/regenerates assets. Regenerate art against the now-final DNA snapshots.
+  - `client/input/gestures.test.ts:79`: platform gravity-sign equality compares positive zero with negative zero. Input owner should normalize the zero or adjust the numeric assertion.
+- `git diff --check` on owned tracked paths: PASS. No git commits, dependency changes, shared/server/sim/client/design edits, live deployments, or port-5173 access by codex-repo.
+- `analysis/README.md` documents DNA extraction/safety/limits, one-call recent commits, empty source-free DNA, privacy boundaries, and anonymous-only public snapshot generation. No open contract requests or remaining codex-repo implementation work.
+
+DONE (round 2)

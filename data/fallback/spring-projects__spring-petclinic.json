@@ -12,7 +12,7 @@
   },
   "totalFiles": 74,
   "totalLoc": 13268,
-  "commits": 1047,
+  "commits": 1050,
   "contributors": 158,
   "ageDays": 5036,
   "components": [
@@ -156,5 +156,189 @@
     "src/main/java/org/springframework/samples/petclinic/package-info.java",
     "src/main/resources/templates/welcome.html",
     "src/main/resources/db/mysql/user.sql"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "Owner",
+      "Pet",
+      "getPet",
+      "findAll",
+      "PetType",
+      "toString",
+      "Visit",
+      "setName",
+      "Vet",
+      "getName",
+      "george",
+      "getId",
+      "getPets",
+      "addPet",
+      "Person",
+      "setId",
+      "validate",
+      "OwnerRepository",
+      "setBirthDate",
+      "setType",
+      "VetRepository",
+      "setLastName",
+      "addVisit",
+      "BaseEntity"
+    ],
+    "componentSymbols": {
+      "src/main": [
+        "Owner",
+        "Pet",
+        "getPet",
+        "PetType"
+      ],
+      "src/test": [
+        "validate",
+        "EntityUtils",
+        "initCreationForm",
+        "main"
+      ]
+    },
+    "heartLines": [
+      "@MappedSuperclass",
+      "public class NamedEntity extends BaseEnt",
+      "@NotBlank",
+      "private String name;",
+      "public String getName() {",
+      "return this.name;",
+      "public void setName(String name) {",
+      "this.name = name;",
+      "@Override",
+      "public String toString() {",
+      "String name = this.getName();",
+      "return name != null ? name : \"<null>\";"
+    ],
+    "snippets": [
+      {
+        "file": "src/main/resources/db/postgres/data.sql",
+        "line": 34,
+        "code": "INSERT INTO owners (first_name, last_name, addre"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/system/I18nPropertiesSyncTest.java",
+        "line": 68,
+        "code": "if (hasLiteralText && !line.contains(\"#{\") && !h"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/model/ValidatorTests.java",
+        "line": 43,
+        "code": "private <T> ConstraintViolation<T> getOnlyViolat"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "line": 78,
+        "code": "public String processCreationForm(@Valid Owner o"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java",
+        "line": 49,
+        "code": "private javax.cache.configuration.Configuration<"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java",
+        "line": 138,
+        "code": "private List<EnumerablePropertySource<?>> findPr"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+        "line": 56,
+        "code": "private String addPaginationModel(int page, Page"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "line": 202,
+        "code": "private boolean isDuplicatePetNameViolation(Data"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java",
+        "line": 41,
+        "code": "public void testDuplicatePetNameRaceConditionIsB"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+        "line": 52,
+        "code": "public PetType parse(String text, Locale locale)"
+      },
+      {
+        "file": "src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java",
+        "line": 28,
+        "code": "public void registerHints(RuntimeHints hints, Cl"
+      },
+      {
+        "file": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+        "line": 137,
+        "code": "void processCreationFormRejectsCityLongerThanCol"
+      }
+    ],
+    "todos": [],
+    "commits": [],
+    "tokens": [
+      ";",
+      "import",
+      "=",
+      "{",
+      "}",
+      "<",
+      "void",
+      "public",
+      ">",
+      "this",
+      "class",
+      "new"
+    ],
+    "bigFiles": [
+      {
+        "path": "src/main/resources/static/resources/css/petclinic.css",
+        "loc": 8518
+      },
+      {
+        "path": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+        "loc": 278
+      },
+      {
+        "path": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+        "loc": 265
+      },
+      {
+        "path": "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+        "loc": 241
+      },
+      {
+        "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+        "loc": 175
+      },
+      {
+        "path": "src/main/scss/petclinic.scss",
+        "loc": 174
+      },
+      {
+        "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+        "loc": 162
+      },
+      {
+        "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+        "loc": 161
+      }
+    ],
+    "longestFunction": {
+      "name": "testDuplicatePetNameRaceConditionIsBlocked",
+      "file": "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java",
+      "lines": 92
+    },
+    "counts": {
+      "functions": 180,
+      "classes": 50,
+      "todo": 0,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 1099
+    },
+    "maxNesting": 6,
+    "avgLineLength": 39.1,
+    "indent": "mixed"
+  }
 }

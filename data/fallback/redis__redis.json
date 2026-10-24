@@ -16,7 +16,7 @@
   },
   "totalFiles": 369,
   "totalLoc": 229624,
-  "commits": 13377,
+  "commits": 13380,
   "contributors": 965,
   "ageDays": 6425,
   "components": [
@@ -216,5 +216,268 @@
     "src/kvstore.c",
     "src/chk.h",
     "tests/modules/basics.c"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "sdslen",
+      "strcasecmp",
+      "TEST",
+      "size_t",
+      "config",
+      "test",
+      "client",
+      "mstime",
+      "strcmp",
+      "memcmp",
+      "RedisModuleCtx",
+      "entry",
+      "zfree",
+      "sdsfree",
+      "next",
+      "dict",
+      "quicklist",
+      "list",
+      "checkType",
+      "addReplyError",
+      "atoi",
+      "dictEntry",
+      "strlen",
+      "addReplyBulkCString"
+    ],
+    "componentSymbols": {
+      "src": [
+        "main",
+        "crc64",
+        "connSetReadHandler",
+        "connSetWriteHandler"
+      ],
+      "tests": [
+        "strlen",
+        "cleanup",
+        "RedisModule_OnLoad",
+        "MemBlock"
+      ],
+      "modules": [
+        "test",
+        "generate_random_vector",
+        "main",
+        "TestCase"
+      ],
+      "utils": [
+        "fullname",
+        "write",
+        "main",
+        "struct_code"
+      ],
+      "scripts": [
+        "manifest_modules",
+        "manifest_field",
+        "END",
+        "_manifest_usage"
+      ],
+      "src/modules": [
+        "RedisModule_OnLoad",
+        "HelloBlock_FreeData",
+        "HelloBlock_Reply",
+        "HelloBlock_Timeout"
+      ],
+      "tools": [
+        "resp",
+        "main",
+        "run",
+        "Workload"
+      ]
+    },
+    "heartLines": [
+      "static inline void kvSpecInit(kvSpec *sp",
+      "typedef struct pendingCommandList {",
+      "typedef struct pendingCommandPool {",
+      "typedef struct __attribute__((aligned(CA",
+      "typedef struct replDataBufToDbCtx {",
+      "typedef struct zskiplistNodeInfo {",
+      "typedef struct clientBufferLimitsConfig ",
+      "typedef struct redisTLSContextConfig {",
+      "typedef struct jsonObjectElement {",
+      "typedef struct _redisSortOperation {",
+      "typedef struct hashTemplateRegistry {",
+      "static inline int clusterSlotStatsEnable"
+    ],
+    "snippets": [
+      {
+        "file": "src/object.c",
+        "line": 1711,
+        "code": "s = sdscatprintf(s,\" * High total RSS: This inst"
+      },
+      {
+        "file": "modules/vector-sets/tests/node_update.py",
+        "line": 73,
+        "code": "*[str(x) for x in cluster2_base],"
+      },
+      {
+        "file": "src/server.h",
+        "line": 4338,
+        "code": "static inline int clusterSlotStatsEnabled(int st"
+      },
+      {
+        "file": "src/mstr.h",
+        "line": 211,
+        "code": "static inline int mstrGetFlag(mstr s, int flagId"
+      },
+      {
+        "file": "src/quicklist.c",
+        "line": 201,
+        "code": "size_t quicklistAllocSize(const quicklist *ql) {"
+      },
+      {
+        "file": "src/t_zset.c",
+        "line": 248,
+        "code": "size_t zslAllocSize(const zskiplist *zsl) { retu"
+      },
+      {
+        "file": "src/vector.h",
+        "line": 71,
+        "code": "static inline size_t vecSize(const vec *v) { ret"
+      },
+      {
+        "file": "src/sparsearray.h",
+        "line": 192,
+        "code": "static inline int arIsEmpty(void *v) { return v "
+      },
+      {
+        "file": "src/ebuckets.h",
+        "line": 252,
+        "code": "static inline ebuckets ebCreate(void) { return N"
+      },
+      {
+        "file": "src/geohash_helper.c",
+        "line": 57,
+        "code": "static inline double deg_rad(double ang) { retur"
+      },
+      {
+        "file": "modules/vector-sets/examples/cli-tool/cli.py",
+        "line": 44,
+        "code": "def replace_with_embedding_and_text(match):"
+      },
+      {
+        "file": "src/module.c",
+        "line": 14053,
+        "code": "int moduleOnLoad(int (*onload)(void *, void **, "
+      }
+    ],
+    "todos": [
+      {
+        "file": "modules/vector-sets/hnsw.c",
+        "text": "XXX: this function needs improvements: successive updates to"
+      },
+      {
+        "file": "modules/vector-sets/vset.c",
+        "text": "XXX Technically in Redis-land we don't have out of memory, a"
+      },
+      {
+        "file": "src/cluster_asm.c",
+        "text": "TODO: Detect whether the bgsave is completed successfully an"
+      },
+      {
+        "file": "src/cluster_legacy.c",
+        "text": "TODO: instead of exiting the loop send every other"
+      },
+      {
+        "file": "src/cluster_legacy.h",
+        "text": "xxx as failing"
+      },
+      {
+        "file": "src/config.c",
+        "text": "TODO: make this a dict for better performance"
+      },
+      {
+        "file": "src/db.c",
+        "text": "TODO))."
+      },
+      {
+        "file": "src/db.c",
+        "text": "TODO: Use separate hits stats for WRITE"
+      },
+      {
+        "file": "src/db.c",
+        "text": "TODO: Use separate misses stats and notify event for WRITE"
+      },
+      {
+        "file": "src/db.c",
+        "text": "TODO: uncomment in redis 8.0"
+      },
+      {
+        "file": "src/ebuckets.c",
+        "text": "TODO: Written straightforward. Should be optimized to merge "
+      },
+      {
+        "file": "src/ebuckets.h",
+        "text": "TODO"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      ";",
+      "=",
+      "->",
+      "*",
+      "}",
+      "{",
+      "if",
+      "int",
+      "return",
+      "==",
+      "&",
+      "void"
+    ],
+    "bigFiles": [
+      {
+        "path": "src/module.c",
+        "loc": 15119
+      },
+      {
+        "path": "src/redis-cli.c",
+        "loc": 10674
+      },
+      {
+        "path": "src/server.c",
+        "loc": 7804
+      },
+      {
+        "path": "src/t_stream.c",
+        "loc": 6209
+      },
+      {
+        "path": "src/cluster_legacy.c",
+        "loc": 6014
+      },
+      {
+        "path": "src/t_hash.c",
+        "loc": 5999
+      },
+      {
+        "path": "src/zset_btree.c",
+        "loc": 5733
+      },
+      {
+        "path": "src/networking.c",
+        "loc": 5524
+      }
+    ],
+    "longestFunction": {
+      "name": "quicklistTest",
+      "file": "src/quicklist.c",
+      "lines": 1506
+    },
+    "counts": {
+      "functions": 6504,
+      "classes": 439,
+      "todo": 22,
+      "fixme": 0,
+      "hack": 6,
+      "comments": 60010
+    },
+    "maxNesting": 14,
+    "avgLineLength": 43.7,
+    "indent": "mixed"
+  }
 }

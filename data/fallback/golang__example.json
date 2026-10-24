@@ -13,7 +13,7 @@
   },
   "totalFiles": 44,
   "totalLoc": 3207,
-  "commits": 76,
+  "commits": 80,
   "contributors": 20,
   "ageDays": 4471,
   "components": [
@@ -160,5 +160,239 @@
     "gotypes/gen.go",
     "ragserver/tests/weaviate-delete-objects.sh",
     "gotypes/hello/hello.go"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "main",
+      "IndentHandler",
+      "appendAttr",
+      "New",
+      "String",
+      "Options",
+      "ragServer",
+      "parseLogEntries",
+      "readRequestJSON",
+      "document",
+      "usage",
+      "addDocumentsHandler",
+      "addRequest",
+      "queryHandler",
+      "queryRequest",
+      "renderJSON",
+      "version",
+      "appendUnopenedGroups",
+      "Get",
+      "groupOrAttrs",
+      "Document",
+      "Enabled",
+      "Handle",
+      "NewServer"
+    ],
+    "componentSymbols": {
+      "slog-handler-guide": [
+        "appendAttr",
+        "New",
+        "parseLogEntries",
+        "appendUnopenedGroups"
+      ],
+      "ragserver": [
+        "main",
+        "readRequestJSON",
+        "addDocumentsHandler",
+        "queryHandler"
+      ],
+      "gotypes": [
+        "main",
+        "CheckNilFuncComparison",
+        "isValidIdentifier",
+        "mode"
+      ],
+      "internal": [
+        "main",
+        "cleanListing",
+        "include",
+        "leadingTabs"
+      ],
+      "outyet": [
+        "main",
+        "NewServer",
+        "ServeHTTP",
+        "isTagged"
+      ],
+      "misc": [
+        "main",
+        "usage",
+        "version",
+        "greet"
+      ],
+      "hello": [
+        "main",
+        "String",
+        "usage",
+        "ExampleString"
+      ],
+      "template": [
+        "main",
+        "imageHandler",
+        "indexHandler",
+        "Index"
+      ]
+    },
+    "heartLines": [
+      "func String(s string) string {",
+      "r := []rune(s)",
+      "for i, j := 0, len(r)-1; i < len(r)/2; i",
+      "r[i], r[j] = r[j], r[i]",
+      "return string(r)"
+    ],
+    "snippets": [
+      {
+        "file": "ragserver/ragserver-langchaingo/main.go",
+        "line": 131,
+        "code": "respText, err := llms.GenerateFromSinglePrompt(r"
+      },
+      {
+        "file": "internal/cmd/weave/weave.go",
+        "line": 149,
+        "code": "printf(\"%s1. [%s](#%s)\\n\", strings.Repeat(\"\\t\", "
+      },
+      {
+        "file": "ragserver/ragserver-genkit/main.go",
+        "line": 87,
+        "code": "func (rs *ragServer) addDocumentsHandler(w http."
+      },
+      {
+        "file": "ragserver/ragserver-langchaingo/main.go",
+        "line": 77,
+        "code": "func (rs *ragServer) addDocumentsHandler(w http."
+      },
+      {
+        "file": "ragserver/ragserver/main.go",
+        "line": 70,
+        "code": "func (rs *ragServer) addDocumentsHandler(w http."
+      },
+      {
+        "file": "outyet/main_test.go",
+        "line": 19,
+        "code": "func (h *statusHandler) ServeHTTP(w http.Respons"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler1/indent_handler.go",
+        "line": 89,
+        "code": "func (h *IndentHandler) appendAttr(buf []byte, a"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler2/indent_handler.go",
+        "line": 74,
+        "code": "func (h *IndentHandler) withGroupOrAttrs(goa gro"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler2/indent_handler.go",
+        "line": 129,
+        "code": "func (h *IndentHandler) appendAttr(buf []byte, a"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler3/indent_handler.go",
+        "line": 127,
+        "code": "func (h *IndentHandler) appendAttr(buf []byte, a"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler4/indent_handler.go",
+        "line": 140,
+        "code": "func (h *IndentHandler) appendAttr(buf []byte, a"
+      },
+      {
+        "file": "outyet/main.go",
+        "line": 98,
+        "code": "func (s *Server) ServeHTTP(w http.ResponseWriter"
+      }
+    ],
+    "todos": [
+      {
+        "file": "internal/cmd/weave/weave.go",
+        "text": "TODO(adonovan): escape /^```/ in s"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler1/indent_handler.go",
+        "text": "TODO: state for WithGroup and WithAttrs"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler1/indent_handler.go",
+        "text": "TODO: implement."
+      },
+      {
+        "file": "slog-handler-guide/indenthandler1/indent_handler.go",
+        "text": "TODO: implement."
+      },
+      {
+        "file": "slog-handler-guide/indenthandler1/indent_handler.go",
+        "text": "TODO: output the Attrs and groups from WithAttrs and WithGro"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      "}",
+      "{",
+      ":=",
+      "if",
+      "=",
+      "*",
+      "return",
+      "func",
+      "nil",
+      "!=",
+      "for",
+      "&"
+    ],
+    "bigFiles": [
+      {
+        "path": "internal/cmd/weave/weave.go",
+        "loc": 262
+      },
+      {
+        "path": "ragserver/ragserver/main.go",
+        "loc": 216
+      },
+      {
+        "path": "slog-handler-guide/indenthandler4/indent_handler.go",
+        "loc": 187
+      },
+      {
+        "path": "ragserver/ragserver-genkit/main.go",
+        "loc": 157
+      },
+      {
+        "path": "slog-handler-guide/indenthandler2/indent_handler_test.go",
+        "loc": 147
+      },
+      {
+        "path": "slog-handler-guide/indenthandler2/indent_handler.go",
+        "loc": 147
+      },
+      {
+        "path": "slog-handler-guide/indenthandler3/indent_handler.go",
+        "loc": 147
+      },
+      {
+        "path": "ragserver/ragserver-langchaingo/main.go",
+        "loc": 137
+      }
+    ],
+    "longestFunction": {
+      "name": "main",
+      "file": "internal/cmd/weave/weave.go",
+      "lines": 154
+    },
+    "counts": {
+      "functions": 108,
+      "classes": 26,
+      "todo": 5,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 632
+    },
+    "maxNesting": 5,
+    "avgLineLength": 26.2,
+    "indent": "mixed"
+  }
 }

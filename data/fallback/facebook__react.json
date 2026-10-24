@@ -301,5 +301,274 @@
     "packages/react-reconciler/src/ReactCurrentFiber.js",
     "compiler/crates/react_compiler_inference/src/propagate_scope_dependencies_hir.rs",
     "packages/react-client/src/ReactFlightClientConfig.js"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "render",
+      "Component",
+      "App",
+      "fn",
+      "Foo",
+      "Child",
+      "get",
+      "new",
+      "foo",
+      "value",
+      "Text",
+      "error",
+      "x",
+      "Parent",
+      "push",
+      "act",
+      "env",
+      "callback",
+      "Hello",
+      "onClick",
+      "from",
+      "log",
+      "A",
+      "start"
+    ],
+    "componentSymbols": {
+      "compiler": [
+        "render",
+        "Component",
+        "App",
+        "fn"
+      ],
+      "packages/react-dom": [
+        "render",
+        "Component",
+        "App",
+        "fn"
+      ],
+      "misc": [
+        "render",
+        "Component",
+        "App",
+        "fn"
+      ],
+      "packages/react-reconciler": [
+        "render",
+        "Component",
+        "App",
+        "fn"
+      ],
+      "packages/react-devtools-shared": [
+        "render",
+        "Component",
+        "App",
+        "fn"
+      ],
+      "fixtures": [
+        "render",
+        "Component",
+        "App",
+        "Foo"
+      ],
+      "packages/react-dom-bindings": [
+        "fn",
+        "get",
+        "callback",
+        "resolve"
+      ],
+      "packages/eslint-plugin-react-hooks": [
+        "fn",
+        "create",
+        "Identifier",
+        "normalizeIndent"
+      ]
+    },
+    "heartLines": [
+      "export function mutateAndReturnNewValue<",
+      "export function arrayPush<T>(arr: Array<",
+      "export function makeArray<T>(...values: ",
+      "export function throwErrorWithMessageIf(",
+      "export function invoke<T extends Array<a",
+      "export function conditionalInvoke<T exte",
+      "return function Component(props: TProps)",
+      "export function toJSON(value: any, invok",
+      "static makeBuilder(isNull: boolean, ...a",
+      "export function typedArrayPush<T>(array:",
+      "export function typedCapture<T>(x: T): A",
+      "export function typedCreateFrom<T>(array"
+    ],
+    "snippets": [
+      {
+        "file": "packages/react-dom/src/__tests__/ReactDOMFizzServerBrowser-test.js",
+        "line": 393,
+        "code": "const str2049 = `(2049) This string is intention"
+      },
+      {
+        "file": "fixtures/flight/src/App.js",
+        "line": 165,
+        "code": "yay: 'You reached the end',"
+      },
+      {
+        "file": "packages/react-devtools-shared/src/inspectedElementCache.js",
+        "line": 226,
+        "code": "}): {abort: () => void, pause: () => void, resum"
+      },
+      {
+        "file": "packages/react-devtools-fusebox/src/frontend.js",
+        "line": 36,
+        "code": "return new Bridge({listen: () => () => {}, send:"
+      },
+      {
+        "file": "packages/react-debug-tools/src/ReactDebugHooks.js",
+        "line": 764,
+        "code": "function useEffectEvent<Args, F: (...Array<Args>"
+      },
+      {
+        "file": "packages/react-reconciler/src/ReactFiberHooks.js",
+        "line": 2728,
+        "code": "function useEffectEventImpl<Args, Return, F: (.."
+      },
+      {
+        "file": "packages/react-dom-bindings/src/client/ReactDOMUpdatePriority.js",
+        "line": 47,
+        "code": "export function runWithPriority<T>(priority: Eve"
+      },
+      {
+        "file": "packages/react-cache/src/LRU.js",
+        "line": 87,
+        "code": "function add(value: Object, onDelete: () => mixe"
+      },
+      {
+        "file": "packages/react-native-renderer/src/__mocks__/react-native/Libraries/ReactPrivate/ReactNativeViewConfigRegistry.js",
+        "line": 59,
+        "code": "export function register(name: string, callback:"
+      },
+      {
+        "file": "compiler/scripts/test-internal-files.ts",
+        "line": 186,
+        "code": "function walkDir(dir: string, callback: (filePat"
+      },
+      {
+        "file": "packages/react-dom-bindings/src/client/ReactFiberConfigDOM.js",
+        "line": 2157,
+        "code": "function waitForImageToLoad(this: HTMLImageEleme"
+      },
+      {
+        "file": "compiler/packages/babel-plugin-react-compiler/src/__tests__/fixtures/compiler/error.todo-kitchensink.js",
+        "line": 18,
+        "code": "const j = function bar([quz, qux], ...args) {};"
+      }
+    ],
+    "todos": [
+      {
+        "file": ".eslintrc.js",
+        "text": "TODO should be WARNING"
+      },
+      {
+        "file": ".eslintrc.js",
+        "text": "TODO should be ERROR"
+      },
+      {
+        "file": ".eslintrc.js",
+        "text": "TODO should be WARNING?"
+      },
+      {
+        "file": ".eslintrc.js",
+        "text": "TODO: Prettier doesn't handle long strings or long comments."
+      },
+      {
+        "file": "babel.config-react-compiler.js",
+        "text": "HACK: @poteto React Compiler inlines Zod in its build artifa"
+      },
+      {
+        "file": "babel.config-react-compiler.js",
+        "text": "hack later when we move eslint-plugin-react-hooks into the c"
+      },
+      {
+        "file": "compiler/apps/playground/colors.js",
+        "text": "todo: doesn't match illustrations"
+      },
+      {
+        "file": "compiler/apps/playground/components/Editor/ConfigEditor.tsx",
+        "text": "TODO: Add back <Activity> after upgrading next.js"
+      },
+      {
+        "file": "compiler/apps/playground/components/Editor/Input.tsx",
+        "text": "TODO: Make TS recognize .d.ts files, in addition to loading "
+      },
+      {
+        "file": "compiler/crates/react_compiler_diagnostics/src/lib.rs",
+        "text": "Todo is Hint"
+      },
+      {
+        "file": "compiler/crates/react_compiler_diagnostics/src/lib.rs",
+        "text": "Todo diagnostic (matches TS `CompilerError.throwTodo()`)."
+      },
+      {
+        "file": "compiler/crates/react_compiler_diagnostics/src/lib.rs",
+        "text": "Todo diagnostics should produce ErrorDetail (flat loc format"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      ";",
+      "{",
+      "}",
+      "=",
+      "<",
+      ">",
+      "const",
+      "/",
+      "=>",
+      "return",
+      "if",
+      "null"
+    ],
+    "bigFiles": [
+      {
+        "path": "packages/react-dom/src/__tests__/ReactDOMFizzServer-test.js",
+        "loc": 9819
+      },
+      {
+        "path": "packages/react-dom/src/__tests__/ReactDOMFloat-test.js",
+        "loc": 9724
+      },
+      {
+        "path": "packages/eslint-plugin-react-hooks/__tests__/ESLintRuleExhaustiveDeps-test.js",
+        "loc": 8618
+      },
+      {
+        "path": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+        "loc": 7505
+      },
+      {
+        "path": "compiler/crates/react_compiler_lowering/src/build_hir.rs",
+        "loc": 7124
+      },
+      {
+        "path": "packages/react-dom-bindings/src/server/ReactFizzConfigDOM.js",
+        "loc": 6749
+      },
+      {
+        "path": "packages/react-dom-bindings/src/client/ReactFiberConfigDOM.js",
+        "loc": 6581
+      },
+      {
+        "path": "packages/react-client/src/ReactFlightClient.js",
+        "loc": 5518
+      }
+    ],
+    "longestFunction": {
+      "name": "attach",
+      "file": "packages/react-devtools-shared/src/backend/fiber/renderer.js",
+      "lines": 7708
+    },
+    "counts": {
+      "functions": 23394,
+      "classes": 2566,
+      "todo": 1114,
+      "fixme": 8,
+      "hack": 37,
+      "comments": 71228
+    },
+    "maxNesting": 16,
+    "avgLineLength": 33,
+    "indent": "mixed"
+  }
 }

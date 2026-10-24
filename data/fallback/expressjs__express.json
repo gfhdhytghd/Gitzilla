@@ -195,5 +195,183 @@
     "test/req.accepts.js",
     "test/res.set.js",
     "test/app.options.js"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "app",
+      "get",
+      "createApp",
+      "send",
+      "use",
+      "set",
+      "json",
+      "path",
+      "test",
+      "render",
+      "fn",
+      "accept",
+      "fn1",
+      "fn2",
+      "View",
+      "verify",
+      "html",
+      "route",
+      "text",
+      "status",
+      "count",
+      "fn3",
+      "users",
+      "headers"
+    ],
+    "componentSymbols": {
+      "test": [
+        "createApp",
+        "send",
+        "json",
+        "test"
+      ],
+      "lib": [
+        "app",
+        "get",
+        "send",
+        "use"
+      ],
+      "examples": [
+        "get",
+        "json",
+        "html",
+        "text"
+      ],
+      "root": []
+    },
+    "heartLines": [],
+    "snippets": [
+      {
+        "file": "test/res.links.js",
+        "line": 43,
+        "code": ".expect('Link', '<http://api.example.com/users?p"
+      },
+      {
+        "file": "test/res.render.js",
+        "line": 199,
+        "code": "res.render('user.tmpl', { user: { name: 'tobi' }"
+      },
+      {
+        "file": "lib/application.js",
+        "line": 72,
+        "code": "get: function getrouter() {"
+      },
+      {
+        "file": "lib/utils.js",
+        "line": 250,
+        "code": "return function generateETag (body, encoding) {"
+      },
+      {
+        "file": "lib/view.js",
+        "line": 153,
+        "code": "return process.nextTick(function renderTick() {"
+      },
+      {
+        "file": "test/support/tmpl.js",
+        "line": 26,
+        "code": "return function variableLookup(str, path) {"
+      },
+      {
+        "file": "test/config.js",
+        "line": 123,
+        "code": "function fn1() { return false }"
+      },
+      {
+        "file": "test/Router.js",
+        "line": 94,
+        "code": "var handler = function (req, res) { res.end(new "
+      },
+      {
+        "file": "lib/response.js",
+        "line": 437,
+        "code": "res.download = function download (path, filename"
+      },
+      {
+        "file": "test/res.format.js",
+        "line": 41,
+        "code": "json: function(){ res.send({ message: 'hey' }) }"
+      },
+      {
+        "file": "test/res.format.js",
+        "line": 166,
+        "code": "json: function(){ res.send({ message: 'hey' }) }"
+      },
+      {
+        "file": "test/res.location.js",
+        "line": 141,
+        "code": "function testRequestedRedirect (app, inputUrl, e"
+      }
+    ],
+    "todos": [],
+    "commits": [],
+    "tokens": [
+      ";",
+      "}",
+      "{",
+      "function",
+      "=",
+      "var",
+      "this",
+      "/",
+      "+",
+      "return",
+      "if",
+      "new"
+    ],
+    "bigFiles": [
+      {
+        "path": "test/app.router.js",
+        "loc": 940
+      },
+      {
+        "path": "lib/response.js",
+        "loc": 908
+      },
+      {
+        "path": "test/res.sendFile.js",
+        "loc": 840
+      },
+      {
+        "path": "test/express.urlencoded.js",
+        "loc": 701
+      },
+      {
+        "path": "test/express.static.js",
+        "loc": 692
+      },
+      {
+        "path": "test/express.json.js",
+        "loc": 643
+      },
+      {
+        "path": "lib/application.js",
+        "loc": 530
+      },
+      {
+        "path": "test/Router.js",
+        "loc": 505
+      }
+    ],
+    "longestFunction": {
+      "name": "send",
+      "file": "lib/response.js",
+      "lines": 97
+    },
+    "counts": {
+      "functions": 270,
+      "classes": 0,
+      "todo": 0,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 1778
+    },
+    "maxNesting": 8,
+    "avgLineLength": 30.1,
+    "indent": "spaces2"
+  }
 }

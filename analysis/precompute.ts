@@ -26,7 +26,7 @@ async function main(): Promise<void> {
         const slug = normalizeSlug(input);
         const filename = `${directory}${slug.replace('/', '__')}.json`;
         const previous = await readFile(filename, 'utf8').then(text => JSON.parse(text) as RepoProfile).catch(() => undefined);
-        const profile = await analyzeGitHubRepo(slug, { timeoutMs: 60_000, metadataFallback: previous });
+        const profile = await analyzeGitHubRepo(slug, { timeoutMs: 60_000, metadataFallback: previous, token: '' });
         await writeFile(filename, JSON.stringify(profile, null, 2) + '\n');
         console.log(`${slug}: ${profile.totalFiles} files, ${profile.totalLoc} LOC, ${profile.components.length} components, ${profile.edges.length} edges, ${profile.cycles.length} cycles`);
       } catch (error) { failed++; console.error(`${input}: ${String(error)}`); }

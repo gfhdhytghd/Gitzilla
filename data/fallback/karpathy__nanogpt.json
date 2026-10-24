@@ -1,16 +1,16 @@
 {
   "slug": "karpathy/nanogpt",
-  "description": "",
-  "stars": 0,
+  "description": "The simplest, fastest repository for training/finetuning medium-sized GPTs.",
+  "stars": 64055,
   "primaryLanguage": "Python",
   "languages": {
     "Python": 51670
   },
   "totalFiles": 15,
   "totalLoc": 1085,
-  "commits": 0,
-  "contributors": 0,
-  "ageDays": 0,
+  "commits": 210,
+  "contributors": 37,
+  "ageDays": 1396,
   "components": [
     {
       "name": "root",
@@ -64,5 +64,195 @@
     "config/eval_gpt2_large.py",
     "config/eval_gpt2_xl.py",
     "config/eval_gpt2.py"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "__init__",
+      "get_batch",
+      "GPT",
+      "GPTConfig",
+      "encode",
+      "forward",
+      "decode",
+      "from_pretrained",
+      "LayerNorm",
+      "configure_optimizers",
+      "estimate_mfu",
+      "get_num_params",
+      "_init_weights",
+      "Block",
+      "CausalSelfAttention",
+      "crop_block_size",
+      "estimate_loss",
+      "generate",
+      "get_lr",
+      "MLP",
+      "process"
+    ],
+    "componentSymbols": {
+      "root": [
+        "__init__",
+        "get_batch",
+        "GPT",
+        "GPTConfig"
+      ],
+      "data": [
+        "encode",
+        "decode",
+        "process"
+      ],
+      "config": []
+    },
+    "heartLines": [
+      "class LayerNorm(nn.Module):",
+      "def __init__(self, ndim, bias):",
+      "class CausalSelfAttention(nn.Module):",
+      "def __init__(self, config):",
+      "def get_num_params(self, non_embedding=T",
+      "def _init_weights(self, module):",
+      "def forward(self, idx, targets=None):",
+      "def crop_block_size(self, block_size):",
+      "def from_pretrained(cls, model_type, ove",
+      "def configure_optimizers(self, weight_de",
+      "def estimate_mfu(self, fwdbwd_per_iter, ",
+      "def generate(self, idx, max_new_tokens, "
+    ],
+    "snippets": [
+      {
+        "file": "train.py",
+        "line": 73,
+        "code": "dtype = 'bfloat16' if torch.cuda.is_available() "
+      },
+      {
+        "file": "model.py",
+        "line": 50,
+        "code": ".view(1, 1, config.block_size, config.block_size"
+      },
+      {
+        "file": "model.py",
+        "line": 306,
+        "code": "def generate(self, idx, max_new_tokens, temperat"
+      },
+      {
+        "file": "bench.py",
+        "line": 37,
+        "code": "def get_batch(split):"
+      },
+      {
+        "file": "data/openwebtext/prepare.py",
+        "line": 43,
+        "code": "def process(example):"
+      },
+      {
+        "file": "train.py",
+        "line": 116,
+        "code": "def get_batch(split):"
+      },
+      {
+        "file": "data/shakespeare_char/prepare.py",
+        "line": 32,
+        "code": "def encode(s):"
+      },
+      {
+        "file": "data/shakespeare_char/prepare.py",
+        "line": 35,
+        "code": "return ''.join([itos[i] for i in l]) # decoder: "
+      },
+      {
+        "file": "model.py",
+        "line": 64,
+        "code": "y = torch.nn.functional.scaled_dot_product_atten"
+      },
+      {
+        "file": "sample.py",
+        "line": 32,
+        "code": "ctx = nullcontext() if device_type == 'cpu' else"
+      },
+      {
+        "file": "data/openwebtext/prepare.py",
+        "line": 69,
+        "code": "batch = dset.shard(num_shards=total_batches, ind"
+      },
+      {
+        "file": "bench.py",
+        "line": 18,
+        "code": "dtype = 'bfloat16' if torch.cuda.is_available() "
+      }
+    ],
+    "todos": [
+      {
+        "file": "model.py",
+        "text": "TODO investigate"
+      },
+      {
+        "file": "sample.py",
+        "text": "TODO want to make this more general to arbitrary encoder/dec"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      "=",
+      "if",
+      "in",
+      "import",
+      "for",
+      "-",
+      "True",
+      "*",
+      "==",
+      "else",
+      "def",
+      "+"
+    ],
+    "bigFiles": [
+      {
+        "path": "train.py",
+        "loc": 309
+      },
+      {
+        "path": "model.py",
+        "loc": 290
+      },
+      {
+        "path": "bench.py",
+        "loc": 106
+      },
+      {
+        "path": "sample.py",
+        "loc": 82
+      },
+      {
+        "path": "data/openwebtext/prepare.py",
+        "loc": 68
+      },
+      {
+        "path": "data/shakespeare_char/prepare.py",
+        "loc": 59
+      },
+      {
+        "path": "configurator.py",
+        "loc": 42
+      },
+      {
+        "path": "config/train_shakespeare_char.py",
+        "loc": 29
+      }
+    ],
+    "longestFunction": {
+      "name": "from_pretrained",
+      "file": "model.py",
+      "lines": 55
+    },
+    "counts": {
+      "functions": 24,
+      "classes": 6,
+      "todo": 2,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 338
+    },
+    "maxNesting": 10,
+    "avgLineLength": 46.5,
+    "indent": "spaces4"
+  }
 }

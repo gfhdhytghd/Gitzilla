@@ -189,5 +189,187 @@
     "examples/tutorial/flaskr/templates/auth/login.html",
     "examples/tutorial/tests/data.sql",
     "tests/test_apps/blueprintapp/apps/admin/__init__.py"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "app",
+      "get",
+      "index",
+      "client",
+      "create_app",
+      "__init__",
+      "post",
+      "Flask",
+      "route",
+      "b",
+      "response",
+      "cli",
+      "Module",
+      "name",
+      "decorator",
+      "add_url_rule",
+      "endpoint",
+      "Blueprint",
+      "request",
+      "my_reverse",
+      "register_blueprint",
+      "Index",
+      "error",
+      "jinja_env"
+    ],
+    "componentSymbols": {
+      "src/flask": [
+        "app",
+        "get",
+        "__init__",
+        "post"
+      ],
+      "tests": [
+        "app",
+        "get",
+        "index",
+        "client"
+      ],
+      "examples": [
+        "app",
+        "index",
+        "client",
+        "create_app"
+      ],
+      "docs": [
+        "github_link",
+        "setup"
+      ],
+      ".devcontainer": []
+    },
+    "heartLines": [],
+    "snippets": [
+      {
+        "file": "src/flask/sessions.py",
+        "line": 193,
+        "code": "return app.config[\"SESSION_COOKIE_PATH\"] or app."
+      },
+      {
+        "file": "src/flask/app.py",
+        "line": 1390,
+        "code": "return rv  # type: ignore[no-any-return]"
+      },
+      {
+        "file": "src/flask/config.py",
+        "line": 35,
+        "code": "def __get__(self, obj: App | None, owner: type[A"
+      },
+      {
+        "file": "src/flask/helpers.py",
+        "line": 281,
+        "code": "def abort(code: int | BaseResponse, *args: t.Any"
+      },
+      {
+        "file": "src/flask/cli.py",
+        "line": 395,
+        "code": "def decorator(ctx: click.Context, /, *args: t.An"
+      },
+      {
+        "file": "src/flask/app.py",
+        "line": 73,
+        "code": "def _make_timedelta(value: timedelta | int | Non"
+      },
+      {
+        "file": "src/flask/sansio/app.py",
+        "line": 53,
+        "code": "def _make_timedelta(value: timedelta | int | Non"
+      },
+      {
+        "file": "src/flask/sessions.py",
+        "line": 223,
+        "code": "def get_expiration_time(self, app: Flask, sessio"
+      },
+      {
+        "file": "src/flask/sansio/scaffold.py",
+        "line": 45,
+        "code": "def wrapper_func(self: Scaffold, *args: t.Any, *"
+      },
+      {
+        "file": "docs/conf.py",
+        "line": 72,
+        "code": "def github_link(name, rawtext, text, lineno, inl"
+      },
+      {
+        "file": "src/flask/blueprints.py",
+        "line": 55,
+        "code": "def get_send_file_max_age(self, filename: str | "
+      },
+      {
+        "file": "src/flask/sansio/blueprints.py",
+        "line": 256,
+        "code": "def register_blueprint(self, blueprint: Blueprin"
+      }
+    ],
+    "todos": [],
+    "commits": [],
+    "tokens": [
+      "=",
+      "def",
+      "assert",
+      "None",
+      "return",
+      "==",
+      "import",
+      "from",
+      "->",
+      "if",
+      "in",
+      "|"
+    ],
+    "bigFiles": [
+      {
+        "path": "tests/test_basic.py",
+        "loc": 1487
+      },
+      {
+        "path": "src/flask/app.py",
+        "loc": 1325
+      },
+      {
+        "path": "src/flask/cli.py",
+        "loc": 898
+      },
+      {
+        "path": "src/flask/sansio/app.py",
+        "loc": 833
+      },
+      {
+        "path": "tests/test_blueprints.py",
+        "loc": 790
+      },
+      {
+        "path": "src/flask/sansio/scaffold.py",
+        "loc": 647
+      },
+      {
+        "path": "src/flask/sansio/blueprints.py",
+        "loc": 572
+      },
+      {
+        "path": "tests/test_cli.py",
+        "loc": 536
+      }
+    ],
+    "longestFunction": {
+      "name": "make_response",
+      "file": "src/flask/app.py",
+      "lines": 141
+    },
+    "counts": {
+      "functions": 1462,
+      "classes": 160,
+      "todo": 0,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 928
+    },
+    "maxNesting": 6,
+    "avgLineLength": 40.5,
+    "indent": "mixed"
+  }
 }
