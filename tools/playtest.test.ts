@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { parseOptions } from './playtest';
+import { parseOptions, playtestBaseURL } from './playtest';
+
+describe('DEV server targeting', () => {
+  it('defaults to shared DEV and accepts an explicit override', () => {
+    expect(playtestBaseURL('')).toBe('http://localhost:5175');
+    expect(playtestBaseURL('http://localhost:6000/')).toBe('http://localhost:6000');
+  });
+  it('rejects stable live targets without making a request', () => {
+    expect(() => playtestBaseURL('http://localhost:5173')).toThrow('stable live');
+    expect(() => playtestBaseURL('https://gitzilla.wilflin.me')).toThrow('stable live');
+  });
+});
 
 describe('playtest CLI options', () => {
   it('uses the documented four-player sixty-second default', () => {

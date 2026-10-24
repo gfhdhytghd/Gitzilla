@@ -4,11 +4,12 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { strict as assert } from 'node:assert';
 import { chromium } from 'playwright';
+import { playtestBaseURL } from './playtest';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const output = join(root, 'docs/shots', `${new Date().toISOString().replace(/[:.]/g, '-')}-audio`);
 mkdirSync(output, { recursive: true });
-const base = process.env.PLAYTEST_BASE_URL || 'http://127.0.0.1:5173';
+const base = playtestBaseURL(process.env.SMOKE_URL || process.env.PLAYTEST_URL);
 const executable = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
   || (existsSync(chromium.executablePath()) ? chromium.executablePath() : '/usr/bin/chromium');
 const browser = await chromium.launch({ executablePath: executable, headless: true });
@@ -90,7 +91,8 @@ try {
       assert(durations[0] > durations[1] && durations[1] > durations[2], 'higher phases must increase tempo');
       results.phaseLoopDurations = durations;
       for (const weapon of ['blaster', 'smg', 'shotgun', 'cannon', 'staff', 'laser', 'blade']) await activate(`fire-${weapon}`);
-      for (const event of ['hit', 'crit', 'combo', 'hurt', 'telegraph', 'limbBroken', 'downed', 'revived', 'phase', 'victory', 'defeat']) await activate(`event-${event}`);
+      for (const event of ['hit', 'crit', 'combo', 'hurt', 'telegraph', 'limbBroken', 'downed', 'revived',
+        'pickup-energy', 'pickup-heart', 'pickup-armor', 'obstacleBroken', 'perk', 'phase', 'victory', 'defeat']) await activate(`event-${event}`);
       for (const skill of ['firewall', 'fork', 'hotfix', 'overclock', 'rollback']) await activate(`skill-${skill}`);
       for (const effect of ['dash', 'intro', 'ui-tick', 'stress-burst']) await activate(effect);
       const stress = await rms();

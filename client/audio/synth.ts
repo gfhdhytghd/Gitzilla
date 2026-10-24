@@ -80,6 +80,13 @@ function sfxPatches(name: SfxName): Patch[] {
     case 'hurt': return [{ wave: 'saw', from: 170, to: 45, length: 0.25, bits: 4, hold: 10, gain: 0.7 }, { wave: 'noise', from: 1, length: 0.13, gain: 0.3, hold: 9 }];
     case 'crit': return [...notes([1318, 1760, 2093], 'pulse', 0.035, 0.45, 0.12), { wave: 'noise', from: 1, length: 0.09, gain: 0.5, bits: 4, hold: 5 }];
     case 'combo': return notes([659, 830, 988, 1318], 'bell', 0.045, 0.55, 0.18);
+    case 'pickup:energy': return notes([1318, 2093], 'pulse', 0.035, 0.5, 0.09);
+    case 'pickup:heart': return [...notes([523, 659], 'bell', 0.06, 0.65, 0.2), { wave: 'triangle', from: 131, length: 0.12, gain: 0.25 }];
+    case 'pickup:armor': return [...notes([784, 1175, 1568], 'organ', 0.03, 0.55, 0.12), { wave: 'noise', from: 1, length: 0.025, gain: 0.2, hold: 2 }];
+    case 'obstacleBroken': return [{ wave: 'noise', from: 1, length: 0.2, gain: 0.8, bits: 4, hold: 6, decay: 5 },
+      { wave: 'triangle', from: 160, to: 45, length: 0.16, gain: 0.5 }, ...notes([1568, 1175, 784], 'pulse', 0.025, 0.2, 0.07)];
+    case 'perk': return [...notes([523, 659, 784, 1046], 'bell', 0.075, 0.6, 0.24),
+      ...[261, 330, 392].map((from): Patch => ({ wave: 'organ', from, at: 0.225, length: 0.35, gain: 0.25 }))];
     case 'telegraph': return [0, 0.15, 0.3].map((at, index) => ({ wave: 'pulse', from: index === 1 ? 622 : 880, at, length: 0.105, gain: 0.55, decay: 0.8 }));
     case 'limbBroken': return [{ wave: 'noise', from: 1, length: 0.65, gain: 0.85, bits: 4, hold: 12, decay: 5 }, { wave: 'saw', from: 110, to: 28, length: 0.6, gain: 0.65 }, ...notes([1568, 1175, 784, 392], 'pulse', 0.06, 0.22)];
     case 'downed': return [...notes([392, 330, 261, 185], 'triangle', 0.13, 0.7, 0.32), { wave: 'pulse', from: 65, to: 35, length: 0.7, gain: 0.25 }];
