@@ -1,4 +1,5 @@
 import type { Autopsy, Bullet, Concept, GameEvent, InputFrame, MatchState, PlayerKit, PlayerState, PvpState } from '../shared/types.ts';
+import { ARENA_W, ARENA_H } from '../shared/types.ts';
 import type { Match } from './match.ts';
 import { clamp, distance, random, unit } from './math.ts';
 import { safeInput } from './input.ts';
@@ -65,7 +66,10 @@ export class ClassroomMatch implements Match {
     if (students.length < 2 || students.length > 30) throw new Error('Classroom PvP needs 2–30 students');
     this.seed = students.reduce((seed, p) => [...p.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), seed), this.seed);
     this.rng = random(this.seed);
-    const arena = pvpArenaSize(students.length); this.width = arena.width; this.height = arena.height;
+    // The direct-control duel uses the renderer's arena. The larger classroom
+    // arena would spawn player two beyond the 480px viewport and camera bounds.
+    const arena = duel ? { width: ARENA_W, height: ARENA_H } : pvpArenaSize(students.length);
+    this.width = arena.width; this.height = arena.height;
     this.state = {
       t: 0, status: 'countdown', mode: duel ? 'pvp' : 'edu', boss: null, heroScale: 2,
       players: students.map(student => {

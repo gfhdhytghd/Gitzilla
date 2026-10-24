@@ -127,6 +127,7 @@ button, input { font: inherit; color: inherit; }
 .panel-title .count { color: var(--dim); font-family: var(--small); font-size: 10px; margin-left: auto; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+.chips[hidden] { display: none !important; }
 .chip {
   font-family: var(--term); font-size: 17px; cursor: pointer;
   background: #0a1a12; color: var(--dim); border: 1px solid #1f4630; padding: 1px 7px;

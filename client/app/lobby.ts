@@ -223,7 +223,7 @@ export function createLobby(app: AppCtx): Screen {
   repoInput.addEventListener("keydown", (e) => e.key === "Enter" && submitRepo());
   const repoErr = h("div.input-err", { role: "alert" });
   repoInput.addEventListener("input", () => (repoErr.textContent = ""));
-  const youChips = h("div.chips");
+  const youChips = h("div.chips", { "data-testid": "public-repo-suggestions" });
   const youStatus = h("div.you-status");
   const youCard = h("div.you-card");
   const nameEl = h("span.you-name");

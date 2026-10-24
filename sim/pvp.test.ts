@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CodeDNA, InputFrame, PlayerState } from '../shared/types.ts';
+import { ARENA_W, ARENA_H } from '../shared/types.ts';
 import { createMatch, type Match } from './match.ts';
 import { ClassroomMatch, pvpArenaSize, type ClassroomState } from './pvp.ts';
 import { playerKitFromProfile } from './kits.ts';
@@ -152,6 +153,23 @@ describe('classroom explanations', () => {
 });
 
 describe('two-player PvP duel', () => {
+  it('spawns and bounds both duelists inside the rendered arena', () => {
+    const match = createMatch(students(), null, { mode: 'pvp' });
+    const assertVisible = () => {
+      const state = match.snapshot();
+      expect(state.pvp).toMatchObject({ arenaW: ARENA_W, arenaH: ARENA_H });
+      expect(state.players).toHaveLength(2);
+      for (const player of state.players) {
+        expect(player.x).toBeGreaterThanOrEqual(32);
+        expect(player.x).toBeLessThanOrEqual(ARENA_W - 32);
+        expect(player.y).toBeGreaterThanOrEqual(32);
+        expect(player.y).toBeLessThanOrEqual(ARENA_H - 32);
+      }
+    };
+    assertVisible();
+    advance(match, 10, new Map([['p0', frame({ move: [-1, -1] })], ['p1', frame({ move: [1, 1] })]]));
+    assertVisible();
+  });
   it('uses exactly two balanced heroes without a boss, quality rubric, lessons or quizzes', () => {
     expect(() => createMatch(students(1), null, { mode: 'pvp' })).toThrow('exactly two');
     expect(() => createMatch(students(3), null, { mode: 'pvp' })).toThrow('exactly two');
