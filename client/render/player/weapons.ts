@@ -38,7 +38,9 @@ const DEFAULT_WORD: Record<WeaponKind, string> = {
 
 export function weaponWord(L: HeroLook, kind: WeaponKind, max: number): string {
   const ok = (s: string) => s.length > 0 && s.length <= max && [...s].every((ch) => glyphBits(ch));
-  const tok = [L.etch, ...L.tokens].map((s) => (s ?? "").trim()).find(ok);
+  const toks = [L.etch, ...L.tokens].map((s) => (s ?? "").trim());
+  // prefer real words (fn, go, def, impl), then 2+ char operators (=>, ::, &mut), then anything
+  const tok = toks.find((s) => s.length >= 2 && /[a-z]/i.test(s) && ok(s)) ?? toks.find((s) => s.length >= 2 && ok(s)) ?? toks.find(ok);
   return (tok ?? DEFAULT_WORD[kind].slice(0, max)).toUpperCase();
 }
 
@@ -98,20 +100,23 @@ function build(L: HeroLook, kind: WeaponKind): Built {
       hand = [M + 1, M + 7]; tip = [x, M + 3];
       break;
     }
-    case "smg": { // FOR plate + = barrel, ;; magazine
-      const word = weaponWord(L, kind, 3);
+    case "smg": { // < stock, FOR plate, = barrel, ;;; magazine
+      const word = weaponWord(L, kind, 3).padEnd(3, " ");
       let x = M;
+      x += g.glyph("<", x, M, syn.kw, c.white);
+      const p0 = x;
       const pw = g.plate(word, x, M, syn.kw, syn.fn);
       x += pw;
       x += g.glyph("=", x, M, syn.fn);
-      g.rect(x, M + 2, 3, 3, metal); g.rect(x, M + 2, 3, 1, c.metalL);
-      x += 3;
-      const mx = M + pw - 7;
+      g.rect(x, M + 2, 4, 3, metal); g.rect(x, M + 2, 4, 1, c.metalL);
+      x += 4;
+      const mx = p0 + pw - 10;
       g.glyph(";", mx, M + 7, syn.str, c.white);
       g.glyph(";", mx + 3, M + 7, syn.str, c.white);
-      g.rect(M + 1, M + 7, 3, 4, wood);
-      g.rect(M + 1, M + 7, 2, 2, skin);
-      hand = [M + 1, M + 7]; tip = [x, M + 3];
+      g.glyph(";", mx + 6, M + 7, syn.str, c.white);
+      g.rect(p0, M + 7, 3, 4, wood);
+      g.rect(p0, M + 7, 2, 2, skin);
+      hand = [p0, M + 7]; tip = [x, M + 3];
       break;
     }
     case "shotgun": { // [ ] stock + CASE plate (the pellets) + double barrel

@@ -1,3 +1,31 @@
+DONE (weapon v2)
+
+Weapon v2 (user: "the weapon is still regular, I want code elements there"). Every weapon is now BUILT from code:
+- **New pixel art** (`client/render/player/weapons.ts`). Big bold 7px glyphs in the hero's syntax colors with a 1px outline, plus an "editor plate" that shows the repo's real token as readable letters. Plates prefer a word (`FN`, `GO`, `IMPL`), then an operator (`=>`, `&MUT`), then a per-kind default.
+  - blaster: `{TK}=>` pistol (brace frame, token plate, arrow barrel)
+  - smg: `<` stock + `FOR`/token plate + `=` barrel + `;;;` magazine
+  - shotgun: `[ ]` stock + `CASE`/token plate (the pellets) + double barrel
+  - cannon: breech + token plate (e.g. Rust `&MUT`) + `[*]` pointer bore
+  - staff: shaft with a token plate + a big bold upright glowing `λ` head
+  - laser: token plate + `/.*/` regex lens emitter
+  - blade: a `//` comment guard + a "selected text" blade carrying the token, with a blinking caret past the tip
+  Weapons are about 17–31px long (Soul Knight chunky). EPX 2x applies for edu heroes.
+- **Readable at any aim.** The angle snaps to 16 directions, and near-horizontal aims hold perfectly flat. Aiming left uses a mirrored variant whose words are re-stamped unmirrored, so the code never reads upside-down or backwards.
+- **Firing.** The muzzle word (`kit.code.weapon.muzzle`, else per-kind) flashes right at the code-shaped barrel: 2x and white for you on every shot; 1x, dimmer, and occasionally for others. The muzzle star/glow is unchanged and impact words are unchanged.
+- **Portraits as showcase.**
+  - `playerPortrait` now fits hero + weapon. The hero stands left of center, guns are held flat (or raised 22.5° in small cards), the blade/staff are raised 45°, and the weapon gets an accent glow.
+  - `paintHeroCard` adds a syntax-highlight shimmer sweeping across the weapon every ~3s.
+  - New `weaponShowcase(canvas, kit, time, { label?, hires? })`: the weapon alone, horizontal, at the largest integer scale, with a pulsing glow, sparkles, the shimmer, and an optional weapon name. Call it per frame.
+- **Gallery.** `?weapons=1` shows all 7 weapons × 5 aim angles at 1x plus 2x edu. There's a new "legendary weapons" row. `?benchsync=N` remains.
+- **Tests.** code.test.ts adds plate-word preference tests. Player tests: 12 pass.
+
+### API notes for claude-genesis / claude-ui (please read)
+- **claude-genesis:** `client/genesis/sprites.ts` re-derives the portrait weapon transform (`translate(size/2, ...)`, `rotate(-0.9/-1.2/-0.25)`). The portrait geometry changed (the hero is left of center, new poses, scale fitted to hero+weapon), so that layer will no longer line up.
+  Replace that block with `const { canvas: wc } = portraitWeaponLayer(kit, size, hires)` (exported from `client/render/player/index.ts`). It is exactly the weapon as `playerPortrait(kit, size, *, hires)` draws it, plus `.glow`. For a weapon close-up beat, `weaponShowcase(canvas, kit, t, { label: true })` is ready to use.
+- `weaponSprite(L, kind, res, left?)`: the signature is backward compatible (`left` is optional), and the pivot/tip semantics are unchanged.
+- **claude-ui:** no required changes. Optional: `weaponShowcase` on the hero card or report card ("your weapon").
+- **codex-sim (optional):** weapons are now longer. Spawning player bullets ~14–18px from the hero center along the aim (the barrel tip) would make projectiles visibly leave the code barrel.
+
 DONE (edu pvp)
 
 Edu classroom PvP summary (claude-player part: 2x high-detail heroes for heroScale 2, same identity as 1x):

@@ -1304,28 +1304,27 @@ export function playerPortrait(kit: PlayerKit, size: number, frame = 0, hires = 
   cv.width = size; cv.height = size;
   const g = cv.getContext("2d")!;
   g.imageSmoothingEnabled = false;
-  const s = res > 1 ? Math.floor(size / 52) * 2 : Math.max(1, Math.floor(size / 26));
+  const { s, cx, cy } = portraitGeom(kit, size, res);
   const fr: FrameSpec = { pose: "idle", i: frame === 1 ? 1 : 0, expr: frame === 2 ? "blink" : "normal" };
   g.save();
-  g.translate(Math.floor(size / 2), Math.floor(size / 2 + 12.5 * s));
+  g.translate(cx, cy);
   g.scale(s, s);
   g.fillStyle = "rgba(8,4,16,0.42)";
   filledEllipse(g, -1, 0, 7, 2);
   const body = heroFrame(L, fr, "", res);
   g.drawImage(body, -ANCHOR_X - 1, -SPRITE_FOOT, SW, SH);
-  // weapon held forward-down, like a hero pose
-  const ws = weaponSprite(L, kit.weapon, res);
-  g.save();
-  g.translate(2, -6 + (fr.i === 1 ? 0 : 0));
-  g.rotate(kit.weapon === "blade" ? -0.9 : kit.weapon === "staff" ? -1.2 : -0.25);
-  g.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / ws.res, ws.canvas.height / ws.res);
-  if (kit.weapon === "staff" || kit.weapon === "laser") {
-    g.globalCompositeOperation = "lighter";
-    g.globalAlpha = 0.35;
-    g.fillStyle = L.c.accent;
-    g.beginPath(); g.arc(ws.tipX - 1, ws.tipY, 3, 0, Math.PI * 2); g.fill();
-  }
   g.restore();
+  // the weapon is the showcase: drawn from the shared portrait weapon layer, with a soft glow
+  const wl = portraitWeaponLayer(kit, size, res > 1);
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  g.globalAlpha = 0.35;
+  g.drawImage(wl.glow, 0, 0);
+  g.restore();
+  g.drawImage(wl.canvas, 0, 0);
+  g.save();
+  g.translate(cx, cy);
+  g.scale(s, s);
   if (L.duck) {
     const d = duckSprite();
     g.drawImage(d, -18, -22 + (fr.i === 1 ? 1 : 0));
@@ -1334,6 +1333,163 @@ export function playerPortrait(kit: PlayerKit, size: number, frame = 0, hires = 
   if (portraitCache.size > 300) portraitCache.clear();
   portraitCache.set(key, cv);
   return cv;
+}
+
+/** Hero x position in portraits (left of center: the weapon is big and points right). */
+const PORTRAIT_CX = 0.4;
+
+/** Portrait geometry shared by playerPortrait + portraitWeaponLayer: fit hero AND weapon, integer scale. */
+function portraitGeom(kit: PlayerKit, size: number, res: number): { s: number; cx: number; cy: number; pose: number } {
+  const L = lookFor(kit);
+  const ws = weaponSprite(L, kit.weapon, 1);
+  const fit = (pose: number) => {
+    const reach = Math.cos(pose) * (ws.canvas.width - ws.px) + (kit.weapon === "staff" ? 6 : 0); // px right of the hand
+    const need = Math.max(28, 14 + 2 + Math.ceil(reach) + 1);
+    const sc = res > 1 ? Math.max(2, Math.floor(size / (need * 2)) * 2) : Math.max(1, Math.floor(size / need));
+    return { sc, reach };
+  };
+  let pose = PORTRAIT_POSE[kit.weapon] ?? 0;
+  let f = fit(pose);
+  const heroOnly = res > 1 ? Math.max(2, Math.floor(size / 60) * 2) : Math.max(1, Math.floor(size / 30));
+  if (f.sc < heroOnly && pose === 0) { pose = -Math.PI / 8; f = fit(pose); } // raise the weapon a little first
+  // the hero never shrinks below its normal portrait scale; tiny cards may clip the very tip of long weapons
+  const s = Math.max(f.sc, heroOnly);
+  const cx = Math.max(Math.floor(14 * s * 0.85), Math.min(Math.floor(size * PORTRAIT_CX), Math.floor(size - (2 + f.reach) * s - 1)));
+  return { s, cx, cy: Math.floor(size / 2 + 12.5 * s), pose };
+}
+const PORTRAIT_POSE: Record<string, number> = { blade: -Math.PI / 4, staff: -Math.PI / 4 };
+const pwCache = new Map<string, { canvas: HTMLCanvasElement; glow: HTMLCanvasElement }>();
+
+/**
+ * The weapon exactly as playerPortrait(kit, size, *, hires) draws it, on its own size x size layer (+ a glow
+ * layer). Genesis/lobby can use it to animate or highlight the weapon without re-deriving the transform.
+ */
+export function portraitWeaponLayer(kit: PlayerKit, size: number, hires = false): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
+  const L = lookFor(kit);
+  const res = hires && size >= 52 ? 2 : 1;
+  const key = L.key + "|" + size + "|" + res;
+  const hit = pwCache.get(key);
+  if (hit) return hit;
+  const { s, cx, cy, pose } = portraitGeom(kit, size, res);
+  const ws = weaponSprite(L, kit.weapon, res);
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = size;
+  const g = cv.getContext("2d")!;
+  g.imageSmoothingEnabled = false;
+  g.translate(cx, cy);
+  g.scale(s, s);
+  g.translate(2, -6);
+  g.rotate(pose);
+  g.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / ws.res, ws.canvas.height / ws.res);
+  if (kit.weapon === "staff") {
+    const lam = boldGlyph("λ", L.c.accentL, L.c.outline, "#ffffff");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    const a = pose, r = Math.hypot(ws.tipX, ws.tipY) + 4;
+    const lx = cx + (2 + Math.cos(a) * r) * s, ly = cy + (-6 + Math.sin(a) * r) * s;
+    g.drawImage(lam, Math.round(lx - (lam.width * s) / 2), Math.round(ly - (lam.height * s) / 2), lam.width * s, lam.height * s);
+  }
+  // glow: the weapon silhouette in its accent color, dilated
+  const tint = tinted(cv, L.c.accent);
+  const glow = document.createElement("canvas");
+  glow.width = glow.height = size;
+  const gg = glow.getContext("2d")!;
+  const d = Math.max(1, Math.round(s));
+  for (const [ox, oy] of [[-d, 0], [d, 0], [0, -d], [0, d], [-d, -d], [d, d], [-d, d], [d, -d]]) gg.drawImage(tint, ox, oy);
+  const out = { canvas: cv, glow };
+  if (pwCache.size > 120) pwCache.clear();
+  pwCache.set(key, out);
+  return out;
+}
+
+/** A diagonal syntax-highlight shimmer sweeping across a layer (clipped to its pixels). */
+function shimmer(g: CanvasRenderingContext2D, layer: HTMLCanvasElement, t: number, colors: string[], period = 2.6): void {
+  const k = (t % period) / period;
+  if (k > 0.45) return;
+  const w = layer.width, h = layer.height;
+  const tmp = shimmerTmp(w, h);
+  const tg = tmp.getContext("2d")!;
+  tg.clearRect(0, 0, w, h);
+  tg.drawImage(layer, 0, 0);
+  tg.globalCompositeOperation = "source-atop";
+  const cx = -h + (w + 2 * h) * (k / 0.45);
+  const band = Math.max(3, Math.round(w / 12));
+  colors.forEach((col, i) => {
+    tg.fillStyle = col;
+    tg.beginPath();
+    const x0 = cx + i * band;
+    tg.moveTo(x0, 0); tg.lineTo(x0 + band, 0); tg.lineTo(x0 + band - h, h); tg.lineTo(x0 - h, h);
+    tg.closePath();
+    tg.fill();
+  });
+  tg.globalCompositeOperation = "source-over";
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  g.globalAlpha = 0.55;
+  g.drawImage(tmp, 0, 0);
+  g.restore();
+}
+let shimmerCv: HTMLCanvasElement | null = null;
+function shimmerTmp(w: number, h: number): HTMLCanvasElement {
+  if (!shimmerCv) shimmerCv = document.createElement("canvas");
+  if (shimmerCv.width !== w || shimmerCv.height !== h) { shimmerCv.width = w; shimmerCv.height = h; }
+  return shimmerCv;
+}
+
+/**
+ * Legendary-artifact showcase of a hero's code weapon, alone, horizontal (code readable), at the largest
+ * integer scale that fits the canvas: pulsing accent glow, sparkles and a syntax-highlight shimmer.
+ * Optionally prints the weapon's name (kit.code.weapon.name) underneath. Call every frame to animate.
+ */
+export function weaponShowcase(c: HTMLCanvasElement, kit: PlayerKit, time: number, opts?: { label?: boolean; hires?: boolean }): void {
+  const t = normTime(time);
+  const L = lookFor(kit);
+  const res = opts?.hires ? 2 : 1;
+  const ws = weaponSprite(L, kit.weapon, res);
+  const lam = kit.weapon === "staff" ? boldGlyph("λ", L.c.accentL, L.c.outline, "#ffffff") : null;
+  const ww = ws.canvas.width / ws.res + (lam ? lam.width + 2 : 0), wh = Math.max(ws.canvas.height / ws.res, lam ? lam.height : 0);
+  const labelH = opts?.label ? 9 : 0;
+  const s = Math.max(1, Math.floor(Math.min(c.width / (ww + 6), (c.height - labelH * 2) / (wh + 6 + labelH))));
+  const g = c.getContext("2d")!;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, c.width, c.height);
+  g.imageSmoothingEnabled = false;
+  // layer: weapon (+ lambda head) at scale s, centered
+  const layer = shimmerLayer(c.width, c.height);
+  const lg = layer.getContext("2d")!;
+  lg.setTransform(1, 0, 0, 1, 0, 0);
+  lg.clearRect(0, 0, layer.width, layer.height);
+  lg.imageSmoothingEnabled = false;
+  const ox = Math.round((c.width - ww * s) / 2), oy = Math.round((c.height - labelH * s - wh * s) / 2 + Math.sin(t * 2) * s * 0.5);
+  lg.drawImage(ws.canvas, ox, oy, (ws.canvas.width / ws.res) * s, (ws.canvas.height / ws.res) * s);
+  if (lam) lg.drawImage(lam, ox + (ws.canvas.width / ws.res + 1) * s, oy + Math.round(((ws.py + ws.tipY) - lam.height / 2) * s), lam.width * s, lam.height * s);
+  // glow
+  const tint = tinted(layer, L.c.accent);
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  g.globalAlpha = 0.28 + 0.12 * Math.sin(t * 3);
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-2, 0], [2, 0], [0, -2], [0, 2]]) g.drawImage(tint, dx * s, dy * s);
+  g.restore();
+  g.drawImage(layer, 0, 0);
+  shimmer(g, layer, t, [L.syn.kw, "#ffffff", L.syn.str]);
+  // sparkles
+  g.fillStyle = L.c.accentL;
+  for (let i = 0; i < 4; i++) {
+    const a = t * 0.9 + i * 1.7;
+    if (Math.sin(t * 5 + i * 2.1) < 0.5) continue;
+    g.fillRect(Math.round(ox + ((Math.sin(a) + 1) / 2) * ww * s), Math.round(oy - 2 * s + ((Math.cos(a * 1.3) + 1) / 2) * (wh + 4) * s), s, s);
+  }
+  if (opts?.label) {
+    const name = (kit.code?.weapon?.name || kit.weapon).toUpperCase();
+    const tc = textCanvas(name, "#e8f4ff");
+    const ls = Math.max(1, Math.floor(Math.min(s, c.width / (tc.width + 4))));
+    g.drawImage(tc, Math.round((c.width - tc.width * ls) / 2), c.height - (tc.height + 2) * ls, tc.width * ls, tc.height * ls);
+  }
+}
+let showcaseLayer: HTMLCanvasElement | null = null;
+function shimmerLayer(w: number, h: number): HTMLCanvasElement {
+  if (!showcaseLayer) showcaseLayer = document.createElement("canvas");
+  if (showcaseLayer.width !== w || showcaseLayer.height !== h) { showcaseLayer.width = w; showcaseLayer.height = h; }
+  return showcaseLayer;
 }
 
 /** Idle frame index for animated portraits: breathe 0/1 with occasional blink (2). */
@@ -1390,6 +1546,7 @@ export function paintHeroCard(c: HTMLCanvasElement, kit: PlayerKit, time: number
     } else {
       g.drawImage(src, 0, 0);
     }
+    shimmer(g, portraitWeaponLayer(kit, size).canvas, t + (kit.seed % 50) / 20, [L.syn.kw, "#ffffff", L.syn.str], 3.2);
     const fa = readyAge - SPIN;
     if (fa < 0.3) {
       g.save();
@@ -1466,7 +1623,7 @@ export function paintHeroTerminal(c: HTMLCanvasElement, kit: PlayerKit, time: nu
   const words = (kit.code?.snippet || L.lang + " " + repoName).split(/(\s+)/).filter((w) => w.trim());
   const idents = (kit.code?.identifiers ?? []).slice(0, 4);
   const P = Math.max(26, Math.floor((H * 0.95) / 26) * 26);
-  const cols = Math.max(4, Math.floor((W - 12 - P * 0.42) / GLYPH_W));
+  const cols = Math.max(4, Math.floor((W - 12 - P * 0.62) / GLYPH_W));
   const lines: { text: string; color: string }[][] = [];
   let line: { text: string; color: string }[] = [], len = 0;
   const push = (w: string, color: string) => {
@@ -1501,6 +1658,6 @@ export function paintHeroTerminal(c: HTMLCanvasElement, kit: PlayerKit, time: nu
   let tmp = termTmp.get(key);
   if (!tmp) { tmp = document.createElement("canvas"); tmp.width = tmp.height = P; termTmp.set(key, tmp); }
   paintHeroCard(tmp, kit, time, readyAge);
-  g.drawImage(tmp, W - Math.floor(P * 0.74), H - P + Math.floor(P * 0.02));
+  g.drawImage(tmp, W - P + 1, H - P + Math.floor(P * 0.02));
   g.setTransform(1, 0, 0, 1, 0, 0);
 }
