@@ -1,3 +1,9 @@
+DONE (autopsy wait)
+
+Small harness follow-up: server autopsy can arrive at the end of the normal5s timed-fight grace while the UI is still in its2s defeat outro. Record message receive time and wait for visible autopsy for up to6s from that message before failing. Keep normal timed-fight behavior when no server ending arrives. Added a synthetic browser regression with a late server message +2.5s outro. No server lifecycle/live access or commits.
+
+Verification:18PASS (14CLI +4browser fixtures), including the new regression:2s requested fight, server autopsy at6.2s, visible UI2.5s later. Harness waited through the delayed outro and captured desktop +phone autopsy with exit0. Artifact `docs/shots/2026-10-24T20-42-02-649Z-1910294/summary.json`. Whole-workspace typecheck and touched-file whitespace PASS. No live/server lifecycle changes or commits.
+
 DONE (ios permission)
 
 Urgent iPhone follow-up: preserving coordinator commit2bcc826 (auto permission only touchend/click). Initial staging failure diagnosed from20-27-33 artifact: stale harness assertion explicitly allowed pointerdown/click but rejected touchend; only9snapshots because assertion aborted immediately, not game failure. Tightening mock to reject pointerdown/touchstart/inactive/untrusted permission calls. Inspecting denial retry/state+sensor UI; DEV5175/staging5176 only, never live5173.

@@ -54,6 +54,7 @@ interface Telemetry {
   skills: number;
   ack: number;
   autopsy: boolean;
+  autopsyAt?: number;
   result?: Autopsy;
   sources: Record<string, number>;
   lessons: number;
@@ -220,7 +221,7 @@ export async function playtest(options: Options): Promise<number> {
           t.ack = Math.max(t.ack, message.ack);
           if (previousStatus !== message.state.status) log('ws:status', `${name}: ${message.state.status}`);
         } else if (message.t === 'autopsy') {
-          t.autopsy = true; t.result = message.result;
+          t.autopsy = true; t.autopsyAt ??= Date.now(); t.result = message.result;
           log('ws:autopsy', `${name}: ${message.result.mode === 'edu' ? `class ranking (${message.result.ranking?.length ?? 0} students)` : message.result.victory ? 'victory' : 'defeat'}`);
         }
         else if (message.t === 'error') {
@@ -407,15 +408,23 @@ export async function playtest(options: Options): Promise<number> {
     phase = 'autopsy';
     try { await owner.page.getByTestId('autopsy').waitFor({ state: 'visible', timeout: 5000 }); }
     catch { /* A timed smoke need not last long enough for a natural match ending. */ }
+    if (!await owner.page.getByTestId('autopsy').isVisible()) {
+      await capturePair('end-fight');
+      // A server ending near the timed-smoke deadline still has a full outro to
+      // render. Give it six seconds from the message, rather than from fight end.
+      if (owner.telemetry.autopsy) {
+        const remaining = Math.max(1, 6000 - (Date.now() - owner.telemetry.autopsyAt!));
+        try { await owner.page.getByTestId('autopsy').waitFor({ state: 'visible', timeout: remaining }); }
+        catch { throw new IncompleteUI('Server sent autopsy, but visible [data-testid="autopsy"] is missing after 6s'); }
+      }
+    }
     if (await owner.page.getByTestId('autopsy').isVisible()) {
       for (const client of pair()) await required(client, 'autopsy');
       await capturePair('autopsy');
       outcome = 'autopsy';
     } else {
-      await capturePair('end-fight');
       note('Autopsy not reached within the requested fight window plus 5s grace; screenshots show the real end-of-run fight.');
       outcome = 'timed-fight';
-      if (owner.telemetry.autopsy) throw new IncompleteUI('Server sent autopsy, but visible [data-testid="autopsy"] is missing');
     }
     for (const client of fighters) {
       const t = client.telemetry;

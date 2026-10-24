@@ -1,4 +1,25 @@
-DONE (code weapon names)
+DONE (feishu refs)
+DONE (kaiju flavor)
+
+## Feishu hero-reference retrieval
+- Read lark-shared and lark-im skills. Use ~/.local/bin/lark-cli with both notifier-suppression env flags.
+- Find the user's two recent image messages, prefer bot-readable chats/p2p before requiring user auth, download originals to docs/design-refs/, inspect both, and write a concrete style/proportions/palette brief for claude-player.
+- User explicitly authorized docs/design-refs/ for this card. No Feishu messages, commits/pushes, or live server actions.
+- Retrieved both original PNGs as bot through the existing codex bot p2p conversation. Native read-only lookup `POST /open-apis/im/v1/chat_p2p/batch_query` works with bot identity even though the CLI's `--user-id` shortcut rejects it; its documented CLI-source parameters are `chatter_id_type=open_id` and `chatter_ids`.
+- Confirmed actual sender 林海阔 is `ou_3db23cf05c03b4942c355797cc88e8f9`; the initially suggested ID had no messages in the last-hour window. Correct p2p chat: `oc_e0decba894219dffa8d4868c05aad646`. Latest two image messages at16:27 are positions373/372, IDs `om_x100b62e5045ed0a0b07dc523cfcb3cf` / `om_x100b62e504446ca0ce429232c8d7f5b`.
+- Saved `docs/design-refs/hero-1.png` (600×667,353970 bytes) and `hero-2.png` (1100×700,723585 bytes), newest first. Viewed both and verified both PNGs; original bytes preserved. No login/USER ACTION required and no messages sent.
+- Wrote `docs/design-refs/README.md` with image links, message provenance, exact dimensions/checksums, observed Duelyst-style armor/proportions/palettes, concrete details for claude-player, and a6-point Gitzilla translation brief. Visual observations are separated from implementation proposals.
+- Honored coordinator's design/ index freeze while codex-sim applies reconcileCodeNames. Feishu implementation touched only docs/design-refs/ and this required progress log.
+
+## Kaiju flavor completed
+- Started only after completing the Feishu reference download/brief. Confirmed codex-sim's progress explicitly marks its authorized design exception DONE and documents reconcileCodeNames in validation/direct apply. Preserved its imports, attack/limb normalization and tests while editing the prompt/cache boundary.
+- Boss prompt/schema now treat all9 body enums as variants on one Godzilla-inspired upright reptilian anatomy: massive chest, powerful legs, clawed arms, distinct jaws, dorsal plates and a heavy tail. Hydra means multiple heads; machine means mech plating/reactors; tree means bark/root spines; the other variants retain the same kaiju outline.
+- Offline epithets/intros now describe kaiju chest reactors, charging dorsal plates and atomic code breath, retaining actual heart/code evidence and existing unique repo-derived names. Example Flask lore: `A long-necked, whip-tailed kaiju; 5 code-limbs guard the chest reactor.`
+- Added boss-only prompt/art cache versioning separate from the DNA name seed: old monster-prompt caches are invalidated, while hero art and distinctive boss names stay stable.
+- Regenerated **30 bundles /15 repos** via `npx tsx design/precompute.ts --force --offline --require-dna`, with truthful fallback provenance. No live Gemini calls or new dependencies.
+- **58/58 design tests PASS**, including all9 variant lore cases, model prompt anatomy/variant guidance, independent art-cache versioning, saved bundles, code weapon names, distinct source attack/limb repair, and stats preservation.
+- Final merged workspace at16:39 local: **npm test587 PASS /7 skipped** (49 passed files /3 skipped), **npm run typecheck PASS**, owned `git diff --check PASS`. Earlier other-owner weapon-fixture/layout/typecheck failures are resolved in this merged run.
+- No renderer/sim/shared/server changes, commits/pushes, Feishu messages, server start/stop, or live5173 access. Hero reference files remain original and verified; no visual runtime rendering proof is claimed for the prompt-only kaiju change.
 
 ## Code-expression weapon names
 - Implemented coordinator's max-24-character code-expression rule in Gemini instructions, optional JSON schema and runtime validation. Shared HeroDesign.weaponName is now used directly through a compatibility alias; the earlier contract request is resolved.

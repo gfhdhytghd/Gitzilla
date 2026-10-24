@@ -9,7 +9,7 @@ import { playtest } from './playtest';
 
 const enabled = process.env.PLAYTEST_SELF_TEST === '1';
 describe.skipIf(!enabled)('playtest browser self-test (synthetic fixture)', () => {
-  async function fixture(withErrors: boolean) {
+  async function fixture(withErrors: boolean, ending: { afterMs?: number; outroMs?: number } = {}) {
     const server = createServer((req, res) => {
       if (req.url === '/api/fallbacks') {
         res.setHeader('Content-Type', 'application/json');
@@ -50,7 +50,7 @@ if(location.pathname === '/') {
     const ctx=document.querySelector('canvas').getContext('2d');ctx.fillStyle='#173d49';ctx.fillRect(0,0,480,288);ctx.fillStyle='#f7b844';ctx.fillRect(220,110,40,60);
     setTimeout(()=>document.querySelector('[data-testid="boss-intro"]')?.remove(),1500);
    }
-   if(m.t==='autopsy') { fighting=false;document.body.innerHTML='<div data-testid="autopsy">SYNTHETIC AUTOPSY</div>'; }
+   if(m.t==='autopsy') { fighting=false;setTimeout(()=>{document.body.innerHTML='<div data-testid="autopsy">SYNTHETIC AUTOPSY</div>';},${ending.outroMs ?? 0}); }
   };
   setInterval(()=>{if(fighting&&ws.readyState===1) {ws.send(JSON.stringify({t:'input',frame:{seq:++seq,move:[Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyS'))-Number(keys.has('KeyW'))],aim:null,fire:keys.has('KeyJ'),dash,skill,source:'keyboard'}}));dash=skill=false;}},50);
  };
@@ -97,7 +97,7 @@ if(location.pathname === '/') {
             clearInterval(timer);
             broadcast({ t: 'autopsy', result: { victory: mode === 'battle', mode, boss: null, ranking: mode === 'edu'
               ? [...sockets.values()].map(p => ({ id: p.id, name: p.name, repo: 'fixture/repo', kos: 0, damage: 0, roundWins: 0, quality: [] })) : undefined } });
-          }, withErrors ? 1500 : mode === 'edu' ? 2500 : 11_000);
+          }, ending.afterMs ?? (withErrors ? 1500 : mode === 'edu' ? 2500 : 11_000));
         }
       });
     });
@@ -147,6 +147,32 @@ if(location.pathname === '/') {
       await testServer.close();
     }
   }, 60_000);
+
+  it('waits for a delayed outro when the server autopsy arrives near the timed grace deadline', async () => {
+    const testServer = await fixture(false, { afterMs: 6200, outroMs: 2500 });
+    const previousURL = process.env.PLAYTEST_URL;
+    const originalLog = console.log;
+    let artifactDir = '';
+    console.log = (...args) => {
+      originalLog(...args);
+      const match = String(args[0]).match(/artifacts=(.*)$/);
+      if (match) artifactDir = match[1];
+    };
+    process.env.PLAYTEST_URL = testServer.url;
+    try {
+      expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 2, headed: false, mode: 'battle' })).toBe(0);
+      const summary = JSON.parse(readFileSync(join(artifactDir, 'summary.json'), 'utf8'));
+      expect(summary.outcome).toBe('autopsy');
+      expect(summary.screenshots).toContain('autopsy-desktop.png');
+      expect(summary.screenshots).toContain('autopsy-phone.png');
+      expect(summary.clients.every((client: any) => client.autopsy)).toBe(true);
+    } finally {
+      console.log = originalLog;
+      if (previousURL === undefined) delete process.env.PLAYTEST_URL;
+      else process.env.PLAYTEST_URL = previousURL;
+      await testServer.close();
+    }
+  }, 30_000);
 
   it('returns nonzero and logs uncaught page and WebSocket protocol errors', async () => {
     const testServer = await fixture(true);
