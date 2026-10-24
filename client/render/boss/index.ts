@@ -1,7 +1,7 @@
 // Boss renderer: procedural eldritch code-monster assembled from the BossKit (+ Gemini BossDesign).
 import type { BossKit, BossState } from "../../../shared/types.ts";
 import { disc, drawGlow, hash2, line, makeCanvas, TAU } from "../arena/pix.ts";
-import { drawText } from "../arena/font.ts";
+import { drawText, textSprite } from "../arena/font.ts";
 import { emit, every, fx } from "../arena/fx.ts";
 import { bossArt, type BossArt } from "./art.ts";
 import { bossLayout, type Anchor, type BossLayout, type LegLayout, type TentacleLayout } from "./layout.ts";
@@ -21,6 +21,7 @@ interface DrawOpts { portrait?: boolean }
 
 const lastLayout = new Map<string, { anchors: Anchor[]; L: BossLayout }>();
 const lastPos = new Map<string, { x: number; y: number; t: number }>();
+const kaijuBreathUntil = new Map<string, number>();
 
 function layoutFor(b: BossState): BossLayout {
   const regs = b.regions;
@@ -47,6 +48,7 @@ export function drawBoss(ctx: CanvasRenderingContext2D, b: BossState | null, tim
 function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, opts: DrawOpts) {
   const kit = b.kit;
   const L = opts.portrait ? bossLayout(kit) : layoutFor(b);
+  if (!opts.portrait) fx.bossKind = L.body;
   const brokenById = new Map(b.limbs.map((l) => [l.id, l.broken]));
   const broken = L.limbs.map((l) => brokenById.get(l.id) ?? false);
   const tint = b.phase === 3 ? 2 : b.enraged || b.phase === 2 ? 1 : 0;
@@ -63,7 +65,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   const castP = b.casting ? Math.min(1, b.casting.t / Math.max(0.01, b.casting.total)) : 0;
   const srcIdx = atk ? L.limbs.findIndex((l) => l.component === atk.source) : -1;
 
-  const bob = L.body === "machine" || L.body === "golem" ? Math.round(Math.sin(time * 1.7) * 0.6) : Math.round(Math.sin(time * 1.7) * 1.5);
+  const bob = L.body === "machine" || L.body === "golem" || L.body === "kaiju" ? Math.round(Math.sin(time * 1.7) * 0.6) : Math.round(Math.sin(time * 1.7) * 1.5);
   let jx = 0, jy = 0;
   if (castP > 0.6) { jx = Math.round((hash2(Math.floor(time * 30), 1) - 0.5) * 2 * castP); jy = Math.round((hash2(Math.floor(time * 30), 2) - 0.5) * 2 * castP); }
   if (tint === 2 && hash2(Math.floor(time * 12), 7) < 0.15) jx += hash2(Math.floor(time * 12), 8) < 0.5 ? -2 : 2;
@@ -72,7 +74,14 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   const bx = Math.round(b.x) + jx, by = Math.round(b.y) + bob + jy + lift;
 
   // ---- ground shadow (dithered) ----
-  if (!opts.portrait) drawShadow(ctx, Math.round(b.x), Math.round(b.y) + 46, 46 - lift, 9);
+  if (!opts.portrait) {
+    if (L.kaiju) drawShadow(ctx, Math.round(b.x) + 22, Math.round(b.y) + 56, 66 - lift, 8);
+    else drawShadow(ctx, Math.round(b.x), Math.round(b.y) + 46, 46 - lift, 9);
+  }
+  // kaiju signature: the dorsal plates charge up tail -> head before the atomic breath (laser)
+  const breathCharge = L.kaiju && atk?.kind === "laser" ? castP : 0;
+  if (L.kaiju && breathCharge > 0.9) kaijuBreathUntil.set(kit.repo, time + 0.9);
+  const breathing = L.kaiju ? time < (kaijuBreathUntil.get(kit.repo) ?? -1) : false;
 
   // ---- heart light on the floor ----
   const beat = heartbeat(time, tint);
@@ -80,6 +89,9 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
 
   // ---- wings (behind everything) ----
   for (const g of L.spots) if (g.kind === "wings") drawWings(ctx, bx + g.x, by + g.y, g.size, art, time, tint);
+
+  // ---- kaiju dorsal plates (behind the body so they grow out of the spine) ----
+  if (L.kaiju) drawKaijuPlates(ctx, L, kit, broken, bx, by, time, breathing ? 1 : breathCharge, tint);
 
   // ---- legs + tentacles behind body ----
   for (const lg of L.legs) if (lg.limb < 0 || !broken[lg.limb]) drawLeg(ctx, lg, art, bx, by, time, castP, b);
@@ -106,7 +118,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   if (tint === 2 || dying >= 0) {
     const prev = ctx.globalCompositeOperation;
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = dying >= 0 ? 0.4 : 0.18;
+    ctx.globalAlpha = dying >= 0 ? 0.4 : L.kaiju ? 0.07 : 0.18;
     const w = whiteOf(body);
     const o = 1 + Math.round(beat * 2) + (dying >= 0 ? Math.round(dying * 6) : 0);
     ctx.drawImage(tinted(w, "#ff0040"), sx - o, sy);
@@ -182,6 +194,9 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
     if (g.kind === "crystals") drawGlow(ctx, bx + g.x, by + g.y - g.size * 0.5, art.accent, 8, 0.35 + 0.2 * Math.sin(time * 3 + g.phase));
   }
 
+  // ---- kaiju jaw, claws (in front of the body) ----
+  if (L.kaiju) drawKaijuFront(ctx, L, art, broken, bx, by, time, breathing ? 1 : breathCharge, castP, tint, opts.portrait);
+
   // ---- heart ----
   drawHeart(ctx, bx + L.heart.x, by + L.heart.y, L, art, time, beat, tint, b, castP);
 
@@ -189,6 +204,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   const look = lookTarget(b, time, bx, by);
   L.eyes.forEach((e, k) => {
     if (e.limb >= 0 && broken[e.limb]) return;
+    if (L.kaiju) { drawKaijuEye(ctx, bx + e.x, by + e.y, e.r, e.phase + k, time, look, castP, tint); return; }
     drawEye(ctx, bx + e.x, by + e.y, e.r, e.phase + k, art, time, look, tint, castP, L.body === "machine");
   });
 
@@ -221,7 +237,8 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   // ---- casting: energy converging on the source limb ----
   if (atk && !opts.portrait) {
     const src = srcIdx >= 0 && !broken[srcIdx] ? L.limbs[srcIdx] : null;
-    const cx = bx + (src ? src.x + Math.cos(src.angle) * src.r : L.heart.x), cy = by + (src ? src.y + Math.sin(src.angle) * src.r : L.heart.y);
+    let cx = bx + (src ? src.x + Math.cos(src.angle) * src.r : L.heart.x), cy = by + (src ? src.y + Math.sin(src.angle) * src.r : L.heart.y);
+    if (L.kaiju && atk.kind === "laser") { cx = bx + L.kaiju.mouth.x; cy = by + L.kaiju.mouth.y; }
     drawGlow(ctx, cx, cy, art.danger, 6 + castP * 16, 0.5 + castP * 0.5);
     for (let k = 0; k < 14; k++) {
       const f = (time * 1.6 + k * 0.137) % 1;
@@ -267,7 +284,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   // ---- broken limbs: sparks + error glyphs ----
   if (!opts.portrait) L.limbs.forEach((l, i) => {
     if (!broken[i]) return;
-    const st = stumpOf(l);
+    const st = L.kaiju ? { x: l.x - Math.cos(l.angle) * l.r * 0.6, y: l.y - Math.sin(l.angle) * l.r * 0.6, r: l.r } : stumpOf(l);
     const x = bx + st.x + Math.cos(l.angle) * st.r * 0.6, y = by + st.y + Math.sin(l.angle) * st.r * 0.6;
     if (every("stump" + l.id, 0.12, time)) emit({ kind: "spark", x, y, vx: Math.cos(l.angle + (Math.random() - 0.5) * 1.5) * 70, vy: Math.sin(l.angle) * 40 - 40, grav: 160, max: 0.45, color: "#ffd23f", color2: "#ff5a2a" });
     if (every("err" + l.id, 2.2 + (i % 3) * 0.7, time)) emit({ kind: "glyph", x: x + (Math.random() - 0.5) * 10, y, vx: Math.cos(l.angle) * 14, vy: -22, max: 1.1, text: ERR_GLYPHS[(Math.floor(time) + i) % ERR_GLYPHS.length], color: art.dangerRamp[3] });
@@ -776,14 +793,111 @@ function drawParasite(ctx: CanvasRenderingContext2D, x: number, y: number, dir: 
   drawGlow(ctx, x, y, "#9dff3a", 4, 0.35);
 }
 
+// ---------- kaiju ----------
+
+const PLATE_COLS = ["#ff3e9a", "#3ee6ff", "#2fe39a"]; // brand syntax colors: string pink, keyword cyan, ident green
+
+function drawKaijuPlates(ctx: CanvasRenderingContext2D, L: BossLayout, kit: BossKit, broken: boolean[], bx: number, by: number, time: number, charge: number, tint: number) {
+  const K = L.kaiju!;
+  const n = K.plates.length;
+  const accent = kit.palette[2] ?? "#3ee6ff";
+  for (const p of K.plates) {
+    const dead = p.owner >= 0 && broken[p.owner];
+    if (dead && p.order % 2 === 0) continue; // a broken plate row loses every other plate
+    const h = 5 * p.scale;
+    // the plate's base sits on the back edge (drawn behind the body, so ~1/3 of it is buried in the hide)
+    const cx = Math.round(bx + p.x + p.nx * (h * 0.32)), cy = Math.round(by + p.y + p.ny * (h * 0.32) + (dead ? 2 : 0));
+    // charge-up runs from the tail end (order 0) to the head
+    const lit = charge > 0 && charge * 1.15 > (p.order + 1) / n;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 2.2 + p.order * 0.6);
+    const base = tint === 2 ? "#ff2a4a" : p.order % 4 === 3 ? accent : PLATE_COLS[p.order % 3];
+    const col = dead ? "#8a8490" : lit ? "#ffffff" : base;
+    if (!dead) drawGlow(ctx, cx, cy, lit ? "#3ee6ff" : base, lit ? h + 8 : h * 0.6 + 2, lit ? 0.95 : 0.25 + pulse * 0.2);
+    const g = textSprite(p.ch, col, "#06110c", p.scale);
+    if (p.ny < -0.75) {
+      // plates on the tail point up: rotate the bracket a clean 90 degrees
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(g, -Math.round(g.width / 2), -Math.round(g.height / 2));
+      ctx.restore();
+    } else ctx.drawImage(g, Math.round(cx - g.width / 2), Math.round(cy - g.height / 2));
+    if (dead) { ctx.fillStyle = "#06110c"; line(ctx, cx - h * 0.3, cy - h * 0.4, cx + h * 0.2, cy + h * 0.3); } // crack
+    if (lit && Math.random() < 0.15) emit({ kind: "px", x: cx, y: cy - h / 2, vx: (Math.random() - 0.5) * 20, vy: -30, max: 0.4, color: "#3ee6ff", color2: "#ffffff", glow: true });
+    if (dead && Math.random() < 0.02) emit({ kind: "spark", x: cx, y: cy, vx: (Math.random() - 0.5) * 50, vy: -40, grav: 160, max: 0.4, color: "#ffd23f", color2: "#ff5a2a" });
+  }
+}
+
+function drawKaijuFront(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, broken: boolean[], bx: number, by: number, time: number, charge: number, castP: number, tint: number, portrait?: boolean) {
+  const K = L.kaiju!;
+  const jawBroken = K.jawLimb >= 0 && broken[K.jawLimb];
+  // jaw: hinged at the cheek, opens wide for the breath
+  const chatter = Math.max(0, Math.sin(time * 1.9)) * 0.06 + (tint ? Math.max(0, Math.sin(time * 7)) * 0.08 : 0);
+  const open = Math.min(0.62, 0.05 + chatter + castP * 0.18 + charge * 0.42) + (jawBroken ? 0.25 : 0);
+  const hx = bx - 24, hy = by - 40;
+  const len = 26;
+  const a = Math.PI + 0.18 - open; // pointing left, rotating down as it opens
+  const tx = hx + Math.cos(a) * len, ty = hy - Math.sin(a) * len;
+  const closedTx = hx + Math.cos(Math.PI + 0.18) * len, closedTy = hy - Math.sin(Math.PI + 0.18) * len;
+  // mouth cavity (glows cyan while the breath charges)
+  if (open > 0.08) {
+    const steps = 18;
+    for (let k = 0; k <= steps; k++) {
+      const f = k / steps;
+      const x0 = hx + (closedTx - hx) * f, y0 = hy + (closedTy - hy) * f;
+      const x1 = hx + (tx - hx) * f, y1 = hy + (ty - hy) * f;
+      ctx.fillStyle = art.inside; line(ctx, x0, y0 - 1, x1, y1);
+    }
+    if (charge > 0) {
+      drawGlow(ctx, bx + K.mouth.x + 4, by + K.mouth.y + 2, "#3ee6ff", 10 + charge * 22, 0.4 + charge * 0.6);
+      ctx.fillStyle = charge > 0.6 ? "#ffffff" : "#3ee6ff";
+      disc(ctx, bx + K.mouth.x + 6, by + K.mouth.y + 2, 1 + charge * 3);
+    }
+  }
+  // upper teeth under the snout
+  ctx.fillStyle = "#f4f1e6";
+  for (let x = -50; x <= -31; x += 3) ctx.fillRect(Math.round(bx + x), Math.round(by - 39), 1, 2);
+  // lower jaw: tapered obsidian bar with teeth on top
+  const ramp = art.mats.obsidian.map((c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
+  for (const [w, c] of [[5, art.outline], [3, ramp[2]], [1, ramp[3]]] as [number, string][]) {
+    ctx.fillStyle = c;
+    line(ctx, hx, hy, tx, ty, w);
+  }
+  ctx.fillStyle = "#f4f1e6";
+  for (let k = 0; k < 6; k++) {
+    const f = 0.25 + k * 0.13;
+    if (jawBroken && k % 2) continue;
+    ctx.fillRect(Math.round(hx + (tx - hx) * f), Math.round(hy + (ty - hy) * f - 2), 1, 2);
+  }
+  if (jawBroken && !portrait && Math.random() < 0.05) emit({ kind: "px", x: tx, y: ty, vy: 20, grav: 80, max: 0.6, color: art.dangerRamp[2], color2: art.dangerRamp[0] });
+  // claws on the little arms and the toes
+  ctx.fillStyle = "#f4f1e6";
+  const armSlot = K.slots.indexOf("arms");
+  if (!(armSlot >= 0 && broken[armSlot])) { ctx.fillRect(bx - 34, by - 2, 1, 2); ctx.fillRect(bx - 33, by + 1, 1, 2); }
+  for (const fx2 of [-28, -24, -2, 2]) ctx.fillRect(bx + fx2, by + 57, 2, 1);
+}
+
+function drawKaijuEye(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, ph: number, time: number, look: [number, number], castP: number, tint: number) {
+  x = Math.round(x); y = Math.round(y);
+  const bt = (time + ph * 1.7) % (3.4 + (ph % 2));
+  const closed = bt < 0.12;
+  drawGlow(ctx, x, y, "#ff2a3a", r + 5, 0.5 + castP * 0.5);
+  ctx.fillStyle = "#06110c"; disc(ctx, x, y, r + 1);
+  if (closed) { ctx.fillStyle = "#ff2a3a"; ctx.fillRect(x - r, y, r * 2 + 1, 1); return; }
+  ctx.fillStyle = tint ? "#ffd23f" : "#ff2a3a"; disc(ctx, x, y, r);
+  const dx = look[0] - x, dy = look[1] - y, dl = Math.hypot(dx, dy) || 1;
+  const px = Math.round(x + (dx / dl) * Math.max(0, r - 1.5)), py = Math.round(y + (dy / dl) * Math.max(0, r - 1.5));
+  ctx.fillStyle = "#3ee6ff"; ctx.fillRect(px, py - Math.max(1, r - 1), 1, Math.max(1, r * 2 - 1)); // cyan slit pupil
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 1, y - r + 1, 1, 1);
+}
+
 // ---------- portrait ----------
 
 export function bossPortrait(kit: BossKit, size: number): HTMLCanvasElement {
-  const LOGICAL = 176;
+  const kaiju = bossLayout(kit).body === "kaiju";
+  const LOGICAL = kaiju ? 196 : 176;
   const [c, ctx] = makeCanvas(size, size);
   const [l, lctx] = makeCanvas(LOGICAL, LOGICAL);
   const state: BossState = {
-    x: LOGICAL / 2, y: LOGICAL / 2 - 8, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1,
+    x: kaiju ? 76 : LOGICAL / 2, y: kaiju ? 104 : LOGICAL / 2 - 8, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1,
     limbs: kit.limbs.map((m) => ({ id: m.id, hp: m.maxHp, maxHp: m.maxHp, broken: false })),
     casting: null, targetPlayer: null, enraged: false, regions: [], kit,
   };

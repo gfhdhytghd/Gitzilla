@@ -7,7 +7,8 @@ export const fx = {
   now: 0,
   boss: null as BossState | null,
   bossSeenAt: -10,                      // drawBoss refreshes this; a stale boss (edu PvP has none) is dropped
-  pvp: false,                           // edu classroom PvP: no boss, bullets colored per player
+  pvp: false,
+  bossKind: "" as string,               // archetype of the boss being drawn ("kaiju" = atomic breath lasers)                           // edu classroom PvP: no boss, bullets colored per player
   bossFlash: -10,                       // time of last hit on the boss
   limbFlash: new Map<string, number>(), // limb id -> time of last hit
   look: null as [number, number] | null,

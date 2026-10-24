@@ -69,6 +69,10 @@ export function bossArt(kit: BossKit, tint = 0): BossArt {
     bark: mk(redden(mix(base, [104, 72, 48], 0.65))),
     foliage: mk(redden(mix(base, [70, 150, 80], 0.72))),
     sclera: mk(tint ? mix(bone, danger, 0.35) : mix(bone, base, 0.12)),
+    // kaiju hide: charcoal/obsidian with a hint of the repo hue; belly: ash-grey plates
+    // stays charcoal when enraged (only a faint red undertone); the plates and cracks carry the rage
+    obsidian: mk(mix(mix(base, [30, 32, 42], 0.66), [70, 12, 24], tint ? 0.18 : 0)),
+    belly: mk(redden(mix(base, [128, 122, 120], 0.55))),
   };
   const flesh = ramp(shiftHue(base, -22, 1.1, -0.04), 4);
   const art: BossArt = {

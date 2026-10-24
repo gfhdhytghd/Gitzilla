@@ -5,6 +5,7 @@
 import type { ArenaTheme, BossDesign, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, MatchState, Minion, PlayerKit, PlayerState, RepoProfile } from "../../../shared/types.ts";
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bossKitFromProfile, bossRegions, createMatch, playerKitFromProfile } from "../../../sim/index.ts";
+import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
 import { drawBoss, bossLookAt, bossPortrait } from "./index.ts";
 import { drawArenaBackground, drawBullets, drawEvents, drawHazards, drawMinions, drawObstacles, drawPerkPads, drawPickups, drawPostFx, getFxCues, trackPlayers } from "../arena/index.ts";
 import type { Obstacle, PerkOffer, Pickup } from "../../../shared/types.ts";
@@ -27,11 +28,11 @@ function kitFor(p: RepoProfile, n: number, useDesign = q.get("design") !== "0"):
   let kit = bossKitFromProfile(p, n);
   const d = useDesign ? designFor(p) : undefined;
   if (d) {
-    const body = q.get("body");
-    const dd = body ? { ...d, body: body as BossDesign["body"] } : d;
+    const dd = d;
     kit = { ...kit, design: dd, name: dd.name, palette: [...dd.palette], theme: dd.theme, attacks: kit.attacks.map((a) => ({ ...a, name: dd.attackNames[a.id] || a.name })) };
   }
   if (q.get("theme")) kit = { ...kit, theme: q.get("theme") as ArenaTheme };
+  if (q.get("body")) kit = { ...kit, forceBody: q.get("body") } as BossKit;
   if (!kit.code?.heartLines?.length && q.get("code") !== "0") kit = { ...kit, code: fakeCode(p, kit) };
   if (q.get("fragile")) kit = { ...kit, limbs: kit.limbs.map((l, i) => ({ ...l, fragile: i % 3 === 0 || l.fragile, maintainers: i % 3 === 0 ? 1 : l.maintainers, parasites: i === 1 ? [{ id: "GHSA-xxxx-1234", pkg: "lodash", ecosystem: "npm", summary: "prototype pollution", fixed: "4.17.21" }, { id: "CVE-2024-0001", pkg: "regex", ecosystem: "crates.io", summary: "ReDoS" }] : l.parasites })) };
   return kit;
@@ -160,7 +161,8 @@ function render(ctx: CanvasRenderingContext2D, scale: number, s: MatchState, eve
     scale = Math.max(1, Math.floor(c.height / ARENA_H));
     const vw = c.width / scale;
     const me = s.players[0];
-    camX += ((me ? me.x - vw / 2 : 0) - camX) * 0.15;
+    const focusX = q.get("follow") === "boss" && s.boss ? s.boss.x - 10 : me ? me.x : 0;
+    camX += (focusX - vw / 2 - camX) * 0.15;
     camX = Math.max(0, Math.min(ARENA_W - vw, camX));
     view = { x: camX, y: 0, w: vw, h: ARENA_H };
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -196,8 +198,9 @@ function stubPlayer(ctx: CanvasRenderingContext2D, p: PlayerState) {
 function grid() {
   const scale = Number(q.get("scale") ?? 1);
   const phase = Number(q.get("phase") ?? 1) as 1 | 2 | 3;
-  const scenes = THEMES.map((theme, i) => {
-    const prof = profiles[(i * 2 + Number(q.get("offset") ?? 0)) % profiles.length];
+  const themes = q.get("one") ? [(q.get("theme") as ArenaTheme) ?? "terminal"] : THEMES;
+  const scenes = themes.map((theme, i) => {
+    const prof = q.get("boss") ? pickProfile() : profiles[(i * 2 + Number(q.get("offset") ?? 0)) % profiles.length];
     const kit = { ...kitFor(prof, 4), theme };
     const ctx = makeStage(scale, `${theme} :: ${prof.slug} [${kit.design?.body ?? "seed"}]`);
     return { ctx, kit, i };
@@ -214,7 +217,12 @@ function stagedState(kit: BossKit, time: number, phase: 1 | 2 | 3, idx: number):
   const x = 300 + Math.sin(time * 0.3) * 20, y = 140 + Math.cos(time * 0.4) * 10;
   const broken = (q.get("broken") ?? (phase === 3 ? "0,2" : "")).split(",").filter(Boolean).map(Number);
   const casting = q.get("cast") === "1" || (time % 4) < 1.2;
-  const atk = kit.attacks[Math.floor(time / 4) % kit.attacks.length];
+  const forcedKind = q.get("atk");
+  let atk = kit.attacks[Math.floor(time / 4) % kit.attacks.length];
+  if (forcedKind) {
+    atk = kit.attacks.find((a) => a.kind === forcedKind) ?? { ...kit.attacks[0], id: "fake-" + forcedKind, kind: forcedKind as BossKit["attacks"][number]["kind"] };
+    if (!kit.attacks.includes(atk)) kit.attacks.push(atk);
+  }
   const b: BossState = {
     x, y, hp: kit.maxHp * (phase === 1 ? 0.8 : phase === 2 ? 0.4 : 0.1), maxHp: kit.maxHp, phase,
     limbs: kit.limbs.map((l, i) => ({ id: l.id, hp: broken.includes(i) ? 0 : l.maxHp, maxHp: l.maxHp, broken: broken.includes(i) })),
@@ -237,7 +245,9 @@ function stagedState(kit: BossKit, time: number, phase: 1 | 2 | 3, idx: number):
   }
   const hz: Hazard[] = [
     { id: 1, kind: "slam", x: 120, y: 90, r: 30, angle: 0, t: (time % 2), total: 1.6, armed: (time % 2) > 1.15 },
-    { id: 2, kind: "laser", x, y, r: 7, angle: 2.6 + Math.sin(time * 0.2) * 0.2, t: (time % 2.2), total: 1.8, armed: (time % 2.2) > 1.05 },
+    forcedKind === "laser"
+      ? { id: 2 + Math.floor(time / 4) * 1000, kind: "laser", x: x + kaijuAnchors(kit).mouth.dx, y: y + kaijuAnchors(kit).mouth.dy, r: 7, angle: Math.PI - 0.15, t: (time % 4), total: 1.95, armed: (time % 4) > 1.2 }
+      : { id: 2, kind: "laser", x, y, r: 7, angle: 2.6 + Math.sin(time * 0.2) * 0.2, t: (time % 2.2), total: 1.8, armed: (time % 2.2) > 1.05 },
     { id: 3, kind: "firewall", x: 90, y: 210, r: 40, angle: 0, t: 1, total: 4, armed: true },
     { id: 4, kind: "cascade", x: 200, y: 240, r: 23, angle: 0, t: 0.3, total: 1.5, armed: false },
     { id: 5, kind: "cascade", x: 260, y: 252, r: 23, angle: 0, t: 0.3, total: 1.5, armed: false },
@@ -417,12 +427,12 @@ function bulletsShow() {
 
 function bodies() {
   const wrap = document.getElementById("wrap")!;
-  const BODIES = ["blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"] as const;
+  const BODIES = ["kaiju", "blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"] as const;
   const prof = pickProfile();
   const base = kitFor(prof, 4);
   const d = base.design ?? designFor(profiles[0])!;
   for (const body of BODIES) {
-    const kit: BossKit = { ...base, design: { ...d, body, growths: (q.get("growths")?.split(",") as BossDesign["growths"]) ?? d.growths, mouth: (q.get("mouth") as BossDesign["mouth"]) ?? d.mouth } };
+    const kit = { ...base, forceBody: body, design: { ...d, growths: (q.get("growths")?.split(",") as BossDesign["growths"]) ?? d.growths, mouth: (q.get("mouth") as BossDesign["mouth"]) ?? d.mouth } } as BossKit;
     const cell = document.createElement("div");
     cell.className = "cell";
     cell.style.background = "#14101e";
