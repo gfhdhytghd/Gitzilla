@@ -1,6 +1,8 @@
 import type { BossAttack, BossState, PlayerState } from '../shared/types.ts';
 import { distance, random } from './math.ts';
 import { ATTACK_COST, squadBudget } from './balance.ts';
+import { ATTACK_FLAVOR } from './flavor.ts';
+import type { BossCode } from './code.ts';
 
 export interface AiDecision { started?: BossAttack; fired?: BossAttack; target?: [number, number] }
 
@@ -46,7 +48,8 @@ export class BossAi {
       }
       for (const kind of ['ring', 'spiral', 'laser', 'slam'] as const) {
         if (boss.kit.attacks.some(a => a.id === `heart-${kind}`)) continue;
-        boss.kit.attacks.push({ id: `heart-${kind}`, source: 'heart', kind, name: `FATAL: Heartbeat ${kind.toUpperCase()}`,
+        const symbol = (boss.kit.code as Partial<BossCode> | undefined)?.attackSymbols?.[`heart-${kind}`];
+        boss.kit.attacks.push({ id: `heart-${kind}`, source: 'heart', kind, name: symbol ? `${symbol} ${ATTACK_FLAVOR[kind]}` : `FATAL: Heartbeat ${kind.toUpperCase()}`,
           damage: squadBudget(this.playerCount).hitDamage, cooldown: 7 * squadBudget(this.playerCount).recoveryScale, telegraph: 0.95,
           params: { count: kind === 'spiral' ? 32 : 19, speed: 59, radius: 36, threatShare: 0.25, threatCost: ATTACK_COST[kind] } });
       }

@@ -1,9 +1,16 @@
 import { ARENA_H, ARENA_W } from '../shared/types.ts';
-import type { Autopsy, BossAttack, BossKit, Bullet, GameEvent, Hazard, InputFrame, MatchState, PlayerKit, PlayerState, WeaponKind } from '../shared/types.ts';
+import type { Autopsy, BossAttack, BossKit, BossState, Bullet, GameEvent, GameMode, Hazard, InputFrame, MatchState, Pickup, PlayerKit, PlayerState, WeaponKind } from '../shared/types.ts';
 import { BossAi } from './bossAi.ts';
-import { clamp, distance, unit } from './math.ts';
+import { clamp, distance, random, unit } from './math.ts';
 import { activeBossRegions, bossRegions } from './regions.ts';
 import { ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
+import { createObstacles, segmentRect } from './arena.ts';
+import { createPerkOffer, hasPerk } from './perks.ts';
+import { safeInput } from './input.ts';
+import { WEAPONS, SOLO_DAMAGE_MUL } from './weapons.ts';
+import { ClassroomMatch } from './pvp.ts';
+import type { SocialBossKit } from './social.ts';
+import { reconcileCodeNames } from './code.ts';
 
 export interface Match {
   step(dt: number, inputs: Map<string, InputFrame>): void;
@@ -11,18 +18,11 @@ export interface Match {
   autopsy(): Autopsy;
   readonly over: boolean;
 }
+export type BattleState = MatchState & { mode: 'battle'; boss: BossState; heroScale: 1; pvp: null };
+export type BattleAutopsy = Autopsy & { mode: 'battle'; boss: NonNullable<Autopsy['boss']> };
+export interface BattleMatch extends Match { snapshot(): BattleState; autopsy(): BattleAutopsy }
 
-export const WEAPONS: Record<WeaponKind, { interval: number; damage: number; speed: number; cost: number; life: number; count: number; spread: number; r: number }> = {
-  blaster: { interval: 0.3, damage: 8, speed: 230, cost: 2, life: 2, count: 1, spread: 0, r: 3 },
-  smg: { interval: 0.11, damage: 3, speed: 250, cost: 0.8, life: 1.8, count: 1, spread: 0.09, r: 2 },
-  shotgun: { interval: 0.65, damage: 4, speed: 230, cost: 4, life: 0.8, count: 5, spread: 0.42, r: 2.5 },
-  cannon: { interval: 0.85, damage: 23, speed: 175, cost: 5, life: 2.5, count: 1, spread: 0, r: 5 },
-  staff: { interval: 0.5, damage: 13, speed: 160, cost: 3, life: 3, count: 1, spread: 0, r: 4 },
-  laser: { interval: 0.14, damage: 3.8, speed: 540, cost: 1, life: 0.65, count: 1, spread: 0, r: 2 },
-  blade: { interval: 0.38, damage: 11, speed: 285, cost: 1, life: 0.54, count: 1, spread: 0, r: 9 },
-};
-// A lone hero cannot earn multiplayer combos or be revived; keep solo demos playable.
-export const SOLO_DAMAGE_MUL = 1.65;
+export { WEAPONS, SOLO_DAMAGE_MUL } from './weapons.ts';
 
 interface PlayerRuntime {
   shot: number; lastDamage: number; armorTick: number; dash: number; dashDir: [number, number];
@@ -31,8 +31,8 @@ interface PlayerRuntime {
 interface ShotRuntime { damage: number; life: number }
 interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string }
 
-class ArenaMatch implements Match {
-  private state: MatchState;
+class ArenaMatch implements BattleMatch {
+  private state: BattleState;
   private ai: BossAi;
   private id = 1;
   private players = new Map<string, PlayerRuntime>();
@@ -47,28 +47,38 @@ class ArenaMatch implements Match {
   private pressureCd = 3;
   private pressureRound = 0;
   private pressure: { t: number; x: number; y: number; angle: number }[] = [];
+  private dropExpiry = new Map<number, number>();
+  private lootRng = random(ENCOUNTER_SEED ^ 0x4c4f4f54);
+  private armorDropsLeft = 0;
+  private reviewQueued = false;
+  private reviewProgress = new Map<string, { pad: string; t: number }>();
+  private reviewSeed = ENCOUNTER_SEED;
 
   constructor(players: { id: string; name: string; kit: PlayerKit }[], kit: BossKit) {
     this.ai = new BossAi(ENCOUNTER_SEED ^ players.length, players.length);
+    this.armorDropsLeft = Math.max(1, Math.ceil(players.length / 2));
+    this.reviewSeed = players.reduce((seed, p) => [...p.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), seed), ENCOUNTER_SEED);
     this.state = {
-      t: 0, status: 'countdown', bullets: [], hazards: [], minions: [], events: [],
+      t: 0, status: 'countdown', mode: 'battle', heroScale: 1, pvp: null, bullets: [], hazards: [], minions: [], events: [], obstacles: [], pickups: [], perkOffer: null,
       players: players.map((p, i) => ({
         ...p, kit: structuredClone(p.kit), x: 64 + i % 2 * 24, y: 70 + Math.floor(i / 2) * 47,
         vx: 0, vy: 0, facing: [1, 0], hp: p.kit.maxHp, armor: p.kit.maxArmor, energy: p.kit.maxEnergy,
-        alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [],
+        alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], perks: [],
         stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
       })),
       boss: { x: 335, y: 144, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1, regions: [],
         limbs: kit.limbs.map(l => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })),
-        casting: null, targetPlayer: null, enraged: false, kit: structuredClone(kit) },
+        casting: null, targetPlayer: null, enraged: false, kit: reconcileCodeNames(kit) },
     };
     this.state.boss.regions = bossRegions(this.state.boss);
+    this.state.obstacles = createObstacles(kit, () => this.id++);
     for (const p of this.state.players) this.players.set(p.id, { shot: 0, lastDamage: -10, armorTick: 0, dash: 0, dashDir: [1, 0], buff: 0, history: [] });
   }
 
   get over() { return this.state.status === 'victory' || this.state.status === 'defeat'; }
 
   step(dt: number, inputs: Map<string, InputFrame>) {
+    inputs = new Map([...inputs].map(([id, frame]) => [id, safeInput(frame)]));
     // Substeps preserve collision behavior when a delayed server tick arrives.
     let remaining = clamp(dt, 0, 0.25);
     while (remaining > 0.000001 && !this.over) {
@@ -87,10 +97,17 @@ class ArenaMatch implements Match {
       if (s.t < 2) return;
       s.status = 'fighting';
     }
+    if (this.reviewQueued && s.boss.hp > 0) this.beginReview();
     for (const p of s.players) this.updatePlayer(p, dt, inputs.get(p.id));
     this.revive(dt);
     const living = s.players.filter(p => p.alive);
     if (!living.length) { this.finish(false); return; }
+    this.updatePickups();
+    if (s.perkOffer) {
+      this.updateReview(dt);
+      if (s.t >= 360) this.finish(false);
+      return;
+    }
     const targets = living.map(p => {
       const decoy = this.decoys.get(p.id);
       if (decoy && decoy.until > s.t) return { ...p, x: decoy.x, y: decoy.y, hp: 1, buffs: [], stats: { ...p.stats, damage: p.stats.damage * 3 + 1000 } };
@@ -110,6 +127,7 @@ class ArenaMatch implements Match {
       return false;
     });
     this.updateBullets(dt);
+    if (this.reviewQueued && s.boss.hp > 0) { this.beginReview(); return; }
     this.updateHazards(dt);
     this.updateMinions(dt);
     if (s.boss.hp <= 0) this.finish(true);
@@ -120,31 +138,34 @@ class ArenaMatch implements Match {
   private updatePlayer(p: PlayerState, dt: number, input?: InputFrame) {
     const r = this.players.get(p.id)!;
     p.skillCd = Math.max(0, p.skillCd - dt); p.dashCd = Math.max(0, p.dashCd - dt); p.invuln = Math.max(0, p.invuln - dt);
-    r.shot -= dt; r.dash -= dt; r.buff -= dt;
+    // Preserve sub-tick cadence while firing, without banking idle/review time as free shots.
+    r.shot = Math.max(-dt, r.shot - dt); r.dash -= dt; r.buff -= dt;
     if (r.buff <= 0) p.buffs = p.buffs.filter(b => b === 'firewall');
     if (!p.alive) { p.downedFor += dt; p.vx = p.vy = 0; return; }
     r.history.push({ t: this.state.t, x: p.x, y: p.y });
     while (r.history.length && r.history[0].t < this.state.t - 2.1) r.history.shift();
     p.energy = Math.min(p.kit.maxEnergy, p.energy + dt * 10);
-    if (this.state.t - r.lastDamage >= 3 && p.armor < p.kit.maxArmor) {
+    if (this.state.t - r.lastDamage >= (hasPerk(p, 'lint-fix') ? 2 : 3) && p.armor < p.kit.maxArmor) {
       r.armorTick += dt;
-      if (r.armorTick >= 1.5) { p.armor = Math.min(p.kit.maxArmor, p.armor + 1); r.armorTick = 0; }
+      if (r.armorTick >= (hasPerk(p, 'lint-fix') ? 1 : 1.5)) { p.armor = Math.min(p.kit.maxArmor, p.armor + 1); r.armorTick = 0; }
     }
     let [mx, my] = input?.move ?? [0, 0];
     const magnitude = Math.hypot(mx, my);
-    if (magnitude > 1) { mx /= magnitude; my /= magnitude; }
-    const aim = input?.aim ? unit(...input.aim) : this.autoAim(p);
+    const aim = input?.aim ?? this.autoAim(p);
     p.facing = aim;
     if (input?.dash && p.dashCd <= 0) {
       r.dashDir = magnitude > 0.1 ? unit(mx, my) : aim;
-      r.dash = 0.19; p.invuln = 0.24; p.dashCd = 1.7;
+      r.dash = 0.19; p.invuln = 0.24; p.dashCd = 1.7 * (hasPerk(p, 'no-verify') ? 0.6 : 1);
     }
-    const speed = p.kit.speed * (p.buffs.includes('overclock') ? 1.3 : 1);
+    const speed = p.kit.speed * (p.buffs.includes('overclock') ? 1.3 : 1) * (hasPerk(p, 'tail-call') ? 1.12 : 1);
     p.vx = r.dash > 0 ? r.dashDir[0] * 310 : mx * speed;
     p.vy = r.dash > 0 ? r.dashDir[1] * 310 : my * speed;
-    p.x = clamp(p.x + p.vx * dt, 23, ARENA_W - 23); p.y = clamp(p.y + p.vy * dt, 23, ARENA_H - 23);
+    const nextX = clamp(p.x + p.vx * dt, 23, ARENA_W - 23), nextY = clamp(p.y + p.vy * dt, 23, ARENA_H - 23);
+    const blocked = (x: number, y: number) => this.state.obstacles.some(o => Math.abs(x - o.x) < o.w / 2 + 6 && Math.abs(y - o.y) < o.h / 2 + 6);
+    if (!blocked(nextX, p.y)) p.x = nextX;
+    if (!blocked(p.x, nextY)) p.y = nextY;
     if (input?.skill && p.skillCd <= 0) this.skill(p);
-    if (input?.fire && r.shot <= 0) this.fire(p);
+    if (input?.fire && r.shot <= 0 && !this.state.perkOffer) this.fire(p);
   }
 
   private autoAim(p: PlayerState): [number, number] {
@@ -156,21 +177,22 @@ class ArenaMatch implements Match {
 
   private fire(p: PlayerState) {
     const w = WEAPONS[p.kit.weapon];
-    if (p.energy < w.cost) return;
-    p.energy -= w.cost;
+    const cost = w.cost * (hasPerk(p, 'cache-hit') ? 0.7 : 1);
+    if (p.energy < cost) return;
+    p.energy -= cost;
     this.players.get(p.id)!.shot += w.interval / (p.buffs.includes('overclock') ? 1.55 : 1);
     const angle = Math.atan2(p.facing[1], p.facing[0]);
     for (let i = 0; i < w.count; i++) {
       const a = angle + (w.count === 1 ? 0 : (i / (w.count - 1) - 0.5) * w.spread);
       this.bullet(p.id, p.kit.weapon, p.x + Math.cos(a) * 9, p.y + Math.sin(a) * 9, Math.cos(a) * w.speed, Math.sin(a) * w.speed, w.r,
-        w.damage * p.kit.damageMul * (this.state.players.length === 1 ? SOLO_DAMAGE_MUL : 1), w.life);
+        w.damage * p.kit.damageMul * (this.state.players.length === 1 ? SOLO_DAMAGE_MUL : 1) * (hasPerk(p, 'force') ? 1.25 : 1), w.life);
     }
   }
 
   private skill(p: PlayerState) {
     const r = this.players.get(p.id)!;
     const kind = p.kit.skill;
-    p.skillCd = kind === 'hotfix' ? 22 : 13;
+    p.skillCd = (kind === 'hotfix' ? 22 : 13) * (hasPerk(p, 'hotfix-plus') ? 0.7 : 1);
     this.emit({ type: 'skill', player: p.id, skill: kind });
     if (kind === 'hotfix') {
       for (const ally of this.state.players.filter(a => a.alive && distance(a, p) < 76)) ally.hp = Math.min(ally.kit.maxHp, ally.hp + 2);
@@ -192,8 +214,9 @@ class ArenaMatch implements Match {
 
   private revive(dt: number) {
     for (const p of this.state.players.filter(p => !p.alive)) {
-      const helper = this.state.players.find(a => a.alive && distance(a, p) <= 24);
-      p.reviveProgress = helper ? Math.min(1, p.reviveProgress + dt / 2) : Math.max(0, p.reviveProgress - dt / 2);
+      const helper = this.state.players.filter(a => a.alive && distance(a, p) <= (hasPerk(a, 'pair-programming') ? 40 : 24))
+        .sort((a, b) => Number(hasPerk(b, 'pair-programming')) - Number(hasPerk(a, 'pair-programming')))[0];
+      p.reviveProgress = helper ? Math.min(1, p.reviveProgress + dt / (hasPerk(helper, 'pair-programming') ? 1 : 2)) : Math.max(0, p.reviveProgress - dt / 2);
       if (helper && p.reviveProgress >= 0.99999) {
         p.alive = true; p.hp = Math.ceil(p.kit.maxHp / 2); p.armor = 0; p.invuln = 2; p.downedFor = 0; p.reviveProgress = 0;
         helper.stats.revives++; this.emit({ type: 'revived', player: p.id, by: helper.id });
@@ -235,7 +258,7 @@ class ArenaMatch implements Match {
     } else if (a.kind === 'summon') {
       for (let i = 0; i < Math.min(4, count); i++) {
         const theta = i * Math.PI * 2 / count;
-        if (this.state.minions.length < 12) this.state.minions.push({ id: this.id++, x: clamp(b.x + Math.cos(theta) * 55, 24, 456), y: clamp(b.y + Math.sin(theta) * 55, 24, 264), hp: 12, kind: 'bug' });
+        if (this.state.minions.length < 12) this.state.minions.push({ id: this.id++, x: clamp(b.x + Math.cos(theta) * 55, 24, 456), y: clamp(b.y + Math.sin(theta) * 55, 24, 264), hp: 12, kind: b.kit.code?.todos[i % (b.kit.code.todos.length || 1)] ?? 'bug' });
       }
     }
   }
@@ -292,6 +315,7 @@ class ArenaMatch implements Match {
   private updateBullets(dt: number) {
     const next: Bullet[] = [];
     for (const b of this.state.bullets) {
+      if (this.reviewQueued && b.owner === 'boss') { this.shots.delete(b.id); continue; }
       const meta = this.shots.get(b.id)!;
       meta.life -= dt;
       if (b.kind === 'staff' && b.owner !== 'boss') {
@@ -299,9 +323,22 @@ class ArenaMatch implements Match {
         const [ux, uy] = unit(target.x - b.x, target.y - b.y);
         b.vx += (ux * 160 - b.vx) * dt * 4; b.vy += (uy * 160 - b.vy) * dt * 4;
       }
+      const oldX = b.x, oldY = b.y;
       b.x += b.vx * dt; b.y += b.vy * dt;
       let hit = false;
-      if (b.owner === 'boss') {
+      const cover = this.state.obstacles.map(o => ({ o, t: segmentRect(oldX, oldY, b.x, b.y, o, b.r) }))
+        .filter((v): v is { o: MatchState['obstacles'][number]; t: number } => v.t !== null).sort((a, c) => a.t - c.t)[0];
+      if (cover) {
+        const amount = Math.min(cover.o.hp, meta.damage); cover.o.hp -= amount;
+        this.hit({ type: 'hit', target: `obstacle:${cover.o.id}`, amount, x: cover.o.x, y: cover.o.y }, b.owner, unit(b.vx, b.vy));
+        if (cover.o.hp <= 0) {
+          this.emit({ type: 'obstacleBroken', id: cover.o.id, label: cover.o.label, x: cover.o.x, y: cover.o.y });
+          this.drop('energy', cover.o.x, cover.o.y);
+          this.maybeArmor(cover.o.x + 6, cover.o.y, 0.25);
+          this.state.obstacles = this.state.obstacles.filter(o => o.id !== cover.o.id);
+        }
+        hit = true;
+      } else if (b.owner === 'boss') {
         const blocked = this.state.hazards.some(h => h.kind === 'firewall' && distance(h, b) <= h.r);
         if (blocked) hit = true;
         else for (const p of this.state.players) if (p.alive && p.invuln <= 0 && distance(p, b) < 6 + b.r) { this.hurtPlayer(p, meta.damage, unit(b.vx, b.vy)); hit = true; break; }
@@ -337,9 +374,10 @@ class ArenaMatch implements Match {
     hits.set(p.id, this.state.t); this.recent.set(id, hits);
     const combo = hits.size;
     p.stats.bestCombo = Math.max(p.stats.bestCombo, combo);
-    const damage = base * (1 + Math.min(4, combo - 1) * 0.14) * (id === 'heart' || kit?.weakPoint ? 1.5 : 1);
+    const critical = !!(kit?.weakPoint || kit?.fragile);
+    const damage = base * (1 + Math.min(4, combo - 1) * 0.14) * (id === 'heart' || critical ? 1.5 : 1);
     // Cycles still break faster and flash as crits, but don't add free core DPS to a repo's total budget.
-    const dealt = Math.min(b.hp, damage * (limb ? 0.8 / (kit?.weakPoint ? 1.5 : 1) : b.phase === 3 && b.limbs.some(l => !l.broken) ? 0.6 : 1));
+    const dealt = Math.min(b.hp, damage * (limb ? 0.8 / (critical ? 1.5 : 1) : b.phase === 3 && b.limbs.some(l => !l.broken) ? 0.6 : 1));
     b.hp = Math.max(0, b.hp - dealt); p.stats.damage += dealt;
     if (limb && !limb.broken) {
       const limbHit = Math.min(limb.hp, damage);
@@ -348,6 +386,7 @@ class ArenaMatch implements Match {
       if (limb.hp <= 0) {
         limb.broken = true; p.stats.limbsBroken++;
         this.emit({ type: 'limbBroken', limb: id, by: p.id });
+        this.drop('heart', x - 5, y); this.drop('energy', x + 5, y);
         // A broken source interrupts its in-flight cast as well as future selection.
         const attack = b.kit.attacks.find(a => a.id === b.casting?.attackId);
         if (attack && attack.source === kit?.component) {
@@ -359,15 +398,16 @@ class ArenaMatch implements Match {
         }
       }
     }
-    this.hit({ type: 'hit', target: 'boss', ...(limb ? { limb: id } : {}), amount: dealt, x, y, combo }, p.id, direction, id === 'heart' || !!kit?.weakPoint || combo >= 3);
+    this.hit({ type: 'hit', target: 'boss', ...(limb ? { limb: id } : {}), amount: dealt, x, y, combo }, p.id, direction, id === 'heart' || critical || combo >= 3);
     const ratio = b.hp / b.maxHp;
-    if (ratio <= b.kit.enrageAt && b.phase === 1) { b.phase = 2; b.enraged = true; this.emit({ type: 'phase', phase: 2 }); }
+    if (ratio <= b.kit.enrageAt && b.phase === 1) { b.phase = 2; b.enraged = true; this.emit({ type: 'phase', phase: 2 }); this.reviewQueued = true; }
     if (ratio <= 0.15 && b.phase < 3) { b.phase = 3; b.enraged = true; this.emit({ type: 'phase', phase: 3 }); }
     if (b.hp <= 0) p.stats.killingBlow = true;
   }
 
   private hurtPlayer(p: PlayerState, damage: number, direction = unit(p.x - this.state.boss.x, p.y - this.state.boss.y)) {
     if (!p.alive || p.invuln > 0 || damage <= 0) return;
+    if (hasPerk(p, 'safe-mode')) damage *= 0.8;
     if (p.buffs.includes('fork')) damage *= 0.5;
     const armor = Math.min(p.armor, damage); p.armor -= armor; p.hp = Math.max(0, p.hp - (damage - armor));
     p.invuln = 0.65;
@@ -406,6 +446,7 @@ class ArenaMatch implements Match {
   }
 
   private updateMinions(dt: number) {
+    this.cleanupMinions();
     this.minionShot -= dt;
     for (const m of this.state.minions.filter(m => m.hp > 0)) {
       const target = this.state.players.filter(p => p.alive).sort((a, b) => distance(a, m) - distance(b, m))[0];
@@ -417,6 +458,80 @@ class ArenaMatch implements Match {
     }
     if (this.minionShot <= 0) this.minionShot = 3;
     this.state.minions = this.state.minions.filter(m => m.hp > 0);
+  }
+
+  private cleanupMinions() {
+    for (const m of this.state.minions.filter(m => m.hp <= 0)) {
+      this.drop('energy', m.x, m.y);
+      this.maybeArmor(m.x + 5, m.y, 0.2);
+    }
+    this.state.minions = this.state.minions.filter(m => m.hp > 0);
+  }
+
+  private drop(kind: Pickup['kind'], x: number, y: number) {
+    const id = this.id++;
+    this.state.pickups.push({ id, kind, x: clamp(x, 24, ARENA_W - 24), y: clamp(y, 24, ARENA_H - 24) });
+    this.dropExpiry.set(id, this.state.t + 15);
+  }
+
+  private maybeArmor(x: number, y: number, chance: number) {
+    // Summoner-style repos cannot turn an unlimited bug farm into free team health.
+    if (this.lootRng() < chance && this.armorDropsLeft > 0) {
+      this.armorDropsLeft--; this.drop('armor', x, y);
+    }
+  }
+
+  private updatePickups() {
+    this.state.pickups = this.state.pickups.filter(drop => {
+      if (this.state.t >= (this.dropExpiry.get(drop.id) ?? 0)) { this.dropExpiry.delete(drop.id); return false; }
+      const player = this.state.players.filter(p => p.alive && distance(p, drop) <= 14 &&
+        (drop.kind === 'heart' ? p.hp < p.kit.maxHp : drop.kind === 'armor' ? p.armor < p.kit.maxArmor : p.energy < p.kit.maxEnergy))
+        .sort((a, b) => distance(a, drop) - distance(b, drop))[0];
+      if (!player) return true;
+      if (drop.kind === 'heart') player.hp = Math.min(player.kit.maxHp, player.hp + 1);
+      else if (drop.kind === 'armor') player.armor = Math.min(player.kit.maxArmor, player.armor + 2);
+      else player.energy = Math.min(player.kit.maxEnergy, player.energy + 30);
+      this.emit({ type: 'pickup', player: player.id, kind: drop.kind, x: drop.x, y: drop.y });
+      this.dropExpiry.delete(drop.id); return false;
+    });
+  }
+
+  private beginReview() {
+    this.reviewQueued = false;
+    this.cleanupMinions();
+    this.state.perkOffer = createPerkOffer(this.reviewSeed, this.state.t);
+    this.state.boss.casting = null;
+    this.state.bullets = []; this.shots.clear();
+    this.state.hazards = []; this.hazardData.clear();
+    this.pending = []; this.pressure = []; this.charge = null;
+    this.pressureCd = Math.max(1, this.pressureCd);
+    this.reviewProgress.clear();
+  }
+
+  private updateReview(dt: number) {
+    const offer = this.state.perkOffer!;
+    const choose = (p: PlayerState, id: string) => {
+      offer.picked[p.id] = id;
+      if (!p.perks.includes(id)) p.perks.push(id);
+      this.emit({ type: 'perk', player: p.id, perk: id });
+    };
+    for (const p of this.state.players) {
+      if (offer.picked[p.id]) continue;
+      const pad = p.alive ? offer.pads.find(pad => distance(p, pad) <= pad.r) : undefined;
+      if (pad) {
+        const previous = this.reviewProgress.get(p.id);
+        const progress = previous?.pad === pad.id ? previous.t + dt : dt;
+        this.reviewProgress.set(p.id, { pad: pad.id, t: progress });
+        if (progress >= 1 - 1e-6) choose(p, pad.id);
+      } else this.reviewProgress.delete(p.id);
+      if (!offer.picked[p.id] && this.state.t >= offer.endsAt) {
+        const nearest = [...offer.pads].sort((a, b) => distance(p, a) - distance(p, b))[0];
+        choose(p, nearest.id);
+      }
+    }
+    const extended = offer as typeof offer & { progress?: Record<string, { pad: string; t: number }> };
+    extended.progress = Object.fromEntries([...this.reviewProgress].map(([id, value]) => [id, { pad: value.pad, t: Math.min(1, value.t) }]));
+    if (this.state.t >= offer.endsAt) { this.state.perkOffer = null; this.reviewProgress.clear(); }
   }
 
   private emit(event: GameEvent) { this.state.events.push(event); }
@@ -431,23 +546,39 @@ class ArenaMatch implements Match {
     this.state.status = victory ? 'victory' : 'defeat';
     this.emit({ type: victory ? 'victory' : 'defeat' });
   }
-  snapshot(): MatchState {
+  snapshot(): BattleState {
     const copy = structuredClone(this.state);
+    // Parasites eat the visible shell, not the combat budget. Render health bars with
+    // displayHp when present; hp remains authoritative so attacks/break timing stay fair.
+    for (const limb of copy.boss.limbs) {
+      const kit = copy.boss.kit.limbs.find(l => l.id === limb.id);
+      if (kit?.parasites?.length) Object.assign(limb, { displayHp: limb.hp * (1 - Math.min(0.1, Math.max(0, copy.t - 2) / 600)) });
+    }
     this.state.events = [];
     return copy;
   }
-  autopsy(): Autopsy {
+  autopsy(): BattleAutopsy {
     const s = this.state;
     return {
-      victory: s.status === 'victory', duration: Math.max(0, s.t - 2),
+      mode: 'battle', victory: s.status === 'victory', duration: Math.max(0, s.t - 2),
       boss: { repo: s.boss.kit.repo, heart: s.boss.kit.heart,
-        limbs: s.boss.kit.limbs.map(l => ({ component: l.component, broken: s.boss.limbs.find(other => other.id === l.id)!.broken, damageTaken: this.limbDamage.get(l.id) ?? 0 })) },
+        ...structuredClone((s.boss.kit as SocialBossKit).social ?? {}),
+        limbs: s.boss.kit.limbs.map(l => ({ component: l.component, broken: s.boss.limbs.find(other => other.id === l.id)!.broken, damageTaken: this.limbDamage.get(l.id) ?? 0,
+          ...(l.fragile === undefined ? {} : { fragile: l.fragile }), ...(l.maintainers === undefined ? {} : { maintainers: l.maintainers }),
+          ...(l.issues ? { issues: structuredClone(l.issues) } : {}), ...(l.parasites ? { parasites: structuredClone(l.parasites) } : {}),
+        })) },
       players: s.players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { ...p.stats } })),
       mvp: [...s.players].sort((a, b) => b.stats.damage - a.stats.damage)[0]?.id ?? null,
     };
   }
 }
 
-export function createMatch(players: { id: string; name: string; kit: PlayerKit }[], boss: BossKit): Match {
+type MatchPlayer = { id: string; name: string; kit: PlayerKit };
+export function createMatch(players: MatchPlayer[], boss: BossKit, options?: { mode?: 'battle' }): BattleMatch;
+export function createMatch(players: MatchPlayer[], boss: BossKit | null, options: { mode: 'edu' }): ClassroomMatch;
+export function createMatch(players: MatchPlayer[], boss: BossKit | null, options?: { mode?: GameMode }): Match;
+export function createMatch(players: MatchPlayer[], boss: BossKit | null, options: { mode?: GameMode } = {}): Match {
+  if (options.mode === 'edu') return new ClassroomMatch(players);
+  if (!boss) throw new Error('Battle mode needs a boss');
   return new ArenaMatch(players, boss);
 }

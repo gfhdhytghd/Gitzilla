@@ -1,0 +1,407 @@
+{
+  "game": "Gitzilla",
+  "mode": "edu",
+  "syntheticQualityFixtures": true,
+  "trials": 12,
+  "playersPerTrial": 4,
+  "controls": "Same TypeScript blaster, firewall skill and 0.7 bot skill; one strong-quality versus three C-range kits; strong identity rotates.",
+  "strongWins": 5,
+  "strongKOs": 115,
+  "learningKOs": 267,
+  "runs": [
+    {
+      "trial": 0,
+      "duration": 255.1666666666556,
+      "strong": "p0",
+      "winner": "p1",
+      "students": [
+        {
+          "id": "p1",
+          "kos": 10,
+          "damage": 202.7599634574996,
+          "roundWins": 2
+        },
+        {
+          "id": "p3",
+          "kos": 8,
+          "damage": 188.58112469499977,
+          "roundWins": 1
+        },
+        {
+          "id": "p2",
+          "kos": 8,
+          "damage": 202.37339242000039,
+          "roundWins": 0
+        },
+        {
+          "id": "p0",
+          "kos": 7,
+          "damage": 222.2436266074994,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 1,
+      "duration": 255.1666666666556,
+      "strong": "p1",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 11,
+          "damage": 214.8727011049996,
+          "roundWins": 2
+        },
+        {
+          "id": "p1",
+          "kos": 9,
+          "damage": 218.07463549749951,
+          "roundWins": 1
+        },
+        {
+          "id": "p0",
+          "kos": 7,
+          "damage": 197.90019194000044,
+          "roundWins": 0
+        },
+        {
+          "id": "p3",
+          "kos": 7,
+          "damage": 194.3424936249996,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "duration": 165.0999999999931,
+      "strong": "p2",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 8,
+          "damage": 170.78577993850004,
+          "roundWins": 2
+        },
+        {
+          "id": "p1",
+          "kos": 7,
+          "damage": 125.98897005100007,
+          "roundWins": 0
+        },
+        {
+          "id": "p3",
+          "kos": 6,
+          "damage": 125.8951186230001,
+          "roundWins": 0
+        },
+        {
+          "id": "p0",
+          "kos": 2,
+          "damage": 127.02148980000021,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "duration": 255.1666666666556,
+      "strong": "p3",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 9,
+          "damage": 211.48418510400043,
+          "roundWins": 2
+        },
+        {
+          "id": "p3",
+          "kos": 10,
+          "damage": 223.48951163800044,
+          "roundWins": 1
+        },
+        {
+          "id": "p0",
+          "kos": 9,
+          "damage": 187.6912296944997,
+          "roundWins": 0
+        },
+        {
+          "id": "p1",
+          "kos": 7,
+          "damage": 200.52575868799974,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 4,
+      "duration": 255.1666666666556,
+      "strong": "p0",
+      "winner": "p0",
+      "students": [
+        {
+          "id": "p0",
+          "kos": 16,
+          "damage": 225.25873475499938,
+          "roundWins": 2
+        },
+        {
+          "id": "p1",
+          "kos": 13,
+          "damage": 198.1849601799995,
+          "roundWins": 1
+        },
+        {
+          "id": "p3",
+          "kos": 5,
+          "damage": 203.49839522999963,
+          "roundWins": 0
+        },
+        {
+          "id": "p2",
+          "kos": 2,
+          "damage": 232.66973862999978,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 5,
+      "duration": 255.1666666666556,
+      "strong": "p1",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 12,
+          "damage": 216.62526671650042,
+          "roundWins": 2
+        },
+        {
+          "id": "p1",
+          "kos": 10,
+          "damage": 215.4245326249999,
+          "roundWins": 1
+        },
+        {
+          "id": "p0",
+          "kos": 8,
+          "damage": 197.96985400049988,
+          "roundWins": 0
+        },
+        {
+          "id": "p3",
+          "kos": 4,
+          "damage": 178.63393448199975,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 6,
+      "duration": 165.0999999999931,
+      "strong": "p2",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 8,
+          "damage": 160.0826495649996,
+          "roundWins": 2
+        },
+        {
+          "id": "p1",
+          "kos": 5,
+          "damage": 127.96497506250006,
+          "roundWins": 0
+        },
+        {
+          "id": "p3",
+          "kos": 4,
+          "damage": 127.85424332750017,
+          "roundWins": 0
+        },
+        {
+          "id": "p0",
+          "kos": 4,
+          "damage": 120.64039121500015,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 7,
+      "duration": 255.1666666666556,
+      "strong": "p3",
+      "winner": "p0",
+      "students": [
+        {
+          "id": "p0",
+          "kos": 9,
+          "damage": 222.6298334774994,
+          "roundWins": 2
+        },
+        {
+          "id": "p3",
+          "kos": 9,
+          "damage": 207.61091648499948,
+          "roundWins": 1
+        },
+        {
+          "id": "p1",
+          "kos": 8,
+          "damage": 210.9829551900004,
+          "roundWins": 0
+        },
+        {
+          "id": "p2",
+          "kos": 8,
+          "damage": 175.45447097499982,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 8,
+      "duration": 255.1666666666556,
+      "strong": "p0",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 11,
+          "damage": 199.13230910250047,
+          "roundWins": 2
+        },
+        {
+          "id": "p0",
+          "kos": 6,
+          "damage": 221.82909956749944,
+          "roundWins": 1
+        },
+        {
+          "id": "p1",
+          "kos": 8,
+          "damage": 207.6668159825004,
+          "roundWins": 0
+        },
+        {
+          "id": "p3",
+          "kos": 7,
+          "damage": 183.8295016399998,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 9,
+      "duration": 255.1666666666556,
+      "strong": "p1",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 9,
+          "damage": 201.9004923474997,
+          "roundWins": 1
+        },
+        {
+          "id": "p3",
+          "kos": 8,
+          "damage": 216.04691949999946,
+          "roundWins": 1
+        },
+        {
+          "id": "p0",
+          "kos": 7,
+          "damage": 202.2642874375006,
+          "roundWins": 1
+        },
+        {
+          "id": "p1",
+          "kos": 9,
+          "damage": 194.28236819499946,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 10,
+      "duration": 255.1666666666556,
+      "strong": "p2",
+      "winner": "p2",
+      "students": [
+        {
+          "id": "p2",
+          "kos": 10,
+          "damage": 217.56772434249945,
+          "roundWins": 2
+        },
+        {
+          "id": "p1",
+          "kos": 10,
+          "damage": 199.39262013249956,
+          "roundWins": 1
+        },
+        {
+          "id": "p3",
+          "kos": 8,
+          "damage": 178.7199512574997,
+          "roundWins": 0
+        },
+        {
+          "id": "p0",
+          "kos": 5,
+          "damage": 198.92157238249945,
+          "roundWins": 0
+        }
+      ]
+    },
+    {
+      "trial": 11,
+      "duration": 255.1666666666556,
+      "strong": "p3",
+      "winner": "p3",
+      "students": [
+        {
+          "id": "p3",
+          "kos": 13,
+          "damage": 254.71661027500028,
+          "roundWins": 1
+        },
+        {
+          "id": "p1",
+          "kos": 8,
+          "damage": 219.45024753500059,
+          "roundWins": 1
+        },
+        {
+          "id": "p0",
+          "kos": 7,
+          "damage": 191.87045588749982,
+          "roundWins": 1
+        },
+        {
+          "id": "p2",
+          "kos": 6,
+          "damage": 181.88966664349957,
+          "roundWins": 0
+        }
+      ]
+    }
+  ],
+  "stress": {
+    "players": 30,
+    "duration": 255.1666666666556,
+    "wallSeconds": 5.014784620000001,
+    "maxBullets": 185,
+    "maxStepMs": 4.815647999999783,
+    "kos": 340,
+    "allFinite": true
+  },
+  "wallSeconds": 10.912926745
+}

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { InputFrame, MatchState, PlayerKit } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from './kits.ts';
-import { createMatch, type Match } from './match.ts';
+import { createMatch, type BattleState, type Match } from './match.ts';
 import { bossRegions } from './regions.ts';
 import { balanceTable, loadBalanceProfiles, runBalance, syntheticProfile } from './bots.ts';
 import { BossAi } from './bossAi.ts';
 import { ATTACK_COST, squadBudget, type HitFeedback } from './balance.ts';
 
 const frame = (patch: Partial<InputFrame> = {}): InputFrame => ({ seq: 1, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard', ...patch });
-const internals = (match: Match) => (match as unknown as { state: MatchState }).state;
+const internals = (match: Match) => (match as unknown as { state: BattleState }).state;
 const advance = (match: Match, seconds: number, inputs = new Map<string, InputFrame>()) => {
   for (let i = 0; i < Math.ceil(seconds * 30); i++) match.step(1 / 30, inputs);
 };
@@ -54,7 +54,7 @@ describe('repository kits', () => {
   it('ignores readme/tree art-direction context when calculating stats and attack budgets', () => {
     const profile = syntheticProfile(8);
     const withArtContext = { ...profile, readme: 'A terrifying monster with infinite power', tree: ['src/giant.ts', 'art/hero.svg'] };
-    expect(playerKitFromProfile(withArtContext)).toEqual(playerKitFromProfile(profile));
+    expect({ ...playerKitFromProfile(withArtContext), classroom: undefined }).toEqual({ ...playerKitFromProfile(profile), classroom: undefined });
     expect(bossKitFromProfile(withArtContext, 8)).toEqual(bossKitFromProfile(profile, 8));
   });
   it('spends the same scheduled threat per second across all repo styles and squad sizes', () => {
@@ -176,6 +176,7 @@ describe('authoritative arena', () => {
     s.boss.hp = s.boss.maxHp * 0.49;
     advance(m, 0.3, inputs); expect(s.boss.phase).toBe(2);
     expect(Math.max(...s.players.map(p => p.stats.bestCombo))).toBe(2);
+    advance(m, 5.1, inputs); // Code review pauses combat before the last stand.
     s.boss.hp = s.boss.maxHp * 0.14;
     advance(m, 0.3, inputs); expect(s.boss.phase).toBe(3);
     s.boss.hp = 1; advance(m, 0.3, inputs);
