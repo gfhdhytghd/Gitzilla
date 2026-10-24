@@ -73,7 +73,7 @@ const host = document.getElementById("host")!;
 const vw = window.innerWidth, vh = window.innerHeight - 44;
 const size: Record<string, [number, number]> = {
   big: [Math.min(vw, (vh * 16) / 9), Math.min(vh, (vw * 9) / 16)],
-  desktop: [Math.min(vw - 20, 860), Math.min(vh - 20, 480)],
+  desktop: [vw - 16, vh - 12],
   card: [Math.min(vw - 20, 420), Math.min(vh - 20, 300)],
   phone: [Math.min(vw, 390), Math.min(vh, Math.round(844 * 0.45))],
 };

@@ -44,6 +44,7 @@ export interface GenesisHandle {
 
 // logical canvas height target; bosses get chunkier pixels so the ~130 px monster fills the stage
 const TARGET_H = { hero: 215, boss: 185 };
+const END_HOLD = 0.9;
 
 export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle {
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -72,6 +73,7 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
   let disposed = false;
   let frozen: number | null = null;
   let pauses: number[] = [];
+  let endFor = 0;
   let pauseIdx = 0;
   let heldFor = 0;
   const auto = opts.autoAdvance ?? (!!opts.compact || opts.interactive === false);
@@ -139,12 +141,14 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
       } else scene.hold = null;
       t = frozen ?? next;
       scene.draw(ctx, text, t, now, dt);
-      if (!done && t >= scene.T.total) {
+      // the finished character + name card stay up >= ~2 s (reveal stage + END_HOLD) before onDone
+      if (t >= scene.T.total) endFor += dt; else endFor = 0;
+      if (!done && t >= scene.T.total && endFor >= END_HOLD) {
         done = true;
         doneAt = now;
         opts.onDone?.();
       }
-      if (done && opts.loop && now - doneAt > 4) replay();
+      if (done && opts.loop && now - doneAt > 3) replay();
     } else if (live) {
       live.draw(ctx, text, now, dt);
     }
@@ -213,9 +217,13 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
 function computeLayout(W: number, H: number, compact: boolean, tx: TextLayer): Layout {
   const wide = !compact && W >= H * 1.3 && W >= 300;
   const small = compact || H < 150 || W < 250;
-  const hh = Math.max(11, Math.ceil(tx.lineH(small ? 6 : 7, "term", 10)) + 3);
+  // text sizes follow the host's CSS height (not the logical pixel size): ~22 px terminal on a 720 px screen
+  const cssH = H * tx.k;
+  const toL = (px: number) => px / (1.25 * tx.k);
+  const headSize = toL(Math.max(12, Math.min(26, cssH / 28)));
+  const hh = Math.max(11, Math.ceil(tx.lineH(headSize, "term", 10)) + 3);
   const header: Rect = { x: 0, y: 0, w: W, h: hh };
-  const termSize = small ? 6 : 6.5;
+  const termSize = toL(Math.max(11, Math.min(24, cssH / (small ? 30 : 33))));
   const lh = tx.lineH(termSize, "term", 10);
   let term: Rect, stage: Rect, termLines: number;
   if (wide) {
@@ -238,7 +246,7 @@ function computeLayout(W: number, H: number, compact: boolean, tx: TextLayer): L
   const split = stage.w > 220 ? 0.46 : 0.42;
   const graphMap: Rect = { x: graph.x, y: graph.y, w: Math.round(graph.w * split), h: graph.h };
   const charBox: Rect = { x: graph.x + graphMap.w + 2, y: graph.y, w: graph.w - graphMap.w - 2, h: graph.h };
-  return { W, H, wide, compact: small, header, term, stage, langBar, counters, graph, graphMap, charBox, termLines, termSize, labelSize: 5.5 };
+  return { W, H, wide, compact: small, headSize, header, term, stage, langBar, counters, graph, graphMap, charBox, termLines, termSize, labelSize: 5.5 };
 }
 
 export { clamp01, isBossKit };

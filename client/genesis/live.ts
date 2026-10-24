@@ -142,14 +142,17 @@ export class Live {
     ctx.fillStyle = "#03060a"; ctx.fillRect(h.x, h.y, h.w, h.h);
     ctx.fillStyle = UI.line; ctx.fillRect(h.x, h.y + h.h - 1, h.w, 1);
     ctx.fillStyle = UI.green; ctx.fillRect(h.x, h.y + h.h - 1, Math.round(h.w * this.pct), 1);
-    const size = L.compact ? 6 : 7;
+    const names = STAGES as string[];
+    const sep = " › ";
+    let size = L.headSize;
+    let total = tx.measure(names.join(sep), size, "term", 10);
+    if (total > h.w - 8) { size *= (h.w - 8) / total; total = tx.measure(names.join(sep), size, "term", 10); }
     const yy = h.y + (h.h - tx.lineH(size, "term", 10)) / 2;
     let x = h.x + 4;
-    if (!L.compact) x += tx.text(this.kind === "boss" ? "BOSS GENESIS" : "HERO GENESIS", x, yy, { size, min: 10, color: this.kind === "boss" ? UI.red : UI.cyan }) + 6;
-    x += tx.text(this.slug, x, yy, { size, min: 10, color: UI.text, maxW: h.w * 0.35 }) + 8;
-    const names = L.W < 300 ? ["cln", "prs", "grf", "map", "asm", "go"] : (STAGES as string[]);
-    const sep = " › ";
-    const total = names.reduce((s, nm) => s + tx.measure(nm, size, "term", 10), 0) + tx.measure(sep, size, "term", 10) * (names.length - 1);
+    const room = h.w - 8 - total - 10;
+    const lab = this.kind === "boss" ? "BOSS GENESIS" : "HERO GENESIS";
+    if (room > tx.measure(lab, size, "term", 10) + 66) x += tx.text(lab, x, yy, { size, min: 10, color: this.kind === "boss" ? UI.red : UI.cyan }) + 6;
+    if (room - (x - h.x - 4) > 30) x += tx.text(this.slug, x, yy, { size, min: 10, color: UI.text, maxW: room - (x - h.x - 4) }) + 8;
     let px = Math.max(x, h.x + h.w - 4 - total);
     names.forEach((nm, i) => {
       const on = i === order;

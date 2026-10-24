@@ -30,7 +30,7 @@ export interface Layout {
   W: number; H: number;
   wide: boolean; compact: boolean;
   header: Rect; term: Rect; stage: Rect; langBar: Rect; counters: Rect; graph: Rect; graphMap: Rect; charBox: Rect;
-  termLines: number; termSize: number; labelSize: number;
+  termLines: number; termSize: number; labelSize: number; headSize: number;
 }
 
 interface Tile { path: string; color: string; comp: number; born: number; hx: number; hy: number; ox: number; oy: number; seed: number }
@@ -45,16 +45,16 @@ const short = (name: string) => {
 };
 const kfmt = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e4 ? Math.round(n / 1e3) + "k" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : String(Math.round(n)));
 
-export function stageTimes(condensed: boolean, steps: number, edu = false) {
+export function stageTimes(condensed: boolean, steps: number, edu = false, boss = false) {
   const k = condensed ? 0.5 : edu ? 1.4 : 1;
   const dur = { ...BASE_DUR };
-  dur.map = Math.max(1.4, Math.min(4.2, 0.9 + steps * 0.12));
+  dur.map = Math.max(1.4, Math.min(boss ? 2.4 : 3.0, 0.9 + steps * 0.1));
   if (condensed) dur.map = Math.max(1.1, dur.map * 0.55);
   else if (edu) dur.map *= 1.5;
   const out = {} as Record<StageId, [number, number]>;
   let t = 0;
   for (const s of STAGES) {
-    const d = s === "map" ? dur.map : dur[s] * k;
+    const d = s === "map" ? dur.map : s === "reveal" ? dur[s] * (edu ? 1.4 : 1) : dur[s] * k;
     out[s] = [t, t + d];
     t += d;
   }
@@ -106,7 +106,7 @@ export class Scene {
       r: 4 + Math.round(Math.sqrt(c.loc / maxLoc) * 9), heart: i === heartComp,
     }));
     if (!this.nodes.length) this.nodes.push({ name: g.slug, short: short(g.slug), loc: 1, files: 1, r: 8, heart: true });
-    this.T = stageTimes(condensed, g.trace.length, edu);
+    this.T = stageTimes(condensed, g.trace.length, edu, kind === "boss");
     this.buildTiles();
     this.setKit(kit);
   }
@@ -184,7 +184,8 @@ export class Scene {
     const [m0, m1] = this.T.at.map;
     const trace = this.g.trace;
     // runs of the same part (7 limbs, 8 attacks...) overlap like a volley; a new part gets a full beat
-    const w = trace.map((s, i) => (i > 0 && trace[i - 1].part === s.part ? 0.32 : s.part === "name" ? 1.2 : 1));
+    const run = this.kind === "boss" ? 0.18 : 0.32;
+    const w = trace.map((s, i) => (i > 0 && trace[i - 1].part === s.part ? run : s.part === "name" ? 1.2 : 1));
     const sum = w.reduce((a, b) => a + b, 0) || 1;
     const span = m1 - m0 - 0.2;
     const minD = this.condensed ? 0.3 : 0.5;
@@ -636,16 +637,19 @@ export class Scene {
     ctx.fillRect(h.x, h.y + h.h - 1, Math.round(h.w * p), 1);
     ctx.fillStyle = UI.green;
     ctx.fillRect(h.x + Math.round(h.w * p) - 2, h.y + h.h - 1, 2, 1);
-    const size = L.compact ? 6 : 7;
+    const names = STAGES as string[];
+    const sep = " › ";
+    let size = L.headSize;
+    let total = tx.measure(names.join(sep), size, "term", 10);
+    if (total > h.w - 8) { size *= (h.w - 8) / total; total = tx.measure(names.join(sep), size, "term", 10); }
     const lab = this.kind === "boss" ? "BOSS GENESIS" : "HERO GENESIS";
     let x = h.x + 4;
     const yy = h.y + (h.h - tx.lineH(size, "term", 10)) / 2;
-    if (!L.compact) x += tx.text(lab, x, yy, { size, min: 10, color: this.kind === "boss" ? UI.red : UI.cyan }) + 6;
-    x += tx.text(this.g.slug, x, yy, { size, min: 10, color: UI.text, maxW: h.w * (L.compact ? 0.4 : 0.3) }) + 8;
-    // pipeline: clone > parse > graph > map > assemble > reveal
-    const names = L.W < 300 ? ["cln", "prs", "grf", "map", "asm", "go"] : STAGES as string[];
-    const sep = " › ";
-    const total = names.reduce((s, n) => s + tx.measure(n, size, "term", 10), 0) + tx.measure(sep, size, "term", 10) * (names.length - 1);
+    const room = h.w - 8 - total - 10;
+    const labW = tx.measure(lab, size, "term", 10) + 6;
+    if (room > labW + 60) x += tx.text(lab, x, yy, { size, min: 10, color: this.kind === "boss" ? UI.red : UI.cyan }) + 6;
+    if (room - (x - h.x - 4) > 30) x += tx.text(this.g.slug, x, yy, { size, min: 10, color: UI.text, maxW: room - (x - h.x - 4) }) + 8;
+    // pipeline: clone > parse > graph > map > assemble > reveal (full words everywhere)
     let px = Math.max(x, h.x + h.w - 4 - total);
     names.forEach((n, i) => {
       const done = i < ci || t >= this.T.total;
@@ -716,6 +720,8 @@ export class Scene {
     // import arrows: each edge draws itself in turn during parse
     const E = this.g.edges;
     const graphOn = t >= T.graph[0];
+    const edgeFade = this.kind === "boss" ? 1 - clamp01((t - T.map[0]) / 0.5) : 1;
+    ctx.globalAlpha = fade * edgeFade;
     E.forEach(([a, b], i) => {
       if (a >= nodes.length || b >= nodes.length || a === b) return;
       const ek = clamp01(pk * E.length - i * 0.7);
@@ -750,10 +756,23 @@ export class Scene {
       if (isCyc) drawGlow(ctx, mid.x, mid.y, UI.red, 8, 0.35 + 0.2 * Math.sin(now * 8));
     });
     // nodes: rings sized by LOC, labels with real component names
+    ctx.globalAlpha = fade;
     const lk = clamp01((t - T.parse[0] - 0.2) / 0.5);
     const bossFly = this.kind === "boss" && t >= T.map[0];
     this.nodes.forEach((n, i) => {
       const p = nodes[i];
+      if (bossFly) {
+        // flying organ: a small solid blob streaking into its limb slot; once landed the skeleton draws it
+        const fk = this.flyK(i, t);
+        if (fk >= 0.98) return;
+        const lt = this.sprite!.limbs.find((l) => l.component === n.name);
+        const r = n.r + ((lt ? Math.max(3, lt.r * this.charXform().k * 0.5) : 3) - n.r) * fk;
+        const col = n.heart ? UI.red : PART_COLOR.limb;
+        if (fk > 0) drawGlow(ctx, p.x, p.y, col, r + 8, 0.5);
+        ctx.fillStyle = fk > 0 ? col : "#0c2a1c";
+        disc(ctx, p.x, p.y, Math.max(2, fk > 0 ? r * 0.7 : r * 0.6));
+        return;
+      }
       const grow = ease.back(clamp01((t - T.parse[0] - i * 0.06) / 0.4));
       if (grow <= 0) return;
       const inCycle = graphOn && this.g.cycles.some((c) => c.includes(n.name));
@@ -812,8 +831,9 @@ export class Scene {
     const T = this.T.at;
     const fadeAll = 1 - clamp01((t - T.assemble[0] - 0.4) / 0.5);
     if (fadeAll <= 0) return;
-    const active = this.steps.filter((s) => t >= s.t0);
+    let active = this.steps.filter((s) => t >= s.t0);
     const cur = active[active.length - 1];
+    if (this.kind === "boss") active = active.slice(-2).filter((s) => s === cur || t < s.t1 + 0.3);
     for (const s of active) {
       const k = clamp01((t - s.t0) / (s.t1 - s.t0));
       const a = this.fromAnchor(s, s.t0, this.nodePosFrozen(s, nodes, t));
@@ -1003,6 +1023,14 @@ export class Scene {
     const heartK = this.partK("heart", t);
     const center = this.spr(sp.heart ?? sp.center);
     ctx.save();
+    // the forming silhouette: fills in as organs arrive
+    const arrived = this.nodes.filter((_, i) => this.flyK(i, t) >= 0.98).length / Math.max(1, this.nodes.length);
+    const { ox, oy, k } = this.charXform();
+    const S = sp.size * k;
+    ctx.globalAlpha = alpha * (0.18 + 0.5 * arrived);
+    ctx.drawImage(tintCached(sp.silhouette, kit.palette[1] ?? "#59365e"), ox, oy, S, S);
+    ctx.globalAlpha = alpha * (0.35 + 0.4 * arrived) * (0.8 + 0.2 * Math.sin(now * 9));
+    ctx.drawImage(tintCached(sp.outline, kit.palette[2] ?? UI.red), ox, oy, S, S);
     ctx.globalAlpha = alpha;
     // tentacles: heart -> each limb that has arrived
     this.nodes.forEach((n, i) => {
@@ -1014,8 +1042,15 @@ export class Scene {
       ctx.fillStyle = limb?.weak && this.partK("weakpoint", t) > 0 ? UI.red : "#7a4a8a";
       for (const q of pts) ctx.fillRect(q.x, q.y, 1, 1);
       if (limb) {
-        ctx.fillStyle = limb.weak && this.partK("weakpoint", t) > 0 ? UI.red : PART_COLOR.limb;
-        ring(ctx, p.x, p.y, limb.r * this.charXform().k * 0.8, 2, now * 2 + i);
+        const weak = limb.weak && this.partK("weakpoint", t) > 0;
+        const lr = Math.max(3, limb.r * k * 0.45);
+        ctx.fillStyle = kit.palette[0] ?? "#160f25";
+        disc(ctx, p.x, p.y, lr);
+        ctx.fillStyle = weak ? UI.red : PART_COLOR.limb;
+        ring(ctx, p.x, p.y, lr, 1);
+        // landing pop
+        const land = t - (this.steps.find((s) => s.part === "limb" && s.comp === i)?.t1 ?? -9);
+        if (land >= 0 && land < 0.3) { ctx.globalAlpha = alpha * (1 - land / 0.3); ring(ctx, p.x, p.y, lr + 2 + land * 30, 1); ctx.globalAlpha = alpha; }
       }
     });
     // weak points: red knots pulsing at cycle limbs
@@ -1341,13 +1376,23 @@ export class Scene {
     const top = tm.y + (L.wide ? 9 : 2);
     const rows = Math.max(1, Math.floor((tm.h - (L.wide ? 11 : 4)) / lh));
     const shown = this.log.filter((l) => l.t <= t);
-    const view = shown.slice(-rows);
-    view.forEach((l, i) => {
-      const last = i === view.length - 1;
+    // monospace: wrap by character count (continuation rows indented), never truncate
+    const cols = Math.max(12, Math.floor((tm.w - 6) / Math.max(0.5, tx.measure("M", size, "term", 10))));
+    const out: { segs: [string, string][] }[] = [];
+    for (let li = shown.length - 1; li >= 0 && out.length < rows; li--) {
+      const l = shown[li];
+      const last = li === shown.length - 1;
       const chars = last && this.hold === null ? Math.floor((t - l.t) * 90) : 9999;
-      const text = l.text.slice(0, chars);
-      const w = tx.text(text, tm.x + 3, top + i * lh, { size, min: 10, color: l.color, maxW: tm.w - 6 });
-      if (l.dim && chars >= l.text.length) tx.text(" " + l.dim, tm.x + 3 + w, top + i * lh, { size, min: 10, color: l.color === UI.dim ? UI.text : UI.dim, maxW: Math.max(0, tm.w - 6 - w) });
+      const main = l.text.slice(0, chars);
+      const dimCol = l.color === UI.dim ? UI.text : UI.dim;
+      const segs: [string, string][] = [[main, l.color]];
+      if (l.dim && chars >= l.text.length) segs.push([" " + l.dim, dimCol]);
+      out.unshift(...wrapSegs(segs, cols).reverse().slice(0, rows - out.length).reverse().map((r) => ({ segs: r })));
+    }
+    const view = out.slice(-rows);
+    view.forEach((row, i) => {
+      let x = tm.x + 3;
+      for (const [str, col] of row.segs) x += tx.text(str, x, top + i * lh, { size, min: 10, color: col });
     });
     // blinking block cursor
     if (Math.floor(now * 2.5) % 2) {
@@ -1380,6 +1425,31 @@ export class Scene {
 const SKILL_LABEL: Record<string, string> = {
   firewall: "try{}catch firewall", fork: "git fork decoy", hotfix: "+patch hotfix", overclock: "sudo !! overclock", rollback: "git revert rollback",
 };
+
+/** Wrap colored segments into rows of at most `cols` chars, breaking after / · space when possible. */
+function wrapSegs(segs: [string, string][], cols: number): [string, string][][] {
+  const chars: [string, string][] = [];
+  for (const [str, col] of segs) for (const ch of str.replace(/…/g, "..")) chars.push([ch, col]);
+  const rows: [string, string][][] = [];
+  let i = 0, first = true;
+  while (i < chars.length) {
+    const width = first ? cols : cols - 2;
+    let end = Math.min(chars.length, i + width);
+    if (end < chars.length) {
+      for (let j = end; j > i + width * 0.55; j--) if (" /·>".includes(chars[j - 1][0])) { end = j; break; }
+    }
+    const row: [string, string][] = first ? [] : [["  ", UI.dim]];
+    for (let j = i; j < end; j++) {
+      const [ch, col] = chars[j];
+      const lastSeg = row[row.length - 1];
+      if (lastSeg && lastSeg[1] === col && !(row.length === 1 && !first)) lastSeg[0] += ch; else row.push([ch, col]);
+    }
+    rows.push(row);
+    i = end;
+    first = false;
+  }
+  return rows.length ? rows : [[["", UI.text]]];
+}
 
 function wrap(tx: TextLayer, text: string, maxW: number, size: number): string[] {
   const out: string[] = [];
