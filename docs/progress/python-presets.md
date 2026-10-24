@@ -12,3 +12,9 @@ Validation:
 - Existing 30-student cooperative flow, retry, exports, reconnect and entry migration passed in the same smoke run.
 
 This change needs only a static asset update; server routes and message formats are unchanged.
+
+## Deployment
+
+Feature commit `49803f946e7adbb019ede814f073b0a3e686389f` was deployed on 2026-10-24 at 22:24 UTC to https://gitzilla.wilflin.me. Static assets were published before the HTML, retaining old hashed files for existing tabs. Server PID 2391694 remained running; there was no server restart or classroom-state reset. Rollback artifacts: `/home/wilf/data/HackPSU/.deploy-backups/python-presets-20261024T222437Z/`.
+
+Public browser acceptance passed: all nine courses load, the dictionary starter downloads as `09_dict.py`, and a published dictionary lesson reaches the student's phone page with the correct instructions. Zero page errors; the temporary validation room was removed. Public JS/CSS hashes matched the deployed artifacts. Evidence: `docs/shots/python-presets-live/result.json` and `dict-library.png`.
