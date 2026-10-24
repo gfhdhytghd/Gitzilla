@@ -1,7 +1,7 @@
 {
   "slug": "fastapi/fastapi",
   "description": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
-  "stars": 104078,
+  "stars": 104084,
   "primaryLanguage": "Python",
   "languages": {
     "Python": 4626334,
@@ -12,7 +12,7 @@
   },
   "totalFiles": 1202,
   "totalLoc": 112739,
-  "commits": 7945,
+  "commits": 7950,
   "contributors": 907,
   "ageDays": 2877,
   "components": [
@@ -21,56 +21,104 @@
       "files": 649,
       "loc": 83358,
       "fanIn": 0,
-      "fanOut": 6
+      "fanOut": 6,
+      "issues": [],
+      "maintainers": 11,
+      "topMaintainers": [
+        "tiangolo",
+        "YuriiMotov",
+        "svlandeg"
+      ]
     },
     {
       "name": "fastapi",
       "files": 23,
       "loc": 14422,
       "fanIn": 5,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 7,
+      "topMaintainers": [
+        "tiangolo",
+        "AshNicolus",
+        "mnixry"
+      ]
     },
     {
       "name": "docs_src",
       "files": 457,
       "loc": 6024,
       "fanIn": 1,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 36,
+      "topMaintainers": [
+        "tiangolo",
+        "YuriiMotov",
+        "alejsdev"
+      ]
     },
     {
       "name": "scripts",
       "files": 38,
       "loc": 3447,
       "fanIn": 1,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 6,
+      "topMaintainers": [
+        "tiangolo",
+        "YuriiMotov",
+        "alejsdev"
+      ]
     },
     {
       "name": "misc",
       "files": 14,
       "loc": 1575,
       "fanIn": 4,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": []
     },
     {
       "name": "fastapi/openapi",
       "files": 5,
       "loc": 1324,
       "fanIn": 5,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 47,
+      "topMaintainers": [
+        "tiangolo",
+        "dmontagu",
+        "jmriebold"
+      ]
     },
     {
       "name": "fastapi/security",
       "files": 7,
       "loc": 1308,
       "fanIn": 3,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 33,
+      "topMaintainers": [
+        "tiangolo",
+        "blkst8",
+        "svlandeg"
+      ]
     },
     {
       "name": "docs",
       "files": 9,
       "loc": 1281,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 1,
+      "topMaintainers": [
+        "tiangolo"
+      ]
     }
   ],
   "heart": "fastapi/__init__.py",
@@ -206,6 +254,7 @@
     "docs_src/body_nested_models/",
     "docs_src/path_operation_configuration/",
     "docs_src/path_operation_advanced_configuration/",
+    "pyproject.toml",
     "README.md",
     "fastapi/__init__.py",
     "tests/test_include_router_defaults_overrides.py",
@@ -284,8 +333,7 @@
     "tests/test_forms_optional_unions.py",
     "scripts/translation_git.py",
     "tests/test_header_cookie_optional_models.py",
-    "fastapi/exception_handlers.py",
-    "tests/test_query_optional_models.py"
+    "fastapi/exception_handlers.py"
   ],
   "dna": {
     "identifiers": [
@@ -365,9 +413,25 @@
       ]
     },
     "heartLines": [
-      "__version__ = \"0.162.0\""
+      "needs_py310 = pytest.mark.skipif(",
+      "sys.version_info < (3, 10), reason=\"requ",
+      "needs_py314 = pytest.mark.skipif(",
+      "sys.version_info < (3, 14), reason=\"requ",
+      "needs_orjson = pytest.mark.skipif(",
+      "reason=\"requires orjson\",",
+      "needs_ujson = pytest.mark.skipif(",
+      "reason=\"requires ujson\",",
+      "workdir_lock = pytest.mark.xdist_group(\"",
+      "def skip_module_if_py_gte_314():",
+      "if sys.version_info >= (3, 14):",
+      "pytest.skip(\"requires python3.13-\", allo"
     ],
     "snippets": [
+      {
+        "file": "tests/utils.py",
+        "line": 26,
+        "code": "def skip_module_if_py_gte_314():"
+      },
       {
         "file": "tests/test_sub_callbacks.py",
         "line": 96,
@@ -422,14 +486,17 @@
         "file": "tests/main.py",
         "line": 71,
         "code": "def get_path_param_min_max_length(item_id: str ="
-      },
-      {
-        "file": "tests/test_schema_extra_examples.py",
-        "line": 26,
-        "code": "def example(item: Item = Body(example={\"data\": \""
       }
     ],
     "todos": [
+      {
+        "file": "docs/en/docs/css/custom.css",
+        "text": "hack to display the window buttons in one pseudo element."
+      },
+      {
+        "file": "docs/en/docs/css/termynal.css",
+        "text": "hack to display the window buttons in one pseudo element."
+      },
       {
         "file": "fastapi/_compat/shared.py",
         "text": "TODO: remove this function once the required version of Pyda"
@@ -459,27 +526,30 @@
         "text": "TODO remove when deprecating Pydantic v1"
       },
       {
+        "file": "fastapi/applications.py",
+        "text": "hack. But if you"
+      },
+      {
         "file": "fastapi/encoders.py",
         "text": "TODO: pv2 should this return strings instead?"
       },
       {
-        "file": "fastapi/openapi/utils.py",
-        "text": "TODO: probably make status_code a default class attribute fo"
-      },
-      {
-        "file": "fastapi/routing.py",
-        "text": "TODO: Replace or deprecate this no-scope hook so included-ro"
-      },
-      {
-        "file": "fastapi/routing.py",
-        "text": "TODO: probably move this out of the Route / Route Group, sam"
-      },
-      {
-        "file": "fastapi/routing.py",
-        "text": "TODO: deprecate this once the lifespan (or alternative) inte"
+        "file": "fastapi/encoders.py",
+        "text": "hack for compatibility with SQLAlchemy objects, they"
       }
     ],
-    "commits": [],
+    "commits": [
+      "🔖 Release version 0.162.0 (#16606)",
+      "📝 Update release notes",
+      "🐛 Restore default handling for omitted boolean form fields (#16605)",
+      "🔖 Release version 0.161.1 (#16599)",
+      "📝 Update release notes",
+      "🐛 Fix OpenAPI schemas for standalone nullable form unions (#16598)",
+      "🔖 Release version 0.161.0 (#16597)",
+      "📝 Update release notes",
+      "✨ Add support for combining unions of form models (#16596)",
+      "🔖 Release version 0.160.0 (#16595)"
+    ],
     "tokens": [
       "{",
       "}",
@@ -538,11 +608,15 @@
       "classes": 950,
       "todo": 23,
       "fixme": 0,
-      "hack": 0,
-      "comments": 1246
+      "hack": 4,
+      "comments": 6855
     },
     "maxNesting": 16,
     "avgLineLength": 39.6,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 17.2,
+    "hasTestDir": true
+  },
+  "repoIssues": [],
+  "busFactor": 1
 }

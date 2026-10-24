@@ -134,6 +134,48 @@ describe('real-code DNA', () => {
     expect(d.todos.every(todo => todo.text.length <= 60)).toBe(true); expect(d.tokens.length).toBeLessThanOrEqual(12);
     expect(d.counts.functions).toBe(40); expect(d.counts.todo).toBe(40);
   });
+  it('uses real central implementation lines for a barrel heart and pins their snippet provenance', () => {
+    const implementation = 'export function pulse(value: number) {\n  const doubled = value * 2;\n  const shifted = doubled + 1;\n  if (shifted > 0) {\n    return shifted;\n  }\n  return 0;\n}';
+    const files = sources({
+      'src/index.ts': 'export * from "./core";',
+      'src/core.ts': implementation,
+      'src/larger.ts': 'export function unrelated() {\n' + '  return 1;\n'.repeat(50) + '}',
+      ...Object.fromEntries(Array.from({ length: 8 }, (_, i) => ['test/caller' + i + '.ts', 'import "../src/index";'])),
+    });
+    const p = profileFromFiles('demo/barrel', files);
+    expect(p.heart).toBe('src/index.ts'); expect(p.heartFanIn).toBe(8);
+    expect(p.dna!.heartLines.length).toBeGreaterThanOrEqual(6);
+    expect(p.dna!.heartLines).toContain('export function pulse(value: number) {');
+    expect(p.dna!.snippets[0].file).toBe('src/core.ts');
+    const sourceLine = implementation.split('\n')[p.dna!.snippets[0].line - 1].trim();
+    expect(sourceLine.startsWith(p.dna!.snippets[0].code)).toBe(true);
+  });
+  it('ignores multiline re-exports and selects the biggest implementation in the heart component when there are no import counts', () => {
+    const input = sources({
+      'src/index.py': 'from .model import (\n    A,\n    B,\n    C,\n    D,\n    E,\n    F,\n    G,\n)',
+      'src/model.py': 'def model(value):\n    a = value + 1\n    b = a + 1\n    c = b + 1\n    d = c + 1\n    return d',
+      'other/large.py': 'def other():\'Other component\'\n' + '    print(1)\n'.repeat(40),
+    });
+    const result = extractCodeDNA(input, { heart: 'src/index.py', componentForFile: file => file.split('/')[0] });
+    expect(result.heartLines).toContain('def model(value):');
+    expect(result.heartLines).not.toContain('A,'); expect(result.snippets[0].file).toBe('src/model.py');
+    expect(extractCodeDNA(sources({ 'index.ts': 'export * from "./empty";' }), { heart: 'index.ts' }).heartLines).toEqual([]);
+  });
+  it('collects real NOTE-ish documentation/style comments after actionable tags without inventing TODO counts', () => {
+    const result = dna({
+      'a.py': '"""NOTE: preserve documented ordering.\n"""\ndescription = """NOTE: this assigned string is not a doc comment."""\n# NOTE: userToken = credential\n# BUG: retry ordering\n',
+      'b.css': '/* NOTE: keep the pixel palette consistent. */\n.x { color: red; }',
+      'c.html': '<!-- NOTE: phone landscape layout -->\n<main></main>',
+      'z.py': '# TODO: remove compatibility branch\ndef run():\n    return 1',
+    }, 'z.py');
+    expect(result.todos[0].text).toBe('TODO: remove compatibility branch');
+    expect(result.todos.some(todo => todo.text === 'NOTE: preserve documented ordering.')).toBe(true);
+    expect(result.todos.some(todo => todo.file === 'b.css')).toBe(true);
+    expect(result.todos.some(todo => todo.file === 'c.html')).toBe(true);
+    expect(JSON.stringify(result.todos)).not.toContain('assigned string');
+    expect(JSON.stringify(result.todos)).not.toContain('userToken');
+    expect(result.counts).toMatchObject({ todo: 1, fixme: 0, hack: 0 });
+  });
   it('handles tabs, mixed styles, empty sources, and commit filtering without invented code', () => {
     expect(dna({ 'main.go': 'func main() {\n\treturn\n}' }).indent).toBe('tabs');
     expect(dna({ 'a.py': 'def a():\n  return 1', 'b.py': 'def b():\n    return 2' }).indent).toBe('mixed');

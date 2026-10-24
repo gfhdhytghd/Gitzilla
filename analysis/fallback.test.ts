@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { listFallbackRepos, offlineProfile } from './index.ts';
 import { componentTopology, fnv1a } from './graph.ts';
 import { safeCodeText } from './dna.ts';
+import { qualitySignalsFromProfile } from './quality.ts';
 
 describe('checked-in famous repository snapshots', () => {
   it('covers all fifteen requested repos with actual, consistent analyzed source profiles', () => {
@@ -14,14 +15,27 @@ describe('checked-in famous repository snapshots', () => {
       if (slug === 'spring-projects/spring-petclinic') expect(p.primaryLanguage).toBe('Java');
       expect(p.description).not.toContain('synthetic');
       const d = p.dna!;
+      const quality = qualitySignalsFromProfile(p);
+      expect(quality.avgFunctionLength).toBeGreaterThan(0); expect(typeof quality.hasTestDir).toBe('boolean');
+      expect(quality.commentRatio).toBeGreaterThanOrEqual(0); expect(quality.commentRatio).toBeLessThanOrEqual(1);
+      if (p.busFactor !== undefined) expect(p.busFactor).toBeGreaterThanOrEqual(1);
+      expect((p.repoIssues ?? []).length).toBeLessThanOrEqual(10); expect((p.vulns ?? []).length).toBeLessThanOrEqual(12);
+      for (const component of p.components) {
+        if (component.maintainers !== undefined) expect(component.maintainers).toBeGreaterThanOrEqual(0);
+        expect((component.topMaintainers ?? []).length).toBeLessThanOrEqual(3); expect((component.issues ?? []).length).toBeLessThanOrEqual(3);
+        for (const issue of component.issues ?? []) expect(issue.url).toMatch(/^https:\/\/github\.com\/.+\/issues\/\d+$/);
+      }
       expect(d).toBeDefined(); expect(d.identifiers.length).toBeGreaterThan(0); expect(d.identifiers.length).toBeLessThanOrEqual(24);
       expect(Object.keys(d.componentSymbols).sort()).toEqual(p.components.map(c => c.name).sort());
       expect(Object.values(d.componentSymbols).every(symbols => symbols.length <= 4)).toBe(true);
+      expect(d.heartLines.length).toBeGreaterThanOrEqual(6);
       expect(d.heartLines.length).toBeLessThanOrEqual(12); expect(d.heartLines.every(line => line.length <= 40 && safeCodeText(line))).toBe(true);
       expect(d.snippets.length).toBeLessThanOrEqual(12); expect(d.snippets.length).toBeGreaterThan(0);
       expect(d.snippets.every(s => s.line >= 1 && s.code.length <= 48 && safeCodeText(s.code))).toBe(true);
       expect(d.todos.length).toBeLessThanOrEqual(12); expect(d.todos.every(t => t.text.length <= 60 && safeCodeText(t.text))).toBe(true);
+      expect(d.commits.length).toBeGreaterThan(0);
       expect(d.commits.length).toBeLessThanOrEqual(10); expect(d.commits.every(safeCodeText)).toBe(true);
+      if (['pallets/flask', 'expressjs/express', 'lodash/lodash'].includes(slug)) expect(d.todos.length).toBeGreaterThan(0);
       expect(d.tokens.length).toBeLessThanOrEqual(12); expect(d.bigFiles.length).toBeLessThanOrEqual(8);
       expect(d.counts.functions).toBeGreaterThan(0); expect(d.maxNesting).toBeGreaterThanOrEqual(0); expect(d.avgLineLength).toBeGreaterThan(0);
       expect(['tabs', 'spaces2', 'spaces4', 'mixed']).toContain(d.indent);

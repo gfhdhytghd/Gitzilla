@@ -21,14 +21,28 @@
       "files": 54,
       "loc": 11245,
       "fanIn": 1,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 49,
+      "topMaintainers": [
+        "patbaumgartner",
+        "LouieWickDing",
+        "arey"
+      ]
     },
     {
       "name": "src/test",
       "files": 20,
       "loc": 2023,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 35,
+      "topMaintainers": [
+        "patbaumgartner",
+        "anyulled",
+        "snicoll"
+      ]
     }
   ],
   "heart": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
@@ -81,6 +95,7 @@
     "src/main/java/org/springframework/samples/petclinic/model/",
     "src/test/java/org/springframework/samples/petclinic/vet/",
     "src/test/java/org/springframework/samples/petclinic/model/",
+    "pom.xml",
     "README.md",
     "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
     "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java",
@@ -275,7 +290,18 @@
       }
     ],
     "todos": [],
-    "commits": [],
+    "commits": [
+      "added redirection to the page when the user types a page that is out of bounds",
+      "adding integer overflow mitigations from user controlled input",
+      "adding integer overflow mitigations from user controlled input",
+      "Validate visit description length",
+      "Prevent HTTP 500 when owner city/address exceed column length",
+      "docs: Fix formatting in Docker container instructions",
+      "Fix persisted pet association and enforce pet name length",
+      "issue #2584: fix relation \"unique_owner_pet_name\" already exists in PostgreSQL",
+      "fix: normalize whitespace in owner search",
+      "i18n: add Japanese translation"
+    ],
     "tokens": [
       ";",
       "import",
@@ -335,10 +361,15 @@
       "todo": 0,
       "fixme": 0,
       "hack": 0,
-      "comments": 1099
+      "comments": 1159
     },
     "maxNesting": 6,
     "avgLineLength": 39.1,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 8.4,
+    "hasTestDir": true
+  },
+  "vulns": [],
+  "repoIssues": [],
+  "busFactor": 4
 }

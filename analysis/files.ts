@@ -34,7 +34,7 @@ export function isSourcePath(file: string): boolean {
 
 export function shouldKeep(file: string): boolean {
   if (file.split('/').some(part => SKIP_DIRS.has(part.toLowerCase()))) return false;
-  return isRootReadme(file) || isSourcePath(file) || /(?:^|\/)(?:go\.mod|Cargo\.toml|package\.json|(?:tsconfig(?:\.[^/]+)?|jsconfig)\.json)$/.test(file);
+  return isRootReadme(file) || isSourcePath(file) || /(?:^|\/)requirements\/[^/]+\.txt$/i.test(file) || /(?:^|\/)(?:go\.mod|Cargo\.(?:toml|lock)|package\.json|pyproject\.toml|pom\.xml|requirements[^/]*\.txt|(?:tsconfig(?:\.[^/]+)?|jsconfig)\.json)$/.test(file);
 }
 
 export function isTestFile(file: string): boolean {

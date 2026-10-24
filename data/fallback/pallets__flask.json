@@ -11,7 +11,7 @@
   },
   "totalFiles": 108,
   "totalLoc": 14541,
-  "commits": 5562,
+  "commits": 5570,
   "contributors": 864,
   "ageDays": 6045,
   "components": [
@@ -20,35 +20,69 @@
       "files": 24,
       "loc": 7563,
       "fanIn": 2,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 17,
+      "topMaintainers": [
+        "davidism",
+        "pgjones",
+        "lkk7"
+      ]
     },
     {
       "name": "tests",
       "files": 51,
       "loc": 5868,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 19,
+      "topMaintainers": [
+        "davidism",
+        "pgjones",
+        "lkk7"
+      ]
     },
     {
       "name": "examples",
       "files": 31,
       "loc": 1019,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 33,
+      "topMaintainers": [
+        "davidism",
+        "wgwz",
+        "mitsuhiko"
+      ]
     },
     {
       "name": "docs",
       "files": 1,
       "loc": 84,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 29,
+      "topMaintainers": [
+        "davidism",
+        "pamelafox",
+        "abhiramk6"
+      ]
     },
     {
       "name": ".devcontainer",
       "files": 1,
       "loc": 7,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 2,
+      "topMaintainers": [
+        "davidism",
+        "emisparkles"
+      ]
     }
   ],
   "heart": "src/flask/__init__.py",
@@ -109,6 +143,7 @@
     "tests/test_apps/blueprintapp/apps/admin/templates/",
     "tests/test_apps/blueprintapp/apps/admin/static/",
     "tests/test_apps/blueprintapp/apps/frontend/templates/frontend/",
+    "pyproject.toml",
     "README.md",
     "src/flask/__init__.py",
     "src/flask/app.py",
@@ -187,8 +222,7 @@
     "examples/javascript/js_example/views.py",
     "examples/tutorial/flaskr/templates/auth/register.html",
     "examples/tutorial/flaskr/templates/auth/login.html",
-    "examples/tutorial/tests/data.sql",
-    "tests/test_apps/blueprintapp/apps/admin/__init__.py"
+    "examples/tutorial/tests/data.sql"
   ],
   "dna": {
     "identifiers": [
@@ -242,8 +276,26 @@
       ],
       ".devcontainer": []
     },
-    "heartLines": [],
+    "heartLines": [
+      "class ProxyMixin(t.Protocol[T]):",
+      "def _get_current_object(self) -> T: ...",
+      "class FlaskProxy(ProxyMixin[Flask], Flas",
+      "class AppContextProxy(ProxyMixin[AppCont",
+      "class _AppCtxGlobalsProxy(ProxyMixin[_Ap",
+      "class RequestProxy(ProxyMixin[Request], ",
+      "class SessionMixinProxy(ProxyMixin[Sessi",
+      "app_ctx: AppContextProxy = LocalProxy(  ",
+      "session: SessionMixinProxy = LocalProxy(",
+      "def __getattr__(name: str) -> t.Any:",
+      "return app_ctx",
+      "raise AttributeError(name)"
+    ],
     "snippets": [
+      {
+        "file": "src/flask/globals.py",
+        "line": 18,
+        "code": "def _get_current_object(self) -> T: ..."
+      },
       {
         "file": "src/flask/sessions.py",
         "line": 193,
@@ -298,15 +350,50 @@
         "file": "src/flask/blueprints.py",
         "line": 55,
         "code": "def get_send_file_max_age(self, filename: str | "
-      },
-      {
-        "file": "src/flask/sansio/blueprints.py",
-        "line": 256,
-        "code": "def register_blueprint(self, blueprint: Blueprin"
       }
     ],
-    "todos": [],
-    "commits": [],
+    "todos": [
+      {
+        "file": "src/flask/app.py",
+        "text": "Note we do this without checking if static_folder exists."
+      },
+      {
+        "file": "src/flask/app.py",
+        "text": "Note this is a duplicate of the same method in the Flask"
+      },
+      {
+        "file": "src/flask/app.py",
+        "text": "Note this is a duplicate of the same method in the Flask"
+      },
+      {
+        "file": "src/flask/app.py",
+        "text": "Note that the as of Flask 0.6, the original values"
+      },
+      {
+        "file": "src/flask/app.py",
+        "text": "Note that if you are testing for assertions or exceptions in"
+      },
+      {
+        "file": "src/flask/blueprints.py",
+        "text": "Note this is a duplicate of the same method in the Flask"
+      },
+      {
+        "file": "src/flask/blueprints.py",
+        "text": "Note this is a duplicate of the same method in the Flask"
+      }
+    ],
+    "commits": [
+      "fix typing",
+      "fix dev",
+      "fix link",
+      "drop support for Python 3.10 (#6168)",
+      "drop support for Python 3.10",
+      "fix docs ref",
+      "explain seek",
+      "support query in methodview",
+      "add `app.query` route decorator (#6133)",
+      "add app.query route decorator"
+    ],
     "tokens": [
       "=",
       "def",
@@ -366,10 +453,112 @@
       "todo": 0,
       "fixme": 0,
       "hack": 0,
-      "comments": 928
+      "comments": 3797
     },
     "maxNesting": 6,
     "avgLineLength": 40.5,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 10.7,
+    "hasTestDir": true
+  },
+  "repoIssues": [],
+  "vulns": [
+    {
+      "id": "GHSA-68rp-wp8r-4726",
+      "pkg": "flask",
+      "ecosystem": "PyPI",
+      "summary": "Flask session does not add `Vary: Cookie` header when accessed in some ways",
+      "fixed": "3.1.3",
+      "component": "examples"
+    },
+    {
+      "id": "PYSEC-2026-2151",
+      "pkg": "flask",
+      "ecosystem": "PyPI",
+      "summary": "Flask is a web server gateway interface (WSGI) web application framework. In versions 3.1.2 and below, when the session object is accessed, Flask should set the Vary: Cookie header",
+      "fixed": "3.1.3",
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-cpwx-vrp4-4pq7",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting format method",
+      "fixed": "3.1.6",
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-gmj6-6f8f-6699",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja has a sandbox breakout through malicious filenames",
+      "fixed": "3.1.5",
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-h5c8-rqwp-cp95",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "fixed": "3.1.3",
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-h75v-3vvj-5mfj",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "fixed": "3.1.4",
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-q2x7-8rv6-6q7h",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja has a sandbox breakout through indirect reference to format method",
+      "fixed": "3.1.5",
+      "component": "examples"
+    },
+    {
+      "id": "PYSEC-2026-1471",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting format method",
+      "fixed": "3.1.6",
+      "component": "examples"
+    },
+    {
+      "id": "PYSEC-2026-1472",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja has a sandbox breakout through malicious filenames",
+      "fixed": "3.1.5",
+      "component": "examples"
+    },
+    {
+      "id": "PYSEC-2026-1473",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "fixed": "3.1.3",
+      "component": "examples"
+    },
+    {
+      "id": "PYSEC-2026-1474",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "fixed": "3.1.4",
+      "component": "examples"
+    },
+    {
+      "id": "PYSEC-2026-1475",
+      "pkg": "jinja2",
+      "ecosystem": "PyPI",
+      "summary": "Jinja has a sandbox breakout through indirect reference to format method",
+      "fixed": "3.1.5",
+      "component": "examples"
+    }
+  ],
+  "busFactor": 2
 }

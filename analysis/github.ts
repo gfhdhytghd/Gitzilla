@@ -2,9 +2,14 @@ import type { RepoProfile } from '../shared/types.ts';
 import { profileFromFiles, type RepoMetadata } from './graph.ts';
 import { extractTarGz, ARCHIVE_LIMITS } from './tar.ts';
 import { cleanCommitSubjects } from './dna.ts';
+import { cloneProgress, notifyProgress, type ProgressCallback } from './progress.ts';
+import { enrichSocial } from './social.ts';
+import { queryDeclaredVulns } from './vulns.ts';
 
 export interface GitHubOptions {
   token?: string;
+  onProgress?: ProgressCallback;
+  publicOnly?: boolean; // snapshot generation: authenticated archives need verified public metadata
   timeoutMs?: number;
   fetcher?: typeof fetch;
   metadataFallback?: RepoMetadata;
@@ -52,6 +57,13 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
     }).catch(() => undefined);
     const contributorsPromise = count('/contributors?per_page=1&anon=true');
     const archivePromise = (async () => {
+      if (options.publicOnly && token) {
+        const metadata = await metaPromise;
+        if ((metadata?.data as { private?: boolean } | undefined)?.private !== false) {
+          throw new Error('Snapshot generation requires verified public repository metadata');
+        }
+      }
+      notifyProgress(options.onProgress, { stage: 'clone', pct: 0.02, note: 'Downloading repository archive' });
       // GitHub's API issues an authorized archive redirect for private repositories.
       const archiveUrl = token
         ? `https://api.github.com/repos/${slug}/tarball`
@@ -75,12 +87,15 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
           }
         } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
       }
-      return extractTarGz(chunks());
+      const progress = cloneProgress(options.onProgress, ARCHIVE_LIMITS.maxBytes);
+      const files = await extractTarGz(chunks(), {}, progress.file);
+      progress.finish();
+      return files;
     })();
     const [files, meta, languageResult, commits, contributors] = await Promise.all([
       archivePromise, metaPromise, languagesPromise, commitsPromise, contributorsPromise,
     ]);
-    const raw = meta?.data as { description?: string; stargazers_count?: number; language?: string; created_at?: string } | undefined;
+    const raw = meta?.data as { description?: string; stargazers_count?: number; language?: string; created_at?: string; private?: boolean } | undefined;
     const previous = options.metadataFallback;
     const metadata: RepoMetadata = {
       description: raw?.description ?? previous?.description ?? '', stars: raw?.stargazers_count ?? previous?.stars ?? 0,
@@ -89,8 +104,12 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
       commits: commits?.count ?? previous?.commits ?? 0, recentCommits: commits?.subjects ?? [], contributors: contributors ?? previous?.contributors ?? 0,
       ageDays: raw?.created_at ? Math.max(0, Math.floor((Date.now() - Date.parse(raw.created_at)) / 86_400_000)) : previous?.ageDays ?? 0,
     };
-    const profile = profileFromFiles(slug, files, metadata);
+    const profile = profileFromFiles(slug, files, metadata, options.onProgress);
     if (!profile.totalFiles) throw new Error('No supported source files in archive sample');
+    await Promise.allSettled([
+      ...(meta ? [enrichSocial(profile, api, { fullContributorHistory: options.publicOnly })] : []),
+      ...(!token || raw?.private === false ? [queryDeclaredVulns(files, profile, { fetcher, signal: controller.signal }).then(vulns => { if (vulns !== undefined) profile.vulns = vulns; })] : []),
+    ]);
     return profile;
   } finally {
     clearTimeout(timer);

@@ -19,35 +19,69 @@
       "files": 10,
       "loc": 23161,
       "fanIn": 0,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 20,
+      "topMaintainers": [
+        "jdalton",
+        "UlisesGascon",
+        "falsyvalues"
+      ]
     },
     {
       "name": "root",
       "files": 3,
       "loc": 16235,
       "fanIn": 2,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 26,
+      "topMaintainers": [
+        "jdalton",
+        "UlisesGascon",
+        "jonchurch"
+      ]
     },
     {
       "name": "perf",
       "files": 3,
       "loc": 1943,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 2,
+      "topMaintainers": [
+        "jdalton",
+        "sfinktah"
+      ]
     },
     {
       "name": "fp",
       "files": 4,
       "loc": 881,
       "fanIn": 2,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 10,
+      "topMaintainers": [
+        "jdalton",
+        "jfmengels",
+        "billyjanitsch"
+      ]
     },
     {
       "name": "lib",
       "files": 12,
       "loc": 739,
       "fanIn": 0,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 6,
+      "topMaintainers": [
+        "jdalton",
+        "bnjmnt4n",
+        "esamattis"
+      ]
     }
   ],
   "heart": "lodash.js",
@@ -255,8 +289,68 @@
         "code": "function getTemplate(moduleName) {"
       }
     ],
-    "todos": [],
-    "commits": [],
+    "todos": [
+      {
+        "file": "lodash.js",
+        "text": "bug in Safari 9."
+      },
+      {
+        "file": "lodash.js",
+        "text": "bug in the JS engine embedded in Adobe applications"
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** This function only supports comparing values with ta"
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** This function only supports cloning values with tags"
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** If this function becomes hot, i.e. is invoked a lot "
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** Unlike `_.pullAll`, this method returns a new array."
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** Unlike `_.pullAllBy`, this method returns a new arra"
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** Unlike `_.pullAllWith`, this method returns a new ar"
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** This method mutates `array`."
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** Unlike `_.without`, this method mutates `array`. Use"
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** Unlike `_.difference`, this method mutates `array`."
+      },
+      {
+        "file": "lodash.js",
+        "text": "Note:** Unlike `_.differenceBy`, this method mutates `array`"
+      }
+    ],
+    "commits": [
+      "ci: update actions to latest versions (#6279)",
+      "ci: ossf/scorecard-action update to 2.4.4 (#6278)",
+      "docs: fix some minor docs inconsistencies (#6249)",
+      "ci(playwright): fix browser test flake from test timeout shorter than assertion",
+      "docs: clarify number-word behavior in startCase examples (#6224)",
+      "docs: fix typo contributing link in README (#6196)",
+      "docs: fix Chrome sandboxing-eval link in README",
+      "test: add tests for Number constants on isNumber (#5987)",
+      "test: add test for chunk with empty array (#5994)",
+      "chore(ci): sha pin the actions (#6209)"
+    ],
     "tokens": [
       ";",
       "{",
@@ -320,6 +414,52 @@
     },
     "maxNesting": 12,
     "avgLineLength": 35.6,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 30.5,
+    "hasTestDir": true
+  },
+  "repoIssues": [],
+  "vulns": [
+    {
+      "id": "GHSA-29mw-wpgm-hmr9",
+      "pkg": "lodash",
+      "ecosystem": "npm",
+      "summary": "Regular Expression Denial of Service (ReDoS) in lodash",
+      "fixed": "4.17.21",
+      "component": "root"
+    },
+    {
+      "id": "GHSA-35jh-r3h4-6jhm",
+      "pkg": "lodash",
+      "ecosystem": "npm",
+      "summary": "Command Injection in lodash",
+      "fixed": "4.17.21",
+      "component": "root"
+    },
+    {
+      "id": "GHSA-f23m-r3pf-42rh",
+      "pkg": "lodash",
+      "ecosystem": "npm",
+      "summary": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+      "fixed": "4.18.0",
+      "component": "root"
+    },
+    {
+      "id": "GHSA-r5fr-rjxr-66jc",
+      "pkg": "lodash",
+      "ecosystem": "npm",
+      "summary": "lodash vulnerable to Code Injection via `_.template` imports key names",
+      "fixed": "4.18.0",
+      "component": "root"
+    },
+    {
+      "id": "GHSA-xxjr-mmjv-4gpg",
+      "pkg": "lodash",
+      "ecosystem": "npm",
+      "summary": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
+      "fixed": "4.17.23",
+      "component": "root"
+    }
+  ],
+  "busFactor": 1
 }

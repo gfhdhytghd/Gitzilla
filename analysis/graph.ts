@@ -2,6 +2,7 @@ import { posix as path } from 'node:path';
 import type { RepoProfile } from '../shared/types.ts';
 import { notableTree, readmeFromFiles } from './context.ts';
 import { extractCodeDNA } from './dna.ts';
+import { notifyProgress, type ProgressCallback } from './progress.ts';
 import { countLoc, isSourcePath, isTestFile, languageOf, selectPrimaryLanguage, type SourceFile } from './files.ts';
 
 export interface RepoMetadata {
@@ -265,8 +266,9 @@ export function componentTopology(names: string[], edges: [number, number][]): {
   };
 }
 
-export function profileFromFiles(slug: string, input: SourceFile[], metadata: RepoMetadata = {}): RepoProfile {
+export function profileFromFiles(slug: string, input: SourceFile[], metadata: RepoMetadata = {}, onProgress?: ProgressCallback): RepoProfile {
   const files = input.filter(file => isSourcePath(file.path)).sort((a, b) => a.path.localeCompare(b.path));
+  notifyProgress(onProgress, { stage: 'parse', pct: 0.4, paths: files.slice(0, 8).map(file => file.path), note: `Parsing imports in ${files.length} source files` });
   const graph = buildImportGraph(input);
   const locs = new Map(files.map(file => [file.path, countLoc(file.text)]));
   const totalLoc = Array.from(locs.values()).reduce((sum, loc) => sum + loc, 0);
@@ -325,6 +327,7 @@ export function profileFromFiles(slug: string, input: SourceFile[], metadata: Re
   const edges = Array.from(edgeKeys, key => key.split(',').map(Number) as [number, number]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   for (const [from, to] of edges) { components[from].fanOut++; components[to].fanIn++; }
   const heart = files.map(file => file.path).sort((a, b) => incoming.get(b)! - incoming.get(a)! || a.localeCompare(b))[0] ?? 'README.md';
+  notifyProgress(onProgress, { stage: 'graph', pct: 0.55, paths: files.length ? [heart] : [], note: `${components.length} components, ${edges.length} dependency edges` });
   const measuredLanguages: Record<string, number> = {};
   for (const file of files) {
     const language = languageOf(file.path)!;
@@ -332,6 +335,9 @@ export function profileFromFiles(slug: string, input: SourceFile[], metadata: Re
   }
   const languages = metadata.languages && Object.keys(metadata.languages).length ? metadata.languages : measuredLanguages;
   const primaryLanguage = selectPrimaryLanguage(languages, metadata.primaryLanguage, measuredLanguages);
+  notifyProgress(onProgress, { stage: 'dna', pct: 0.6, paths: files.length ? [heart] : [], note: 'Extracting real-code DNA' });
+  const dna = extractCodeDNA(files, { heart, componentForFile: file => components[fileComponent(file)].name, components: components.map(c => c.name), commits: metadata.recentCommits, fileFanIn: incoming });
+  notifyProgress(onProgress, { stage: 'dna', pct: 0.7, paths: [...new Set(dna.snippets.map(snippet => snippet.file))].slice(0, 8), note: `${dna.counts.functions} functions, ${dna.identifiers.length} signature symbols` });
   return {
     slug, description: metadata.description ?? '', stars: metadata.stars ?? 0,
     primaryLanguage, languages, totalFiles: files.length, totalLoc,
@@ -341,6 +347,6 @@ export function profileFromFiles(slug: string, input: SourceFile[], metadata: Re
     testRatio: files.length ? files.filter(file => isTestFile(file.path)).length / files.length : 0,
     seed: fnv1a(slug.toLowerCase()),
     readme: readmeFromFiles(input), tree: notableTree(input, graph, heart),
-    dna: extractCodeDNA(files, { heart, componentForFile: file => components[fileComponent(file)].name, components: components.map(c => c.name), commits: metadata.recentCommits }),
+    dna,
   };
 }

@@ -1,7 +1,7 @@
 {
   "slug": "facebook/react",
   "description": "The library for web and native user interfaces.",
-  "stars": 251748,
+  "stars": 251746,
   "primaryLanguage": "JavaScript",
   "languages": {
     "JavaScript": 5689922,
@@ -23,56 +23,106 @@
       "files": 2258,
       "loc": 179104,
       "fanIn": 1,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 33,
+      "topMaintainers": [
+        "josephsavona",
+        "poteto",
+        "andrewimm"
+      ]
     },
     {
       "name": "packages/react-dom",
       "files": 225,
       "loc": 114488,
       "fanIn": 5,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 33,
+      "topMaintainers": [
+        "eps1lon",
+        "gnoff",
+        "jackpope"
+      ]
     },
     {
       "name": "misc",
       "files": 581,
       "loc": 104645,
       "fanIn": 4,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": []
     },
     {
       "name": "packages/react-reconciler",
       "files": 173,
       "loc": 103038,
       "fanIn": 4,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 19,
+      "topMaintainers": [
+        "eps1lon",
+        "rickhanlonii",
+        "sebmarkbage"
+      ]
     },
     {
       "name": "packages/react-devtools-shared",
       "files": 477,
       "loc": 79972,
       "fanIn": 1,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 17,
+      "topMaintainers": [
+        "eps1lon",
+        "hoxyq",
+        "sebmarkbage"
+      ]
     },
     {
       "name": "fixtures",
       "files": 393,
       "loc": 36322,
       "fanIn": 1,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 12,
+      "topMaintainers": [
+        "sebmarkbage",
+        "eps1lon",
+        "jackpope"
+      ]
     },
     {
       "name": "packages/react-dom-bindings",
       "files": 93,
       "loc": 29516,
       "fanIn": 4,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 35,
+      "topMaintainers": [
+        "sebmarkbage",
+        "jackpope",
+        "eps1lon"
+      ]
     },
     {
       "name": "packages/eslint-plugin-react-hooks",
       "files": 27,
       "loc": 17626,
       "fanIn": 1,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 26,
+      "topMaintainers": [
+        "poteto",
+        "eps1lon",
+        "josephsavona"
+      ]
     }
   ],
   "heart": "compiler/packages/snap/src/sprout/shared-runtime.ts",
@@ -505,7 +555,18 @@
         "text": "Todo diagnostics should produce ErrorDetail (flat loc format"
       }
     ],
-    "commits": [],
+    "commits": [
+      "[compiler] Retain declared Freeze effects on already-frozen values for ref validation (#37975)",
+      "[compiler] Allow ref access in ResizeObserver / MutationObserver callbacks (#37895)",
+      "[rust-compiler] Fix Unicode diagnostic underline positions (#37898)",
+      "Ensure unique `useId` values in large trees (#37916)",
+      "[Fizz] Fix truncated prerender output under backpressure (#37901)",
+      "Allow resumeAndPrerender to postpone an existing boundary again (#37876)",
+      "Preserve the rendered shell on synchronous prerender abort (#37853)",
+      "[Flight] Strip the full `<anonymous>.` type name prefix from I/O names (#37856)",
+      "[release] Await gh availability check before verifying artifacts (#37855)",
+      "Revert sync abort replay restoration pending a complete fix (#37852)"
+    ],
     "tokens": [
       ";",
       "{",
@@ -565,10 +626,124 @@
       "todo": 1114,
       "fixme": 8,
       "hack": 37,
-      "comments": 71228
+      "comments": 71459
     },
     "maxNesting": 16,
     "avgLineLength": 33,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 15.9,
+    "hasTestDir": true
+  },
+  "repoIssues": [
+    {
+      "number": 17355,
+      "title": "\"Should not already be working\" in Firefox after a breakpoint/alert",
+      "url": "https://github.com/react/react/issues/17355",
+      "labels": [
+        "Type: Bug",
+        "Difficulty: medium",
+        "Type: Needs Investigation",
+        "good first issue"
+      ]
+    }
+  ],
+  "vulns": [
+    {
+      "id": "GHSA-2464-fhr4-w9xw",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js: Unauthenticated Remote Code Execution in Image Optimization API when SVG files are used",
+      "fixed": "15.5.28",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-267c-6grr-h53f",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js has a Middleware / Proxy bypass in App Router applications via segment-prefetch routes",
+      "fixed": "15.5.16",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-26hh-7cqf-hhc6",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js has a Middleware / Proxy bypass in App Router applications via segment-prefetch routes - Incomplete Fix Follow-Up",
+      "fixed": "15.5.18",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-2xp9-vwfh-vxw4",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js: Unauthenticated Remote Code Execution in Image Optimization API when AVIF files are used",
+      "fixed": "15.5.24",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-36qx-fr4f-26g5",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js has a Middleware / Proxy bypass in Pages Router applications using i18n",
+      "fixed": "15.5.16",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-3g8h-86w9-wvmq",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js's Middleware / Proxy redirects can be cache-poisoned",
+      "fixed": "15.5.16",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-3x4c-7xq6-9pq8",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js: Unbounded next/image disk cache growth can exhaust storage",
+      "fixed": "15.5.14",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-4633-3j49-mh5q",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js: Cache confusion of response bodies for requests with bodies containing invalid UTF-8 byte sequences",
+      "fixed": "15.5.21",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-492v-c6pp-mqqv",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js has a Middleware / Proxy bypass through dynamic route parameter injection",
+      "fixed": "15.5.16",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-4c39-4ccg-62r3",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js: Unbounded Server Action payload in Edge runtime",
+      "fixed": "15.5.21",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-4jqv-mc3x-m676",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js has cache poisoning of SSG and ISR pages in self-hosted applications",
+      "fixed": "15.5.27",
+      "component": "compiler"
+    },
+    {
+      "id": "GHSA-68g3-v927-f742",
+      "pkg": "next",
+      "ecosystem": "npm",
+      "summary": "Next.js: Cache confusion of response bodies for requests with bodies",
+      "fixed": "15.5.21",
+      "component": "compiler"
+    }
+  ],
+  "busFactor": 8
 }

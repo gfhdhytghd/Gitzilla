@@ -1,44 +1,72 @@
 {
   "slug": "expressjs/express",
   "description": "Fast, unopinionated, minimalist web framework for node.",
-  "stars": 69577,
+  "stars": 69576,
   "primaryLanguage": "JavaScript",
   "languages": {
     "JavaScript": 515401
   },
   "totalFiles": 154,
   "totalLoc": 18092,
-  "commits": 6183,
+  "commits": 6190,
   "contributors": 395,
-  "ageDays": 6328,
+  "ageDays": 6329,
   "components": [
     {
       "name": "test",
       "files": 96,
       "loc": 13950,
       "fanIn": 0,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 44,
+      "topMaintainers": [
+        "dougwilson",
+        "wesleytodd",
+        "jonchurch"
+      ]
     },
     {
       "name": "lib",
       "files": 6,
       "loc": 2342,
       "fanIn": 3,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 56,
+      "topMaintainers": [
+        "dougwilson",
+        "wesleytodd",
+        "jonchurch"
+      ]
     },
     {
       "name": "examples",
       "files": 51,
       "loc": 1791,
       "fanIn": 1,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 40,
+      "topMaintainers": [
+        "dougwilson",
+        "hiowenluke",
+        "notrab"
+      ]
     },
     {
       "name": "root",
       "files": 1,
       "loc": 9,
       "fanIn": 2,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 43,
+      "topMaintainers": [
+        "bjohansebas",
+        "UlisesGascon",
+        "Phillip9587"
+      ]
     }
   ],
   "heart": "index.js",
@@ -244,8 +272,26 @@
       ],
       "root": []
     },
-    "heartLines": [],
+    "heartLines": [
+      "function shouldHaveBody (buf) {",
+      "return function (res) {",
+      "function shouldHaveHeader (header) {",
+      "return function (res) {",
+      "function shouldNotHaveBody () {",
+      "return function (res) {",
+      "function shouldNotHaveHeader(header) {",
+      "return function (res) {",
+      "function getMajorVersion(versionString) ",
+      "return versionString.split('.')[0];",
+      "function shouldSkipQuery(versionString) ",
+      "return Number(getMajorVersion(versionStr"
+    ],
     "snippets": [
+      {
+        "file": "test/support/utils.js",
+        "line": 28,
+        "code": "function shouldHaveBody (buf) {"
+      },
       {
         "file": "test/res.links.js",
         "line": 43,
@@ -300,15 +346,46 @@
         "file": "test/res.format.js",
         "line": 166,
         "code": "json: function(){ res.send({ message: 'hey' }) }"
-      },
-      {
-        "file": "test/res.location.js",
-        "line": 141,
-        "code": "function testRequestedRedirect (app, inputUrl, e"
       }
     ],
-    "todos": [],
-    "commits": [],
+    "todos": [
+      {
+        "file": "examples/view-locals/index.js",
+        "text": "note that this may not always work"
+      },
+      {
+        "file": "lib/application.js",
+        "text": "note that it aliases this method as `ejs.__express` internal"
+      },
+      {
+        "file": "lib/request.js",
+        "text": "NOTE: remember that ranges are inclusive, so for example \"Ra"
+      },
+      {
+        "file": "lib/request.js",
+        "text": "Note: X-Forwarded-Proto is normally only ever a"
+      },
+      {
+        "file": "lib/request.js",
+        "text": "Note: X-Forwarded-Host is normally only ever a"
+      },
+      {
+        "file": "test/express.static.js",
+        "text": "NOTE: This is not a real part of the API, but"
+      }
+    ],
+    "commits": [
+      "test: expand coverage for request, response and view behavior (#7112)",
+      "docs: correct crossed names in the emeritus triagers list (#7529)",
+      "Revert \"build(deps-dev): bump supertest from 6.3.0 to 7.3.0 (#7494)\" (#7518)",
+      "build(deps-dev): bump supertest from 6.3.0 to 7.3.0 (#7494)",
+      "5.3.0 (#7468)",
+      "docs: fix typos and a stale API reference in lib comments (#7512)",
+      "docs: fix pass-through typos (#7509)",
+      "build(deps): bump the github-actions group with 3 updates (#7499)",
+      "build(deps-dev): bump hbs from 4.3.0 to 4.3.1 (#7500)",
+      "docs: add missing apostrophe in example (#7483)"
+    ],
     "tokens": [
       ";",
       "}",
@@ -372,6 +449,23 @@
     },
     "maxNesting": 8,
     "avgLineLength": 30.1,
-    "indent": "spaces2"
-  }
+    "indent": "spaces2",
+    "avgFunctionLength": 8.8,
+    "hasTestDir": true
+  },
+  "repoIssues": [
+    {
+      "number": 2414,
+      "title": "route() should handle 405 Method not allowed",
+      "url": "https://github.com/expressjs/express/issues/2414",
+      "labels": [
+        "enhancement",
+        "help wanted",
+        "5.x",
+        "module:router"
+      ]
+    }
+  ],
+  "vulns": [],
+  "busFactor": 1
 }

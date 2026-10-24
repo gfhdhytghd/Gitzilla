@@ -25,9 +25,9 @@ describe('GitHub source and metadata requests', () => {
     expect(p.languages).toEqual({ TypeScript: 1234 }); expect(p.ageDays).toBeGreaterThan(1000);
     expect(p.readme).toContain('Test Kaiju'); expect(p.readme).not.toContain('badge.example');
     expect(p.tree).toContain('src/heart.ts'); expect(p.tree).toContain('README.md');
-    expect(calls).toHaveLength(5);
+    expect(calls).toHaveLength(9);
     expect(p.dna?.commits).toEqual(['Fix renderer batching']);
-    const commitCalls = calls.filter(call => call.url.includes('/commits?'));
+    const commitCalls = calls.filter(call => call.url.includes('/commits?') && new URL(call.url).searchParams.get('per_page') === '10');
     expect(commitCalls).toHaveLength(1); expect(commitCalls[0].url).toContain('per_page=10');
     expect(calls.find(call => call.url.includes('codeload'))?.init?.headers).not.toHaveProperty('Authorization');
   });
@@ -53,6 +53,31 @@ describe('GitHub source and metadata requests', () => {
     const empty = vi.fn(async (input: string | URL | Request) => String(input).includes('codeload')
       ? new Response(new Uint8Array(archive([{ path: 'README.md', text: 'Hello' }]))) : json([])) as typeof fetch;
     await expect(analyzeGitHubRepo('demo/readme', { fetcher: empty })).rejects.toThrow('No supported source');
+  });
+  it.each([true, undefined])('blocks authenticated snapshot writes when public visibility is %s', async (visibility) => {
+    const fetcher = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith('/tarball')) return new Response(new Uint8Array(body));
+      if (url.endsWith('/languages') || url.includes('/commits?') || url.includes('/contributors?')) return json([]);
+      return json(visibility === undefined ? {} : { private: visibility });
+    }) as typeof fetch;
+    await expect(analyzeGitHubRepo('demo/repo', { token: 'fixture-only', publicOnly: true, fetcher })).rejects.toThrow('verified public');
+    expect(vi.mocked(fetcher).mock.calls.some(([url]) => String(url).endsWith('/tarball'))).toBe(false);
+  });
+  it('allows authenticated precompute only after verified public metadata and includes recent commits', async () => {
+    const fetcher = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer fixture-only');
+      if (url.endsWith('/tarball')) return new Response(new Uint8Array(body));
+      if (url.endsWith('/languages')) return json({ TypeScript: 100 });
+      if (url.includes('/commits?')) return json([{ commit: { message: 'Improve graph layout' } }]);
+      if (url.includes('/contributors?')) return json([{}]);
+      return json({ private: false, language: 'TypeScript' });
+    }) as typeof fetch;
+    const profile = await analyzeGitHubRepo('demo/repo', { token: 'fixture-only', publicOnly: true, fetcher });
+    expect(profile.dna?.commits).toEqual(['Improve graph layout']);
+    expect(vi.mocked(fetcher).mock.calls.some(([url]) => String(url).endsWith('/tarball'))).toBe(true);
+    expect(JSON.stringify(profile)).not.toContain('fixture-only');
   });
   it('uses array length without a last-page link', () => {
     expect(countFromPage(null, [{}])).toBe(1); expect(countFromPage(null, [])).toBe(0);

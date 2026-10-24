@@ -1,7 +1,7 @@
 {
   "slug": "django/django",
   "description": "The Web framework for perfectionists with deadlines.",
-  "stars": 91576,
+  "stars": 91577,
   "primaryLanguage": "Python",
   "languages": {
     "Python": 19220392,
@@ -23,56 +23,106 @@
       "files": 737,
       "loc": 117985,
       "fanIn": 0,
-      "fanOut": 7
+      "fanOut": 7,
+      "issues": [],
+      "maintainers": 40,
+      "topMaintainers": [
+        "jacobtylerwalls",
+        "nessita",
+        "sarahboyce"
+      ]
     },
     {
       "name": "django/db",
       "files": 123,
       "loc": 48596,
       "fanIn": 7,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 47,
+      "topMaintainers": [
+        "jacobtylerwalls",
+        "cliffordgama",
+        "charettes"
+      ]
     },
     {
       "name": "django/contrib",
       "files": 437,
       "loc": 47699,
       "fanIn": 3,
-      "fanOut": 6
+      "fanOut": 6,
+      "issues": [],
+      "maintainers": 44,
+      "topMaintainers": [
+        "jacobtylerwalls",
+        "sarahboyce",
+        "adamchainz"
+      ]
     },
     {
       "name": "misc",
       "files": 395,
       "loc": 28022,
       "fanIn": 7,
-      "fanOut": 5
+      "fanOut": 5,
+      "issues": []
     },
     {
       "name": "django/core",
       "files": 112,
       "loc": 16254,
       "fanIn": 7,
-      "fanOut": 5
+      "fanOut": 5,
+      "issues": [],
+      "maintainers": 51,
+      "topMaintainers": [
+        "jacobtylerwalls",
+        "medmunds",
+        "timgraham"
+      ]
     },
     {
       "name": "django/utils",
       "files": 48,
       "loc": 8935,
       "fanIn": 7,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 44,
+      "topMaintainers": [
+        "nessita",
+        "sarahboyce",
+        "jacobtylerwalls"
+      ]
     },
     {
       "name": "django/test",
       "files": 7,
       "loc": 5739,
       "fanIn": 3,
-      "fanOut": 6
+      "fanOut": 6,
+      "issues": [],
+      "maintainers": 44,
+      "topMaintainers": [
+        "felixxm",
+        "jacobtylerwalls",
+        "ngnpope"
+      ]
     },
     {
       "name": "django/template",
       "files": 27,
       "loc": 5723,
       "fanIn": 6,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 56,
+      "topMaintainers": [
+        "felixxm",
+        "FarhanAliRaza",
+        "sarahboyce"
+      ]
     }
   ],
   "heart": "django/db/__init__.py",
@@ -296,6 +346,7 @@
     "tests/contenttypes_tests/",
     "tests/expressions_case/",
     "package.json",
+    "pyproject.toml",
     "README.rst",
     "django/db/__init__.py",
     "tests/admin_views/tests.py",
@@ -373,8 +424,7 @@
     "django/utils/safestring.py",
     "django/template/defaulttags.py",
     "django/db/models/lookups.py",
-    "django/contrib/admin/checks.py",
-    "scripts/pr_quality/tests/test_check_pr.py"
+    "django/contrib/admin/checks.py"
   ],
   "dna": {
     "identifiers": [
@@ -539,6 +589,22 @@
         "text": "TODO: this should be handled by some parameter to the Change"
       },
       {
+        "file": "django/contrib/admin/static/admin/css/base.css",
+        "text": "XXX Probably unused?"
+      },
+      {
+        "file": "django/contrib/admin/static/admin/css/base.css",
+        "text": "XXX Probably unused?"
+      },
+      {
+        "file": "django/contrib/admin/static/admin/css/responsive.css",
+        "text": "XXX Is this used at all?"
+      },
+      {
+        "file": "django/contrib/admin/static/admin/css/responsive.css",
+        "text": "XXX Redundant, .datetime span also sets #ccc"
+      },
+      {
         "file": "django/contrib/admin/widgets.py",
         "text": "XXX: The deletion UX can be confusing when dealing with casc"
       },
@@ -561,25 +627,20 @@
       {
         "file": "django/contrib/gis/db/backends/postgis/operations.py",
         "text": "TODO: Support 'M' extension."
-      },
-      {
-        "file": "django/contrib/gis/gdal/envelope.py",
-        "text": "TODO: Fix significant figures."
-      },
-      {
-        "file": "django/contrib/gis/gdal/field.py",
-        "text": "TODO: Adapt timezone information. See:"
-      },
-      {
-        "file": "django/contrib/gis/gdal/geometries.py",
-        "text": "TODO: Fix Envelope() for Point geometries."
-      },
-      {
-        "file": "django/contrib/gis/geos/coordseq.py",
-        "text": "TODO when dropping support for GEOS 3.13 the z argument can "
       }
     ],
-    "commits": [],
+    "commits": [
+      "Refs #35874 -- Improved documentation console tabs accessibility.",
+      "Updated asgiref dependency.",
+      "Fixed #30949 -- Deprecated django.utils.functional.cached_property.",
+      "Refs #30949 -- Replaced django.utils.functional.cached_property with functools.cached_property.",
+      "Fixed #37449 -- Corrected local name for Punjabi in django/conf/locale/__init__.py.",
+      "Fixed test_asgeojson() on MySQL 9.5.",
+      "Refs #36664 -- Installed gettext in scheduled Windows tests.",
+      "Fixed #37447 -- Fixed makemessages with non-ASCII file names on Windows.",
+      "Fixed #37395 -- Emitted 'none' for CSP directives left empty by an unused nonce.",
+      "Fixed #37401 -- Aligned safe_makedirs() with os.makedirs() semantics."
+    ],
     "tokens": [
       "=",
       "def",
@@ -638,11 +699,16 @@
       "classes": 5230,
       "todo": 23,
       "fixme": 8,
-      "hack": 24,
-      "comments": 18731
+      "hack": 31,
+      "comments": 37860
     },
     "maxNesting": 36,
     "avgLineLength": 41,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 12.9,
+    "hasTestDir": true
+  },
+  "vulns": [],
+  "repoIssues": [],
+  "busFactor": 11
 }

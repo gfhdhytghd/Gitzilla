@@ -1,7 +1,7 @@
 {
   "slug": "karpathy/nanogpt",
   "description": "The simplest, fastest repository for training/finetuning medium-sized GPTs.",
-  "stars": 64055,
+  "stars": 64056,
   "primaryLanguage": "Python",
   "languages": {
     "Python": 51670
@@ -17,21 +17,41 @@
       "files": 5,
       "loc": 829,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 25,
+      "topMaintainers": [
+        "karpathy",
+        "apivovarov",
+        "adambala"
+      ]
     },
     {
       "name": "data",
       "files": 3,
       "loc": 155,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 8,
+      "topMaintainers": [
+        "karpathy",
+        "danielgross",
+        "LaihoE"
+      ]
     },
     {
       "name": "config",
       "files": 7,
       "loc": 101,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 2,
+      "topMaintainers": [
+        "karpathy",
+        "otaviogood"
+      ],
+      "issues": []
     }
   ],
   "heart": "model.py",
@@ -187,9 +207,39 @@
       {
         "file": "sample.py",
         "text": "TODO want to make this more general to arbitrary encoder/dec"
+      },
+      {
+        "file": "bench.py",
+        "text": "note ignore split in benchmarking script"
+      },
+      {
+        "file": "data/openwebtext/prepare.py",
+        "text": "note: I think eot should be prepended not appended... hmm. i"
+      },
+      {
+        "file": "model.py",
+        "text": "note: using list [-1] to preserve the time dim"
+      },
+      {
+        "file": "train.py",
+        "text": "note: float16 data type will automatically use a GradScaler"
+      },
+      {
+        "file": "train.py",
+        "text": "note: this is a CPU-GPU sync point"
       }
     ],
-    "commits": [],
+    "commits": [
+      "Update README to mention nanochat and deprecation",
+      "fix: ensure non-zero learning rate during warmup at iteration 0",
+      "Merge pull request #463 from goswamig/test1",
+      "Merge branch 'master' into test1",
+      "Merge pull request #487 from jellehak/patch-1",
+      "Update README.md",
+      "Fixing eval path in README",
+      "Merge pull request #420 from vinjn/fix-371-enc-is-not-defined",
+      "Merge pull request #429 from adambala/fixes"
+    ],
     "tokens": [
       "=",
       "if",
@@ -249,10 +299,14 @@
       "todo": 2,
       "fixme": 0,
       "hack": 0,
-      "comments": 338
+      "comments": 389
     },
     "maxNesting": 10,
     "avgLineLength": 46.5,
-    "indent": "spaces4"
-  }
+    "indent": "spaces4",
+    "avgFunctionLength": 14.3,
+    "hasTestDir": false
+  },
+  "busFactor": 1,
+  "repoIssues": []
 }
