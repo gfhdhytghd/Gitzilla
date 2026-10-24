@@ -1,4 +1,4 @@
-# Repo Kaiju art direction
+# Gitzilla art direction
 
 Server-only, dependency-free Gemini REST module. Import the six main functions from `./index.ts`:
 
