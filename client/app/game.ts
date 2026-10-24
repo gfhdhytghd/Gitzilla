@@ -20,6 +20,9 @@ import { asciiBar, clamp, fmtTime, h, isPhone, isTouchDevice, lerp, vibrate } fr
 const BUFFER = 0.1; // seconds of interpolation delay
 const RES = 1; // internal render scale (logical px -> canvas px)
 
+// Avoid replacing text nodes (and invalidating phone layout) when status is unchanged.
+const setText = (el: HTMLElement, text: string) => { if (el.textContent !== text) el.textContent = text; };
+
 interface Snap {
   t: number;
   s: MatchState;
@@ -95,8 +98,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // ---------------- layout ----------------
   let cssScale = 1;
   // visible window into the arena, in logical px (camera); landscape = whole arena
-  const view = { x: 0, y: 0, w: ARENA_W, h: ARENA_H };
+  const view = { x: 0, y: 0, w: ARENA_W, h: ARENA_H, cssScale: 1 };
   let portrait = false;
+  let phoneLayout = isPhone();
   const safeProbe = h("div.safe-probe");
   document.body.append(safeProbe);
   const placeParts = () => {
@@ -115,7 +119,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   };
   const layout = () => {
     const W = innerWidth, H = innerHeight, dpr = devicePixelRatio || 1;
-    const phone = isPhone();
+    const phone = phoneLayout = isPhone();
     el.classList.toggle("phone-landscape", phone && W > H);
     const wasPortrait = portrait;
     portrait = phone && H >= W && !spectator;
@@ -138,6 +142,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       cssScale = (ARENA_H * s) / dpr >= budget * 0.85 ? s / dpr : budget / ARENA_H;
       // keep at least ~200 logical px of arena visible across the width
       cssScale = Math.min(cssScale, W / 200);
+      view.cssScale = cssScale;
       view.w = Math.min(ARENA_W, Math.floor(W / cssScale));
       view.h = ARENA_H;
       const w = view.w < ARENA_W ? W : Math.round(view.w * cssScale), hh = Math.round(view.h * cssScale);
@@ -162,6 +167,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     cssScale = s >= 1 ? s / dpr : Math.min(W / ARENA_W, H / ARENA_H);
     // integer device-pixel scale wastes too much space on some phones; fall back to fractional nearest-neighbour
     if ((ARENA_H * cssScale) / H < 0.78 && (ARENA_W * cssScale) / W < 0.78) cssScale = Math.min(W / ARENA_W, H / ARENA_H);
+    view.cssScale = cssScale;
     const w = Math.round(ARENA_W * cssScale), hh = Math.round(ARENA_H * cssScale);
     Object.assign(stage.style, { width: `${w}px`, height: `${hh}px`, left: `${Math.round((W - w) / 2)}px`, top: `${Math.round((H - hh) / 2)}px` });
     el.style.setProperty("--gw", `${w}px`);
@@ -626,7 +632,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
       const frame = input.sample();
       app.conn.send({ t: "input", frame });
-      el.dataset.input = input.mode;
+      if (el.dataset.input !== input.mode) el.dataset.input = input.mode;
       const notice = input.lastGesture;
       if (input.mode !== "keyboard" && notice && notice.at !== lastNoticeAt) {
         // codex-input says exactly what fired and how ("⚡ dash · twist")
@@ -745,12 +751,14 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (!input || !sensorBadge) return;
     const mode = input.mode, st = input.sensorStatus ?? "off";
     const motionReady = st === "on";
-    sensorBadge.textContent = motionReady ? "motion: on" : input.motionProfile === "tap-only" ? "touch controls" : "tap to enable tilt";
-    sensorBadge.dataset.status = mode === "touch" ? "touch" : st;
-    sensorBadge.dataset.mode = mode;
-    if (recalBtn) recalBtn.hidden = !motionReady;
+    setText(sensorBadge, motionReady ? "motion: on" : input.motionProfile === "tap-only" ? "touch controls" : "tap to enable tilt");
+    const status = mode === "touch" ? "touch" : st;
+    if (sensorBadge.dataset.status !== status) sensorBadge.dataset.status = status;
+    if (sensorBadge.dataset.mode !== mode) sensorBadge.dataset.mode = mode;
+    if (recalBtn && recalBtn.hidden !== !motionReady) recalBtn.hidden = !motionReady;
     const introOver = performance.now() > introEnd;
-    if (enablePill) enablePill.hidden = motionReady || input.motionProfile === "tap-only";
+    const hideEnable = motionReady || input.motionProfile === "tap-only";
+    if (enablePill && enablePill.hidden !== hideEnable) enablePill.hidden = hideEnable;
     if (introOver && !tipsShown && latest?.status === "fighting") {
       tipsShown = true;
       const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing/tap = attack · twist = dash · spin/hold = skill");
@@ -796,6 +804,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let skillCdMax = 1;
   let ambientTick = 0;
   let miniTick = 0;
+  let lastHudMs = -Infinity;
   // "where am I?": pulsing ring + YOU tag under your hero for the first seconds and after a revive
   let youRingUntil = 0;
   let youRingStarted = false;
@@ -985,6 +994,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
   const frame = (nowMs: number) => {
     raf = requestAnimationFrame(frame);
+    if (document.hidden) { last = nowMs; return; }
+    // Bound sustained phone CPU/GPU work instead of running the elaborate pixel
+    // effects at the display's maximum refresh rate. The independent 30 Hz input
+    // sender and authoritative snapshot stream are never throttled here.
+    if (phoneLayout && nowMs - last < 1000 / 30 - 1) return;
     const dtReal = Math.min(0.1, (nowMs - last) / 1000);
     last = nowMs;
     const now = nowMs / 1000;
@@ -1070,7 +1084,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       drawIndicators(s, me ?? null, now);
       if ((miniTick = (miniTick + 1) % 2) === 0) drawMinimap(s, now);
     }
-    if ((ambientTick = (ambientTick + 1) % 3) === 0) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height);
+    if (!portrait && (ambientTick = (ambientTick + 1) % 6) === 0) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height);
     releasedEvents.length = 0;
 
     // DOM fx
@@ -1091,37 +1105,42 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     danger.classList.toggle("on", inDanger);
     stage.classList.toggle("enraged", !!s.boss && (s.boss.enraged || s.boss.phase >= 2));
 
-    hud.update(s, app.you, input?.mode ?? null);
-    if (me) {
-      // on-screen DASH/SKILL buttons (touch fallback and motion-v2) get cooldown fill + countdown
-      const sk = document.querySelector<HTMLElement>(".kj-touch-skill");
-      const da = document.querySelector<HTMLElement>(".kj-touch-dash");
-      skillCdMax = Math.max(skillCdMax, me.skillCd);
-      const touchMode = input?.mode === "touch";
-      gsSkillLbl.textContent = touchMode ? "✦ hold" : "✦ spin or hold";
-      gsDashLbl.textContent = touchMode ? "⚡ double-tap" : "⚡ twist";
-      gsSkillState.textContent = me.skillCd > 0 ? `${me.skillCd.toFixed(1)}s` : "READY";
-      gsSkill.classList.toggle("ready", me.skillCd <= 0);
-      gsSkill.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
-      gsDashState.textContent = me.dashCd > 0 ? `${me.dashCd.toFixed(1)}s` : "READY";
-      gsDash.classList.toggle("ready", me.dashCd <= 0);
-      gsDash.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
-      if (sk) {
-        sk.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
-        sk.dataset.ready = me.skillCd > 0 ? "0" : "1";
-        sk.dataset.cd = me.skillCd > 0 ? me.skillCd.toFixed(1) : "";
-        sk.dataset.code = `$ ${me.kit.skill}`;
+    // Cooldown text and status bars don't need the canvas refresh rate. Keep
+    // input sampling, snapshot interpolation and world rendering independent.
+    if (!phoneLayout || nowMs - lastHudMs >= 1000 / 15) {
+      lastHudMs = nowMs;
+      hud.update(s, app.you, input?.mode ?? null);
+      if (me) {
+        // on-screen DASH/SKILL buttons (touch fallback and motion-v2) get cooldown fill + countdown
+        const sk = document.querySelector<HTMLElement>(".kj-touch-skill");
+        const da = document.querySelector<HTMLElement>(".kj-touch-dash");
+        skillCdMax = Math.max(skillCdMax, me.skillCd);
+        const touchMode = input?.mode === "touch";
+        setText(gsSkillLbl, touchMode ? "✦ hold" : "✦ spin or hold");
+        setText(gsDashLbl, touchMode ? "⚡ double-tap" : "⚡ twist");
+        setText(gsSkillState, me.skillCd > 0 ? `${me.skillCd.toFixed(1)}s` : "READY");
+        gsSkill.classList.toggle("ready", me.skillCd <= 0);
+        gsSkill.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
+        setText(gsDashState, me.dashCd > 0 ? `${me.dashCd.toFixed(1)}s` : "READY");
+        gsDash.classList.toggle("ready", me.dashCd <= 0);
+        gsDash.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
+        if (sk) {
+          sk.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
+          sk.dataset.ready = me.skillCd > 0 ? "0" : "1";
+          sk.dataset.cd = me.skillCd > 0 ? me.skillCd.toFixed(1) : "";
+          sk.dataset.code = `$ ${me.kit.skill}`;
+        }
+        if (da) {
+          da.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
+          da.dataset.ready = me.dashCd > 0 ? "0" : "1";
+          da.dataset.cd = me.dashCd > 0 ? me.dashCd.toFixed(1) : "";
+        }
       }
-      if (da) {
-        da.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
-        da.dataset.ready = me.dashCd > 0 ? "0" : "1";
-        da.dataset.cd = me.dashCd > 0 ? me.dashCd.toFixed(1) : "";
+      const mapKey = s.boss?.kit.repo ?? "pvp";
+      if (portrait && miniTab.dataset.boss !== mapKey) {
+        miniTab.dataset.boss = mapKey;
+        miniTab.textContent = s.boss ? `▾ ${(s.boss.kit.heart || "arena").split("/").pop()} · map` : "▾ classroom.map";
       }
-    }
-    const mapKey = s.boss?.kit.repo ?? "pvp";
-    if (portrait && miniTab.dataset.boss !== mapKey) {
-      miniTab.dataset.boss = mapKey;
-      miniTab.textContent = s.boss ? `▾ ${(s.boss.kit.heart || "arena").split("/").pop()} · map` : "▾ classroom.map";
     }
     if (s.status === "fighting" && !youRingStarted && performance.now() > introEnd) {
       youRingStarted = true;
@@ -1136,8 +1155,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (showBubble) {
       const b = s.boss!;
       const top = b.regions?.length ? Math.min(...b.regions.map((r) => r.y - r.r)) : b.y - 50;
-      bubble.style.left = `${stage.offsetLeft + clamp(b.x - view.x, 30, view.w - 30) * cssScale}px`;
-      bubble.style.top = `${stage.offsetTop + Math.max(20, top) * cssScale}px`;
+      bubble.style.left = `${parseFloat(stage.style.left) + clamp(b.x - view.x, 30, view.w - 30) * cssScale}px`;
+      bubble.style.top = `${parseFloat(stage.style.top) + Math.max(20, top) * cssScale}px`;
     }
 
   };

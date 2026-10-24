@@ -92,7 +92,7 @@ export function createInput(opts: InputOptions): InputController {
   let gravity: Acceleration | null = null;
   let lastOrientationAt = -Infinity;
   let gravitySign = 0;
-  let freezeUntil = 0;
+  let steeringHoldUntil = 0;
   let lastAutomaticRequest = -Infinity;
   let permissionVersion = 0;
   let touch: TouchControls | null = null;
@@ -142,13 +142,14 @@ export function createInput(opts: InputOptions): InputController {
     }, finish() { void trace.upload(); },
   });
   const notify = (kind: GestureNotice['kind'], via: string, at: number) => {
-    lastGesture = { kind, via, at }; freezeUntil = at + 120;
+    lastGesture = { kind, via, at };
+    if (via === 'swing' || via === 'twist' || via === 'spin') steeringHoldUntil = at + 120;
     calibration.observe({ at, gesture: lastGesture });
     trace.add({ type: 'gesture', at, kind, via });
     recordGesture(`${via} → ${kind}`); opts.onGesture?.(lastGesture);
   };
   const acceptGravity = (vector: Acceleration, now: number) => {
-    if (now < freezeUntil) return;
+    if (now < steeringHoldUntil) return;
     const magnitude = Math.hypot(vector.x, vector.y, vector.z);
     if (magnitude < 0.01) return;
     const next = { x: vector.x / magnitude, y: vector.y / magnitude, z: vector.z / magnitude };
@@ -166,7 +167,7 @@ export function createInput(opts: InputOptions): InputController {
     mouseAt = -Infinity;
     dash = skill = false;
     gestures = createGestureState();
-    freezeUntil = 0;
+    steeringHoldUntil = 0;
     touch?.clear();
   };
   const dashKeys = new Set(['Space', 'KeyK', 'ShiftLeft', 'ShiftRight']);
@@ -247,7 +248,7 @@ export function createInput(opts: InputOptions): InputController {
   };
   on(window, 'deviceorientation', onOrientation);
   on(window, 'deviceorientationabsolute', onOrientation);
-  const resetOrientation = () => { resetCalibration(); freezeUntil = 0; };
+  const resetOrientation = () => { resetCalibration(); steeringHoldUntil = 0; };
   on(window, 'orientationchange', resetOrientation);
   if (window.screen?.orientation) {
     on(window.screen.orientation, 'change', resetOrientation);
@@ -285,10 +286,10 @@ export function createInput(opts: InputOptions): InputController {
       twistThreshold: step === 'twist' ? 80 : thresholds.twistThreshold, spinAngle: step === 'spin' ? 220 : thresholds.spinAngle } : thresholds;
     const result = recognizeGesture(gestures, acceleration, now, motionProfile, gyro, trainingThresholds);
     gestures = result.state;
-    // Freeze during the candidate too: waiting for a twist to settle must not let
-    // its rotation steer the hero before the eventual dash/spin is classified.
+    // Reject transient steering samples during a gesture, but keep moving in
+    // the last clean tilt direction. Attacks must never zero movement.
     if (gyro && Math.hypot(gyro.alpha, gyro.beta, gyro.gamma) >= 80) {
-      freezeUntil = now + 120;
+      steeringHoldUntil = now + 120;
     }
     debugState.spinDegrees = result.spinDegrees;
     calibration.observe({ at: now, acceleration, rotationRate: gyro, spinDegrees: result.spinDegrees });
@@ -370,7 +371,7 @@ export function createInput(opts: InputOptions): InputController {
       gravity = null;
       gravitySign = 0;
       gestures = createGestureState();
-      freezeUntil = 0;
+      steeringHoldUntil = 0;
       moveGravity = null; lastGravityAt = -Infinity;
       recordGesture('gravity filter refreshed (horizontal remains zero)');
     },
@@ -392,7 +393,7 @@ export function createInput(opts: InputOptions): InputController {
           if (length > 0) aim = [dx / length, dy / length];
         }
       } else if (!disposed && mode === 'motion') {
-        move = now < freezeUntil || !moveGravity ? [0, 0] : gravityMove(moveGravity, angle(), 1, TILT_FULL_SPEED[tiltSensitivity]);
+        move = !moveGravity ? [0, 0] : gravityMove(moveGravity, angle(), 1, TILT_FULL_SPEED[tiltSensitivity]);
         fire = now < gestures.fireUntil;
       } else if (!disposed && touch) {
         move = [...touch.move];

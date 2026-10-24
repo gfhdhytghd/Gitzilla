@@ -27,7 +27,7 @@ export const fx = {
   cssPerLogical: 3,                     // measured on-screen zoom
 };
 
-export type View = { x: number; y: number; w: number; h: number };
+export type View = { x: number; y: number; w: number; h: number; cssScale?: number };
 
 /** Update the visible window + text scale from the caller's view and current transform. */
 export function setView(ctx: CanvasRenderingContext2D, view?: View) {
@@ -37,7 +37,9 @@ export function setView(ctx: CanvasRenderingContext2D, view?: View) {
   // CSS px per logical px: use the canvas's on-screen size when it's in the DOM (callers may render at 1 canvas px per
   // logical px and upscale with CSS); otherwise assume the backing store is DPR-scaled.
   const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
-  const cssPerLogical = cv.clientWidth > 0 && cv.width > 0 ? (cv.clientWidth / cv.width) * Math.abs(m.a || 1) : Math.abs(m.a || 1) / dpr;
+  // The game already knows this from its resize layout. Reading clientWidth
+  // here after HUD writes forces a synchronous layout on every rendered frame.
+  const cssPerLogical = view?.cssScale ?? (cv.clientWidth > 0 && cv.width > 0 ? (cv.clientWidth / cv.width) * Math.abs(m.a || 1) : Math.abs(m.a || 1) / dpr);
   fx.cssPerLogical = cssPerLogical;
   fx.textScale = cssPerLogical < 2.2 ? 2 : 1;
 }

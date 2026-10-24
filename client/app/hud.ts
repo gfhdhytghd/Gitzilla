@@ -158,6 +158,7 @@ export function createHud(spectator: boolean): Hud {
   let lastTelegraphName = "";
   let comboUntil = 0;
   let bossHpLag = 1;
+  let lastUpdate = performance.now();
 
   const segs = (bar: HTMLElement, n: number, full: number, cls: string) => {
     n = Math.max(0, Math.min(12, Math.round(n)));
@@ -182,6 +183,9 @@ export function createHud(spectator: boolean): Hud {
     el,
     parts: { self: selfPanel, team, combo, log, review, toasts, skill: skillBox, timer },
     update(s, you, inputMode) {
+      const now = performance.now();
+      const dt = Math.min(0.25, (now - lastUpdate) / 1000);
+      lastUpdate = now;
       const boss = s.boss;
       const me = s.players.find((p) => p.id === you) ?? null;
       toggle(bossPanel, "hidden", !boss);
@@ -244,7 +248,7 @@ export function createHud(spectator: boolean): Hud {
       toggle(bossHint, "show", !!hint && s.status === "fighting");
       if (hint) bossHint.dataset.kind = hint.kind;
       const pct = Math.max(0, boss.hp / boss.maxHp);
-      bossHpLag = Math.max(pct, bossHpLag - 0.004);
+      bossHpLag = Math.max(pct, bossHpLag - 0.24 * dt);
       if (bossHpLag < pct) bossHpLag = pct;
       setStyle(bossFill, "width", `${(pct * 100).toFixed(2)}%`);
       setStyle(bossLag, "width", `${(bossHpLag * 100).toFixed(2)}%`);
@@ -313,7 +317,7 @@ export function createHud(spectator: boolean): Hud {
         setStyle(r.bar.firstElementChild as HTMLElement, "width", `${Math.max(0, (p.hp / p.kit.maxHp) * 100).toFixed(0)}%`);
         setStyle(r.row, "--c", p.kit.palette[0] ?? "#39ff88");
         toggle(r.row, "down", !p.alive);
-        if (s.pvp) team.append(r.row); // keep rows in leaderboard order
+        if (s.pvp && team.children[rank - 1] !== r.row) team.insertBefore(r.row, team.children[rank - 1] ?? null); // move only when rank changes
         toggle(r.row, "me", p.id === you);
         const sc = s.pvp?.scores[p.id];
         setText(r.st, sc ? `${sc.kos} KO` : p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");

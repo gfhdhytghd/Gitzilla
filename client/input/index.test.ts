@@ -306,13 +306,37 @@ describe('motion-v3 permissions and live sensors', () => {
     win.screen.orientation.angle = 90; emit(win.screen.orientation, 'change');
     orientation(15, 0); expect(input.sample().move[0]).toBeCloseTo(1);
   });
-  it('freezes movement for120ms after a swing, then resumes gravity-relative movement', () => {
+  it('rejects swing-induced steering from rest, then resumes gravity-relative movement', () => {
     mobile(); const input = start(); orientation(0, 0); input.sample(); motion(-15, 0, 0);
     orientation(80, 60); advance(100);
     expect(input.sample()).toMatchObject({ move: [0, 0], fire: true, dash: false, skill: false, aim: null });
     advance(30); orientation(0, 15);
     expect(input.sample().move[0]).toBeGreaterThan(0.8);
     advance(500); expect(input.sample().fire).toBe(false);
+  });
+  it('keeps moving while repeated swings attack and rejects their steering noise', () => {
+    mobile(); const input = start(); orientation(0, 15);
+    expect(input.sample().move[0]).toBeCloseTo(1);
+    for (let i = 0; i < 6; i++) {
+      motion(i % 2 ? 15 : -15, 0, 0);
+      orientation(80, -60); // swing noise must not reverse or stop the established movement
+      expect(input.sample()).toMatchObject({ fire: true, dash: false, skill: false });
+      expect(input.sample().move[0]).toBeCloseTo(1);
+      expect(input.sample().move[1]).toBeCloseTo(0);
+      advance(210);
+    }
+    orientation(0, -15);
+    expect(input.sample().move[0]).toBeLessThan(-0.8);
+  });
+  it('allows steering changes throughout a tap attack burst', () => {
+    mobile(); const input = start(); orientation(0, 15);
+    pointer(win, 'pointerdown', 1, { target: canvas }); advance(40);
+    pointer(win, 'pointerup', 1, { target: canvas }); advance(320);
+    expect(input.sample().fire).toBe(true);
+    expect(input.sample().move[0]).toBeGreaterThan(0.8);
+    orientation(0, -15);
+    expect(input.sample().fire).toBe(true);
+    expect(input.sample().move[0]).toBeLessThan(-0.8);
   });
   it('uses gravity-only sensors for tilt and filters gravity out of swing recognition', () => {
     mobile(); const input = start();

@@ -276,6 +276,12 @@ try {
   await actionEvidence('skill', 'integrated gyro spin skill, no dash during start/settle', async () => {
     await setRate(0, 600); await sleep(550); await setRate(0); await sleep(200);
   });
+  // Three real dashes can leave the player next to the boss, where a bullet
+  // hits before the next20Hz snapshot. Retreat using normal tilt controls so
+  // each subsequent swing has an observable authoritative projectile in flight.
+  await pose(0, -15);
+  await until(() => me()!.x < 95, 'retreat after gyro dashes for projectile visibility', 4000);
+  await pose(0, 0); await sleep(300);
   for (const a of [[15, 0, 0], [-15, 0, 0], [0, 15, 0], [0, -15, 0], [0, 0, 15], [0, 0, -15]]) {
     await attackEvidence(`any-axis swing ${a.join(',')}`, () => page.evaluate(([x, y, z]) => {
       window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: { x, y, z }, interval: 30 }));
@@ -293,6 +299,22 @@ try {
     });
     await page.evaluate(() => { (window as any).__motion.nullAcceleration = false; });
   });
+  // Regression: attack gestures must not zero an already tilted phone's movement.
+  for (const via of ['tap', 'swing'] as const) {
+    await pose(0, 0); await sleep(700);
+    await pose(0, 15); await sleep(200);
+    assert(me()?.alive, 'movement + attack needs a living player for authoritative proof');
+    const before = { x: me()!.x, y: me()!.y };
+    const oldBullets = new Set(bullets), seq = lastSeq();
+    if (via === 'tap') await page.touchscreen.tap(120, 350);
+    else await page.evaluate(() => {
+      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: { x: 15, y: 0, z: 0 }, interval: 30 }));
+      window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { beta: 80, gamma: -60 }));
+    });
+    const packet = await until(() => inputs.find(i => i.frame.seq > seq && i.frame.fire && i.frame.move[0] > 0.8)?.frame, `${via} fires while moving`);
+    await until(() => ack >= packet.seq && me()!.x - before.x > 5 && [...bullets].some(id => !oldBullets.has(id)), `${via} authoritative movement and own projectile`);
+    check(`tilt + ${via}: moving and attacking together`, { seq: packet.seq, ack, move: packet.move, deltaX: me()!.x - before.x, newOwnBullets: [...bullets].filter(id => !oldBullets.has(id)).length });
+  }
   await page.evaluate(() => { (window as any).__motion.absolute = true; });
   if (await page.getByTestId('motion-recalibrate').isVisible()) await page.getByTestId('motion-recalibrate').tap();
   await sleep(450);

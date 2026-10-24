@@ -87,11 +87,6 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   const img = bctx.createImageData(size, size);
   const d = img.data;
   const lx = -0.45, ly = -0.68, lz = 0.58;
-  const field = (px: number, py: number) => {
-    let s = 1e9;
-    for (const o of lobes) s = smin(s, lobeDist(o, px, py), blend);
-    return s;
-  };
   const moss = L.growths.includes("moss");
   // bounding box for speed
   let x0 = size, y0 = size, x1 = 0, y1 = 0;
@@ -101,8 +96,16 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
     y0 = Math.min(y0, Math.floor(C + o.y - ry - 6)); y1 = Math.max(y1, Math.ceil(C + o.y + ry + 6));
   }
   x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(size, x1); y1 = Math.min(size, y1);
-  for (let y = y0; y < y1; y++)
-    for (let x = x0; x < x1; x++) {
+  // Neighbouring pixels share their distance-field samples. Previously each
+  // shaded pixel recomputed all lobes four more times for its surface normal,
+  // causing long main-thread stalls whenever a breath/broken-limb sprite was cold.
+  // Keep float64 samples so the original shading and dither thresholds are exact.
+  const stride = x1 - x0 + 2, rows = y1 - y0 + 2;
+  const field = new Float64Array(stride * rows);
+  const nearest = new Float64Array(stride * rows);
+  const owner = new Uint16Array(stride * rows);
+  for (let y = y0 - 1; y <= y1; y++) {
+    for (let x = x0 - 1; x <= x1; x++) {
       const px = x - C + 0.5, py = y - C + 0.5;
       let best = 1e9, bi = 0, sd = 1e9;
       for (let i = 0; i < lobes.length; i++) {
@@ -110,11 +113,20 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
         sd = smin(sd, di, blend);
         if (di < best) { best = di; bi = i; }
       }
+      const at = (y - y0 + 1) * stride + x - x0 + 1;
+      field[at] = sd; nearest[at] = best; owner[at] = bi;
+    }
+  }
+  for (let y = y0; y < y1; y++)
+    for (let x = x0; x < x1; x++) {
+      const px = x - C + 0.5, py = y - C + 0.5;
+      const at = (y - y0 + 1) * stride + x - x0 + 1;
+      const sd = field[at], best = nearest[at], bi = owner[at];
       if (sd > 0) continue;
       const lobe = lobes[bi];
       const mat: Material = lobe.mat;
-      const gx = field(px + 1, py) - field(px - 1, py);
-      const gy = field(px, py + 1) - field(px, py - 1);
+      const gx = field[at + 1] - field[at - 1];
+      const gy = field[at + stride] - field[at - stride];
       const gl = Math.hypot(gx, gy) || 1;
       const rl = Math.min(lobe.r, lobe.ry ?? lobe.r);
       const t = Math.min(1, -sd / Math.max(4, rl * 0.85));

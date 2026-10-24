@@ -7,7 +7,7 @@ import * as ph from "./placeholders";
 // Essential input is eager: a failed optional chunk must never leave phones on a placeholder.
 import { createInput as realCreateInput, type InputController, type InputOptions } from "../input";
 
-export interface View { x: number; y: number; w: number; h: number }
+export interface View { x: number; y: number; w: number; h: number; cssScale?: number }
 
 export interface Renderers {
   drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean): void;

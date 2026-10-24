@@ -41,7 +41,7 @@ export function textWidth(text: string): number {
 export function textCanvas(text: string, color: string, outline = "#0b0710"): HTMLCanvasElement {
   const key = text + "|" + color + "|" + outline;
   let c = cache.get(key);
-  if (c) return c;
+  if (c) { cache.delete(key); cache.set(key, c); return c; }
   const up = text.toUpperCase();
   const w = textWidth(up) + 2, h = GLYPH_H + 2;
   c = document.createElement("canvas");
@@ -61,7 +61,7 @@ export function textCanvas(text: string, color: string, outline = "#0b0710"): HT
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]) on(dx, dy, outline);
   }
   on(0, 0, color);
-  if (cache.size > 400) cache.clear();
+  if (cache.size >= 400) cache.delete(cache.keys().next().value!);
   cache.set(key, c);
   return c;
 }

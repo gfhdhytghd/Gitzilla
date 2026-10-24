@@ -45,8 +45,8 @@ const cache = new Map<string, HTMLCanvasElement>();
 export function textSprite(str: string, color: string, outline: string | null = "#07040c", scale = 1): HTMLCanvasElement {
   const key = str + "\u0000" + color + "\u0000" + outline + "\u0000" + scale;
   let c = cache.get(key);
-  if (c) return c;
-  if (cache.size > 600) cache.clear();
+  if (c) { cache.delete(key); cache.set(key, c); return c; }
+  if (cache.size >= 600) cache.delete(cache.keys().next().value!);
   const pad = outline ? 1 : 0;
   const [cv, ctx] = makeCanvas(textWidth(str, scale) + pad * 2, FONT_H * scale + pad * 2);
   if (outline) {
