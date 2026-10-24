@@ -16,16 +16,19 @@ describe('GitHub source and metadata requests', () => {
       if (url.includes('codeload')) return new Response(new Uint8Array(body));
       if (url.endsWith('/languages')) return json({ TypeScript: 1234 });
       if (url.includes('/contributors?')) return json([{}], { link: '<https://api.github.com/repos/demo/repo/contributors?per_page=1&page=27>; rel="last"' });
-      if (url.includes('/commits?')) return json([{}], { link: '<https://api.github.com/repos/demo/repo/commits?page=318&per_page=1>; rel="last"' });
+      if (url.includes('/commits?')) return json([{ commit: { message: 'Fix renderer batching\n\nLong body' } }, { commit: { message: 'secret=not-for-display' } }], { link: '<https://api.github.com/repos/demo/repo/commits?page=32&per_page=10>; rel="last"' });
       return json({ description: 'Repo heart', stargazers_count: 99, language: 'TypeScript', created_at: '2020-01-01T00:00:00Z' });
     }) as typeof fetch;
     const p = await analyzeGitHubRepo('demo/repo', { fetcher });
     expect(p.totalFiles).toBe(2); expect(p.heart).toBe('src/heart.ts'); expect(p.heartFanIn).toBe(1);
-    expect(p.stars).toBe(99); expect(p.commits).toBe(318); expect(p.contributors).toBe(27);
+    expect(p.stars).toBe(99); expect(p.commits).toBe(320); expect(p.contributors).toBe(27);
     expect(p.languages).toEqual({ TypeScript: 1234 }); expect(p.ageDays).toBeGreaterThan(1000);
     expect(p.readme).toContain('Test Kaiju'); expect(p.readme).not.toContain('badge.example');
     expect(p.tree).toContain('src/heart.ts'); expect(p.tree).toContain('README.md');
     expect(calls).toHaveLength(5);
+    expect(p.dna?.commits).toEqual(['Fix renderer batching']);
+    const commitCalls = calls.filter(call => call.url.includes('/commits?'));
+    expect(commitCalls).toHaveLength(1); expect(commitCalls[0].url).toContain('per_page=10');
     expect(calls.find(call => call.url.includes('codeload'))?.init?.headers).not.toHaveProperty('Authorization');
   });
   it('still returns real source metrics if optional API metadata is rate limited', async () => {
@@ -33,7 +36,7 @@ describe('GitHub source and metadata requests', () => {
       ? new Response(new Uint8Array(body)) : new Response('rate limited', { status: 403 })) as typeof fetch;
     const p = await analyzeGitHubRepo('demo/rate-limited', { fetcher });
     expect(p.fallback).toBeUndefined(); expect(p.totalFiles).toBe(2); expect(p.stars).toBe(0);
-    expect(p.primaryLanguage).toBe('TypeScript'); expect(p.commits).toBe(0);
+    expect(p.primaryLanguage).toBe('TypeScript'); expect(p.commits).toBe(0); expect(p.dna?.commits).toEqual([]);
   });
   it('aborts a stalled archive at the analysis deadline', async () => {
     const fetcher = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {

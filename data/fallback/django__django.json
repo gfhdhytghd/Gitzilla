@@ -14,7 +14,7 @@
   },
   "totalFiles": 1886,
   "totalLoc": 278953,
-  "commits": 35051,
+  "commits": 35060,
   "contributors": 3513,
   "ageDays": 5292,
   "components": [
@@ -375,5 +375,274 @@
     "django/db/models/lookups.py",
     "django/contrib/admin/checks.py",
     "scripts/pr_quality/tests/test_check_pr.py"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "__init__",
+      "get",
+      "name",
+      "clean",
+      "value",
+      "create",
+      "f",
+      "as_sql",
+      "path",
+      "request",
+      "render",
+      "test",
+      "Model",
+      "deconstruct",
+      "check",
+      "model",
+      "filter",
+      "save",
+      "func",
+      "Person",
+      "output_field",
+      "choices",
+      "Article",
+      "Author"
+    ],
+    "componentSymbols": {
+      "tests": [
+        "__init__",
+        "get",
+        "clean",
+        "value"
+      ],
+      "django/db": [
+        "__init__",
+        "get",
+        "name",
+        "clean"
+      ],
+      "django/contrib": [
+        "__init__",
+        "get",
+        "name",
+        "clean"
+      ],
+      "misc": [
+        "__init__",
+        "get",
+        "name",
+        "clean"
+      ],
+      "django/core": [
+        "__init__",
+        "get",
+        "clean",
+        "path"
+      ],
+      "django/utils": [
+        "__init__",
+        "create",
+        "f",
+        "deconstruct"
+      ],
+      "django/test": [
+        "__init__",
+        "get",
+        "request",
+        "test"
+      ],
+      "django/template": [
+        "__init__",
+        "request",
+        "render",
+        "check"
+      ]
+    },
+    "heartLines": [
+      "connections = ConnectionHandler()",
+      "router = ConnectionRouter()",
+      "connection = ConnectionProxy(connections",
+      "def reset_queries(**kwargs):",
+      "for conn in connections.all(initialized_",
+      "conn.queries_log.clear()",
+      "signals.request_started.connect(reset_qu",
+      "def close_old_connections(**kwargs):",
+      "for conn in connections.all(initialized_",
+      "conn.close_if_unusable_or_obsolete()",
+      "signals.request_started.connect(close_ol",
+      "signals.request_finished.connect(close_o"
+    ],
+    "snippets": [
+      {
+        "file": "scripts/verify_release.sh",
+        "line": 55,
+        "code": "ARTIFACT_ACTUAL_URL=$(curl --head --write-out '%"
+      },
+      {
+        "file": "django/template/base.py",
+        "line": 1075,
+        "code": "raise"
+      },
+      {
+        "file": "django/http/request.py",
+        "line": 775,
+        "code": "def match(self, other):"
+      },
+      {
+        "file": "django/urls/resolvers.py",
+        "line": 202,
+        "code": "def match(self, path):"
+      },
+      {
+        "file": "django/core/files/temp.py",
+        "line": 42,
+        "code": "def __init__(self, mode=\"w+b\", bufsize=-1, suffi"
+      },
+      {
+        "file": "django/contrib/gis/gdal/raster/band.py",
+        "line": 188,
+        "code": "def data(self, data=None, offset=None, size=None"
+      },
+      {
+        "file": "django/test/client.py",
+        "line": 532,
+        "code": "def trace(self, path, secure=False, *, headers=N"
+      },
+      {
+        "file": "django/forms/fields.py",
+        "line": 319,
+        "code": "def __init__(self, *, max_value=None, min_value="
+      },
+      {
+        "file": "django/contrib/postgres/indexes.py",
+        "line": 122,
+        "code": "def __init__(self, *expressions, fillfactor=None"
+      },
+      {
+        "file": "django/core/validators.py",
+        "line": 440,
+        "code": "def int_list_validator(sep=\",\", message=None, co"
+      },
+      {
+        "file": "django/forms/models.py",
+        "line": 1395,
+        "code": "def __init__(self, parent_instance, *args, pk_fi"
+      },
+      {
+        "file": "django/template/library.py",
+        "line": 166,
+        "code": "def simple_block_tag(self, func=None, takes_cont"
+      }
+    ],
+    "todos": [
+      {
+        "file": "django/contrib/admin/checks.py",
+        "text": "FIXME: checking"
+      },
+      {
+        "file": "django/contrib/admin/options.py",
+        "text": "TODO: this should be handled by some parameter to the Change"
+      },
+      {
+        "file": "django/contrib/admin/widgets.py",
+        "text": "XXX: The deletion UX can be confusing when dealing with casc"
+      },
+      {
+        "file": "django/contrib/auth/management/__init__.py",
+        "text": "TODO: Drop ImportError and KeyError when dropping support fo"
+      },
+      {
+        "file": "django/contrib/gis/db/backends/oracle/introspection.py",
+        "text": "TODO: Research way to find a more specific geometry field ty"
+      },
+      {
+        "file": "django/contrib/gis/db/backends/oracle/models.py",
+        "text": "TODO: Add support for `diminfo` column (type MDSYS.SDO_DIM_A"
+      },
+      {
+        "file": "django/contrib/gis/db/backends/oracle/operations.py",
+        "text": "TODO: Is this really the same as ST_Intersects()?"
+      },
+      {
+        "file": "django/contrib/gis/db/backends/postgis/operations.py",
+        "text": "TODO: Support 'M' extension."
+      },
+      {
+        "file": "django/contrib/gis/gdal/envelope.py",
+        "text": "TODO: Fix significant figures."
+      },
+      {
+        "file": "django/contrib/gis/gdal/field.py",
+        "text": "TODO: Adapt timezone information. See:"
+      },
+      {
+        "file": "django/contrib/gis/gdal/geometries.py",
+        "text": "TODO: Fix Envelope() for Point geometries."
+      },
+      {
+        "file": "django/contrib/gis/geos/coordseq.py",
+        "text": "TODO when dropping support for GEOS 3.13 the z argument can "
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      "=",
+      "def",
+      "if",
+      "return",
+      "import",
+      "None",
+      "{",
+      "}",
+      "from",
+      "in",
+      "class",
+      "True"
+    ],
+    "bigFiles": [
+      {
+        "path": "tests/admin_views/tests.py",
+        "loc": 8851
+      },
+      {
+        "path": "tests/forms_tests/tests/test_forms.py",
+        "loc": 5161
+      },
+      {
+        "path": "tests/admin_scripts/tests.py",
+        "loc": 3201
+      },
+      {
+        "path": "tests/cache/tests.py",
+        "loc": 2991
+      },
+      {
+        "path": "django/db/models/query.py",
+        "loc": 2813
+      },
+      {
+        "path": "tests/expressions/tests.py",
+        "loc": 2748
+      },
+      {
+        "path": "django/db/models/sql/query.py",
+        "loc": 2671
+      },
+      {
+        "path": "tests/aggregation/tests.py",
+        "loc": 2659
+      }
+    ],
+    "longestFunction": {
+      "name": "create_forward_many_to_many_manager",
+      "file": "django/db/models/fields/related_descriptors.py",
+      "lines": 643
+    },
+    "counts": {
+      "functions": 18621,
+      "classes": 5230,
+      "todo": 23,
+      "fixme": 8,
+      "hack": 24,
+      "comments": 18731
+    },
+    "maxNesting": 36,
+    "avgLineLength": 41,
+    "indent": "mixed"
+  }
 }

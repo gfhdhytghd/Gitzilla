@@ -1,7 +1,7 @@
 {
   "slug": "jquery/jquery",
   "description": "jQuery JavaScript Library",
-  "stars": 59910,
+  "stars": 59911,
   "primaryLanguage": "JavaScript",
   "languages": {
     "JavaScript": 1340812,
@@ -12,7 +12,7 @@
   },
   "totalFiles": 285,
   "totalLoc": 46525,
-  "commits": 6864,
+  "commits": 6870,
   "contributors": 349,
   "ageDays": 6413,
   "components": [
@@ -288,5 +288,269 @@
     "test/node_smoke_tests/module/lib/ensure_jquery.js",
     "src/data.js",
     "src/selector/var/rleadingCombinator.js"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "get",
+      "assert",
+      "success",
+      "done",
+      "error",
+      "trigger",
+      "css",
+      "remove",
+      "test",
+      "set",
+      "nodeName",
+      "setup",
+      "find",
+      "prop",
+      "data",
+      "text",
+      "attr",
+      "add",
+      "complete",
+      "on",
+      "each",
+      "name",
+      "val",
+      "event"
+    ],
+    "componentSymbols": {
+      "test": [
+        "nodeName",
+        "Deferred",
+        "dir",
+        "siblings"
+      ],
+      "src": [
+        "nodeName",
+        "Deferred",
+        "jQueryFactory",
+        "siblings"
+      ],
+      "misc": [
+        "dir",
+        "createElement",
+        "siblings",
+        "getAll"
+      ],
+      "src/attributes": [
+        "get",
+        "set",
+        "prop",
+        "attr"
+      ],
+      "src/core": [
+        "nodeName",
+        "camelCase",
+        "stripAndCollapse",
+        "toType"
+      ],
+      "root": [],
+      "src/selector": [
+        "tokenize",
+        "toSelector",
+        "createCache",
+        "testContext"
+      ],
+      "src/css": [
+        "showHide",
+        "finalPropName",
+        "getStyles",
+        "isHiddenWithinTree"
+      ]
+    },
+    "heartLines": [
+      "pushStack: function( elems ) {",
+      "each: function( callback ) {",
+      "noop: function() {},",
+      "isPlainObject: function( obj ) {",
+      "isEmptyObject: function( obj ) {",
+      "globalEval: function( code, options, doc",
+      "each: function( obj, callback ) {",
+      "makeArray: function( arr, results ) {",
+      "inArray: function( elem, arr, i ) {",
+      "merge: function( first, second ) {",
+      "grep: function( elems, callback, invert ",
+      "map: function( elems, callback, arg ) {"
+    ],
+    "snippets": [
+      {
+        "file": "test/unit/serialize.js",
+        "line": 30,
+        "code": "assert.equal( decodeURIComponent( jQuery.param( "
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "line": 1794,
+        "code": "( node[ expando ] = {} );"
+      },
+      {
+        "file": "test/data/testinit.js",
+        "line": 54,
+        "code": "function match( message, selector, expectedIds, "
+      },
+      {
+        "file": "src/selector.js",
+        "line": 1267,
+        "code": "function compile( selector, match /* Internal Us"
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "line": 2568,
+        "code": "function compile( selector, match /* Internal Us"
+      },
+      {
+        "file": "src/selector/preFilter.js",
+        "line": 58,
+        "code": "PSEUDO: function( match ) {"
+      },
+      {
+        "file": "src/selector.js",
+        "line": 978,
+        "code": "function setMatcher( preFilter, selector, matche"
+      },
+      {
+        "file": "src/css.js",
+        "line": 39,
+        "code": "function boxModelAdjustment( elem, dimension, bo"
+      },
+      {
+        "file": "src/ajax.js",
+        "line": 86,
+        "code": "function inspectPrefiltersOrTransports( structur"
+      },
+      {
+        "file": "src/manipulation.js",
+        "line": 29,
+        "code": "nodeName( content.nodeType !== 11 ? content : co"
+      },
+      {
+        "file": "src/manipulation/buildFragment.js",
+        "line": 14,
+        "code": "export function buildFragment( elems, context, s"
+      },
+      {
+        "file": "test/node_smoke_tests/commonjs/lib/ensure_iterability_es6.cjs",
+        "line": 8,
+        "code": "const ensureIterability = ( jQueryModuleSpecifie"
+      }
+    ],
+    "todos": [
+      {
+        "file": "eslint.config.js",
+        "text": "TODO: Enable this rule when eslint-plugin-import supports"
+      },
+      {
+        "file": "src/ajax/script.js",
+        "text": "hack transport"
+      },
+      {
+        "file": "src/data.js",
+        "text": "TODO: Drop _data, _removeData)"
+      },
+      {
+        "file": "src/data.js",
+        "text": "TODO: Now that all calls to _data and _removeData have been "
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "text": "hack if the browser"
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "text": "TODO: Drop _data, _removeData)"
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "text": "TODO: Now that all calls to _data and _removeData have been "
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "text": "hack by Dean Edwards\""
+      },
+      {
+        "file": "test/data/jquery-3.7.1.js",
+        "text": "hack transport"
+      },
+      {
+        "file": "test/unit/deferred.js",
+        "text": "xxx .resolve( \"bar\" )"
+      },
+      {
+        "file": "test/unit/effects.js",
+        "text": "FIXME why is this double only when run with other tests"
+      },
+      {
+        "file": "test/unit/effects.js",
+        "text": "TODO: uncrowd this"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      ";",
+      "{",
+      "}",
+      "=",
+      "function",
+      "+",
+      "if",
+      "return",
+      "var",
+      "this",
+      "true",
+      "==="
+    ],
+    "bigFiles": [
+      {
+        "path": "test/data/jquery-3.7.1.js",
+        "loc": 8654
+      },
+      {
+        "path": "test/unit/ajax.js",
+        "loc": 3969
+      },
+      {
+        "path": "test/unit/event.js",
+        "loc": 2897
+      },
+      {
+        "path": "test/unit/manipulation.js",
+        "loc": 2420
+      },
+      {
+        "path": "test/unit/selector.js",
+        "loc": 2315
+      },
+      {
+        "path": "test/unit/effects.js",
+        "loc": 2252
+      },
+      {
+        "path": "test/unit/css.js",
+        "loc": 1529
+      },
+      {
+        "path": "test/unit/attributes.js",
+        "loc": 1476
+      }
+    ],
+    "longestFunction": {
+      "name": "ajax",
+      "file": "src/ajax.js",
+      "lines": 467
+    },
+    "counts": {
+      "functions": 1298,
+      "classes": 1,
+      "todo": 8,
+      "fixme": 3,
+      "hack": 6,
+      "comments": 5437
+    },
+    "maxNesting": 13,
+    "avgLineLength": 37,
+    "indent": "mixed"
+  }
 }

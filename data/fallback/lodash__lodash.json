@@ -1,7 +1,7 @@
 {
   "slug": "lodash/lodash",
   "description": "A modern JavaScript utility library delivering modularity, performance, & extras.",
-  "stars": 61279,
+  "stars": 61280,
   "primaryLanguage": "JavaScript",
   "languages": {
     "JavaScript": 1543734,
@@ -119,5 +119,207 @@
     "fp/_convertBrowser.js",
     "test/asset/worker.js",
     ".markdown-doctest-setup.js"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "Foo",
+      "fn",
+      "iteratee",
+      "object",
+      "map",
+      "result",
+      "skipAssert",
+      "values",
+      "add",
+      "customizer",
+      "a",
+      "lodash",
+      "message",
+      "predicate",
+      "slice",
+      "b",
+      "resolve",
+      "wrapper",
+      "matches",
+      "build",
+      "isEqual",
+      "constant",
+      "stubTrue",
+      "set"
+    ],
+    "componentSymbols": {
+      "test": [
+        "iteratee",
+        "message",
+        "before",
+        "after"
+      ],
+      "root": [
+        "iteratee",
+        "apply",
+        "curry",
+        "baseRest"
+      ],
+      "perf": [
+        "log",
+        "run",
+        "basename",
+        "eventHandler"
+      ],
+      "fp": [
+        "wrap",
+        "baseConvert",
+        "overArg",
+        "baseAry"
+      ],
+      "lib": [
+        "build",
+        "min",
+        "Hash",
+        "pitch"
+      ]
+    },
+    "heartLines": [
+      "function arrayReduceRight(array, iterate",
+      "function baseReduce(collection, iteratee",
+      "function baseAggregator(collection, sett",
+      "function baseFlatten(array, depth, predi",
+      "function baseIsEqualDeep(object, other, ",
+      "function createHybrid(func, bitmask, thi",
+      "function createRecurry(func, bitmask, wr",
+      "function createWrap(func, bitmask, thisA",
+      "function equalArrays(array, other, bitma",
+      "function equalByTag(object, other, tag, ",
+      "function equalObjects(object, other, bit",
+      "isBuffer(value) || isTypedArray(value) |"
+    ],
+    "snippets": [
+      {
+        "file": "lodash.js",
+        "line": 230,
+        "code": "rsSpaceRange = ' \\\\t\\\\x0b\\\\f\\\\xa0\\\\ufeff\\\\n\\\\r\\\\"
+      },
+      {
+        "file": "test/test.js",
+        "line": 25238,
+        "code": "var object = { 'a': { '-1.23': { '[\"b\"]': { 'c':"
+      },
+      {
+        "file": "test/test.js",
+        "line": 7770,
+        "code": "var iteratee = function(value) { value.push(valu"
+      },
+      {
+        "file": "test/test-fp.js",
+        "line": 24,
+        "code": "var add = function(x, y) { return x + y; },"
+      },
+      {
+        "file": "lodash.js",
+        "line": 5237,
+        "code": "function createHybrid(func, bitmask, thisArg, pa"
+      },
+      {
+        "file": "lib/common/minify.js",
+        "line": 24,
+        "code": "function minify(srcPath, destPath, callback, opt"
+      },
+      {
+        "file": "fp/_baseConvert.js",
+        "line": 138,
+        "code": "function baseConvert(util, name, func, options) "
+      },
+      {
+        "file": "fp/_convertBrowser.js",
+        "line": 11,
+        "code": "function browserConvert(lodash, options) {"
+      },
+      {
+        "file": "perf/perf.js",
+        "line": 123,
+        "code": "function basename(filePath, extension) {"
+      },
+      {
+        "file": "lib/main/build-site.js",
+        "line": 65,
+        "code": "function removeHorizontalRules($) {"
+      },
+      {
+        "file": "lib/common/file.js",
+        "line": 21,
+        "code": "function copy(srcPath, destPath) {"
+      },
+      {
+        "file": "lib/fp/build-modules.js",
+        "line": 87,
+        "code": "function getTemplate(moduleName) {"
+      }
+    ],
+    "todos": [],
+    "commits": [],
+    "tokens": [
+      ";",
+      "{",
+      "}",
+      "=",
+      "function",
+      "var",
+      "return",
+      "+",
+      "if",
+      "false",
+      "true",
+      "-"
+    ],
+    "bigFiles": [
+      {
+        "path": "test/test.js",
+        "loc": 20385
+      },
+      {
+        "path": "lodash.js",
+        "loc": 16197
+      },
+      {
+        "path": "perf/perf.js",
+        "loc": 1774
+      },
+      {
+        "path": "test/test-fp.js",
+        "loc": 1634
+      },
+      {
+        "path": "fp/_baseConvert.js",
+        "loc": 516
+      },
+      {
+        "path": "test/underscore.html",
+        "loc": 455
+      },
+      {
+        "path": "fp/_mapping.js",
+        "loc": 343
+      },
+      {
+        "path": "test/index.html",
+        "loc": 307
+      }
+    ],
+    "longestFunction": {
+      "name": "runInContext",
+      "file": "lodash.js",
+      "lines": 15779
+    },
+    "counts": {
+      "functions": 738,
+      "classes": 0,
+      "todo": 0,
+      "fixme": 0,
+      "hack": 0,
+      "comments": 11366
+    },
+    "maxNesting": 12,
+    "avgLineLength": 35.6,
+    "indent": "mixed"
+  }
 }

@@ -19,7 +19,7 @@ function installFetch() {
       return new Response(new Uint8Array(archive([
         { path: 'README.md', text: `# ${label}` },
         { path: 'src/main.ts', text: `import './heart';` },
-        { path: 'src/heart.ts', text: 'export const heart = 1;' },
+        { path: 'src/heart.ts', text: `export function ${token === ALPHA ? 'alphaHandler' : token === BETA ? 'betaHandler' : 'publicHandler'}() { return 1; }` },
       ])));
     }
     if (url.endsWith('/languages')) return json({ TypeScript: 100 });
@@ -62,6 +62,8 @@ describe('per-request GitHub authentication', () => {
       analyzeRepo('demo/project'), analyzeRepo('https://github.com/demo/project', { token: ALPHA }),
     ]);
     expect(a.readme).toBe('Alpha private source'); expect(b.readme).toBe('Beta private source');
+    expect(a.dna?.identifiers).toContain('alphaHandler'); expect(b.dna?.identifiers).toContain('betaHandler');
+    expect(anonymous.dna?.identifiers).toContain('publicHandler'); expect(anonymous.dna?.identifiers).not.toContain('alphaHandler');
     expect(anonymous.readme).toBe('Public source'); expect(aAgain).toEqual(a); expect(aAgain).not.toBe(a);
     expect(fetcher).toHaveBeenCalledTimes(15);
     expect((await analyzeRepo('demo/project', { token: ALPHA })).readme).toBe('Alpha private source');
@@ -72,7 +74,7 @@ describe('per-request GitHub authentication', () => {
     const written = disk.writeFile.mock.calls[0];
     expect(written[0]).toContain('/.cache/analysis/demo/project.json');
     expect(written[1]).toContain('Public source');
-    for (const privateValue of [ALPHA, BETA, 'Alpha private source', 'Beta private source']) expect(written[1]).not.toContain(privateValue);
+    for (const privateValue of [ALPHA, BETA, 'Alpha private source', 'Beta private source', 'alphaHandler', 'betaHandler']) expect(written[1]).not.toContain(privateValue);
   });
   it('does not let fresh public disk cache mask an authenticated repository', async () => {
     disk.readFile.mockResolvedValue(JSON.stringify({ slug: 'demo/project', totalFiles: 9, components: [], primaryLanguage: 'Java', languages: { Java: 100 }, readme: 'Public old source', tree: [] }));

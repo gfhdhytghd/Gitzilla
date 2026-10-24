@@ -1,7 +1,7 @@
 {
   "slug": "burntsushi/ripgrep",
   "description": "ripgrep recursively searches directories for a regex pattern while respecting your gitignore",
-  "stars": 69398,
+  "stars": 69399,
   "primaryLanguage": "Rust",
   "languages": {
     "Rust": 1874012,
@@ -13,7 +13,7 @@
   },
   "totalFiles": 107,
   "totalLoc": 50796,
-  "commits": 2298,
+  "commits": 2300,
   "contributors": 483,
   "ageDays": 3879,
   "components": [
@@ -236,5 +236,274 @@
     "crates/core/flags/complete/powershell.rs",
     "crates/core/flags/complete/fish.rs",
     "crates/printer/src/hyperlink/aliases.rs"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "new",
+      "path",
+      "build",
+      "matched",
+      "args",
+      "matcher",
+      "len",
+      "default",
+      "bytes",
+      "fmt",
+      "m",
+      "line_number",
+      "Error",
+      "name_long",
+      "is_empty",
+      "from",
+      "builder",
+      "stats",
+      "stdout",
+      "lines",
+      "config",
+      "cmd",
+      "update",
+      "write"
+    ],
+    "componentSymbols": {
+      "crates/core": [
+        "new",
+        "path",
+        "build",
+        "args"
+      ],
+      "crates/ignore": [
+        "new",
+        "path",
+        "build",
+        "matched"
+      ],
+      "crates/printer": [
+        "new",
+        "path",
+        "build",
+        "matched"
+      ],
+      "crates/searcher": [
+        "new",
+        "build",
+        "matched",
+        "matcher"
+      ],
+      "tests": [
+        "new",
+        "path",
+        "args",
+        "bytes"
+      ],
+      "misc": [
+        "new",
+        "build",
+        "matcher",
+        "len"
+      ],
+      "crates/globset": [
+        "new",
+        "build",
+        "is_empty",
+        "write"
+      ],
+      "crates/regex": [
+        "new",
+        "build",
+        "len",
+        "Error"
+      ]
+    },
+    "heartLines": [
+      "fn strip<'a, P: 'a + AsRef<Path> + ?Size",
+      "pub fn new<P: AsRef<Path>>(root: P) -> G",
+      "pub fn build(&self) -> Result<Gitignore,",
+      "pub fn build_global(mut self) -> (Gitign",
+      "pub fn add<P: AsRef<Path>>(&mut self, pa",
+      "fn gitconfig_global_env_contents() -> Op",
+      "fn gitconfig_system_contents() -> Option",
+      "fn gitconfig_home_contents() -> Option<V",
+      "fn gitconfig_xdg_contents() -> Option<Ve",
+      "fn parse_excludes_file(data: &[u8]) -> O",
+      "fn gi_from_str<P: AsRef<Path>>(root: P, ",
+      "fn path_string<P: AsRef<Path>>(path: P) "
+    ],
+    "snippets": [
+      {
+        "file": "crates/core/flags/complete/powershell.rs",
+        "line": 37,
+        "code": "const TEMPLATE_FLAG: &'static str = \"[Completion"
+      },
+      {
+        "file": "crates/ignore/src/walk.rs",
+        "line": 1206,
+        "code": "return Some(Err(err));"
+      },
+      {
+        "file": "crates/globset/src/pathutil.rs",
+        "line": 9,
+        "code": "pub(crate) fn file_name<'a>(path: &Cow<'a, [u8]>"
+      },
+      {
+        "file": "crates/globset/src/lib.rs",
+        "line": 629,
+        "code": "pub fn from_bytes<P: AsRef<[u8]> + ?Sized>(path:"
+      },
+      {
+        "file": "crates/cli/src/pattern.rs",
+        "line": 82,
+        "code": "pub fn patterns_from_path<P: AsRef<Path>>(path: "
+      },
+      {
+        "file": "crates/core/main.rs",
+        "line": 77,
+        "code": "fn run(result: crate::flags::ParseResult<HiArgs>"
+      },
+      {
+        "file": "tests/util.rs",
+        "line": 449,
+        "code": "fn repeat<F: FnMut() -> io::Result<()>>(mut f: F"
+      },
+      {
+        "file": "crates/cli/src/human.rs",
+        "line": 44,
+        "code": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -"
+      },
+      {
+        "file": "crates/cli/src/process.rs",
+        "line": 44,
+        "code": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -"
+      },
+      {
+        "file": "crates/globset/src/glob.rs",
+        "line": 103,
+        "code": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -"
+      },
+      {
+        "file": "crates/ignore/src/lib.rs",
+        "line": 328,
+        "code": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -"
+      },
+      {
+        "file": "crates/ignore/src/walk.rs",
+        "line": 259,
+        "code": "fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -"
+      }
+    ],
+    "todos": [
+      {
+        "file": "crates/core/flags/complete/rg.zsh",
+        "text": "xxx --yyy --zzz"
+      },
+      {
+        "file": "crates/core/flags/complete/rg.zsh",
+        "text": "xxx`, `--yyy`, and"
+      },
+      {
+        "file": "crates/globset/src/lib.rs",
+        "text": "TODO: In the next semver breaking release, we should drop th"
+      },
+      {
+        "file": "crates/ignore/src/gitignore.rs",
+        "text": "TODO: This should not return a `Result`. Fix this in the nex"
+      },
+      {
+        "file": "crates/ignore/src/overrides.rs",
+        "text": "TODO: This should not return a `Result`. Fix this in the nex"
+      },
+      {
+        "file": "crates/regex/src/matcher.rs",
+        "text": "FIXME: Re-enable this test once inner literal extraction wor"
+      },
+      {
+        "file": "crates/regex/src/non_matching.rs",
+        "text": "FIXME: This is wrong, but not doing this leads to incorrect"
+      },
+      {
+        "file": "crates/regex/src/non_matching.rs",
+        "text": "FIXME: The first four tests below should correspond to a ful"
+      },
+      {
+        "file": "crates/searcher/src/searcher/core.rs",
+        "text": "FIXME: This works around a bug in grep-regex where it does"
+      },
+      {
+        "file": "crates/searcher/src/sink.rs",
+        "text": "TODO: In theory, it should be possible to amortize"
+      },
+      {
+        "file": "tests/regression.rs",
+        "text": "TODO(burntsushi): Darwin doesn't like this test for some rea"
+      },
+      {
+        "file": "tests/regression.rs",
+        "text": "TODO(burntsushi): Figure out how to make this test work on W"
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      ";",
+      "{",
+      "}",
+      "::",
+      "&",
+      "!",
+      "self",
+      "=",
+      "let",
+      "fn",
+      "mut",
+      "<"
+    ],
+    "bigFiles": [
+      {
+        "path": "crates/core/flags/defs.rs",
+        "loc": 6871
+      },
+      {
+        "path": "crates/printer/src/standard.rs",
+        "loc": 3688
+      },
+      {
+        "path": "crates/ignore/src/walk.rs",
+        "loc": 2547
+      },
+      {
+        "path": "crates/globset/src/glob.rs",
+        "loc": 1570
+      },
+      {
+        "path": "crates/ignore/src/dir.rs",
+        "loc": 1531
+      },
+      {
+        "path": "tests/regression.rs",
+        "loc": 1500
+      },
+      {
+        "path": "crates/core/flags/hiargs.rs",
+        "loc": 1411
+      },
+      {
+        "path": "crates/searcher/src/searcher/glue.rs",
+        "loc": 1397
+      }
+    ],
+    "longestFunction": {
+      "name": "test_path_separator",
+      "file": "crates/core/flags/defs.rs",
+      "lines": 1822
+    },
+    "counts": {
+      "functions": 2732,
+      "classes": 357,
+      "todo": 6,
+      "fixme": 4,
+      "hack": 2,
+      "comments": 10348
+    },
+    "maxNesting": 9,
+    "avgLineLength": 36.4,
+    "indent": "mixed"
+  }
 }

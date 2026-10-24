@@ -9,7 +9,7 @@
   },
   "totalFiles": 98,
   "totalLoc": 20553,
-  "commits": 2023,
+  "commits": 2030,
   "contributors": 543,
   "ageDays": 4512,
   "components": [
@@ -214,5 +214,222 @@
     "binding/toml_test.go",
     "binding/default_validator_benchmark_test.go",
     "binding/yaml_test.go"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "Render",
+      "Name",
+      "Bind",
+      "String",
+      "Error",
+      "Header",
+      "WriteContentType",
+      "Context",
+      "JSON",
+      "GET",
+      "New",
+      "Get",
+      "Use",
+      "CreateTestContext",
+      "Data",
+      "Write",
+      "Param",
+      "PerformRequest",
+      "Engine",
+      "Marshal",
+      "route",
+      "testRequest",
+      "ResponseWriter",
+      "BindBody"
+    ],
+    "componentSymbols": {
+      "root": [
+        "Render",
+        "Bind",
+        "String",
+        "Error"
+      ],
+      "binding": [
+        "Name",
+        "Bind",
+        "Error",
+        "Engine"
+      ],
+      "render": [
+        "Render",
+        "String",
+        "Header",
+        "WriteContentType"
+      ],
+      "ginS": [
+        "GET",
+        "Use",
+        "Run",
+        "POST"
+      ],
+      "internal": [
+        "Open",
+        "StringToBytes",
+        "BytesToString",
+        "rawBytesToStr"
+      ],
+      "codec": [
+        "Marshal",
+        "NewEncoder",
+        "NewDecoder",
+        "Unmarshal"
+      ]
+    },
+    "heartLines": [
+      "func StringToBytes(s string) []byte {",
+      "return unsafe.Slice(unsafe.StringData(s)",
+      "func BytesToString(b []byte) string {",
+      "return unsafe.String(unsafe.SliceData(b)"
+    ],
+    "snippets": [
+      {
+        "file": "context_test.go",
+        "line": 1463,
+        "code": "assert.Equal(t, \"[GIN-debug] [WARNING] Since Set"
+      },
+      {
+        "file": "tree.go",
+        "line": 474,
+        "code": "*value.params = (*value.params)[:skippedNode.par"
+      },
+      {
+        "file": "response_writer_test.go",
+        "line": 43,
+        "code": "func (w *nonFlusherWriter) Write(b []byte) (int,"
+      },
+      {
+        "file": "errors_test.go",
+        "line": 112,
+        "code": "func (e TestErr) Error() string { return string("
+      },
+      {
+        "file": "tree.go",
+        "line": 418,
+        "code": "func (n *node) getValue(path string, params *Par"
+      },
+      {
+        "file": "gin_test.go",
+        "line": 32,
+        "code": "func setupHTMLFiles(t *testing.T, mode string, t"
+      },
+      {
+        "file": "binding/multipart_form_mapping.go",
+        "line": 35,
+        "code": "func setByMultipartFormFile(value reflect.Value,"
+      },
+      {
+        "file": "binding/multipart_form_mapping.go",
+        "line": 63,
+        "code": "func setArrayOfMultipartFormFiles(value reflect."
+      },
+      {
+        "file": "context.go",
+        "line": 1330,
+        "code": "func (c *Context) DataFromReader(code int, conte"
+      },
+      {
+        "file": "binding/form_mapping.go",
+        "line": 75,
+        "code": "func (form formSource) TrySet(value reflect.Valu"
+      },
+      {
+        "file": "binding/form_mapping.go",
+        "line": 245,
+        "code": "func setByForm(value reflect.Value, field reflec"
+      },
+      {
+        "file": "binding/header.go",
+        "line": 35,
+        "code": "func (hs headerSource) TrySet(value reflect.Valu"
+      }
+    ],
+    "todos": [
+      {
+        "file": "context_test.go",
+        "text": "TODO"
+      },
+      {
+        "file": "context_test.go",
+        "text": "TODO"
+      },
+      {
+        "file": "tree.go",
+        "text": "XXX should resolve to /prefix/xxx, not match :id)."
+      },
+      {
+        "file": "tree.go",
+        "text": "xxx, not match :id)."
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      "{",
+      "}",
+      ":=",
+      "func",
+      "*",
+      "=",
+      "return",
+      "if",
+      "nil",
+      "&",
+      "false",
+      "struct"
+    ],
+    "bigFiles": [
+      {
+        "path": "context_test.go",
+        "loc": 3413
+      },
+      {
+        "path": "context.go",
+        "loc": 1331
+      },
+      {
+        "path": "binding/binding_test.go",
+        "loc": 1195
+      },
+      {
+        "path": "tree_test.go",
+        "loc": 1006
+      },
+      {
+        "path": "gin_test.go",
+        "loc": 992
+      },
+      {
+        "path": "binding/form_mapping_test.go",
+        "loc": 968
+      },
+      {
+        "path": "tree.go",
+        "loc": 840
+      },
+      {
+        "path": "routes_test.go",
+        "loc": 796
+      }
+    ],
+    "longestFunction": {
+      "name": "getValue",
+      "file": "tree.go",
+      "lines": 255
+    },
+    "counts": {
+      "functions": 1317,
+      "classes": 170,
+      "todo": 2,
+      "fixme": 0,
+      "hack": 2,
+      "comments": 2315
+    },
+    "maxNesting": 9,
+    "avgLineLength": 32.7,
+    "indent": "tabs"
+  }
 }

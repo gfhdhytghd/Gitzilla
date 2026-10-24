@@ -12,7 +12,7 @@
   },
   "totalFiles": 230,
   "totalLoc": 10252,
-  "commits": 3405,
+  "commits": 3410,
   "contributors": 489,
   "ageDays": 4057,
   "components": [
@@ -243,5 +243,269 @@
     "solutions/20_threads/threads2.rs",
     "solutions/09_strings/strings3.rs",
     "exercises/13_error_handling/errors1.rs"
-  ]
+  ],
+  "dna": {
+    "identifiers": [
+      "new",
+      "test",
+      "stdout",
+      "main",
+      "name",
+      "from",
+      "Message",
+      "CreationError",
+      "dir",
+      "Command",
+      "PositiveNonzeroInteger",
+      "try_from",
+      "Color",
+      "parse",
+      "output",
+      "path",
+      "Point",
+      "write_ascii",
+      "done",
+      "Progress",
+      "Fruit",
+      "exercises",
+      "args",
+      "assert"
+    ],
+    "componentSymbols": {
+      "solutions": [
+        "new",
+        "Command",
+        "parse",
+        "transformer"
+      ],
+      "exercises": [
+        "new",
+        "Command",
+        "parse",
+        "make_sausage"
+      ],
+      "src": [
+        "new",
+        "Command",
+        "parse",
+        "path"
+      ],
+      "src/dev": [
+        "new",
+        "check",
+        "update",
+        "SolutionCheck"
+      ],
+      "src/list": [
+        "new",
+        "selected",
+        "build",
+        "filter"
+      ],
+      "src/watch": [
+        "done",
+        "build",
+        "InputEvent",
+        "check_all_exercises"
+      ],
+      "misc": [
+        "args",
+        "ExerciseInfo",
+        "InfoFile",
+        "init"
+      ],
+      "website": []
+    },
+    "heartLines": [
+      "fn name(&self) -> &str;",
+      "fn dir(&self) -> Option<&str>;",
+      "fn strict_clippy(&self) -> bool;",
+      "fn embedded_input_files(&self) -> &[Inpu",
+      "fn run<const FORCE_STRICT_CLIPPY: bool>(",
+      "fn run_exercise(&self, output: Option<&m",
+      "fn run_solution(&self, output: Option<&m",
+      "fn sol_path(&self) -> String {",
+      "fn name(&self) -> &str {",
+      "fn dir(&self) -> Option<&str> {",
+      "fn strict_clippy(&self) -> bool {",
+      "fn embedded_input_files(&self) -> &[Inpu"
+    ],
+    "snippets": [
+      {
+        "file": "src/dev/check.rs",
+        "line": 405,
+        "code": "const SKIP_CHECK_UNSOLVED_HINT: &str = \"If this "
+      },
+      {
+        "file": "src/watch/notify_event.rs",
+        "line": 47,
+        "code": ".send(WatchEvent::FileChange { exercise_ind })"
+      },
+      {
+        "file": "src/exercise.rs",
+        "line": 186,
+        "code": "fn run_exercise(&self, output: Option<&mut Vec<u"
+      },
+      {
+        "file": "src/list/state.rs",
+        "line": 119,
+        "code": "fn draw_exercise_name(&self, writer: &mut MaxLen"
+      },
+      {
+        "file": "src/dev/check.rs",
+        "line": 152,
+        "code": "fn check_unexpected_files(dir: &str, allowed_fil"
+      },
+      {
+        "file": "src/term.rs",
+        "line": 116,
+        "code": "pub fn build(stdout: &'a mut StdoutLock<'lock>, "
+      },
+      {
+        "file": "src/watch/state.rs",
+        "line": 305,
+        "code": "pub fn update_term_width(&mut self, width: u16, "
+      },
+      {
+        "file": "src/app_state.rs",
+        "line": 406,
+        "code": "fn check_all_exercises_impl(&mut self, stdout: &"
+      },
+      {
+        "file": "src/watch/state.rs",
+        "line": 286,
+        "code": "pub fn check_all_exercises(&mut self, stdout: &m"
+      },
+      {
+        "file": "src/dev/new.rs",
+        "line": 20,
+        "code": "fn write_rel_file<C>(file_name: &str, current_di"
+      },
+      {
+        "file": "exercises/18_iterators/iterators5.rs",
+        "line": 47,
+        "code": "fn count_collection_iterator(collection: &[HashM"
+      },
+      {
+        "file": "solutions/18_iterators/iterators5.rs",
+        "line": 40,
+        "code": "fn count_collection_iterator(collection: &[HashM"
+      }
+    ],
+    "todos": [
+      {
+        "file": "exercises/00_intro/intro1.rs",
+        "text": "TODO: We sometimes encourage you to keep trying things on a "
+      },
+      {
+        "file": "exercises/00_intro/intro2.rs",
+        "text": "TODO: Fix the code to print \"Hello world!\"."
+      },
+      {
+        "file": "exercises/01_variables/variables1.rs",
+        "text": "TODO: Add the missing keyword."
+      },
+      {
+        "file": "exercises/01_variables/variables2.rs",
+        "text": "TODO: Change the line below to fix the compiler error."
+      },
+      {
+        "file": "exercises/01_variables/variables3.rs",
+        "text": "TODO: Change the line below to fix the compiler error."
+      },
+      {
+        "file": "exercises/01_variables/variables4.rs",
+        "text": "TODO: Fix the compiler error."
+      },
+      {
+        "file": "exercises/01_variables/variables5.rs",
+        "text": "TODO: Fix the compiler error by changing the line below with"
+      },
+      {
+        "file": "exercises/01_variables/variables6.rs",
+        "text": "TODO: Change the line below to fix the compiler error."
+      },
+      {
+        "file": "exercises/02_functions/functions1.rs",
+        "text": "TODO: Add some function with the name `call_me` without argu"
+      },
+      {
+        "file": "exercises/02_functions/functions2.rs",
+        "text": "TODO: Add the missing type of the argument `num` after the c"
+      },
+      {
+        "file": "exercises/02_functions/functions3.rs",
+        "text": "TODO: Fix the function call."
+      },
+      {
+        "file": "exercises/02_functions/functions4.rs",
+        "text": "TODO: Fix the function signature."
+      }
+    ],
+    "commits": [],
+    "tokens": [
+      ";",
+      "{",
+      "}",
+      "::",
+      "!",
+      "=",
+      "fn",
+      "&",
+      "let",
+      "self",
+      "<",
+      "mut"
+    ],
+    "bigFiles": [
+      {
+        "path": "src/app_state.rs",
+        "loc": 559
+      },
+      {
+        "path": "src/list/state.rs",
+        "loc": 388
+      },
+      {
+        "path": "src/dev/check.rs",
+        "loc": 338
+      },
+      {
+        "path": "src/watch/state.rs",
+        "loc": 260
+      },
+      {
+        "path": "src/term.rs",
+        "loc": 225
+      },
+      {
+        "path": "src/exercise.rs",
+        "loc": 214
+      },
+      {
+        "path": "src/init.rs",
+        "loc": 205
+      },
+      {
+        "path": "src/main.rs",
+        "loc": 179
+      }
+    ],
+    "longestFunction": {
+      "name": "init",
+      "file": "src/init.rs",
+      "lines": 182
+    },
+    "counts": {
+      "functions": 844,
+      "classes": 145,
+      "todo": 147,
+      "fixme": 0,
+      "hack": 3,
+      "comments": 1362
+    },
+    "maxNesting": 9,
+    "avgLineLength": 32.7,
+    "indent": "spaces4"
+  }
 }

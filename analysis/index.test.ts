@@ -58,6 +58,15 @@ describe('public repo analysis API', () => {
     expect((await analyzeRepo('demo/project')).tree).toContain('src/main.ts');
     expect(mocks.github).toHaveBeenCalledOnce();
   });
+  it('refreshes pre-DNA disk cache entries and keeps source-free fallback DNA explicitly empty', async () => {
+    const { analyzeRepo, syntheticProfile } = await import('./index.ts');
+    const { dna: _dna, ...old } = profile;
+    mocks.readFile.mockResolvedValue(JSON.stringify(old)); mocks.stat.mockResolvedValue({ mtimeMs: Date.now() });
+    expect((await analyzeRepo('demo/project')).dna).toEqual(profile.dna);
+    expect(mocks.github).toHaveBeenCalledOnce();
+    expect(syntheticProfile('demo/offline').dna?.identifiers).toEqual([]);
+    expect(syntheticProfile('demo/offline').dna?.longestFunction).toBeNull();
+  });
   it('uses stale real cache on network failure and marks that response as fallback', async () => {
     const { analyzeRepo } = await import('./index.ts');
     mocks.readFile.mockResolvedValue(JSON.stringify(profile)); mocks.stat.mockResolvedValue({ mtimeMs: Date.now() - 2 * 86_400_000 });
