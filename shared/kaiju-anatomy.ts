@@ -9,6 +9,15 @@ export type HydraSlot = "wing" | "tail" | "head-0" | "head-1" | "leg" | "head-2"
 export type MechaSlot = "back-armor" | "tail" | "head" | "rocket-fist" | "leg" | "shoulder-cannon" | "leg-back" | "tail-tip";
 export type AbyssalSlot = "coil" | "tail" | "head" | "crest" | "coil-front" | "neck" | "coil-back" | "tail-tip";
 export type BossSlot = KaijuSlot | HydraSlot | MechaSlot | AbyssalSlot;
+/** Coarse body-part tag per anchor (sim filters airborne hitboxes and picks behaviors by tag). */
+export type AnchorTag = "head" | "neck" | "wing" | "arm" | "leg" | "tail" | "plate" | "coil" | "jet" | "core";
+
+const TAG: Record<BossSlot, AnchorTag> = {
+  plates: "plate", "neck-plates": "plate", jaw: "head", arms: "arm", leg: "leg", "leg-back": "leg", tail: "tail", "tail-tip": "tail",
+  wing: "wing", "head-0": "head", "head-1": "head", "head-2": "head", neck: "neck",
+  "back-armor": "plate", head: "head", "rocket-fist": "arm", "shoulder-cannon": "jet",
+  coil: "coil", "coil-front": "coil", "coil-back": "coil", crest: "plate",
+};
 
 interface SlotDef { slot: BossSlot; dx: number; dy: number; r: number; aloft?: boolean }
 
@@ -76,10 +85,10 @@ export function kaijuTailLen(kit: BossKit): number {
 
 export interface BossAnchors {
   archetype: BossArchetype;
-  chest: { dx: number; dy: number; r: number };  // the glowing heart core = "heart" region
-  mouth: { dx: number; dy: number };             // primary breath/beam origin
-  mouths: { dx: number; dy: number }[];          // hydra: one per head (pose.head / attack head index); others: [mouth]
-  limbs: { id: string; slot: BossSlot; dx: number; dy: number; r: number; aloft: boolean }[];
+  chest: { dx: number; dy: number; r: number; tag: "core" };  // the glowing heart core = "heart" region
+  mouth: { dx: number; dy: number };             // primary breath/beam origin (= mouths[0])
+  mouths: { dx: number; dy: number }[];          // one per drawn head: hydra 2–3 (rotate pose.head / beam origin), others 1
+  limbs: { id: string; slot: BossSlot; tag: AnchorTag; dx: number; dy: number; r: number; aloft: boolean }[];
 }
 /** Back-compat name used by the first kaiju version. */
 export type KaijuAnchors = BossAnchors;
@@ -104,10 +113,11 @@ export function bossAnchors(kit: BossKit): BossAnchors {
   const arch = bossArchetype(kit);
   const table = SLOTS[arch];
   const tail = kaijuTailLen(kit);
-  const mouths = MOUTHS[arch];
+  // hydra: 3 heads once the repo has 6+ components (the head-2 slot exists), else 2; the art draws exactly mouths.length heads
+  const mouths = arch === "hydra" ? MOUTHS.hydra.slice(0, kit.limbs.length >= 6 ? 3 : 2) : MOUTHS[arch];
   return {
     archetype: arch,
-    chest: { ...CHEST[arch] },
+    chest: { ...CHEST[arch], tag: "core" },
     mouth: { ...mouths[0] },
     mouths: mouths.map((m) => ({ ...m })),
     limbs: kit.limbs.map((l, i) => {
@@ -115,7 +125,7 @@ export function bossAnchors(kit: BossKit): BossAnchors {
       const s = table[i % table.length];
       const extra = Math.floor(i / table.length) * 6;
       const dx = s.slot === "tail-tip" ? tail - 4 + (arch === "abyssal" ? 2 : 0) : s.dx;
-      return { id: l.id, slot: s.slot, dx: dx + extra, dy: s.dy, r: s.r, aloft: !!s.aloft };
+      return { id: l.id, slot: s.slot, tag: TAG[s.slot], dx: dx + extra, dy: s.dy, r: s.r, aloft: !!s.aloft };
     }),
   };
 }
