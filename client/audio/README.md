@@ -14,7 +14,9 @@ document.addEventListener('pointerdown', () => {
 
 // On each new authoritative snapshot, once (never every render frame):
 audio.music(state.status === 'victory' || state.status === 'defeat'
-  ? state.status : state.boss.kit.theme, state.boss.phase);
+  ? state.status : state.boss?.kit.theme ?? 'notebook',
+  state.boss?.phase ?? Math.min(3, state.pvp?.round ?? 1) as 1 | 2 | 3,
+  { intro: state.mode !== 'edu' }); // classroom PvP has no boss or modem summon
 audio.onEvents(state.events, selfId);
 
 audio.onFire(self.kit.weapon); // on a new local shot, not held-fire every render
@@ -24,6 +26,8 @@ audio.setVolume(0.6); // 0..1, default .6
 ```
 
 The first move from lobby/no music to an arena in phase 1 automatically plays the modem-handshake sting. Phase events update the active arena arrangement; victory/defeat events select the end-state loop. Repeated `music(theme, phase)` calls with the same selection preserve the playhead. Phase 2 adds kick/snare/hat and 12% tempo; phase 3 adds 24% tempo, sample-and-hold, five-bit quantization, packet stutters, and a music-only distortion node. Lobby/victory/defeat ignore the phase argument.
+
+For classroom PvP (no boss), use notebook music with `{intro:false}` as the optional third argument. This also cancels a queued modem sting before unlock. `lesson` events play a quiet, low-priority notification; `perk.correct === true` plays a positive quiz chime and `false` plays a gentle retry cue. Absent `correct` keeps the ordinary perk jingle. These work through existing `onEvents`, including hero-vs-hero hit/source emphasis. The demo includes CLASSROOM PvP, lesson, quiz-correct and quiz-retry buttons.
 
 Each arena has its own scale, tempo and instrument in `synth.ts`: terminal minor pentatonic/narrow pulse; kernel Phrygian/saw; web Lydian/micro-pulse; notebook Dorian/FM bell; enterprise major/octave organ; legacy harmonic minor/plucked triangle. Four-bar buffers loop sample-accurately with short silent boundaries. Track changes crossfade. There are no music timers or AudioWorklet dependencies.
 

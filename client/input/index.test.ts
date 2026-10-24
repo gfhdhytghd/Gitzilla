@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInput, createInputDebugPanel, vibrate } from './index';
 import type { InputController } from './index';
+import type { MotionProfile } from '../../shared/types';
 
 // Small browser fixture: no jsdom dependency and no actual sensor/device claims.
 class ElementFixture extends EventTarget {
@@ -45,8 +46,9 @@ let canvas: ElementFixture;
 let time: number;
 let controller: InputController | undefined;
 
-function start() {
+function start(motionProfile?: MotionProfile) {
   controller = createInput({ canvas: canvas as unknown as HTMLCanvasElement,
+    motionProfile,
     toArena: (x, y) => [x / 2, y / 2], getSelf: () => ({ x: 10, y: 20 }) });
   return controller;
 }
@@ -81,6 +83,9 @@ beforeEach(() => {
   vi.stubGlobal('window', win);
   vi.stubGlobal('document', doc);
   vi.stubGlobal('navigator', { maxTouchPoints: 0, vibrate: vi.fn(() => true) });
+  const stored = new Map<string, string>();
+  vi.stubGlobal('localStorage', { getItem: (key: string) => stored.get(key) ?? null,
+    setItem: (key: string, value: string) => { stored.set(key, value); } });
 });
 afterEach(() => {
   controller?.dispose();
@@ -292,6 +297,72 @@ describe('motion-v2 permissions and live sensors', () => {
     pointer(win, 'pointerdown', 2, { target: canvas }); advance(1000);
     expect(input.sample().fire).toBe(true);
     pointer(win, 'pointerup', 2); expect(input.sample().fire).toBe(false);
+  });
+});
+
+describe('inclusive profile integration', () => {
+  it('tapping settings/profile UI cannot prompt for sensors before choosing tap-only', () => {
+    const request = vi.fn(async () => 'granted');
+    mobile(request);
+    const input = start();
+    const button = doc.createElement('button');
+    pointer(win, 'pointerdown', 1, { target: button });
+    expect(request).not.toHaveBeenCalled();
+    input.setMotionProfile('tap-only');
+    expect(input.needsPermission).toBe(false);
+    expect(request).not.toHaveBeenCalled();
+  });
+  it('persists seated selection across controller lifecycles and uses a small flick', () => {
+    mobile();
+    let input = start();
+    input.setMotionProfile('seated');
+    input.dispose();
+    input = start();
+    expect(input.motionProfile).toBe('seated');
+    motion(7, 0, 0);
+    expect(input.sample()).toMatchObject({ fire: true, dash: false, skill: false, source: 'motion' });
+  });
+  it('tap-only shows the joystick, never requests sensors, and ignores late events', async () => {
+    const request = vi.fn(async () => 'granted');
+    mobile(request);
+    const input = start('tap-only');
+    expect(input.mode).toBe('touch');
+    expect(input.needsPermission).toBe(false);
+    expect(await input.requestPermission()).toBe(false);
+    emit(win, 'deviceorientation', { beta: 60, gamma: 40 }); motion(50, 50, 50);
+    expect(input.sample()).toMatchObject({ move: [0, 0], fire: false, source: 'touch' });
+    const zone = doc.body.children[0].children[0];
+    expect(zone.style.display).toBe('');
+    pointer(win, 'pointerdown', 7, { target: canvas }); pointer(win, 'pointerup', 7);
+    expect(input.sample().fire).toBe(true);
+    advance(401); expect(input.sample().fire).toBe(false);
+    expect(request).not.toHaveBeenCalled();
+  });
+  it('switches live profiles without leaking sensor attacks and can re-enable permission', async () => {
+    const request = vi.fn(async () => 'granted');
+    mobile(request);
+    const input = start('seated');
+    await input.requestPermission(); motion(7, 0, 0);
+    expect(input.sample().fire).toBe(true);
+    input.setMotionProfile('tap-only'); motion(50, 0, 0);
+    expect(input.sample()).toMatchObject({ fire: false, move: [0, 0], source: 'touch' });
+    input.setMotionProfile('standard');
+    expect(input.mode).toBe('motion');
+    for (let i = 0; i < 4; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 0 }); advance(100); }
+    motion(7, 0, 0);
+    expect(input.sample().fire).toBe(false);
+  });
+  it('a pending native permission result cannot override a switch to tap-only', async () => {
+    let resolve!: (result: string) => void;
+    mobile(() => new Promise<string>(r => { resolve = r; }));
+    const input = start();
+    const permission = input.requestPermission();
+    input.setMotionProfile('tap-only'); resolve('granted');
+    expect(await permission).toBe(false);
+    motion(50, 0, 0); advance(2000);
+    expect(input.mode).toBe('touch');
+    expect(input.sensorStatus).toBe('off');
+    expect(input.needsPermission).toBe(false);
   });
 });
 

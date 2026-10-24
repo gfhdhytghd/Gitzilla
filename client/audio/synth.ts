@@ -87,6 +87,9 @@ function sfxPatches(name: SfxName): Patch[] {
       { wave: 'triangle', from: 160, to: 45, length: 0.16, gain: 0.5 }, ...notes([1568, 1175, 784], 'pulse', 0.025, 0.2, 0.07)];
     case 'perk': return [...notes([523, 659, 784, 1046], 'bell', 0.075, 0.6, 0.24),
       ...[261, 330, 392].map((from): Patch => ({ wave: 'organ', from, at: 0.225, length: 0.35, gain: 0.25 }))];
+    case 'lesson': return notes([659, 880], 'bell', 0.055, 0.35, 0.16);
+    case 'quizCorrect': return notes([659, 830, 988, 1318], 'bell', 0.065, 0.6, 0.24);
+    case 'quizWrong': return notes([440, 392], 'triangle', 0.1, 0.45, 0.23);
     case 'telegraph': return [0, 0.15, 0.3].map((at, index) => ({ wave: 'pulse', from: index === 1 ? 622 : 880, at, length: 0.105, gain: 0.55, decay: 0.8 }));
     case 'limbBroken': return [{ wave: 'noise', from: 1, length: 0.65, gain: 0.85, bits: 4, hold: 12, decay: 5 }, { wave: 'saw', from: 110, to: 28, length: 0.6, gain: 0.65 }, ...notes([1568, 1175, 784, 392], 'pulse', 0.06, 0.22)];
     case 'downed': return [...notes([392, 330, 261, 185], 'triangle', 0.13, 0.7, 0.32), { wave: 'pulse', from: 65, to: 35, length: 0.7, gain: 0.25 }];

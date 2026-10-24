@@ -54,6 +54,11 @@ for (const [key, profile] of Object.entries(MUSIC_PROFILES)) {
   caption.textContent = `${profile.bpm} BPM / ${profile.label}`;
   el.append(caption);
 }
+button('#music', 'CLASSROOM PvP / NO BOSS', () => {
+  theme = 'notebook';
+  audio.music('notebook', phase(), { intro: false });
+  document.querySelectorAll('#music button').forEach(el => el.classList.remove('active'));
+}, 'music-classroom');
 phaseSelect.addEventListener('change', () => {
   if (theme) void audition(`${theme} // phase ${phase()}`, () => audio.music(theme!, phase()));
 });
@@ -78,6 +83,9 @@ const eventFactories: Record<string, () => GameEvent[]> = {
   'pickup-armor': () => [{ type: 'pickup', player: self(), kind: 'armor', x: 80, y: 90 }],
   obstacleBroken: () => [{ type: 'obstacleBroken', id: 1, label: 'router.ts', x: 80, y: 90 }],
   perk: () => [{ type: 'perk', player: self(), perk: 'Merge Approved' }],
+  lesson: () => [{ type: 'lesson', concept: 'test-coverage', ref: 'tests/parser.ts', facts: { testRatio: 0.3 } }],
+  'quiz-correct': () => [{ type: 'perk', player: self(), perk: 'review reward', correct: true }],
+  'quiz-retry': () => [{ type: 'perk', player: self(), perk: 'keep learning', correct: false }],
   phase: () => [{ type: 'phase', phase: phase() }],
   victory: () => [{ type: 'victory' }],
   defeat: () => [{ type: 'defeat' }],

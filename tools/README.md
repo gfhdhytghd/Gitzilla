@@ -3,11 +3,14 @@
 ```sh
 npx tsx tools/playtest.ts --players 4 --boss pallets/flask --seconds 60
 npx tsx tools/playtest.ts --players 4 --seconds 180 --headed
+npx tsx tools/playtest.ts --mode edu --players 4 --seconds 30
 ```
 
 Playwright is a devDependency. If Chromium is missing, run `npx playwright install chromium`. The harness also tries `/usr/bin/chromium`; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to override. The harness reuses the shared DEV server at **http://localhost:5175**; **`PLAYTEST_URL`** overrides that URL. It never starts or stops servers. Port 5173 and `gitzilla.wilflin.me` are stable live targets and are rejected before any request. Audio smoke uses the same DEV default and accepts `SMOKE_URL` or `PLAYTEST_URL`.
 
-`--players` is 1–8 (default 4), `--seconds` is the maximum fight-driving duration (default 60), `--boss` defaults to `pallets/flask`. Each player gets an isolated browser context. Player 1 is the desktop owner at 1280×720. With 2+ players the final player uses **portrait 390×844 CSS, DPR 3**, mobile viewport and touch emulation (1170×2532 PNG). A one-player run adds a phone **spectator**, preserving the requested player count. Desktop players use WASD wander, held J, periodic Space/E. The generic phone context disables sensor APIs to exercise the real touch fallback using CDP touch drags and action buttons; the keyboard driver is still present for synthetic harness fixtures. It tests phone layout and fallback touch controls; use the motion test below for sensor-to-server proof.
+`--players` in battle is 1–8 (default 4), `--seconds` is the maximum fight-driving duration (default 60), `--boss` defaults to `pallets/flask`. Each player gets an isolated browser context. Player 1 is the desktop owner at 1280×720. With 2+ players the final player uses **portrait 390×844 CSS, DPR 3**, mobile viewport and touch emulation (1170×2532 PNG). A one-player run adds a phone **spectator**, preserving the requested player count. Desktop players use WASD wander, held J, periodic Space/E. The generic phone context disables sensor APIs to exercise the real touch fallback using CDP touch drags and action buttons; the keyboard driver is still present for synthetic harness fixtures. It tests phone layout and fallback touch controls; use the motion test below for sensor-to-server proof.
+
+`--mode edu` selects **classroom PvP**, supports 2–30 students, and never selects/submits a boss. It clicks the owner's `mode-edu` control before others join, confirms authoritative `LobbyState.mode`, and checks `boss === null`, `heroScale === 2`, PvP rounds/scoring and per-student quality cards in snapshots. Start screenshots are `classroom-start-*`, with no boss intro. If the match naturally ends, the autopsy must contain every student's ranking and no boss. Summary JSON includes quality cards, PvP state, rankings, lesson and quiz-event counts. `--mode battle` remains the default (1–8 players). A timed run does not prove all three rounds or inter-round quizzes completed; use a sufficiently long `--seconds` for that acceptance test.
 
 Artifacts go to `docs/shots/<timestamp>/`:
 
@@ -26,6 +29,7 @@ Use `data-testid` on the actual interactive/visible elements, unique within a pa
 | Test ID | Contract |
 | --- | --- |
 | `create-room` | Landing create button; clicking navigates to `/r/<ROOM>`. |
+| `mode-battle`, `mode-edu` | Owner's mode buttons; select before student joins, synchronized to server lobby mode. |
 | `player-name` | Optional display-name input, on landing or join screen. |
 | `join-room` | Optional confirmation button if joining isn't automatic. |
 | `player-repo-input` | Current player's editable GitHub repo field. |
@@ -42,6 +46,8 @@ Use `data-testid` on the actual interactive/visible elements, unique within a pa
 No app-private functions or direct WebSocket input injection are used. The harness observes actual WebSocket traffic to verify the UI's actions reached the server. Repositories are selected from `/api/fallbacks`, cycled for the requested player count. The specified boss is submitted exactly as given; use a listed fallback boss for a reliable demo.
 
 Harness self-tests: `npx vitest run tools/playtest.test.ts` checks CLI options. `PLAYTEST_SELF_TEST=1 npx vitest run tools/playtest.integration.test.ts` launches browsers against a clearly labeled synthetic UI/WebSocket fixture, checks both screenshot dimensions and control/ack evidence, then injects page/protocol errors to verify nonzero exit. Those summaries have `syntheticFixture: true`; they verify the harness and do not establish real-game acceptance. The browser self-tests are skipped during normal `npm test`.
+
+`npx tsx tools/inclusive-motion.ts` checks persistent standard/seated/tap-only profiles in a browser component fixture using the actual DEV input module. It records the distinction from game/UI/hardware acceptance in its JSON artifact. `npx tsx tools/audio-smoke.ts` also auditions quiet lesson/quiz feedback and asserts that classroom music suppresses the boss modem sting.
 
 ## Motion v2 / portrait phone
 

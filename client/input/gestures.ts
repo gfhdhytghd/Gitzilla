@@ -1,3 +1,6 @@
+import type { MotionProfile } from '../../shared/types';
+import { MOTION_SETTINGS } from './profiles';
+
 /** Pure sensor processing. Times are monotonic milliseconds; acceleration is m/s². */
 export interface Acceleration { x: number; y: number; z: number }
 export interface GestureState {
@@ -19,12 +22,14 @@ export function createGestureState(): GestureState {
 }
 
 /** Motion v2: any-axis swing attacks. Dash and skill belong exclusively to buttons. */
-export function recognizeGesture(previous: GestureState, a: Acceleration, now: number): GestureResult {
+export function recognizeGesture(previous: GestureState, a: Acceleration, now: number, profile: MotionProfile = 'standard'): GestureResult {
+  if (profile === 'tap-only') return { state: createGestureState(), fire: false, fired: false, dash: false, skill: false };
+  const settings = MOTION_SETTINGS[profile];
   const state = { ...previous };
   const magnitude = Math.hypot(a.x, a.y, a.z);
-  if (magnitude < 5) state.peakHeld = false;
+  if (magnitude < settings.releaseThreshold) state.peakHeld = false;
   const opposite = state.lastPeak && a.x * state.lastPeak.x + a.y * state.lastPeak.y + a.z * state.lastPeak.z < 0;
-  const fired = magnitude >= 12 && (!state.peakHeld || !!opposite) && now - state.lastFire >= 200;
+  const fired = magnitude >= settings.swingThreshold && (!state.peakHeld || !!opposite) && now - state.lastFire >= settings.refractoryMs;
   if (fired) {
     state.peakHeld = true;
     state.lastPeak = { ...a };
@@ -62,12 +67,14 @@ export function gravityTilt(gravity: Acceleration, angle: number, sign: number):
     Math.asin(Math.max(-1, Math.min(1, sign * gravity.y / length))) * 180 / Math.PI, angle);
 }
 
-export function tiltMove(current: [number, number], neutral: [number, number]): [number, number] {
+export function tiltMove(current: [number, number], neutral: [number, number], profile: MotionProfile = 'standard'): [number, number] {
+  if (profile === 'tap-only') return [0, 0];
+  const settings = MOTION_SETTINGS[profile];
   const x = current[0] - neutral[0];
   const y = current[1] - neutral[1];
   const magnitude = Math.hypot(x, y);
-  if (magnitude <= 4) return [0, 0];
-  const strength = Math.min(1, (magnitude - 4) / 16);
+  if (magnitude <= settings.deadzone) return [0, 0];
+  const strength = Math.min(1, (magnitude - settings.deadzone) / (settings.fullSpeed - settings.deadzone));
   return [x / magnitude * strength, y / magnitude * strength];
 }
 

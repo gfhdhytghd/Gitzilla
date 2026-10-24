@@ -1,8 +1,11 @@
+import type { MotionProfile } from '../../shared/types';
+
 export interface InputDebugState {
   mode: string;
   permission: string;
   sensors: 'on' | 'waiting' | 'off';
   calibrating: boolean;
+  profile: MotionProfile;
   beta: number;
   gamma: number;
   angle: number;
@@ -12,7 +15,7 @@ export interface InputDebugState {
 }
 
 export const debugState: InputDebugState = {
-  mode: 'uninitialized', permission: 'unknown', sensors: 'off', calibrating: false, beta: 0, gamma: 0, angle: 0,
+  mode: 'uninitialized', permission: 'unknown', sensors: 'off', calibrating: false, profile: 'standard', beta: 0, gamma: 0, angle: 0,
   acceleration: { x: 0, y: 0, z: 0 }, move: [0, 0], gestures: [],
 };
 
@@ -30,7 +33,7 @@ export function createInputDebugPanel(): HTMLDivElement & { dispose(): void } {
   const render = () => {
     const s = debugState;
     const a = s.acceleration;
-    panel.textContent = `INPUT ${s.mode} | sensors: ${s.sensors} | permission: ${s.permission}${s.calibrating ? ' | calibrating' : ''}\n` +
+    panel.textContent = `INPUT ${s.mode} | profile: ${s.profile} | sensors: ${s.sensors} | permission: ${s.permission}${s.calibrating ? ' | calibrating' : ''}\n` +
       `beta ${s.beta.toFixed(1)} gamma ${s.gamma.toFixed(1)} screen ${s.angle}°\n` +
       `accel x ${a.x.toFixed(2)} y ${a.y.toFixed(2)} z ${a.z.toFixed(2)} |a| ${Math.hypot(a.x, a.y, a.z).toFixed(2)}\n` +
       `move ${s.move.map(v => v.toFixed(2)).join(', ')}\n` + s.gestures.join('\n');

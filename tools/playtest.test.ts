@@ -14,11 +14,18 @@ describe('DEV server targeting', () => {
 
 describe('playtest CLI options', () => {
   it('uses the documented four-player sixty-second default', () => {
-    expect(parseOptions([])).toEqual({ players: 4, boss: 'pallets/flask', seconds: 60, headed: false });
+    expect(parseOptions([])).toEqual({ players: 4, boss: 'pallets/flask', seconds: 60, headed: false, mode: 'battle' });
   });
   it('accepts all requested options without depending on their order', () => {
     expect(parseOptions(['--headed', '--seconds', '12.5', '--boss', 'facebook/react', '--players', '8']))
-      .toEqual({ players: 8, boss: 'facebook/react', seconds: 12.5, headed: true });
+      .toEqual({ players: 8, boss: 'facebook/react', seconds: 12.5, headed: true, mode: 'battle' });
+  });
+  it('supports 2–30 classroom students regardless of argument order', () => {
+    expect(parseOptions(['--players', '30', '--mode', 'edu']).players).toBe(30);
+    expect(parseOptions(['--mode', 'edu', '--players', '2']).mode).toBe('edu');
+    expect(() => parseOptions(['--mode', 'edu', '--players', '1'])).toThrow('--players');
+    expect(() => parseOptions(['--mode', 'edu', '--players', '31'])).toThrow('--players');
+    expect(() => parseOptions(['--mode', 'unknown'])).toThrow('--mode');
   });
   it.each(['0', '9', '1.5', 'nope'])('rejects invalid player count %s', count => {
     expect(() => parseOptions(['--players', count])).toThrow('--players');

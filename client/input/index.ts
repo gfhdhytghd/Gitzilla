@@ -1,21 +1,26 @@
-import type { InputFrame } from '../../shared/types';
+import type { InputFrame, MotionProfile } from '../../shared/types';
 import { createGestureState, gravityTilt, normalize, recognizeGesture, removeGravity, screenTilt, tiltMove } from './gestures';
 import type { Acceleration } from './gestures';
 import { createInputDebugPanel, debugState, recordGesture } from './debug';
 import { createTouchControls } from './touch';
 import type { TouchControls } from './touch';
+import { isMotionProfile, loadMotionProfile, MOTION_SETTINGS, saveMotionProfile } from './profiles';
 
 export { createInputDebugPanel } from './debug';
+export { loadMotionProfile, saveMotionProfile, MOTION_PROFILES, MOTION_PROFILE_LABELS } from './profiles';
 
 export interface InputOptions {
   canvas: HTMLCanvasElement;
   toArena: (clientX: number, clientY: number) => [number, number];
   getSelf: () => { x: number; y: number } | null;
+  motionProfile?: MotionProfile;
 }
 export interface InputController {
   readonly mode: InputFrame['source'];
   readonly needsPermission: boolean;
   readonly sensorStatus: 'on' | 'waiting' | 'off';
+  readonly motionProfile: MotionProfile;
+  setMotionProfile(profile: MotionProfile): void;
   requestPermission(): Promise<boolean>;
   calibrate(): void;
   sample(): InputFrame;
@@ -36,12 +41,15 @@ export function vibrate(pattern: number | number[]): boolean {
 export function createInput(opts: InputOptions): InputController {
   const sensors = window as SensorWindow;
   const mobile = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-  // Listen first: API presence doesn't prove delivery, and some browsers hide constructors.
-  let mode: InputFrame['source'] = mobile ? 'motion' : 'keyboard';
-  let sensorStatus: InputController['sensorStatus'] = mobile ? 'waiting' : 'off';
-  let needsPermission = !!mobile && [sensors.DeviceMotionEvent, sensors.DeviceOrientationEvent]
+  let motionProfile = opts.motionProfile ?? loadMotionProfile();
+  if (opts.motionProfile) saveMotionProfile(opts.motionProfile);
+  const requiresPermission = [sensors.DeviceMotionEvent, sensors.DeviceOrientationEvent]
     .some(sensor => typeof sensor?.requestPermission === 'function');
-  let permissionGranted = !!mobile && !needsPermission;
+  // Listen first: API presence doesn't prove delivery, and some browsers hide constructors.
+  let mode: InputFrame['source'] = mobile ? motionProfile === 'tap-only' ? 'touch' : 'motion' : 'keyboard';
+  let sensorStatus: InputController['sensorStatus'] = mode === 'motion' ? 'waiting' : 'off';
+  let needsPermission = !!mobile && motionProfile !== 'tap-only' && requiresPermission;
+  let permissionGranted = !!mobile && !requiresPermission;
   let disposed = false;
   let seq = 0;
   let dash = false;
@@ -66,6 +74,7 @@ export function createInput(opts: InputOptions): InputController {
   let sawSensor = false;
   let sensorTimer: number | undefined;
   let pendingPermission: Promise<boolean> | null = null;
+  let permissionVersion = 0;
   let touch: TouchControls | null = null;
   const keys = new Set<string>();
   const cleanup: (() => void)[] = [];
@@ -188,11 +197,16 @@ export function createInput(opts: InputOptions): InputController {
   on(window, 'pointerdown', (event => {
     const e = event as PointerEvent;
     if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+    const target = e.target as Element | null;
+    // Choosing tap-only or opening settings must not accidentally request sensors.
+    // The dedicated enable button still requests here, before fullscreen consumes activation.
+    if (target?.closest?.('button, input, textarea, select, a, [data-motion-profile]')
+      && !target.closest?.('[data-testid="motion-enable"]')) return;
     if (needsPermission) void controller.requestPermission();
   }), { capture: true });
   const onOrientation: EventListener = event => {
     const e = event as DeviceOrientationEvent;
-    if (!mobile || !permissionGranted || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
+    if (!mobile || motionProfile === 'tap-only' || !permissionGranted || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
     if (e.beta == null || e.gamma == null) return;
     markSensor();
     debugState.beta = e.beta;
@@ -210,7 +224,7 @@ export function createInput(opts: InputOptions): InputController {
   }
   on(window, 'devicemotion', (event => {
     const e = event as DeviceMotionEvent;
-    if (!mobile || !permissionGranted) return;
+    if (!mobile || motionProfile === 'tap-only' || !permissionGranted) return;
     const clean = e.acceleration;
     const valid = (a: DeviceMotionEventAcceleration | null | undefined): a is DeviceMotionEventAcceleration & Acceleration =>
       !!a && a.x != null && a.y != null && a.z != null && Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z);
@@ -228,7 +242,7 @@ export function createInput(opts: InputOptions): InputController {
       if (!gravitySign && Math.abs(gravity.z) > 1) gravitySign = Math.sign(gravity.z);
     }
     debugState.acceleration = acceleration;
-    const result = recognizeGesture(gestures, acceleration, now);
+    const result = recognizeGesture(gestures, acceleration, now, motionProfile);
     gestures = result.state;
     if (result.fired) {
       freezeUntil = now + 250;
@@ -244,24 +258,49 @@ export function createInput(opts: InputOptions): InputController {
     get mode() { return mode; },
     get needsPermission() { return needsPermission; },
     get sensorStatus() { return sensorStatus; },
+    get motionProfile() { return motionProfile; },
+    setMotionProfile(profile) {
+      if (disposed || !isMotionProfile(profile)) return;
+      saveMotionProfile(profile);
+      if (profile === motionProfile) return;
+      motionProfile = profile;
+      permissionVersion++;
+      pendingPermission = null;
+      reset(); resetCalibration();
+      gravity = null; gravitySign = 0; lastOrientationAt = -Infinity;
+      sawSensor = false;
+      window.clearTimeout(sensorTimer);
+      if (mobile) {
+        mode = profile === 'tap-only' ? 'touch' : 'motion';
+        sensorStatus = profile === 'tap-only' ? 'off' : 'waiting';
+        needsPermission = profile !== 'tap-only' && requiresPermission && !permissionGranted;
+        touch?.setJoystick(profile === 'tap-only');
+        if (profile !== 'tap-only' && permissionGranted) watchForMotion();
+      }
+      debugState.mode = mode; debugState.sensors = sensorStatus; debugState.profile = profile;
+      recordGesture(`profile → ${profile}; recalibrating`);
+    },
     requestPermission() {
-      if (disposed || mode !== 'motion') return Promise.resolve(false);
+      if (disposed || mode !== 'motion' || motionProfile === 'tap-only') return Promise.resolve(false);
       if (pendingPermission) return pendingPermission;
       if (permissionGranted) return Promise.resolve(true);
+      const version = permissionVersion;
       // Invoke both requests before awaiting so iOS retains the original tap activation.
       try {
         const requests = [sensors.DeviceMotionEvent, sensors.DeviceOrientationEvent]
           .filter((sensor): sensor is PermissionSensor => !!sensor?.requestPermission)
           .map(sensor => sensor.requestPermission!());
         pendingPermission = Promise.all(requests).then(results => {
-          if (disposed) return false;
+          if (disposed || version !== permissionVersion) return false;
           needsPermission = false;
           permissionGranted = results.every(result => result === 'granted');
+          if (motionProfile === 'tap-only') return false; // profile may change while a native prompt is open
           debugState.permission = permissionGranted ? 'granted' : 'denied';
           if (permissionGranted) watchForMotion();
           else fallback();
           return permissionGranted;
         }).catch(() => {
+          if (disposed || version !== permissionVersion) return false;
           debugState.permission = 'denied';
           fallback();
           return false;
@@ -302,8 +341,8 @@ export function createInput(opts: InputOptions): InputController {
         if (!neutral && calibrationAt !== null && now - calibrationAt >= 300 && calibrationCount) {
           neutral = [calibrationSum[0] / calibrationCount, calibrationSum[1] / calibrationCount];
         }
-        const target = neutral ? tiltMove(rawTilt, neutral) : [0, 0];
-        const blend = 1 - Math.exp(-Math.max(0, Math.min(now - lastSample, 100)) / 65);
+        const target = neutral ? tiltMove(rawTilt, neutral, motionProfile) : [0, 0];
+        const blend = 1 - Math.exp(-Math.max(0, Math.min(now - lastSample, 100)) / MOTION_SETTINGS[motionProfile].smoothingMs);
         if (now >= freezeUntil) {
           smoothedMove = [smoothedMove[0] + (target[0] - smoothedMove[0]) * blend,
             smoothedMove[1] + (target[1] - smoothedMove[1]) * blend];
@@ -342,11 +381,12 @@ export function createInput(opts: InputOptions): InputController {
   debugState.mode = mode;
   debugState.sensors = sensorStatus;
   debugState.calibrating = false;
+  debugState.profile = motionProfile;
   debugState.permission = needsPermission ? 'tap to enable' : mode === 'motion' ? 'not required' : 'not applicable';
-  if (mobile) touch = createTouchControls({ joystick: false });
+  if (mobile) touch = createTouchControls({ joystick: motionProfile === 'tap-only' });
   const debugPanel = window.location && new URLSearchParams(window.location.search).get('debug') === 'input'
     ? createInputDebugPanel() : null;
   if (debugPanel) document.body.append(debugPanel);
-  if (permissionGranted) watchForMotion();
+  if (permissionGranted && motionProfile !== 'tap-only') watchForMotion();
   return controller;
 }
