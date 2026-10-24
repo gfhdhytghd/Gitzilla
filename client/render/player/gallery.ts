@@ -40,6 +40,22 @@ const STATES: { b: Behavior; buff?: SkillKind }[] = [
   { b: "idle" }, { b: "run" }, { b: "shoot" }, { b: "run" }, { b: "shoot" }, { b: "idle" }, { b: "idle" }, { b: "run" },
 ];
 
+// Real-looking CodeDNA-derived kit.code per language (round 2).
+const CODE: Record<string, { tokens: string[]; signature: string; snippet: string; identifiers: string[] }> = {
+  TypeScript: { tokens: ["=>", "const", "{}", "?.", "as"], signature: "createServer()", snippet: "export const app = createServer(opts);", identifiers: ["createServer", "parseConfig"] },
+  Rust: { tokens: ["fn", "::", "&mut", "?", "let"], signature: "borrow_mut()", snippet: "fn main() -> Result<(), Box<dyn Error>> {", identifiers: ["borrow_mut", "Parser"] },
+  Python: { tokens: ["def", ":", "self", "**", "->"], signature: "parse_args()", snippet: "def get_response(self, request):", identifiers: ["parse_args", "Request"] },
+  Go: { tokens: [":=", "err", "go", "<-", "nil"], signature: "ListenAndServe()", snippet: "if err != nil { return err }", identifiers: ["ListenAndServe", "Handler"] },
+  C: { tokens: ["*", "->", "&", "#", ";;"], signature: "kmalloc()", snippet: "static int __init init(void)", identifiers: ["kmalloc", "spin_lock"] },
+  Java: { tokens: ["new", "@", "{}", "::", "."], signature: "SpringApplication.run()", snippet: "public static void main(String[] args)", identifiers: ["run", "Bean"] },
+  Ruby: { tokens: ["do", "end", "@", "|x|", "=>"], signature: "has_many()", snippet: "class User < ApplicationRecord", identifiers: ["has_many", "render"] },
+  JavaScript: { tokens: ["=>", "===", "{}", "...", "fn"], signature: "useEffect()", snippet: "useEffect(() => { setCount(c + 1) });", identifiers: ["useEffect", "render"] },
+  Kotlin: { tokens: ["fun", "?:", "val", "->", "!!"], signature: "suspendCoroutine()", snippet: "fun main() = runBlocking {", identifiers: ["launch", "suspendCoroutine"] },
+  "C++": { tokens: ["::", "<>", "&&", "->", "*"], signature: "Node::ready()", snippet: "void Node::_notification(int p_what) {", identifiers: ["Node", "ready"] },
+  Swift: { tokens: ["->", "?", "let", "@", "{}"], signature: "withContinuation()", snippet: "func run() async throws -> Int {", identifiers: ["run", "Task"] },
+  Lua: { tokens: ["..", "end", "~=", "#", ":"], signature: "vim.api()", snippet: "local M = {}", identifiers: ["setup", "api"] },
+};
+
 function kitFor(i: number): PlayerKit {
   const des = i >= 24 ? DESIGNS[(i - 24) % DESIGNS.length] : null;
   const weapon = des ? des[0] : WEAPONS[i % WEAPONS.length];
@@ -49,6 +65,7 @@ function kitFor(i: number): PlayerKit {
     repo, title: `${lang} ${TITLES[weapon]}`, weapon, skill: SKILLS[i % SKILLS.length],
     maxHp: 7, maxArmor: 5, maxEnergy: 200, speed: 90, damageMul: 1,
     palette: ["#172131", color, seed & 1 ? "#ffe2ac" : "#d5f5ff", "#f4faf7"], seed,
+    code: CODE[lang],
     ...(des ? { design: des[1], title: des[1].title, palette: des[1].palette } : {}),
   };
 }
@@ -66,12 +83,14 @@ interface Sim { p: PlayerState; b: Behavior; buff?: SkillKind; cx: number; cy: n
 const only = params.get("only");
 const sims: Sim[] = STATES.map((s, i) => {
   const kit = kitFor(i);
+  if (s.buff) kit.skill = s.buff;
   const cx = (i % COLS) * CW + CW / 2, cy = Math.floor(i / COLS) * CH + 46;
   const p: PlayerState = {
     id: "p" + i, name: NAMES[i], x: cx, y: cy, vx: 0, vy: 0, facing: [1, 0.2],
     hp: kit.maxHp, armor: kit.maxArmor, energy: kit.maxEnergy, alive: true, downedFor: 0, reviveProgress: 0,
     skillCd: 0, dashCd: 0, invuln: 0, buffs: s.buff ? [s.buff] : [], kit,
     stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+    perks: i % 5 === 2 ? ["--force", "cache hit"] : i % 7 === 3 ? ["pair-programming"] : [],
   };
   return { p, b: s.b, buff: s.buff, cx, cy, label: kit.design ? kit.design.headgear + "/" + kit.design.accessory.replace("laptop-", "").replace("sticker-", "") : (s.buff ?? s.b) + "/" + kit.weapon };
 });
@@ -169,6 +188,7 @@ async function arenaScene() {
       id: "a" + j, name: NAMES[k], x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0], hp: 7, armor: 5, energy: 200, alive: true,
       downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], kit,
       stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+      perks: j % 3 === 0 ? ["--no-verify", "lint --fix", "hotfix++"].slice(0, 1 + (j % 3)) : j === 4 ? ["--force"] : [],
     };
     return p;
   });
@@ -213,7 +233,7 @@ async function arenaScene() {
 function stripScene() {
   document.querySelectorAll("h2, #portraits").forEach((e) => ((e as HTMLElement).style.display = "none"));
   const OFFS = [-0.1, 0.02, 0.05, 0.09, 0.14, 0.2, 0.3, 0.45, 0.7, 1.0];
-  const EVENTS = ["hurt-armor", "hurt-hp", "dash", "downed", "revive", "firewall", "overclock", "hotfix", "rollback", "fork", "shoot-blade", "shoot-cannon"];
+  const EVENTS = ["hurt-armor", "hurt-hp", "dash", "downed", "revive", "firewall", "overclock", "hotfix", "rollback", "fork", "shoot-blade", "shoot-cannon", "perk"];
   const SW2 = 48, SH2 = 56;
   stage.width = OFFS.length * SW2 * SCALE; stage.height = EVENTS.length * SH2 * SCALE;
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
@@ -223,11 +243,13 @@ function stripScene() {
   EVENTS.forEach((ev, row) => {
     OFFS.forEach((off, col) => {
       const kit = kitFor(ev === "shoot-blade" ? 7 : ev === "shoot-cannon" ? 4 : row * 3 + 1);
+      if ((SKILLS as string[]).includes(ev)) kit.skill = ev as SkillKind;
       const cx = col * SW2 + SW2 / 2, cy = row * SH2 + 34;
       const p: PlayerState = {
         id: `s${row}_${col}`, name: ev.slice(0, 8), x: cx, y: cy, vx: 0, vy: 0, facing: [1, 0.15], hp: 7, armor: 5, energy: 200,
         alive: ev !== "revive", downedFor: 0, reviveProgress: ev === "revive" ? 0.9 : 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], kit,
         stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+        perks: [],
       };
       const T0 = 1, tEnd = T0 + off;
       for (let t = 0; t <= tEnd + 1e-6; t += 1 / 60) {
@@ -255,6 +277,7 @@ function stripScene() {
           if (ev === "fork") { p.x = cx + Math.min(14, (t - T0) * 40); p.vx = t - T0 < 0.35 ? 40 : 0; }
           if (ev === "overclock") p.vx = 60;
         }
+        if (ev === "perk" && after && !p.perks.length) p.perks = ["--force", "lint --fix", "cache hit"];
         if (ev.startsWith("shoot") && after && Math.abs(t - T0) < 1 / 120) p.energy -= 5;
         const last = t + 1 / 60 > tEnd + 1e-6;
         drawPlayer(last ? ctx : scratch, p, t, false);

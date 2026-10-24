@@ -1,6 +1,7 @@
 // Hand-authored pixel weapons (pointing right). 'h' cells are the holding hand (skin) = pivot.
 import type { WeaponKind } from "../../../shared/types.ts";
 import type { HeroLook } from "./look.ts";
+import { hashStr } from "./color.ts";
 
 // keys: M metal light, m metal, d metal dark, p primary, P primary light, s secondary,
 //       a accent, A accent light (glow), w wood, W wood light, k near-black, h hand
@@ -61,7 +62,7 @@ export interface WeaponSprite {
 const cache = new Map<string, WeaponSprite>();
 
 export function weaponSprite(L: HeroLook, kind: WeaponKind): WeaponSprite {
-  const key = L.key + "|w|" + kind;
+  const key = L.key + "|w|" + kind + "|" + L.etch;
   const hit = cache.get(key);
   if (hit) return hit;
   const c = L.c;
@@ -82,6 +83,26 @@ export function weaponSprite(L: HeroLook, kind: WeaponKind): WeaponSprite {
       if ((ch === "A") && x + 1 >= tipX) { tipX = x + 1; tipY = y + 1; }
     }
   });
+  // Real-code engraving: the repo's top token, hashed into a rune pattern along the main metal row,
+  // plus one glowing accent pixel. Reads as a "code-etched" weapon skin at 1x.
+  if (L.etch) {
+    let bestRow = -1, bestCount = 0;
+    rows.forEach((row, y) => {
+      const n = [...row].filter((ch) => ch === "m" || ch === "W").length;
+      if (n > bestCount) { bestCount = n; bestRow = y; }
+    });
+    if (bestRow >= 0 && bestCount >= 4) {
+      const bits = hashStr(L.etch);
+      const row = rows[bestRow];
+      let i = 0, lit = false;
+      for (let x = 0; x < row.length; x++) {
+        if (row[x] !== "m" && row[x] !== "W") continue;
+        if ((bits >> i) & 1) grid[bestRow + 1][x + 1] = row[x] === "W" ? "#5e3a1f" : c.metalD;
+        else if (!lit && i > 1) { grid[bestRow + 1][x + 1] = c.accentL; lit = true; }
+        i++;
+      }
+    }
+  }
   // outline
   const out: [number, number][] = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
