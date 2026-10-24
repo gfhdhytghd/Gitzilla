@@ -1,4 +1,3 @@
-import { spawn, type ChildProcess } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +10,13 @@ const UI_TIMEOUT = 15_000;
 const ANALYSIS_TIMEOUT = 30_000;
 
 export interface Options { players: number; boss: string; seconds: number; headed: boolean }
+export function playtestBaseURL(override = process.env.PLAYTEST_URL): string {
+  const url = new URL(override || 'http://localhost:5175');
+  if (url.port === '5173' || url.hostname === 'gitzilla.wilflin.me') {
+    throw new Error('Playtests cannot target the stable live server; use http://localhost:5175');
+  }
+  return url.href.replace(/\/$/, '');
+}
 export function parseOptions(args: string[]): Options {
   const opts: Options = { players: 4, boss: 'pallets/flask', seconds: 60, headed: false };
   for (let i = 0; i < args.length; i++) {
@@ -64,7 +70,6 @@ export async function playtest(options: Options): Promise<number> {
   const errors = { page: 0, console: 0, websocket: 0, failedRequests: 0 };
   const clients: Client[] = [];
   let browser: Browser | undefined;
-  let server: ChildProcess | undefined;
   let shuttingDown = false;
   let interrupted = false;
   let outcome = 'incomplete';
@@ -74,7 +79,7 @@ export async function playtest(options: Options): Promise<number> {
   let startedAt: number | undefined;
   let elapsed = 0;
   let exitCode = 2;
-  const baseURL = (process.env.PLAYTEST_BASE_URL || 'http://127.0.0.1:5173').replace(/\/$/, '');
+  const baseURL = playtestBaseURL();
   const log = (kind: string, message: string, print = false) => {
     const line = `${new Date().toISOString()} [${kind}] ${message}`;
     appendFileSync(logFile, `${line}\n`);
@@ -84,7 +89,6 @@ export async function playtest(options: Options): Promise<number> {
   const stopOnSignal = () => {
     interrupted = true;
     void browser?.close().catch(() => {});
-    server?.kill('SIGTERM');
   };
   process.once('SIGINT', stopOnSignal);
   process.once('SIGTERM', stopOnSignal);
@@ -214,26 +218,9 @@ export async function playtest(options: Options): Promise<number> {
 
   try {
     log('start', JSON.stringify({ ...options, baseURL, output }), true);
-    let repos = await probe();
-    if (!repos) {
-      if (process.env.PLAYTEST_BASE_URL) throw new Error(`No Repo Kaiju fallback endpoint at ${baseURL}; custom base URLs must point to a running server`);
-      log('server', 'Starting local server/main.ts', true);
-      server = spawn(process.execPath, ['--import', 'tsx', join(ROOT, 'server/main.ts')], {
-        cwd: ROOT, env: { ...process.env, NODE_ENV: 'development', PORT: '5173', HTTPS_KEY: '', HTTPS_CERT: '' }, stdio: ['ignore', 'pipe', 'pipe'],
-      });
-      server.stdout?.on('data', chunk => appendFileSync(join(output, 'server.log'), chunk));
-      server.stderr?.on('data', chunk => appendFileSync(join(output, 'server.log'), chunk));
-      let spawnError: Error | undefined;
-      server.on('error', error => { spawnError = error; });
-      const deadline = Date.now() + 25_000;
-      while (!repos && Date.now() < deadline && !interrupted) {
-        if (spawnError) throw spawnError;
-        repos = await probe();
-        if (!repos) await sleep(300);
-        if (!repos && server.exitCode !== null) throw new Error(`Server exited ${server.exitCode}; see server.log`);
-      }
-      if (!repos) throw new Error('Server did not expose /api/fallbacks within 25s; see server.log');
-    } else log('server', `Reusing ${baseURL}`, true);
+    const repos = await probe();
+    if (!repos) throw new Error(`No Repo Kaiju fallback endpoint at ${baseURL}; start the shared DEV server on 5175. The harness never starts or stops servers.`);
+    log('server', `Reusing ${baseURL}`, true);
     note(`Fallback repos: ${repos.join(', ')}`);
     if (!repos.includes(options.boss)) note(`Requested boss ${options.boss} isn't listed in /api/fallbacks; real analysis may be needed.`);
     const bundledChromium = chromium.executablePath();
@@ -382,14 +369,6 @@ export async function playtest(options: Options): Promise<number> {
     shuttingDown = true;
     if (interrupted || errors.page || errors.websocket) exitCode = 1;
     await browser?.close().catch(error => log('cleanup', String(error)));
-    if (server && server.exitCode === null && server.signalCode === null) {
-      const child = server;
-      await new Promise<void>(done => {
-        const timer = setTimeout(() => { child.kill('SIGKILL'); done(); }, 4000);
-        child.once('exit', () => { clearTimeout(timer); done(); });
-        child.kill('SIGTERM');
-      });
-    }
     process.removeListener('SIGINT', stopOnSignal);
     process.removeListener('SIGTERM', stopOnSignal);
     const summary = {

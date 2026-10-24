@@ -67,6 +67,27 @@ describe('pure event -> SFX mapping', () => {
       expect(cue.priority).toBeGreaterThan(normal.priority);
     }
   });
+  it.each(['energy', 'heart', 'armor'] as const)('maps %s pickups to a distinct blip and emphasizes self', kind => {
+    const event: GameEvent = { type: 'pickup', player: 'me', kind, x: 80, y: 90 };
+    const own = eventToSfx(event, 'me')[0];
+    const remote = eventToSfx(event, 'friend')[0];
+    expect(own).toMatchObject({ sound: `pickup:${kind}`, self: true });
+    expect(own.gain).toBeGreaterThan(remote.gain);
+    expect(own.pitch).toBeGreaterThan(remote.pitch);
+    expect(remote.self).toBe(false);
+  });
+  it('maps broken cover to a lower-priority shatter without inventing a responsible player', () => {
+    expect(eventToSfx({ type: 'obstacleBroken', id: 7, label: 'router.ts', x: 80, y: 90 }, 'me')[0])
+      .toMatchObject({ sound: 'obstacleBroken', self: false, priority: 1 });
+  });
+  it('maps perks to a merge-approved jingle with personal emphasis', () => {
+    const event: GameEvent = { type: 'perk', player: 'me', perk: 'overclock' };
+    const own = eventToSfx(event, 'me')[0];
+    const other = eventToSfx(event, 'friend')[0];
+    expect(own).toMatchObject({ sound: 'perk', self: true, priority: 4 });
+    expect(own.gain).toBeGreaterThan(other.gain);
+    expect(own.pitch).toBeGreaterThan(other.pitch);
+  });
   it('does not mutate snapshots and gives spectators no personal emphasis', () => {
     const event = Object.freeze({ type: 'revived', player: '', by: '' } as const);
     expect(eventToSfx(event, '')[0].self).toBe(false);
@@ -92,7 +113,8 @@ describe('procedural PCM', () => {
   it('renders deterministic non-silent finite PCM for every SFX and weapon', () => {
     const names: SfxName[] = ['hit', 'hurt', 'crit', 'combo', 'telegraph', 'limbBroken', 'downed', 'revived', 'skill', 'phase',
       'victory', 'defeat', 'dash', 'ui', 'intro', 'skill:firewall', 'skill:fork', 'skill:hotfix', 'skill:overclock', 'skill:rollback',
-      'fire:blaster', 'fire:smg', 'fire:shotgun', 'fire:cannon', 'fire:staff', 'fire:laser', 'fire:blade'];
+      'fire:blaster', 'fire:smg', 'fire:shotgun', 'fire:cannon', 'fire:staff', 'fire:laser', 'fire:blade',
+      'pickup:energy', 'pickup:heart', 'pickup:armor', 'obstacleBroken', 'perk'];
     for (const name of names) {
       const pcm = renderSfx(name, 12000);
       expect(pcm.length).toBeGreaterThan(100);

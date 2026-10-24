@@ -5,7 +5,7 @@ npx tsx tools/playtest.ts --players 4 --boss pallets/flask --seconds 60
 npx tsx tools/playtest.ts --players 4 --seconds 180 --headed
 ```
 
-Playwright is a devDependency. If Chromium is missing, run `npx playwright install chromium`. The harness also tries `/usr/bin/chromium`; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to override. A running Repo Kaiju server on 5173 is reused. Otherwise the harness starts `node --import tsx server/main.ts`, waits for `/api/fallbacks`, and stops only that child on exit. `PLAYTEST_BASE_URL` overrides the default `http://127.0.0.1:5173` for an existing server.
+Playwright is a devDependency. If Chromium is missing, run `npx playwright install chromium`. The harness also tries `/usr/bin/chromium`; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to override. The harness reuses the shared DEV server at **http://localhost:5175**; **`PLAYTEST_URL`** overrides that URL. It never starts or stops servers. Port 5173 and `gitzilla.wilflin.me` are stable live targets and are rejected before any request. Audio smoke uses the same DEV default and accepts `SMOKE_URL` or `PLAYTEST_URL`.
 
 `--players` is 1–8 (default 4), `--seconds` is the maximum fight-driving duration (default 60), `--boss` defaults to `pallets/flask`. Each player gets an isolated browser context. Player 1 is the desktop owner at 1280×720. With 2+ players the final player uses phone-landscape 844×390, mobile viewport and touch emulation. A one-player run adds a phone **spectator**, preserving the requested player count. All players are driven with real browser keyboard events (WASD wander, held J, periodic Space/E). The phone context disables sensor APIs so the game's keyboard input mode handles those events; this tests phone layout/touch capability, not physical sensors or gestures.
 
@@ -14,7 +14,7 @@ Artifacts go to `docs/shots/<timestamp>/`:
 - `landing-{desktop,phone}.png`, `lobby-{desktop,phone}.png`, `boss-intro-{desktop,phone}.png`.
 - `mid-fight-010s-{desktop,phone}.png`, then every 10 seconds while fighting.
 - `autopsy-{desktop,phone}.png` if a natural match end occurs. A short run can legitimately end during a fight: it saves `end-fight-*` and explicitly records autopsy as not reached. It never forces a win or fabricates an autopsy.
-- `playtest.log`: browser console, uncaught page errors, failed requests, WebSocket transport/protocol errors, and harness stages. Server output is in `server.log` when the harness starts it.
+- `playtest.log`: browser console, uncaught page errors, failed requests, WebSocket transport/protocol errors, and harness stages.
 - `summary.json`: outcome, missing selectors/stages, screenshot paths, error counts, and observed WebSocket snapshot/input counts, including movement/fire/dash/skill evidence.
 
 Exit codes: **0** = the requested fight window ran (or a natural autopsy appeared), **1** = uncaught page errors, WebSocket errors, or harness/runtime failure, **2** = missing/incomplete UI or required end-to-end evidence. Console errors are logged and counted; uncaught page errors always fail. A missing UI gets bounded waits, a failure screenshot, an inventory of visible test IDs, and a clear summary. Full game completion is separate from completing a timed playtest.

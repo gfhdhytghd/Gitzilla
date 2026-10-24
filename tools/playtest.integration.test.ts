@@ -100,7 +100,7 @@ if(location.pathname === '/') {
 
   it('drives two isolated clients, captures both viewports and reaches natural fixture autopsy', async () => {
     const testServer = await fixture(false);
-    const previousURL = process.env.PLAYTEST_BASE_URL;
+    const previousURL = process.env.PLAYTEST_URL;
     const originalLog = console.log;
     let artifactDir = '';
     console.log = (...args) => {
@@ -108,7 +108,7 @@ if(location.pathname === '/') {
       const match = String(args[0]).match(/artifacts=(.*)$/);
       if (match) artifactDir = match[1];
     };
-    process.env.PLAYTEST_BASE_URL = testServer.url;
+    process.env.PLAYTEST_URL = testServer.url;
     try {
       expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 13, headed: false })).toBe(0);
       const summary = JSON.parse(readFileSync(join(artifactDir, 'summary.json'), 'utf8'));
@@ -129,21 +129,21 @@ if(location.pathname === '/') {
       expect([phone.readUInt32BE(16), phone.readUInt32BE(20)]).toEqual([844, 390]);
     } finally {
       console.log = originalLog;
-      if (previousURL === undefined) delete process.env.PLAYTEST_BASE_URL;
-      else process.env.PLAYTEST_BASE_URL = previousURL;
+      if (previousURL === undefined) delete process.env.PLAYTEST_URL;
+      else process.env.PLAYTEST_URL = previousURL;
       await testServer.close();
     }
   }, 60_000);
 
   it('returns nonzero and logs uncaught page and WebSocket protocol errors', async () => {
     const testServer = await fixture(true);
-    const previousURL = process.env.PLAYTEST_BASE_URL;
-    process.env.PLAYTEST_BASE_URL = testServer.url;
+    const previousURL = process.env.PLAYTEST_URL;
+    process.env.PLAYTEST_URL = testServer.url;
     try {
       expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 3, headed: false })).toBe(1);
     } finally {
-      if (previousURL === undefined) delete process.env.PLAYTEST_BASE_URL;
-      else process.env.PLAYTEST_BASE_URL = previousURL;
+      if (previousURL === undefined) delete process.env.PLAYTEST_URL;
+      else process.env.PLAYTEST_URL = previousURL;
       await testServer.close();
     }
   }, 40_000);
