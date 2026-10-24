@@ -1,10 +1,12 @@
 DONE
 
+Third card complete: procedural WebAudio engine, theme/phase chiptunes, full SFX mapping, audition page, 18 pure tests, browser/DSP smoke, and exact claude-ui handoff below. Zero added audio dependencies/assets; no commits or edits outside owned areas.
+
 Follow-up complete: `tools/playtest.ts` is ready, Playwright installed, stable selector contract documented, CLI and real-browser harness self-tests pass. Live-app diagnostics correctly report unfinished UI; full live-game acceptance remains pending those screens.
 
 Completed keyboard/mouse, calibrated motion gestures, permission-driven touch fallback, haptics, debug panel, and 25 input tests. Ready for claude-ui integration.
 
-Owner: codex-input. Scope: `client/input/`, newly assigned `tools/`, this progress file, and requested playtest artifacts in `docs/shots/`. No commits or shared edits. User explicitly authorized Playwright devDependency installation for the follow-up; package.json/package-lock.json will change only for that install.
+Owner: codex-input. Scope: `client/input/`, `tools/`, newly assigned `client/audio/`, this progress file, and requested playtest artifacts in `docs/shots/`. No commits or shared edits. Playwright was previously installed with user authorization; audio adds zero assets/dependencies.
 
 ## Read
 - `docs/BRIEF.md`, `shared/types.ts`, `../repo-kaiju.md`, `docs/tasks/codex-input.md`.
@@ -41,6 +43,8 @@ Playtest selector contract for claude-ui (also documented in `tools/README.md`; 
 
 Selector request is ready for the coordinator to relay to claude-ui. Missing selectors/UI get bounded waits and timestamped diagnostics instead of hanging.
 
+Audio contract request: optionally type `source?: string` and `crit?: boolean` on the shared `hit` event when convenient. `sim/match.ts` already emits both via its structural HitFeedback extension. Audio consumes them through a local compatible intersection, so this request does not block integration and requires no immediate shared edit. Without them, normal hits/combo/self-hurt still work; outgoing self damage attribution and explicit crit accents rely on the fields being transmitted.
+
 ## Follow-up: end-to-end playtest harness
 - Added `playwright@^1.64.1` as an authorized devDependency (package.json/package-lock.json only). No browser download needed here: harness falls back to installed `/usr/bin/chromium`; document `npx playwright install chromium` for other hosts.
 - `tools/playtest.ts`: requested CLI, server reuse/spawn/owned-child cleanup, isolated contexts, fallback repo selection, owner boss/start, deterministic keyboard wander/J/Space/E, desktop plus phone-landscape captures, WS telemetry and error logs, JSON summary, bounded missing-UI diagnostics.
@@ -68,4 +72,62 @@ Selector request is ready for the coordinator to relay to claude-ui. Missing sel
 - Real phone sensors, iOS permission UI, haptics, and landscape feel: UNVERIFIED, require venue/device testing. Synthetic tests do not claim physical sensor or visual proof.
 
 ## Remaining
-None for the assigned cards. Live game acceptance awaits the UI screens being finished and the coordinator relaying/merging the selector contract. Physical-device acceptance for the original input card remains a venue handoff.
+None for the assigned cards. Physical-device listening/audio routing and original sensor acceptance remain venue handoffs. Full app audio wiring belongs to claude-ui; the exact integration calls are below.
+
+## Audio card plan
+- Lazy AudioContext unlocked from first tap/click; separate music/SFX buses, master compressor, mute/volume, limited concurrent SFX.
+- Pure GameEvent -> sound-cue mapping with self emphasis; current shared hit event has no attacker/crit field, so document interpretation without editing shared/.
+- Seven distinct weapon voices, dash, bitcrushed hits, error telegraphs, modem boss sting and keyboard UI ticks.
+- Six theme-specific generated chiptune loops plus lobby/victory/defeat; phase 2 drums + faster tempo, phase 3 distortion + glitch stutters.
+- `client/audio/demo.html` for auditioning all public calls; optional helpers for explicit intro/UI/lifecycle.
+
+## Audio implemented
+- `client/audio/index.ts`: lazy gesture-unlocked AudioContext; music/SFX buses -> master compressor -> bounded peak shaper -> user gain; mute/volume; 12-priority-voice SFX cap and per-category throttles; crossfading cached music; dispose.
+- `client/audio/synth.ts`: zero-assets PCM synthesis; all seven weapons, dash, crushed hit/hurt/crit, combos, error telegraphs, limb bursts, down/revive, five skills, phase/end SFX, modem handshake and keyboard clack.
+- All six arena themes have distinct scales/tempos/instruments; lobby/victory/defeat loops included. Phase 2: drums and +12% BPM; phase 3: +24% BPM, bitcrush, packet stutter, music-only distortion. Music uses sample-accurate looping buffers, no timers.
+- `client/audio/events.ts` + `events.test.ts`: pure mapping, self emphasis and 18 passing mapping/PCM tests. Runtime has zero new dependencies.
+- `client/audio/demo.html` / `demo.ts`: audition buttons for every theme/phase/weapon/event/skill, self toggle, intro/UI ticks, eight-player burst, mute and volume.
+- `tools/audio-smoke.ts`: repeatable browser/DSP smoke using the already-installed Playwright devDependency; audio runtime still adds zero dependencies.
+
+## Audio validation
+- `npx vitest run client/audio`: 18 PASS (pure mapping and deterministic synthesis).
+- `npm run typecheck`: PASS across the current repository.
+- `npm test`: 168 PASS, 2 prior opt-in harness browser tests skipped by design.
+- Tools-only strict typecheck of `tools/audio-smoke.ts`: PASS; owned `git diff --check`: PASS.
+- `npx tsx tools/audio-smoke.ts`: PASS in Chromium, desktop 1280×720 and touch-emulated phone 844×390. Verified no context before gesture, one running context after click/tap, every demo SFX/weapon/skill/theme/phase control, finite non-silent output, master compressor/shaper, mute stopping all sources with measured RMS 0, retained music on unmute, volume .25, and context closed on teardown. Zero browser/page/HTTP errors in the passing run.
+- Terminal loop durations: phase 1 8.5714s, phase 2 7.6531s, phase 3 6.9124s. Eight-player burst sampled output peak .4257 (below 1), finite PCM. Active SFX cap is 12 plus 12ms fade tails when stealing; output probe's max 15 total live sources includes music/crossfade/tails, not 15 steady SFX voices.
+- Passing artifact: `docs/shots/2026-10-24T18-40-06-709Z-audio/audio-smoke.json` with desktop/phone screenshots alongside it. Earlier run had correct audio checks but failed for the demo's missing favicon; fixed with an inline empty favicon and reran cleanly.
+- Browser/DSP checks do NOT establish human-perceived sound quality, physical iOS unlock/routing, phone speaker audibility, or OS background/resume behavior. Those remain UNVERIFIED until device listening.
+
+## Handoff to claude-ui
+Import `createAudio` from `../audio` and create **one instance per app**, retained across lobby/game/autopsy.
+
+```ts
+const audio = createAudio();
+audio.music('lobby'); // safe before unlock: selection remembered, no autoplay
+// Register at app entry. Keep this listener for later OS-suspended audio resumes.
+const unlockAudio = () => { void audio.unlock().catch(console.warn); };
+document.addEventListener('pointerdown', unlockAudio, { capture: true });
+
+// Once for each NEW server snapshot; do not repeat events in the render loop.
+audio.music(state.status === 'victory' || state.status === 'defeat'
+  ? state.status : state.boss.kit.theme, state.boss.phase);
+audio.onEvents(state.events, app.you ?? '');
+
+// Detect new OWN bullet IDs in a snapshot, then call once per local shot.
+// Group shotgun pellets from one snapshot into one call; helper also throttles.
+audio.onFire(self.kit.weapon);
+// On local dash starting (input edge or dashCd jumping from 0 to positive):
+audio.onDash();
+// Optional explicit UI action feedback:
+audio.onUi();
+// Mute toggle / settings range:
+audio.setMuted(muted);
+audio.setVolume(volume); // 0..1; default .6
+```
+
+- First transition into an arena in phase 1 automatically plays the modem boss-intro sting. `audio.onBossIntro()` is available for custom intro timing; don't call it every frame. Same-intro repeats are suppressed for 2.5s.
+- Phase events update the active arena arrangement; victory/defeat events select the corresponding loop. Repeated `music(sameTheme, samePhase)` calls are idempotent.
+- Transient SFX before unlock are dropped rather than replayed later. Music selection is retained. Mute stops active sources and retains the selected track for unmute.
+- Only on permanent app teardown: remove the pointerdown listener and call `audio.dispose()`; don't dispose between ordinary screens.
+- Audition page: `/client/audio/demo.html`. Full details: `client/audio/README.md`. Human listening and physical iOS speaker/resume proof remain unverified.
