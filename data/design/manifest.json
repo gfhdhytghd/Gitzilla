@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "entries": {
+    "burntsushi/ripgrep": {
+      "seed": 3221300618,
+      "hero": {
+        "slug": "burntsushi/ripgrep",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "burntsushi/ripgrep",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "facebook/react": {
+      "seed": 478723125,
+      "hero": {
+        "slug": "facebook/react",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "facebook/react",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "pallets/flask": {
+      "seed": 3030858016,
+      "hero": {
+        "slug": "pallets/flask",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "pallets/flask",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "django/django": {
+      "seed": 4244418796,
+      "hero": {
+        "slug": "django/django",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "django/django",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "expressjs/express": {
+      "seed": 4042100819,
+      "hero": {
+        "slug": "expressjs/express",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "expressjs/express",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "fastapi/fastapi": {
+      "seed": 3386353004,
+      "hero": {
+        "slug": "fastapi/fastapi",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "fastapi/fastapi",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "gin-gonic/gin": {
+      "seed": 3650359213,
+      "hero": {
+        "slug": "gin-gonic/gin",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "gin-gonic/gin",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "golang/example": {
+      "seed": 810435114,
+      "hero": {
+        "slug": "golang/example",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "golang/example",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "jquery/jquery": {
+      "seed": 1484102062,
+      "hero": {
+        "slug": "jquery/jquery",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "jquery/jquery",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "karpathy/nanogpt": {
+      "seed": 593896085,
+      "hero": {
+        "slug": "karpathy/nanogpt",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "karpathy/nanogpt",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "lodash/lodash": {
+      "seed": 416011368,
+      "hero": {
+        "slug": "lodash/lodash",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "lodash/lodash",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "redis/redis": {
+      "seed": 1696836392,
+      "hero": {
+        "slug": "redis/redis",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "redis/redis",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "rust-lang/rustlings": {
+      "seed": 2349371326,
+      "hero": {
+        "slug": "rust-lang/rustlings",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "rust-lang/rustlings",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "spring-projects/spring-petclinic": {
+      "seed": 1701789151,
+      "hero": {
+        "slug": "spring-projects/spring-petclinic",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "spring-projects/spring-petclinic",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    },
+    "vuejs/core": {
+      "seed": 3482187646,
+      "hero": {
+        "slug": "vuejs/core",
+        "kind": "hero",
+        "source": "fallback"
+      },
+      "boss": {
+        "slug": "vuejs/core",
+        "kind": "boss",
+        "source": "fallback"
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "DJANGO, THE KNOT THAT IMPORTS",
+  "epithet": "Its 8 limbs feed the sleepless heart of django/db/__init__.py.",
+  "body": "golem",
+  "eyes": 12,
+  "mouth": "maw",
+  "growths": [
+    "moss",
+    "tentacles"
+  ],
+  "palette": [
+    "#211329",
+    "#465b72",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "notebook",
+  "intro": [
+    "$ git clone django/django",
+    "[##########] architecture awakened",
+    "FATAL: django/db/__init__.py"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-fan-0": "Merge Conflict",
+    "0-charge-1": "Fast Forward",
+    "1-cascade-0": "Dependency Hell",
+    "2-cascade-0": "Circular Import",
+    "3-cascade-0": "Dependency Hell",
+    "4-cascade-0": "Circular Import",
+    "5-cascade-0": "Dependency Hell",
+    "6-cascade-0": "Circular Import",
+    "7-cascade-0": "Dependency Hell"
+  },
+  "limbNames": {
+    "limb-0": "tests Claw",
+    "limb-1": "db Tendril",
+    "limb-2": "contrib Mandible",
+    "limb-3": "misc Coil",
+    "limb-4": "core Claw",
+    "limb-5": "utils Tendril",
+    "limb-6": "test Mandible",
+    "limb-7": "template Coil"
+  }
+}

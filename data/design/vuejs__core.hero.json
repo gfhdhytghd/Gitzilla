@@ -1,0 +1,14 @@
+{
+  "title": "core Branch Ranger",
+  "archetype": "ranger",
+  "headgear": "hood",
+  "accessory": "scarf",
+  "emblem": "<>",
+  "palette": [
+    "#315aa5",
+    "#71b5ff",
+    "#f5deb4",
+    "#a7f3dc"
+  ],
+  "catchphrase": "One more patch saves the party."
+}

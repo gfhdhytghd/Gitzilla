@@ -1,0 +1,50 @@
+{
+  "name": "RUSTLINGS, THE KNOT THAT IMPORTS",
+  "epithet": "Its 8 limbs feed the sleepless heart of src/exercise.rs.",
+  "body": "swarm",
+  "eyes": 12,
+  "mouth": "brackets",
+  "growths": [
+    "moss",
+    "tentacles"
+  ],
+  "palette": [
+    "#211329",
+    "#465b72",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "legacy",
+  "intro": [
+    "$ git clone rust-lang/rustlings",
+    "[##########] architecture awakened",
+    "FATAL: src/exercise.rs"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-summon-0": "Bug Factory",
+    "0-charge-1": "Fast Forward",
+    "1-summon-0": "Bug Factory",
+    "2-cascade-0": "Circular Import",
+    "3-cascade-0": "Dependency Hell",
+    "4-cascade-0": "Circular Import",
+    "5-cascade-0": "Dependency Hell",
+    "6-cascade-0": "Circular Import",
+    "7-spiral-0": "Stack Overflow"
+  },
+  "limbNames": {
+    "limb-0": "solutions Mandible",
+    "limb-1": "exercises Coil",
+    "limb-2": "src Claw",
+    "limb-3": "dev Tendril",
+    "limb-4": "list Mandible",
+    "limb-5": "watch Coil",
+    "limb-6": "misc Claw",
+    "limb-7": "website Tendril"
+  }
+}

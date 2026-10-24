@@ -1,0 +1,46 @@
+{
+  "name": "GIN, THE UNMERGED",
+  "epithet": "Its 6 limbs feed the sleepless heart of internal/bytesconv/bytesconv.go.",
+  "body": "eye",
+  "eyes": 12,
+  "mouth": "maw",
+  "growths": [
+    "moss",
+    "gears"
+  ],
+  "palette": [
+    "#211329",
+    "#465b72",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "legacy",
+  "intro": [
+    "$ git clone gin-gonic/gin",
+    "[##########] architecture awakened",
+    "FATAL: internal/bytesconv/bytesconv.go"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-fan-0": "Force Push",
+    "0-charge-1": "Race Condition",
+    "1-laser-0": "Traceback Beam",
+    "2-ring-0": "Segfault Halo",
+    "3-spiral-0": "Recursive Regret",
+    "4-ring-0": "Segfault Halo",
+    "5-spiral-0": "Recursive Regret"
+  },
+  "limbNames": {
+    "limb-0": "root Tendril",
+    "limb-1": "binding Mandible",
+    "limb-2": "render Coil",
+    "limb-3": "ginS Claw",
+    "limb-4": "internal Tendril",
+    "limb-5": "codec Mandible"
+  }
+}

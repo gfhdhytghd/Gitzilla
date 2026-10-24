@@ -1,0 +1,50 @@
+{
+  "name": "FASTAPI, THE KNOT THAT IMPORTS",
+  "epithet": "Its 8 limbs feed the sleepless heart of fastapi/__init__.py.",
+  "body": "spider",
+  "eyes": 12,
+  "mouth": "brackets",
+  "growths": [
+    "cables",
+    "tentacles"
+  ],
+  "palette": [
+    "#211329",
+    "#5a4145",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "notebook",
+  "intro": [
+    "$ git clone fastapi/fastapi",
+    "[##########] architecture awakened",
+    "FATAL: fastapi/__init__.py"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-fan-0": "Merge Conflict",
+    "0-charge-1": "Fast Forward",
+    "1-cascade-0": "Dependency Hell",
+    "2-fan-0": "Force Push",
+    "3-summon-0": "Bug Factory",
+    "4-cascade-0": "Circular Import",
+    "5-cascade-0": "Dependency Hell",
+    "6-cascade-0": "Circular Import",
+    "7-spiral-0": "Stack Overflow"
+  },
+  "limbNames": {
+    "limb-0": "tests Claw",
+    "limb-1": "fastapi Tendril",
+    "limb-2": "docs_src Mandible",
+    "limb-3": "scripts Coil",
+    "limb-4": "misc Claw",
+    "limb-5": "openapi Tendril",
+    "limb-6": "security Mandible",
+    "limb-7": "docs Coil"
+  }
+}

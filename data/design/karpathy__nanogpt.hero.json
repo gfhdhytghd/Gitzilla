@@ -1,0 +1,14 @@
+{
+  "title": "nanogpt Byte Mage",
+  "archetype": "mage",
+  "headgear": "hood",
+  "accessory": "jetpack",
+  "emblem": "*",
+  "palette": [
+    "#355b99",
+    "#65b8ed",
+    "#ffdda1",
+    "#ffe36c"
+  ],
+  "catchphrase": "Tests green. Sword ready."
+}

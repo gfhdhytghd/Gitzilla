@@ -1,0 +1,40 @@
+{
+  "name": "NANOGPT, THE UNMERGED",
+  "epithet": "Its 3 limbs feed the sleepless heart of model.py.",
+  "body": "hydra",
+  "eyes": 1,
+  "mouth": "none",
+  "growths": [
+    "cables",
+    "gears"
+  ],
+  "palette": [
+    "#211329",
+    "#5a4145",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "notebook",
+  "intro": [
+    "$ git clone karpathy/nanogpt",
+    "[##########] architecture awakened",
+    "FATAL: model.py"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-ring-0": "Exception Orbit",
+    "0-charge-1": "Race Condition",
+    "1-spiral-0": "Recursive Regret",
+    "2-ring-0": "Segfault Halo"
+  },
+  "limbNames": {
+    "limb-0": "root Tendril",
+    "limb-1": "data Mandible",
+    "limb-2": "config Coil"
+  }
+}

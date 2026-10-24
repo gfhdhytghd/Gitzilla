@@ -1,0 +1,14 @@
+{
+  "title": "gin Branch Ranger",
+  "archetype": "ranger",
+  "headgear": "crown",
+  "accessory": "laptop-backpack",
+  "emblem": "#",
+  "palette": [
+    "#267f8c",
+    "#65e0df",
+    "#ffe4ba",
+    "#f8f7d6"
+  ],
+  "catchphrase": "Small hero. Clean commits."
+}

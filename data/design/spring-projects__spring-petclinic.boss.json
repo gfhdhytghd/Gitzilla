@@ -1,0 +1,38 @@
+{
+  "name": "SPRING-PETCLINIC, THE UNMERGED",
+  "epithet": "Its 2 limbs feed the sleepless heart of src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java.",
+  "body": "serpent",
+  "eyes": 12,
+  "mouth": "maw",
+  "growths": [
+    "moss",
+    "gears"
+  ],
+  "palette": [
+    "#211329",
+    "#465b72",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "legacy",
+  "intro": [
+    "$ git clone spring-projects/spring-petclinic",
+    "[##########] architecture awakened",
+    "FATAL: src/main/java/org/springframework/samples/petclinic/model/NamedEntity.jav"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-summon-0": "npm install",
+    "0-slam-1": "rm -rf /",
+    "1-spiral-0": "Recursive Regret"
+  },
+  "limbNames": {
+    "limb-0": "main Coil",
+    "limb-1": "test Claw"
+  }
+}
