@@ -79,7 +79,7 @@ export interface HeroDesign {
   emblem: string;            // 1–2 ASCII chars on the chest, e.g. "λ", "{}", "R"
   palette: string[];         // 4 hex: primary, secondary, skin/visor, accent
   catchphrase: string;       // <= 40 chars, shown on lobby card
-  weaponName?: string;       // <= 20 chars, maps into PlayerKit.code.weapon.name (cosmetic)
+  weaponName?: string;       // <= 24 chars code expression, maps into PlayerKit.code.weapon.name (cosmetic)
 }
 
 export type BossBody = "blob" | "serpent" | "spider" | "hydra" | "golem" | "swarm" | "eye" | "tree" | "machine";
@@ -148,7 +148,7 @@ export interface PlayerKit {
     snippet: string;         // one real line shown on the hero card / weapon skin
     identifiers: string[];
     weapon?: {               // the weapon as a code construct, e.g. "goroutine SMG" firing "go"/"<-ch"
-      name: string;          // <= 20 chars, shown on the card / HUD
+      name: string;          // <= 24 chars, a real-looking code expression, e.g. "for { go serve() }"
       projectiles: string[]; // 1–4 short literal glyph strings the bullets are made of
       muzzle: string;        // flash text when firing, e.g. "fork()", "yield"
       impact: string;        // hit spark text, e.g. "Err", "0xDEAD", "panic!"
