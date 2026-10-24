@@ -1,6 +1,24 @@
-DONE
+DONE (round 2)
+
+Round 2 summary: real code shows up on hero cards (signature + snippet), on the boss panel (scrolling heart lines, TODOs as "known bugs", commits as "recent sins"), in the intro, and in the autopsy (red diff of each destroyed limb's real symbols plus the removed heart lines). The game composes obstacles, pickups and perk pads, with a compact CODE REVIEW strip, pickup toasts and perk badges. Round-1 review fixes are done too: docked HUD, ambient margins, compact downed banner, phone overflow. Verification: the e2e on the dev server (5175) reached autopsy with exit 0 and 0 errors. Later reruns failed only when the shared dev server restarted mid-run. The only open item is analysis-progress paths, which is blocked on the contract request below.
 
 # claude-ui progress
+
+## Round 1 fix list (coordinator review) — done
+- Phone: combo counter sized/positioned inside the right gutter; mute button moved to the left gutter; HUD docked (no overlap with boss bar); touch DASH/SKILL buttons docked into the right gutter.
+- Combo shown once in HUD (fixed slot). **Request → claude-boss:** please drop (or keep tiny, near the hit) the in-world "xN COMBO" text from drawEvents; the HUD owns the big combo counter.
+- Downed: compact single-line banner at the arena's bottom edge with revive bar + %.
+- Desktop: margins filled with a blurred/dimmed live copy of the arena (`canvas.ambient`), HUD panels docked into side/top gutters when wide enough (`dock-x` ≥88px, `dock-y` ≥56px, `dock-narrow` for phones); falls back to in-arena overlay otherwise. Event log docked bottom-left.
+- Outros shortened (victory 3.2s, defeat 2.0s; tap/key skips) so the autopsy appears promptly.
+
+## Round 2 (claude-ui section)
+- [x] renderers: optional drawObstacles / drawPickups / drawPerkPads (claude-boss arena exports; placeholders otherwise); draw order bg → pads → obstacles → pickups → hazards → minions → boss → players → bullets → events.
+- [x] HUD: CODE REVIEW strip (3 PR cards, timer, "approved by …" per card, yours highlighted), pickup toasts (+1 ♥ / +energy / +1 ◆), perk badges in the self panel, log lines for `rm <file>` (obstacleBroken) and `merged <perk>`; haptics/flash on your pickups/perk; shake on obstacle break.
+- [x] Lobby: hero cards show `sig <signature>` + real snippet in a mini editor line; you-card shows "signature move"; boss panel shows the heart file in a mini editor with real heartLines scrolling, "known bugs" (real TODOs) and "recent sins" (commit subjects).
+- [x] Autopsy: each limb's real symbols as diff lines (red `-` for broken limbs, context for survivors) + heart lines removed on victory.
+- [x] Mock: `?mock=review` starts the boss at 50.5% to reach CODE REVIEW fast; mock kits get fake code when DNA is missing.
+- [x] Motion-v2 prep: DASH/SKILL thumb buttons styled (terminal look, big targets, cooldown fill + countdown from HUD data in every input mode, docked in the right gutter on phones); copy updated to "tilt to move · tap or swing to attack".
+- [~] Analyzing state streaming real file paths: needs server progress (contract request below); UI already renders `progress.stage` / `progress.paths` if present.
 
 ## Summary
 GITZILLA app shell is complete: landing (glitch GITZILLA logo with a stomping kaiju, live themed backdrop, Hall of Monsters), `$ whoami` gate, lobby (repo input + fallback chips + GitHub picker, squad cards that spin up and reveal with Gemini design swaps, AI-teammates stepper, boss silhouette-to-reveal, START), big-screen QR mode, the game screen (integer-scaled pixel canvas, 100 ms interpolation, shake, hit-stop, slow-mo, boss intro cinematic, taunts, terminal HUD, motion/touch/keyboard flows, haptics, procedural audio), and the autopsy (diff dissection, stats, MVP, hall, PNG share card, REMATCH).
@@ -36,4 +54,5 @@ DONE (see summary). Remaining ideas only: phone-portrait lobby layout, QR corner
 - The HUD intentionally duplicates some in-world text (telegraph banner/stack trace + target name, combo counter in a fixed HUD slot).
 
 ## Contract requests
+- **Round 2:** `LobbyPlayer.progress?: { stage: string; paths: string[] }` and the same on `LobbyState.boss` — server streams the analyzer's current stage and recently read file paths while `status === "analyzing"` so the lobby can show real paths like `git clone` output. UI already consumes it (lobby.ts `Progress`).
 - `ClientMsg {t:"setName"; name}` would let lobby rename without reconnecting (currently rename = reconnect with resume token).

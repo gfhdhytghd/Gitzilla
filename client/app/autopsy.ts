@@ -106,6 +106,10 @@ export function createAutopsy(app: AppCtx): Screen {
   if (bossKit) backdrop.setTheme(bossKit.theme);
 
   const maxDmg = Math.max(1, ...a.boss.limbs.map((l) => l.damageTaken));
+  const codeOf = (component: string): string[] => {
+    const id = bossKit?.limbs.find((l) => l.component === component)?.id;
+    return (id && bossKit?.code?.limbSymbols?.[id]) || [];
+  };
   const diff = h(
     "div.diff",
     null,
@@ -115,7 +119,7 @@ export function createAutopsy(app: AppCtx): Screen {
     h("div.diff-hunk", null, `@@ -1,${a.boss.limbs.length} +1,${a.boss.limbs.filter((l) => !l.broken).length} @@ heart: ${a.boss.heart}`),
     ...[...a.boss.limbs]
       .sort((x, y) => y.damageTaken - x.damageTaken)
-      .map((l, i) =>
+      .flatMap((l, i) => [
         h(
           `div.diff-line.${l.broken ? "del" : "keep"}`,
           { style: `animation-delay:${0.1 + i * 0.06}s` },
@@ -125,7 +129,17 @@ export function createAutopsy(app: AppCtx): Screen {
           h("span.dmg", null, `${Math.round(l.damageTaken)} dmg`),
           h("span.mark", null, l.broken ? "✗ broken" : "survived"),
         ),
-      ),
+        // the real code that lived in this limb: deleted lines for broken limbs, context for survivors
+        ...codeOf(l.component).slice(0, l.broken ? 3 : 1).map((line) =>
+          h(`div.diff-code.${l.broken ? "del" : "ctx"}`, { style: `animation-delay:${0.15 + i * 0.06}s` }, h("span.sign", null, l.broken ? "-" : " "), h("code", null, line)),
+        ),
+      ]),
+    ...(a.victory && bossKit?.code?.heartLines?.length
+      ? [
+          h("div.diff-hunk", null, `@@ ${a.boss.heart} @@ heart removed`),
+          ...bossKit.code.heartLines.slice(0, 4).map((line) => h("div.diff-code.del", null, h("span.sign", null, "-"), h("code", null, line))),
+        ]
+      : []),
   );
 
   const ranked = [...a.players].sort((x, y) => y.stats.damage - x.stats.damage);

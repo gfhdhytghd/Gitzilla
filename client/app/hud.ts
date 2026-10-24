@@ -41,10 +41,12 @@ export function createHud(spectator: boolean): Hud {
   const arBar = h("div.seg-bar.ar");
   const enFill = h("div.fill");
   const hpNum = h("span.num"), arNum = h("span.num"), enNum = h("span.num");
+  const perkRow = h("div.hs-perks");
   const selfPanel = h(
     "div.hud-self.term",
     null,
     selfName,
+    perkRow,
     h("div.hs-row", null, h("span.lbl.red", null, "HP "), hpBar, hpNum),
     h("div.hs-row", null, h("span.lbl.grey", null, "ARM"), arBar, arNum),
     h("div.hs-row", null, h("span.lbl.cyan", null, "NRG"), h("div.en-bar", null, enFill), enNum),
@@ -84,11 +86,32 @@ export function createHud(spectator: boolean): Hud {
   const dashEl = h("div.sk.dash", null, dashFill, dashKey, h("span.sk-name", null, "dash"), dashState);
   skillBox.append(dashEl, skillEl);
   const combo = h("div.hud-combo");
+  // code review (phase-2 perk pick): banner with the 3 PR cards + who picked what
+  const reviewTimer = h("span.rv-timer");
+  const reviewCards = h("div.rv-cards");
+  const review = h("div.hud-review", null, h("div.rv-title", null, "CODE REVIEW ", h("span.dim", null, "· stand on a PR to merge your perk "), reviewTimer), reviewCards);
+  let reviewSig = "";
+  const perkNames = new Map<string, string>();
+  const toasts = h("div.hud-toasts");
+  const toastAt = (text: string, cls: string) => {
+    const t = h(`div.htoast.${cls}`, null, text);
+    toasts.append(t);
+    while (toasts.childElementCount > 4) toasts.firstElementChild!.remove();
+    setTimeout(() => t.remove(), 1600);
+  };
   const log = h("div.hud-log.term");
-  const downed = h("div.hud-downed", null, h("div.dn-title", null, "Segmentation fault (core dumped)"), h("div.dn-sub", null, "you are DOWN · a teammate must stand next to you"), h("div.dn-bar"));
+  const dnPct = h("span.dn-pct");
+  const downed = h(
+    "div.hud-downed",
+    null,
+    h("span.dn-title", null, "SEGFAULT"),
+    h("span.dn-sub", null, "you're down · stand-by for teammate revive"),
+    h("div.dn-bar"),
+    dnPct,
+  );
   const dnBar = downed.querySelector(".dn-bar") as HTMLElement;
 
-  const el = h("div.hud" + (spectator ? ".spectator" : ""), null, bossPanel, telegraph, timer, spectator ? null : selfPanel, team, spectator ? null : skillBox, combo, log, spectator ? null : downed);
+  const el = h("div.hud" + (spectator ? ".spectator" : ""), null, bossPanel, telegraph, review, timer, spectator ? null : selfPanel, team, spectator ? null : skillBox, combo, log, spectator ? null : downed, toasts);
 
   let skillMax = new Map<string, number>();
   let lastTelegraphName = "";
@@ -134,6 +157,12 @@ export function createHud(spectator: boolean): Hud {
         setText(enNum, `${Math.round(me.energy)}`);
         setStyle(enFill, "width", `${Math.max(0, Math.min(100, (me.energy / me.kit.maxEnergy) * 100)).toFixed(1)}%`);
         toggle(selfPanel, "low", me.hp <= 2 && me.alive);
+        const perks = me.perks ?? [];
+        const ps = perks.join(",");
+        if (perkRow.dataset.sig !== ps) {
+          perkRow.dataset.sig = ps;
+          perkRow.replaceChildren(...perks.map((id) => h("span.perk-badge", { title: id }, perkNames.get(id) ?? id)));
+        }
         // skill + dash
         const mode = inputMode ?? "keyboard";
         setText(skillKey, SKILL_KEY[mode]);
@@ -149,7 +178,10 @@ export function createHud(spectator: boolean): Hud {
         toggle(dashEl, "ready", me.dashCd <= 0);
         setStyle(dashFill, "height", `${me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2) * 100 : 100}%`);
         toggle(downed, "show", !me.alive && s.status === "fighting");
-        if (!me.alive) setStyle(dnBar, "--p", String(me.reviveProgress));
+        if (!me.alive) {
+          setStyle(dnBar, "--p", String(me.reviveProgress));
+          setText(dnPct, `${Math.round(me.reviveProgress * 100)}%`);
+        }
       }
 
       // boss
@@ -224,6 +256,33 @@ export function createHud(spectator: boolean): Hud {
       for (const [id, r] of teamRows) if (!seen.has(id)) (r.row.remove(), teamRows.delete(id));
 
       toggle(combo, "show", performance.now() < comboUntil);
+
+      // code review
+      const offer = s.perkOffer;
+      toggle(review, "show", !!offer);
+      if (offer) {
+        for (const pad of offer.pads) perkNames.set(pad.id, pad.name);
+        setText(reviewTimer, `${Math.max(0, offer.endsAt - s.t).toFixed(1)}s`);
+        const sig = offer.pads.map((p) => p.id).join(",") + "|" + Object.entries(offer.picked).map(([k, v]) => k + v).join(",");
+        if (sig !== reviewSig) {
+          reviewSig = sig;
+          const nameOf = (id: string) => (id === you ? "you" : s.players.find((p) => p.id === id)?.name ?? id);
+          reviewCards.replaceChildren(
+            ...offer.pads.map((pad, i) => {
+              const by = Object.entries(offer.picked).filter(([, padId]) => padId === pad.id).map(([pid]) => nameOf(pid));
+              const mine = !!you && offer.picked[you] === pad.id;
+              return h(
+                `div.rv-card${mine ? ".mine" : ""}`,
+                null,
+                h("div.rv-pr", null, `PR #${(s.boss.kit.seed % 900) + 100 + i}`),
+                h("div.rv-name", null, pad.name),
+                h("div.rv-desc", null, pad.desc),
+                h("div.rv-by", null, by.length ? `✓ approved by ${by.join(", ")}` : "awaiting review…"),
+              );
+            }),
+          );
+        }
+      } else reviewSig = "";
     },
     say(text) {
       logLine(`boss> ${text}`, "boss");
@@ -241,6 +300,18 @@ export function createHud(spectator: boolean): Hud {
             comboUntil = performance.now() + 1400;
           }
           break;
+        case "pickup":
+          if (e.player === you) toastAt(e.kind === "heart" ? "+1 ♥" : e.kind === "armor" ? "+1 ◆" : "+energy", `pk-${e.kind}`);
+          break;
+        case "obstacleBroken":
+          logLine(`[${fmtTime(s.t)}] rm ${e.label}`, "good");
+          break;
+        case "perk": {
+          const pn = perkNames.get(e.perk) ?? e.perk;
+          logLine(`[${fmtTime(s.t)}] ${name(e.player)} merged ${pn}`, "good");
+          if (e.player === you) toastAt(`merged ${pn}`, "pk-perk");
+          break;
+        }
         case "limbBroken":
           logLine(`[${fmtTime(s.t)}] ${name(e.by)} rm -rf ${limbName(kit, e.limb)}  ✗`, "good");
           break;

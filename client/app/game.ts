@@ -6,7 +6,7 @@ import { type AppCtx, type Screen } from "./app";
 import { createHud } from "./hud";
 import { audio } from "./sound";
 import { bossPortraitCanvas } from "./lobby";
-import { type InputHandle, R, X, createInput, loadModules, safe } from "./renderers";
+import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
 import { asciiBar, clamp, fmtTime, h, isTouchDevice, lerp, vibrate } from "./util";
 
 const BUFFER = 0.1; // seconds of interpolation delay
@@ -27,7 +27,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const stage = h("div.stage", null, canvas, flash, danger);
   const hud = createHud(spectator);
   const overlay = h("div.game-overlay");
-  const el = h("div.screen.game.waiting", null, stage, hud.el, overlay);
+  // blurred, dimmed copy of the arena that fills the letterbox margins
+  const ambient = h("canvas.ambient", { width: 96, height: 58 }) as HTMLCanvasElement;
+  const actx = ambient.getContext("2d")!;
+  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, overlay);
 
   // ---------------- layout ----------------
   let cssScale = 1;
@@ -44,6 +47,13 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     el.style.setProperty("--gx", `${Math.round((W - w) / 2)}px`);
     el.style.setProperty("--gy", `${Math.round((H - hh) / 2)}px`);
     el.classList.toggle("portrait", H > W && isTouchDevice());
+    // dock HUD panels into the margins when they're wide/tall enough
+    const gx = (W - w) / 2, gy = (H - hh) / 2;
+    el.style.setProperty("--dw", `${Math.floor(gx - 10)}px`);
+    document.body.style.setProperty("--dw-btn", `${Math.floor(gx - 10)}px`); // touch overlay lives on <body>
+    el.classList.toggle("dock-x", gx >= 88);
+    el.classList.toggle("dock-narrow", gx >= 88 && gx < 150);
+    el.classList.toggle("dock-y", gy >= 56);
   };
   layout();
   addEventListener("resize", layout);
@@ -172,6 +182,18 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         } else kick(0.2);
         if (Math.random() < 0.4) taunt(s);
         break;
+      case "obstacleBroken":
+        kick(0.18);
+        break;
+      case "pickup":
+        if (e.player === you) vibrate(15);
+        break;
+      case "perk":
+        if (e.player === you) {
+          doFlash(0.25, "57,255,136");
+          vibrate([20, 30, 20]);
+        }
+        break;
       case "revived":
         if (e.player === you) {
           doFlash(0.4, "57,255,136");
@@ -264,7 +286,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (kn > 0.4 && kit.design?.epithet) epithet.textContent = kit.design.epithet;
       if (kn > 0.6) {
         const knots = kit.limbs.filter((l) => l.weakPoint).length;
-        meta.textContent = `♥ ${kit.heart || "heart"} · ${kit.limbs.length} limbs · ${knots} knots · ${kit.theme}`;
+        const hl = kit.code?.heartLines?.find((l) => l.trim().length > 6)?.trim();
+        meta.textContent = `♥ ${kit.heart || "heart"} · ${kit.limbs.length} limbs · ${knots} knots · ${kit.theme}${hl ? `\n  > ${hl}` : ""}`;
       }
       if (performance.now() > introEnd && latest?.status !== "countdown") {
         clearInterval(iv);
@@ -281,6 +304,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // ---------------- outro ----------------
   let outro: { victory: boolean; at: number } | null = null;
   const result = { outroDone: false };
+  const finishOutro = () => {
+    if (result.outroDone) return;
+    result.outroDone = true;
+    app.refresh();
+  };
   const startOutro = (victory: boolean) => {
     if (outro) return;
     outro = { victory, at: performance.now() };
@@ -306,27 +334,36 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
             h("p.dim", null, "loading autopsy…"),
           );
       overlay.append(card);
-    }, victory ? 1400 : 900);
-    setTimeout(() => {
-      result.outroDone = true;
-      app.refresh();
-    }, victory ? 4200 : 3200);
+    }, victory ? 1000 : 500);
+    setTimeout(finishOutro, victory ? 3200 : 2000);
   };
 
   // ---------------- input ----------------
+  let destroyed = false;
   let input: InputHandle | null = null;
   let selfPos: { x: number; y: number } | null = null;
   let sendIv: ReturnType<typeof setInterval> | null = null;
   let motionOverlay: HTMLElement | null = null;
   let hint: HTMLElement | null = null;
+  let sensorBadge: HTMLElement | null = null;
 
   const setupInput = async () => {
-    await loadModules();
+    void loadModules(); // Optional art must not delay sensor listeners or the input sender.
     if (destroyed || spectator) return;
+    if (!loaded.input) {
+      console.error("[kaiju] PHONE INPUT FAILURE: real input unavailable; refusing placeholder");
+      return;
+    }
     input = createInput({ canvas, toArena, getSelf: () => selfPos });
+    if (isTouchDevice()) console.info("[kaiju] motion-v2 real input active; waiting for sensor delivery");
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
       app.conn.send({ t: "input", frame: input.sample() });
+      if (sensorBadge) {
+        sensorBadge.textContent = `sensors: ${input.sensorStatus ?? "off"}`;
+        sensorBadge.dataset.status = input.sensorStatus ?? "off";
+        sensorBadge.dataset.mode = input.mode;
+      }
     }, 1000 / 30);
     if (input.mode === "motion") showMotionFlow();
     else if (input.mode === "keyboard") showKeyHint();
@@ -348,73 +385,46 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   };
   const onKey = (e: KeyboardEvent) => {
     if (e.key.toLowerCase() === "h" && hint) hint.classList.toggle("fade");
-    if (outro && result.outroDone === false && performance.now() - outro.at > 2000) {
-      result.outroDone = true;
-      app.refresh();
-    }
+    if (outro && performance.now() - outro.at > 1200) finishOutro();
   };
   addEventListener("keydown", onKey);
-
-  const goFullscreen = () => {
-    try {
-      const d = document.documentElement;
-      if (!document.fullscreenElement && d.requestFullscreen) {
-        d.requestFullscreen({ navigationUI: "hide" })
-          .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("landscape"))
-          .catch(() => {});
-      }
-    } catch {
-      /* unsupported */
-    }
-  };
+  overlay.addEventListener("pointerdown", () => {
+    if (outro && performance.now() - outro.at > 1200) finishOutro();
+  });
 
   const showMotionFlow = () => {
-    const step = (title: string, sub: string, btn: string, fn: () => void | Promise<void>) => {
-      const b = h("button.btn.btn-big.btn-primary", null, btn);
-      const box = h("div.motion-flow", null, h("div.mf-icon", null, "📱"), h("div.mf-title", null, title), h("div.mf-sub", null, sub), b);
-      b.addEventListener("click", async (ev) => {
-        ev.stopPropagation();
-        await fn();
-      });
-      motionOverlay?.remove();
-      motionOverlay = box;
-      overlay.append(box);
-    };
-    const calibrateStep = () =>
-      step("$ calibrate --sensors", "hold your phone flat-ish in landscape, the way you'll play, then tap", "TAP TO CALIBRATE", () => {
-        input?.calibrate();
-        goFullscreen();
-        vibrate(30);
-        motionOverlay?.remove();
-        motionOverlay = null;
-        const recal = h("button.btn.btn-tiny.recal", { onclick: () => (input?.calibrate(), vibrate(20)) }, "⟲ recalibrate");
-        overlay.append(recal);
-        const tips = h("div.motion-tips", null, "tilt = move · thrust/hold = fire · swing = dash · shake = skill");
-        overlay.append(tips);
-        setTimeout(() => tips.classList.add("fade"), 6000);
-      });
-    if (input?.needsPermission)
-      step("$ sudo enable-sensors", "GITZILLA is played by moving your phone", "TAP TO ENABLE SENSORS", async () => {
-        const ok = await input!.requestPermission();
-        if (ok && input?.mode === "motion") calibrateStep();
-        else {
-          motionOverlay?.remove();
-          motionOverlay = null;
-        }
-      });
-    else calibrateStep();
+    sensorBadge = h("div.kj-sensor-status", { "data-testid": "input-sensors" }, "sensors: waiting");
+    Object.assign(sensorBadge.style, { position: "absolute", left: "8px", top: "32px", font: "12px monospace", color: "#9df5c4", pointerEvents: "none" });
+    overlay.append(sensorBadge);
+    const recal = h("button.btn.btn-tiny.recal", { "data-testid": "motion-recalibrate", onclick: () => (input?.calibrate(), vibrate(20)) }, "⟲ recalibrate");
+    overlay.append(recal);
+    const tips = h("div.motion-tips", null, "tilt = move · tap / swing = attack · DASH / SKILL buttons");
+    Object.assign(tips.style, { whiteSpace: "normal", textAlign: "center", fontSize: "12px", bottom: "28px", width: "70%" });
+    overlay.append(tips);
+    setTimeout(() => tips.classList.add("fade"), 6000);
+    if (!input?.needsPermission) return; // neutral auto-calibrates, no mandatory second tap
+    const enable = h("button.btn.btn-big.btn-primary", { "data-testid": "motion-enable" }, "TAP TO ENABLE SENSORS");
+    motionOverlay = h("div.motion-flow", null,
+      h("div.mf-title", null, "$ sudo enable-sensors"),
+      h("div.mf-sub", null, "Hold comfortably. Neutral calibrates automatically; tilt to move, tap or swing to attack."), enable);
+    enable.addEventListener("click", event => {
+      event.stopPropagation();
+      // Both native permission calls execute synchronously inside this gesture.
+      const request = input!.requestPermission();
+      void request.then(() => { motionOverlay?.remove(); motionOverlay = null; });
+    });
+    overlay.append(motionOverlay);
   };
-  const rotate = h("div.rotate-hint", null, h("div.rot-icon", null, "⟳"), h("div", null, "rotate to landscape"));
-  overlay.append(rotate);
+  // Portrait works too: removed the old rotate-only blocker and forced landscape lock.
 
   setupInput();
 
   // ---------------- render loop ----------------
-  let destroyed = false;
   let raf = 0;
   let last = performance.now();
   let visTime = 0;
   let skillCdMax = 1;
+  let ambientTick = 0;
 
   const interp = (rt: number): MatchState | null => {
     if (!snaps.length) return null;
@@ -514,6 +524,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const tgt = s.players.find((p) => p.id === s.boss.targetPlayer);
     if (tgt) X.bossLookAt(tgt.x, tgt.y);
     safe("drawArenaBackground", R.drawArenaBackground, ctx, kit.theme, kit.seed, visTime);
+    safe("drawPerkPads", R.drawPerkPads, ctx, s.perkOffer ?? null, s.players, visTime);
+    safe("drawObstacles", R.drawObstacles, ctx, s.obstacles ?? [], visTime);
+    safe("drawPickups", R.drawPickups, ctx, s.pickups ?? [], visTime);
     safe("drawHazards", R.drawHazards, ctx, s.hazards, visTime);
     safe("drawMinions", R.drawMinions, ctx, s.minions, visTime);
     safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
@@ -523,6 +536,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime);
     ctx.restore();
     safe("drawPostFx", R.drawPostFx, ctx, visTime, sh);
+    if ((ambientTick = (ambientTick + 1) % 3) === 0) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height);
     releasedEvents.length = 0;
 
     // DOM fx
@@ -544,17 +558,20 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     stage.classList.toggle("enraged", s.boss.enraged || s.boss.phase >= 2);
 
     hud.update(s, app.you, input?.mode ?? null);
-    if (me && input?.mode === "touch") {
+    if (me) {
+      // on-screen DASH/SKILL buttons (touch fallback and motion-v2) get cooldown fill + countdown
       const sk = document.querySelector<HTMLElement>(".kj-touch-skill");
       const da = document.querySelector<HTMLElement>(".kj-touch-dash");
       skillCdMax = Math.max(skillCdMax, me.skillCd);
       if (sk) {
         sk.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
         sk.dataset.ready = me.skillCd > 0 ? "0" : "1";
+        sk.dataset.cd = me.skillCd > 0 ? me.skillCd.toFixed(1) : "";
       }
       if (da) {
         da.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
         da.dataset.ready = me.dashCd > 0 ? "0" : "1";
+        da.dataset.cd = me.dashCd > 0 ? me.dashCd.toFixed(1) : "";
       }
     }
     if (s.status === "fighting") {
@@ -568,7 +585,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       bubble.style.left = `${stage.offsetLeft + s.boss.x * cssScale}px`;
       bubble.style.top = `${stage.offsetTop + Math.max(20, top) * cssScale}px`;
     }
-    if (motionOverlay && input && input.mode !== "motion") {
+    if (motionOverlay && input && (!input.needsPermission || input.mode !== "motion")) {
       motionOverlay.remove();
       motionOverlay = null;
     }

@@ -1,7 +1,7 @@
 // Temporary stand-ins for client/render/* and client/input/* until those modules land.
 // Kept deliberately simple; renderers.ts swaps in the real ones automatically.
 import type {
-  ArenaTheme, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, Minion, PlayerKit, PlayerState,
+  ArenaTheme, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, Minion, Obstacle, PerkOffer, Pickup, PlayerKit, PlayerState,
 } from "../../shared/types";
 import { ARENA_H, ARENA_W, TILE } from "../../shared/types";
 import type { InputHandle } from "./renderers";
@@ -276,4 +276,44 @@ export function createInput(opts: {
       removeEventListener("contextmenu", cm);
     },
   };
+}
+
+export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], _time: number) {
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.textAlign = "center";
+  for (const o of obstacles) {
+    const x = Math.round(o.x - o.w / 2), y = Math.round(o.y - o.h / 2);
+    ctx.fillStyle = "#05070a";
+    ctx.fillRect(x - 1, y - 1, o.w + 2, o.h + 2);
+    ctx.fillStyle = "#1b2a3a";
+    ctx.fillRect(x, y, o.w, o.h);
+    ctx.fillStyle = "#3de8ff";
+    ctx.fillRect(x, y, Math.round(o.w * (o.hp / o.maxHp)), 2);
+    ctx.fillStyle = "#d9ffe9";
+    ctx.fillText(o.label.slice(0, Math.max(2, Math.floor(o.w / 8))), Math.round(o.x), Math.round(o.y + 4));
+  }
+  ctx.textAlign = "left";
+}
+
+const PICKUP_COL: Record<Pickup["kind"], string> = { heart: "#ff3355", energy: "#3de8ff", armor: "#c8d4e0" };
+export function drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], time: number) {
+  for (const p of pickups) {
+    const y = Math.round(p.y + Math.sin(time * 5 + p.id) * 1.5);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(Math.round(p.x) - 3, y - 3, 7, 7);
+    ctx.fillStyle = PICKUP_COL[p.kind];
+    ctx.fillRect(Math.round(p.x) - 2, y - 2, 5, 5);
+  }
+}
+
+export function drawPerkPads(ctx: CanvasRenderingContext2D, offer: PerkOffer | null, _players: PlayerState[], time: number) {
+  if (!offer) return;
+  for (const pad of offer.pads) {
+    ctx.strokeStyle = `rgba(57,255,136,${0.6 + 0.4 * Math.sin(time * 6)})`;
+    ctx.setLineDash([3, 2]);
+    ctx.beginPath();
+    ctx.arc(pad.x, pad.y, pad.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 }
