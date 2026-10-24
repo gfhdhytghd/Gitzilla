@@ -57,3 +57,4 @@ DONE. Further work would only be polish.
 ## Notes
 - The coordinator's BossKit.heart and BossState.regions change doesn't affect the player renderer.
 - No new deps. Screenshots were taken with system `/usr/bin/chromium --headless`.
+- Gitzilla rebrand: the gallery headings now read `$ gitzilla --heroes` / `$ gitzilla --portraits`. The renderer draws no other product-name strings (in-game text is player names, repo names, `404`, `200 OK`, and skill callouts).
