@@ -10,7 +10,7 @@ let file: string;
 beforeEach(() => { directory = mkdtempSync(join(tmpdir(), 'repo-kaiju-hall-')); file = join(directory, 'cache/hall.json'); });
 afterEach(() => { vi.restoreAllMocks(); rmSync(directory, { recursive: true, force: true }); });
 const match = (victory = true, duration = 120, damage = 300): Autopsy => ({
-  victory, duration, boss: { repo: 'ignored/old-boss', limbs: [], heart: 'src/heart.ts' }, mvp: 'one',
+  mode: 'battle', victory, duration, boss: { repo: 'ignored/old-boss', limbs: [], heart: 'src/heart.ts' }, mvp: 'one',
   players: [
     { id: 'one', name: 'Ada', repo: 'ada/compiler', stats: { damage, bestCombo: 4, limbsBroken: 2, revives: 1, killingBlow: victory } },
     { id: 'two', name: 'Grace', repo: 'grace/runtime', stats: { damage: damage / 2, bestCombo: 2, limbsBroken: 1, revives: 0, killingBlow: false } },
@@ -21,6 +21,17 @@ describe('Hall of Monsters', () => {
   it('starts empty without creating or requiring a cache directory', () => {
     expect(createHall(file).top()).toEqual({ fastestKills: [], topDamage: [], bossRecords: [] });
     expect(readdirSync(directory)).toEqual([]);
+  });
+  it('skips classroom PvP and null-boss results without creating or changing the battle Hall', () => {
+    const hall = createHall(file);
+    const pvp: Autopsy = { ...match(false), mode: 'edu', boss: null, ranking: [] };
+    hall.recordMatch(pvp, 'CLASS', 'not-a-boss');
+    hall.recordMatch({ ...match(), boss: null }, 'NO-BOSS', 'not-a-boss');
+    expect(readdirSync(directory)).toEqual([]);
+    hall.recordMatch(match(), 'RAID', 'facebook/react');
+    const before = readFileSync(file, 'utf8');
+    hall.recordMatch(pvp, 'CLASS', 'not-a-boss');
+    expect(readFileSync(file, 'utf8')).toBe(before);
   });
   it('records a victory with squad names, per-match damage, boss counts, and ISO timestamps', () => {
     vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2026-10-24T20:00:00.000Z');
@@ -86,6 +97,16 @@ describe('Hall of Monsters', () => {
       expect(readFileSync(file, 'utf8')).toBe(previous);
       expect(readdirSync(join(directory, 'cache'))).toEqual(['hall.json']);
     } finally { vi.doUnmock('node:fs'); vi.resetModules(); }
+  });
+  it('never persists extra DNA/code fields supplied on autopsies, bosses, players, or stats', () => {
+    const hall = createHall(file);
+    const result = match();
+    const dna = { snippets: [{ code: 'private_fixture_identifier()' }] };
+    Object.assign(result, { dna }); if (result.boss) Object.assign(result.boss, { dna });
+    Object.assign(result.players[0], { code: dna }); Object.assign(result.players[0].stats, { dna });
+    hall.recordMatch(result, 'SAFE', 'demo/repo');
+    expect(readFileSync(file, 'utf8')).not.toContain('private_fixture_identifier');
+    expect(JSON.stringify(hall.top())).not.toContain('snippets');
   });
   it('reports malformed persisted data instead of silently overwriting it', () => {
     const hall = createHall(file); hall.recordMatch(match(), 'GOOD', 'redis/redis');

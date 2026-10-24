@@ -34,6 +34,8 @@ export function createHall(file = DEFAULT_FILE): { recordMatch(autopsy: Autopsy,
   }
 
   function recordMatch(autopsy: Autopsy, room: string, bossRepo: string): void {
+    // Classroom PvP has no boss and never enters the battle Hall.
+    if (autopsy.mode === 'edu' || !autopsy.boss) return;
     const data = read();
     const at = new Date().toISOString();
     const boss = bossRepo.trim().toLowerCase();

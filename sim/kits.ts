@@ -1,7 +1,7 @@
 import type { ArenaTheme, BossAttack, BossAttackKind, BossKit, GameMode, PlayerKit, RepoProfile, WeaponKind } from '../shared/types.ts';
 import { ATTACK_COST, squadBudget } from './balance.ts';
 import { bossCode, heroCode, symbolAllocator } from './code.ts';
-import { ATTACK_FLAVOR } from './flavor.ts';
+import { ATTACK_FLAVOR, weaponCode } from './flavor.ts';
 import { asClassroomKit, classroomFacts, type ClassroomKit } from './quality.ts';
 import { bossSocial, fragileComponents, type SocialBossKit } from './social.ts';
 
@@ -29,9 +29,11 @@ export function playerKitFromProfile(p: RepoProfile, options: { mode?: GameMode 
     repo: p.slug, title: `${p.primaryLanguage || 'Code'} ${title}`, weapon, skill,
     maxHp: 5 + points[0], maxArmor: 3 + points[1], maxEnergy: 150 + points[2] * 35,
     speed: 77 + points[3] * 8, damageMul: 0.9 + points[4] * 0.1,
-    palette: ['#172131', color, (p.seed & 1) ? '#ffe2ac' : '#d5f5ff', '#f4faf7'], seed: p.seed, code: heroCode(p, weapon),
+    palette: ['#172131', color, (p.seed & 1) ? '#ffe2ac' : '#d5f5ff', '#f4faf7'], seed: p.seed, code: heroCode(p),
     classroom: classroomFacts(p),
   };
+  kit.code!.weapon = weaponCode(weapon, p.primaryLanguage, p.seed, p.dna?.tokens,
+    [kit.code!.signature, ...(p.dna?.identifiers ?? []), ...Object.values(p.dna?.componentSymbols ?? {}).flat()]);
   return options.mode === 'edu' ? asClassroomKit(kit) : kit;
 }
 

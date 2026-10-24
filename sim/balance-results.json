@@ -64,7 +64,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "unsafe{} Cannon",
+      "weaponName": "alloc(name_long())",
       "projectileGlyphs": 4
     },
     {
@@ -75,7 +75,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "yield Staff",
+      "weaponName": "yield from value()",
       "projectileGlyphs": 4
     },
     {
@@ -86,7 +86,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "Promise Blaster",
+      "weaponName": "accept().then(fire)",
       "projectileGlyphs": 3
     },
     {
@@ -97,7 +97,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "Promise Blaster",
+      "weaponName": "emit(create())",
       "projectileGlyphs": 3
     },
     {
@@ -108,7 +108,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "yield Staff",
+      "weaponName": "yield from alias()",
       "projectileGlyphs": 4
     },
     {
@@ -119,7 +119,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "goroutine SMG",
+      "weaponName": "go burst(Data)",
       "projectileGlyphs": 4
     },
     {
@@ -130,7 +130,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "goroutine SMG",
+      "weaponName": "go repeat(groupOrAttrs)",
       "projectileGlyphs": 4
     },
     {
@@ -141,7 +141,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "Promise Blaster",
+      "weaponName": "await setup()",
       "projectileGlyphs": 3
     },
     {
@@ -152,7 +152,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "yield Staff",
+      "weaponName": "yield process()",
       "projectileGlyphs": 4
     },
     {
@@ -163,7 +163,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "Promise Blaster",
+      "weaponName": "await fetch(add)",
       "projectileGlyphs": 3
     },
     {
@@ -174,7 +174,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "yield Staff",
+      "weaponName": "yield from create_app()",
       "projectileGlyphs": 4
     },
     {
@@ -185,7 +185,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "#define Shotgun",
+      "weaponName": "#define SPRAY(list)",
       "projectileGlyphs": 4
     },
     {
@@ -196,7 +196,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "unsafe{} Cannon",
+      "weaponName": "alloc(stdout())",
       "projectileGlyphs": 4
     },
     {
@@ -207,7 +207,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "Stream Beam",
+      "weaponName": "addVisit.stream()",
       "projectileGlyphs": 4
     },
     {
@@ -218,7 +218,7 @@
       "snippets": 12,
       "heartLines": 12,
       "bigFiles": 8,
-      "weaponName": "as any Blaster",
+      "weaponName": "await fire(data)",
       "projectileGlyphs": 4
     }
   ],
