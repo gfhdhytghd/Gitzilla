@@ -88,6 +88,26 @@ describe('pure event -> SFX mapping', () => {
     expect(own.gain).toBeGreaterThan(other.gain);
     expect(own.pitch).toBeGreaterThan(other.pitch);
   });
+  it('announces lessons quietly, below combat warning priority', () => {
+    const lesson = eventToSfx({ type: 'lesson', concept: 'test-coverage', ref: 'tests/parser.ts', facts: { testRatio: 0.3 } }, 'me')[0];
+    const warning = eventToSfx({ type: 'telegraph', attackId: 'x', name: 'x', targetPlayer: 'me' }, 'me')[0];
+    expect(lesson).toMatchObject({ sound: 'lesson', self: false });
+    expect(lesson.gain).toBeLessThan(warning.gain);
+    expect(lesson.priority).toBeLessThan(warning.priority);
+  });
+  it('distinguishes quiz success and a gentle retry from an ordinary perk', () => {
+    const base = { type: 'perk', player: 'me', perk: 'quiz reward' } as const;
+    expect(eventToSfx({ ...base, correct: true }, 'me')[0]).toMatchObject({ sound: 'quizCorrect', self: true });
+    expect(eventToSfx({ ...base, correct: false }, 'me')[0]).toMatchObject({ sound: 'quizWrong', self: true });
+    expect(eventToSfx(base, 'me')[0].sound).toBe('perk');
+    expect(eventToSfx({ ...base, correct: false }, 'me')[0].gain).toBeLessThan(eventToSfx(base, 'me')[0].gain);
+  });
+  it('emphasizes self hits in hero-vs-hero combat without a boss event', () => {
+    const event: AudioHit = { ...hit, target: 'student-b', source: 'student-a' };
+    expect(eventToSfx(event, 'student-a')[0]).toMatchObject({ sound: 'hit', self: true });
+    expect(eventToSfx(event, 'student-b')[0]).toMatchObject({ sound: 'hurt', self: true });
+    expect(eventToSfx(event, 'teacher')[0]).toMatchObject({ sound: 'hit', self: false });
+  });
   it('does not mutate snapshots and gives spectators no personal emphasis', () => {
     const event = Object.freeze({ type: 'revived', player: '', by: '' } as const);
     expect(eventToSfx(event, '')[0].self).toBe(false);
@@ -114,7 +134,7 @@ describe('procedural PCM', () => {
     const names: SfxName[] = ['hit', 'hurt', 'crit', 'combo', 'telegraph', 'limbBroken', 'downed', 'revived', 'skill', 'phase',
       'victory', 'defeat', 'dash', 'ui', 'intro', 'skill:firewall', 'skill:fork', 'skill:hotfix', 'skill:overclock', 'skill:rollback',
       'fire:blaster', 'fire:smg', 'fire:shotgun', 'fire:cannon', 'fire:staff', 'fire:laser', 'fire:blade',
-      'pickup:energy', 'pickup:heart', 'pickup:armor', 'obstacleBroken', 'perk'];
+      'pickup:energy', 'pickup:heart', 'pickup:armor', 'obstacleBroken', 'perk', 'lesson', 'quizCorrect', 'quizWrong'];
     for (const name of names) {
       const pcm = renderSfx(name, 12000);
       expect(pcm.length).toBeGreaterThan(100);

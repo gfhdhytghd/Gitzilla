@@ -68,6 +68,10 @@ try {
     await activate('audio-unlock');
     assert.match(await page.getByTestId('audio-status').innerText(), /UNLOCKED/);
     assert.equal(await page.evaluate(() => (window as any).__audioProbe.contexts[0].state), 'running');
+    const beforeClassroom = await page.evaluate(() => (window as any).__audioProbe.starts.length);
+    await activate('music-classroom');
+    assert.equal(await page.evaluate(start => (window as any).__audioProbe.starts.slice(start)
+      .filter((source: any) => !source.loop && source.duration > 1).length, beforeClassroom), 0, 'classroom music must not summon a boss');
     await activate('music-terminal');
     await page.waitForTimeout(200);
     const rms = () => page.evaluate(() => {
@@ -92,7 +96,7 @@ try {
       results.phaseLoopDurations = durations;
       for (const weapon of ['blaster', 'smg', 'shotgun', 'cannon', 'staff', 'laser', 'blade']) await activate(`fire-${weapon}`);
       for (const event of ['hit', 'crit', 'combo', 'hurt', 'telegraph', 'limbBroken', 'downed', 'revived',
-        'pickup-energy', 'pickup-heart', 'pickup-armor', 'obstacleBroken', 'perk', 'phase', 'victory', 'defeat']) await activate(`event-${event}`);
+        'pickup-energy', 'pickup-heart', 'pickup-armor', 'obstacleBroken', 'perk', 'lesson', 'quiz-correct', 'quiz-retry', 'phase', 'victory', 'defeat']) await activate(`event-${event}`);
       for (const skill of ['firewall', 'fork', 'hotfix', 'overclock', 'rollback']) await activate(`skill-${skill}`);
       for (const effect of ['dash', 'intro', 'ui-tick', 'stress-burst']) await activate(effect);
       const stress = await rms();

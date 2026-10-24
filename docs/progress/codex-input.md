@@ -1,4 +1,31 @@
-DONE (motion v2)
+DONE (edu pvp)
+
+Owner parts complete: persistent inclusive controls in all modes; lesson/quiz/PvP audio; null-boss-safe examples; classroom playtest for 2–30 students with no boss, quality/PvP/ranking evidence; required-mode fixture updates. No commits, shared edits, new dependencies or live-server access. Full live classroom acceptance awaits other owners' UI/sim integration.
+
+Education/social-impact card read (`docs/tasks/edu.md`, `docs/social-impact.md`, committed shared types). Owner work: persistent standard/seated/tap-only MotionProfile and accessible thresholds; audio support for lesson and quiz verdict events; education-aware tools/fixtures and owned contract type fixes. Onboarding/settings UI remains claude-ui-owned; handoff will specify exact APIs. DEV only localhost:5175, no commits/shared edits/new dependencies.
+
+Latest user update accepted: edu is CLASSROOM PvP (no boss, quality-derived heroes, up to 30 students). Earlier boss-edu assumptions are superseded. Null-boss audit first: owned input/audio have no boss dereferences; tools' `.boss` references are lobby configuration/options, not nullable MatchState boss. Audio's new lesson event requires mapping. Playtest edu path will skip boss setup and inspect mode/heroScale/PvP snapshots. Outside-owner null-boss compile errors are left to their owners.
+
+## EDU PvP handoff to claude-ui — APIs ready now
+- Input exports `loadMotionProfile()`, `saveMotionProfile(profile)`, `MOTION_PROFILES`, `MOTION_PROFILE_LABELS` from `client/input/index.ts`. Storage key: `kaiju.motionProfile`; values are shared `MotionProfile` (`standard`, `seated`, `tap-only`). No server/network data added.
+- Choose/save profile BEFORE creating the input controller, so tapping **Tap only** cannot accidentally open a sensor-permission prompt from an already-active standard controller. `createInput({canvas,toArena,getSelf,motionProfile: choice})` also accepts an explicit initial value; omitting it loads saved preference.
+- For the settings gear during play, use `input.motionProfile` and `input.setMotionProfile(choice)`: it persists, resets neutral/old actions, changes joystick visibility immediately, and safely ignores stale in-flight native permission results. Seated: full speed 8°, deadzone 5° vs standard 4°, smoothing 150ms vs 65ms, swing 6m/s² vs 12m/s², refractory 350ms vs 200ms. Tap-only: no permission or sensor processing, joystick + existing tap/hold attack and action buttons.
+- Labels: “Standard”, “Seated / low-motion”, “Tap only”. Your calibration/onboarding/settings choice UI remains yours; do not duplicate a second input controller. Input/profile code has 55 passing tests. Settings/profile UI taps cannot auto-open sensor prompts; the dedicated enable button and attack-area taps still request before fullscreen.
+- Audio now accepts `lesson` and `perk.correct` (`true` -> positive quiz chime, `false` -> gentle retry cue, absent -> ordinary perk jingle). Existing `onEvents` is sufficient.
+- For no-boss PvP music: `audio.music('notebook', Math.min(3, state.pvp?.round ?? 1) as 1|2|3, {intro:false})`; third options arg is new and suppresses boss-modem summon. Use `state.boss?.kit.theme` / `state.boss?.phase` for optional battle values; never dereference null.
+- Playtest contract request: owner mode buttons `[data-testid="mode-battle"]` / `[data-testid="mode-edu"]`, synchronized with server `LobbyState.mode`. Implemented `--mode edu` skips every boss control, validates null-boss/heroScale/PvP/quality snapshots and checks complete ranking if a natural match end is reached.
+- Minimal integration-only edit: `client/app/renderers.ts` aliases InputHandle/CreateInput to the real InputController/InputOptions so profile methods/options are typed. No functional UI edits for this card.
+
+## EDU PvP verification and limitations
+- Final whole-workspace `npm run typecheck`: PASS. No owned mode/null-boss diagnostics; lesson event mapping fixes audio exhaustiveness.
+- Final input/audio/CLI tests: 95 PASS (55 input/profile, 26 audio, 14 CLI). Strict tools/input/audio TypeScript and owned whitespace checks PASS.
+- Opt-in Playwright harness fixtures: 3 PASS (battle, error exit, classroom PvP), plus 14 CLI tests. Classroom fixture verifies mode control, no boss configuration, 2x/null-boss/PvP/quality snapshots and ranking autopsy. Synthetic fixture proof only; not real-classroom acceptance.
+- `tools/inclusive-motion.ts`: 6 browser component checks PASS, actual DEV input module at 390×844/DPR 3. Verified seated 8° full speed, tremor filtering, small flick; tap-only sensor/permission isolation + tap attacks; storage persistence after reload; live restoration of standard thresholds. Artifact: `docs/shots/2026-10-24T19-38-54-685Z-inclusive-motion/`. No product-onboarding/network/hardware claim from this component fixture.
+- `tools/audio-smoke.ts`: PASS, zero browser errors. New lesson/quiz voices and classroom boss-sting suppression checked; desktop + portrait phone mute/volume/cleanup/finite DSP. Artifact: `docs/shots/2026-10-24T19-39-31-167Z-audio/`, sampled stress peak .4352.
+- Final `tools/motion-v2.ts`: 18 real DEV checks PASS, 298 snapshots / 442 input frames, zero errors. Artifact: `docs/shots/2026-10-24T19-43-00-909Z-motion-v2/`. Updated the test to tap the actual attack area for permissions after UI moved the enable control to a compact intro-hidden pill; original six-axis/snapshot/action/permission proof preserved.
+- Live `--mode edu --players 2 --seconds 10` reported missing mode-edu while its UI was not yet implemented and a shared DEV restart. Artifact: `docs/shots/2026-10-24T19-39-29-798Z-1575218/`. Real classroom rounds, teacher board, full ranking/quiz flow and 30-student performance remain PENDING. No outside-owner simulation/UI edits to fabricate a pass.
+- Latest full suite during concurrent work: 377 passed / 7 failed / 7 skipped. Six failures are analysis fetch-count expectations after new metadata calls (5→9 / 15→27); one is qa/robustness.test.ts 5s timeout. These outside-owner files were left untouched; scoped tests pass.
+- Physical-phone accessibility feel, native iOS prompts and human listening remain UNVERIFIED. Motion profiles stay local and do not alter quality stats or network contracts.
 
 Portrait motion-v2 complete and verified against real DEV localhost:5175. Final browser run: 18 checks PASS, 293 authoritative snapshots, 438 transmitted input frames, zero browser/WebSocket errors. Human/physical-phone acceptance remains unverified; no live server touched and no commits.
 

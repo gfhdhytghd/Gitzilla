@@ -2,7 +2,7 @@ import type { GameEvent, Pickup, SkillKind } from '../../shared/types';
 
 export type EventSound = 'hit' | 'hurt' | 'crit' | 'combo' | 'telegraph' | 'limbBroken'
   | 'downed' | 'revived' | 'skill' | 'phase' | 'victory' | 'defeat'
-  | `pickup:${Pickup['kind']}` | 'obstacleBroken' | 'perk';
+  | `pickup:${Pickup['kind']}` | 'obstacleBroken' | 'perk' | 'lesson' | 'quizCorrect' | 'quizWrong';
 export interface SoundCue {
   sound: EventSound;
   self: boolean;
@@ -40,7 +40,9 @@ export function eventToSfx(event: GameEvent, selfId: string): SoundCue[] {
     case 'phase': return [{ ...cue('phase', false, 5, 0.65, (event.phase - 1) * 3), variant: event.phase }];
     case 'pickup': return [cue(`pickup:${event.kind}`, !!selfId && event.player === selfId, 2, 0.4)];
     case 'obstacleBroken': return [cue('obstacleBroken', false, 1, 0.4)];
-    case 'perk': return [cue('perk', !!selfId && event.player === selfId, 4, 0.55)];
+    case 'perk': return [cue(event.correct === true ? 'quizCorrect' : event.correct === false ? 'quizWrong' : 'perk',
+      !!selfId && event.player === selfId, event.correct === false ? 3 : 4, event.correct === false ? 0.35 : 0.55)];
+    case 'lesson': return [cue('lesson', false, 1, 0.22)];
     case 'victory': return [cue('victory', false, 5, 0.7)];
     case 'defeat': return [cue('defeat', false, 5, 0.65)];
   }

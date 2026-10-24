@@ -8,7 +8,7 @@ export interface KaijuAudio {
   onEvents(events: GameEvent[], selfId: string): void;
   onFire(weapon: WeaponKind): void;
   onDash(): void;
-  music(theme: ArenaTheme | 'lobby' | 'victory' | 'defeat', phase?: 1 | 2 | 3): void;
+  music(theme: ArenaTheme | 'lobby' | 'victory' | 'defeat', phase?: 1 | 2 | 3, options?: { intro?: boolean }): void;
   setMuted(muted: boolean): void;
   setVolume(volume: number): void;
   /** Optional UI helpers beyond the requested interface. */
@@ -185,13 +185,14 @@ export function createAudio(): KaijuAudio {
       play(`fire:${weapon}`, 0.4, 1, 1, cooldown[weapon]);
     },
     onDash() { play('dash', 0.5, 2, 2, 0.22); },
-    music(theme, phase = 1) {
+    music(theme, phase = 1, options = {}) {
       if (disposed) return;
+      if (options.intro === false) pendingIntro = false;
       const activePhase = isArenaTheme(theme) ? phase : 1;
       if (desired?.theme === theme && desired.phase === activePhase) return;
       const previous = desired;
       desired = { theme, phase: activePhase };
-      pendingIntro = isArenaTheme(theme) && activePhase === 1
+      pendingIntro = options.intro !== false && isArenaTheme(theme) && activePhase === 1
         && (!previous || !isArenaTheme(previous.theme) || previous.theme !== theme);
       startMusic();
     },

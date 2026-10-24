@@ -2,14 +2,14 @@ import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page } from 'playwright';
-import type { ClientMsg, InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
+import type { Autopsy, ClientMsg, GameMode, InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = (ms: number) => new Promise<void>(done => setTimeout(done, ms));
 const UI_TIMEOUT = 15_000;
 const ANALYSIS_TIMEOUT = 30_000;
 
-export interface Options { players: number; boss: string; seconds: number; headed: boolean }
+export interface Options { players: number; boss: string; seconds: number; headed: boolean; mode: GameMode }
 export function playtestBaseURL(override = process.env.PLAYTEST_URL): string {
   const url = new URL(override || 'http://localhost:5175');
   if (url.port === '5173' || url.hostname === 'gitzilla.wilflin.me') {
@@ -18,18 +18,24 @@ export function playtestBaseURL(override = process.env.PLAYTEST_URL): string {
   return url.href.replace(/\/$/, '');
 }
 export function parseOptions(args: string[]): Options {
-  const opts: Options = { players: 4, boss: 'pallets/flask', seconds: 60, headed: false };
+  const opts: Options = { players: 4, boss: 'pallets/flask', seconds: 60, headed: false, mode: 'battle' };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--headed') opts.headed = true;
-    else if (arg === '--players' || arg === '--seconds' || arg === '--boss') {
+    else if (arg === '--players' || arg === '--seconds' || arg === '--boss' || arg === '--mode') {
       const value = args[++i];
       if (!value || value.startsWith('--')) throw new Error(`Missing value for ${arg}`);
       if (arg === '--boss') opts.boss = value;
+      else if (arg === '--mode') {
+        if (value !== 'battle' && value !== 'edu') throw new Error('--mode must be battle or edu');
+        opts.mode = value;
+      }
       else opts[arg === '--players' ? 'players' : 'seconds'] = Number(value);
     } else throw new Error(`Unknown option: ${arg}`);
   }
-  if (!Number.isInteger(opts.players) || opts.players < 1 || opts.players > 8) throw new Error('--players must be an integer from 1 to 8');
+  const minPlayers = opts.mode === 'edu' ? 2 : 1;
+  const maxPlayers = opts.mode === 'edu' ? 30 : 8;
+  if (!Number.isInteger(opts.players) || opts.players < minPlayers || opts.players > maxPlayers) throw new Error(`--players must be an integer from ${minPlayers} to ${maxPlayers} for ${opts.mode}`);
   if (!Number.isFinite(opts.seconds) || opts.seconds <= 0) throw new Error('--seconds must be a positive number');
   return opts;
 }
@@ -48,7 +54,10 @@ interface Telemetry {
   skills: number;
   ack: number;
   autopsy: boolean;
+  result?: Autopsy;
   sources: Record<string, number>;
+  lessons: number;
+  quizAnswers: number;
 }
 interface Client {
   name: string;
@@ -205,10 +214,15 @@ export async function playtest(options: Options): Promise<number> {
           const previousStatus = t.snapshot?.status;
           t.snapshot = message.state;
           t.snapshots++;
+          t.lessons += message.state.events?.filter(event => event.type === 'lesson').length ?? 0;
+          t.quizAnswers += message.state.events?.filter(event => event.type === 'perk' && event.correct !== undefined).length ?? 0;
           if (message.state.status === 'fighting') t.fightingSnapshots++;
           t.ack = Math.max(t.ack, message.ack);
           if (previousStatus !== message.state.status) log('ws:status', `${name}: ${message.state.status}`);
-        } else if (message.t === 'autopsy') { t.autopsy = true; log('ws:autopsy', `${name}: ${message.result.victory ? 'victory' : 'defeat'}`); }
+        } else if (message.t === 'autopsy') {
+          t.autopsy = true; t.result = message.result;
+          log('ws:autopsy', `${name}: ${message.result.mode === 'edu' ? `class ranking (${message.result.ranking?.length ?? 0} students)` : message.result.victory ? 'victory' : 'defeat'}`);
+        }
         else if (message.t === 'error') {
           errors.websocket++;
           log('ws:protocol-error', `${name}: ${message.message}`, true);
@@ -223,7 +237,7 @@ export async function playtest(options: Options): Promise<number> {
     if (!repos) throw new Error(`No Repo Kaiju fallback endpoint at ${baseURL}; start the shared DEV server on 5175. The harness never starts or stops servers.`);
     log('server', `Reusing ${baseURL}`, true);
     note(`Fallback repos: ${repos.join(', ')}`);
-    if (!repos.includes(options.boss)) note(`Requested boss ${options.boss} isn't listed in /api/fallbacks; real analysis may be needed.`);
+    if (options.mode === 'battle' && !repos.includes(options.boss)) note(`Requested boss ${options.boss} isn't listed in /api/fallbacks; real analysis may be needed.`);
     const bundledChromium = chromium.executablePath();
     const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       || (existsSync(bundledChromium) ? bundledChromium : existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
@@ -246,7 +260,7 @@ export async function playtest(options: Options): Promise<number> {
         Object.defineProperty(window, 'DeviceOrientationEvent', { configurable: true, value: undefined });
       });
       const client: Client = { name: spectator ? 'Phone spectator' : `Playtester ${i + 1}`, phone, spectator, context,
-        page: await context.newPage(), telemetry: { snapshots: 0, fightingSnapshots: 0, inputs: 0, moving: 0, firing: 0, dashes: 0, skills: 0, ack: -1, autopsy: false, sources: {} } };
+        page: await context.newPage(), telemetry: { snapshots: 0, fightingSnapshots: 0, inputs: 0, moving: 0, firing: 0, dashes: 0, skills: 0, ack: -1, autopsy: false, sources: {}, lessons: 0, quizAnswers: 0 } };
       clients.push(client);
       attach(client);
     }
@@ -264,6 +278,13 @@ export async function playtest(options: Options): Promise<number> {
     log('room', room, true);
     phase = 'joining';
     await optionalJoin(owner);
+    if (options.mode === 'edu') {
+      phase = 'classroom mode selection';
+      await click(owner, 'mode-edu');
+      const deadline = Date.now() + UI_TIMEOUT;
+      while (owner.telemetry.lobby?.mode !== 'edu' && Date.now() < deadline) await sleep(50);
+      if (owner.telemetry.lobby?.mode !== 'edu') throw new IncompleteUI('mode-edu did not change authoritative LobbyState.mode to edu');
+    }
     await Promise.all(clients.slice(1).map(async client => {
       await client.page.goto(`${baseURL}/r/${room}${client.spectator ? '?screen=1' : ''}`, { waitUntil: 'domcontentloaded' });
       if (!client.spectator) await optionalJoin(client);
@@ -275,9 +296,11 @@ export async function playtest(options: Options): Promise<number> {
       await click(client, 'player-repo-submit');
       await waitForReady(client, 'player-ready');
     }));
-    await (await required(owner, 'boss-repo-input')).fill(options.boss);
-    await click(owner, 'boss-repo-submit');
-    await waitForReady(owner, 'boss-ready');
+    if (options.mode === 'battle') {
+      await (await required(owner, 'boss-repo-input')).fill(options.boss);
+      await click(owner, 'boss-repo-submit');
+      await waitForReady(owner, 'boss-ready');
+    }
     await capturePair('lobby');
     // Rendering and the Playwright WS observer can settle on adjacent event turns.
     const readyDeadline = Date.now() + 2000;
@@ -285,13 +308,15 @@ export async function playtest(options: Options): Promise<number> {
       && Date.now() < readyDeadline) await sleep(50);
     const readyCount = owner.telemetry.lobby?.players.filter(player => player.status === 'ready').length ?? 0;
     if (readyCount !== options.players) throw new IncompleteUI(`UI selected repos but server reports ${readyCount}/${options.players} ready players`);
-    phase = 'boss intro';
+    phase = options.mode === 'edu' ? 'classroom PvP start' : 'boss intro';
     await click(owner, 'start-match');
     startedAt = Date.now();
     await Promise.all(pair().map(async client => {
-      try { await client.page.getByTestId('boss-intro').waitFor({ state: 'visible', timeout: 2500 }); }
-      catch { note(`${client.name}: optional boss-intro overlay absent; capturing fight canvas instead`); await required(client, 'game-canvas'); }
-      await screenshot(client, 'boss-intro');
+      if (options.mode === 'battle') {
+        try { await client.page.getByTestId('boss-intro').waitFor({ state: 'visible', timeout: 2500 }); }
+        catch { note(`${client.name}: optional boss-intro overlay absent; capturing fight canvas instead`); await required(client, 'game-canvas'); }
+      } else await required(client, 'game-canvas');
+      await screenshot(client, options.mode === 'edu' ? 'classroom-start' : 'boss-intro');
     }));
     await Promise.all(clients.filter(c => !c.spectator).map(client => required(client, 'game-canvas')));
     phase = 'fight';
@@ -374,6 +399,16 @@ export async function playtest(options: Options): Promise<number> {
     }
     for (const client of fighters) {
       const t = client.telemetry;
+      if (options.mode === 'edu' && (t.snapshot?.mode !== 'edu' || t.snapshot.boss !== null || t.snapshot.heroScale !== 2 || !t.snapshot.pvp)) {
+        throw new IncompleteUI(`${client.name}: classroom snapshot must have mode=edu, boss=null, heroScale=2 and PvP scoring`);
+      }
+      if (options.mode === 'edu' && t.snapshot?.players.some(player => !player.kit.quality?.length)) {
+        throw new IncompleteUI(`${client.name}: classroom hero is missing its code-quality report card`);
+      }
+      if (options.mode === 'edu' && t.result && (t.result.mode !== 'edu' || t.result.boss !== null
+        || t.result.ranking?.length !== options.players)) {
+        throw new IncompleteUI(`${client.name}: classroom autopsy must have no boss and a ranking for every student`);
+      }
       if (!t.fightingSnapshots || !t.inputs || !t.moving || !t.firing || t.ack < 1) {
         throw new IncompleteUI(`${client.name}: missing end-to-end snapshot/ack/movement/fire evidence (${JSON.stringify(totals(t))})`);
       }
@@ -415,12 +450,15 @@ export async function playtest(options: Options): Promise<number> {
 function totals(t: Telemetry) {
   return { playerId: t.id, snapshots: t.snapshots, fightingSnapshots: t.fightingSnapshots, inputs: t.inputs, moving: t.moving, firing: t.firing,
     dashes: t.dashes, skills: t.skills, ack: t.ack, sources: t.sources, autopsy: t.autopsy,
-    lastMatchStatus: t.snapshot?.status, serverTime: t.snapshot?.t };
+    lastMatchStatus: t.snapshot?.status, serverTime: t.snapshot?.t, mode: t.snapshot?.mode,
+    heroScale: t.snapshot?.heroScale, hasBoss: t.snapshot?.boss != null, pvp: t.snapshot?.pvp,
+    lessons: t.lessons, quizAnswers: t.quizAnswers,
+    qualityCards: t.snapshot?.players.map(player => ({ id: player.id, quality: player.kit.quality })), ranking: t.result?.ranking };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (process.argv.includes('--help')) {
-    console.log('Usage: npx tsx tools/playtest.ts [--players 4] [--boss pallets/flask] [--seconds 60] [--headed]\nSee tools/README.md for selectors, artifacts, and exit codes.');
+    console.log('Usage: npx tsx tools/playtest.ts [--mode battle|edu] [--players 4] [--boss pallets/flask] [--seconds 60] [--headed]\nSee tools/README.md for selectors, artifacts, and exit codes.');
   } else {
     try { process.exitCode = await playtest(parseOptions(process.argv.slice(2))); }
     catch (error) { console.error(String(error)); process.exitCode = 1; }

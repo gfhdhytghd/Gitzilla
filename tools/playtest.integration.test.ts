@@ -32,7 +32,8 @@ if(location.pathname === '/') {
   ws.onopen = () => ws.send(JSON.stringify({t:'hello',name}));
   const renderLobby = () => {
    if(document.querySelector('[data-testid="player-repo-input"]')) return;
-   document.body.innerHTML = '<input data-testid="player-repo-input"><button data-testid="player-repo-submit">Repo</button><div data-testid="player-ready" data-status="empty">Player</div><input data-testid="boss-repo-input"><button data-testid="boss-repo-submit">Boss</button><div data-testid="boss-ready" data-status="empty">Boss status</div><button data-testid="start-match">Start</button>';
+   document.body.innerHTML = '<button data-testid="mode-battle">Battle</button><button data-testid="mode-edu">Classroom PvP</button><input data-testid="player-repo-input"><button data-testid="player-repo-submit">Repo</button><div data-testid="player-ready" data-status="empty">Player</div><input data-testid="boss-repo-input"><button data-testid="boss-repo-submit">Boss</button><div data-testid="boss-ready" data-status="empty">Boss status</div><button data-testid="start-match">Start</button>';
+   for(const mode of ['battle','edu']) document.querySelector('[data-testid="mode-'+mode+'"]').onclick=()=>ws.send(JSON.stringify({t:'setMode',mode}));
    for(const [test,t] of [['player-repo-submit','setRepo'],['boss-repo-submit','setBoss'],['start-match','start']]) document.querySelector('[data-testid="'+test+'"]').onclick=()=>ws.send(JSON.stringify({t}));
   };
   ws.onmessage = event => {
@@ -42,6 +43,7 @@ if(location.pathname === '/') {
     renderLobby(); const lobby=m.lobby;
     document.querySelector('[data-testid="player-ready"]').dataset.status=lobby.players.find(p=>p.id===id)?.status || 'empty';
     document.querySelector('[data-testid="boss-ready"]').dataset.status=lobby.boss.status;
+    for(const id of ['boss-repo-input','boss-repo-submit','boss-ready']) document.querySelector('[data-testid="'+id+'"]').hidden=lobby.mode==='edu';
    }
    if(m.t==='snapshot'&&!fighting) {
     fighting=true; document.body.innerHTML='<div data-testid="boss-intro">SYNTHETIC HARNESS FIXTURE</div><canvas data-testid="game-canvas" width="480" height="288"></canvas>';
@@ -57,34 +59,45 @@ if(location.pathname === '/') {
       }
     });
     const wss = new WebSocketServer({ server, path: '/ws' });
-    const sockets = new Map<WebSocket, { id: string; status: string; ack: number }>();
+    const sockets = new Map<WebSocket, { id: string; name: string; status: string; ack: number }>();
     let bossStatus = 'empty';
+    let mode: 'battle' | 'edu' = 'battle';
     let timer: ReturnType<typeof setInterval> | undefined;
     let endTimer: ReturnType<typeof setTimeout> | undefined;
-    const lobby = () => ({ players: [...sockets.values()], boss: { status: bossStatus }, phase: 'lobby' });
+    const lobby = () => ({ players: [...sockets.values()], boss: { status: bossStatus }, phase: 'lobby', mode });
     const send = (ws: WebSocket, message: unknown) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(message)); };
     const broadcast = (message: unknown) => { for (const ws of sockets.keys()) send(ws, message); };
     wss.on('connection', ws => {
       ws.on('message', payload => {
         const m = JSON.parse(payload.toString());
         if (m.t === 'hello') {
-          const player = { id: `fixture-${sockets.size + 1}`, status: 'empty', ack: -1 };
+          const player = { id: `fixture-${sockets.size + 1}`, name: m.name, status: 'empty', ack: -1 };
           sockets.set(ws, player);
           send(ws, { t: 'welcome', you: player.id, lobby: lobby() });
           if (withErrors) send(ws, { t: 'error', message: 'fixture protocol error' });
           broadcast({ t: 'lobby', lobby: lobby() });
         } else if (m.t === 'setRepo') { sockets.get(ws)!.status = 'ready'; broadcast({ t: 'lobby', lobby: lobby() }); }
-        else if (m.t === 'setBoss') { bossStatus = 'ready'; broadcast({ t: 'lobby', lobby: lobby() }); }
+        else if (m.t === 'setMode') { mode = m.mode; broadcast({ t: 'lobby', lobby: lobby() }); }
+        else if (m.t === 'setBoss') {
+          if (mode === 'edu') send(ws, { t: 'error', message: 'Fixture: edu must never set a boss' });
+          else { bossStatus = 'ready'; broadcast({ t: 'lobby', lobby: lobby() }); }
+        }
         else if (m.t === 'input') sockets.get(ws)!.ack = m.frame.seq;
         else if (m.t === 'start') {
           const began = Date.now();
           timer = setInterval(() => {
-            for (const [socket, p] of sockets) send(socket, { t: 'snapshot', state: { status: 'fighting', t: (Date.now() - began) / 1000 }, ack: p.ack });
+            for (const [socket, p] of sockets) send(socket, { t: 'snapshot', state: { status: 'fighting', t: (Date.now() - began) / 1000,
+              mode, boss: mode === 'edu' ? null : { hp: 100 }, heroScale: mode === 'edu' ? 2 : 1,
+              pvp: mode === 'edu' ? { round: 1, rounds: 3, roundEndsAt: 75, scores: {}, leader: null } : null,
+              players: [...sockets.values()].map(player => ({ id: player.id, kit: { quality: mode === 'edu'
+                ? [{ stat: 'armor', grade: 'B', value: 5, signal: 'tests: 30%', tip: 'test parser' }] : undefined } })), events: [],
+            }, ack: p.ack });
           }, 50);
           endTimer = setTimeout(() => {
             clearInterval(timer);
-            broadcast({ t: 'autopsy', result: { victory: true } });
-          }, withErrors ? 1500 : 11_000);
+            broadcast({ t: 'autopsy', result: { victory: mode === 'battle', mode, boss: null, ranking: mode === 'edu'
+              ? [...sockets.values()].map(p => ({ id: p.id, name: p.name, repo: 'fixture/repo', kos: 0, damage: 0, roundWins: 0, quality: [] })) : undefined } });
+          }, withErrors ? 1500 : mode === 'edu' ? 2500 : 11_000);
         }
       });
     });
@@ -110,7 +123,7 @@ if(location.pathname === '/') {
     };
     process.env.PLAYTEST_URL = testServer.url;
     try {
-      expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 13, headed: false })).toBe(0);
+      expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 13, headed: false, mode: 'battle' })).toBe(0);
       const summary = JSON.parse(readFileSync(join(artifactDir, 'summary.json'), 'utf8'));
       expect(summary.outcome).toBe('autopsy');
       for (const label of ['landing', 'lobby', 'boss-intro', 'mid-fight-010s', 'autopsy']) {
@@ -140,8 +153,38 @@ if(location.pathname === '/') {
     const previousURL = process.env.PLAYTEST_URL;
     process.env.PLAYTEST_URL = testServer.url;
     try {
-      expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 3, headed: false })).toBe(1);
+      expect(await playtest({ players: 2, boss: 'pallets/flask', seconds: 3, headed: false, mode: 'battle' })).toBe(1);
     } finally {
+      if (previousURL === undefined) delete process.env.PLAYTEST_URL;
+      else process.env.PLAYTEST_URL = previousURL;
+      await testServer.close();
+    }
+  }, 40_000);
+
+  it('runs classroom PvP with no boss controls and reports quality/round snapshots', async () => {
+    const testServer = await fixture(false);
+    const previousURL = process.env.PLAYTEST_URL;
+    const originalLog = console.log;
+    let artifactDir = '';
+    console.log = (...args) => {
+      originalLog(...args);
+      const match = String(args[0]).match(/artifacts=(.*)$/);
+      if (match) artifactDir = match[1];
+    };
+    process.env.PLAYTEST_URL = testServer.url;
+    try {
+      expect(await playtest({ players: 2, boss: 'unused/never-submit', seconds: 5, headed: false, mode: 'edu' })).toBe(0);
+      const summary = JSON.parse(readFileSync(join(artifactDir, 'summary.json'), 'utf8'));
+      expect(summary.options.mode).toBe('edu');
+      expect(summary.screenshots).toContain('classroom-start-phone.png');
+      for (const client of summary.clients) {
+        expect(client.mode).toBe('edu'); expect(client.hasBoss).toBe(false);
+        expect(client.heroScale).toBe(2); expect(client.pvp.round).toBe(1);
+        expect(client.qualityCards.every((card: any) => card.quality.length > 0)).toBe(true);
+      }
+      expect(readFileSync(join(artifactDir, 'playtest.log'), 'utf8')).not.toContain('setBoss');
+    } finally {
+      console.log = originalLog;
       if (previousURL === undefined) delete process.env.PLAYTEST_URL;
       else process.env.PLAYTEST_URL = previousURL;
       await testServer.close();

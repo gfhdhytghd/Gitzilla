@@ -110,12 +110,14 @@ try {
   for (let i = 0; i < 3; i++) { await page.getByTestId('bots-plus').tap(); await sleep(120); }
   await page.getByTestId('start-match').tap();
   await page.getByTestId('game-canvas').waitFor();
-  await page.getByTestId('motion-enable').tap();
+  // Tap the actual attack area: permission must also work without a modal/enable button.
+  // The compact pill is intentionally hidden during the cinematic in the current UI.
+  await page.touchscreen.tap(120, 350);
   const permissions = await page.evaluate(() => (window as any).__permissionCalls);
   assert.equal(permissions.length, 2);
   assert(permissions.every((p: any) => p.active && (p.event === 'pointerdown' || p.event === 'click')));
   check('both iOS permissions in original user gesture', permissions);
-  await page.locator('[data-testid="input-sensors"][data-status="off"]').waitFor();
+  await page.locator('[data-testid="input-sensors"][data-mode="touch"]').waitFor();
   assert(await page.locator('.kj-touch-joystick-zone').isVisible());
   check('no events -> touch fallback after 1.5s', { mode: await page.getByTestId('input-sensors').getAttribute('data-mode') });
   await page.evaluate(() => { (window as any).__motion.enabled = true; });
