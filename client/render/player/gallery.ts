@@ -83,7 +83,7 @@ function kitFor(i: number): PlayerKit {
 const params = new URLSearchParams(location.search);
 if (params.get("mood") === "victory") setPlayerMood("victory");
 const SCALE = Number(params.get("scale") || 3);
-const COLS = 8, CW = 60, CH = 74;
+const COLS = 8, CW = 72, CH = 92;
 const W = COLS * CW, H = Math.ceil(STATES.length / COLS) * CH;
 
 const stage = document.getElementById("stage") as HTMLCanvasElement;
@@ -95,7 +95,7 @@ const only = params.get("only");
 const sims: Sim[] = STATES.map((s, i) => {
   const kit = kitFor(i);
   if (s.buff) kit.skill = s.buff;
-  const cx = (i % COLS) * CW + CW / 2, cy = Math.floor(i / COLS) * CH + 46;
+  const cx = (i % COLS) * CW + CW / 2, cy = Math.floor(i / COLS) * CH + 60;
   const p: PlayerState = {
     id: "p" + i, name: NAMES[i], x: cx, y: cy, vx: 0, vy: 0, facing: [1, 0.2],
     hp: kit.maxHp, armor: kit.maxArmor, energy: kit.maxEnergy, alive: true, downedFor: 0, reviveProgress: 0,
@@ -149,7 +149,7 @@ if (only !== null) {
   const keep = only.split(",").map(Number);
   const sel = sims.filter((_, i) => keep.includes(i));
   sims.length = 0;
-  sel.forEach((s, j) => { const dx = (j % COLS) * CW + CW / 2 - s.cx, dy = Math.floor(j / COLS) * CH + 46 - s.cy; s.cx += dx; s.cy += dy; s.p.x += dx; s.p.y += dy; sims.push(s); });
+  sel.forEach((s, j) => { const dx = (j % COLS) * CW + CW / 2 - s.cx, dy = Math.floor(j / COLS) * CH + 60 - s.cy; s.cx += dx; s.cy += dy; s.p.x += dx; s.p.y += dy; sims.push(s); });
   stage.height = Math.ceil(sims.length / COLS) * CH * SCALE;
 }
 
@@ -303,6 +303,14 @@ function stripScene() {
   });
 }
 
+const genEl = document.getElementById("generals")!;
+const gens = [24, 25, 26, 27, 28, 29, 30, 31, 0, 3].map((k) => {
+  const cv = document.createElement("canvas");
+  cv.width = 168; cv.height = 168;
+  cv.style.cssText = "image-rendering:pixelated;width:168px;height:168px;background:#151021;border:2px solid #2d2442";
+  genEl.appendChild(cv);
+  return { cv, kit: kitFor(k) };
+});
 const showEl = document.getElementById("showcase")!;
 const shows = ([["blade", 31], ["blaster", 26], ["smg", 27], ["shotgun", 28], ["cannon", 29], ["staff", 25], ["laser", 30]] as [WeaponKind, number][]).map(([w, k]) => {
   const cv = document.createElement("canvas");
@@ -324,7 +332,7 @@ const terms = [24, 25, 26, 27, 28, 31].map((k) => {
 function compareScene() {
   document.querySelectorAll("h2, #portraits, #terminals").forEach((e) => ((e as HTMLElement).style.display = "none"));
   const ids = [24, 25, 26, 27, 28, 29, 30, 31, 0, 2, 4, 5];
-  const CWc = 64, CHc = 74;
+  const CWc = 96, CHc = 120;
   stage.width = 6 * CWc * SCALE; stage.height = Math.ceil(ids.length / 3) * CHc * SCALE;
   const mk = (k: number, j: number, pre: string): PlayerState => ({
     id: pre + j, name: NAMES[k] ?? "kai", x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0.2], hp: 7, armor: 5, energy: 200, alive: true,
@@ -343,11 +351,11 @@ function compareScene() {
       ctx.fillStyle = (col + row) % 2 ? "#1d1728" : "#1a1524";
       ctx.fillRect(x0, y0, CWc * 2, CHc);
       // left: battle 1x sprite pixel-doubled; right: edu native 2x
-      a.x = x0 + CWc / 2; a.y = y0 + 38;
+      a.x = x0 + CWc / 2; a.y = y0 + 64;
       ctx.save(); ctx.translate(a.x, a.y); ctx.scale(2, 2); ctx.translate(-a.x, -a.y);
       drawPlayer(ctx, a, t, false);
       ctx.restore();
-      b.x = x0 + CWc + CWc / 2; b.y = y0 + 38;
+      b.x = x0 + CWc + CWc / 2; b.y = y0 + 64;
       drawPlayer(ctx, b, t, false, { scale: 2, pvp: true });
       drawText(ctx, "1X", x0 + 3, y0 + CHc - 8, "#6f6590", "left", "");
       drawText(ctx, "EDU 2X", x0 + CWc + 3, y0 + CHc - 8, "#8bffb0", "left", "");
@@ -371,6 +379,7 @@ function frame() {
   for (const s of sims) step(s, now, dt);
   for (const s of order) drawPlayer(ctx, s.p, t, s.b === "you");
   shows.forEach((sc) => weaponShowcase(sc.cv, sc.kit, now, { label: true }));
+  gens.forEach((gc) => paintHeroCard(gc.cv, gc.kit, now));
   terms.forEach((tc, i) => paintHeroTerminal(tc.cv, tc.kit, now, params.get("age") !== null ? Number(params.get("age")) : (now + i * 0.5) % 5));
   for (const c of cards) {
     const g = c.cv.getContext("2d")!;

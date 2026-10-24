@@ -26,6 +26,7 @@ interface Part {
   seam?: boolean;   // dark seam where it meets another armor part (plate look)
   flat?: boolean;   // no bevel shading (glows, small details)
   glow?: boolean;   // painted after all passes, never outlined/shaded
+  code?: boolean;   // detail line: only drawn from res 2 up (too noisy at 32 px)
   cape?: boolean;   // code-cape surface
 }
 
@@ -34,12 +35,12 @@ interface Arch {
   head: number; robe: boolean; cape: number; knee: number; spikes: number; bulk: number;
 }
 const ARCH: Record<string, Arch> = {
-  knight:   { sh: 17, pa: 10, chest: 14, waist: 9, hip: 11, leg: 4.6, stance: 13, head: 7.2, robe: false, cape: 0.95, knee: 28, spikes: 1, bulk: 1 },
-  heavy:    { sh: 22, pa: 14, chest: 18, waist: 13, hip: 14, leg: 6.6, stance: 15, head: 6.6, robe: false, cape: 0.55, knee: 25, spikes: 2, bulk: 1.25 },
-  ranger:   { sh: 14, pa: 6, chest: 11, waist: 8, hip: 10, leg: 4.2, stance: 14, head: 7, robe: false, cape: 0.8, knee: 29, spikes: 0, bulk: 0.9 },
-  mage:     { sh: 15, pa: 8, chest: 12, waist: 9, hip: 13, leg: 4, stance: 9, head: 7, robe: true, cape: 1, knee: 29, spikes: 1, bulk: 0.95 },
-  engineer: { sh: 16, pa: 9, chest: 13, waist: 10, hip: 11, leg: 5, stance: 12, head: 7.6, robe: false, cape: 0, knee: 28, spikes: 0, bulk: 1.05 },
-  rogue:    { sh: 13, pa: 6, chest: 10, waist: 7, hip: 9, leg: 3.9, stance: 17, head: 6.6, robe: false, cape: 0.85, knee: 26, spikes: 1, bulk: 0.85 },
+  knight:   { sh: 19, pa: 13, chest: 16, waist: 10, hip: 12, leg: 5.6, stance: 14, head: 7.2, robe: false, cape: 0.95, knee: 28, spikes: 1, bulk: 1.15 },
+  heavy:    { sh: 24, pa: 17, chest: 20, waist: 14, hip: 15, leg: 7.6, stance: 16, head: 6.8, robe: false, cape: 0.55, knee: 25, spikes: 2, bulk: 1.4 },
+  ranger:   { sh: 16, pa: 8, chest: 13, waist: 9, hip: 11, leg: 5, stance: 15, head: 7, robe: false, cape: 0.8, knee: 29, spikes: 0, bulk: 1 },
+  mage:     { sh: 17, pa: 11, chest: 14, waist: 10, hip: 14, leg: 4.6, stance: 9, head: 7, robe: true, cape: 1, knee: 29, spikes: 1, bulk: 1.05 },
+  engineer: { sh: 18, pa: 12, chest: 15, waist: 11, hip: 12, leg: 6, stance: 13, head: 7.6, robe: false, cape: 0, knee: 28, spikes: 0, bulk: 1.2 },
+  rogue:    { sh: 15, pa: 8, chest: 12, waist: 8, hip: 10, leg: 4.6, stance: 17, head: 6.6, robe: false, cape: 0.85, knee: 26, spikes: 1, bulk: 0.95 },
 };
 
 export interface GPalette {
@@ -51,15 +52,15 @@ export function generalPalette(L: HeroLook): GPalette {
   const c = L.c;
   const [ph, ps] = hexToHsl(c.primary);
   // dark armor tinted by the primary hue; trims in the vivid primary; glows in the accent
-  const armor = hslToHex(ph, Math.min(0.45, ps * 0.6 + 0.08), 0.24);
+  const armor = hslToHex(ph, Math.min(0.42, ps * 0.5 + 0.1), 0.21);
   const [sh2, ss] = hexToHsl(c.secondary);
   const cloth = hslToHex(sh2, Math.min(0.7, ss), 0.3);
   return {
-    armor, armorL: light(armor, 0.9), armorD: shade(armor, 0.7),
-    trim: c.primary, trimL: c.primaryL,
+    armor, armorL: light(armor, 1.1), armorD: shade(armor, 0.6),
+    trim: mix(c.primaryL, "#ffe39a", 0.35), trimL: mix(c.primaryL, "#fff4cf", 0.55),
     cloth, clothL: light(cloth, 0.8), clothD: shade(cloth, 0.7),
     glow: c.accent, glowL: c.accentL, skin: c.skin,
-    rim: mix(c.accentL, "#ffffff", 0.35), outline: "#0a0710", metal: mix("#9aa6bd", armor, 0.35), dark: "#120e1a",
+    rim: mix(c.accentL, "#ffffff", 0.15), outline: "#0a0710", metal: mix("#9aa6bd", armor, 0.35), dark: "#120e1a",
   };
 }
 
@@ -115,9 +116,11 @@ function rig(L: HeroLook, f: GFrame): Rig {
     add({ t: "limb", a: fHip, b: fKnee, ra: leg * 1.15, rb: leg * 0.95 }, P.armor, { seam: true });
     add({ t: "limb", a: fKnee, b: fAnk, ra: leg * 0.95, rb: leg * 0.85 }, P.armor, { seam: true });
     add({ t: "poly", p: [[fAnk[0] - leg, fAnk[1] - 2], [fAnk[0] + leg, fAnk[1] - 2], [fAnk[0] + leg * 2, fAnk[1] + 5], [fAnk[0] - leg * 1.1, fAnk[1] + 5]] }, P.dark, { seam: true });
-    // knee guards (trim) + greave stripe
-    add({ t: "ell", c: [fKnee[0] + 1, fKnee[1]], rx: leg * 1.15, ry: leg * 0.95 }, P.trim, { seam: true });
-    add({ t: "ell", c: [bKnee[0] + 1, bKnee[1]], rx: leg * 1.05, ry: leg * 0.9 }, shade(P.trim, 0.5), { seam: true });
+    // greave glow seams (front leg) + knee guards (trim)
+    add({ t: "limb", a: [fKnee[0] + 1.5, fKnee[1] + 4], b: [fAnk[0] + 1.2, fAnk[1] - 3], ra: 0.7, rb: 0.7 }, P.glow, { flat: true, code: true });
+    const kneeG = (k: Pt, c: string) => add({ t: "poly", p: [[k[0] - leg * 0.9, k[1]], [k[0] + 1, k[1] - leg * 1.2], [k[0] + leg * 1.3, k[1] + 0.5], [k[0] + 1, k[1] + leg * 1.1]] }, c, { seam: true });
+    kneeG(fKnee, P.trim);
+    kneeG(bKnee, shade(P.trim, 0.5));
     // tassets (plate skirt)
     add({ t: "poly", p: [[-hip - 1, Y(-54)], [hip + 1, Y(-54)], [hip + 2, Y(-40)], [3, Y(-43)], [-2, Y(-38)], [-hip - 2, Y(-41)]] }, P.armor, { seam: true });
   } else {
@@ -130,14 +133,24 @@ function rig(L: HeroLook, f: GFrame): Rig {
   add({ t: "poly", p: [[-chest - 1, Y(-79)], [chest + 1, Y(-79)], [chest, Y(-67)], [waist + 1, Y(-55)], [-waist - 1, Y(-55)], [-chest, Y(-67)]] }, P.armorD, { seam: true });
   add({ t: "poly", p: [[-chest + 2, Y(-78)], [chest - 1, Y(-78)], [chest - 3, Y(-65)], [1, Y(-60)], [-chest + 4, Y(-65)]] }, P.armor, { seam: true });
   add({ t: "poly", p: [[-waist - 2, Y(-58)], [waist + 2, Y(-58)], [waist + 2, Y(-53)], [-waist - 2, Y(-53)]] }, P.trim, { seam: true });   // belt
+  // code-etched armor: glowing syntax-highlighted "lines" across the chest plate (Duelyst glow seams)
+  const syn = L.syn;
+  [[syn.kw, -chest + 5, -chest + 11, -74], [syn.fn, -chest + 7, chest - 6, -70.5], [syn.str, -chest + 6, 2, -67]].forEach(([c, x0, x1, yy]) =>
+    add({ t: "poly", p: [[x0 as number, Y((yy as number) - 0.7)], [x1 as number, Y((yy as number) - 0.7)], [x1 as number, Y((yy as number) + 0.7)], [x0 as number, Y((yy as number) + 0.7)]] }, c as string, { flat: true, code: true }));
   // ---------- head (+ gorget)
   const hc: Pt = [1.5, Y(-89)];
   add({ t: "ell", c: [1, Y(-81)], rx: A.head * 0.9, ry: 3.4 }, P.armorD, { seam: true });
   paintHead(add, L, A, P, hc, f.expr);
   // ---------- pauldrons (back then front), spikes
-  add({ t: "ell", c: [-sh + 1, Y(-77)], rx: pa * 0.95, ry: pa * 0.78 }, shade(P.trim, 0.45), { seam: true });
-  add({ t: "ell", c: [sh - 1, Y(-77)], rx: pa, ry: pa * 0.8 }, P.armor, { seam: true });
-  add({ t: "poly", p: [[sh - pa, Y(-79)], [sh + pa * 0.9, Y(-81)], [sh + pa, Y(-77)], [sh - pa, Y(-75)]] }, P.trim, { seam: true }); // pauldron trim band
+  // angular layered pauldrons (back one darker), each with a gilded lip
+  const pauldron = (cx: number, dir: number, body: string, lip: string) => {
+    const q = (dx: number, dy: number): Pt => [cx + dx * dir, Y(dy)];
+    add({ t: "poly", p: [q(-pa * 0.55, -71), q(pa * 0.95, -70), q(pa * 0.85, -64), q(-pa * 0.25, -65)] }, shade(body, 0.3), { seam: true });          // lower lame
+    add({ t: "poly", p: [q(-pa * 0.9, -79), q(-pa * 0.2, -86), q(pa * 0.7, -85), q(pa * 1.1, -78), q(pa * 1.0, -71), q(-pa * 0.7, -72)] }, body, { seam: true }); // main plate
+    add({ t: "poly", p: [q(-pa * 0.7, -73.5), q(pa * 1.02, -72.5), q(pa * 1.0, -70.5), q(-pa * 0.75, -71.2)] }, lip, { seam: true });                     // lip
+  };
+  pauldron(-sh + 1, -1, P.armorD, shade(P.trim, 0.35));
+  pauldron(sh - 1, 1, P.armor, P.trim);
   if (A.spikes) {
     for (let k = 0; k < A.spikes; k++) {
       const sx = sh - 2 + k * 5;
@@ -279,7 +292,8 @@ export function renderGeneral(L: HeroLook, f: GFrame, res: number, snippet?: str
   const glows: { s: Shape; c: string }[] = [];
   R.parts.forEach((part, id) => {
     if (part.glow) { glows.push({ s: thicken(part.s, k), c: part.col }); return; }
-    const s = thicken(part.s, k);
+    if (part.code && res < 2) return;
+    const s = part.code ? part.s : thicken(part.s, k);
     const [x0, y0, x1, y1] = bounds(s);
     const px0 = Math.max(0, Math.floor(ax + x0 * k)), px1 = Math.min(W - 1, Math.ceil(ax + x1 * k));
     const py0 = Math.max(0, Math.floor(fy + y0 * k)), py1 = Math.min(H - 1, Math.ceil(fy + y1 * k));
@@ -305,8 +319,11 @@ export function renderGeneral(L: HeroLook, f: GFrame, res: number, snippet?: str
     if (part.flat) continue;
     // bevel: top light, bottom dark (needs some thickness)
     const up = y > 0 ? i - W : -1, dn = y < H - 1 ? i + W : -1;
-    if (!same(i, up) && same(i, dn) && same(i, dn + W)) col[i] = lt(c0, big ? 0.8 : 0.6);
-    else if (!same(i, dn) && same(i, up)) col[i] = lt(c0, -0.6);
+    const lf = x > 0 ? i - 1 : -1, rt = x < W - 1 ? i + 1 : -1;
+    if (!same(i, up) && same(i, dn) && same(i, dn + W)) col[i] = lt(c0, big ? 0.9 : 0.7);
+    else if (!same(i, dn) && same(i, up)) col[i] = lt(c0, -0.7);
+    else if (big && !same(i, lf) && same(i, rt)) col[i] = lt(c0, 0.45);
+    else if (big && !same(i, rt) && same(i, lf)) col[i] = lt(c0, -0.45);
     // rim light on the silhouette's back edge (left) + front edge glint
     if (x > 0 && !src[i - 1]) col[i] = mix(col[i] ?? c0, P.rim, big ? 0.65 : 0.5);
     else if (x < W - 1 && !src[i + 1] && y % 2 === 0) col[i] = mix(col[i] ?? c0, "#ffffff", 0.25);
@@ -335,6 +352,20 @@ export function renderGeneral(L: HeroLook, f: GFrame, res: number, snippet?: str
       for (let px = Math.max(0, Math.floor(ax + x0 * k) - 1); px <= Math.min(W - 1, Math.ceil(ax + x1 * k) + 1); px++) {
         if (inside(gl.s, (px + 0.5 - ax) / k, (py + 0.5 - fy) / k)) col[py * W + px] = gl.c;
       }
+  }
+  // bloom: 1px halo around glows (only over painted pixels, so the silhouette stays crisp)
+  if (big) {
+    const glowSet = new Set(glows.map((g0) => g0.c));
+    const halo: [number, string][] = [];
+    for (let i = 0; i < W * H; i++) {
+      const c0 = col[i];
+      if (!c0 || glowSet.has(c0)) continue;
+      for (const j of [i - 1, i + 1, i - W, i + W]) {
+        const cj = col[j];
+        if (cj && glowSet.has(cj)) { halo.push([i, mix(c0, cj, 0.45)]); break; }
+      }
+    }
+    for (const [i, c0] of halo) col[i] = c0;
   }
   // chest emblem: the repo's token / language glyph, glowing (fits from res 2 up)
   if (res >= 2) {

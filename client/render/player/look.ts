@@ -57,6 +57,7 @@ export interface HeroLook {
   codeRows: (string | null)[][]; // minimap-style syntax-colored code lines (8 px wide) for capes / laptop screens
   tokens: string[];    // short real tokens (orbiting glyphs, sticker)
   idents: string[];    // real identifiers (stack traces)
+  snippet: string;     // one real line of the repo (written on portrait capes)
 }
 
 const SYN_BASE: SyntaxColors = { kw: "#c678dd", str: "#98c379", fn: "#61afef", num: "#d19a66", type: "#e5c07b", plain: "#abb2bf", com: "#5c6370", bg: "#1d1f2b" };
@@ -302,7 +303,7 @@ function lookForKey(kit: PlayerKit): HeroLook {
     mask: cls === "rogue" && headgear === "bandana",
     hoodie, stickers: [], emblem,
     etch: (kit.code?.tokens ?? []).map((x) => (x ?? "").trim()).find((x) => x.length > 0) ?? "",
-    syn: SYN_BASE, crestGlyph: "", face: "eyes", codeRows: [], tokens: [], idents: [],
+    syn: SYN_BASE, crestGlyph: "", face: "eyes", codeRows: [], tokens: [], idents: [], snippet: "",
   };
   const kwCol = SYN_KW[lang.toLowerCase()];
   look.syn = kwCol ? { ...SYN_BASE, kw: kwCol } : SYN_BASE;
@@ -310,7 +311,8 @@ function lookForKey(kit: PlayerKit): HeroLook {
   look.idents = (kit.code?.identifiers ?? []).filter((x) => x && x.length <= 18).slice(0, 6);
   look.crestGlyph = kit.code ? crestFromTokens(kit.code.tokens ?? [], kit.seed) : "";
   look.face = headgear === "helmet" ? "prompt" : cls === "mage" || headgear === "wizard-hat" ? "braces" : "eyes";
-  look.codeRows = buildCodeRows(kit.code?.snippet || `${lang} ${kit.repo}`, look.idents, look.tokens, look.syn);
+  look.snippet = kit.code?.snippet || `${lang} ${kit.repo}`;
+  look.codeRows = buildCodeRows(look.snippet, look.idents, look.tokens, look.syn);
   const stickerCols = ["#ff5fa2", "#ffd84a", "#54e0ff", "#7dff6a", "#ffffff"];
   const n = 2 + Math.floor(r() * 3);
   for (let i = 0; i < n; i++) look.stickers.push([Math.floor(r() * 3), Math.floor(r() * 4), pick(r, stickerCols)]);

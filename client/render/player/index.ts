@@ -2,7 +2,7 @@
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
 import { lookFor, syntaxColor, type HeroLook } from "./look.ts";
-import { heroFrame, heroRim, heroCodeCells, tinted, ANCHOR_X, SW, SH, type Expr, type FrameSpec } from "./sprite.ts";
+import { heroFrame, heroRim, heroCodeCells, heroHand, tinted, ANCHOR_X, SW, SH, SPRITE_FEET, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle, boldGlyph, weaponWord } from "./weapons.ts";
 import { drawText, glyphBits, textCanvas, textWidth, GLYPH_W } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
@@ -10,8 +10,8 @@ import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
 export { lookFor } from "./look.ts";
 
 /** Grid row of the feet bottom edge relative to sprite top. Feet bottom = p.y + FOOT. */
-const FOOT = 8;
-const SPRITE_FOOT = 27;
+const FOOT = 14;              // feet = p.y + FOOT (generals are ~32 px tall; head top ~ p.y - 18)
+const SPRITE_FOOT = SPRITE_FEET;
 
 // ---------------------------------------------------------------- per-player memory
 interface Particle {
@@ -48,6 +48,7 @@ const mems = new Map<string, Mem>();
 // convert between world and that local frame with LX/LY and WX/WY.
 let S = 1, RES = 1, PVP = false, OX = 0, OY = 0;
 let curMem: Mem | null = null;
+let curFrame: FrameSpec | null = null;
 const LX = (v: number) => OX + (v - OX) / S;
 const LY = (v: number) => OY + (v - OY) / S;
 const WX = (v: number) => OX + (v - OX) * S;
@@ -281,10 +282,10 @@ function ringCanvas(color: string): HTMLCanvasElement {
   let c = ringCache.get(color);
   if (c) return c;
   c = document.createElement("canvas");
-  c.width = 21; c.height = 11;
+  c.width = 27; c.height = 13;
   const g = c.getContext("2d")!;
   g.fillStyle = color;
-  pixEllipse(g, 10, 5, 9, 3.5, 0, Math.PI * 2);
+  pixEllipse(g, 13, 6, 12, 4.5, 0, Math.PI * 2);
   if (ringCache.size > 200) ringCache.clear();
   ringCache.set(color, c);
   return c;
@@ -326,45 +327,27 @@ function drawBody(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, x: 
 
 /** Cape interior / laptop screen = the hero's real code, syntax-colored, scrolling upward. */
 function paintCodeCells(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, scroll: number) {
-  const cells = heroCodeCells(L, fr);
+  const cells = heroCodeCells(L, fr, RES);
   if (!cells.length || !L.codeRows.length) return;
   const rows = L.codeRows, n = rows.length;
   // cache the overlay per hero; it only changes when the frame or the scroll step changes
   const m = curMem;
   const key = L.key + fr.pose + fr.i + fr.expr + "|" + (scroll % n) + "|" + RES;
-  if (m) {
-    if (m.codeKey !== key || !m.codeCv) {
-      const cv = m.codeCv ?? document.createElement("canvas");
-      cv.width = SW * RES; cv.height = SH * RES;
-      const g = cv.getContext("2d")!;
-      g.clearRect(0, 0, cv.width, cv.height);
-      for (const [cx, cy] of cells) for (let sy = 0; sy < RES; sy++) for (let sx = 0; sx < RES; sx++) {
-        const col = rows[(cy * RES + sy + scroll) % n][(cx * RES + sx) % 8];
-        if (!col) continue;
-        g.fillStyle = col;
-        g.fillRect(cx * RES + sx, cy * RES + sy, 1, 1);
-      }
-      m.codeCv = cv; m.codeKey = key;
-    }
-    ctx.drawImage(m.codeCv, -ANCHOR_X, -SPRITE_FOOT, SW, SH);
-    return;
-  }
-  if (RES > 1) {
-    // 2x: each cell holds 2x2 code pixels -> twice the line density (reads like real minimap text)
-    for (const [cx, cy] of cells) for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
-      const col = rows[(cy * 2 + sy + scroll) % n][(cx * 2 + sx) % 8];
+  let cv = m?.codeKey === key ? m.codeCv : null;
+  if (!cv) {
+    cv = m?.codeCv ?? document.createElement("canvas");
+    cv.width = SW * RES; cv.height = SH * RES;
+    const g = cv.getContext("2d")!;
+    g.clearRect(0, 0, cv.width, cv.height);
+    for (const [cx, cy] of cells) {
+      const col = rows[(cy + scroll) % n][cx % 8];
       if (!col) continue;
-      ctx.fillStyle = col;
-      ctx.fillRect(cx - ANCHOR_X + sx / 2, cy - SPRITE_FOOT + sy / 2, 0.5, 0.5);
+      g.fillStyle = col;
+      g.fillRect(cx, cy, 1, 1);
     }
-    return;
+    if (m) { m.codeCv = cv; m.codeKey = key; }
   }
-  for (const [cx, cy] of cells) {
-    const col = rows[(cy + scroll) % n][cx % 8];
-    if (!col) continue;
-    ctx.fillStyle = col;
-    ctx.fillRect(cx - ANCHOR_X, cy - SPRITE_FOOT, 1, 1);
-  }
+  ctx.drawImage(cv, -ANCHOR_X, -SPRITE_FOOT, SW, SH);
 }
 
 /** git checkout: the body re-materializes line by line (top -> down) with a green "+" scan. */
@@ -404,7 +387,9 @@ function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     const off = Math.abs(Math.sin(ang)) < 0.2 ? 0 : 1;
     ang = off ? Math.round(ang / step) * step : Math.cos(ang) < 0 ? Math.PI : 0;
   }
-  const hx = x + 3 * flip, hy = feet - 6 + bob;
+  const hand = heroHand(L, curFrame ?? { pose: "idle", i: 0, expr: "normal" });
+  const hx = x + Math.round(hand[0]) * flip, hy = feet + Math.round(hand[1]);
+  void bob;
   ctx.save();
   ctx.translate(hx, hy);
   // slash arc behind the blade
@@ -483,8 +468,8 @@ function hexagon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
 
 function drawFirewall(ctx: CanvasRenderingContext2D, x: number, y: number, t: number, age: number) {
   const pop = Math.min(1, age / 0.18);
-  const r = 15 * (0.4 + 0.6 * pop) + Math.sin(t * 5) * 0.6;
-  const cy = y - 2;
+  const r = 21 * (0.4 + 0.6 * pop) + Math.sin(t * 5) * 0.6;
+  const cy = y - 3;
   // try { ... } catch: giant braces hug the bubble
   ctx.fillStyle = "#9df3ff";
   const h = Math.round(r * 0.8);
@@ -523,7 +508,7 @@ function drawFirewall(ctx: CanvasRenderingContext2D, x: number, y: number, t: nu
 }
 
 function drawRevive(ctx: CanvasRenderingContext2D, x: number, y: number, prog: number, t: number) {
-  const cx = x, cy = y + 2, r = 14;
+  const cx = x, cy = y + 6, r = 18;
   ctx.fillStyle = "rgba(93,255,138,0.25)";
   pixEllipse(ctx, cx, cy, r, r * 0.7, 0, Math.PI * 2, 12, t * 1.5);
   if (prog > 0) {
@@ -573,6 +558,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   else if (p.facing[0] < -0.12) m.flip = -1;
   const flip = m.flip;
   const fr = pickFrame(p, m, t);
+  curFrame = fr;
   const dashing = t - m.dashT < 0.25 || sp > p.kit.speed * 1.7;
   const overclock = p.buffs.includes("overclock");
   if (sp > 8 || !p.alive) m.moveT = t;
@@ -583,17 +569,17 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
 
   // --- ground: shadow + friendly ring
   ctx.fillStyle = "rgba(8,4,16,0.42)";
-  filledEllipse(ctx, x, feet, 6, 2);
+  filledEllipse(ctx, x, feet, 9, 2);
   if (p.alive) {
     const pulse = 0.55 + 0.45 * Math.sin(t * 4 + m.phase * 6);
     if (isYou) {
       ctx.fillStyle = rgba("#ffe45c", 0.5 + 0.4 * pulse);
-      pixEllipse(ctx, x, feet, 10, 4, 0, Math.PI * 2, 6, t * 2);
+      pixEllipse(ctx, x, feet, 13, 5, 0, Math.PI * 2, 6, t * 2);
     } else if (PVP) {
       // classroom PvP: everyone else is a rival -> ring in their own hero color
-      ctx.drawImage(ringCanvas(rgba(playerColor(p.kit), 0.8)), x - 10, feet - 5);
+      ctx.drawImage(ringCanvas(rgba(playerColor(p.kit), 0.8)), x - 13, feet - 6);
     } else {
-      ctx.drawImage(ringCanvas(rgba(L.c.ring, 0.62)), x - 10, feet - 5);
+      ctx.drawImage(ringCanvas(rgba(L.c.ring, 0.62)), x - 13, feet - 6);
     }
   }
 
@@ -679,7 +665,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     drawBody(ctx, L, { pose: "idle", i: Math.floor(t * 2) % 2, expr: "normal" }, dx - glitch, dy, flip, 1, 1, "#b98bff");
     ctx.restore();
     drawText(ctx, "#" + (hashStr(p.id + Math.floor(m.skillT.fork ?? 0)) >>> 0).toString(16).padStart(8, "0").slice(0, 7), dx, dy + 3, "#b98bff");
-    if (Math.floor(t * 4) % 2 === 0) drawText(ctx, "!", dx, dy - 37 + Math.round(Math.sin(t * 8)), "#ff4a5a");
+    if (Math.floor(t * 4) % 2 === 0) drawText(ctx, "!", dx, dy - 50 + Math.round(Math.sin(t * 8)), "#ff4a5a");
   }
   // --- skill: rollback rewind ghost (where you were ~2s ago) + blink trail
   if (p.buffs.includes("rollback")) {
@@ -756,7 +742,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
       ctx.globalCompositeOperation = "lighter";
       ctx.globalAlpha = alpha * (0.8 + 0.2 * Math.sin(t * 12));
     } else {
-      ctx.globalAlpha = alpha * (isYou ? 0.6 : 0.45);
+      ctx.globalAlpha = alpha * (isYou ? 0.35 : 0.22);
     }
     const rim = heroRim(L, fr, glowCol || L.c.rim, RES);
     ctx.translate(bx, bfeet);
@@ -779,7 +765,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
     // horizontal slice displacement
     const cv = heroFrame(L, fr, "", RES);
-    const band = 3 + ((Math.floor(t * 60) * 7) % 14);
+    const band = 3 + ((Math.floor(t * 60) * 7) % 30);
     ctx.save();
     ctx.translate(bx + (Math.floor(t * 60) % 2 ? 2 : -2), bfeet);
     ctx.scale(flip, 1);
@@ -826,7 +812,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   }
 
   // --- idle: a tiny keyboard floats up and the hero types; long idle -> sleep(1)
-  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 5, feet - 5, t, idleFor, flip);
+  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 7, feet - 13, t, idleFor, flip);
 
   // --- 2-3 real tokens orbit the head; brighter while the skill is ready
   const orbit = L.tokens.filter((tk) => tk.length <= 3 && /^[^A-Za-z0-9]+$/.test(tk)).slice(0, 2);
@@ -837,13 +823,13 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     orbit.forEach((tk, i) => {
       const a = t * 0.8 + m.phase * 5 + (i / orbit.length) * Math.PI * 2;
       ctx.globalAlpha = ready ? 0.45 + 0.15 * Math.sin(t * 4 + i) : 0.16;
-      drawText(ctx, tk, x + Math.cos(a) * 14, y - 13 + Math.sin(a) * 4, cols[i], "center", "");
+      drawText(ctx, tk, x + Math.cos(a) * 17, y - 20 + Math.sin(a) * 5, cols[i], "center", "");
     });
     ctx.restore();
   }
 
   if (L.duck) {
-    const tx = p.x - flip * 13 * S, ty = p.y - 12 * S;
+    const tx = p.x - flip * 19 * S, ty = p.y - 18 * S;
     const k = 1 - Math.exp(-dt * 5);
     m.duckX += (tx - m.duckX) * k; m.duckY += (ty - m.duckY) * k;
     if (Math.abs(tx - m.duckX) > 1.5) m.duckFlip = tx > m.duckX ? 1 : -1;
@@ -881,7 +867,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
       const text = sig ? "$ " + sig : SKILL_TEXT[b] ?? "$ " + b;
       ctx.save();
       ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2;
-      drawText(ctx, text, x, y - 40 - Math.round(k * 8), SKILL_COLOR[b] ?? "#ffffff");
+      drawText(ctx, text, x, y - 46 - Math.round(k * 8), SKILL_COLOR[b] ?? "#ffffff");
       ctx.restore();
     }
   }
@@ -892,7 +878,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
       const k = age / 1.6;
       ctx.save();
       ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2;
-      drawText(ctx, "+ " + k0, x, y - 48 - Math.round(k * 8), perkStyle(k0).color);
+      drawText(ctx, "+ " + k0, x, y - 54 - Math.round(k * 8), perkStyle(k0).color);
       ctx.restore();
     }
   }
@@ -905,7 +891,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     ctx.restore();
     ctx.save();
     ctx.globalAlpha = Math.min(1, (1 - ra) * 2);
-    drawText(ctx, "200 OK", x, y - 40 - Math.round(ra * 10), "#5dff8a");
+    drawText(ctx, "200 OK", x, y - 46 - Math.round(ra * 10), "#5dff8a");
     ctx.restore();
   }
 
@@ -932,7 +918,7 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     ctx.save();
     ctx.translate(x, 0);
     ctx.scale(flip, 1);
-    ctx.drawImage(ly, -14, y + 3 - 12, SH, SW);
+    ctx.drawImage(ly, -Math.round(SH / 2) + 2, y + 9 - Math.round(SW / 2), SH, SW);
     ctx.restore();
   }
   void fr;
@@ -1165,7 +1151,7 @@ function initialOf(name: string): string {
  * - alive teammates: a tiny colored pip with their initial
  */
 function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isYou: boolean, x: number, y: number, t: number, downed = false) {
-  const top = y - 25;
+  const top = y - 31;
   const name = (p.name || "anon").trim() || "anon";
   if (downed) {
     drawText(ctx, name, x, top, Math.floor(t * 3) % 2 ? "#ff4a5a" : isYou ? "#ffe45c" : "#f4f1ff");
@@ -1190,7 +1176,7 @@ function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isY
     return;
   }
   const pip = pipCanvas(L, initialOf(name));
-  ctx.drawImage(pip, x - 4, y - 27);
+  ctx.drawImage(pip, x - 4, y - 33);
 }
 
 /** Real signature identifier, shortened only at a member boundary ("SpringApplication.run()" -> "run()"). */
@@ -1279,7 +1265,7 @@ function drawPerkBadges(ctx: CanvasRenderingContext2D, perks: string[], x: numbe
     const a = t * 1.4 + phase * 6 + (i / n) * Math.PI * 2;
     const isFront = Math.sin(a) >= 0;
     if (isFront !== front) continue;
-    const bx = Math.round(x + Math.cos(a) * 12) - 3, by = Math.round(y + 3 + Math.sin(a) * 4) - 3;
+    const bx = Math.round(x + Math.cos(a) * 15) - 3, by = Math.round(y + 4 + Math.sin(a) * 5) - 3;
     ctx.save();
     if (!front) ctx.globalAlpha = 0.7;
     ctx.drawImage(perkBadge(perks[i]), bx, by);
@@ -1290,74 +1276,60 @@ function drawPerkBadges(ctx: CanvasRenderingContext2D, perks: string[], x: numbe
 // ---------------------------------------------------------------- portraits
 const portraitCache = new Map<string, HTMLCanvasElement>();
 
+/** Portrait pose of the signature weapon (guns flat so their code reads; blade/staff raised heroically). */
+const PORTRAIT_POSE: Record<string, number> = { blade: -Math.PI / 4, staff: -Math.PI / 3 };
+
 /**
- * Big crisp portrait for lobby cards. `frame` (optional) picks an idle animation frame:
- * 0/1 breathe, 2 blink. Call with frame = playerPortraitFrame(time) to animate cheaply (all cached).
+ * Portrait geometry: the general is rendered natively at res r (figure ~32*r px tall, r = 3 gives the
+ * full-detail ~96 px general with real code on the cape) and drawn 1:1; the code weapon is scaled to match.
+ */
+function portraitGeom(kit: PlayerKit, size: number, hires: boolean): { r: number; cx: number; fy: number; pose: number; wres: number; ws: number } {
+  const r = Math.max(1, Math.min(4, Math.floor(size / (hires ? 44 : 46))));
+  const pose = PORTRAIT_POSE[kit.weapon] ?? 0;
+  const ws = Math.max(1, r - 1);              // weapon pixel scale: a notch chunkier than the figure, not 3x
+  const wres = ws >= 2 ? 2 : 1;               // weapon canvas res (EPX 2x when scaled)
+  const fy = size < 46 ? size - 1 : Math.floor(size - Math.max(2, size * 0.06)); // tiny slots: feet on the edge so the figure fits
+  return { r, cx: Math.floor(size * (size < 46 ? 0.45 : 0.4)), fy, pose, wres, ws };
+}
+
+/**
+ * Big crisp portrait for lobby/genesis/share cards: the Duelyst-style general holding their code weapon.
+ * Use size >= 144 for the full-detail (res 3, ~96 px) general. `frame`: 0/1 breathe, 2 blink
+ * (playerPortraitFrame(time) animates it cheaply; all cached). `hires` keeps edu cards at even scales.
  */
 export function playerPortrait(kit: PlayerKit, size: number, frame = 0, hires = false): HTMLCanvasElement {
   const L = lookFor(kit);
-  const res = hires && size >= 52 ? 2 : 1; // edu: 2x high-detail sprite (needs an even integer scale)
-  const key = L.key + "|" + size + "|" + frame + "|r" + res;
+  const key = L.key + "|" + size + "|" + frame + "|" + (hires ? "h" : "");
   const hit = portraitCache.get(key);
   if (hit) return hit;
   const cv = document.createElement("canvas");
   cv.width = size; cv.height = size;
   const g = cv.getContext("2d")!;
   g.imageSmoothingEnabled = false;
-  const { s, cx, cy } = portraitGeom(kit, size, res);
+  const G = portraitGeom(kit, size, hires);
   const fr: FrameSpec = { pose: "idle", i: frame === 1 ? 1 : 0, expr: frame === 2 ? "blink" : "normal" };
-  g.save();
-  g.translate(cx, cy);
-  g.scale(s, s);
+  // ground shadow
   g.fillStyle = "rgba(8,4,16,0.42)";
-  filledEllipse(g, -1, 0, 7, 2);
-  const body = heroFrame(L, fr, "", res);
-  g.drawImage(body, -ANCHOR_X - 1, -SPRITE_FOOT, SW, SH);
-  g.restore();
-  // the weapon is the showcase: drawn from the shared portrait weapon layer, with a soft glow
-  const wl = portraitWeaponLayer(kit, size, res > 1);
+  g.save(); g.translate(G.cx, G.fy); g.scale(G.r, G.r); filledEllipse(g, 0, 0, 10, 2); g.restore();
+  // weapon behind? (raised blades/staves sit behind the back pauldron in Duelyst poses) -> draw after body
+  const body = heroFrame(L, fr, "", G.r);
+  g.drawImage(body, G.cx - ANCHOR_X * G.r, G.fy - SPRITE_FOOT * G.r);
+  const wl = portraitWeaponLayer(kit, size, hires);
   g.save();
   g.globalCompositeOperation = "lighter";
   g.globalAlpha = 0.35;
   g.drawImage(wl.glow, 0, 0);
   g.restore();
   g.drawImage(wl.canvas, 0, 0);
-  g.save();
-  g.translate(cx, cy);
-  g.scale(s, s);
   if (L.duck) {
     const d = duckSprite();
-    g.drawImage(d, -18, -22 + (fr.i === 1 ? 1 : 0));
+    g.drawImage(d, G.cx - 26 * G.r, G.fy - 30 * G.r, d.width * G.r, d.height * G.r);
   }
-  g.restore();
   if (portraitCache.size > 300) portraitCache.clear();
   portraitCache.set(key, cv);
   return cv;
 }
 
-/** Hero x position in portraits (left of center: the weapon is big and points right). */
-const PORTRAIT_CX = 0.4;
-
-/** Portrait geometry shared by playerPortrait + portraitWeaponLayer: fit hero AND weapon, integer scale. */
-function portraitGeom(kit: PlayerKit, size: number, res: number): { s: number; cx: number; cy: number; pose: number } {
-  const L = lookFor(kit);
-  const ws = weaponSprite(L, kit.weapon, 1);
-  const fit = (pose: number) => {
-    const reach = Math.cos(pose) * (ws.canvas.width - ws.px) + (kit.weapon === "staff" ? 6 : 0); // px right of the hand
-    const need = Math.max(28, 14 + 2 + Math.ceil(reach) + 1);
-    const sc = res > 1 ? Math.max(2, Math.floor(size / (need * 2)) * 2) : Math.max(1, Math.floor(size / need));
-    return { sc, reach };
-  };
-  let pose = PORTRAIT_POSE[kit.weapon] ?? 0;
-  let f = fit(pose);
-  const heroOnly = res > 1 ? Math.max(2, Math.floor(size / 60) * 2) : Math.max(1, Math.floor(size / 30));
-  if (f.sc < heroOnly && pose === 0) { pose = -Math.PI / 8; f = fit(pose); } // raise the weapon a little first
-  // the hero never shrinks below its normal portrait scale; tiny cards may clip the very tip of long weapons
-  const s = Math.max(f.sc, heroOnly);
-  const cx = Math.max(Math.floor(14 * s * 0.85), Math.min(Math.floor(size * PORTRAIT_CX), Math.floor(size - (2 + f.reach) * s - 1)));
-  return { s, cx, cy: Math.floor(size / 2 + 12.5 * s), pose };
-}
-const PORTRAIT_POSE: Record<string, number> = { blade: -Math.PI / 4, staff: -Math.PI / 4 };
 const pwCache = new Map<string, { canvas: HTMLCanvasElement; glow: HTMLCanvasElement }>();
 
 /**
@@ -1366,34 +1338,35 @@ const pwCache = new Map<string, { canvas: HTMLCanvasElement; glow: HTMLCanvasEle
  */
 export function portraitWeaponLayer(kit: PlayerKit, size: number, hires = false): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
   const L = lookFor(kit);
-  const res = hires && size >= 52 ? 2 : 1;
-  const key = L.key + "|" + size + "|" + res;
+  const key = L.key + "|" + size + "|" + (hires ? "h" : "");
   const hit = pwCache.get(key);
   if (hit) return hit;
-  const { s, cx, cy, pose } = portraitGeom(kit, size, res);
-  const ws = weaponSprite(L, kit.weapon, res);
+  const G = portraitGeom(kit, size, hires);
+  const ws = weaponSprite(L, kit.weapon, G.wres);
+  const hand = heroHand(L, { pose: "idle", i: 0, expr: "normal" });
   const cv = document.createElement("canvas");
   cv.width = cv.height = size;
   const g = cv.getContext("2d")!;
   g.imageSmoothingEnabled = false;
-  g.translate(cx, cy);
-  g.scale(s, s);
-  g.translate(2, -6);
-  g.rotate(pose);
-  g.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / ws.res, ws.canvas.height / ws.res);
+  const hx = G.cx + hand[0] * G.r, hy = G.fy + hand[1] * G.r;
+  g.translate(Math.round(hx), Math.round(hy));
+  g.rotate(G.pose);
+  const sc = G.ws;
+  g.drawImage(ws.canvas, -ws.px * sc, -ws.py * sc, (ws.canvas.width / ws.res) * sc, (ws.canvas.height / ws.res) * sc);
   if (kit.weapon === "staff") {
     const lam = boldGlyph("λ", L.c.accentL, L.c.outline, "#ffffff");
+    const r = Math.hypot(ws.tipX, ws.tipY) + 5;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    const a = pose, r = Math.hypot(ws.tipX, ws.tipY) + 4;
-    const lx = cx + (2 + Math.cos(a) * r) * s, ly = cy + (-6 + Math.sin(a) * r) * s;
-    g.drawImage(lam, Math.round(lx - (lam.width * s) / 2), Math.round(ly - (lam.height * s) / 2), lam.width * s, lam.height * s);
+    const lx = hx + Math.cos(G.pose) * r * sc, ly = hy + Math.sin(G.pose) * r * sc;
+    void lx;
+    g.drawImage(lam, Math.round(lx - (lam.width * sc) / 2), Math.round(ly - (lam.height * sc) / 2), lam.width * sc, lam.height * sc);
   }
   // glow: the weapon silhouette in its accent color, dilated
   const tint = tinted(cv, L.c.accent);
   const glow = document.createElement("canvas");
   glow.width = glow.height = size;
   const gg = glow.getContext("2d")!;
-  const d = Math.max(1, Math.round(s));
+  const d = Math.max(1, Math.round(G.r));
   for (const [ox, oy] of [[-d, 0], [d, 0], [0, -d], [0, d], [-d, -d], [d, d], [-d, d], [d, -d]]) gg.drawImage(tint, ox, oy);
   const out = { canvas: cv, glow };
   if (pwCache.size > 120) pwCache.clear();
