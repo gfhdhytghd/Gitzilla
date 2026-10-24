@@ -1,6 +1,6 @@
 DONE
 
-Current public origin: `https://gitzilla.wilflin.me`. Package default and active server docs migrated; new-domain public smoke is pending tunnel TLS hostname correction. Local 2-human + 2-bot smoke passes.
+Current infrastructure: DEV/testing is `http://localhost:5175`. Port 5173 and `https://gitzilla.wilflin.me` are stable LIVE from `../gitzilla-live`; never start/stop/test them. Only the coordinator deploys live.
 
 # codex-net — server
 
@@ -112,5 +112,60 @@ None. Real autopsy heart is populated in server/ without a shared contract chang
 - No old tunnel references remain in package scripts or server docs/tests. Historical evidence above retains its former-domain URLs intentionally; it is not a new-domain verification claim.
 - Vite allowedHosts remains `.wilflin.me`, unchanged. Existing npm watcher must be restarted to inherit the new package-script PUBLIC_URL default (or launched with PUBLIC_URL explicitly).
 - Owned diff whitespace check PASS. No secrets added, commits/pushes, or server restarts by codex-net.
+
+DONE
+
+## Auth0 follow-up in progress
+- Read `docs/progress/claude-auth.md` exact server handoff, auth/ API, and analysis token-cache behavior. Applying project Auth0 skill token-handling guidance; no tenant changes, dependency installs, or .env reads/edits.
+- Added auth route dispatch before all game/API/Vite routes; retained each WS upgrade request server-side; setRepo resolves getGithubToken for that request and passes it only as analyzeRepo's token option.
+- Added async session-based default names for blank-name players, preserving explicit and resumed custom names. Hello gating prevents a queued setRepo racing async session decoding.
+- Privacy policy: RepoProfile does not expose visibility. Treat all credentialed analyses as private: no Gemini enrichment and no public Hall recording for that match. Raw profiles, README/tree/heart paths and access tokens are not broadcast for private player selections; only their chosen slug and derived gameplay kit are visible in the room. Authenticated analysis already avoids public disk cache and scopes memory jobs by credential hash.
+- Mocked auth/privacy tests and local/new-domain public smoke next.
+
+## Auth0 server card — DONE (14:55 local)
+- Imported `handleAuthRoute/getSession/getGithubToken` from auth/ exactly per handoff. Auth HTTP dispatch runs before game/API/Vite routes, with generic handling of provider exceptions so raw upstream bodies never reach clients or logs.
+- WebSocket connection retains its actual upgrade IncomingMessage in a WeakMap. `setRepo` resolves that client's GitHub token afresh and passes it only as analyzeRepo options; no token is stored in members/profiles/kits/results, broadcast, logged, cached publicly, or sent to Gemini.
+- Blank-name players default to session.login. Explicit names and resumed user-chosen names win. Queued messages wait for async hello/session resolution, without serializing independent analysis jobs or breaking revision guards.
+- Private-data boundary: analysis lacks a visibility flag, so all credentialed analyses conservatively skip Gemini enrichment and mark the match non-exportable to public Hall. The room receives only the chosen slug and derived hero gameplay kit, never raw profile/README/tree/internal paths. Anonymous/boss analyses explicitly pass an empty token at the main adapter to prevent ambient GITHUB_TOKEN credentials granting private access.
+- Mocked real-WebSocket tests verify two distinct upgrade cookies use their own analysis tokens, GitHub default names/explicit-name resume/anonymous fallback, setRepo queued during async hello, no token or private-profile sentinel on the wire, no private Gemini/Hall calls, anonymous Hall still recording, and sanitized upstream failures. Only obvious dummy credentials occur in test fixtures.
+- `npx vitest run server auth`: **26 PASS**. Final `npm run typecheck`: **PASS**. Final `npm test`: **176 PASS / 2 optional browser tests skipped**. `npm run build`: **PASS**.
+- Final local smoke: room OFPA, **PASS**, 2 humans + 2 moving bots, **100 snapshots/client** in five seconds; auth/QR/fallback/Hall, kit designs, heart/regions and advancing input acks/time checks pass.
+- Final public smoke via **https://gitzilla.wilflin.me** and its **wss://gitzilla.wilflin.me/ws**: room FYSD, **PASS**, 2 humans + 2 moving bots, **107 snapshots/client** over the five-second input window, same assertions pass. Domain TLS now validates normally; no bypass flags.
+- Smoke runner now explicitly checks GET `/api/me` returns enabled/user JSON and anonymous GET `/api/me/repos` returns 401 before starting gameplay.
+- Actual browser consent + a real private GitHub repo remain **UNVERIFIED**, owned by claude-auth's real-login USER ACTION. No auth tenant, auth/ implementation, shared/, client/, .env or other-owner files edited by codex-net. No dependencies, real secrets, commits or pushes added.
+
+## Auth privacy contract request / future refinement
+- Optional future visibility metadata from analysis would let authenticated **public** repos keep Gemini/public-Hall eligibility. Current conservative policy deliberately makes no guess about visibility and completes this card without changing shared/.
+
+DONE
+
+## Room resilience card / infrastructure boundary
+- 5173 is stable LIVE from ../gitzilla-live; **never start/stop/test it or the public tunnel**. Shared DEV is http://localhost:5175. This supersedes all earlier smoke/deployment notes.
+- Implementing .cache/rooms.json with atomic 0600 writes, debounce on every lobby change, boot restore of identities/resume tokens/kits/boss/bots/privacy flags, and interrupted-match -> lobby notice.
+- Unknown four-letter hello codes now recreate that exact room; first player becomes owner. Default smoke origin changed to http://localhost:5175.
+- Room persistence is local/private and contains only room resume tokens, never GitHub/Auth0 credentials or private raw profiles. Added HTTP and Vite fs deny coverage for .cache.
+- Unit restart tests use temp files and ephemeral ports only. Dev smoke will use 5175; no live deployment by codex-net.
+
+## Room resilience validation in progress
+- `npx vitest run server`: **19 PASS**; restart/resume unit scenarios use isolated files and ephemeral servers.
+- `ROOM_RESTART_TEST=1 npx vitest run server/restart.integration.test.ts`: **PASS** against three real main.ts Node processes on OS-assigned ports (asserted not 5173 or 5175). Confirms actual boot loading, same resume identity/token/kits/boss after process exit, match -> lobby restart notice, and stale-code self-healing. Test-only ROOMS_FILE override keeps its persistence outside the shared dev store; all children cleaned up.
+- Shared DEV briefly refused connections during a watcher reload; an initial subsequent smoke received 39 snapshots while parallel work was landing. Retried once stable: default `npx tsx server/smoke.ts` **PASS** on 5175, room AFXG, four humans and **100 snapshots per client** over five seconds.
+- DEV HTTP denial checks: `/.cache/rooms.json` **404**, `/@fs/.../.cache/rooms.json` **404**. `.cache/rooms.json` is gitignored and atomic store files use 0600.
+- Latest workspace typecheck **PASS** after parallel required fields landed. Latest full tests: **206 PASS / 6 skipped / 2 unrelated failures** (design bundled boss provenance and sim phase-3 transition); left other owners' files untouched. Rechecking final workspace status next.
+- No port-5173/live tunnel requests, process control, deployments, or live-worktree edits during this card.
+
+## ROOM RESILIENCE — DONE (15:04 local)
+- Added `server/room-store.ts`: atomic, versioned local room store with 0600 file permissions; main defaults to `.cache/rooms.json`, with ROOMS_FILE override for isolated tests. Every lobby/configuration broadcast schedules a debounced write, room creation/expiry are persisted, match start flushes its marker immediately, and graceful close flushes before dropping sockets.
+- Stored state preserves room code/owner, player IDs/resume tokens/names/selected slugs/kits/privacy flags, bot slots/seeds, and public boss state/profile. No requests, cookies, GitHub/Auth0 credentials, private raw profiles, combat snapshots or input history are saved.
+- Boot restores rooms to lobby, recreates bot controllers, lets returning tabs reclaim the same IDs/kits with their existing tokens, turns interrupted analyses into retryable errors, and sends a clear Server restarted notice. Interrupted matches restart from lobby with retained repo choices. First returning human takes over if the saved owner is offline; spectators never become owners.
+- Unknown valid four-letter hello codes recreate that exact room instead of returning Room not found. First player becomes owner, allowing stale tabs/URLs to recover.
+- `server/smoke.ts` now defaults to **http://localhost:5175**. README clearly separates DEV 5175 from stable LIVE 5173/public tunnel and documents restart recovery/testing.
+- Added HTTP/Vite `.cache` denial while retaining Vite's existing secret-file deny patterns. Actual DEV direct-cache and @fs requests returned 404; rooms.json is gitignored and actual permissions are 600.
+- **Focused server tests: 19 PASS**. New cases cover debounced persistence, shutdown flush, owner/token/kit/boss/bot restore, interrupted match notice/restart, privacy retention without credential/profile persistence, owner-offline recovery and stale room self-heal.
+- **Real-process restart integration: PASS**, `ROOM_RESTART_TEST=1 npx vitest run server/restart.integration.test.ts`: three actual main.ts processes, isolated temp persistence and OS-assigned ports (explicitly not 5173/5175), proper cleanup. Normal full test suite skips it by design.
+- **Final workspace typecheck: PASS**. **Final build: PASS**. **Final npm test: 208 PASS / 6 optional tests skipped**; earlier parallel sim/design failures are resolved in the merged workspace.
+- **DEV 5175 default smoke: PASS**, room AFXG, 4 humans, 100 snapshots/client in 5s. **DEV 5175 bot smoke: PASS**, room UTEQ, 2 humans + 2 moving bots, 100 snapshots/client, auth/QR/fallback/Hall + kit design/heart/regions + input ack/time checks pass.
+- No starts/stops/tests against stable LIVE port 5173 or gitzilla.wilflin.me, no ../gitzilla-live edits, no deployment, no commits/pushes. All interactive smoke verification used DEV 5175; restart integration controlled only its own isolated children.
+- No outstanding server contract requests for this card. Notice uses the existing ServerMsg error/toast channel; shared/ unchanged.
 
 DONE

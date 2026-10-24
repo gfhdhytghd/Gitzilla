@@ -9,6 +9,7 @@ import { analyzeRepo, listFallbackRepos, offlineProfile } from '../analysis/inde
 import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim/index.ts';
 import { designHero, designBoss, fallbackHero, fallbackBoss, applyHeroDesign, applyBossDesign } from '../design/index.ts';
 import { recordMatch, top } from '../hall/index.ts';
+import { handleAuthRoute, getSession, getGithubToken } from '../auth/index.ts';
 import { createBot } from '../sim/bots.ts';
 import { RoomServer } from './rooms.ts';
 import { qrSvg, qrTerminal } from './qr.ts';
@@ -36,7 +37,9 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
-  analyzeRepo, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch,
+  // Public/boss lookups must not inherit an ambient server PAT with private access.
+  analyzeRepo: (repo, options) => analyzeRepo(repo, { token: options?.token ?? '' }),
+  listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
   playerKitFromProfile(profile) {
     const kit = playerKitFromProfile(profile);
     return applyHeroDesign(kit, fallbackHero(profile, kit));
@@ -47,10 +50,12 @@ const rooms = new RoomServer(wss, {
   },
   async enhanceHeroKit(profile, kit) { return applyHeroDesign(kit, await designHero(profile, kit)); },
   async enhanceBossKit(profile, kit) { return applyBossDesign(kit, await designBoss(profile, kit)); },
-});
+}, { persistenceFile: process.env.ROOMS_FILE || resolve(root, '.cache/rooms.json') });
 const vite = production ? null : await (await import('vite')).createServer({
   root,
-  server: { middlewareMode: true, hmr: { server } },
+  server: { middlewareMode: true, hmr: { server }, fs: { deny: [
+    '.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.cache/**',
+  ] } },
   appType: 'spa',
 });
 
@@ -77,7 +82,17 @@ async function serveDist(pathname: string, req: IncomingMessage, res: ServerResp
 }
 server.on('request', (req, res) => {
   void (async () => {
+    try { if (await handleAuthRoute(req, res)) return; }
+    catch {
+      // Auth provider errors can contain upstream response bodies; keep them off wire/logs.
+      if (!res.headersSent) json(res, 503, { error: 'GitHub connection unavailable. Please retry.' });
+      else res.end();
+      return;
+    }
     const url = new URL(req.url || '/', 'http://localhost');
+    if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
+      json(res, 404, { error: 'Not found' }); return;
+    }
     if (url.pathname === '/api/room' && req.method === 'POST') {
       req.resume();
       const room = rooms.createRoom();
