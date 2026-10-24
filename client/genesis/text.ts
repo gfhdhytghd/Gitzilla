@@ -2,6 +2,7 @@
 // real code, captions) is drawn on a device-resolution canvas on top so lowercase code stays readable.
 
 export type Font = "term" | "pix" | "small";
+import { t } from '../i18n';
 const FAMILY: Record<Font, string> = {
   term: '"VT323", ui-monospace, monospace',
   pix: '"Press Start 2P", ui-monospace, monospace',
@@ -56,11 +57,13 @@ export class TextLayer {
 
   /** Width in logical px. */
   measure(str: string, size = 8, font: Font = "term", min = 10): number {
+    str = t(str);
     this.setFont(size, font, min);
     return this.ctx.measureText(str).width / this.k;
   }
 
   fit(str: string, maxW: number, size = 8, font: Font = "term", min = 10): string {
+    str = t(str);
     if (this.measure(str, size, font, min) <= maxW) return str;
     let lo = 0, hi = str.length;
     while (lo < hi) {
@@ -72,10 +75,12 @@ export class TextLayer {
 
   /** Wrap at whitespace so code identifiers and closing delimiters stay whole. */
   wrap(str: string, maxW: number, size = 8, font: Font = "term", min = 10): string[] {
+    str = t(str);
     const rows: string[] = [];
     let row = "";
-    for (const word of str.trim().split(/\s+/)) {
-      const next = row ? `${row} ${word}` : word;
+    for (const word of str.trim().match(/[\p{Script=Han}]|[^\p{Script=Han}\s]+/gu) ?? []) {
+      const join = row && !/[\p{Script=Han}]$/u.test(row) && !/^[\p{Script=Han}]/u.test(word) ? ' ' : '';
+      const next = row + join + word;
       if (row && this.measure(next, size, font, min) > maxW) { rows.push(row); row = word; }
       else row = next;
     }
@@ -84,6 +89,7 @@ export class TextLayer {
   }
 
   text(str: string, x: number, y: number, o: TextOpts = {}): number {
+    str = t(str);
     if (!str) return 0;
     const c = this.ctx;
     const size = o.size ?? 8, font = o.font ?? "term", min = o.min ?? 10;

@@ -46,13 +46,13 @@ export function createHallBoard(mock: boolean, opts: { rows?: number; highlight?
       h("div.hall-col", null,
         h("div.hall-h", null, "$ fastest kills"),
         ...(kills.length ? kills.map((k, i) =>
-          h("div.hall-row", null, h("span.hr-rank", null, `${i + 1}.`), h("span.hr-time", null, fmtTime(k.seconds)), h("span.hr-main", { title: k.squad.join(", ") }, shortRepo(k.boss)), h("span.hr-sub", null, `${k.squad.length}p`)),
+          h("div.hall-row", null, h("span.hr-rank", null, `${i + 1}.`), h("span.hr-time", null, fmtTime(k.seconds)), h("span.hr-main", { title: k.squad.join(", "), translate: "no" }, shortRepo(k.boss)), h("span.hr-sub", null, `${k.squad.length}p`)),
         ) : [h("div.dim", null, "—")]),
       ),
       h("div.hall-col", null,
         h("div.hall-h", null, "$ top damage"),
         ...(dmg.length ? dmg.map((d, i) =>
-          h(`div.hall-row${hi.has(d.name) ? ".hi" : ""}`, null, h("span.hr-rank", null, `${i + 1}.`), h("span.hr-dmg", null, `${Math.round(d.damage)} dmg`), h("span.hr-main", { title: d.repo }, d.name), h("span.hr-sub", null, `vs ${shortRepo(d.boss)}`)),
+          h(`div.hall-row${hi.has(d.name) ? ".hi" : ""}`, null, h("span.hr-rank", null, `${i + 1}.`), h("span.hr-dmg", null, `${Math.round(d.damage)} dmg`), h("span.hr-main", { title: d.repo, translate: "no" }, d.name), h("span.hr-sub", null, `vs ${shortRepo(d.boss)}`)),
         ) : [h("div.dim", null, "—")]),
       ),
     );

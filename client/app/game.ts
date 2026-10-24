@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 // Game screen: integer-scaled pixel canvas, snapshot interpolation (~100ms buffer), render composition,
 // camera shake / hit-stop / slow-mo driven by events, boss intro + victory/defeat outro, input + motion setup.
 // Landscape/desktop/big screen show the whole 480x288 arena. Phones in portrait get a camera viewport that follows
@@ -821,9 +822,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.textAlign = "center";
     ctx.fillStyle = "#000";
-    ctx.fillText("YOU", Math.round(me.x) + 1, Math.round(me.y + 22 * scale) + 1);
+    ctx.fillText(t("YOU"), Math.round(me.x) + 1, Math.round(me.y + 22 * scale) + 1);
     ctx.fillStyle = "#ffd23d";
-    ctx.fillText("YOU", Math.round(me.x), Math.round(me.y + 22 * scale));
+    ctx.fillText(t("YOU"), Math.round(me.x), Math.round(me.y + 22 * scale));
     ctx.textAlign = "left";
     ctx.restore();
   };
@@ -845,9 +846,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ctx.textAlign = dir > 0 ? "right" : "left";
     const tx = x - dir * 9;
     ctx.fillStyle = "#000";
-    ctx.fillText(text, tx + 1, y + 1);
+    ctx.fillText(t(text), tx + 1, y + 1);
     ctx.fillStyle = col;
-    ctx.fillText(text, tx, y);
+    ctx.fillText(t(text), tx, y);
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
   };
@@ -1168,7 +1169,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = "#39ff88";
     ctx.textAlign = "center";
-    ctx.fillText(`booting arena${".".repeat(Math.floor(now * 3) % 4)}`, view.w / 2, view.h / 2);
+    ctx.fillText(t(`booting arena${".".repeat(Math.floor(now * 3) % 4)}`), view.w / 2, view.h / 2);
     ctx.textAlign = "left";
   };
   raf = requestAnimationFrame(frame);

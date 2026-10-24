@@ -1,3 +1,4 @@
+import { installLanguageUi, setClassroomLanguage } from '../i18n';
 import { createClassroom } from './classroom';
 // Entry: path router (/ landing, /r/<ROOM> room) + room controller that swaps lobby/game/autopsy screens.
 import type { LobbyState, Role, ServerMsg } from "../../shared/types";
@@ -13,6 +14,7 @@ import { loadModules } from "./renderers";
 import { getMotionPermissionState, subscribeMotionPermission } from "../input";
 import { h, store } from "./util";
 
+installLanguageUi();
 const root = document.getElementById("app")!;
 const params = new URLSearchParams(location.search);
 const mock = params.has("mock");
@@ -100,6 +102,7 @@ function startRoom(room: string, role: Role, name: string) {
     refresh,
     leave(o = {}) {
       stopControls();
+      setClassroomLanguage(null);
       // remember the repo so the next room can offer it again
       const me = app.lobby?.players.find((p) => p.id === app.you);
       if (me?.repo) store.set("kaiju.lastRepo", me.repo);
@@ -156,6 +159,7 @@ function startRoom(room: string, role: Role, name: string) {
 
   function refresh() {
     if (!app.lobby) return;
+    setClassroomLanguage(app.lobby.mode === "edu" ? app.lobby.locale ?? "en" : null);
     if (app.lobby.mode === "edu") {
       show("classroom"); screen?.update?.(app); return;
     }

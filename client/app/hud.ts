@@ -48,7 +48,7 @@ export interface Hud {
 
 export function createHud(spectator: boolean): Hud {
   // --- self panel ---
-  const selfName = h("div.hs-name");
+  const selfName = h("div.hs-name", { translate: "no" });
   const hpBar = h("div.seg-bar.hp");
   const arBar = h("div.seg-bar.ar");
   const enFill = h("div.fill");
@@ -68,7 +68,7 @@ export function createHud(spectator: boolean): Hud {
   );
 
   // --- boss panel ---
-  const bossName = h("div.hb-name");
+  const bossName = h("div.hb-name", { translate: "no" });
   const bossPhase = h("span.hb-phase");
   const bossFill = h("div.fill");
   const bossLag = h("div.lag");
@@ -307,7 +307,7 @@ export function createHud(spectator: boolean): Hud {
         seen.add(p.id);
         let r = teamRows.get(p.id);
         if (!r) {
-          const name = h("span.tm-name"), bar = h("div.tm-bar", null, h("i")), st = h("span.tm-st");
+          const name = h("span.tm-name", { translate: "no" }), bar = h("div.tm-bar", null, h("i")), st = h("span.tm-st");
           r = { row: h("div.tm-row", null, name, bar, st), name, bar, st };
           teamRows.set(p.id, r);
           team.append(r.row);

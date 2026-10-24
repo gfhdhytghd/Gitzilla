@@ -87,12 +87,35 @@ try {
   const starter=await starterDownload;if(starter.suggestedFilename()!=='09_dict.py')throw new Error('Wrong starter filename');
   await starter.saveAs(`${out}/09_dict.py`);
   await migration.getByTestId('step-title-0').fill('My dictionary challenge');
+  await migration.getByTestId('step-checks-0').fill('file: README.md\ncontains: python/09_dict.py :: inventory');
+  await migration.getByTestId('step-checks-0').evaluate(el => el.setAttribute('data-editor-identity', 'preserved'));
+  await migration.getByTestId('classroom-language').selectOption('fr');
+  await migration.waitForFunction(()=>document.documentElement.lang==='fr');
+  if(await migration.getByTestId('step-title-0').inputValue()!=='My dictionary challenge')throw new Error('Language switch lost unpublished title');
+  if(await migration.getByTestId('step-checks-0').inputValue()!=='file: README.md\ncontains: python/09_dict.py :: inventory')throw new Error('Language switch lost unpublished checks');
+  if(await migration.getByTestId('step-checks-0').getAttribute('data-editor-identity')!=='preserved')throw new Error('Language switch rebuilt the active editor');
+  await migration.getByTestId('classroom-language').selectOption('en');
   await migration.getByTestId('classroom-preset-select').selectOption('01-hello');
   if(await migration.getByTestId('step-title-0').inputValue()!=='My dictionary challenge')throw new Error('Previewing a preset overwrote the draft');
   await migration.getByTestId('classroom-save-plan').click();
   const courseStudent=await phone.newPage();await courseStudent.goto(`${base}/r/${oldRoom}`);
   await courseStudent.waitForFunction(()=>document.querySelector('.cr-task h2')?.textContent?.includes('My dictionary challenge'));
   if(!(await courseStudent.locator('.cr-instructions').innerText()).includes('inventory'))throw new Error('Published preset instructions missing');
+  if(await courseStudent.getByTestId('classroom-language').count()!==0 && await courseStudent.getByTestId('classroom-language').isVisible())throw new Error('Student has a classroom language control');
+  const instructionLanguages = new Set<string>();
+  for(const lang of ['en','zh','es','fr']) {
+    await migration.getByTestId('classroom-language').selectOption(lang);
+    await courseStudent.waitForFunction(l=>document.documentElement.lang===l,lang);
+    if((await courseStudent.locator('.cr-task h2').innerText()).indexOf('My dictionary challenge')<0)throw new Error('Language switch overwrote teacher-authored text');
+    instructionLanguages.add(await courseStudent.locator('.cr-instructions').innerText());
+    if(await courseStudent.evaluate(()=>document.querySelector('.classroom-screen')!.scrollWidth>innerWidth))throw new Error(`Localized student page overflows: ${lang}`);
+    await courseStudent.screenshot({path:`${out}/classroom-student-${lang}.png`});
+  }
+  if(instructionLanguages.size!==4)throw new Error('Preset instructions did not change across all four languages');
+  await courseStudent.evaluate(()=>localStorage.setItem('gitzilla.locale','zh'));
+  await courseStudent.reload();await courseStudent.waitForFunction(()=>document.documentElement.lang==='fr');
+  await migration.reload();await migration.getByTestId('classroom-language').waitFor();
+  if(await migration.getByTestId('classroom-language').inputValue()!=='fr')throw new Error('Host language did not survive reload');
   await migration.setViewportSize({width:390,height:844});
   await migration.getByTestId('classroom-preset-library').screenshot({path:`${out}/python-presets-phone.png`});
   if(await migration.evaluate(()=>document.querySelector('.classroom-screen')!.scrollWidth>innerWidth))throw new Error('Preset form overflows phone');
@@ -102,7 +125,7 @@ try {
   await entry.goto(`${base}/r/${battleRoom}`);await entry.getByTestId('mode-edu').click();
   await entry.getByTestId('classroom-plan-editor').waitFor();
   if(new URL(entry.url()).pathname===`/r/${battleRoom}`)throw new Error('Battle classroom entry did not open a teacher room');
-  const result={passed:true,pythonPresets:9,presetPublish:true,starterDownload:true,legacyRoomMigration:true,battleClassroomEntry:true,students:30,flow:'configure,submit,review,pause,raid,export,retry,newSHA,reconnect,next',phoneWidths:[390,360],battleInputs:0,battleSnapshots:0,browserErrors:errors};
+  const result={passed:true,pythonPresets:9,presetPublish:true,starterDownload:true,hostOnlyLanguages:4,localeReconnect:true,legacyRoomMigration:true,battleClassroomEntry:true,students:30,flow:'configure,submit,review,pause,raid,export,retry,newSHA,reconnect,next',phoneWidths:[390,360],battleInputs:0,battleSnapshots:0,browserErrors:errors};
   writeFileSync(`${out}/result.json`,JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 } finally {
   for(const ws of sockets)ws.close();await browser.close();rooms.close();await vite.close();await new Promise<void>(r=>wss.close(()=>r()));await new Promise<void>(r=>server.close(()=>r()));

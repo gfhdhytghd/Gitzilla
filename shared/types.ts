@@ -1,3 +1,4 @@
+import type { Locale } from './i18n/locale';
 import type { ClassroomPlan, ClassroomState, ClassroomReport, ClassroomCommand } from "./classroom";
 // Shared contracts. Every module imports from here; change only via the coordinator (Claude, pane wQ:p9).
 
@@ -459,6 +460,7 @@ export interface LobbyPlayer {
 }
 
 export interface LobbyState {
+  locale?: Locale;
   room: string;
   ownerId: string;
   players: LobbyPlayer[];
@@ -471,6 +473,7 @@ export interface LobbyState {
 }
 
 export type ClientMsg =
+  | { t: "classroomLanguage"; locale: Locale }
   | { t: "classroomPlan"; plan: ClassroomPlan }
   | { t: "classroomControl"; action: ClassroomCommand }
   | { t: "classroomSubmit"; repo: string; ref?: string }

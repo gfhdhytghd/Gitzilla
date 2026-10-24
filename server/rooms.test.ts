@@ -1343,6 +1343,20 @@ describe('PvP duel authority and isolation', () => {
     const resumed = await f.connect('player', a.welcome.token, 'Alice', 'bob');
     expect(resumed.welcome.lobby.players.find(p => p.id === a.welcome.you)?.status).toBe('empty');
   });
+  it('drops disconnected ready players from the lobby and starts with a verified replacement', async () => {
+    const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
+    const a = await f.connect('player', undefined, 'Alice', 'alice'), b = await f.connect('player', undefined, 'Bob', 'bob');
+    a.send({ t: 'setRepo', repo: 'alice/own' }); b.send({ t: 'setRepo', repo: 'bob/own' });
+    await until(() => b.lobby()?.players.every(p => p.status === 'ready'));
+    a.socket.close();
+    await until(() => b.lobby()?.players.length === 1);
+    const replacement = await f.connect('player', undefined, 'Alice again', 'alice');
+    replacement.send({ t: 'setRepo', repo: 'alice/next' });
+    await until(() => b.lobby()?.players.length === 2 && b.lobby()?.players.every(p => p.status === 'ready'));
+    expect(b.lobby()?.players.some(p => p.id === a.welcome.you)).toBe(false);
+    b.send({ t: 'start' });
+    await until(() => b.lobby()?.phase === 'match');
+  });
   it('starts a verified duel with two humans and no boss, preserves mode after persistence', async () => {
     const auth = accessServices(), file = persistenceFile();
     const f = await setup(0.05, auth.services, { persistenceFile: file, debounceMs: 1 }, undefined, 'pvp');
@@ -1361,4 +1375,33 @@ describe('PvP duel authority and isolation', () => {
     expect(readFileSync(file, 'utf8')).not.toContain('userId');
     expect(readFileSync(file, 'utf8')).not.toContain('src/real-heart.ts');
   });
+});
+
+
+it('only the classroom host can switch language, including before a lesson is published', async () => {
+  const test=await setup(999,{}, {}, undefined, 'edu');
+  const teacher=await test.connect('screen'), student=await test.connect(), spectator=await test.connect('screen');
+  teacher.send({t:'classroomLanguage',locale:'fr'});
+  await until(()=>student.lobby()?.locale==='fr');expect(spectator.lobby()?.locale).toBe('fr');
+  student.send({t:'classroomLanguage',locale:'es'});
+  await until(()=>student.messages.find(m=>m.t==='error'&&m.message.includes('teacher')));
+  expect(student.lobby()?.locale).toBe('fr');
+  spectator.send({t:'classroomLanguage',locale:'zh'});
+  await until(()=>spectator.messages.find(m=>m.t==='error'&&m.message.includes('teacher')));
+  teacher.send({t:'classroomLanguage',locale:'bogus'} as unknown as ClientMsg);
+  await until(()=>teacher.messages.find(m=>m.t==='error'&&m.message.includes('English')));
+  expect(student.lobby()?.locale).toBe('fr');
+  const {defaultClassroomPlan}=await import('../shared/classroom-defaults');
+  teacher.send({t:'classroomPlan',plan:defaultClassroomPlan()});
+  await until(()=>teacher.messages.find(m=>m.t==='classroom'));
+  teacher.send({t:'classroomLanguage',locale:'es'});await until(()=>student.lobby()?.locale==='es');
+  const resumed=await test.connect('player',student.welcome.token);expect(resumed.welcome.lobby.locale).toBe('es');
+});
+
+it('persists the host-selected classroom language across server restarts', async () => {
+  const file=persistenceFile(),test=await setup(999,{}, {persistenceFile:file},undefined,'edu');
+  const teacher=await test.connect('screen');teacher.send({t:'classroomLanguage',locale:'zh'});
+  await until(()=>teacher.lobby()?.locale==='zh');await test.close();
+  const restored=await setup(999,{}, {persistenceFile:file},test.room,'edu');
+  const resumed=await restored.connect('screen',teacher.welcome.token);expect(resumed.welcome.lobby.locale).toBe('zh');
 });

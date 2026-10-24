@@ -15,6 +15,30 @@ function lesson() {
   return {s, advance:(ms:number)=>{time+=ms;}, plan};
 }
 describe('staged classroom lesson',()=>{
+  it.each([1, 2, 4, 8, 30])('scales HP for %i students while keeping individual damage fixed', count => {
+    const {s}=lesson();
+    const students=Array.from({length:count},(_,i)=>({id:`s${i}`,name:`Student ${i}`,connected:true}));
+    s.roster(students);
+    expect(s.state.bossMaxHp).toBe(180 * count / 4);
+    s.control('start');
+    for(const student of students) s.accept(s.begin(student.id,'demo/repo'),source);
+    s.control('attack');
+    expect(s.state.rounds[0].attacks.every(a=>a.damage===25)).toBe(true);
+    expect(s.state.bossHp / s.state.bossMaxHp).toBeCloseTo(4/9);
+  });
+  it('updates the setup preview but locks HP through disconnects, late joins and restore',()=>{
+    const {s,plan}=lesson();
+    expect(s.state.bossMaxHp).toBe(90);
+    s.remove('b'); expect(s.state.bossMaxHp).toBe(45);
+    s.setPlan({...plan,steps:plan.steps.slice(0,2)}); expect(s.state.bossMaxHp).toBe(30);
+    s.control('start'); s.accept(s.begin('a','demo/repo'),source); s.control('attack');
+    const hp=s.state.bossHp;
+    s.roster([{id:'c',name:'Late student',connected:true}]); s.remove('a');
+    expect(s.state.bossHp).toBe(hp); expect(s.state.bossMaxHp).toBe(30);
+    const restored=ClassroomSession.restore(s.save());
+    restored.roster([{id:'a',name:'Alice',connected:true},{id:'c',name:'Late student',connected:true}]);
+    expect(restored.state.bossHp).toBe(hp); expect(restored.state.bossMaxHp).toBe(30);
+  });
   it('validates bounded tasks, relative paths and unique task ids',()=>{
     const {plan}=lesson(); expect(normalizeClassroomPlan(plan).steps).toHaveLength(3);
     plan.steps[0].checks[0].path='../secrets'; expect(()=>normalizeClassroomPlan(plan)).toThrow('relative');
@@ -30,7 +54,7 @@ describe('staged classroom lesson',()=>{
     expect(Object.keys(s.privatePayload('teacher',true).reports)).toHaveLength(2);
     expect(s.privatePayload('b',false).reports.b.score).toBe(50);
     s.control('attack'); expect(s.state.rounds[0].attacks.map(a=>a.commit)).toEqual([sha,'b'.repeat(40)]);
-    expect(s.state.bossHp).toBe(105); expect(s.valid(a)).toBe(false);
+    expect(s.state.bossMaxHp).toBe(90); expect(s.state.bossHp).toBe(52.5); expect(s.valid(a)).toBe(false);
   });
   it('rejects synthetic grades and missing SHA; never treats skipped CI as passed',()=>{
     const {s}=lesson(); s.state.plan.steps[0].checks=[{id:'ci',kind:'ci',path:'unit-tests',label:'Tests'}];

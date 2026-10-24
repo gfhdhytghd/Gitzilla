@@ -1,5 +1,7 @@
 // Tiny 3x5 pixel font. Each glyph = 5 rows, each row a 3-bit number (4 = left pixel, 1 = right).
 import { makeCanvas } from "./pix.ts";
+import { t } from '../../i18n';
+import { nativeTextSprite, nativeTextWidth } from '../localized-text';
 
 const G: Record<string, string> = {
   "0": "75557", "1": "26227", "2": "71747", "3": "71717", "4": "55711", "5": "74717", "6": "74757",
@@ -24,6 +26,8 @@ export function glyphRows(ch: string): number[] {
 }
 
 export function textWidth(str: string, scale = 1): number {
+  str = t(str);
+  if (Array.from(str).some(ch => !G[ch] && !G[ch.toUpperCase()])) return nativeTextWidth(str, scale);
   return str.length ? (str.length * (FONT_W + 1) - 1) * scale : 0;
 }
 
@@ -43,10 +47,14 @@ const cache = new Map<string, HTMLCanvasElement>();
 
 /** Cached text sprite with optional 1px outline (outline is 1 logical px regardless of scale). */
 export function textSprite(str: string, color: string, outline: string | null = "#07040c", scale = 1): HTMLCanvasElement {
+  str = t(str);
   const key = str + "\u0000" + color + "\u0000" + outline + "\u0000" + scale;
   let c = cache.get(key);
   if (c) { cache.delete(key); cache.set(key, c); return c; }
   if (cache.size >= 600) cache.delete(cache.keys().next().value!);
+  if (Array.from(str).some(ch => !G[ch] && !G[ch.toUpperCase()])) {
+    const sprite = nativeTextSprite(str, color, outline, scale); cache.set(key, sprite); return sprite;
+  }
   const pad = outline ? 1 : 0;
   const [cv, ctx] = makeCanvas(textWidth(str, scale) + pad * 2, FONT_H * scale + pad * 2);
   if (outline) {

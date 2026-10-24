@@ -115,7 +115,7 @@ server.on('request', (req, res) => {
     if (url.pathname === '/api/room' && req.method === 'POST') {
       req.resume();
       const mode = url.searchParams.get('mode');
-      if (mode && mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') { json(res, 400, { error: 'Choose battle or edu mode' }); return; }
+      if (mode && mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') { json(res, 400, { error: 'Choose battle, classroom, or PvP mode' }); return; }
       const room = rooms.createRoom(undefined, mode === 'edu' ? 'edu' : mode === 'pvp' ? 'pvp' : 'battle');
       printRoomQr(room);
       json(res, 201, { room });

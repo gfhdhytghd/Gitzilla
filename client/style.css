@@ -1492,3 +1492,13 @@ body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .hud-log { display: none;
 .next-bar:disabled { opacity: 1; cursor: wait; }
 .lobby-rubric, .ap-feedback { min-width: 0; grid-column: 1 / -1; overflow-wrap: anywhere; }
 .lobby-rubric > *, .ap-feedback > * { min-width: 0; max-width: 100%; }
+/* Locale controls use native selects for keyboard and mobile accessibility. */
+.language-switch { position:fixed; z-index:900; top:12px; right:12px; display:flex; align-items:center; gap:7px; padding:5px 8px; background:#101a2b; border:1px solid #53647d; color:#e8edf7; font:16px/1.2 monospace; }
+.language-switch select,.cr-language select { background:#101a2b; color:#e8edf7; border:1px solid #53647d; padding:6px; font:inherit; }
+body.classroom-active>.language-switch { display:none; }
+.cr-language { display:flex; flex-direction:column; gap:4px; font-size:16px; }
+.cr-language select { width:auto; min-width:110px; }
+/* Translated labels may be longer than the English defaults. */
+.classroom-screen .btn { white-space:normal; overflow-wrap:anywhere; max-width:100%; }
+.classroom-screen .cr-language { flex:none; }
+@media(max-width:800px) { .cr-header .cr-language { margin-left:auto; }.language-switch { top:8px; right:8px; } }

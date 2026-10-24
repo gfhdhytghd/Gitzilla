@@ -40,7 +40,7 @@ try {
       try { localStorage.setItem('kaiju.name', 'Duelist'); } catch { /* Blank frames have no storage. */ }
       (window as any).states = [];
       const Native = window.WebSocket;
-      window.WebSocket = class extends Native { constructor(url: string | URL, protocols?: string | string[]) { super(url, protocols); this.addEventListener('message', e => { const msg = JSON.parse(e.data); if (msg.t === 'snapshot') (window as any).states.push(msg.state); }); } };
+      window.WebSocket = class extends Native { constructor(url: string | URL, protocols?: string | string[]) { super(url, protocols); this.addEventListener('message', e => { const msg = JSON.parse(e.data); if (msg.t === 'welcome') (window as any).playerId = msg.you; if (msg.t === 'snapshot') (window as any).states.push(msg.state); }); } };
     });
     context.on('page', p => p.on('pageerror', e => errors.push(e.message)));
   }
@@ -54,7 +54,22 @@ try {
   await a.screenshot({ path: `${out}/lobby.png` });
   await a.getByTestId('start-match').click();
   await a.waitForFunction(() => (window as any).states.some((s: any) => s.status === 'fighting'));
-  await a.keyboard.down('d'); await a.keyboard.down('Space'); await a.waitForTimeout(900); await a.keyboard.up('d'); await a.keyboard.up('Space');
+  await a.waitForFunction(() => !document.querySelector('.game.intro-on'));
+  await a.waitForTimeout(3500);
+  const firingStart = await a.evaluate(() => {
+    const states = (window as any).states, id = (window as any).playerId;
+    return { index: states.length, damage: states.at(-1).players.find((p: any) => p.id === id).stats.damage };
+  });
+  await a.keyboard.down('d'); await a.keyboard.down('j');
+  try {
+    await a.waitForFunction(({ index, damage }) => (window as any).states.slice(index).some((s: any) => {
+      const id = (window as any).playerId, me = s.players.find((p: any) => p.id === id);
+      return me && Math.hypot(me.vx, me.vy) > 0
+        && (s.bullets.some((bullet: any) => bullet.owner === id) || me.stats.damage > damage);
+    }), firingStart, { timeout: 5000 });
+  } finally {
+    await a.keyboard.up('d'); await a.keyboard.up('j');
+  }
   const valid = await a.evaluate(() => { const s = (window as any).states; return s.length > 2 && s.every((x: any) => x.mode === 'pvp' && x.boss === null && x.players.length === 2) && s.some((x: any) => x.players.some((p: any) => p.vx > 0)); });
   if (!valid) throw new Error('Expected two-player PvP snapshots and keyboard movement');
   await b.setViewportSize({ width: 390, height: 844 }); await b.screenshot({ path: `${out}/phone-fight.png` });
@@ -64,7 +79,7 @@ try {
   await a.waitForTimeout(1000);
   await a.screenshot({ path: `${out}/results.png` });
   if (errors.length) throw new Error(errors.join('\n'));
-  console.log(JSON.stringify({ twoPlayerBattle: true, noBoss: true, keyboardMovement: true, results: true, pageErrors: 0, screenshots: out }));
+  console.log(JSON.stringify({ twoPlayerBattle: true, noBoss: true, keyboardMovement: true, simultaneousMoveAndAttack: true, results: true, pageErrors: 0, screenshots: out }));
 } finally {
   await browser.close(); rooms.close(); await vite.close(); await new Promise<void>(r => wss.close(() => r())); await new Promise<void>(r => server.close(() => r()));
 }

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 // Small DOM + misc helpers shared by the app screens.
 
 type Attrs = Record<string, string | number | boolean | EventListener | undefined | null>;
@@ -115,6 +116,7 @@ export const isTouchDevice = () => matchMedia("(pointer: coarse)").matches || "o
 
 /** Typewriter effect into an element; returns a cancel fn. */
 export function typeInto(el: HTMLElement, text: string, cps = 40, done?: () => void): () => void {
+  text = t(text);
   let i = 0;
   let cancelled = false;
   const tick = () => {

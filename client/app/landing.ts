@@ -1,3 +1,4 @@
+import { onLocaleChange } from '../i18n';
 // Landing page (/): animated logo over a living arena backdrop, create room / big-screen room / join by code.
 // Also the "$ whoami" name gate shown before joining a room for the first time.
 import { toast } from "./app";
@@ -57,10 +58,13 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   const tag = h("span.typed");
   let tagIdx = 0;
   let cancelType = () => {};
+  let tagTimer: ReturnType<typeof setTimeout> | undefined;
   const cycleTag = () => {
-    cancelType = typeInto(tag, TAGLINES[tagIdx++ % TAGLINES.length], 28, () => setTimeout(cycleTag, 3200));
+    cancelType(); clearTimeout(tagTimer);
+    cancelType = typeInto(tag, TAGLINES[tagIdx++ % TAGLINES.length], 28, () => { tagTimer = setTimeout(cycleTag, 3200); });
   };
   cycleTag();
+  const stopLocale = onLocaleChange(cycleTag);
 
   const busy = (b: boolean) => el.classList.toggle("busy", b);
   const create = async (screen: boolean, mode: "battle" | "edu" | "pvp" = "battle") => {
@@ -147,7 +151,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
         ),
         joinMsg,
         h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
-        h("button.btn.btn-ghost.host-big", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP: challenge a friend ]"),
+        h("button.btn.btn-ghost", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP: challenge a friend ]"),
         h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 classroom: code together, raid together ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),
@@ -165,7 +169,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   return {
     el,
     destroy() {
-      cancelType();
+      cancelType(); clearTimeout(tagTimer); stopLocale();
       document.removeEventListener("pointerup", onBackdrop, true);
       document.removeEventListener("keydown", onKey);
       backdrop.destroy();

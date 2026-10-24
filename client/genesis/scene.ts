@@ -7,6 +7,7 @@
 //   reveal   name card types out; the equal stat budget flows into bars
 // Everything is a pure function of the scene time `t` (skip = jump t), plus a small FX particle pool.
 import type { BossArchetype, BossKit, BossState, Genesis, PlayerKit, TraceStep } from "../../shared/types.ts";
+import { t as tr } from '../i18n';
 import { drawBoss } from "../render/boss/index.ts";
 import { fx as arenaFx } from "../render/arena/fx.ts";
 import { textSprite } from "../render/arena/font.ts";
@@ -1390,7 +1391,7 @@ export class Scene {
     const kit = this.kit!;
     const rk = t - T.reveal[0];
     const boss = isBossKit(kit);
-    const title = boss ? kit.name : kit.title;
+    const title = tr(boss ? kit.name : kit.title);
     const typed = title.slice(0, Math.floor(rk * 42));
     // boss: title + archetype up top; the epithet and counts sit with the budget bar so the head stays visible
     const sub = boss ? "" : kit.design?.catchphrase ? `"${kit.design.catchphrase}"` : "";
@@ -1670,14 +1671,7 @@ function wrapSegs(segs: [string, string][], cols: number): [string, string][][] 
 }
 
 function wrap(tx: TextLayer, text: string, maxW: number, size: number): string[] {
-  const out: string[] = [];
-  let cur = "";
-  for (const word of text.split(/\s+/)) {
-    const next = cur ? cur + " " + word : word;
-    if (tx.measure(next, size, "term", 11) > maxW && cur) { out.push(cur); cur = word; } else cur = next;
-  }
-  if (cur) out.push(cur);
-  return out.slice(0, 4);
+  return tx.wrap(text, maxW, size, 'term', 11).slice(0, 4);
 }
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);

@@ -34,7 +34,7 @@ describe('repository kits', () => {
     const p = syntheticProfile(3); p.primaryLanguage = 'Rust'; p.testRatio = 0.3;
     expect(playerKitFromProfile(p)).toMatchObject({ weapon: 'cannon', skill: 'hotfix', title: 'Rust Paladin' });
     const one = bossKitFromProfile(p, 1), four = bossKitFromProfile(p, 4);
-    expect(four.maxHp / one.maxHp).toBeCloseTo(2.2);
+    expect(four.maxHp / one.maxHp).toBeCloseTo(4);
     expect(four).toEqual(bossKitFromProfile(p, 4));
     expect(four.limbs.some(l => l.weakPoint)).toBe(true);
     expect(four.attacks.every(a => a.telegraph >= 0.6)).toBe(true);
@@ -51,7 +51,7 @@ describe('repository kits', () => {
       expect(kit.attacks.reduce((sum, a) => sum + a.params.threatShare, 0)).toBeCloseTo(1);
       expect(kit.maxHp).toBe(squadBudget(6).hp);
     }
-    expect(squadBudget(8).hp / 8).toBeGreaterThan(squadBudget(4).hp / 4);
+    expect(squadBudget(8).hp / 8).toBe(squadBudget(4).hp / 4);
   });
   it('ignores readme/tree art-direction context when calculating stats and attack budgets', () => {
     const profile = syntheticProfile(8);

@@ -1,3 +1,4 @@
+import type { Locale } from '../shared/i18n/locale';
 import type { ClassroomState } from '../shared/classroom';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
@@ -19,6 +20,7 @@ export interface SavedRoom {
   ownerId: string;
   mode?: GameMode;
   teacherId?: string;
+  locale?: Locale;
   classroom?: ClassroomState;
   rubric?: Rubric;
   players: SavedPlayer[];

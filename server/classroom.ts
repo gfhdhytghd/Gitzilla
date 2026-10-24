@@ -10,6 +10,8 @@ export interface ClassroomSource {
 }
 export interface SubmissionTicket { id: string; generation: number; revision: number }
 const round = (n: number) => Math.round(n * 10) / 10;
+const REFERENCE_STUDENTS = 4;
+const BOSS_HP_PER_STEP = 60;
 const bounded = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi;
 const text = (s: unknown, name: string, max: number, empty = false): string => {
   if (typeof s !== 'string' || s.length > max || (!empty && !s.trim())) throw new Error(`Invalid ${name}`);
@@ -52,6 +54,7 @@ export class ClassroomSession {
     }
     const ids = new Set(students.map(s => s.id));
     for (const row of this.state.rows) if (!ids.has(row.id)) row.connected = false;
+    this.scaleBoss();
   }
   publicState(): ClassroomState {
     return structuredClone({ ...this.state, serverTime: this.now(), rows: [...this.state.rows].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.improvement - a.improvement || a.name.localeCompare(b.name)) });
@@ -60,6 +63,7 @@ export class ClassroomSession {
     this.revisions.set(id, (this.revisions.get(id) ?? 0) + 1);
     const row = this.state.rows.find(r => r.id === id);
     if (row) { row.connected = false; if (row.status === 'queued') row.status = 'error'; }
+    this.scaleBoss();
     this.reports.delete(id); this.errors.delete(id);
   }
   privatePayload(id: string, teacher: boolean) {
@@ -67,7 +71,7 @@ export class ClassroomSession {
   }
   setPlan(plan: ClassroomPlan) {
     if (this.state.phase !== 'setup') throw new Error('The lesson is already running; start a new room to change its plan');
-    const next = normalizeClassroomPlan(plan); this.state.plan = next; this.state.bossHp = this.state.bossMaxHp = next.steps.length * 60;
+    const next = normalizeClassroomPlan(plan); this.state.plan = next; this.scaleBoss();
   }
   begin(id: string, repo: string): SubmissionTicket {
     this.tick();
@@ -154,6 +158,12 @@ export class ClassroomSession {
     session.state.notice = 'Lesson restored. Coding is paused after restart. Detailed feedback is memory-only; resubmit to retrieve it.';
     return session;
   }
+  private scaleBoss() {
+    // Lock at lesson start: disconnects/retries cannot erase damage or lower difficulty.
+    if (this.state.phase !== 'setup') return;
+    const students = Math.max(1, this.state.rows.filter(r => r.connected).length);
+    this.state.bossHp = this.state.bossMaxHp = round(this.state.plan.steps.length * BOSS_HP_PER_STEP * students / REFERENCE_STUDENTS);
+  }
   private row(id: string): ClassroomRow { const row = this.state.rows.find(r => r.id === id); if (!row) throw new Error('Join as a student first'); return row; }
   private open(remember = true) {
     const s = this.state; this.generation++; this.reports.clear(); this.errors.clear(); this.submittedAt.clear();
@@ -165,11 +175,10 @@ export class ClassroomSession {
     if (s.rows.some(r => r.status === 'queued')) throw new Error('Wait for queued submissions before launching the raid');
     const submitted = s.rows.filter(r => r.status === 'submitted');
     if (!submitted.length) throw new Error('At least one student must submit this step');
-    const count = Math.max(1, s.rows.filter(r => r.connected || r.status === 'submitted').length);
     const attacks = submitted.map(r => {
       const key = `${s.plan.steps[s.stepIndex].id}:${r.id}`;
       const before = this.credited.get(key) ?? 0, score = r.score ?? 0;
-      const damage = round(Math.max(0, score - before) / count);
+      const damage = round(Math.max(0, score - before) / REFERENCE_STUDENTS);
       this.credited.set(key, Math.max(before, score)); r.damage = damage; r.totalDamage = round(r.totalDamage + damage);
       return { id: r.id, name: r.name, score, improvement: r.improvement, damage, commit: r.commit! };
     });

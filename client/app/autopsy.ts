@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 // Autopsy: boss dissection as a git diff, per-player stats, MVP, shareable victory card (PNG), owner REMATCH.
 import type { Autopsy, BossKit, PlayerKit } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner } from "./app";
@@ -65,46 +66,47 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
   g.textBaseline = "top";
   g.fillStyle = accent;
   g.font = '28px "Press Start 2P", monospace';
-  g.fillText(a.victory ? "BOSS DELETED" : "SQUAD WIPED", 56, 56);
+  g.fillText(t(a.victory ? "BOSS DELETED" : "SQUAD WIPED"), 56, 56);
   g.fillStyle = "#e8fff2";
   g.font = '40px "VT323", monospace';
-  g.fillText(`GITZILLA · ${a.boss ? shortRepo(a.boss.repo) : "classroom brawl"} · ${fmtTime(a.duration)}`, 58, 110);
+  g.fillText(t(`GITZILLA · ${a.boss ? shortRepo(a.boss.repo) : "classroom brawl"} · ${fmtTime(a.duration)}`), 58, 110);
   g.fillStyle = "#ffd23d";
-  const text = brag(a, pid, a.boss?.repo ?? "the class");
-  const words = text.split(" ");
+  const text = t(brag(a, pid, a.boss?.repo ?? "the class"));
+  const words = text.match(/[\p{Script=Han}]|[^\p{Script=Han}\s]+/gu) ?? [];
   let line = "", y = 160;
   g.font = '34px "VT323", monospace';
   for (const w of words) {
-    if (g.measureText(line + w).width > 640) {
-      g.fillText(line, 58, y);
+    const join = line && !/[\p{Script=Han}]$/u.test(line) && !/^[\p{Script=Han}]/u.test(w) ? ' ' : '';
+    if (line && g.measureText(line + join + w).width > 640) {
+      g.fillText(t(line), 58, y);
       y += 34;
       line = "";
     }
-    line += w + " ";
+    line += (line ? join : '') + w;
   }
-  g.fillText(line, 58, y);
+  g.fillText(t(line), 58, y);
   const p = a.players.find((x) => x.id === pid);
   if (heroKit) drawCode(g, `⌐ ${heroKit.code?.weapon?.name ?? heroKit.weapon}`, 330, 400, 34, 560);
   if (p) {
     g.fillStyle = "#3de8ff";
     g.font = '32px "VT323", monospace';
-    g.fillText(`dmg ${Math.round(p.stats.damage)}  combo x${p.stats.bestCombo}  limbs ${p.stats.limbsBroken}  revives ${p.stats.revives}`, 330, 500);
+    g.fillText(t(`dmg ${Math.round(p.stats.damage)}  combo x${p.stats.bestCombo}  limbs ${p.stats.limbsBroken}  revives ${p.stats.revives}`), 330, 500);
     if (a.mvp === pid) {
       g.fillStyle = "#ffd23d";
       g.font = '20px "Press Start 2P", monospace';
-      g.fillText("★ MVP", 330, 440);
+      g.fillText(t("★ MVP"), 330, 440);
     }
   }
   // brand mark + wordmark in the corner
   g.drawImage(markCanvas(3), 52, H - 112);
   g.font = '22px "Press Start 2P", monospace';
   g.fillStyle = "#2fe39a";
-  g.fillText("GIT", 196, H - 84);
+  g.fillText(t("GIT"), 196, H - 84);
   g.fillStyle = "#ff3e9a";
-  g.fillText("ZILLA", 196 + g.measureText("GIT").width, H - 84);
+  g.fillText(t("ZILLA"), 196 + g.measureText(t("GIT")).width, H - 84);
   g.fillStyle = "rgba(255,255,255,.4)";
   g.font = '26px "VT323", monospace';
-  g.fillText("$ play at HackPSU · your repo is a kaiju", 196, H - 52);
+  g.fillText(t("$ play at HackPSU · your repo is a kaiju"), 196, H - 52);
   g.fillStyle = "rgba(0,0,0,.18)";
   for (let yy = 0; yy < H; yy += 3) g.fillRect(0, yy, W, 1);
   return c;
@@ -219,7 +221,7 @@ export function createAutopsy(app: AppCtx): Screen {
       { style: `animation-delay:${0.2 + i * 0.06}s` },
       h("span.rank", null, `#${i + 1}`),
       kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
-      h("span.ap-name", null, p.name, h("small", null, ` ${shortRepo(p.repo)} `), kit?.code?.weapon?.name ? codeSpan(kit.code.weapon.name) : null),
+      h("span.ap-name", { translate: "no" }, p.name, h("small", null, ` ${shortRepo(p.repo)} `), kit?.code?.weapon?.name ? codeSpan(kit.code.weapon.name) : null),
       h("span.ap-dmg", null, String(Math.round(p.stats.damage))),
       h("span.ap-combo", null, `x${p.stats.bestCombo}`),
       h("span.ap-limbs", null, String(p.stats.limbsBroken)),
@@ -304,7 +306,7 @@ export function createAutopsy(app: AppCtx): Screen {
                 "div.mvp-card",
                 null,
                 mvpKit ? h("div.mvp-port", null, heroPortrait(mvpKit, 64)) : null,
-                h("div", null, h("div.mvp-label", null, "★ MVP"), h("div.mvp-name", null, mvp.name), h("div.mvp-brag", null, brag(a, mvp.id, a.boss.repo))),
+                h("div", null, h("div.mvp-label", null, "★ MVP"), h("div.mvp-name", { translate: "no" }, mvp.name), h("div.mvp-brag", null, brag(a, mvp.id, a.boss.repo))),
               )
             : null,
         ),
@@ -432,7 +434,7 @@ function createDuelAutopsy(app: AppCtx): Screen {
       h("div.ap-sub", null, a.mvp ? `Winner: ${ranking.find(p => p.id === a.mvp)?.name ?? "Player"}` : "Draw"),
       h("p", null, "Round wins, then KOs, then damage decide the ranking."),
       ...ranking.map((p, i) => h("div.rp-card", null, `#${i + 1} ${p.name} · ${p.repo} · ${p.roundWins} round wins · ${p.kos} KOs · ${p.damage.toFixed(1)} damage`)),
-      isOwner(app) ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "Rematch") : h("p", null, "Waiting for the host to start a rematch"),
+      isOwner(app) ? h("button.btn.btn-big.btn-primary", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "Rematch") : h("p", null, "Waiting for the host to start a rematch"),
       exitButtons(app))));
   return { el, update() {}, destroy() { backdrop.destroy(); el.remove(); } };
 }

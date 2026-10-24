@@ -1,4 +1,5 @@
 import type { PvpAccess } from './pvp-access';
+import { isLocale, type Locale } from '../shared/i18n/locale';
 import { ClassroomSession, type ClassroomSource } from './classroom';
 import { classroomExport } from './classroom-export';
 import type { IncomingMessage } from 'node:http';
@@ -69,6 +70,7 @@ interface Room {
   ownerId: string;
   mode: GameMode;
   teacherId?: string;
+  locale?: Locale;
   classroom?: ClassroomSession;
   classroomTimer?: ReturnType<typeof setInterval>;
   rubric?: Rubric;
@@ -160,7 +162,7 @@ export class RoomServer {
         ? { repo: saved.boss.repo, status: 'error', kit: null, error: 'Reconnect GitHub and reselect the private boss repo.' }
         : { ...saved.boss };
       if (boss.status === 'analyzing') { boss.status = 'error'; boss.error = 'Server restarted during analysis. Choose the boss again.'; }
-      const room: Room = { code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : saved.mode === 'pvp' ? 'pvp' : 'battle', teacherId: saved.teacherId, members, boss,
+      const room: Room = { locale: isLocale(saved.locale) ? saved.locale : 'en', code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : saved.mode === 'pvp' ? 'pvp' : 'battle', teacherId: saved.teacherId, members, boss,
         privateBoss: saved.privateBoss, bossProfile: saved.privateBoss ? undefined : saved.bossProfile,
         bossRevision: 0, phase: 'lobby', events: [],
         restartNotice: saved.phase === 'match'
@@ -178,7 +180,7 @@ export class RoomServer {
   }
 
   private savedRooms(): SavedRoom[] {
-    return [...this.rooms.values()].map(room => ({ code: room.code, ownerId: room.ownerId, mode: room.mode, teacherId: room.teacherId, rubric: room.rubric, classroom: room.classroom?.save(),
+    return [...this.rooms.values()].map(room => ({ code: room.code, ownerId: room.ownerId, mode: room.mode, teacherId: room.teacherId, locale: room.locale, rubric: room.rubric, classroom: room.classroom?.save(),
       players: [...room.members.values()].filter(m => m.role === 'player' || m.id === room.ownerId || m.id === room.teacherId).map(m => ({
         id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed,
         lobby: this.persistedLobby(m),
@@ -254,8 +256,8 @@ export class RoomServer {
   }
 
   exportClassroom(code: string, format: 'csv' | 'md'): string | undefined {
-    const classroom = this.rooms.get(code)?.classroom;
-    return classroom ? classroomExport(classroom.publicState(), format) : undefined;
+    const room = this.rooms.get(code), classroom = room?.classroom;
+    return classroom ? classroomExport(classroom.publicState(), format, room?.locale ?? 'en') : undefined;
   }
   exportFeedback(code: string, format: 'csv' | 'md'): string | undefined {
     const room = this.rooms.get(code);
@@ -264,7 +266,7 @@ export class RoomServer {
   }
 
   lobby(room: Room): LobbyState {
-    return { room: room.code, ownerId: room.ownerId, mode: room.mode,
+    return { room: room.code, ownerId: room.ownerId, mode: room.mode, ...(room.mode === 'edu' ? { locale: room.locale ?? 'en' } : {}),
       players: squad(room).map(m => ({ ...m.lobby, controlsReady: !!m.lobby.bot || m.controlsReady, rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
       ...(room.classroom ? { classroom: room.classroom.publicState() } : {}),
       ...(room.mode === 'edu' && room.rubric ? { rubric: room.rubric } : {}) };
@@ -348,7 +350,7 @@ export class RoomServer {
     if (!session || session.member.socket !== socket) throw new Error('Send hello first');
     const { room, member } = session;
     if (msg.t === 'leave') { this.leave(socket, room, member); return; }
-    if (['classroomPlan', 'classroomControl', 'classroomSubmit', 'classroomReview'].includes(msg.t)) {
+    if (['classroomLanguage', 'classroomPlan', 'classroomControl', 'classroomSubmit', 'classroomReview'].includes(msg.t)) {
       await this.handleClassroom(room, member, msg); return;
     }
     if (room.classroom && !['controls', 'input'].includes(msg.t)) throw new Error('Use the classroom controls for this lesson');
@@ -945,6 +947,11 @@ export class RoomServer {
   private async handleClassroom(room: Room, member: Member, msg: ClientMsg) {
     if (room.mode !== 'edu' || room.phase !== 'lobby') throw new Error('Open a classroom room first');
     const teacher = member.role === 'screen' && room.teacherId === member.id && room.ownerId === member.id;
+    if (msg.t === 'classroomLanguage') {
+      if (!teacher) throw new Error('Only the teacher can change the classroom language');
+      if (!isLocale(msg.locale)) throw new Error('Choose English, Chinese, Spanish or French');
+      room.locale = msg.locale; this.broadcastLobby(room); this.publishClassroom(room); this.persist(); return;
+    }
     if (msg.t === 'classroomPlan') {
       if (!teacher) throw new Error('Only the teacher can edit the lesson');
       if (room.classroom) room.classroom.setPlan(msg.plan);

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 // Lobby: your hero setup, squad cards that "spin up" as repos are analyzed, the boss panel
 // (owner sets the boss repo; silhouette -> reveal), START. Big-screen mode (?screen=1) shows a huge QR.
 import type { BossKit, LobbyPlayer, LobbyState, PlayerKit } from "../../shared/types";
@@ -504,7 +505,7 @@ export function createLobby(app: AppCtx): Screen {
         await navigator.clipboard.writeText(url);
         toast("join link copied", "ok");
       } catch {
-        prompt("join link", url);
+        prompt(t("join link"), url);
       }
     },
   }, "copy link");
@@ -631,8 +632,8 @@ export function createLobby(app: AppCtx): Screen {
     const owner = p.id === lobby.ownerId;
     const portrait = h("div.pcard-portrait");
     const info = h("div.pcard-info");
-    const name = h("div.pcard-name", null, p.name, owner ? h("span.badge.owner", null, "★ OWNER") : null, you ? h("span.badge.you", null, "YOU") : null, p.bot ? h("span.badge.bot", null, "BOT") : null);
-    const repo = h("div.pcard-repo", null, p.repo ? `⎇ ${p.repo}` : "awaiting repo…");
+    const name = h("div.pcard-name", null, h("span", { translate: "no" }, p.name), owner ? h("span.badge.owner", null, "★ OWNER") : null, you ? h("span.badge.you", null, "YOU") : null, p.bot ? h("span.badge.bot", null, "BOT") : null);
+    const repo = h("div.pcard-repo", null, p.repo ? h("span", { translate: "no" }, `⎇ ${p.repo}`) : "awaiting repo…");
     info.append(name, repo);
     if (!p.bot) info.append(h("div.controls-state", { "data-testid": "player-controls", "data-ready": p.controlsReady !== false }, p.controlsReady === false ? "📱 waiting for controls" : "✓ controls ready"));
     if (p.status === "ready" && p.kit) {

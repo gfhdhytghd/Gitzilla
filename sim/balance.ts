@@ -7,7 +7,7 @@ export const SQUAD_TUNING = {
   6: { pressurePeriod: 3.4, hitDamage: 4.3 },
   8: { pressurePeriod: 3.2, hitDamage: 4 },
 };
-export const MATCH_TUNING = { bossBaseHp: 11600 };
+export const MATCH_TUNING = { bossBaseHp: 11600, bossReferencePlayers: 4 };
 
 /** One room-wide budget; repo anatomy never adds HP, casts or pressure lanes. */
 export function squadBudget(playerCount: number) {
@@ -16,7 +16,8 @@ export function squadBudget(playerCount: number) {
   const hi = n <= 6 ? SQUAD_TUNING[6] : SQUAD_TUNING[8];
   const t = clamp((n - (n <= 6 ? 4 : 6)) / 2, 0, 1);
   return {
-    hp: Math.round(MATCH_TUNING.bossBaseHp * (0.6 + 0.4 * n) * (1 + Math.max(0, n - 4) * 0.085)),
+    // Preserve the existing four-player encounter, with equal HP per combatant.
+    hp: Math.round(MATCH_TUNING.bossBaseHp * 2.2 * n / MATCH_TUNING.bossReferencePlayers),
     pressureLanes: n >= 8 ? 4 : n >= 6 ? 2 : n >= 4 ? 1 : 0,
     pressurePeriod: lo.pressurePeriod + (hi.pressurePeriod - lo.pressurePeriod) * t,
     recoveryScale: 1 / (1 + Math.max(0, n - 4) * 0.065),

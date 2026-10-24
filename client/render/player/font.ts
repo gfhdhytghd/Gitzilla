@@ -1,4 +1,5 @@
 // 3x5 monospace pixel font with a 1px dark outline, rendered to cached canvases.
+import { nativeTextSprite, nativeTextWidth } from '../localized-text';
 
 const G: Record<string, string> = {
   A: "010101111101101", B: "110101110101110", C: "011100100100011", D: "110101101101110",
@@ -34,6 +35,7 @@ const cache = new Map<string, HTMLCanvasElement>();
 
 /** Text measured in logical px (without outline). */
 export function textWidth(text: string): number {
+  if (Array.from(text).some(ch => !glyphBits(ch))) return nativeTextWidth(text);
   return Math.max(0, text.length * GLYPH_W - 1);
 }
 
@@ -42,6 +44,11 @@ export function textCanvas(text: string, color: string, outline = "#0b0710"): HT
   const key = text + "|" + color + "|" + outline;
   let c = cache.get(key);
   if (c) { cache.delete(key); cache.set(key, c); return c; }
+  if (Array.from(text).some(ch => !glyphBits(ch))) {
+    c = nativeTextSprite(text, color, outline);
+    if (cache.size >= 400) cache.delete(cache.keys().next().value!);
+    cache.set(key, c); return c;
+  }
   const up = text.toUpperCase();
   const w = textWidth(up) + 2, h = GLYPH_H + 2;
   c = document.createElement("canvas");

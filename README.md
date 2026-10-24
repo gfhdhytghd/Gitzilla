@@ -69,3 +69,13 @@ The teacher pauses/extends coding, reviews functionality, then launches a10secon
 Evidence checks use `file: README.md`, `contains: src/main.py :: def calculate`, or `ci: unit-tests`. File/literal checks inspect the bounded source archive; they do not execute code. CI checks require a successful GitHub check run for that exact commit. Connect GitHub for private repositories and higher provider quotas. After a server restart, aggregate results are restored and coding is paused; detailed feedback requires resubmission. See [design and acceptance](docs/design/classroom-raid.md).
 
 The teacher editor includes [nine Python preset lessons](docs/curriculum/python-basics.md): output/variables, numbers/input, strings, conditions, `for`, `while`, lists/tuples, functions, and `dict`. Each has three editable tasks, runnable starter-file downloads, self-check cases and teacher guidance. Selecting a preset previews it; **Load lesson** replaces only the unpublished draft.
+
+## PvP duels
+
+Choose **PvP: challenge a friend** for a two-player, best-of-three fight. Both players connect different GitHub accounts and choose their own non-fork repository, or a public repository where they have maintain/admin permission. The server verifies eligibility again at the start. Duels use direct controls and balanced hero kits, with no Boss, bots or classroom quiz. See [PvP rules and validation](docs/design/pvp-duel.md).
+
+## Languages and AI providers
+
+The interface and Python presets support English, Simplified Chinese, Spanish and French. Only the classroom Host can change the room language; students follow it automatically. Official lesson templates translate while teacher edits and executable starter code are preserved.
+
+Translations are generated through Gemini via AGY, with DeepSeek as the configured fallback. Runtime appearance generation also falls back from Gemini to DeepSeek, then to deterministic artwork if both fail. See [localization and provider configuration](docs/design/i18n.md).

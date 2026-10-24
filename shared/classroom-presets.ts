@@ -1,3 +1,5 @@
+import { translate } from './i18n/text';
+import type { Locale } from './i18n/locale';
 import type { ClassroomCheck, ClassroomPlan } from './classroom';
 import type { Rubric } from './types';
 
@@ -124,37 +126,51 @@ const recordFor = (_id: string) => 'README.md';
 export const pythonClassroomPresets: readonly ClassroomPreset[] = lessons.map(lesson => ({
   id: lesson.id, title: lesson.title, summary: lesson.summary, prerequisite: lesson.prerequisite, minutes: 30, file: pathFor(lesson.id),
 }));
-const lessonFor = (id: string) => {
+export function getPythonClassroomPresets(lang: Locale): readonly ClassroomPreset[] {
+  return pythonClassroomPresets.map(p => ({ ...p, title: translate(p.title, lang), summary: translate(p.summary, lang), prerequisite: translate(p.prerequisite, lang) }));
+}
+const lessonFor = (id: string, lang: Locale = 'zh') => {
   const lesson = lessons.find(item => item.id === id);
   if (!lesson) throw new Error('Unknown Python classroom preset');
-  return lesson;
+  return { ...lesson, title: translate(lesson.title, lang), summary: translate(lesson.summary, lang), prerequisite: translate(lesson.prerequisite, lang), boss: translate(lesson.boss, lang), starter: translate(lesson.starter, lang), teacherNote: translate(lesson.teacherNote, lang), milestones: lesson.milestones.map(m => ({ ...m, title: translate(m.title, lang), task: translate(m.task, lang), examples: translate(m.examples, lang) })) };
 };
 
-export function pythonStarter(id: string): { filename: string; content: string } {
-  const lesson = lessonFor(id);
-  return { filename: pathFor(id), content: `# ${lesson.title}\n# Python 3 · 运行：python3 ${pathFor(id)}\n# ${lesson.summary}\n\n${lesson.starter}` };
+export function pythonStarter(id: string, lang: Locale = 'zh'): { filename: string; content: string } {
+  const lesson = lessonFor(id, lang);
+  return { filename: pathFor(id), content: `# ${lesson.title}\n# ${translate(`Python 3 · 运行：python3 ${pathFor(id)}`, lang)}\n# ${lesson.summary}\n\n${lesson.starter}` };
 }
-export function pythonTeacherGuide(id: string): string {
-  const lesson = lessonFor(id);
-  return `${lesson.title}\n\n建议课时：30 分钟，三个步骤各 10 分钟；可根据班级情况延长。\n前置知识：${lesson.prerequisite}\n\n备课重点：${lesson.teacherNote}\n\n每步建议：演示 2 分钟 → 独立编码 5 分钟 → 同桌检查 2 分钟 → 提交与集体攻击 1 分钟。\n\n检查范围：预设只检查文件、源码片段与自测记录。文本片段可能出现在注释中，检查通过不代表程序正确。请让学生运行示例并解释结果，再用教师复核记录最终功能分数。接受正确的等价实现；可删除不适用的文本检查，或添加自己仓库的 GitHub CI 检查。\n\n${lesson.milestones.map((m, i) => `第 ${i + 1} 步 · ${m.title}\n${m.examples}`).join('\n\n')}`;
+export function pythonTeacherGuide(id: string, lang: Locale = 'zh'): string {
+  const lesson = lessonFor(id, lang), tr = (s: string) => translate(s, lang);
+  return [lesson.title, tr('建议课时：30 分钟，三个步骤各 10 分钟；可根据班级情况延长。'), tr(`前置知识：${lesson.prerequisite}`), tr(`备课重点：${lesson.teacherNote}`),
+    tr('每步建议：演示 2 分钟 → 独立编码 5 分钟 → 同桌检查 2 分钟 → 提交与集体攻击 1 分钟。'),
+    tr('检查范围：预设只检查文件、源码片段与自测记录。文本片段可能出现在注释中，检查通过不代表程序正确。请让学生运行示例并解释结果，再用教师复核记录最终功能分数。接受正确的等价实现；可删除不适用的文本检查，或添加自己仓库的 GitHub CI 检查。'),
+    ...lesson.milestones.map((m, i) => `${tr(`第 ${i + 1} 步 · ${m.title}`)}\n${m.examples}`),
+  ].join('\n\n');
 }
 
-export function pythonClassroomPlan(id: string): ClassroomPlan {
-  const lesson = lessonFor(id), file = pathFor(id), record = recordFor(id);
-  const rubric: Rubric = { title: 'Python 课堂提交证据（教师复核功能）', source: 'default', criteria: [
-    { id: 'python-file', name: '提交本课 Python 文件', weight: 1, signal: 'check', description: `检查 ${file} 是否存在；不执行代码。`, check: { kind: 'path-exists', value: file } },
+export function pythonClassroomPlan(id: string, lang: Locale = 'zh'): ClassroomPlan {
+  const lesson = lessonFor(id, lang), file = pathFor(id), record = recordFor(id);
+  const tr = (s: string) => translate(s, lang);
+  const rubric: Rubric = { title: tr('Python 课堂提交证据（教师复核功能）'), source: 'default', criteria: [
+    { id: 'python-file', name: tr('提交本课 Python 文件'), weight: 1, signal: 'check', description: tr(`检查 ${file} 是否存在；不执行代码。`), check: { kind: 'path-exists', value: file } },
   ] };
   return {
-    title: `Python 基础 · ${lesson.title}`, bossName: lesson.boss,
+    title: tr(`Python 基础 · ${lesson.title}`), bossName: lesson.boss,
     steps: lesson.milestones.map((milestone, i) => {
       const checks: ClassroomCheck[] = [
-        { id: 'source', kind: 'file', path: file, label: '本课 Python 文件已提交' },
-        ...milestone.evidence.map((text, index) => ({ id: `syntax-${index}`, kind: 'contains' as const, path: file, text, label: `源码片段：${text}（不是运行结果）` })),
+        { id: 'source', kind: 'file', path: file, label: tr('本课 Python 文件已提交') },
+        ...milestone.evidence.map((text, index) => ({ id: `syntax-${index}`, kind: 'contains' as const, path: file, text, label: tr(`源码片段：${text}（不是运行结果）`) })),
       ];
-      if (i > 0) checks.push({ id: 'record', kind: 'file', path: record, label: '自测与改进记录已提交' });
+      if (i > 0) checks.push({ id: 'record', kind: 'file', path: record, label: tr('自测与改进记录已提交') });
       return {
         id: `${id}-${i + 1}`, title: milestone.title, durationSec: 600, rubric: structuredClone(rubric), checks, checksWeight: 100,
-        instructions: `学习目标\n${lesson.summary}\n\n本步任务\n${milestone.task}\n\n文件与运行\n在仓库创建 ${file}，使用 Python 3。运行：python3 ${file}。${i === 0 ? `\n可以从下面的起始代码开始：\n\n${pythonStarter(id).content}` : `\n继续修改同一个文件，保留前一步仍需要的功能。`}\n\n自测示例\n${milestone.examples}\n\n记录与提交\n${i === 0 ? '运行成功后，' : `在仓库根目录的 ${record} 中添加本课标题，并记录至少两个案例，每个写“输入 / 预期 / 实际”，再写一句你改进了什么。然后`}保存、commit、push 到 GitHub，回课堂提交最新分支。\n\n评分说明\n当前分数是静态提交证据分，不是程序正确率。源码片段和记录通过后，仍需运行上面的示例并请教师复核。正确的等价写法可由教师调整检查。`,
+        instructions: [tr('学习目标'), lesson.summary, tr('本步任务'), milestone.task,
+          tr('文件与运行'), tr(`在仓库创建 ${file}，使用 Python 3。运行：python3 ${file}。`),
+          i === 0 ? `${tr('可以从下面的起始代码开始：')}\n\n${pythonStarter(id, lang).content}` : tr('继续修改同一个文件，保留前一步仍需要的功能。'),
+          tr('自测示例'), milestone.examples, tr('记录与提交'),
+          (i === 0 ? tr('运行成功后，') : tr(`在仓库根目录的 ${record} 中添加本课标题，并记录至少两个案例，每个写“输入 / 预期 / 实际”，再写一句你改进了什么。然后`)) + tr('保存、commit、push 到 GitHub，回课堂提交最新分支。'),
+          tr('评分说明'), tr('当前分数是静态提交证据分，不是程序正确率。源码片段和记录通过后，仍需运行上面的示例并请教师复核。正确的等价写法可由教师调整检查。'),
+        ].join('\n\n'),
       };
     }),
   };

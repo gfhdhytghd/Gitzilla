@@ -1,0 +1,13 @@
+{
+  "provider": "Gemini via AGY with DeepSeek fallback",
+  "model": "gemini-3.8-flash-high",
+  "providers": {
+    "Gemini via AGY": 1976,
+    "DeepSeek": 90
+  },
+  "entries": 2066,
+  "translated": 2066,
+  "bundled": 1730,
+  "failed": 0,
+  "generatedAt": "2026-10-24T22:52:28.001Z"
+}
