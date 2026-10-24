@@ -413,6 +413,7 @@ export interface Genesis {
 export interface LobbyPlayer {
   id: string; name: string; repo: string | null;
   bot?: boolean;
+  controlsReady?: boolean;     // false = a phone that still has to tap "enable motion" this session
   progress?: GenesisProgress;  // while status === "analyzing"
   genesis?: Genesis;           // once ready
   status: "empty" | "analyzing" | "ready" | "error";
@@ -436,6 +437,7 @@ export type ClientMsg =
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
   | { t: "setMode"; mode: GameMode }        // owner only, lobby only
+  | { t: "controls"; ready: boolean; mode: MotionProfile }  // phone reports: motion permission granted & sensors live (or touch chosen)
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
