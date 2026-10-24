@@ -1,0 +1,23 @@
+{
+  "name": "repo-kaiju",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server/main.ts",
+    "start": "NODE_ENV=production tsx server/main.ts",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/ws": "^8.18.2",
+    "tsx": "^4.23.15",
+    "typescript": "5.9",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}
