@@ -231,3 +231,162 @@ biggest risks in a 30-second demo:
   demo from the production build.
 - **E2** The Vite HMR client tries `ws://localhost:5173` when the page is on :5175 (console errors). Harmless, but noisy
   in every playtest log.
+
+---
+
+# Portrait re-audit (pass 2, after `DONE (portrait)`)
+
+Phones: 390x844, 360x640, 430x932 (isMobile, hasTouch, DPR 3). Shots: `p2-*`, `p3-*`, `m3-*`, `r1-*`. Live runs used 2–3
+phone contexts plus AI teammates; `?mock=match|review|autopsy` covered the late fight states.
+
+**Verdict:** The portrait layout works. The camera follows the hero, the boss gets an edge arrow, the minimap is readable, the
+rotate guard is clean (`p3-rotated-landscape.png`), the lobby, landing and autopsy are single-column with no horizontal
+overflow at any width, and the thumb buttons are big and easy to hit. What's left is density and overlap.
+
+### Fixed since pass 1
+- Landing: footer/mute collision is gone and "host on big screen" is hidden on phones (`p2-landing-p360.png`).
+- Deck: the team list no longer sits under SKILL/DASH at 360x640 (`m3-fight-24s-p360.png`), and the event log is dropped
+  when there's no room.
+- Hero card stats are relative pips (health/armor/energy/damage/speed) instead of `×1.00 · 77px/s`
+  (`p3-intro-2500-p390.png`).
+- The autopsy keeps `✗`/`✓` on phones, columns read `damage · best combo · limbs broken · revives · final blow`, and REMATCH
+  is at the top (`m3-autopsy-p390.png`).
+- Code review: a 3-card strip sits in the deck, at least 10px everywhere (`r1-review-p390.png`).
+
+### Still open / new in portrait
+- **PR-1 (P1) Floating combat text piles up over the boss at portrait zoom.** `-13 CRIT`, `RETURN`, `CATCH`, `-19`, `-31` and
+  the enemy glyph bullets stack into one unreadable blob exactly where the player aims (`p2-revived-p390.png`,
+  `m3-fight-24s-p360.png`). At 2–3x camera zoom, the same text covers about 3x more of the view than in landscape.
+  **Fix (claude-boss, drawEvents with `view`):** cap floating texts to 4 on screen when `view.w < 300`, merge damage
+  numbers on the same target within 250 ms (`-63` instead of three numbers), and only show word callouts (`RETURN`,
+  `CATCH`, `PANIC!`) for hits by YOU.
+- **PR-2 (P1) Intro text still runs behind SKILL/DASH.** In the motion/seated profile intro, the genesis panel plus
+  `$ git clone… / WARNING: KAIJU DETECTED / LODASH, THE DEPENDENCY…` is drawn under the thumb buttons
+  (`r0-game-controls-motion-1500-p390.png`, `p2-intro-2500-p390.png`). **Fix:** during the intro, hide the thumb buttons
+  (they're useless for 3 s), or end the intro block at `bottom: calc(var(--btn-h) + 12px)`.
+- **PR-3 (P2) Touch joystick ring shows during the intro and outros.** The ring sits on top of `CLASS DISMISSED` and the
+  intro (`em-dismissed-p390.png`, `p3-intro-700-p360.png`). Hide `.kj-touch-joystick` while an intro or outro is playing.
+- **PR-4 (P2) The ghost split's "ATTACK · tap anywhere" contradicts the split.** The left half moves you
+  (`r0-game-controls-touch-5000-p390.png`). Use `ATTACK · tap here`. The ghost also overlaps the `$ ./fight --now` FIGHT
+  flash. Start it after the flash ends.
+- **PR-5 (P2) The sticky next-step bar covers the bottom of the hero card.** Stats rows scroll under it with no padding
+  (`p3-lobby-waiting-p360.png`). Add `padding-bottom: calc(var(--next-step-h) + 16px)` to `.lobby-scroll`. For the owner,
+  the bar's `▶ START FIGHT (6 heroes)` and the yellow `$ ./fight.sh` button are both on screen at once
+  (`p3-intro-2500-p390.png`). Keep one: hide the in-panel button on phones.
+- **PR-6 (P2) The lesson/toast chip in the deck is clipped.** `TEST Test` is cut off at about 180px wide
+  (`e-live-20s-p390.png`). Give it full deck width.
+
+### PR-0 (P0, environment) A match silently fell back to the lobby
+- In run `p3`, both phones entered the intro (`p3-intro-700-p360.png`, 15:45:51). Two seconds later both were back in the
+  lobby (`p3-intro-2500-p390.png`), with no message, and stayed there. Later, ownership had silently moved to bob (the 360
+  phone shows `★ you own this room` in the final audit). The dev server process restarted during the session (pid start
+  15:51), and earlier runs (`k-*`) ended on blank black screens (`k-end-p390.png`), so the likely cause is the shared dev
+  server restarting or reloading (E1). Whatever the cause, the player-facing part is a UX bug:
+  - **Fix (codex-net + claude-ui):** if the client was in `match` and the next state is `lobby` without an autopsy, show a
+    toast or banner: `⚠ the match was interrupted (server restarted) — the host can start again`. If `ownerId` changes,
+    toast `★ you are now the host` to the new owner and `host is now bob` to everyone else.
+  - **Demo risk:** run the demo on the production build, not the shared dev server (see E1).
+
+---
+
+# P0 re-check (after `DONE (ux p0)`)
+
+Shots: `r0-*`.
+
+| P0 | Status | Evidence |
+| --- | --- | --- |
+| P0-1 sensor sheet over intro and fight | **Fixed.** The lobby `controls` card (`tilt phone · seated / small moves · touch only`) confirms the choice in plain words (`✓ touch: drag to move · tap to attack`). In-game there's no sheet in either profile. `motion-enable` was not visible, and the pill reads `touch controls` / `motion: waiting`. | `r0-controls-controls-touch-p390.png`, `r0-game-controls-touch-5000-p390.png`, `r0-game-controls-motion-1500-p390.png` |
+| P0-2 touch hint mismatch | **Fixed.** The hint reads `drag on the arena to move · tap to attack · DASH / SKILL buttons`, a MOVE / ATTACK ghost split shows for 5 s, the pill is a neutral grey `touch controls`, and `⟲ recalibrate` is hidden in touch mode and shown in motion mode. Small wording nit: see PR-4. | `r0-game-controls-touch-5000-p390.png` |
+| P0-3 wrong / digit room codes | **Fixed.** `join` is disabled under 4 letters, `0V39` is cleaned to `OV`, and an unknown `QXZW` stays on the landing page with `room QXZW not found — check the code, or create QXZW`. `/r/OV39` shows `fatal: "OV39" isn't a room code … $ cd ~ (back to start)`. Nit: `/r/AB12CD` → `ABIC` shows the "Room not found" card while the link pill says `LINK LOST · RETRYING`. Stop reconnecting and show `LINK ERR` after a fatal error. | `r0-join-notfound-p390.png`, `r0-direct-digits-p390.png`, `r0-direct-bad-p390.png` |
+| P0-4 no next step in phone lobby | **Fixed.** The sticky bar shows `⟳ cloning facebook/react…` → `✓ ready as Render Branch Ranger · waiting for judge to start (6 in)` → owner `▶ START FIGHT (6 heroes)`. The picker collapses to `✓ gin-gonic/gin · change`. Nits: see PR-5. | `p3-lobby-waiting-p360.png`, `p3-intro-2500-p390.png`, `r0-controls-controls-touch-p390.png` |
+| QW5 plain labels | **Fixed.** The deck shows `♥ hp · ◆ armor · ⚡ energy`, and autopsy columns are spelled out. | `m3-fight-24s-p360.png`, `m3-autopsy-p390.png` |
+
+Still open from pass 1: **P1-5** (stand-in hero for a repo that doesn't exist shows a green ✓; blocked on a contract flag),
+**P2-4**, **P2-5**.
+
+---
+
+# Edu mode (classroom PvP) audit (after `DONE (edu pvp)`)
+
+Teacher = `[ 🎓 classroom: teacher on projector ]` on a 1920x1080 desktop. Students = 390x844 and 360x640 phones joining
+by code. A real classroom room (`e-*`) went from lobby → report cards → `$ make brawl` → round 1 live. `?mock=edu-match` and
+`?mock=edu-autopsy` covered lessons, the end screen and the class report (`em-*`, `ea-*`). **The between-round quiz never
+appeared in any run, so it is not audited.**
+
+**Verdict:** This is a strong classroom flow. The teacher creates the room in one click, students see `waiting for the
+teacher to start`, and lesson cards on the projector are large, friendly and tied to real repo facts (`e-live-12s-d1920.png`:
+"Every quick hack and TODO is a loan against the future… `django/django` carries 62 TODO/FIXME/HACK notes."). The main
+problem is the **report card**. It's written for people who already know the concepts. A CS-101 student sees
+`Average fan-out 5.0; dependency depth 1` next to a C with no idea what fan-out is or whether 5.0 is bad.
+
+### EDU-1 (P0) Report-card lines use jargon and raw numbers with no scale
+- **Where:** student lobby (`e-student-ready-p390-scroll1.png`), class report (`ea-autopsy-p390.png`).
+- **What's wrong:**
+  - Concepts are not explained where they're graded: `fan-out`, `dependency depth`, `cohesion`, `definitions/file`,
+    `kLOC`, `Documentation score 79%`.
+  - A raw number alone doesn't tell a student if it's good. The tip at the bottom repeats the same jargon
+    (`Reduce cross-module dependencies and split long dependency chains`).
+  - Each row has two names (`try{} armor`, `dmg damage`, `RAM energy`, `gc() regen`, `debt weakness`), and the arrow
+    `← tests` reads as "armor comes from tests" only if you already get the metaphor.
+  - Only the lowest grade has a tip. B rows with an obvious problem get nothing: `longest 643 lines` under a B for damage.
+- **Fix (claude-edu `report.ts`/`quality.ts`; copy proposals):** use one fixed 3-line shape per stat:
+  1. `C  speed — how independent your files are`
+  2. `each file imports 5 others on average (A-grade repos: ≤ 2)`
+  3. `try: move shared helpers out of utils/ so files import less`
+  - Always show the scale ("A ≤ 2 · B ≤ 3.5 · C ≤ 5"), or a 5-pip bar with a marker.
+  - Make the concept word a tappable link to the glossary animation that already exists.
+  - Drop the code alias, or show it small after the plain word: `armor (try{})`.
+  - Give every B-or-worse row one concrete tip, and make it reference a real file whenever one exists (`longest
+    function: views.py: dispatch(), 643 lines → split it`).
+  - Merge `gc() regen` into `energy`. It says "same source signals as RAM", so it adds a row and no information.
+
+### EDU-2 (P1) Weakness grading direction is unclear
+`B debt weakness ← loops + TODOs`: does B mean a small weakness (good) or a big one? Every other row is "higher = stronger
+hero". **Fix:** rename it to `tech-debt penalty` and grade the health of the code, so A = no penalty. Add the effect in
+plain words: `B → you take +5% damage (1 circular import, few TODOs)`.
+
+### EDU-3 (P1) Grades contradict each other on one screen (mock data, but check the real thresholds)
+In `ea-autopsy-p390.png`, `@ada` is grade B in the ranking but "best tests A: 24% of files", while `@ana` gets C for "25%
+of files". In the real room, two very different repos (django/django and jquery/jquery) both show `code grade B · GPA 3.1`
+(`e-teacher-lobby-2ready-d1920.png`). That may be a coincidence, but students compare grades with each other immediately.
+**Fix:** codex-sim/claude-edu should verify that grades are monotonic in the shown number and that GPA is computed from the
+visible letters. Show the threshold on hover or tap (see EDU-1). Remove fakeQuality inconsistencies from the mock so demos
+don't show contradictions.
+
+### EDU-4 (P1) Projector copy and roster aren't classroom-ready
+- The teacher's projector says `★ the first phone to join is the host`, but in classroom mode the projector itself is the
+  owner (`★ you own this room` on the projector, and students read `waiting for the teacher to start`). It's
+  contradictory, so a student may think they're in charge. **Fix:** in edu, say `students: scan to join · the teacher
+  starts the brawl here`.
+- The roster shows 8 slots (`slot 1 · scan to join` … `slot 8`) although edu allows 30. Names are about 16px and
+  `CODE GRADE B · GPA 3.1` is about 8px, which is unreadable from the back of a classroom (`e-teacher-lobby-2ready-d1920.png`).
+  **Fix:** in edu, show a dense grid of joined students only (avatar 48px, name 20px, grade letter 28px), plus a
+  `12 / 30 joined · 9 ready` counter in 32px. Hide empty slots.
+- `AI teammates` on the projector should be `AI classmates (bots)`. In PvP they're opponents, not teammates.
+
+### EDU-5 (P1) Live leaderboard is tiny on the projector
+During the brawl, the leaderboard is a 16px list in the top-right (`e-live-12s-d1920.png`, `em-quiz-d1920.png`: `ada 3 KO`).
+The lesson card takes the bottom third over the arena where heroes fight. **Fix:** on `?screen=1` in edu, move the
+leaderboard into the empty right gutter at 24–28px with the top 10, and put lesson cards in the left gutter (or make
+them 70% opaque and cap their height at 22%). The scoreboard banner `$ ./brawl round 1/3 · ★ leader` is good. Keep it.
+
+### EDU-6 (P1) Edu intro on phones says the opposite of edu rules
+The phone intro genesis panel reads `repo shape -> stats: same 5-pt budget` (`em-lesson-p390.png`). In classroom mode,
+stats come from code quality and are **not** an equal budget. That's the core lesson, contradicted in the first 5 seconds.
+**Fix (claude-edu/genesis):** in edu, use `code quality -> stats (see your report card)`.
+
+### EDU-7 (P2) Class report polish
+- Ranking columns `KO · RND · GRD` are abbreviations. Use `KOs · rounds won · code grade` on phones, wrapping the header to
+  2 lines if needed.
+- The highlights list wraps inconsistently: `best documentation @octocat` then the value on its own line
+  (`ea-autopsy-p390-scroll2.png`). Use a 2-column layout (label / `@who grade · value`).
+- The glossary says "Concepts you met this match (✓)", but no item shows a ✓ (all show `·`). Either mark the met ones or
+  drop the sentence.
+- `GPA 2.5` is 8px on phones. Use at least 12px.
+- On the phone, the lesson in the deck is 8px (`lesson`, `tap: learn more`). Use at least 10px.
+- Mock-only: `?mock=edu-match` ends with `CLASS DISMISSED` after 25 s in round 1/3 with 0:51 left (`em-dismissed-p390.png`).
+  Fine for screenshots, but don't use it to judge pacing.
+
+### Not verified
+The between-round quiz (projector + phone pads, the explanation afterwards), 30-student scale, and edu on the
+production server. I'd re-run these once the real PvP sim emits quiz offers.
