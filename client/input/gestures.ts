@@ -3,58 +3,35 @@ export interface Acceleration { x: number; y: number; z: number }
 export interface GestureState {
   fireUntil: number;
   lastFire: number;
-  lastDash: number;
-  lastSkill: number;
   peakHeld: boolean;
-  shakeAxis: keyof Acceleration | null;
-  peaks: { at: number; sign: number }[];
+  lastPeak: Acceleration | null;
 }
 export interface GestureResult {
   state: GestureState;
   fire: boolean;
-  dash: boolean;
-  skill: boolean;
+  fired: boolean;
+  dash: false;
+  skill: false;
 }
 
 export function createGestureState(): GestureState {
-  return { fireUntil: 0, lastFire: -Infinity, lastDash: -Infinity, lastSkill: -Infinity,
-    peakHeld: false, shakeAxis: null, peaks: [] };
+  return { fireUntil: 0, lastFire: -Infinity, peakHeld: false, lastPeak: null };
 }
 
+/** Motion v2: any-axis swing attacks. Dash and skill belong exclusively to buttons. */
 export function recognizeGesture(previous: GestureState, a: Acceleration, now: number): GestureResult {
-  const state = { ...previous, peaks: previous.peaks.filter(p => now - p.at <= 600) };
-  let dash = false;
-  let skill = false;
-  const axis = (Object.keys(a) as (keyof Acceleration)[])
-    .reduce((best, key) => Math.abs(a[key]) > Math.abs(a[best]) ? key : best, 'x');
-  const peak = Math.abs(a[axis]);
-  // Hysteresis: a sustained acceleration is one gesture, not a gesture every sample.
-  if (peak < 4) state.peakHeld = false;
-  const sign = Math.sign(a[axis]);
-  const last = state.peaks.at(-1);
-  const reversed = peak >= 14 && axis === state.shakeAxis && last && last.sign !== sign;
-  if (peak >= 7 && (!state.peakHeld || reversed)) {
+  const state = { ...previous };
+  const magnitude = Math.hypot(a.x, a.y, a.z);
+  if (magnitude < 5) state.peakHeld = false;
+  const opposite = state.lastPeak && a.x * state.lastPeak.x + a.y * state.lastPeak.y + a.z * state.lastPeak.z < 0;
+  const fired = magnitude >= 12 && (!state.peakHeld || !!opposite) && now - state.lastFire >= 200;
+  if (fired) {
     state.peakHeld = true;
-    if (peak >= 14) {
-      if (state.shakeAxis !== axis) state.peaks = [];
-      state.shakeAxis = axis;
-      if (state.peaks.at(-1)?.sign !== sign) state.peaks.push({ at: now, sign });
-      if (state.peaks.length >= 3 && now - state.lastSkill >= 1200) {
-        skill = true;
-        state.lastSkill = now;
-        state.peaks = [];
-      }
-    }
-    if (!skill && axis === 'z' && a.z >= 7 && now - state.lastFire >= 300) {
-      state.fireUntil = now + 600;
-      state.lastFire = now;
-    }
-    if (!skill && axis === 'x' && Math.abs(a.x) >= 10 && now - state.lastDash >= 650) {
-      dash = true;
-      state.lastDash = now;
-    }
+    state.lastPeak = { ...a };
+    state.lastFire = now;
+    state.fireUntil = now + 600;
   }
-  return { state, fire: now < state.fireUntil, dash, skill };
+  return { state, fire: now < state.fireUntil, fired, dash: false, skill: false };
 }
 
 export function normalize(x: number, y: number): [number, number] {
@@ -62,19 +39,35 @@ export function normalize(x: number, y: number): [number, number] {
   return length > 1 ? [x / length, y / length] : [x, y];
 }
 
-/** Screen-relative tilt: portrait gamma moves right, beta moves down. */
-export function screenTilt(beta: number, gamma: number, angle: number): [number, number] {
+function rotateScreen(x: number, y: number, angle: number): [number, number] {
   const radians = angle * Math.PI / 180;
-  return [gamma * Math.cos(radians) + beta * Math.sin(radians),
-    beta * Math.cos(radians) - gamma * Math.sin(radians)];
+  return [x * Math.cos(radians) + y * Math.sin(radians), y * Math.cos(radians) - x * Math.sin(radians)];
+}
+
+/** Calibratable roll/pitch degrees, primary pose: portrait tilted back 30–50°.
+ * Device frame stays in natural orientation when the screen rotates (W3C):
+ * https://www.w3.org/TR/orientation-event/#device-orientation-model
+ */
+export function screenTilt(beta: number, gamma: number, angle: number): [number, number] {
+  const b = beta * Math.PI / 180;
+  // Preserve roll sensitivity at upright neutral, rather than attenuating it by cos(beta).
+  return rotateScreen(gamma,
+    Math.asin(Math.sin(b)) * 180 / Math.PI, angle);
+}
+
+/** For browsers whose orientation angles are null, use the low-pass gravity vector. */
+export function gravityTilt(gravity: Acceleration, angle: number, sign: number): [number, number] {
+  const length = Math.hypot(gravity.x, gravity.y, gravity.z) || 1;
+  return rotateScreen(Math.atan2(-sign * gravity.x, sign * gravity.z) * 180 / Math.PI,
+    Math.asin(Math.max(-1, Math.min(1, sign * gravity.y / length))) * 180 / Math.PI, angle);
 }
 
 export function tiltMove(current: [number, number], neutral: [number, number]): [number, number] {
   const x = current[0] - neutral[0];
   const y = current[1] - neutral[1];
   const magnitude = Math.hypot(x, y);
-  if (magnitude <= 5) return [0, 0];
-  const strength = Math.min(1, (magnitude - 5) / 20);
+  if (magnitude <= 4) return [0, 0];
+  const strength = Math.min(1, (magnitude - 4) / 16);
   return [x / magnitude * strength, y / magnitude * strength];
 }
 

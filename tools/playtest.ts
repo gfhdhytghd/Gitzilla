@@ -1,7 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, type Browser, type BrowserContext, type Locator, type Page } from 'playwright';
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page } from 'playwright';
 import type { ClientMsg, InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,6 +57,7 @@ interface Client {
   context: BrowserContext;
   page: Page;
   telemetry: Telemetry;
+  touchDriver?: { session: CDPSession; x: number; y: number; originX: number; originY: number };
 }
 
 export async function playtest(options: Options): Promise<number> {
@@ -234,12 +235,13 @@ export async function playtest(options: Options): Promise<number> {
       const phone = i === totalContexts - 1;
       const spectator = i >= options.players;
       const context = await browser.newContext({
-        viewport: phone ? { width: 844, height: 390 } : { width: 1280, height: 720 },
-        deviceScaleFactor: 1, isMobile: phone, hasTouch: phone, ignoreHTTPSErrors: true,
+        viewport: phone ? { width: 390, height: 844 } : { width: 1280, height: 720 },
+        deviceScaleFactor: phone ? 3 : 1, isMobile: phone, hasTouch: phone, ignoreHTTPSErrors: true,
       });
       context.setDefaultTimeout(UI_TIMEOUT);
       if (phone) await context.addInitScript(() => {
-        // Retain mobile/touch rendering, but drive the real keyboard path deterministically.
+        // No synthetic sensors in this generic harness: exercise the real touch fallback.
+        // tools/motion-v2.ts separately proves sensor input against authoritative snapshots.
         Object.defineProperty(window, 'DeviceMotionEvent', { configurable: true, value: undefined });
         Object.defineProperty(window, 'DeviceOrientationEvent', { configurable: true, value: undefined });
       });
@@ -314,6 +316,31 @@ export async function playtest(options: Options): Promise<number> {
         }
         if (dashPeriod !== lastDash) await client.page.keyboard.press('Space');
         if (skillPeriod !== lastSkill) await client.page.keyboard.press('KeyE');
+        if (client.phone) {
+          const zone = client.page.locator('.kj-touch-joystick-zone');
+          if (!client.touchDriver && await zone.isVisible()) {
+            const box = await zone.boundingBox();
+            if (box) {
+              const x = box.x + box.width * 0.35, y = box.y + box.height * 0.5;
+              const session = await client.context.newCDPSession(client.page);
+              client.touchDriver = { session, x, y, originX: x, originY: y };
+              await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x, y }] });
+            }
+          }
+          const touch = client.touchDriver;
+          if (touch) {
+            const vector = { KeyW: [0, -1], KeyD: [1, 0], KeyS: [0, 1], KeyA: [-1, 0] }[direction as 'KeyW' | 'KeyD' | 'KeyS' | 'KeyA'];
+            touch.x = touch.originX + vector[0] * 44; touch.y = touch.originY + vector[1] * 44;
+            const joy = { id: 1, x: touch.x, y: touch.y };
+            await touch.session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [joy] });
+            for (const action of [dashPeriod !== lastDash ? 'dash' : '', skillPeriod !== lastSkill ? 'skill' : ''].filter(Boolean)) {
+              const box = await client.page.locator(`.kj-touch-${action}`).boundingBox();
+              if (!box) continue;
+              await touch.session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [joy, { id: 2, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
+              await touch.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [joy] });
+            }
+          }
+        }
       }));
       lastDash = dashPeriod;
       lastSkill = skillPeriod;
@@ -330,6 +357,7 @@ export async function playtest(options: Options): Promise<number> {
       await client.page.keyboard.up('KeyJ');
       const direction = held.get(client);
       if (direction) await client.page.keyboard.up(direction);
+      if (client.touchDriver) await client.touchDriver.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     }));
     phase = 'autopsy';
     try { await owner.page.getByTestId('autopsy').waitFor({ state: 'visible', timeout: 5000 }); }

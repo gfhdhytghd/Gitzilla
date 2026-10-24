@@ -51,8 +51,8 @@ const instrument = `(() => {
 
 try {
   for (const phone of [false, true]) {
-    const context = await browser.newContext({ viewport: phone ? { width: 844, height: 390 } : { width: 1280, height: 720 },
-      isMobile: phone, hasTouch: phone, deviceScaleFactor: 1 });
+    const context = await browser.newContext({ viewport: phone ? { width: 390, height: 844 } : { width: 1280, height: 720 },
+      isMobile: phone, hasTouch: phone, deviceScaleFactor: phone ? 3 : 1 });
     await context.addInitScript(instrument);
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(`page: ${error.stack || error.message}`));

@@ -1,37 +1,43 @@
-# Repo Kaiju input
+# Motion v2 input
 
 ```ts
-import { createInput, createInputDebugPanel, vibrate } from '../input';
-
+import { createInput } from '../input';
 const input = createInput({ canvas, toArena, getSelf });
-// Keep one controller for a match; read these getters live because mode may change.
-if (input.needsPermission) await input.requestPermission(); // in a tap handler
-input.calibrate(); // neutral is the current pose, or the first orientation event
-// Each network tick:
+// No mandatory calibration tap: the first 300ms of valid tilt samples establish neutral.
+// On a user gesture, before any fullscreen request consumes user activation:
+if (input.needsPermission) void input.requestPermission();
+// Each network tick (30Hz):
 send({ t: 'input', frame: input.sample() });
-// At match exit:
+// Read live getters: input.mode, input.needsPermission, input.sensorStatus.
+// Optional reset of the 300ms neutral average:
+input.calibrate();
+// On match exit:
 input.dispose();
 ```
 
-The first touch also requests iOS permission automatically. The app may provide its own enable-motion button by calling `requestPermission()` directly from the tap. Motion and orientation requests start together in that handler. Phones need HTTPS (or localhost) for browser sensors. A permission denial, exception, or 1 second without a usable motion event mounts the touch overlay automatically. `mode` and `needsPermission` are live getters; motion and touch always return `aim: null` for auto-aim.
+Phones are **portrait first**, held upright and tilted back about 30–50°. Neutral is measured from the player's comfortable pose. Relative left/right roll moves x, forward/back pitch moves y. There is a 4° deadzone, full speed at 20°, and smoothing. Screen-relative landscape math remains for tablets. Rotation resets the neutral average. Browser sensor coordinates stay in the device's natural orientation, so the module applies the screen rotation ([W3C orientation model](https://www.w3.org/TR/orientation-event/#device-orientation-model)).
 
-Desktop: WASD/arrows move; hold LMB/J to fire; Space/K/Shift dash; E/L/RMB skill. Aim uses the most recent mouse coordinates relative to self and returns to auto-aim after 2 seconds idle. Dash and skill are consumed by `sample()` exactly once per press. Blur/hidden-document clears held state.
+A tap anywhere except UI buttons/inputs fires a **400ms burst**; holding a finger fires continuously. This includes the fallback joystick region, so one finger can move and attack. Swings in **any of the six axis directions or diagonally** attack for 600ms once gravity-free acceleration magnitude reaches 12m/s² (200ms refractory, peak hysteresis). A swing freezes movement updates for 250ms so attack motion doesn't jerk the hero. Swing and shake never dash or use skills. Big on-screen DASH/SKILL buttons produce one edge per press and don't attack. Motion and touch always auto-aim (`aim: null`).
 
-Motion: hold the phone comfortably in landscape and calibrate. Tilt moves; thrust toward the screen fires for 600ms; swing sideways dashes; three alternating strong acceleration peaks inside 600ms trigger skill. The screen-relative horizontal axis follows both landscape directions. Holding a touch anywhere fires too. Rotation automatically resets neutral to the next orientation event. The pure recognizer and its thresholds live in `gestures.ts` for venue tuning.
+Mobile detection starts listening even when sensor constructors are absent. iOS motion **and** orientation permission APIs, when present, are both invoked synchronously within the first touch gesture. Request them **before fullscreen**: fullscreen consumes user activation. Denial/error, or 1.5 seconds without usable sensor events, selects the touch joystick. Listeners stay active and late events recover motion mode. `sensorStatus` is `waiting` / `on` / `off`. Both `deviceorientation` and `deviceorientationabsolute` work; null/nonfinite readings are ignored. If orientation is unavailable, low-pass gravity gives tilt; gravity-free motion uses `acceleration` or a high-pass of `accelerationIncludingGravity`.
 
-Touch: drag on the left side to move; use right-side DASH / SKILL; hold elsewhere to fire. Multiple fingers are supported. The overlay mounts to `document.body` and is removed by `dispose()`. Override these classes in the app stylesheet (defaults use zero-specificity `:where`, so normal class rules win):
+Desktop controls are unchanged: WASD/arrows move; hold LMB/J to fire; Space/K/Shift dash; E/L/RMB skill. Mouse aim returns to auto-aim after two seconds idle. Blur/hidden-document clears held actions.
 
-- `.kj-touch-overlay`
-- `.kj-touch-joystick-zone`, `.kj-touch-joystick`, `.kj-touch-knob`
+Controls mount in `document.body` and clean up on `dispose()`. The joystick is hidden in motion mode. App styles override zero-specificity defaults:
+
+- `.kj-touch-overlay`, `.kj-touch-joystick-zone`, `.kj-touch-joystick`, `.kj-touch-knob`
 - `.kj-touch-button`, `.kj-touch-dash`, `.kj-touch-skill`
+- Action selectors: `[data-testid="input-dash"]`, `[data-testid="input-skill"]`
 
-Optional helpers:
+Open the room with **`?debug=input`** to automatically mount a live sensor panel (`[data-testid="input-debug"]`) showing beta/gamma, screen angle, move, acceleration magnitude and recent tap/swing/button gestures. `createInputDebugPanel()` can still be mounted manually; call its `.dispose()` to clear the timer. `vibrate(pattern)` remains a best-effort haptics helper.
 
-```ts
-const debug = createInputDebugPanel(); // live mode, permissions, sensor values, gestures
-document.body.append(debug);
-// Later: debug.dispose(); // removes the panel and its update timer
-vibrate([20, 30, 20]); // best effort; unsupported/blocked browsers simply return false
+`client/app/renderers.ts` now imports input eagerly; optional renderer loading cannot silently substitute the old placeholder. `game.ts` sets up input immediately, publishes `[data-testid="input-sensors"]`, offers a permission gesture and recalibrate, and registers fullscreen after the input handler. Portrait camera/deck layout and rotate-to-portrait guard are owned by claude-ui.
+
+Verification:
+
+```sh
+npx vitest run client/input
+npx tsx tools/motion-v2.ts
 ```
 
-Verification: `npx vitest run client/input` uses pure synthetic traces and a small DOM/event fixture; no browser simulation dependency. Physical phone sensor feel, iOS prompts, and haptics still need device acceptance.
+The browser test uses the real DEV app at **http://localhost:5175**, portrait 390×844 CSS/DPR 3, actual taps and synthetic orientation/motion events. It verifies all movement directions from authoritative server snapshots, tap/hold and all-axis attacks from transmitted input plus acknowledged real shots, action-button isolation, late-sensor recovery, permissions and debug. Artifacts go to `docs/shots/<timestamp>-motion-v2/`. `MOTION_URL` or `PLAYTEST_URL` can override DEV; stable live targets are rejected. No servers are started/stopped. Real-phone feel, iOS native prompts and hardware/haptics acceptance remain unverified.

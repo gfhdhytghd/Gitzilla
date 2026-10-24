@@ -1,4 +1,33 @@
-DONE
+DONE (motion v2)
+
+Portrait motion-v2 complete and verified against real DEV localhost:5175. Final browser run: 18 checks PASS, 293 authoritative snapshots, 438 transmitted input frames, zero browser/WebSocket errors. Human/physical-phone acceptance remains unverified; no live server touched and no commits.
+
+High-priority motion-v2 card read. Scope: client/input/, tools/, plus explicitly authorized minimal integration edits in client/app/game.ts and renderers.ts. DEV only http://localhost:5175; never live 5173. No commits or unrelated edits.
+
+Portrait update accepted (`docs/tasks/portrait.md`): primary phone pose is portrait, tilted back ~30–50°, roll -> x, pitch -> y, angle 0. Calibrate measured neutral (not a hard-coded flat pose); preserve full roll sensitivity upright. Tablet landscape transforms retained. Playtest/audio-smoke phone contexts now 390×844 CSS, DPR 3 (1170×2532 PNG). Portrait layout/camera/rotate-to-portrait guard remain claude-ui-owned.
+
+Motion-v2 source changes: all-axis magnitude >=12 m/s² attacks for 600ms, 200ms refractory, 250ms movement freeze; tap is latched for 400ms and hold fires continuously; motion and fallback both have on-screen DASH/SKILL with no tap-to-fire leakage; sensor events are observed before deciding, 1.5s fallback can recover on late valid events; absolute orientation, null filtering and gravity-only tilt supported; 300ms automatic neutral average and explicit recalibrate. `sensorStatus` exposes on/waiting/off, `?debug=input` mounts the live debug panel with |a| and last gesture.
+
+Authorized app integration edits (preserving claude-ui's concurrent cooldown changes): `renderers.ts` eagerly imports real input and removes its late-bound placeholder path; `game.ts` starts input without waiting for optional art, logs real input, publishes sensor status, removes the old mandatory calibrate/landscape-only flow, keeps recalibrate + a gesture permission button. For claude-ui portrait deck: use `input.sensorStatus`; existing input-created `.kj-touch-dash` / `.kj-touch-skill` / `[data-testid=input-dash|input-skill]` are the real action buttons. No need to make duplicate buttons. My portrait blocker removal was only the OLD rotate-to-landscape guard; your new phone-only rotate-to-portrait guard should replace it.
+
+Motion-v2 verification:
+- `npx vitest run client/input`: 40 PASS (all six swing directions, upright portrait roll/pitch, calibration, deferred sensor recovery, permission branches, tap/hold/buttons, gravity-only devices).
+- Final `npx tsx tools/motion-v2.ts`: 18 PASS, 293 real snapshots / 438 input frames, zero errors. At 390×844 CSS/DPR 3, server positions moved ~+35px/-37px in x and +33px/-34px in y with tilt; taps/held fingers and every ±X/±Y/±Z swing emitted acknowledged fire plus new authoritative own projectiles. Swing noise kept move frozen; button taps sent exactly one dash/skill edge without fire. Absolute orientation, recalibrate, debug panel, no-event fallback and late recovery passed.
+- Final artifact: `docs/shots/2026-10-24T19-21-22-896Z-motion-v2/{summary.json,inputs.json,portrait-motion.png}`. Earlier unrestricted-HMR run also passed all 18 at `2026-10-24T19-18-19-621Z-motion-v2/` (294 snapshots / 440 input frames).
+- The final test holds only the Vite HMR socket inert within its test tab, so concurrent client-file edits cannot reload/reset synthetic sensors during a check. Game `/ws`, UI input code, authoritative simulation and snapshots are real and unmodified. An intervening rerun and the generic playtest were disrupted by shared DEV reloads/restarts; those failed artifacts are retained and are not counted as acceptance.
+- `npm run typecheck`: PASS at merged-workspace check; `npm test`: 257 PASS / 6 opt-in tests skipped. Tools/input strict typecheck PASS. Final focused input + CLI run: 53 PASS. Opt-in harness fixtures + CLI: 15 PASS, including new 390×844/DPR 3 screenshot dimensions.
+- Generic playtest now drives the phone's real touch fallback with CDP touch drags/buttons (keyboard remains for desktop and synthetic fixtures). Audio smoke phone context is portrait/DPR 3 too.
+- No physical phone was available: real iOS native permission dialogs, sensor feel/sign on hardware, OS resume and haptics remain UNVERIFIED.
+
+Motion-v2 confirmed causes/fixes: old code attacked only on positive Z and used lateral swings/shakes for dash/skill; short taps had no latch and could disappear between 30Hz samples; fallback was one-way after only acceleration, ignored absolute/orientation-only readings, and used one-sample neutral. Those paths are replaced above. Crucially, the new portrait fullscreen handler consumed transient user activation BEFORE the sensor handler: browser instrumentation recorded BOTH permission calls with `active:false` inside pointerdown. Registering the fullscreen handler AFTER `setupInput()` changed both to `active:true` in the same pointerdown, then the complete sensor-to-server test passed. This minimal game.ts ordering fix must be preserved when UI code moves.
+
+Round 2 audio DONE: added distinct energy/heart/armor pickup blips, obstacle shatter crunch, and a major-key perk "merge approved" jingle. New events map through existing playback/throttle/compression paths; pickups/perks retain self gain/pitch emphasis. Added audition buttons, smoke coverage, and five pure mapping cases plus PCM generation coverage. No shared/UI edits and no live server access.
+
+Round 2 validation: 23 audio tests PASS, audio-only strict TypeScript PASS, owned whitespace check PASS. Repository typecheck no longer reports audio errors; remaining failures at check time were missing new perks/obstacles/pickups/perkOffer fields in parallel-owned app mocks, renderer galleries, and sim initialization. No unrelated files changed. Handoff: existing `audio.onEvents(events, selfId)` now handles all three event kinds automatically; no new UI calls required.
+
+Infra follow-up complete: playtest defaults to `http://localhost:5175`, overridden by `PLAYTEST_URL`. Removed all server spawning/stopping. Live port 5173 and `gitzilla.wilflin.me` are rejected before requests. Audio smoke also defaults to DEV 5175 (`SMOKE_URL` / `PLAYTEST_URL`), fixture tests use the new env, and tools README is updated. Earlier 5173/startup notes below are historical and superseded by this infra rule. No live server touched.
+
+Infra validation: 13 CLI/targeting tests PASS, tools strict TypeScript PASS, owned diff whitespace check PASS. Verification was offline; no server was started, stopped, or contacted.
 
 Third card complete: procedural WebAudio engine, theme/phase chiptunes, full SFX mapping, audition page, 18 pure tests, browser/DSP smoke, and exact claude-ui handoff below. Zero added audio dependencies/assets; no commits or edits outside owned areas.
 
