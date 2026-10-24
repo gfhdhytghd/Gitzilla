@@ -389,14 +389,34 @@ function benchScene(n: number) {
     const t0 = performance.now();
     for (const p of ps) { p.energy -= 0.5; if (p.energy < 50) p.energy = 200; drawPlayer(ctx, p, t, p.id === "b0", { scale: 2, pvp: true }); }
     const dtm = performance.now() - t0;
-    if (frames++ > 20) total += dtm;
-    if (frames === 140) console.log(`BENCH ${n} heroes @2x: ${(total / 119).toFixed(2)} ms/frame (drawPlayer only)`);
+    if (frames++ > 10) total += dtm;
+    if (frames > 10 && frames % 30 === 0) console.log(`BENCH ${n} heroes @2x: ${(total / (frames - 11)).toFixed(2)} ms/frame avg over ${frames - 11} frames (drawPlayer only)`);
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
 }
 
-if (params.get("bench")) benchScene(Number(params.get("bench")));
+function benchSync(n: number) {
+  // synchronous: 200 frames of N edu heroes, wall-clock timed (works in headless without rAF)
+  const ps: PlayerState[] = Array.from({ length: n }, (_, j) => ({
+    id: "s" + j, name: NAMES[j % NAMES.length], x: 30 + (j % 10) * 44, y: 40 + Math.floor(j / 10) * 90, vx: 40, vy: 0, facing: [1, 0.2] as [number, number],
+    hp: 7, armor: 5, energy: 200, alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: j % 4 === 0 ? ["firewall"] : [],
+    kit: kitFor(j % 32), perks: j % 3 === 0 ? ["--force"] : [], stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+  }));
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  for (let f = 0; f < 20; f++) for (const p of ps) drawPlayer(ctx, p, f / 60, false, { scale: 2, pvp: true }); // warm caches
+  const t0 = performance.now();
+  for (let f = 0; f < 200; f++) {
+    ctx.fillStyle = "#17121f"; ctx.fillRect(0, 0, W, H);
+    for (const p of ps) { p.x += 0.5; p.energy -= 0.5; if (p.energy < 50) p.energy = 200; drawPlayer(ctx, p, 1 + f / 60, p.id === "s0", { scale: 2, pvp: true }); }
+  }
+  const ms = (performance.now() - t0) / 200;
+  console.log(`BENCHSYNC ${n} heroes @2x: ${ms.toFixed(2)} ms/frame`);
+  document.title = `BENCHSYNC ${n}: ${ms.toFixed(2)}ms`;
+}
+
+if (params.get("benchsync")) benchSync(Number(params.get("benchsync")));
+else if (params.get("bench")) benchScene(Number(params.get("bench")));
 else if (params.get("compare")) compareScene();
 else if (params.get("arena")) arenaScene();
 else if (params.get("strip")) stripScene();

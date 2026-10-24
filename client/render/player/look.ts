@@ -177,8 +177,17 @@ function looksLikeSkin(hex: string): boolean {
 }
 
 const lookCache = new Map<string, HeroLook>();
+const byKit = new WeakMap<PlayerKit, HeroLook>();
 
 export function lookFor(kit: PlayerKit): HeroLook {
+  const fast = byKit.get(kit);
+  if (fast) return fast;
+  const L = lookForKey(kit);
+  byKit.set(kit, L);
+  return L;
+}
+
+function lookForKey(kit: PlayerKit): HeroLook {
   const d: HeroDesign | undefined = kit.design;
   const key = kit.seed + "|" + kit.weapon + "|" + kit.palette.join(",") + "|" + kit.title +
     (d ? "|" + d.archetype + d.headgear + d.accessory + d.emblem + d.palette.join(",") : "") +
