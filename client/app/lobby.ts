@@ -21,6 +21,43 @@ const SKILL_DESC: Record<string, string> = {
 const CLONE_STEPS = ["Cloning into '%s'...", "Receiving objects", "Resolving deltas", "Parsing imports", "Building dependency graph", "Finding the heart", "Detecting cycles", "Forging hero"];
 const BOSS_STEPS = ["git clone --depth 1 %s", "Receiving objects", "Mapping components", "Growing tentacles", "Tying knots (cycles)", "Opening eyes", "Waking the kaiju"];
 
+/** Requested contract (docs/progress/claude-ui.md): analyzer progress on LobbyPlayer / lobby.boss. */
+interface Progress { stage?: string; paths?: string[] }
+
+/** Real code on hero cards: a snippet in a mini editor + the signature move. */
+function codeBits(k: PlayerKit, big: boolean): HTMLElement[] {
+  const c = k.code;
+  if (!c) return [];
+  const out: HTMLElement[] = [];
+  if (c.signature) out.push(h("div.sig", null, h("span.dim", null, big ? "signature move " : "sig "), h("code", null, c.signature)));
+  if (c.snippet) out.push(h("pre.code-mini", { title: c.snippet }, h("span.ln", null, String((k.seed % 380) + 12)), " ", c.snippet));
+  return out;
+}
+
+/** Real code on the boss panel: heart lines scrolling in a mini editor, TODOs as known bugs, commits as recent sins. */
+function bossCode(k: BossKit): HTMLElement[] {
+  const c = k.code;
+  if (!c) return [];
+  const out: HTMLElement[] = [];
+  if (c.heartLines?.length) {
+    const lines = c.heartLines.slice(0, 14);
+    const mk = () => lines.map((l, i) => h("div.hl", null, h("span.ln", null, String(i + 1).padStart(2, " ")), " ", l));
+    out.push(
+      h(
+        "div.heart-win",
+        null,
+        h("div.hw-title", null, `● ${k.heart.split("/").pop() || "heart"}`),
+        h("div.hw-body", null, h("div.hw-scroll", { style: `animation-duration:${lines.length * 1.6}s` }, ...mk(), ...mk())),
+      ),
+    );
+  }
+  if (c.todos?.length)
+    out.push(h("div.code-list", null, h("div.cl-h", null, "known bugs"), ...c.todos.slice(0, 4).map((t) => h("div.cl-row.bug", { title: t }, t))));
+  if (c.commits?.length)
+    out.push(h("div.code-list", null, h("div.cl-h", null, "recent sins"), ...c.commits.slice(0, 3).map((t) => h("div.cl-row.sin", { title: t }, t))));
+  return out;
+}
+
 let fallbackCache: Promise<string[]> | null = null;
 function fallbacks(mock: boolean): Promise<string[]> {
   if (mock) return Promise.resolve(MOCK_REPOS);
@@ -287,7 +324,7 @@ export function createLobby(app: AppCtx): Screen {
         h("img.qr", { src: `/api/qr?text=${encodeURIComponent(url)}`, alt: "join QR code" }),
         h("div.qr-url", null, url.replace(/^https?:\/\//, "")),
         h("div.qr-code-big", null, app.room),
-        h("div.dim", null, "scan to join · landscape · tilt to move"),
+        h("div.dim", null, "scan to join · landscape · tilt to move · tap or swing to attack"),
       ),
       h("div.big-right", null, squad, bossPanel),
     );
@@ -337,6 +374,7 @@ export function createLobby(app: AppCtx): Screen {
         ...(p.kit.design?.catchphrase ? [h("div.pcard-quote", null, `“${p.kit.design.catchphrase}”`)] : []),
         h("div.pcard-kit", null, h("span.tag", null, `${WEAPON_ICON[p.kit.weapon] ?? ""} ${p.kit.weapon}`), h("span.tag.tag-skill", null, `⚡ ${p.kit.skill}`)),
         h("div.pcard-hearts", null, hearts(p.kit)),
+        ...codeBits(p.kit, false),
       );
     } else if (p.status === "analyzing") {
       const c = noiseCanvas(32);
@@ -411,6 +449,7 @@ export function createLobby(app: AppCtx): Screen {
             h("div.kv", null, h("span", null, "weapon"), h("b", null, `${WEAPON_ICON[k.weapon] ?? ""} ${k.weapon}`)),
             h("div.kv", null, h("span", null, "skill"), h("b", null, `⚡ ${k.skill}`)),
             h("div.kv.dim", null, SKILL_DESC[k.skill] ?? ""),
+            ...codeBits(k, true),
             h("div.kv", null, h("span", null, "hp/armor"), h("b.red", null, hearts(k))),
             h("div.kv", null, h("span", null, "energy"), h("b.cyan", null, String(k.maxEnergy))),
             h("div.kv", null, h("span", null, "dmg/spd"), h("b", null, `×${k.damageMul.toFixed(2)} · ${Math.round(k.speed)}px/s`)),
@@ -449,6 +488,7 @@ export function createLobby(app: AppCtx): Screen {
           ...(k.design?.epithet ? [h("div.boss-epithet", null, k.design.epithet)] : []),
           h("div.boss-meta", null, h("span.tag.tag-red", null, `theme: ${k.theme}`), h("span.tag", null, `HP ${Math.round(k.maxHp)}`), h("span.tag", null, `${k.attacks.length} attacks`)),
           h("div.boss-heart", null, "♥ heart: ", h("code", null, k.heart || "?")),
+          ...bossCode(k),
           h(
             "ul.boss-limbs",
             null,
@@ -524,7 +564,13 @@ export function createLobby(app: AppCtx): Screen {
       const since = analyzingSince.get(id) ?? performance.now();
       const slug = id === "__boss" ? app.lobby?.boss.repo ?? "" : app.lobby?.players.find((p) => p.id === id)?.repo ?? "";
       const { lines, frac } = cloneText(slug, since, id === "__boss" ? BOSS_STEPS : CLONE_STEPS);
-      pre.textContent = lines.join("\n") + "\n" + asciiBar(frac, 14) + ` ${Math.floor(frac * 100)}%`;
+      const src = (id === "__boss" ? app.lobby?.boss : app.lobby?.players.find((p) => p.id === id)) as { progress?: Progress } | undefined;
+      const paths = src?.progress?.paths ?? [];
+      if (src?.progress?.stage) lines[lines.length - 1] = `${src.progress.stage}...`;
+      // stream the real file paths the analyzer is reading, newest last
+      const k = Math.floor(performance.now() / 140);
+      const shown = paths.length ? [paths[k % paths.length], paths[(k + 1) % paths.length]].map((x) => `  ${x}`) : [];
+      pre.textContent = [...lines, ...shown].join("\n") + "\n" + asciiBar(frac, 14) + ` ${Math.floor(frac * 100)}%`;
     });
     if (bossRevealAt && performance.now() - bossRevealAt > 1500) {
       bossStage.querySelector(".boss-frame")?.classList.remove("revealing");

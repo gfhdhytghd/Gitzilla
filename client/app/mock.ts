@@ -94,8 +94,26 @@ export function createMockConn(opts: ConnOpts): Conn {
     }
   })();
   const profile = (slug: string) => profiles.get(slug) ?? fakeProfile(slug);
-  const pkit = (slug: string) => { try { return sim ? sim.playerKitFromProfile(profile(slug)) : fakePlayerKit(profile(slug)); } catch { return fakePlayerKit(profile(slug)); } };
-  const bkit = (slug: string, n: number) => { try { return sim ? sim.bossKitFromProfile(profile(slug), n) : fakeBossKit(profile(slug), n); } catch { return fakeBossKit(profile(slug), n); } };
+  const pkit0 = (slug: string) => { try { return sim ? sim.playerKitFromProfile(profile(slug)) : fakePlayerKit(profile(slug)); } catch { return fakePlayerKit(profile(slug)); } };
+  const bkit0 = (slug: string, n: number) => { try { return sim ? sim.bossKitFromProfile(profile(slug), n) : fakeBossKit(profile(slug), n); } catch { return fakeBossKit(profile(slug), n); } };
+  // until analysis produces CodeDNA, give mock kits some plausible code so the UI can be exercised
+  const pkit = (slug: string): PlayerKit => {
+    const k = pkit0(slug);
+    if (!k.code?.signature) k.code = { tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
+    return k;
+  };
+  const bkit = (slug: string, n: number): BossKit => {
+    const k = bkit0(slug, n);
+    if (!k.code?.heartLines?.length) k.code = {
+      heartLines: ["def dispatch_request(self):", "    req = request_ctx.request", "    if req.routing_exception:", "        self.raise_routing_exception(req)", "    rule = req.url_rule", "    if getattr(rule, 'provide_automatic_options'", "        return self.make_default_options_response()", "    view_args = req.view_args", "    return self.ensure_sync(self.view_functions", "        [rule.endpoint])(**view_args)"],
+      snippets: ["class Flask(App):", "def wsgi_app(self, environ, start_response):"],
+      todos: ["TODO: remove this in 3.0", "FIXME: this is a hack for old werkzeug", "HACK: don't ask", "XXX: race condition when reloading"],
+      commits: ["fix typo in docs", "revert 'fix typo in docs'", "release 3.0.1"],
+      tokens: ["def", "self", ":", "->"],
+      limbSymbols: Object.fromEntries(k.limbs.map((l, i) => [l.id, [`${l.component.split("/").pop()}_handler()`, `class ${["Router", "Blueprint", "Config", "Session"][i % 4]}`, `def _${["load", "dump", "wrap"][i % 3]}()`]])),
+    };
+    return k;
+  };
 
   const lobby: LobbyState = {
     room: opts.room, ownerId: "you",
@@ -149,6 +167,11 @@ export function createMockConn(opts: ConnOpts): Conn {
       console.warn("mock: real createMatch failed, using fake", e);
       match = fakeMatch(ps.map((p) => ({ id: p.id, name: p.name, kit: p.kit! })), boss);
     }
+    // ?mock=review: start the boss just above the phase-2 threshold to reach CODE REVIEW quickly
+    if (mode === "review") {
+      const st = (match as unknown as { state?: MatchState }).state;
+      if (st) st.boss.hp = st.boss.maxHp * 0.505;
+    }
     const rnd = mulberry32(7);
     const botMove = new Map<string, [number, number]>();
     let tick = 0;
@@ -197,7 +220,7 @@ export function createMockConn(opts: ConnOpts): Conn {
           setTimeout(() => setRepo("b3", "rust-lang/rust", 3000), 50);
           setTimeout(() => setBoss("pallets/flask", 3500), 50);
         }
-        if (mode === "match" || mode === "autopsy") {
+        if (mode === "match" || mode === "autopsy" || mode === "review") {
           setTimeout(async () => {
             await ready;
             if (opts.role === "player") Object.assign(lobby.players[0], { repo: "golang/go", status: "ready", kit: pkit("golang/go") });
@@ -270,7 +293,7 @@ function fakeMatch(plist: { id: string; name: string; kit: PlayerKit }[], kit: B
   const rnd = mulberry32(kit.seed);
   const players: PlayerState[] = plist.map((p, i) => ({
     id: p.id, name: p.name, x: 80 + (i % 2) * 30, y: 80 + i * 40, vx: 0, vy: 0, facing: [1, 0], hp: p.kit.maxHp, armor: p.kit.maxArmor, energy: p.kit.maxEnergy,
-    alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], kit: p.kit,
+    alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], perks: [], kit: p.kit,
     stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
   }));
   const boss: BossState = { x: 360, y: 140, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1, limbs: kit.limbs.map((l) => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })), casting: null, targetPlayer: null, enraged: false, kit,
@@ -389,7 +412,7 @@ function fakeMatch(plist: { id: string; name: string; kit: PlayerKit }[], kit: B
       bullets = keep;
     },
     snapshot(): MatchState {
-      const s: MatchState = structuredClone({ t: Math.max(0, t), status, players, boss, bullets, hazards, minions, events });
+      const s: MatchState = structuredClone({ t: Math.max(0, t), status, players, boss, bullets, hazards, minions, events, obstacles: [], pickups: [], perkOffer: null });
       if (status === "countdown") s.t = t;
       events = [];
       return s;

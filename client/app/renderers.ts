@@ -1,9 +1,11 @@
 // Late-bound renderer + input modules. Other agents build client/render/* and client/input/* in parallel;
 // import.meta.glob resolves to {} while a file doesn't exist, so the app runs on placeholders until they land.
 import type {
-  ArenaTheme, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, Minion, PlayerKit, PlayerState,
+  ArenaTheme, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, Minion, Obstacle, PerkOffer, Pickup, PlayerKit, PlayerState,
 } from "../../shared/types";
 import * as ph from "./placeholders";
+// Essential input is eager: a failed optional chunk must never leave phones on a placeholder.
+import { createInput as realCreateInput } from "../input";
 
 export interface Renderers {
   drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean): void;
@@ -16,11 +18,16 @@ export interface Renderers {
   drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], time: number): void;
   drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number): void;
   drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number): void;
+  // round 2 (claude-boss arena): placeholders until exported
+  drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], time: number): void;
+  drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], time: number): void;
+  drawPerkPads(ctx: CanvasRenderingContext2D, offer: PerkOffer | null, players: PlayerState[], time: number): void;
 }
 
 export interface InputHandle {
   mode: "keyboard" | "motion" | "touch";
   needsPermission: boolean;
+  readonly sensorStatus?: "on" | "waiting" | "off";
   requestPermission(): Promise<boolean>;
   calibrate(): void;
   sample(): InputFrame;
@@ -51,13 +58,12 @@ export const X: Extras = {
 
 /** Mutable table: starts as placeholders, real implementations are patched in by loadModules(). */
 export const R: Renderers = { ...ph };
-export let createInput: CreateInput = ph.createInput;
-export const loaded = { player: false, boss: false, arena: false, input: false };
+export const createInput: CreateInput = realCreateInput;
+export const loaded = { player: false, boss: false, arena: false, input: true };
 
 const playerMod = import.meta.glob("../render/player/index.ts");
 const bossMod = import.meta.glob("../render/boss/index.ts");
 const arenaMod = import.meta.glob("../render/arena/index.ts");
-const inputMod = import.meta.glob("../input/index.ts");
 
 async function pull(glob: Record<string, () => Promise<unknown>>, names: (keyof Renderers)[], flag: keyof typeof loaded) {
   const load = Object.values(glob)[0];
@@ -71,7 +77,7 @@ async function pull(glob: Record<string, () => Promise<unknown>>, names: (keyof 
         any = true;
       }
     }
-    loaded[flag] = any;
+    loaded[flag] = loaded[flag] || any;
     for (const n of ["playerPortraitFrame", "notePlayerShot", "trackPlayers", "bossLookAt"] as const)
       if (typeof m[n] === "function") (X as unknown as Record<string, unknown>)[n] = m[n];
     if (flag === "player" && typeof m.playerPortrait === "function") {
@@ -90,20 +96,8 @@ export function loadModules(): Promise<void> {
     await Promise.all([
       pull(playerMod, ["drawPlayer", "playerPortrait"], "player"),
       pull(bossMod, ["drawBoss", "bossPortrait"], "boss"),
-      pull(arenaMod, ["drawArenaBackground", "drawBullets", "drawHazards", "drawMinions", "drawEvents", "drawPostFx"], "arena"),
-      (async () => {
-        const load = Object.values(inputMod)[0];
-        if (!load) return;
-        try {
-          const m = (await load()) as { createInput?: CreateInput };
-          if (typeof m.createInput === "function") {
-            createInput = m.createInput;
-            loaded.input = true;
-          }
-        } catch (e) {
-          console.warn("[kaiju] input module failed to load, using placeholder", e);
-        }
-      })(),
+      pull(arenaMod, ["drawArenaBackground", "drawBullets", "drawHazards", "drawMinions", "drawEvents", "drawPostFx", "drawObstacles", "drawPickups", "drawPerkPads"], "arena"),
+      pull(bossMod, ["drawObstacles", "drawPickups", "drawPerkPads"], "boss"),
     ]);
   })();
   return loading;
