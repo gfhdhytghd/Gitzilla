@@ -3,6 +3,9 @@ import { WebSocket } from 'ws';
 import type { ClientMsg, InputFrame, ServerMsg } from '../shared/types.ts';
 
 const base = process.env.SMOKE_URL || 'http://localhost:5175';
+const target = new URL(base);
+assert.ok(['http:', 'https:'].includes(target.protocol) && ['localhost', '127.0.0.1', '[::1]'].includes(target.hostname)
+  && target.port === '5175' && !target.username && !target.password, 'Smoke is DEV-only: use loopback port 5175; live targets are forbidden');
 const humanCount = Number(process.env.SMOKE_PLAYERS || 4);
 const botCount = Number(process.env.SMOKE_BOTS || 0);
 assert.ok(humanCount >= 1 && humanCount <= 8 && botCount >= 0 && humanCount + botCount <= 8);
@@ -20,10 +23,20 @@ async function waitFor<T>(get: () => T | undefined | false, label: string, timeo
   }
   throw new Error(`Timed out: ${label}`);
 }
+async function devIdentity(): Promise<Response> {
+  const deadline = Date.now() + 10_000;
+  while (true) {
+    try { return await fetch(new URL('/api/me', base), { signal: AbortSignal.timeout(2000) }); }
+    catch {
+      if (Date.now() >= deadline) throw new Error('DEV 5175 is unavailable after 10s; no live fallback attempted');
+      await pause(100);
+    }
+  }
+}
 function send(index: number, message: ClientMsg) { sockets[index].send(JSON.stringify(message)); }
 
 try {
-  const me = await fetch(new URL('/api/me', base));
+  const me = await devIdentity();
   assert.equal(me.status, 200, 'Auth routes run before the API catch-all');
   const identity = await me.json() as { enabled: boolean; user: unknown };
   assert.equal(typeof identity.enabled, 'boolean');
@@ -33,6 +46,9 @@ try {
   assert.equal(response.status, 201);
   const { room } = await response.json() as { room: string };
   assert.match(room, /^[A-Z]{4}$/);
+  const roomInfo = await (await fetch(new URL(`/api/room/${room}`, base))).json() as { exists: boolean; players: number; phase: string };
+  assert.deepEqual(roomInfo, { exists: true, players: 0, phase: 'lobby' });
+  assert.equal((await fetch(new URL('/api/room/AB12', base))).status, 400, 'Digit room codes have a clear validation error');
   const fallbacks = await (await fetch(new URL('/api/fallbacks', base))).json() as string[];
   assert.ok(fallbacks.length >= 1, 'At least one fallback repo is required');
   const qr = await fetch(new URL(`/api/qr?text=${encodeURIComponent(`${base}/r/${room}`)}`, base));
@@ -61,6 +77,11 @@ try {
     if (lobby?.players.some(p => p.status === 'error') || lobby?.boss.status === 'error') throw new Error(`Analysis failed: ${JSON.stringify(lobby)}`);
     return lobby?.players.length === humanCount + botCount && lobby.players.every(p => p.status === 'ready') && lobby.boss.status === 'ready';
   }, 'ready human/bot squad and boss', 90_000);
+  const ready = messages[0].filter(m => m.t === 'lobby').at(-1)!.lobby;
+  assert.ok(ready.players.every(p => p.genesis?.slug === p.repo), 'Every human/bot has a replayable Genesis');
+  assert.equal(ready.boss.genesis?.slug, ready.boss.repo, 'Boss Genesis is attached');
+  assert.ok(ready.players.every(p => p.genesis!.trace.length > 0), 'Genesis maps real repo features to the hero');
+  assert.ok(ready.boss.genesis!.trace.length > 0, 'Genesis maps boss anatomy and attacks');
   send(0, { t: 'start' });
   await waitFor(() => snapshots.every(count => count > 0), 'initial snapshots');
   const before = [...snapshots];
@@ -78,11 +99,13 @@ try {
     assert.ok(snapshots[i] - before[i] >= 50, `Client ${i} should receive ~100 snapshots in 5s, got ${snapshots[i] - before[i]}`);
     assert.equal(messages[i].filter(m => m.t === 'error').length, 0, `Client ${i} protocol errors`);
     const states = messages[i].filter(m => m.t === 'snapshot');
+    const boss = states.at(-1)!.state.boss;
+    assert.ok(boss, 'Battle snapshots have a boss');
     assert.equal(states.at(-1)?.state.players.length, humanCount + botCount);
-    assert.ok(states.at(-1)!.state.boss.kit.heart, 'Boss kit carries analyzed heart');
-    assert.ok(states.at(-1)!.state.boss.kit.design, 'Boss seed/cached design is attached without blocking readiness');
+    assert.ok(boss.kit.heart, 'Boss kit carries analyzed heart');
+    assert.ok(boss.kit.design, 'Boss seed/cached design is attached without blocking readiness');
     assert.ok(states.at(-1)!.state.players.every(p => !!p.kit.design), 'Hero seed/cached designs reach all clients');
-    assert.ok(states.at(-1)!.state.boss.regions.some(region => region.id === 'heart'), 'Sim supplies core region');
+    assert.ok(boss.regions.some(region => region.id === 'heart'), 'Sim supplies core region');
     assert.ok(states.at(-1)!.ack > 0, 'Input ack advances');
     assert.ok(states.at(-1)!.state.t >= 4, 'Authoritative simulation advances');
   }
@@ -93,7 +116,35 @@ try {
   }
   const hall = await (await fetch(new URL('/api/hall', base))).json() as Record<string, unknown>;
   for (const key of ['fastestKills', 'topDamage', 'bossRecords']) assert.ok(Array.isArray(hall[key]), `Hall ${key} is an array`);
-  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${snapshots.map((n, i) => n - before[i]).join(', ')}; auth/QR/fallback/Hall endpoints OK`);
+  const throughput = snapshots.map((n, i) => n - before[i]);
+  const owner = messages[0].find(m => m.t === 'welcome')!;
+  async function leave(index: number) {
+    const closed = new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Explicit leave did not close the socket')), 3000);
+      sockets[index].once('close', (code, reason) => { clearTimeout(timeout);
+        try { assert.equal(code, 4002); assert.equal(reason.toString(), 'left'); resolve(); } catch (error) { reject(error); }
+      });
+    });
+    send(index, { t: 'leave' }); await closed;
+  }
+  await leave(0);
+  if (humanCount > 1) {
+    const peer = messages[1].find(m => m.t === 'welcome')!;
+    await waitFor(() => messages[1].filter(m => m.t === 'lobby').at(-1)?.lobby.ownerId === peer.you, 'ownership after leave');
+    await waitFor(() => {
+      const state = messages[1].filter(m => m.t === 'snapshot').at(-1)?.state;
+      return state && state.players.length === humanCount + botCount - 1 && !state.players.some(p => p.id === owner.you);
+    }, 'departed fighter removed while teammates continue');
+  }
+  for (let i = 1; i < humanCount; i++) await leave(i);
+  assert.deepEqual(await (await fetch(new URL(`/api/room/${room}`, base))).json(), { exists: false, players: 0, phase: null });
+  const url = new URL('/ws', base); url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  const stale = new WebSocket(url); sockets.push(stale);
+  await new Promise<void>((resolve, reject) => { stale.once('open', resolve); stale.once('error', reject); });
+  const denied = new Promise<number>(resolve => stale.once('close', resolve));
+  stale.send(JSON.stringify({ t: 'hello', room, role: 'player', resume: owner.token }));
+  assert.equal(await denied, 4002, 'A left tab cannot recreate the deleted room');
+  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${throughput.join(', ')}; Genesis/auth/QR/fallback/Hall + leave/owner/deletion/revocation OK`);
 } finally {
   clearInterval(timer);
   for (const socket of sockets) socket.close();

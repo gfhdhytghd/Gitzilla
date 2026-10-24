@@ -24,12 +24,13 @@ The smoke runner defaults to `http://localhost:5175`; use `SMOKE_URL=http://loca
 
 ## HTTP routes
 
-- `POST /api/room` → HTTP 201 `{ "room": "ABCD" }`
+- `POST /api/room` → HTTP 201 `{ "room": "ABCD" }`; `?mode=edu` creates a classroom
+- `GET /api/room/ABCD` → `{ "exists": true, "players": 4, "phase": "lobby" }`; missing rooms return false/0/null, invalid/digit codes return 400
 - `GET /api/fallbacks` → JSON `string[]` of fallback slugs
 - `GET /api/qr?text=<encoded-join-url>` → SVG QR (four-module white quiet zone)
 - WebSocket at `/ws` → `ClientMsg` / `ServerMsg` from `shared/types.ts`
 
-The first player (not spectator) becomes owner. A disconnect transfers ownership immediately to the next connected player. The `welcome` token can be sent in `hello.resume` to reclaim the same ID and repo kit, including during a match. Reclaiming an active session closes the previous socket. New player slots are capped at eight; screens do not count. At least one connected ready player and a ready boss are needed to start; unconfigured players remain outside that match. The boss kit is regenerated for the actual ready squad size.
+The first player (not spectator) becomes owner. A disconnect transfers ownership immediately to the next connected player. The `welcome` token can be sent in `hello.resume` to reclaim the same ID and repo kit, including during a match. Reclaiming an active session closes the previous socket. Student slots are capped at eight in battle and thirty in edu; screens do not count. Classroom teacher screens can own/control the room. At least one connected ready player and a ready boss are needed to start; unconfigured players remain outside that match. The boss kit is regenerated for the actual ready squad size.
 
 Matches step at 30Hz, consume dash/skill edges once, idle inputs after 300ms without fresh frames, and publish per-client input acknowledgements at 20Hz. Simulation events are drained every step, buffered, then sent exactly once per broadcast. A reconnect gets the latest snapshot without replaying old events. End-of-match publishes a final snapshot, lobby phase `autopsy`, then the autopsy payload; owner `rematch` restores the lobby with repo selections intact. Rooms without any connected clients expire after ten minutes.
 
@@ -67,7 +68,7 @@ Player and boss kits become ready immediately with `design/`'s deterministic fal
 
 `GET /api/hall` returns `{fastestKills, topDamage, bossRecords}` from `hall/`. Each authoritative match completion records its autopsy once, before broadcasting it. Clients should not upload that same result. A Hall persistence error is logged and does not stop autopsy delivery.
 
-The room owner can send `{t:'setBots',count:2}` in the lobby to add two AI teammates, or count 0 to remove them. Count is capped at 0..7 and eight total connected humans + bots. Lobby bot entries have `bot:true` and `[BOT]` names. Kits come from random offline fallback repos without network analysis; `sim/bots.ts` drives their authoritative 30Hz inputs. Humans take priority over bots when joining a full lobby. Ownership always belongs to a human, and a match needs at least one ready human. Boss scaling includes ready humans and bots; bot slots survive rematch.
+The room owner can send `{t:'setBots',count:2}` in the lobby to add two AI teammates, or count 0 to remove them. Count is capped at 0..7 and the mode capacity (eight battle / thirty classroom fighters). Lobby bot entries have `bot:true` and `[BOT]` names. Kits come from random offline fallback repos without network analysis; `sim/bots.ts` drives their authoritative 30Hz inputs. Humans take priority over bots when joining a full lobby. Battle ownership belongs to a human and needs at least one ready human. Edu can be owned by the non-playing projector screen and needs at least two ready fighters, including bots. Boss scaling applies only to battle; bot slots survive rematch.
 
 To test a two-judge squad on DEV:
 
@@ -83,20 +84,56 @@ Defaults remain four human clients and zero bots. Smoke checks also cover attach
 
 Each WebSocket retains its own upgrade request server-side. On `setRepo`, the server resolves that request's GitHub token and passes it only to `analyzeRepo(repo, {token})`. It never attaches the GitHub token to a lobby entry, kit, profile, snapshot, autopsy, Hall record, log, or Gemini request. Auth/credentialed-analysis errors return a generic retry message rather than upstream details.
 
-The current analysis contract does not carry visibility, so **all credentialed analyses are treated as private** for external enrichment and public leaderboard export. Such heroes use local seeded art without Gemini enrichment, and matches involving them are not recorded in the public Hall. Raw profiles, README/tree text and internal file paths are never sent for those private player selections; the room receives their chosen repo slug and derived gameplay kit. Authenticated analysis already scopes memory jobs per credential and avoids public disk cache. Anonymous and boss lookups explicitly disable ambient server PAT credentials, so they remain public-only. Actual browser sign-in/consent and access to a real private repo still need the auth owner's real-login acceptance check; server integration tests use mocked sessions/tokens.
+The current analysis contract does not carry visibility, so **all credentialed analyses are treated as private** for external enrichment and public leaderboard export. Such heroes use local seeded art without Gemini enrichment, and matches involving them are not recorded in the public Hall. Raw profiles are not sent. Genesis deliberately shares filtered real paths/snippets and code-quality facts inside the room; those credentialed data never reach external Gemini or public Hall. Private source-derived code/Genesis/quality tips are omitted from the persistence file; only gameplay values, grades, seed and chosen slug survive. Authenticated analysis already scopes memory jobs per credential and avoids public disk cache. Anonymous and boss lookups explicitly disable ambient server PAT credentials, so they remain public-only. Actual browser sign-in/consent and access to a real private repo still need the auth owner's real-login acceptance check; server integration tests use mocked sessions/tokens.
 
 ## Room restart recovery
 
 The server debounces room configuration changes (100ms) to `.cache/rooms.json` and atomically replaces that file with mode 0600. It also flushes before shutdown and persists a match-start marker immediately. Stored state includes room code/owner, player IDs/names/resume tokens/selected slugs/kits/privacy flags, AI slots/seeds, and the public boss profile/kit. It excludes WebSockets, requests/cookies, live combat, GitHub/Auth0 credentials, and private raw profiles. HTTP/Vite access to `.cache` is denied.
 
-On boot, players can reclaim IDs and kits with their existing resume tokens. Interrupted fights return to a lobby and joining clients receive a `Server restarted` notice through the existing error/notice UI. The first returning human takes ownership if the saved owner is offline. Pending analyses become retryable errors instead of staying stuck on analyzing. Bot controllers are recreated from their saved seeds. Rooms still expire after ten minutes without connected clients; a stale four-letter room URL self-heals by recreating the same code, with the first player as owner.
+On boot, players can reclaim IDs and kits with their existing resume tokens. Interrupted fights return to a lobby and joining clients receive a `Server restarted` notice through the existing error/notice UI. The first returning human takes ownership if the saved owner is offline. Pending analyses become retryable errors instead of staying stuck on analyzing. Bot controllers are recreated from their saved seeds. Rooms still expire after ten minutes without connected clients; a stale four-letter room URL self-heals only when hello carries a resume token. A fresh unknown-code join gets Room not found, and digit-containing codes get a clear four-letters-only error.
 
 `ROOMS_FILE` can override the persistence file for isolated restart integration tests; the normal default remains `.cache/rooms.json`. Existing credentialed/private flags survive restart, so a restored private-repo match is still excluded from public Hall.
 
 Run the isolated real-process restart test with:
 
 ```sh
+npm run build
 ROOM_RESTART_TEST=1 npx vitest run server/restart.integration.test.ts
 ```
 
 It starts only temporary server processes on OS-assigned ports, uses an isolated room-store file, and cleans up its own children. It never starts, stops or tests ports 5173/5175 or the live tunnel. Normal `npm test` skips this integration test; focused room tests exercise persistence with temp files and ephemeral WebSocket servers by default.
+
+## Genesis pipeline
+
+Analysis `onProgress` flows into each lobby player's or boss's `progress`. Progress-only broadcasts are coalesced across the room at about 8Hz, with at most eight real paths per update and revision guards against old requests. Mapping/design/ready lifecycle changes are immediate. Ready human/bot/boss entries carry `genesis` built from the actual profile and kit; optional art updates rebuild it, and battle start rebuilds the boss trace for the real squad size. Fast cached stages can finish inside one throttle window, in which case the final Genesis supplies the complete replay without delaying analysis.
+
+Credentialed Genesis is room-only and ephemeral: no model/Hall export or source persistence. Public Genesis is saved for replay. A restored card without Genesis re-analyzes on resume; private repos require the signed-in cookie again. Optional design failure preserves the ready seed kit/Genesis and ends the design progress state.
+
+## Classroom PvP (edu)
+
+Create via `POST /api/room?mode=edu`, then open `/r/ROOM?screen=1` as the teacher. The first projector claims teacher ownership even if students already arrived, consumes no student slot, and can start/manage without selecting a player repo. Clients should remember the screen's welcome token separately and send it as screen `hello.resume`; the server persists teacher identity and restores its control on resume/restart.
+
+Owner-only lobby `{t:'setMode',mode:'battle'|'edu'}` is persisted and regenerates ready kits/report cards from real profiles while keeping appearance. Edu has thirty student slots, needs at least two ready fighters (bots allowed), uses quality-graded kits and passes `boss:null,{mode:'edu'}` to the simulation. The teacher is absent from match players. Snapshots/autopsies preserve null boss, PvP scores, scale-2 heroes and class ranking; edu results are skipped by the battle Hall. Switching a class of more than eight humans into battle is rejected rather than kicking students out.
+
+```sh
+SMOKE_URL=http://localhost:5175 CLASSROOM_PLAYERS=2 npx tsx server/classroom-smoke.ts
+SMOKE_URL=http://localhost:5175 CLASSROOM_PLAYERS=30 npx tsx server/classroom-smoke.ts
+```
+
+This runner stores only the latest snapshot/lobby per client. It checks a non-playing teacher, quality/Genesis report cards, no selected boss, mode/scale/PvP state, and five seconds of inputs/snapshots. Real simulation, renderer and UI implementations must have landed for this end-to-end acceptance. Battle social-impact autopsy fields (fragility, maintainers, issues, public advisory parasites) are forwarded intact; inclusive MotionProfile remains strictly client-side.
+
+## Invalid input containment
+
+Incoming human/bot InputFrames are whitelisted: safe integer sequence; finite clamped movement; finite normalized aim or auto-aim; boolean action flags; known source. Malformed input cannot smuggle object-shaped aim or unknown fields into the sim. A thrown simulation step drops that tick and idles held frames without replaying a partly applied step or stopping everyone's match. Only a bounded tick-drop message is logged, never raw inputs or upstream/private error text.
+
+## Leaving a room
+
+`{t:'leave'}` permanently removes a player or projector in any phase. Ownership passes to the next connected human player, or a remaining projector. The socket closes with **4002**, reason **left**; clients must forget that role's room resume token and stop automatic reconnects. A fresh join without that token may enter again with a new identity.
+
+Explicit last-human leave stops and deletes the room even if bots or dormant player slots remain. The deletion and SHA-256 hashes of revoked room resume tokens are flushed atomically before the socket closes. Those hashes prevent old tabs from restoring the identity or recreating a deleted room across a server restart. Ordinary connection drops keep the existing resume behavior. The simulation's `removePlayer(id)` hook removes active heroes while teammates continue; the server also excludes departed IDs from snapshots and results.
+
+## Motion trace tuning
+
+Opt-in training/`?trace=1` clients can `POST /api/trace` with `Content-Type: application/json` and the raw sensor trace object or sample array. The server accepts at most 2 MiB, including chunked bodies, returning `201 {id}`. Invalid JSON/primitives return 400; unsupported content types return 415; oversized bodies return 413.
+
+Files are stored as `.cache/traces/<milliseconds>-<random>.json`, mode 0600; the newest 200 are retained. Only the submitted JSON is saved: no cookies, auth/session tokens, or client IP metadata are attached. `GET /api/trace/list` returns `{traces:[{id,bytes,createdAt}]}` newest first, with no caching. Listing requires a direct localhost/loopback request and rejects forwarded/public tunnel requests. Trace contents remain inaccessible through HTTP; the coordinator can inspect files locally. `TRACES_DIR` optionally isolates the directory for tests.
