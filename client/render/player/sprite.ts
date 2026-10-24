@@ -8,11 +8,13 @@ export const CX = 13;          // body center column
 export const ANCHOR_X = 13;
 export const ANCHOR_Y = 19;
 
-export type Expr = "normal" | "blink" | "hurt" | "ko";
+export type Expr = "normal" | "blink" | "hurt" | "ko" | "happy";
 export interface FrameSpec { pose: "idle" | "run"; i: number; expr: Expr }
 
 class Grid {
   cells: (string | null)[] = new Array(SW * SH).fill(null);
+  /** Cells that act as a tiny code editor (cape / laptop screen); filled with scrolling code at draw time. */
+  code: [number, number][] = [];
   set(x: number, y: number, c: string) {
     if (x < 0 || y < 0 || x >= SW || y >= SH) return;
     this.cells[y * SW + x] = c;
@@ -59,16 +61,18 @@ function paintHero(L: HeroLook, f: FrameSpec): Grid {
       const t = y - 19;
       const x0 = 8 - Math.floor((t * (1 + flap)) / 4);
       g.rect(x0, y + bd, 10, y + bd, t < 2 ? c.secondaryL : y === 25 ? c.secondaryD : c.secondary);
+      // cape interior = a dark code editor (real code scrolls here at draw time)
+      if (t >= 1 && y < 25) for (let x = x0 + 1; x <= 9; x++) { g.set(x, y + bd, L.syn.bg); g.code.push([x, y + bd]); }
     }
     if (run) g.set(8 - flap - 1, 24 + bd, c.secondaryD);
   } else if (L.back === "laptop") {
     g.rect(5, 18 + bd, 9, 23 + bd, c.metalD);
     g.rect(5, 18 + bd, 9, 18 + bd, c.metal);
     g.rect(5, 19 + bd, 5, 23 + bd, c.metal);
-    g.set(7, 20 + bd, c.accentL); // glowing logo
-    g.set(6, 22 + bd, L.stickers[0]?.[2] ?? c.secondary);
-    g.set(8, 22 + bd, L.stickers[1]?.[2] ?? c.secondaryL);
-    if (L.stickers[2]) g.set(6, 19 + bd, L.stickers[2][2]);
+    // open lid = tiny screen of scrolling code
+    for (let y = 19; y <= 22; y++) for (let x = 6; x <= 8; x++) { g.set(x, y + bd, L.syn.bg); g.code.push([x, y + bd]); }
+    g.set(9, 19 + bd, L.stickers[0]?.[2] ?? c.secondary);
+    g.set(9, 22 + bd, L.stickers[1]?.[2] ?? c.secondaryL);
   } else if (L.back === "scarf") {
     const wave = run ? (f.i % 2) : 0;
     g.rect(6, 19 + bd, 9, 19 + bd, c.secondary);
@@ -206,6 +210,9 @@ function paintBody(g: Grid, L: HeroLook, bd: number, f: FrameSpec) {
       g.set(7, y0, c.primary); g.set(17, y0, c.primary);
       g.rect(8, y1 - 1, 17, y1 - 1, c.wood); // belt
       g.set(13, y1 - 1, c.accentL);
+      // syntax-highlighted plates: 1px "code line" stripes
+      g.rect(7, y0 - 1, 8, y0 - 1, L.syn.fn); g.rect(16, y0 - 1, 17, y0 - 1, L.syn.kw);
+      g.set(10, y0 + 3, L.syn.kw); g.set(11, y0 + 3, L.syn.kw); g.set(15, y0 + 3, L.syn.str);
       break;
     }
     case "knight": {
@@ -215,6 +222,7 @@ function paintBody(g: Grid, L: HeroLook, bd: number, f: FrameSpec) {
       g.rect(16, y0 + 1, 16, y1, b.dark);
       g.rect(11, y0 + 1, 15, y1, c.primary);    // tabard
       g.rect(11, y0 + 1, 15, y0 + 1, c.primaryL);
+      g.set(9, y0 + 2, L.syn.kw); g.set(16, y0 + 2, L.syn.str); g.set(16, y0 + 3, L.syn.fn);
       emblem(g, L, 12, y0 + 1, c.accentL);
       g.rect(9, y1 - 1, 16, y1 - 1, c.wood);
       g.set(13, y1 - 1, c.accentL);
@@ -245,6 +253,7 @@ function paintBody(g: Grid, L: HeroLook, bd: number, f: FrameSpec) {
         g.rect(9, y1, 16, y1, b.dark);
       } else {
         g.rect(11, y0 + 3, 15, y0 + 4, b.dark);     // kangaroo pocket
+        g.rect(14, y0 + 3, 15, y0 + 4, c.accent); g.set(14, y0 + 3, c.white); // top-token sticker
         g.set(12, y0 + 1, c.white); g.set(14, y0 + 1, c.white); // drawstrings
         emblem(g, L, 12, y0 + 1, c.accentL);
       }
@@ -268,6 +277,7 @@ function paintBody(g: Grid, L: HeroLook, bd: number, f: FrameSpec) {
       g.rect(16, y0 + 1, 16, y1, b.dark);
       if (L.hoodie) {
         g.rect(11, y0 + 3, 15, y0 + 4, b.dark);
+        g.rect(14, y0 + 3, 15, y0 + 4, c.accent); g.set(14, y0 + 3, c.white); // top-token sticker
         g.set(12, y0 + 1, c.white); g.set(14, y0 + 1, c.white);
         emblem(g, L, 12, y0 + 1, c.accentL);
       } else {
@@ -287,6 +297,20 @@ function paintEyes(g: Grid, L: HeroLook, ht: number, e: Expr, glow?: string) {
   const c = L.c;
   const y = ht + 5;
   const col = glow ?? c.eye;
+  if (e === "happy") {
+    for (const ex of [13, 16]) { g.set(ex, y + 1, col); g.set(ex + 1, y, col); g.set(ex + 2, y + 1, col); }
+    g.rect(15, y + 3, 16, y + 3, col);
+    return;
+  }
+  if (e === "ko") g.rect(15, y + 3, 16, y + 3, col); // x_x
+  if (L.face === "braces" && (e === "normal" || e === "blink")) {
+    // mages: glowing { } eyes; blink = the braces dim to a "_" cursor
+    if (e === "blink") { g.rect(13, y + 1, 14, y + 1, c.accent); g.rect(16, y + 1, 17, y + 1, c.accent); return; }
+    g.set(14, y - 1, c.accentL); g.set(13, y, c.accentL); g.set(14, y + 1, c.accentL);
+    g.set(16, y - 1, c.accentL); g.set(17, y, c.accentL); g.set(16, y + 1, c.accentL);
+    g.set(14, y, c.accent); g.set(16, y, c.accent);
+    return;
+  }
   if (e === "blink") {
     g.rect(13, y + 1, 14, y + 1, col);
     g.rect(16, y + 1, 17, y + 1, col);
@@ -302,6 +326,47 @@ function paintEyes(g: Grid, L: HeroLook, ht: number, e: Expr, glow?: string) {
     g.rect(13, y, 14, y + 1, col);
     g.rect(16, y, 17, y + 1, col);
     if (!glow) { g.set(13, y, c.white); g.set(16, y, c.white); }
+  }
+}
+
+/** Visor screen (3 rows from `top`, starting at column x0): ">_" prompt with a blinking cursor. */
+function visorPrompt(g: Grid, top: number, x0: number, glow: string, e: Expr) {
+  const red = "#ff4a5a";
+  if (e === "ko") {
+    for (const a of [x0, x0 + 4]) { g.set(a, top, red); g.set(a + 2, top, red); g.set(a + 1, top + 1, red); g.set(a, top + 2, red); g.set(a + 2, top + 2, red); }
+    g.set(x0 + 3, top + 2, red);
+    return;
+  }
+  if (e === "happy") {
+    for (const a of [x0, x0 + 4]) { g.set(a, top + 1, glow); g.set(a + 1, top, glow); g.set(a + 2, top + 1, glow); }
+    g.set(x0 + 3, top + 2, glow);
+    return;
+  }
+  if (e === "hurt") {
+    g.set(x0 + 1, top, red); g.set(x0 + 2, top + 1, red); g.set(x0 + 1, top + 2, red);
+    g.set(x0 + 6, top, red); g.set(x0 + 5, top + 1, red); g.set(x0 + 6, top + 2, red);
+    return;
+  }
+  g.set(x0 + 1, top, glow); g.set(x0 + 2, top + 1, glow); g.set(x0 + 1, top + 2, glow); // ">"
+  if (e !== "blink") g.rect(x0 + 4, top + 2, x0 + 5, top + 2, glow);                    // "_" cursor
+}
+
+const CREST_BITS: Record<string, string> = { "{": "011010110010011", "#": "101111101111101", "*": "101010101" };
+
+/** Hair/helmet crest made of syntax: { brace, </> horns, # mohawk, ~ curl, * pointer spikes. */
+function paintSyntaxCrest(g: Grid, L: HeroLook, ht: number, col: string, colL: string) {
+  const glyph = L.crestGlyph;
+  const put = (bits: string, x0: number, y0: number, w = 3) => {
+    for (let i = 0; i < bits.length; i++) if (bits[i] === "1") g.set(x0 + (i % w), y0 + ((i / w) | 0), ((i / w) | 0) === 0 ? colL : col);
+  };
+  if (glyph === "{" || glyph === "#") put(CREST_BITS[glyph], 11, ht - 5);
+  else if (glyph === "*") put(CREST_BITS["*"], 11, ht - 3);
+  else if (glyph === "<>") {
+    put("001010100010001", 7, ht - 5);  // <
+    put("001001010100100", 11, ht - 5); // /
+    put("100010001010100", 15, ht - 5); // >
+  } else if (glyph === "~") {
+    g.set(10, ht - 1, col); g.set(11, ht - 2, colL); g.set(12, ht - 1, col); g.set(13, ht - 2, colL); g.set(14, ht - 2, colL);
   }
 }
 
@@ -321,7 +386,9 @@ function paintHair(g: Grid, L: HeroLook, ht: number, f: FrameSpec, coverTop: boo
     g.rect(10, ht + 1, 12, ht + 1, c.hairL);
   }
   const s = L.hairStyle;
-  if (s === 1) { // spiky
+  if (L.crestGlyph && L.topper === "none" && L.headgear !== "wizard-hat" && L.headgear !== "beanie") {
+    paintSyntaxCrest(g, L, ht, c.hair, c.hairL);
+  } else if (s === 1) { // spiky
     for (const [x, y] of [[8, -1], [10, -2], [11, -1], [13, -2], [14, -1], [16, -1], [7, 0]]) g.set(x, ht + y, c.hair);
     g.set(10, ht - 2, c.hairL); g.set(13, ht - 2, c.hairL);
   } else if (s === 4) { // ahoge
@@ -354,30 +421,25 @@ function paintHead(g: Grid, L: HeroLook, ht: number, f: FrameSpec, run: boolean)
       g.rect(9, ht + 9, 16, ht + 9, shellD);
       const vg = c.visor;
       if (heavy) {
-        // metal faceplate with T visor
+        // metal faceplate with a terminal screen
         g.rect(12, ht + 3, 18, ht + 8, c.metal);
         g.rect(12, ht + 3, 18, ht + 3, c.metalL);
-        g.rect(12, ht + 5, 18, ht + 5, "#160f1f");
-        g.rect(15, ht + 5, 15, ht + 8, "#160f1f");
-        const glow = e === "hurt" || e === "ko" ? "#ff4a5a" : vg;
-        if (e !== "blink") { g.set(13, ht + 5, glow); g.set(17, ht + 5, glow); }
+        g.rect(12, ht + 4, 18, ht + 6, "#160f1f");
+        visorPrompt(g, ht + 4, 12, vg, e);
         g.set(9, ht + 7, c.metalL); g.set(10, ht + 3, c.metalL);
+        g.set(14, ht + 8, c.metalD); g.set(16, ht + 8, c.metalD);
       } else {
-        // brow band in primary, visor slit
+        // brow band = a syntax-highlighted code line; visor = terminal prompt ">_"
         g.rect(8, ht + 3, 18, ht + 3, c.primary);
+        g.rect(9, ht + 3, 10, ht + 3, L.syn.kw); g.rect(12, ht + 3, 14, ht + 3, L.syn.fn); g.rect(16, ht + 3, 17, ht + 3, L.syn.str);
         g.rect(11, ht + 4, 18, ht + 6, "#160f1f");
         g.rect(11, ht + 7, 18, ht + 7, c.metalD);
-        if (e === "blink") {
-          g.rect(13, ht + 5, 14, ht + 5, c.primaryD); g.rect(16, ht + 5, 17, ht + 5, c.primaryD);
-        } else if (e === "hurt" || e === "ko") {
-          g.set(13, ht + 4, "#ff4a5a"); g.set(14, ht + 5, "#ff4a5a"); g.set(17, ht + 4, "#ff4a5a"); g.set(16, ht + 5, "#ff4a5a");
-        } else {
-          g.rect(13, ht + 5, 14, ht + 5, vg); g.rect(16, ht + 5, 17, ht + 5, vg);
-          g.set(13, ht + 4, c.accent); g.set(16, ht + 4, c.accent);
-        }
+        visorPrompt(g, ht + 4, 11, vg, e);
         g.set(17, ht + 8, c.metalD); g.set(15, ht + 8, c.metalD);
       }
-      if (L.topper === "none" || L.topper === "antenna") {
+      if ((L.topper === "none" || L.topper === "antenna") && L.crestGlyph) {
+        paintSyntaxCrest(g, L, ht, c.accent, c.accentL);
+      } else if (L.topper === "none" || L.topper === "antenna") {
         if (L.crest === "plume") {
           const sw = run ? 1 : 0;
           g.rect(11, ht - 1, 13, ht - 1, c.secondary);
@@ -553,6 +615,14 @@ export function tinted(src: HTMLCanvasElement, color: string): HTMLCanvasElement
 }
 
 const frameCache = new Map<string, HTMLCanvasElement>();
+const codeCells = new Map<string, [number, number][]>();
+
+/** Grid cells of a frame that show scrolling code (cape interior / laptop screen). */
+export function heroCodeCells(L: HeroLook, f: FrameSpec): [number, number][] {
+  const k = L.key + "|" + f.pose + f.i + f.expr;
+  if (!codeCells.has(k)) heroFrame(L, f);
+  return codeCells.get(k) ?? [];
+}
 
 /** 1px dilated flat-color silhouette (sprite + 1px border each side), drawn under the body as a rim/glow. */
 export function heroRim(L: HeroLook, f: FrameSpec, color: string): HTMLCanvasElement {
@@ -577,6 +647,7 @@ export function heroFrame(L: HeroLook, f: FrameSpec, variant = ""): HTMLCanvasEl
     cv = tinted(heroFrame(L, f), variant);
   } else {
     const g = paintHero(L, f);
+    codeCells.set(L.key + "|" + f.pose + f.i + f.expr, g.code);
     outline(g, L.c.outline);
     cv = raster(g);
   }

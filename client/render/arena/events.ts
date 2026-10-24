@@ -2,16 +2,17 @@
 import type { GameEvent, PlayerState, SkillKind } from "../../../shared/types.ts";
 import { drawGlow, hash2, TAU } from "./pix.ts";
 import { drawText, textWidth } from "./font.ts";
-import { addShake, burst, drawParticles, emit, every, fx, stepParticles, type Particle } from "./fx.ts";
+import { addShake, burst, drawParticles, emit, every, fx, setView, stepParticles, type Particle, type View } from "./fx.ts";
 import { telegraphInfo } from "./hazards.ts";
 import { drawPerkCards } from "./props.ts";
-import { playerGlyphs, registerPlayerGlyphs } from "./bullets.ts";
+import { playerGlyphs, playerWeapons, registerPlayerGlyphs, registerPlayerWeapon } from "./bullets.ts";
 
 type HitExtra = { source?: string; direction?: [number, number]; crit?: boolean; impact?: number; hitStop?: number };
 
 const seen = new WeakSet<object>();
 const players = new Map<string, { x: number; y: number; name: string }>();
 const glyphKeys = new Map<string, string>();
+const IMPACT_COLOR: Record<string, string> = { blaster: "#fff27a", smg: "#9ffcff", shotgun: "#ffd08a", cannon: "#ffb36b", staff: "#f0c8ff", laser: "#c8ffd0", blade: "#ffffff" };
 const numbers = new Map<string, { p: Particle; sum: number; at: number; crit: boolean }>();
 const MAX_NUMBERS = 7;
 function liveNumbers() {
@@ -30,7 +31,9 @@ export function trackPlayers(ps: PlayerState[]) {
     players.set(p.id, { x: p.x, y: p.y, name: p.name });
     // re-register whenever the hero's token list changes (e.g. repo swapped between rematches)
     const toks = p.kit.code?.tokens ?? [];
-    const key = toks.join("\u0000");
+    const w = p.kit.code?.weapon;
+    const key = toks.join("\u0000") + "|" + p.kit.weapon + "|" + (w ? w.projectiles.join("\u0000") + w.impact : "");
+    if (glyphKeys.get(p.id) !== key) registerPlayerWeapon(p.id, p.kit.weapon, w);
     if (glyphKeys.get(p.id) !== key) {
       glyphKeys.set(p.id, key);
       if (toks.length) registerPlayerGlyphs(p.id, toks);
@@ -95,6 +98,11 @@ function ingest(e: GameEvent, time: number) {
       }
       // damage dealt by players (boss or minion)
       avgHit = avgHit * 0.97 + e.amount * 0.03;
+      // impact text of the attacker's code weapon (e.g. "FREE()", "BREAK;", "$1")
+      const wpn = x.source ? playerWeapons.get(x.source) : undefined;
+      if (wpn && every("imp" + x.source, 0.14, time)) {
+        emit({ kind: "glyph", x: e.x + (Math.random() - 0.5) * 10, y: e.y + (Math.random() - 0.5) * 6, vx: (Math.random() - 0.5) * 30, vy: -22, max: 0.35, text: wpn.impact.slice(0, 8), color: IMPACT_COLOR[wpn.kind] ?? "#ffe14a" });
+      }
       const crit = x.crit ?? e.amount > avgHit * 2.4;
       const dir = x.direction ?? [0, -1];
       const ang = Math.atan2(dir[1], dir[0]);
@@ -204,8 +212,9 @@ function ingest(e: GameEvent, time: number) {
       break;
     }
     case "pickup": {
-      const label = e.kind === "heart" ? "+1 HP" : e.kind === "armor" ? "+ARMOR" : "+NRG";
-      const c = e.kind === "heart" ? "#ff5a7a" : e.kind === "armor" ? "#c8d4ff" : "#5ae6ff";
+      // code flavor + a plain-language hint in brackets
+      const label = e.kind === "heart" ? "+1 COMMIT (HP)" : e.kind === "armor" ? "TESTS PASSED (ARMOR)" : "+COFFEE (ENERGY)";
+      const c = e.kind === "heart" ? "#3fb950" : e.kind === "armor" ? "#c8d4ff" : "#5ae6ff";
       emit({ kind: "glyph", x: e.x, y: e.y - 10, vy: -26, max: 0.7, text: label, color: c });
       emit({ kind: "ring", x: e.x, y: e.y, size: 10, max: 0.25, color: c });
       break;
@@ -237,8 +246,10 @@ function ingest(e: GameEvent, time: number) {
   }
 }
 
-export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number) {
+/** view: visible logical window under a camera (portrait phones). Omit for the full landscape arena. */
+export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number, view?: View) {
   fx.now = time;
+  setView(ctx, view);
   for (const e of events) {
     if (seen.has(e)) continue;
     seen.add(e);
@@ -280,11 +291,17 @@ export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], t
     const jx = t < 0.3 ? Math.round((hash2(Math.floor(time * 30), 1) - 0.5) * 6) : 0;
     const fade = t > bn.dur - 0.3 ? Math.floor(time * 20) % 2 : 1;
     if (!fade) continue;
-    const bw = textWidth(bn.text + "_", bn.scale);
-    ctx.globalAlpha = 0.7; ctx.fillStyle = "#07040c"; ctx.fillRect(240 - bw / 2 - 6, bn.y - 4, bw + 12, 5 * bn.scale + 16); ctx.globalAlpha = 1;
-    drawGlow(ctx, 240, bn.y + 6, bn.color, 40, 0.25);
-    if (t < 0.4) { drawText(ctx, txt, 240 - bw / 2 + jx - 1, bn.y, "#ff0040", { scale: bn.scale, outline: null }); drawText(ctx, txt, 240 - bw / 2 + jx + 1, bn.y, "#00e5ff", { scale: bn.scale, outline: null }); }
-    drawText(ctx, txt, 240 - bw / 2 + jx, bn.y, bn.color, { scale: bn.scale });
-    if (t > 0.3) drawText(ctx, bn.sub, 240, bn.y + 5 * bn.scale + 4, "#e8e0f0", { align: "center" });
+    // banners are screen-space: centre in the visible window and shrink to fit narrow (portrait) views
+    const v = fx.view;
+    const cxv = v.x + v.w / 2;
+    const sc = Math.max(1, Math.min(bn.scale, Math.floor((v.w - 16) / textWidth(bn.text + "_", 1))));
+    const by = v.y + Math.round((bn.y / 288) * v.h);
+    const bw = textWidth(bn.text + "_", sc);
+    ctx.globalAlpha = 0.7; ctx.fillStyle = "#07040c"; ctx.fillRect(cxv - bw / 2 - 6, by - 4, bw + 12, 5 * sc + 16); ctx.globalAlpha = 1;
+    drawGlow(ctx, cxv, by + 6, bn.color, 40, 0.25);
+    if (t < 0.4) { drawText(ctx, txt, cxv - bw / 2 + jx - 1, by, "#ff0040", { scale: sc, outline: null }); drawText(ctx, txt, cxv - bw / 2 + jx + 1, by, "#00e5ff", { scale: sc, outline: null }); }
+    drawText(ctx, txt, cxv - bw / 2 + jx, by, bn.color, { scale: sc });
+    const sub = textWidth(bn.sub) > v.w - 8 ? bn.sub.slice(0, Math.floor((v.w - 8) / 4) - 1) + "~" : bn.sub;
+    if (t > 0.3) drawText(ctx, sub, cxv, by + 5 * sc + 4, "#e8e0f0", { align: "center" });
   }
 }

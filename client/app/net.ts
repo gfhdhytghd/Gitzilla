@@ -2,7 +2,11 @@
 import type { ClientMsg, Role, ServerMsg } from "../../shared/types";
 import { store } from "./util";
 
-export type ConnStatus = "connecting" | "open" | "closed";
+/** "displaced" = the server resumed this player in another tab (close 4001); we stop reconnecting until reclaim(). */
+export type ConnStatus = "connecting" | "open" | "closed" | "displaced";
+
+/** Server close code when the same resume token connects from another tab. */
+export const CLOSE_RESUMED_ELSEWHERE = 4001;
 
 export interface Conn {
   send(m: ClientMsg): void;
@@ -10,6 +14,8 @@ export interface Conn {
   onStatus(fn: (s: ConnStatus) => void): void;
   /** Change the display name used for future hellos (reconnects). */
   setName(name: string): void;
+  /** After being displaced by another tab: take the session back here. */
+  reclaim(): void;
   close(): void;
 }
 
@@ -27,13 +33,22 @@ export function connect(opts: ConnOpts): Conn {
   let ws: WebSocket | null = null;
   let closed = false;
   let retry = 0;
+  let displaced = false;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  const cancelRetry = () => {
+    if (retryTimer !== null) clearTimeout(retryTimer);
+    retryTimer = null;
+  };
   let name = opts.name;
   const queue: ClientMsg[] = [];
 
   const setStatus = (s: ConnStatus) => statusFns.forEach((f) => f(s));
 
   const open = () => {
-    if (closed) return;
+    cancelRetry();
+    if (closed || displaced) return;
+    // never stack sockets: a wake + a pending retry both land here
+    if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
     setStatus("connecting");
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const sock = new WebSocket(`${proto}//${location.host}/ws`);
@@ -55,13 +70,21 @@ export function connect(opts: ConnOpts): Conn {
       if (m.t === "welcome" && opts.role === "player") store.set(tokenKey(opts.room), m.token);
       for (const f of msgFns) f(m);
     };
-    sock.onclose = () => {
+    sock.onclose = (ev?: { code?: number }) => {
       if (ws !== sock) return;
       ws = null;
+      if (ev?.code === CLOSE_RESUMED_ELSEWHERE) {
+        // another tab took this player over; reconnecting would just steal it back, forever
+        displaced = true;
+        cancelRetry();
+        setStatus("displaced");
+        return;
+      }
       setStatus("closed");
       if (closed) return;
       retry++;
-      setTimeout(open, Math.min(4000, 250 * 2 ** Math.min(retry, 4)));
+      cancelRetry();
+      retryTimer = setTimeout(open, Math.min(4000, 250 * 2 ** Math.min(retry, 4)));
     };
     sock.onerror = () => sock.close();
   };
@@ -69,7 +92,7 @@ export function connect(opts: ConnOpts): Conn {
 
   // Phones sleeping / tab switching kill sockets; reconnect fast when visible again.
   const onVis = () => {
-    if (document.visibilityState === "visible" && !ws && !closed) open();
+    if (document.visibilityState === "visible" && !ws && !closed && !displaced) open();
   };
   document.addEventListener("visibilitychange", onVis);
 
@@ -87,8 +110,14 @@ export function connect(opts: ConnOpts): Conn {
     setName(n) {
       name = n;
     },
+    reclaim() {
+      displaced = false;
+      retry = 0;
+      open();
+    },
     close() {
       closed = true;
+      cancelRetry();
       document.removeEventListener("visibilitychange", onVis);
       ws?.close();
     },

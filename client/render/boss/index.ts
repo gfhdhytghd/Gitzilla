@@ -20,6 +20,7 @@ const ERR_GLYPHS = ["ERR", "404", "NAN", "NULL", "SIGSEGV", "E_FAIL", "0XDEAD", 
 interface DrawOpts { portrait?: boolean }
 
 const lastLayout = new Map<string, { anchors: Anchor[]; L: BossLayout }>();
+const lastPos = new Map<string, { x: number; y: number; t: number }>();
 
 function layoutFor(b: BossState): BossLayout {
   const regs = b.regions;
@@ -205,6 +206,31 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
       ctx.fillStyle = art.dangerRamp[2];
       for (let s = ((time * 40) % 6); s < dist; s += 6) ctx.fillRect(Math.round(cx + (dx * s) / dist), Math.round(cy + (dy * s) / dist), 1, 1);
     }
+  }
+
+  // ---- npm install: summon casts show a progress bar on the floor that births the bugs ----
+  if (atk?.kind === "summon" && !opts.portrait) {
+    const w = 64, x0 = Math.round(b.x - w / 2), y0 = Math.round(b.y + 50);
+    ctx.fillStyle = "#07040c"; ctx.fillRect(x0 - 2, y0 - 9, w + 4, 18);
+    drawText(ctx, "$ NPM INSTALL", x0, y0 - 8, "#b6ff3a", { outline: null });
+    ctx.fillStyle = "#1a2a10"; ctx.fillRect(x0, y0, w, 4);
+    ctx.fillStyle = "#b6ff3a"; ctx.fillRect(x0, y0, Math.round(w * castP), 4);
+    for (let k = 4; k < w; k += 5) { ctx.fillStyle = "#07040c"; ctx.fillRect(x0 + k, y0, 1, 4); }
+    drawText(ctx, Math.round(castP * 100) + "% (BUGS INCOMING)", x0, y0 + 5, "#9fe88a", { outline: null });
+  }
+
+  // ---- git push --force: a red force-push trail while charging across the arena ----
+  if (!opts.portrait) {
+    const prev = lastPos.get(kit.repo);
+    if (prev && time > prev.t) {
+      const sp = Math.hypot(b.x - prev.x, b.y - prev.y) / Math.max(0.001, time - prev.t);
+      if (sp > 70 && sp < 2000) {
+        const ux = (b.x - prev.x) / (sp * (time - prev.t)), uy = (b.y - prev.y) / (sp * (time - prev.t));
+        for (let k = 0; k < 3; k++) emit({ kind: "spark", x: b.x - ux * 30 + (Math.random() - 0.5) * 40, y: b.y - uy * 30 + (Math.random() - 0.5) * 30, vx: -ux * 120, vy: -uy * 120, max: 0.3, color: "#ff2a4a", color2: "#7a0a24" });
+        if (every("force", 0.22, time)) emit({ kind: "glyph", x: b.x - ux * 40, y: b.y - uy * 40 - 10, vx: -ux * 30, vy: -10, max: 0.6, text: "--FORCE", color: "#ff5a6a" });
+      }
+    }
+    lastPos.set(kit.repo, { x: b.x, y: b.y, t: time });
   }
 
   // ---- broken limbs: sparks + error glyphs ----

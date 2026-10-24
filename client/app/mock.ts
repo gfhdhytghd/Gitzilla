@@ -99,7 +99,7 @@ export function createMockConn(opts: ConnOpts): Conn {
   // until analysis produces CodeDNA, give mock kits some plausible code so the UI can be exercised
   const pkit = (slug: string): PlayerKit => {
     const k = pkit0(slug);
-    if (!k.code?.signature) k.code = { tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
+    if (!k.code?.signature) k.code = { weapon: k.code?.weapon, tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
     return k;
   };
   const bkit = (slug: string, n: number): BossKit => {
@@ -268,6 +268,7 @@ export function createMockConn(opts: ConnOpts): Conn {
     send: (m) => handle(m),
     onMessage: (f) => void msgFns.push(f),
     onStatus: (f) => void statusFns.push(f),
+    reclaim: () => {},
     setName: (n) => {
       if (lobby.players[0]?.id === "you") lobby.players[0].name = n;
       pushLobby();

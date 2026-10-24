@@ -9,15 +9,15 @@ audio.setMuted(muted);
 document.addEventListener("pointerdown", () => void audio.unlock().catch(() => {}), { capture: true });
 document.addEventListener("keydown", () => void audio.unlock().catch(() => {}), { capture: true });
 
-const btn = h("button.mute-btn", { "aria-label": "toggle sound", title: "sound (M)" });
-const paint = () => (btn.textContent = muted ? "♪ off" : "♪ on");
+export const muteBtn = h("button.mute-btn", { "aria-label": "toggle sound", title: "sound (M)" });
+const paint = () => (muteBtn.textContent = muted ? "♪ off" : "♪ on");
 const toggle = () => {
   muted = !muted;
   store.set("kaiju.muted", muted ? "1" : "0");
   audio.setMuted(muted);
   paint();
 };
-btn.addEventListener("click", (e) => {
+muteBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   toggle();
 });
@@ -25,4 +25,4 @@ addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() === "m" && !(e.target instanceof HTMLInputElement)) toggle();
 });
 paint();
-document.body.append(btn);
+document.body.append(muteBtn);

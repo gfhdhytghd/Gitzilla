@@ -101,11 +101,40 @@ function startRoom(room: string, role: Role, name: string) {
     screen?.update?.(app);
   }
 
+  // the server moved this player to another tab (close 4001): explain, and let them take it back explicitly
+  let displacedEl: HTMLElement | null = null;
+  function showDisplaced(on: boolean) {
+    if (!on) {
+      displacedEl?.remove();
+      displacedEl = null;
+      return;
+    }
+    if (displacedEl) return;
+    displacedEl = h(
+      "div.displaced",
+      { "data-testid": "displaced" },
+      h(
+        "div.term-window",
+        null,
+        h("div.term-title", null, h("span.dots", null, "● ● ●"), ` kaiju@room-${room}`),
+        h(
+          "div.term-body",
+          null,
+          h("div", null, "this room is open in another tab."),
+          h("div.dim", null, "your player moved there. only one tab can drive it at a time."),
+          h("button.btn.btn-primary", { "data-testid": "use-here", onclick: () => app.conn.reclaim() }, "[ use here ]"),
+        ),
+      ),
+    );
+    document.body.append(displacedEl);
+  }
+
   function wire() {
     app.conn.onStatus((s) => {
       app.status = s;
       link.className = `link-status ${s}`;
-      link.textContent = s === "open" ? (mock ? "LINK MOCK" : "LINK OK") : s === "connecting" ? "LINK…" : "LINK LOST · RETRYING";
+      link.textContent = s === "open" ? (mock ? "LINK MOCK" : "LINK OK") : s === "connecting" ? "LINK…" : s === "displaced" ? "OPEN IN ANOTHER TAB" : "LINK LOST · RETRYING";
+      showDisplaced(s === "displaced");
     });
     app.conn.onMessage((m: ServerMsg) => {
       switch (m.t) {
@@ -140,4 +169,6 @@ function startRoom(room: string, role: Role, name: string) {
 // rooms hold a live socket; simplest correct back/forward is a fresh load
 addEventListener("popstate", () => location.reload());
 consumeAuthError();
+// phones play in portrait; a sideways phone gets a full-screen guard (the game keeps running underneath)
+document.body.append(h("div.rotate-guard", null, h("div.rg-phone"), h("div", null, "ROTATE TO PORTRAIT ↻"), h("div.rg-sub", null, "gitzilla is played with the phone upright")));
 route();

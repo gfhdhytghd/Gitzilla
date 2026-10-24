@@ -11,6 +11,11 @@ export type Headgear = "helmet" | "hood" | "wizard-hat" | "goggles" | "bandana" 
 export type Topper = "none" | "headphones" | "catears" | "antenna" | "crown";
 export type BackItem = "none" | "cape" | "laptop" | "scarf" | "jetpack" | "shield" | "tail";
 export type Crest = "plume" | "horns" | "fin" | "none";
+/** Syntax crest made of a code glyph, chosen from the repo's real tokens ("" = classic crest). */
+export type SyntaxCrest = "" | "{" | "<>" | "#" | "~" | "*";
+export type FaceMode = "prompt" | "braces" | "eyes";
+
+export interface SyntaxColors { kw: string; str: string; fn: string; num: string; type: string; plain: string; com: string; bg: string }
 
 export interface HeroColors {
   outline: string;
@@ -46,6 +51,58 @@ export interface HeroLook {
   stickers: [number, number, string][];
   emblem: string[];    // rows of '0'/'1' (3x3 shape or 3x5 / 7x5 glyphs)
   etch: string;        // real token engraved on the weapon ("" when the kit has no code)
+  syn: SyntaxColors;   // language syntax-highlight palette (armor stripes, cape code)
+  crestGlyph: SyntaxCrest;
+  face: FaceMode;      // helmet visor = ">_" prompt, mages = glowing {} eyes
+  codeRows: (string | null)[][]; // minimap-style syntax-colored code lines (8 px wide) for capes / laptop screens
+  tokens: string[];    // short real tokens (orbiting glyphs, sticker)
+  idents: string[];    // real identifiers (stack traces)
+}
+
+const SYN_BASE: SyntaxColors = { kw: "#c678dd", str: "#98c379", fn: "#61afef", num: "#d19a66", type: "#e5c07b", plain: "#abb2bf", com: "#5c6370", bg: "#1d1f2b" };
+const SYN_KW: Record<string, string> = {
+  rust: "#ff8f40", python: "#ffd43b", go: "#00c8f0", java: "#f89820", kotlin: "#b07cff", ruby: "#ff5f6d",
+  "c++": "#f34b7d", c: "#7fb4ff", "c#": "#9b59f6", swift: "#ff7043", php: "#8892bf", lua: "#6d8cff", haskell: "#a991d4",
+};
+const KEYWORDS = new Set(("fn let mut const var function def class return if else for while in of import export from pub use impl " +
+  "struct enum match async await yield go func package public private static void new this self try catch throw end do " +
+  "then lambda val fun type interface trait where loop break continue switch case default nil null None true false").split(" "));
+
+/** Turn a real code line (+ identifiers/tokens) into 1px syntax-colored "minimap" rows, 8px wide. */
+function buildCodeRows(snippet: string, idents: string[], toks: string[], syn: SyntaxColors): (string | null)[][] {
+  const W = 8;
+  const words: string[] = [];
+  const src = [snippet, ...idents.slice(0, 6).map((i) => i + "()"), ...toks.slice(0, 4), snippet].join(" ¶ ");
+  for (const w of src.split(/(\s+|[(){}\[\];,])/)) if (w && w.trim()) words.push(w.trim());
+  const rows: (string | null)[][] = [];
+  let row: (string | null)[] = new Array(W).fill(null);
+  let x = 0, indent = 0;
+  const flush = () => { rows.push(row); row = new Array(W).fill(null); x = indent; };
+  for (const w of words) {
+    if (w === "¶") { flush(); continue; }
+    if (w === "{" || w === "(") indent = Math.min(3, indent + 1);
+    if (w === "}" || w === ")") indent = Math.max(0, indent - 1);
+    const col = KEYWORDS.has(w) ? syn.kw : /^["'`]/.test(w) ? syn.str : /^\d/.test(w) ? syn.num
+      : /^[A-Z]/.test(w) ? syn.type : idents.includes(w) || /\($/.test(w) ? syn.fn : /^(\/\/|#)/.test(w) ? syn.com : syn.plain;
+    const len = Math.max(1, Math.min(4, Math.round(w.length / 2)));
+    if (x + len > W) flush();
+    for (let i = 0; i < len && x + i < W; i++) row[x + i] = col;
+    x += len + 1;
+    if (rows.length > 20) break;
+  }
+  flush();
+  while (rows.length < 12) rows.push(...rows.slice(0, 12 - rows.length), new Array(W).fill(null));
+  return rows;
+}
+
+function crestFromTokens(toks: string[], seed: number): SyntaxCrest {
+  const all = toks.join(" ");
+  if (/[{}]/.test(all)) return "{";
+  if (/[<>]/.test(all)) return "<>";
+  if (/#/.test(all)) return "#";
+  if (/~/.test(all)) return "~";
+  if (/[*&]/.test(all)) return "*";
+  return (["{", "<>", "#", "~", "*"] as SyntaxCrest[])[seed % 5];
 }
 
 export const CLASS_OF: Record<WeaponKind, HeroClass> = {
@@ -120,7 +177,7 @@ export function lookFor(kit: PlayerKit): HeroLook {
   const d: HeroDesign | undefined = kit.design;
   const key = kit.seed + "|" + kit.weapon + "|" + kit.palette.join(",") + "|" + kit.title +
     (d ? "|" + d.archetype + d.headgear + d.accessory + d.emblem + d.palette.join(",") : "") +
-    (kit.code ? "|" + kit.code.tokens.slice(0, 4).join(" ") : "");
+    (kit.code ? "|" + kit.code.tokens.slice(0, 4).join(" ") + "|" + kit.code.snippet + "|" + (kit.code.weapon?.name ?? "") : "");
   const hit = lookCache.get(key);
   if (hit) return hit;
   const r = rng(kit.seed ^ 0x9e3779b9);
@@ -231,7 +288,15 @@ export function lookFor(kit: PlayerKit): HeroLook {
     mask: cls === "rogue" && headgear === "bandana",
     hoodie, stickers: [], emblem,
     etch: (kit.code?.tokens ?? []).map((x) => (x ?? "").trim()).find((x) => x.length > 0) ?? "",
+    syn: SYN_BASE, crestGlyph: "", face: "eyes", codeRows: [], tokens: [], idents: [],
   };
+  const kwCol = SYN_KW[lang.toLowerCase()];
+  look.syn = kwCol ? { ...SYN_BASE, kw: kwCol } : SYN_BASE;
+  look.tokens = (kit.code?.tokens ?? []).map((x) => (x ?? "").trim()).filter((x) => x && x.length <= 4 && /^[\x21-\x7e]+$/.test(x)).slice(0, 4);
+  look.idents = (kit.code?.identifiers ?? []).filter((x) => x && x.length <= 18).slice(0, 6);
+  look.crestGlyph = kit.code ? crestFromTokens(kit.code.tokens ?? [], kit.seed) : "";
+  look.face = headgear === "helmet" ? "prompt" : cls === "mage" || headgear === "wizard-hat" ? "braces" : "eyes";
+  look.codeRows = buildCodeRows(kit.code?.snippet || `${lang} ${kit.repo}`, look.idents, look.tokens, look.syn);
   const stickerCols = ["#ff5fa2", "#ffd84a", "#54e0ff", "#7dff6a", "#ffffff"];
   const n = 2 + Math.floor(r() * 3);
   for (let i = 0; i < n; i++) look.stickers.push([Math.floor(r() * 3), Math.floor(r() * 4), pick(r, stickerCols)]);

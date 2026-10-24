@@ -2,7 +2,7 @@
 import type { Hazard } from "../../../shared/types.ts";
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bayer, disc, drawGlow, hash2, line, TAU } from "./pix.ts";
-import { drawText } from "./font.ts";
+import { drawText, textSprite } from "./font.ts";
 import { addShake, burst, emit, fx } from "./fx.ts";
 
 const names = new Map<number, string>();      // hazard id -> attack name (from latest telegraph event)
@@ -65,6 +65,7 @@ function onArm(h: Hazard, red: string) {
     burst(h.x, h.y, 10, { kind: "smoke", speed: 40, max: 0.9, size: 4, color: "#5a4a50", color2: "#2a2228", drag: 2 });
     emit({ kind: "ring", x: h.x, y: h.y, size: h.r * 1.4, max: 0.4, color: "#ffffff" });
     burst(h.x, h.y, 8, { kind: "shard", speed: 90, max: 0.7, text: "/\\#*;", spin: 18, color: "#ffd23f", color2: red, grav: 160 });
+    emit({ kind: "glyph", x: h.x, y: h.y - 10, vy: -20, max: 0.8, text: "STACK OVERFLOW", color: "#ffffff" });
   } else if (h.kind === "cascade") {
     addShake(3);
     burst(h.x, h.y, 14, { kind: "spark", speed: 100, max: 0.35, colors: ["#ffffff", "#9ff0ff", red] });
@@ -99,10 +100,39 @@ function stackTrace(ctx: CanvasRenderingContext2D, x: number, y: number, name: s
   const n = (name || "").split("::")[0].trim().toUpperCase();
   const msg = (n ? n + " " : "") + left.toFixed(1) + "S";
   const blink = Math.floor(time * 8) % 2 === 0;
-  const w = msg.length * 4;
-  const tx = Math.max(12, Math.min(ARENA_W - 12 - w, Math.round(x) - (w >> 1)));
-  const ty = Math.max(24, Math.min(ARENA_H - 18, Math.round(y)));
-  drawText(ctx, msg, tx, ty, blink ? "#ffffff" : red);
+  const sc = fx.textScale;
+  const w = msg.length * 4 * sc;
+  const v = fx.view;
+  const lo = Math.max(12, v.x + 2), hi = Math.min(ARENA_W - 12, v.x + v.w - 2);
+  const tx = Math.max(lo, Math.min(hi - w, Math.round(x) - (w >> 1)));
+  const ty = Math.max(Math.max(24, v.y + 2), Math.min(Math.min(ARENA_H - 18, v.y + v.h - 6 * sc), Math.round(y - (sc - 1) * 5)));
+  drawText(ctx, msg, tx, ty, blink ? "#ffffff" : red, { scale: sc });
+}
+
+function frameNames(): string[] {
+  const code = fx.boss?.kit.code;
+  const syms = code ? Object.values(code.limbSymbols ?? {}).flat().filter((x) => x && x.length <= 14) : [];
+  return syms.length ? syms : ["MAIN", "RECURSE", "RECURSE", "RECURSE", "RECURSE"];
+}
+
+/** "Stack Overflow": stack frames rain down and pile into a column on the target while the slam winds up. */
+function stackFrames(ctx: CanvasRenderingContext2D, h: Hazard, p: number, time: number, red: string) {
+  const names = frameNames();
+  const n = Math.min(8, Math.floor(p * 8) + 1);
+  const fw = 30, fh = 6;
+  for (let i = 0; i < n; i++) {
+    const falling = i === n - 1 && p < 0.98;
+    const fp = falling ? (p * 8) % 1 : 1;
+    const y = Math.round(h.y + 2 - (i + 1) * (fh + 1) - (1 - fp) * 60);
+    const x = Math.round(h.x - fw / 2 + Math.sin(i * 1.7 + time * (i * 0.3)) * Math.min(3, i * 0.5));
+    ctx.globalAlpha = falling ? fp : 1;
+    ctx.fillStyle = "#07040c"; ctx.fillRect(x - 1, y - 1, fw + 2, fh + 2);
+    ctx.fillStyle = i % 2 ? "#3a0a18" : "#4a0e20"; ctx.fillRect(x, y, fw, fh);
+    ctx.fillStyle = red; ctx.fillRect(x, y, 1, fh);
+    const label = ("AT " + names[i % names.length]).toUpperCase().slice(0, 7);
+    drawText(ctx, label, x + 2, y, i === n - 1 ? "#ffffff" : "#ff9ab0", { outline: null });
+  }
+  ctx.globalAlpha = 1;
 }
 
 function slam(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number, time: number, red: string) {
@@ -118,6 +148,7 @@ function slam(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number,
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(Math.round(h.x) - 3, Math.round(h.y), 7, 1);
     ctx.fillRect(Math.round(h.x), Math.round(h.y) - 3, 1, 7);
+    stackFrames(ctx, h, p, time, red);
     stackTrace(ctx, h.x, h.y - h.r - 9, names.get(h.id) ?? "", left, red, time);
   } else {
     const since = time - (armedAt.get(h.id) ?? time);
@@ -167,6 +198,23 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
       }
       void chev;
     }
+    // race condition: two thin beams converge onto the lane as the wind-up completes
+    if (!charge) {
+      for (const sgn of [-1, 1]) {
+        const a = h.angle + sgn * (1 - p) * 0.55;
+        const cx = Math.cos(a), cy = Math.sin(a);
+        ctx.fillStyle = sgn < 0 ? "#ff9ab0" : "#9ff0ff";
+        for (let s2 = 6; s2 < 400; s2 += 3) {
+          const xx = h.x + cx * s2, yy = h.y + cy * s2;
+          if (xx < 0 || yy < 0 || xx > ARENA_W || yy > ARENA_H) break;
+          if (((s2 / 3) | 0) % 3 !== 0) ctx.fillRect(Math.round(xx), Math.round(yy), 1, 1);
+        }
+      }
+    } else {
+      // git push --force: label the charge lane
+      const lx = h.x + ux * 70, ly = h.y + uy * 70;
+      drawText(ctx, "GIT PUSH --FORCE", lx, ly - 3, Math.floor(time * 8) % 2 ? "#ffd23f" : "#ffffff", { align: "center", scale: fx.textScale });
+    }
     // charging flicker at origin
     drawGlow(ctx, h.x, h.y, red, 8 + p * 12, 0.4 + p * 0.6);
     stackTrace(ctx, h.x + ux * 60, h.y + uy * 60 - 14, names.get(h.id) ?? (charge ? "RACE CONDITION" : ""), left, red, time);
@@ -186,6 +234,18 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
         ctx.fillRect(Math.round(x + px * k), Math.round(y + py * k), 1, 1);
       }
       if (s % 14 === 0) drawGlow(ctx, x, y, red, 14, 0.5 * fade);
+    }
+    // the beam is made of text: the attack name crawls along the white core
+    const text = ((names.get(h.id) ?? "") || "RACE CONDITION").split("::")[0].trim().toUpperCase() + "  ";
+    if (fade > 0.6 && w >= 3) {
+      const off = (time * 140) % (text.length * 5);
+      for (let s2 = 10 - off; s2 < endS - 4; s2 += 5) {
+        const ci = Math.floor((s2 + off) / 5) % text.length;
+        const ch = text[ci];
+        if (ch === " " || s2 < 8) continue;
+        const g = textSprite(ch, "#7a0a24", null);
+        ctx.drawImage(g, Math.round(h.x + ux * s2) - 1, Math.round(h.y + uy * s2) - 2);
+      }
     }
     // impact sparks where the beam hits the wall
     const ex = h.x + ux * endS, ey = h.y + uy * endS;
@@ -220,7 +280,15 @@ function cascade(ctx: CanvasRenderingContext2D, h: Hazard, p: number, time: numb
       const a = hash2(Math.floor(time * 15), k, h.id) * TAU;
       bolt(ctx, h.x + Math.cos(a) * h.r, h.y + Math.sin(a) * h.r, h.x + Math.cos(a + 0.5) * (h.r - 5), h.y + Math.sin(a + 0.5) * (h.r - 5), time, "#9ff0ff", 1);
     }
-    if (h.r > 24) drawText(ctx, "CIRCULAR IMPORT", h.x, h.y - h.r - 8, Math.floor(time * 6) % 2 ? "#9ff0ff" : "#ffffff", { align: "center" });
+    // merge conflict markers split the zone
+    const rows: [string, string][] = [["<<<<<<< HEAD", "#7dff9a"], ["=======", "#ffffff"], [">>>>>>> MAIN", "#7ab8ff"]];
+    rows.forEach(([t, c], k) => {
+      const yy = Math.round(h.y + (k - 1) * Math.max(6, h.r * 0.45)) - 2;
+      ctx.globalAlpha = 0.5 + p * 0.5;
+      drawText(ctx, t.slice(0, Math.max(3, Math.floor((h.r * 2 - 2) / 4))), h.x, yy, c, { align: "center" });
+    });
+    ctx.globalAlpha = 1;
+    if (h.r > 24) drawText(ctx, "MERGE CONFLICT", h.x, h.y - h.r - 8, Math.floor(time * 6) % 2 ? "#9ff0ff" : "#ffffff", { align: "center", scale: fx.textScale });
   } else {
     const since = time - (armedAt.get(h.id) ?? time);
     // lightning strike from the sky

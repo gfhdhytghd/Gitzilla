@@ -32,6 +32,8 @@ export interface Hud {
   event(e: GameEvent, s: MatchState, you: string | null): void;
   /** Boss speech line in the terminal log. */
   say(text: string): void;
+  /** Individual panels, so the portrait phone layout can re-home them into the control deck. */
+  parts: { self: HTMLElement; team: HTMLElement; combo: HTMLElement; log: HTMLElement; review: HTMLElement; toasts: HTMLElement; skill: HTMLElement; timer: HTMLElement };
 }
 
 export function createHud(spectator: boolean): Hud {
@@ -42,14 +44,17 @@ export function createHud(spectator: boolean): Hud {
   const enFill = h("div.fill");
   const hpNum = h("span.num"), arNum = h("span.num"), enNum = h("span.num");
   const perkRow = h("div.hs-perks");
+  const weaponLine = h("div.hs-weapon", { title: "your weapon" });
   const selfPanel = h(
     "div.hud-self.term",
     null,
     selfName,
     perkRow,
-    h("div.hs-row", null, h("span.lbl.red", null, "HP "), hpBar, hpNum),
-    h("div.hs-row", null, h("span.lbl.grey", null, "ARM"), arBar, arNum),
-    h("div.hs-row", null, h("span.lbl.cyan", null, "NRG"), h("div.en-bar", null, enFill), enNum),
+    weaponLine,
+    // code vocabulary with the plain meaning as a tooltip / tiny hint
+    h("div.hs-row", { title: "health: hit points (hearts)" }, h("span.lbl.red", null, "hp"), hpBar, hpNum),
+    h("div.hs-row", { title: "armor: a shield that regenerates" }, h("span.lbl.grey", null, "try{}"), arBar, arNum),
+    h("div.hs-row", { title: "energy: ammo for your weapon" }, h("span.lbl.cyan", null, "RAM"), h("div.en-bar", null, enFill), enNum),
   );
 
   // --- boss panel ---
@@ -83,7 +88,7 @@ export function createHud(spectator: boolean): Hud {
   const skillKey = h("span.key"), skillName = h("span.sk-name"), skillState = h("span.sk-state"), skillFill = h("div.sk-fill");
   const dashKey = h("span.key"), dashState = h("span.sk-state"), dashFill = h("div.sk-fill");
   const skillEl = h("div.sk", null, skillFill, skillKey, skillName, skillState);
-  const dashEl = h("div.sk.dash", null, dashFill, dashKey, h("span.sk-name", null, "dash"), dashState);
+  const dashEl = h("div.sk.dash", { title: "dash: quick dodge, briefly invulnerable" }, dashFill, dashKey, h("span.sk-name", null, "--force"), dashState);
   skillBox.append(dashEl, skillEl);
   const combo = h("div.hud-combo");
   // code review (phase-2 perk pick): banner with the 3 PR cards + who picked what
@@ -105,7 +110,7 @@ export function createHud(spectator: boolean): Hud {
     "div.hud-downed",
     null,
     h("span.dn-title", null, "SEGFAULT"),
-    h("span.dn-sub", null, "you're down · stand-by for teammate revive"),
+    h("span.dn-sub", null, "you're down · a teammate standing next to you runs systemctl restart (revive)"),
     h("div.dn-bar"),
     dnPct,
   );
@@ -139,6 +144,7 @@ export function createHud(spectator: boolean): Hud {
 
   return {
     el,
+    parts: { self: selfPanel, team, combo, log, review, toasts, skill: skillBox, timer },
     update(s, you, inputMode) {
       const boss = s.boss;
       const kit = boss.kit;
@@ -154,7 +160,9 @@ export function createHud(spectator: boolean): Hud {
         segs(arBar, me.kit.maxArmor, me.armor, "ar");
         setText(hpNum, `${Math.ceil(me.hp)}/${me.kit.maxHp}`);
         setText(arNum, `${Math.floor(me.armor)}/${me.kit.maxArmor}`);
-        setText(enNum, `${Math.round(me.energy)}`);
+        setText(enNum, `${Math.round(me.energy)}MB`);
+        const w = me.kit.code?.weapon;
+        setText(weaponLine, w ? `⌐ ${w.name}  ${w.projectiles.slice(0, 2).map((x) => `"${x}"`).join(" ")}` : `⌐ ${me.kit.weapon}`);
         setStyle(enFill, "width", `${Math.max(0, Math.min(100, (me.energy / me.kit.maxEnergy) * 100)).toFixed(1)}%`);
         toggle(selfPanel, "low", me.hp <= 2 && me.alive);
         const perks = me.perks ?? [];
@@ -251,7 +259,8 @@ export function createHud(spectator: boolean): Hud {
         setStyle(r.bar.firstElementChild as HTMLElement, "width", `${Math.max(0, (p.hp / p.kit.maxHp) * 100).toFixed(0)}%`);
         setStyle(r.row, "--c", p.kit.palette[0] ?? "#39ff88");
         toggle(r.row, "down", !p.alive);
-        setText(r.st, p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `REVIVE ${Math.round(p.reviveProgress * 100)}%` : "404");
+        setText(r.st, p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");
+        r.st.title = p.alive ? "health" : "downed: stand next to them to revive (systemctl restart)";
       }
       for (const [id, r] of teamRows) if (!seen.has(id)) (r.row.remove(), teamRows.delete(id));
 
@@ -273,7 +282,7 @@ export function createHud(spectator: boolean): Hud {
               const mine = !!you && offer.picked[you] === pad.id;
               return h(
                 `div.rv-card${mine ? ".mine" : ""}`,
-                null,
+                { onclick: () => toastAt(`walk onto the ${pad.name} pad`, "pk-perk") },
                 h("div.rv-pr", null, `PR #${(s.boss.kit.seed % 900) + 100 + i}`),
                 h("div.rv-name", null, pad.name),
                 h("div.rv-desc", null, pad.desc),
@@ -301,7 +310,7 @@ export function createHud(spectator: boolean): Hud {
           }
           break;
         case "pickup":
-          if (e.player === you) toastAt(e.kind === "heart" ? "+1 ♥" : e.kind === "armor" ? "+1 ◆" : "+energy", `pk-${e.kind}`);
+          if (e.player === you) toastAt(e.kind === "heart" ? "+1 commit ♥ (heal)" : e.kind === "armor" ? "test passed ✓ (+armor)" : "☕ +RAM (energy)", `pk-${e.kind}`);
           break;
         case "obstacleBroken":
           logLine(`[${fmtTime(s.t)}] rm ${e.label}`, "good");

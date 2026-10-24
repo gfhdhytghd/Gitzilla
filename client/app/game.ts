@@ -1,13 +1,15 @@
-// Game screen: integer-scaled 480x288 pixel canvas, snapshot interpolation (~100ms buffer), render composition,
+// Game screen: integer-scaled pixel canvas, snapshot interpolation (~100ms buffer), render composition,
 // camera shake / hit-stop / slow-mo driven by events, boss intro + victory/defeat outro, input + motion setup.
+// Landscape/desktop/big screen show the whole 480x288 arena. Phones in portrait get a camera viewport that follows
+// the hero (full arena height, ~230 px of width), edge indicators, a minimap and a control deck under the viewport.
 import type { GameEvent, MatchState, PlayerState, ServerMsg } from "../../shared/types";
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import { type AppCtx, type Screen } from "./app";
 import { createHud } from "./hud";
-import { audio } from "./sound";
+import { audio, muteBtn } from "./sound";
 import { bossPortraitCanvas } from "./lobby";
 import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
-import { asciiBar, clamp, fmtTime, h, isTouchDevice, lerp, vibrate } from "./util";
+import { asciiBar, clamp, fmtTime, h, isPhone, isTouchDevice, lerp, vibrate } from "./util";
 
 const BUFFER = 0.1; // seconds of interpolation delay
 const RES = 1; // internal render scale (logical px -> canvas px)
@@ -30,12 +32,82 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // blurred, dimmed copy of the arena that fills the letterbox margins
   const ambient = h("canvas.ambient", { width: 96, height: 58 }) as HTMLCanvasElement;
   const actx = ambient.getContext("2d")!;
-  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, overlay);
+  const minimap = h("canvas.minimap", { width: ARENA_W / 4, height: ARENA_H / 4 }) as HTMLCanvasElement;
+  const mctx = minimap.getContext("2d")!;
+  // editor-style tab over the minimap: the arena is the boss's source file
+  const miniTab = h("div.mini-tab", { title: "minimap of the whole arena" }, "▾ arena.map");
+  stage.append(h("div.mini-wrap", null, miniTab, minimap));
+  // portrait control deck: HUD panels are re-homed here; the DASH/SKILL buttons (client/input) dock at its bottom
+  const sensorRow = h("div.deck-sensors");
+  const deckMid = h("div.deck-mid");
+  const deck = h("div.deck", null, sensorRow, deckMid);
+  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay);
 
   // ---------------- layout ----------------
   let cssScale = 1;
+  // visible window into the arena, in logical px (camera); landscape = whole arena
+  const view = { x: 0, y: 0, w: ARENA_W, h: ARENA_H };
+  let portrait = false;
+  const safeProbe = h("div.safe-probe");
+  document.body.append(safeProbe);
+  const placeParts = () => {
+    const P = hud.parts;
+    if (portrait) {
+      deck.insertBefore(P.self, sensorRow);
+      deckMid.replaceChildren(P.team, P.combo);
+      deck.append(P.review, P.log, P.toasts);
+      stage.append(P.timer);
+      sensorRow.append(muteBtn);
+    } else {
+      hud.el.append(P.self, P.team, P.combo, P.log, P.review, P.toasts, P.timer);
+      document.body.append(muteBtn);
+    }
+  };
   const layout = () => {
     const W = innerWidth, H = innerHeight, dpr = devicePixelRatio || 1;
+    const phone = isPhone();
+    el.classList.toggle("phone-landscape", phone && W > H);
+    const wasPortrait = portrait;
+    portrait = phone && H >= W && !spectator;
+    el.classList.toggle("phone-portrait", portrait);
+    if (portrait !== wasPortrait || !el.dataset.placed) {
+      el.dataset.placed = "1";
+      placeParts();
+    }
+    if (portrait) {
+      const cs = getComputedStyle(safeProbe);
+      const safeTop = parseFloat(cs.paddingTop) || 0, safeBot = parseFloat(cs.paddingBottom) || 0;
+      const barH = 50 + safeTop;
+      const avail = H - barH - safeBot;
+      // Height budget for the viewport: leave a full deck on tall phones, a compact one (~210px) on short ones.
+      const deckMin = avail >= 640 ? 300 : 210;
+      const budget = Math.min(avail * 0.66, avail - deckMin);
+      // Prefer the biggest integer DEVICE-pixel scale (crisp); if that wastes >15% of the budget (e.g. 360x640 @2x
+      // would floor to 1 device px = a 144px-tall arena), use a fractional scale that fills it (pixelated upscaling).
+      const s = Math.max(1, Math.floor((budget * dpr) / ARENA_H));
+      cssScale = (ARENA_H * s) / dpr >= budget * 0.85 ? s / dpr : budget / ARENA_H;
+      // keep at least ~200 logical px of arena visible across the width
+      cssScale = Math.min(cssScale, W / 200);
+      view.w = Math.min(ARENA_W, Math.floor(W / cssScale));
+      view.h = ARENA_H;
+      const w = view.w < ARENA_W ? W : Math.round(view.w * cssScale), hh = Math.round(view.h * cssScale);
+      const left = Math.round((W - w) / 2);
+      el.classList.toggle("deck-compact", H - barH - hh - safeBot < 290);
+      Object.assign(stage.style, { width: `${w}px`, height: `${hh}px`, left: `${left}px`, top: `${Math.round(barH)}px` });
+      if (canvas.width !== view.w * RES) canvas.width = view.w * RES;
+      if (canvas.height !== view.h * RES) canvas.height = view.h * RES;
+      for (const [k, v] of Object.entries({ "--gw": w, "--gh": hh, "--gx": left, "--gy": Math.round(barH), "--deck-top": Math.round(barH + hh) })) {
+        el.style.setProperty(k, `${v}px`);
+        document.body.style.setProperty(k, `${v}px`); // touch overlay + mute button live on <body>
+      }
+      for (const c of ["dock-x", "dock-narrow", "dock-y"]) el.classList.remove(c);
+      return;
+    }
+    view.x = 0;
+    view.w = ARENA_W;
+    view.h = ARENA_H;
+    if (canvas.width !== ARENA_W * RES) canvas.width = ARENA_W * RES;
+    if (canvas.height !== ARENA_H * RES) canvas.height = ARENA_H * RES;
     const s = Math.floor(Math.min((W * dpr) / ARENA_W, (H * dpr) / ARENA_H));
     cssScale = s >= 1 ? s / dpr : Math.min(W / ARENA_W, H / ARENA_H);
     // integer device-pixel scale wastes too much space on some phones; fall back to fractional nearest-neighbour
@@ -46,7 +118,6 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     el.style.setProperty("--gh", `${hh}px`);
     el.style.setProperty("--gx", `${Math.round((W - w) / 2)}px`);
     el.style.setProperty("--gy", `${Math.round((H - hh) / 2)}px`);
-    el.classList.toggle("portrait", H > W && isTouchDevice());
     // dock HUD panels into the margins when they're wide/tall enough
     const gx = (W - w) / 2, gy = (H - hh) / 2;
     el.style.setProperty("--dw", `${Math.floor(gx - 10)}px`);
@@ -59,7 +130,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   addEventListener("resize", layout);
   const toArena = (cx: number, cy: number): [number, number] => {
     const r = canvas.getBoundingClientRect();
-    return [((cx - r.left) / r.width) * ARENA_W, ((cy - r.top) / r.height) * ARENA_H];
+    return [view.x + ((cx - r.left) / r.width) * view.w, view.y + ((cy - r.top) / r.height) * view.h];
   };
 
   // ---------------- snapshots / timeline ----------------
@@ -322,14 +393,14 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
             h("p", null, `A fatal exception 0E has occurred at ${kit?.heart || "0028:C0011E36"} in VXD KAIJU(01).`),
             h("p", null, "The current boss will be terminated."),
             h("p", null, "*  Segmentation fault (core dumped)"),
-            h("p", null, `*  exit 139 after ${fmtTime(latest?.t ?? 0)}`),
+            h("p", null, `*  boss: exit 139 (segfault) · squad: exit 0 (victory) after ${fmtTime(latest?.t ?? 0)}`),
             h("p.bsod-press", null, "Press any key to view the autopsy _"),
           )
         : h(
             "div.defeat",
             null,
             h("div.df-title", null, "SQUAD TERMINATED"),
-            h("p", null, "Killed: out of memory (exit 137)"),
+            h("p", null, "Process exited with code 1 (defeat)"),
             h("p", null, `${kit?.name ?? "the boss"} survives. tech debt wins this round.`),
             h("p.dim", null, "loading autopsy…"),
           );
@@ -391,13 +462,28 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   overlay.addEventListener("pointerdown", () => {
     if (outro && performance.now() - outro.at > 1200) finishOutro();
   });
+  // phones: first tap goes fullscreen and tries to lock portrait (both may fail; that's fine)
+  const lockPortrait = () => {
+    if (!isPhone()) return;
+    try {
+      const d = document.documentElement;
+      const lock = () => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("portrait").catch(() => {});
+      if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen({ navigationUI: "hide" }).then(lock, () => {});
+      else lock();
+    } catch {
+      /* unsupported */
+    }
+  };
 
   const showMotionFlow = () => {
     sensorBadge = h("div.kj-sensor-status", { "data-testid": "input-sensors" }, "sensors: waiting");
-    Object.assign(sensorBadge.style, { position: "absolute", left: "8px", top: "32px", font: "12px monospace", color: "#9df5c4", pointerEvents: "none" });
-    overlay.append(sensorBadge);
     const recal = h("button.btn.btn-tiny.recal", { "data-testid": "motion-recalibrate", onclick: () => (input?.calibrate(), vibrate(20)) }, "⟲ recalibrate");
-    overlay.append(recal);
+    // portrait: pill + recalibrate live in the control deck; landscape: top-left of the arena
+    if (portrait) sensorRow.append(sensorBadge, recal);
+    else {
+      sensorBadge.classList.add("floating");
+      overlay.append(sensorBadge, recal);
+    }
     const tips = h("div.motion-tips", null, "tilt = move · tap / swing = attack · DASH / SKILL buttons");
     Object.assign(tips.style, { whiteSpace: "normal", textAlign: "center", fontSize: "12px", bottom: "28px", width: "70%" });
     overlay.append(tips);
@@ -418,6 +504,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // Portrait works too: removed the old rotate-only blocker and forced landscape lock.
 
   setupInput();
+  // Register AFTER input: fullscreen consumes transient activation. Both iOS sensor
+  // permission requests must run first in this same gesture, not after fullscreen.
+  addEventListener("pointerdown", lockPortrait, { once: true, capture: true });
 
   // ---------------- render loop ----------------
   let raf = 0;
@@ -425,6 +514,128 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let visTime = 0;
   let skillCdMax = 1;
   let ambientTick = 0;
+  let miniTick = 0;
+  let camX = 0;
+  let camInit = false;
+
+  // ---------------- portrait: edge indicators + minimap ----------------
+  const FONT8 = '8px "Press Start 2P", monospace';
+  // pixel triangle whose tip is at (x, y), pointing outward (dir = +1 right edge, -1 left edge)
+  const arrow = (x: number, y: number, dir: -1 | 1, col: string) => {
+    ctx.fillStyle = "#000";
+    for (let i = 0; i <= 6; i++) ctx.fillRect(x - dir * i - (dir > 0 ? 0 : 0), y - i - 1, 1, i * 2 + 3);
+    ctx.fillStyle = col;
+    for (let i = 1; i <= 5; i++) ctx.fillRect(x - dir * i, y - i + 1, 1, i * 2 - 1);
+  };
+  const edgeLabel = (x: number, y: number, dir: -1 | 1, text: string, col: string) => {
+    ctx.font = FONT8;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = dir > 0 ? "right" : "left";
+    const tx = x - dir * 9;
+    ctx.fillStyle = "#000";
+    ctx.fillText(text, tx + 1, y + 1);
+    ctx.fillStyle = col;
+    ctx.fillText(text, tx, y);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  };
+  const pixHeart = (x: number, y: number, col: string) => {
+    ctx.fillStyle = col;
+    ctx.fillRect(x, y, 2, 2);
+    ctx.fillRect(x + 3, y, 2, 2);
+    ctx.fillRect(x - 0, y + 1, 5, 2);
+    ctx.fillRect(x + 1, y + 3, 3, 1);
+    ctx.fillRect(x + 2, y + 4, 1, 1);
+  };
+  const drawIndicators = (s: MatchState, me: PlayerState | null, now: number) => {
+    const offscreen = (x: number) => x < view.x + 6 || x > view.x + view.w - 6;
+    const place = (x: number, y: number) => {
+      const dir: -1 | 1 = x < view.x ? -1 : 1;
+      return { ex: dir < 0 ? 2 : view.w - 2, ey: clamp(y - view.y, 22, view.h - 14), dir };
+    };
+    const pulse = 0.5 + 0.5 * Math.sin(now * 10);
+    // boss (or an attack aimed at you, which outranks it)
+    const b = s.boss;
+    if (offscreen(b.x)) {
+      const { ex, ey, dir } = place(b.x, b.y);
+      const atMe = !!b.casting && b.targetPlayer === app.you;
+      if (atMe) {
+        const name = b.kit.attacks.find((a) => a.id === b.casting!.attackId)?.name ?? "incoming";
+        arrow(dir < 0 ? ex + 6 : ex, ey, dir, pulse > 0.5 ? "#ff3355" : "#ffd23d");
+        edgeLabel(dir < 0 ? ex + 6 : ex, ey, dir, `! ${name.slice(0, 16)}`, "#ff3355");
+      } else {
+        arrow(dir < 0 ? ex + 6 : ex, ey, dir, "#ff3355");
+        pixHeart(dir < 0 ? ex + 9 : ex - 15, ey - 2, pulse > 0.3 ? "#ff3355" : "#ff8fa0");
+        edgeLabel(dir < 0 ? ex + 10 : ex - 4, ey, dir, "BOSS", "#ffd0d8");
+      }
+    }
+    // downed teammates
+    for (const p of s.players) {
+      if (p.alive || p.id === app.you || !offscreen(p.x)) continue;
+      const { ex, ey, dir } = place(p.x, p.y);
+      arrow(dir < 0 ? ex + 6 : ex, ey, dir, "#39ff88");
+      edgeLabel(dir < 0 ? ex + 6 : ex, ey, dir, `${p.name.slice(0, 8)} ${Math.round(p.reviveProgress * 100)}%`, "#39ff88");
+    }
+    void me;
+  };
+  const drawMinimap = (s: MatchState, now: number) => {
+    const g = mctx, k = 0.25;
+    g.clearRect(0, 0, minimap.width, minimap.height);
+    g.fillStyle = "rgba(3,6,5,.78)";
+    g.fillRect(0, 0, minimap.width, minimap.height);
+    // faint "code" rows like an editor minimap, shaped by the boss's real heart lines
+    const lines = s.boss.kit.code?.heartLines?.length ? s.boss.kit.code.heartLines : ["function f() {", "  return x;", "}"];
+    const SYN = ["rgba(97,175,239,.16)", "rgba(198,120,221,.16)", "rgba(152,195,121,.14)", "rgba(171,178,191,.1)"];
+    for (let row = 0, i = 0; row < minimap.height; row += 3, i++) {
+      const ln = lines[i % lines.length];
+      const indent = Math.min(16, (ln.length - ln.trimStart().length) * 2);
+      const words = ln.trim().split(/\s+/);
+      let x = 2 + indent;
+      for (let w = 0; w < words.length && x < minimap.width - 2; w++) {
+        const len = Math.max(2, Math.min(18, words[w].length * 1.5));
+        g.fillStyle = SYN[(i + w) % SYN.length];
+        g.fillRect(x, row + 1, len, 1);
+        x += len + 2;
+      }
+    }
+    g.fillStyle = "#24343c";
+    for (const o of s.obstacles ?? []) g.fillRect(Math.round((o.x - o.w / 2) * k), Math.round((o.y - o.h / 2) * k), Math.max(2, Math.round(o.w * k)), Math.max(2, Math.round(o.h * k)));
+    if (s.perkOffer) {
+      g.fillStyle = "#39ff88";
+      for (const pad of s.perkOffer.pads) g.fillRect(Math.round(pad.x * k) - 2, Math.round(pad.y * k) - 2, 4, 4);
+    }
+    for (const z of s.hazards) {
+      g.fillStyle = z.armed ? "rgba(255,51,85,.8)" : "rgba(255,51,85,.4)";
+      if (z.kind === "laser") {
+        for (let d = 0; d < 140; d += 4) g.fillRect(Math.round((z.x + Math.cos(z.angle) * d) * k), Math.round((z.y + Math.sin(z.angle) * d) * k), 1, 1);
+      } else g.fillRect(Math.round((z.x - z.r) * k), Math.round((z.y - z.r) * k), Math.max(2, Math.round(z.r * 2 * k)), Math.max(2, Math.round(z.r * 2 * k)));
+    }
+    const PK: Record<string, string> = { heart: "#ff3355", energy: "#3de8ff", armor: "#c8d4e0" };
+    for (const p of s.pickups ?? []) {
+      g.fillStyle = PK[p.kind] ?? "#fff";
+      g.fillRect(Math.round(p.x * k), Math.round(p.y * k), 1, 1);
+    }
+    g.fillStyle = "#8a1328";
+    for (const r of s.boss.regions ?? []) g.fillRect(Math.round((r.x - r.r) * k), Math.round((r.y - r.r) * k), Math.max(2, Math.round(r.r * 2 * k)), Math.max(2, Math.round(r.r * 2 * k)));
+    g.fillStyle = "#ff3355";
+    g.fillRect(Math.round(s.boss.x * k) - 1, Math.round(s.boss.y * k) - 1, 3, 3);
+    for (const p of s.players) {
+      if (p.id === app.you) continue;
+      g.fillStyle = "#000";
+      g.fillRect(Math.round(p.x * k) - 2, Math.round(p.y * k) - 2, 4, 4);
+      g.fillStyle = p.alive ? "#3de8ff" : "#777";
+      g.fillRect(Math.round(p.x * k) - 1, Math.round(p.y * k) - 1, 2, 2);
+    }
+    const me = s.players.find((p) => p.id === app.you);
+    if (me) {
+      g.fillStyle = "#000";
+      g.fillRect(Math.round(me.x * k) - 3, Math.round(me.y * k) - 3, 6, 6);
+      g.fillStyle = Math.floor(now * 4) % 2 ? "#ffffff" : "#ffd23d";
+      g.fillRect(Math.round(me.x * k) - 2, Math.round(me.y * k) - 2, 4, 4);
+    }
+    g.strokeStyle = "rgba(255,255,255,.55)";
+    g.strokeRect(Math.round(view.x * k) + 0.5, 0.5, Math.round(view.w * k) - 1, minimap.height - 1);
+  };
 
   const interp = (rt: number): MatchState | null => {
     if (!snaps.length) return null;
@@ -506,16 +717,24 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     zoom = lerp(zoom, 1, performance.now() < introEnd - 900 ? 0.01 : 0.06);
     if (zoom < 1.003) zoom = 1;
 
+    // camera: portrait follows the hero (slight lead in the move direction); the intro looks at the boss first
+    if (view.w < ARENA_W) {
+      const focus = performance.now() < introEnd - 600 || !me ? s.boss.x : me.x + clamp(me.vx * 0.35, -36, 36);
+      const target = clamp(focus - view.w / 2, 0, ARENA_W - view.w);
+      camX = camInit ? camX + (target - camX) * (1 - Math.exp(-dtReal * 5)) : target;
+      camInit = true;
+      view.x = Math.round(camX);
+    }
     ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, ARENA_W, ARENA_H);
+    ctx.fillRect(0, 0, view.w, view.h);
     ctx.save();
-    if (zoom !== 1) {
-      const zx = clamp(zoomTarget[0], ARENA_W / 2 / zoom, ARENA_W - ARENA_W / 2 / zoom);
-      const zy = clamp(zoomTarget[1], ARENA_H / 2 / zoom, ARENA_H - ARENA_H / 2 / zoom);
-      ctx.translate(ARENA_W / 2, ARENA_H / 2);
-      ctx.scale(zoom, zoom);
+    {
+      const zx = zoom === 1 ? view.x + view.w / 2 : clamp(zoomTarget[0], view.w / 2 / zoom, ARENA_W - view.w / 2 / zoom);
+      const zy = zoom === 1 ? view.y + view.h / 2 : clamp(zoomTarget[1], view.h / 2 / zoom, ARENA_H - view.h / 2 / zoom);
+      ctx.translate(view.w / 2, view.h / 2);
+      if (zoom !== 1) ctx.scale(zoom, zoom);
       ctx.translate(-zx, -zy);
     }
     ctx.translate(sx, sy);
@@ -533,9 +752,13 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const order = [...s.players].sort((a, b) => a.y - b.y);
     for (const p of order) safe("drawPlayer", R.drawPlayer, ctx, p, visTime, p.id === app.you);
     safe("drawBullets", R.drawBullets, ctx, s.bullets, visTime);
-    safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime);
+    safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime, view);
     ctx.restore();
-    safe("drawPostFx", R.drawPostFx, ctx, visTime, sh);
+    safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, view);
+    if (portrait) {
+      drawIndicators(s, me ?? null, now);
+      if ((miniTick = (miniTick + 1) % 2) === 0) drawMinimap(s, now);
+    }
     if ((ambientTick = (ambientTick + 1) % 3) === 0) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height);
     releasedEvents.length = 0;
 
@@ -567,12 +790,17 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         sk.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
         sk.dataset.ready = me.skillCd > 0 ? "0" : "1";
         sk.dataset.cd = me.skillCd > 0 ? me.skillCd.toFixed(1) : "";
+        sk.dataset.code = `$ ${me.kit.skill}`;
       }
       if (da) {
         da.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
         da.dataset.ready = me.dashCd > 0 ? "0" : "1";
         da.dataset.cd = me.dashCd > 0 ? me.dashCd.toFixed(1) : "";
       }
+    }
+    if (portrait && miniTab.dataset.boss !== s.boss.kit.repo) {
+      miniTab.dataset.boss = s.boss.kit.repo;
+      miniTab.textContent = `▾ ${(s.boss.kit.heart || "arena").split("/").pop()} · map`;
     }
     if (s.status === "fighting") {
       if (!nextTaunt) nextTaunt = performance.now() + 5000;
@@ -582,7 +810,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     bubble.classList.toggle("show", showBubble);
     if (showBubble) {
       const top = s.boss.regions?.length ? Math.min(...s.boss.regions.map((r) => r.y - r.r)) : s.boss.y - 50;
-      bubble.style.left = `${stage.offsetLeft + s.boss.x * cssScale}px`;
+      bubble.style.left = `${stage.offsetLeft + clamp(s.boss.x - view.x, 30, view.w - 30) * cssScale}px`;
       bubble.style.top = `${stage.offsetTop + Math.max(20, top) * cssScale}px`;
     }
     if (motionOverlay && input && (!input.needsPermission || input.mode !== "motion")) {
@@ -594,11 +822,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const drawWaiting = (now: number) => {
     ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.fillStyle = "#05070a";
-    ctx.fillRect(0, 0, ARENA_W, ARENA_H);
+    ctx.fillRect(0, 0, view.w, view.h);
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.fillStyle = "#39ff88";
     ctx.textAlign = "center";
-    ctx.fillText(`booting arena${".".repeat(Math.floor(now * 3) % 4)}`, ARENA_W / 2, ARENA_H / 2);
+    ctx.fillText(`booting arena${".".repeat(Math.floor(now * 3) % 4)}`, view.w / 2, view.h / 2);
     ctx.textAlign = "left";
   };
   raf = requestAnimationFrame(frame);
@@ -613,6 +841,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       destroyed = true;
       cancelAnimationFrame(raf);
       removeEventListener("resize", layout);
+      safeProbe.remove();
+      document.body.append(muteBtn);
       removeEventListener("keydown", onKey);
       if (sendIv) clearInterval(sendIv);
       input?.dispose();

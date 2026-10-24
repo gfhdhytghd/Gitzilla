@@ -63,11 +63,20 @@ function nav() {
   el.innerHTML = links.map(([t, h]) => `<a href="${h}">${t}</a>`).join("");
 }
 
+// &portrait=1 simulates claude-ui's phone camera: 390x490 CSS viewport at the page DPR, height-fit integer scale.
+const PORTRAIT = q.get("portrait") === "1";
+const PORT_CSS = [390, 490];
+let camX = 0;
+
 function makeStage(scale: number, label?: string): CanvasRenderingContext2D {
   const cell = document.createElement("div");
   cell.className = "cell";
   const c = document.createElement("canvas");
-  c.width = ARENA_W * scale; c.height = ARENA_H * scale;
+  if (PORTRAIT) {
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(PORT_CSS[0] * dpr); c.height = Math.round(PORT_CSS[1] * dpr);
+    c.style.width = PORT_CSS[0] + "px"; c.style.height = PORT_CSS[1] + "px";
+  } else { c.width = ARENA_W * scale; c.height = ARENA_H * scale; }
   cell.appendChild(c);
   if (label) { const s = document.createElement("span"); s.textContent = label; cell.appendChild(s); }
   document.getElementById("wrap")!.appendChild(cell);
@@ -138,9 +147,21 @@ function bot(i: number) {
 function render(ctx: CanvasRenderingContext2D, scale: number, s: MatchState, events: GameEvent[], time: number) {
   const cues = getFxCues();
   const sh = cues.shake;
+  let view: { x: number; y: number; w: number; h: number } | undefined;
+  if (PORTRAIT) {
+    const c = ctx.canvas;
+    scale = Math.max(1, Math.floor(c.height / ARENA_H));
+    const vw = c.width / scale;
+    const me = s.players[0];
+    camX += ((me ? me.x - vw / 2 : 0) - camX) * 0.15;
+    camX = Math.max(0, Math.min(ARENA_W - vw, camX));
+    view = { x: camX, y: 0, w: vw, h: ARENA_H };
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, c.width, c.height);
+  }
   const ox = Math.round((Math.random() - 0.5) * sh) * scale, oy = Math.round((Math.random() - 0.5) * sh) * scale;
-  ctx.setTransform(scale, 0, 0, scale, ox, oy);
-  ctx.fillStyle = "#000"; ctx.fillRect(-10, -10, ARENA_W + 20, ARENA_H + 20);
+  ctx.setTransform(scale, 0, 0, scale, ox - Math.round((view?.x ?? 0) * scale), oy + (PORTRAIT ? Math.floor((ctx.canvas.height - ARENA_H * scale) / 2) : 0));
+  if (!PORTRAIT) { ctx.fillStyle = "#000"; ctx.fillRect(-10, -10, ARENA_W + 20, ARENA_H + 20); }
   drawArenaBackground(ctx, s.boss.kit.theme, s.boss.kit.seed, time);
   drawPerkPads(ctx, s.perkOffer ?? null, s.players, time);
   drawHazards(ctx, s.hazards, time);
@@ -155,8 +176,8 @@ function render(ctx: CanvasRenderingContext2D, scale: number, s: MatchState, eve
   for (const p of s.players) actors.push({ y: p.y, draw: () => (drawPlayerMod ? drawPlayerMod(ctx, p, time, p.id === "p0") : stubPlayer(ctx, p)) });
   actors.sort((a, b) => a.y - b.y).forEach((a) => a.draw());
   drawBullets(ctx, s.bullets, time);
-  drawEvents(ctx, events, time);
-  drawPostFx(ctx, time, sh);
+  drawEvents(ctx, events, time, view);
+  drawPostFx(ctx, time, sh, view);
 }
 
 function stubPlayer(ctx: CanvasRenderingContext2D, p: PlayerState) {

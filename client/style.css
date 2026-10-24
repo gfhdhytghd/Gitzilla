@@ -834,3 +834,196 @@ body:has(.screen.game.dock-narrow) .kj-touch-skill { bottom: 74px; }
 .kj-touch-button[data-ready="0"] { opacity: .7; color: var(--dim); }
 .kj-touch-button[data-cd]:not([data-cd=""])::after { content: attr(data-cd) "s"; display: block; font-family: var(--term); font-size: 16px; letter-spacing: 0; color: var(--text); }
 .kj-touch-button:active { transform: translateY(2px); filter: brightness(1.5); }
+
+/* ===================== PHONE PORTRAIT (game) ===================== */
+.safe-probe { position: fixed; left: 0; top: 0; width: 0; height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
+.deck, .minimap { display: none; }
+.screen.game.phone-portrait { background: #05070a; }
+.screen.game.phone-portrait .ambient { display: none; }
+.screen.game.phone-portrait .stage { box-shadow: 0 2px 0 0 #1d3b2b, 0 -2px 0 0 #1d3b2b; }
+
+/* boss bar: full width under the safe-area inset */
+.screen.game.phone-portrait .hud-boss { left: 6px; right: 6px; top: calc(env(safe-area-inset-top, 0px) + 3px); width: auto; transform: none; padding: 3px 8px 4px; }
+.screen.game.phone-portrait .hb-top { padding-right: 62px; font-size: 15px; }
+.screen.game.phone-portrait .hb-name { font-size: 9px; }
+.screen.game.phone-portrait .hb-phase { font-size: 7px; }
+.screen.game.phone-portrait .hb-bar { height: 8px; }
+.screen.game.phone-portrait .hb-pct { font-size: 12px; top: -3px; }
+.screen.game.phone-portrait .limb { height: 10px; }
+.screen.game.phone-portrait .limb span { font-size: 6px; line-height: 10px; }
+.screen.game.phone-portrait .hud-timer { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 6px); right: 12px; left: auto; padding: 0 4px; font-size: 15px; background: none; box-shadow: none; z-index: 6; }
+
+/* viewport overlays */
+.screen.game.phone-portrait .minimap { display: block; position: absolute; right: 4px; top: 4px; width: 110px; height: 66px; opacity: .85; box-shadow: 0 0 0 1px rgba(57,255,136,.35), 0 0 0 2px #000; image-rendering: pixelated; pointer-events: none; z-index: 2; }
+.screen.game.phone-portrait .hud-telegraph { top: calc(var(--gy) + 4px); left: 6px; transform: none; max-width: calc(100vw - 130px); padding: 2px 6px; }
+.screen.game.phone-portrait .hud-telegraph.show { animation: none; }
+.screen.game.phone-portrait .tg-main { font-size: 15px; white-space: normal; }
+.screen.game.phone-portrait .tg-trace { display: none; }
+.screen.game.phone-portrait .tg-target { font-size: 8px; }
+.screen.game.phone-portrait .hud-downed { bottom: auto; top: calc(var(--deck-top) - 30px); max-width: calc(100vw - 16px); }
+.screen.game.phone-portrait .dn-sub { display: none; }
+.screen.game.phone-portrait .taunt { font-size: 15px; max-width: 70vw; }
+
+/* control deck */
+.screen.game.phone-portrait .deck {
+  display: flex; flex-direction: column; gap: 6px; position: absolute; left: 0; right: 0; top: var(--deck-top); bottom: 0; z-index: 5;
+  padding: 8px 8px calc(env(safe-area-inset-bottom, 0px) + 112px); overflow: hidden; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(57,255,136,.03) 0 1px, transparent 1px 4px), linear-gradient(#08100c, #05070a);
+}
+.deck > * { flex: none; }
+.deck .hud-self { position: static; width: auto; transform: none; padding: 5px 8px; }
+.deck .hud-self .hs-name { font-size: 8px; }
+.deck .hud-self .hs-row { height: 15px; }
+.deck .hud-self .seg-bar i { max-width: none; height: 9px; }
+.deck .hud-self .en-bar { height: 9px; }
+.deck-sensors { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.deck-sensors:empty { display: none; }
+.deck-mid { display: flex; gap: 8px; align-items: stretch; min-height: 0; }
+.deck .hud-team { position: static; width: auto; flex: 1; top: auto; right: auto; padding: 3px 6px; }
+.deck .tm-row { font-size: 14px; grid-template-columns: minmax(0, 1fr) 30% auto; }
+.deck .hud-combo { position: static; display: block; flex: none; width: 96px; transform: none; text-align: center; align-self: center; }
+.deck .hud-combo .cx { font-size: 22px; }
+.deck .hud-combo .cl { font-size: 7px; white-space: nowrap; }
+.deck .hud-combo.pop { animation: combo-pop2 .35s cubic-bezier(.2,2,.4,1) both; }
+.deck .hud-log { position: static; display: block; width: auto; max-width: none; font-size: 13px; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.deck .log-line { white-space: nowrap; }
+.deck .hud-toasts { position: absolute; left: 50%; top: -34px; bottom: auto; transform: translateX(-50%); }
+.deck .hud-review { position: static; transform: none; width: auto; padding: 4px 6px 6px; display: none; }
+.deck .hud-review.show { display: block; animation: none; }
+.deck .hud-review.show ~ .hud-log, .screen.game.phone-portrait .deck:has(.hud-review.show) .deck-mid { display: none; }
+.deck .rv-cards { grid-template-columns: 1fr; gap: 4px; }
+.deck .rv-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; padding: 5px 8px; pointer-events: auto; }
+.deck .rv-pr { display: none; }
+.deck .rv-name { font-size: 18px; }
+.deck .rv-desc { display: block; font-size: 13px; grid-column: 1; }
+.deck .rv-by { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 12px; }
+.screen.game.phone-portrait .hud-skill { display: none; }
+.screen.game.phone-portrait .key-hint { display: none; }
+
+/* sensor pill (from the motion flow) */
+.kj-sensor-status { font-family: var(--small); font-size: 9px; padding: 2px 8px; border: 1px solid currentColor; color: var(--dim); background: rgba(0,0,0,.5); }
+.kj-sensor-status[data-status="on"] { color: var(--green); }
+.kj-sensor-status[data-status="waiting"] { color: var(--amber); animation: blink .8s steps(2) infinite; }
+.kj-sensor-status[data-status="off"] { color: var(--red); }
+.deck .kj-sensor-status { position: static !important; }
+.deck .recal { position: static; transform: none; opacity: 1; margin: 0; pointer-events: auto; }
+.screen.game.phone-portrait .motion-tips { bottom: auto; top: calc(var(--deck-top) - 26px); }
+
+/* big thumb buttons: SKILL left thumb, DASH right thumb */
+body:has(.screen.game.phone-portrait) .kj-touch-button {
+  position: fixed; top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); width: calc(50vw - 14px); height: 92px; right: auto; left: auto;
+  font-size: 15px; letter-spacing: 2px;
+}
+body:has(.screen.game.phone-portrait) .kj-touch-skill { left: 8px; }
+body:has(.screen.game.phone-portrait) .kj-touch-dash { right: 8px; }
+body:has(.screen.game.phone-portrait) .kj-touch-joystick-zone { height: calc(100% - var(--deck-top, 60%)); top: auto; bottom: 0; width: 100%; }
+
+/* intro + outro on a tall screen */
+.screen.game.phone-portrait .intro .lb { height: calc(var(--gy) - 4px); }
+.screen.game.phone-portrait .in-card { left: 8px; right: 8px; bottom: auto; top: calc(var(--deck-top) + 10px); flex-direction: column; align-items: flex-start; gap: 6px; }
+.screen.game.phone-portrait .in-portrait canvas { width: 72px; height: 72px; }
+.screen.game.phone-portrait .in-line { font-size: 15px; white-space: pre-wrap; }
+.screen.game.phone-portrait .in-name { font-size: 13px; }
+.screen.game.phone-portrait .fight-flash { top: calc(var(--gy) + var(--gh) / 2); font-size: 18px; }
+.screen.game.phone-portrait .bsod { padding: 8vh 6vw; font-size: 18px; }
+
+/* ===================== ROTATE GUARD (phones held sideways) ===================== */
+.rotate-guard { display: none; }
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 599px) {
+  body:not(.bigscreen) .rotate-guard {
+    display: flex; position: fixed; inset: 0; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: repeating-linear-gradient(to bottom, rgba(0,0,0,.25) 0 1px, transparent 1px 3px), #05070a; color: var(--green); font-family: var(--pix); font-size: 13px; text-align: center;
+  }
+}
+.rg-phone { width: 34px; height: 58px; border: 4px solid var(--green); box-shadow: 4px 4px 0 #000; position: relative; animation: rg-rot 1.8s steps(6) infinite; }
+.rg-phone::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 6px; height: 4px; margin-left: -3px; background: var(--green); }
+@keyframes rg-rot { 0%, 30% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
+.rg-sub { font-family: var(--term); font-size: 20px; color: var(--dim); }
+.kj-sensor-status.floating { position: absolute; left: calc(var(--gx) + 6px); top: calc(var(--gy) + 30px); pointer-events: none; }
+/* portrait fixes */
+.screen.game.phone-portrait .minimap { width: 120px; height: 72px; }
+body:has(.screen.game.phone-portrait) .kj-touch-joystick-zone { top: var(--gy); bottom: auto; height: var(--gh); left: 0; width: 100%; }
+.screen.game.phone-portrait .in-card { left: 0; right: 0; top: var(--deck-top); bottom: 0; background: #05070a; box-shadow: inset 0 2px 0 var(--red-d); padding: 12px 14px; z-index: 9; }
+.screen.game.phone-portrait .intro .lb.bot { display: none; }
+.deck .rv-title { font-size: 9px; white-space: nowrap; }
+.deck .rv-title .dim { display: none; }
+.deck .rv-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.deck .rv-card { display: block; padding: 4px 6px; }
+.deck .rv-name { font-size: 15px; }
+.deck .rv-desc { display: none; }
+.deck .rv-by { font-size: 11px; white-space: normal; line-height: 1; }
+.screen.game.phone-portrait .in-card { max-width: none; }
+.deck-sensors .mute-btn { position: static; margin-left: auto; opacity: .8; pointer-events: auto; }
+
+/* ===================== PHONE PORTRAIT: landing / lobby / autopsy ===================== */
+@media (max-width: 600px) and (orientation: portrait) {
+  .lobby-scroll, .ap-scroll { padding: calc(env(safe-area-inset-top, 0px) + 8px) 6px calc(env(safe-area-inset-bottom, 0px) + 40px); }
+  .lobby-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .lobby-grid > *, .ap-grid > *, .panel { min-width: 0; }
+  .lobby-grid .you-panel { order: 1; }
+  .lobby-grid .boss-panel { order: 2; }
+  .lobby-grid .squad-panel { order: 3; grid-row: auto; }
+  .panel { margin: 4px 2px; padding: 12px 12px 14px; }
+  .lobby-head { margin: 2px 4px 8px; gap: 10px; }
+  .room-code { font-size: 20px; }
+  .btn { min-height: 46px; font-size: 12px; }
+  .btn-tiny { min-height: 30px; }
+  .btn-big { min-height: 56px; width: calc(100% - 6px); }
+  .you-panel .btn-primary, .boss-owner .btn-danger { width: calc(100% - 6px); }
+  .term-input { font-size: 22px; }
+  .chips { gap: 8px; }
+  .chip { font-size: 18px; padding: 6px 10px; }
+  .squad-list { grid-template-columns: minmax(0, 1fr); }
+  .gh-row { padding: 8px 6px; font-size: 18px; }
+  .gh-list { max-height: 260px; }
+  .you-card { flex-direction: row; }
+  .you-hero canvas { width: 96px; height: 96px; }
+  .code-mini, .hl { max-width: 100%; }
+  .boss-stage { min-height: 150px; }
+  .landing-inner { justify-content: center; gap: 14px; padding: 16px 18px calc(env(safe-area-inset-bottom, 0px) + 30px); }
+  .landing-actions { width: 100%; }
+  .landing-actions .btn-big { width: 100%; }
+  .host-big { display: none !important; }
+  .hall-toggle { display: inline-flex !important; }
+  .landing-facts { flex-direction: column; gap: 4px; font-size: 18px; }
+  .landing-foot { display: none; }
+  .ap-grid { grid-template-columns: minmax(0, 1fr); }
+  .ap-verdict { font-size: 30px; }
+  .ap-sub { font-size: 17px; }
+  .ap-boss-row { flex-direction: column; align-items: center; }
+  .diff-line { grid-template-columns: 12px minmax(0, 1fr) 40px 62px; }
+  .diff-line .mark { display: none; }
+  .ap-row { grid-template-columns: 26px 34px minmax(0, 1fr) 50px 34px 30px 24px 18px; font-size: 16px; }
+  .ap-actions .btn { width: 100%; }
+  .hall-body { grid-template-columns: minmax(0, 1fr); }
+  .term-window { width: calc(100vw - 20px); }
+  .term-body .btn { width: 100%; }
+}
+
+/* ===================== code flavor: HUD vocabulary, weapon, minimap ===================== */
+.hs-weapon { font-size: 14px; color: #c9e7ff; margin: -1px 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hs-row .lbl { font-family: var(--term); font-size: 15px; width: 34px; text-transform: none; }
+.screen.game.dock-narrow .hs-row .lbl { font-family: var(--term); font-size: 11px; width: 24px; }
+.screen.game.dock-narrow .hs-weapon { font-size: 11px; }
+.deck .hud-self .hs-row .lbl { width: 40px; font-size: 16px; }
+.deck .hs-weapon { font-size: 15px; }
+.mini-wrap { display: none; }
+.screen.game.phone-portrait .mini-wrap { display: block; position: absolute; right: 4px; top: 4px; z-index: 2; pointer-events: none; }
+.screen.game.phone-portrait .mini-wrap .minimap { position: static; display: block; }
+.mini-tab { font-family: var(--term); font-size: 12px; line-height: 14px; height: 14px; padding: 0 5px; color: #c9e7ff; background: rgba(13,17,23,.85); box-shadow: 0 0 0 1px rgba(57,255,136,.35), inset 0 -1px 0 #3178c6; width: max-content; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* thumb buttons carry the code word above the plain one */
+.kj-touch-dash::before { content: "--force"; display: block; font-family: var(--term); font-size: 15px; letter-spacing: 0; color: var(--dim); }
+.kj-touch-skill[data-code]::before { content: attr(data-code); display: block; font-family: var(--term); font-size: 15px; letter-spacing: 0; color: var(--dim); }
+.deck .hud-combo.pop { animation: combo-pop3 .3s cubic-bezier(.2,2,.4,1) both; } @keyframes combo-pop3 { from { transform: scale(1.35); } to { transform: none; } } .deck .hud-combo { overflow: hidden; }
+.displaced { position: fixed; inset: 0; z-index: 1500; display: grid; place-items: center; background: rgba(2,4,6,.86); }
+.link-status.displaced { color: var(--amber); opacity: 1; }
+/* short phones (e.g. 360x640): compact control deck so the arena keeps its height */
+.screen.game.phone-portrait.deck-compact .deck { gap: 4px; padding-top: 5px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 78px); }
+.screen.game.phone-portrait.deck-compact .deck .hud-self { padding: 3px 6px; }
+.screen.game.phone-portrait.deck-compact .deck .hud-self .hs-row { height: 12px; }
+.screen.game.phone-portrait.deck-compact .deck .hs-weapon, .screen.game.phone-portrait.deck-compact .deck .hs-name { display: none; }
+.screen.game.phone-portrait.deck-compact .deck-mid, .screen.game.phone-portrait.deck-compact .deck .hud-log { display: none; }
+.screen.game.phone-portrait.deck-compact .deck-sensors { min-height: 0; }
+.screen.game.phone-portrait.deck-compact .deck-sensors .btn-tiny { min-height: 26px; padding: 3px 6px; }
+body:has(.screen.game.phone-portrait.deck-compact) .kj-touch-button { height: 64px; bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); font-size: 13px; }
+.screen.game.phone-portrait.deck-compact .mini-wrap .minimap { width: 90px; height: 54px; }

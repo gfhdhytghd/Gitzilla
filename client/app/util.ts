@@ -101,6 +101,9 @@ export function vibrate(pattern: number | number[]) {
   }
 }
 
+/** Phones: coarse pointer and a short side under 600 CSS px. These play in PORTRAIT. */
+export const isPhone = () => matchMedia("(pointer: coarse)").matches && Math.min(innerWidth, innerHeight) < 600;
+
 export const isTouchDevice = () => matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
 
 /** Typewriter effect into an element; returns a cancel fn. */
