@@ -1,0 +1,15 @@
+# claude-auth: auth/ — "Connect GitHub" via Auth0
+Goal: alternative to pasting a GitHub link. A player taps "Connect GitHub", signs in through Auth0 (GitHub social connection), and picks one of THEIR repos (incl. private if they grant it) from a list; that repo becomes their Kaiju. Pasting a link keeps working without login.
+
+**Use the Auth0 skill** at `.claude/skills/auth0/SKILL.md` (official auth0/agent-skills). Load it first and follow its intent→framework→references flow. Our server is plain Node `http` (server/main.ts, no Express), so the skill's `auth0-server-js` reference (framework-auth0-server-js) is the likely fit, with Token Vault `getAccessTokenForConnection({ connection: "github" })` to get the user's GitHub token server-side (or the Management API IdP-token fallback if Token Vault isn't available on the tenant — pick what works fastest, document why).
+
+Tenant setup via the Auth0 CLI (`auth0`, v1.38 installed in ~/.local/bin). The user is logging in with `auth0 login`; if `auth0 tenants list` fails, write "BLOCKED: needs auth0 login" in progress and wait (poll every 60s). Create: a Regular Web Application "Repo Kaiju" with callbacks/logout/web-origins for http://localhost:5173 and https://repokaiju.wilflin.me; the GitHub social connection with scopes `read:user repo` (private repos need `repo`; also consider `public_repo` as a lighter option); enable Token Vault / connected accounts as the skill instructs. GitHub OAuth App client id/secret: Auth0 dev keys can't call the GitHub API — if own keys are needed, write exactly what the user must create at github.com/settings/developers (callback URL etc.) to docs/progress/claude-auth.md under "USER ACTION" and tell the coordinator by putting "BLOCKED: needs GitHub OAuth app" at the top of the progress file. Secrets go to repo-kaiju/.env (gitignored) — never print them.
+
+You own `auth/`. Export for codex-net to wire (write exact handoff snippets in your progress file):
+- `handleAuthRoute(req, res): Promise<boolean>` for `/auth/login`, `/auth/callback`, `/auth/logout` (return-to the room URL via `?returnTo=/r/ABCD`).
+- `getSession(req: IncomingMessage): Promise<{ userId: string; login: string; avatar: string } | null>` (works on ws upgrade requests too — cookie based).
+- `getGithubToken(req): Promise<string | null>`.
+- `GET /api/me` and `GET /api/me/repos` handlers (repos: name, full_name, private, language, stars, pushed_at; sorted by pushed_at; owned + collaborator + org).
+Private repo analysis: codex-repo is adding `analyzeRepo(slug, { token })`; server passes the session token for that player's setRepo. Never send a user's token to the client or to Gemini.
+UI: claude-ui owns the lobby; write the UI handoff (endpoints + a "Connect GitHub" button + repo picker list showing avatar/login) in your progress file and the coordinator relays it.
+Hackathon rules: speed over hardening, but do keep tokens server-side and cookies httpOnly+secure on https. Progress log at docs/progress/claude-auth.md, no commits, DONE when finished.

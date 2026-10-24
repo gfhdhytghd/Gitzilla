@@ -1,0 +1,50 @@
+{
+  "name": "JQUERY, THE KNOT THAT IMPORTS",
+  "epithet": "Its 8 limbs feed the sleepless heart of src/core.js.",
+  "body": "spider",
+  "eyes": 12,
+  "mouth": "none",
+  "growths": [
+    "moss",
+    "tentacles"
+  ],
+  "palette": [
+    "#211329",
+    "#465b72",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "web",
+  "intro": [
+    "$ git clone jquery/jquery",
+    "[##########] architecture awakened",
+    "FATAL: src/core.js"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-summon-0": "Bug Factory",
+    "0-charge-1": "Fast Forward",
+    "1-cascade-0": "Dependency Hell",
+    "2-cascade-0": "Circular Import",
+    "3-cascade-0": "Dependency Hell",
+    "4-cascade-0": "Circular Import",
+    "5-spiral-0": "Stack Overflow",
+    "6-cascade-0": "Circular Import",
+    "7-cascade-0": "Dependency Hell"
+  },
+  "limbNames": {
+    "limb-0": "test Mandible",
+    "limb-1": "src Coil",
+    "limb-2": "misc Claw",
+    "limb-3": "attributes Tendril",
+    "limb-4": "core Mandible",
+    "limb-5": "root Coil",
+    "limb-6": "selector Claw",
+    "limb-7": "css Tendril"
+  }
+}

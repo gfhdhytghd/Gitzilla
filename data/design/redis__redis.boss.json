@@ -1,0 +1,48 @@
+{
+  "name": "REDIS, THE UNMERGED",
+  "epithet": "Its 7 limbs feed the sleepless heart of src/server.h.",
+  "body": "blob",
+  "eyes": 12,
+  "mouth": "brackets",
+  "growths": [
+    "moss",
+    "gears"
+  ],
+  "palette": [
+    "#211329",
+    "#5a4145",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "legacy",
+  "intro": [
+    "$ git clone redis/redis",
+    "[##########] architecture awakened",
+    "FATAL: src/server.h"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-summon-0": "Bug Factory",
+    "0-slam-1": "Core Dump",
+    "1-summon-0": "Bug Factory",
+    "2-summon-0": "npm install",
+    "3-spiral-0": "Stack Overflow",
+    "4-ring-0": "Exception Orbit",
+    "5-spiral-0": "Stack Overflow",
+    "6-ring-0": "Exception Orbit"
+  },
+  "limbNames": {
+    "limb-0": "src Claw",
+    "limb-1": "tests Tendril",
+    "limb-2": "modules Mandible",
+    "limb-3": "utils Coil",
+    "limb-4": "scripts Claw",
+    "limb-5": "modules Tendril",
+    "limb-6": "tools Mandible"
+  }
+}

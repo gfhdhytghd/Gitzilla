@@ -1,0 +1,14 @@
+{
+  "title": "react Branch Ranger",
+  "archetype": "ranger",
+  "headgear": "cat-ears",
+  "accessory": "scarf",
+  "emblem": "++",
+  "palette": [
+    "#96712d",
+    "#f3d75c",
+    "#ffdeb0",
+    "#82f4d2"
+  ],
+  "catchphrase": "Small hero. Clean commits."
+}

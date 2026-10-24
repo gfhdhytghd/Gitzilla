@@ -1,0 +1,14 @@
+{
+  "title": "lodash Branch Ranger",
+  "archetype": "ranger",
+  "headgear": "none",
+  "accessory": "sticker-shield",
+  "emblem": "<>",
+  "palette": [
+    "#96712d",
+    "#f3d75c",
+    "#ffdeb0",
+    "#82f4d2"
+  ],
+  "catchphrase": "I brought a rollback."
+}

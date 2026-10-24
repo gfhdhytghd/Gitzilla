@@ -1,0 +1,50 @@
+{
+  "name": "EXAMPLE, THE UNMERGED",
+  "epithet": "Its 8 limbs feed the sleepless heart of hello/reverse/reverse.go.",
+  "body": "swarm",
+  "eyes": 12,
+  "mouth": "maw",
+  "growths": [
+    "moss",
+    "gears"
+  ],
+  "palette": [
+    "#211329",
+    "#683b65",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "legacy",
+  "intro": [
+    "$ git clone golang/example",
+    "[##########] architecture awakened",
+    "FATAL: hello/reverse/reverse.go"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-ring-0": "Segfault Halo",
+    "0-charge-1": "Fast Forward",
+    "1-spiral-0": "Stack Overflow",
+    "2-ring-0": "Exception Orbit",
+    "3-spiral-0": "Stack Overflow",
+    "4-ring-0": "Exception Orbit",
+    "5-spiral-0": "Stack Overflow",
+    "6-ring-0": "Exception Orbit",
+    "7-spiral-0": "Stack Overflow"
+  },
+  "limbNames": {
+    "limb-0": "slog-handler-guide Mandible",
+    "limb-1": "ragserver Coil",
+    "limb-2": "gotypes Claw",
+    "limb-3": "internal Tendril",
+    "limb-4": "outyet Mandible",
+    "limb-5": "misc Coil",
+    "limb-6": "hello Claw",
+    "limb-7": "template Tendril"
+  }
+}

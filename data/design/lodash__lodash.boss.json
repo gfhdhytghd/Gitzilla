@@ -1,0 +1,44 @@
+{
+  "name": "LODASH, THE UNMERGED",
+  "epithet": "Its 5 limbs feed the sleepless heart of lodash.js.",
+  "body": "tree",
+  "eyes": 12,
+  "mouth": "maw",
+  "growths": [
+    "moss",
+    "gears"
+  ],
+  "palette": [
+    "#211329",
+    "#683b65",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "web",
+  "intro": [
+    "$ git clone lodash/lodash",
+    "[##########] architecture awakened",
+    "FATAL: lodash.js"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-ring-0": "Segfault Halo",
+    "0-charge-1": "Fast Forward",
+    "1-spiral-0": "Stack Overflow",
+    "2-ring-0": "Exception Orbit",
+    "3-spiral-0": "Stack Overflow",
+    "4-ring-0": "Exception Orbit"
+  },
+  "limbNames": {
+    "limb-0": "test Claw",
+    "limb-1": "root Tendril",
+    "limb-2": "perf Mandible",
+    "limb-3": "fp Coil",
+    "limb-4": "lib Claw"
+  }
+}

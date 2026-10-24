@@ -1,0 +1,14 @@
+{
+  "title": "jquery Branch Ranger",
+  "archetype": "ranger",
+  "headgear": "hood",
+  "accessory": "sticker-shield",
+  "emblem": "++",
+  "palette": [
+    "#96712d",
+    "#f3d75c",
+    "#ffdeb0",
+    "#82f4d2"
+  ],
+  "catchphrase": "One more patch saves the party."
+}

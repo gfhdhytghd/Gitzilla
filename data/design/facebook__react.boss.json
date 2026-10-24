@@ -1,0 +1,50 @@
+{
+  "name": "REACT, THE KNOT THAT IMPORTS",
+  "epithet": "Its 8 limbs feed the sleepless heart of compiler/packages/snap/src/sprout/shared-runtime.ts.",
+  "body": "hydra",
+  "eyes": 12,
+  "mouth": "maw",
+  "growths": [
+    "moss",
+    "tentacles"
+  ],
+  "palette": [
+    "#211329",
+    "#683b65",
+    "#ff547b",
+    "#bb83ef",
+    "#fff4bd"
+  ],
+  "theme": "web",
+  "intro": [
+    "$ git clone facebook/react",
+    "[##########] architecture awakened",
+    "FATAL: compiler/packages/snap/src/sprout/shared-runtime.ts"
+  ],
+  "taunts": [
+    "Your PR has conflicts.",
+    "There is no base case.",
+    "Works on my machine."
+  ],
+  "attackNames": {
+    "0-summon-0": "npm install",
+    "0-slam-1": "rm -rf /",
+    "1-cascade-0": "Circular Import",
+    "2-cascade-0": "Dependency Hell",
+    "3-cascade-0": "Circular Import",
+    "4-cascade-0": "Dependency Hell",
+    "5-cascade-0": "Circular Import",
+    "6-cascade-0": "Dependency Hell",
+    "7-cascade-0": "Circular Import"
+  },
+  "limbNames": {
+    "limb-0": "compiler Tendril",
+    "limb-1": "react-dom Mandible",
+    "limb-2": "misc Coil",
+    "limb-3": "react-reconciler Claw",
+    "limb-4": "react-devtools-shared Tendril",
+    "limb-5": "fixtures Mandible",
+    "limb-6": "react-dom-bindings Coil",
+    "limb-7": "eslint-plugin-react-hooks Claw"
+  }
+}

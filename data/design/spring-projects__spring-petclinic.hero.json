@@ -1,0 +1,14 @@
+{
+  "title": "spring-petclinic Hotfix",
+  "archetype": "engineer",
+  "headgear": "helmet",
+  "accessory": "coffee-mug",
+  "emblem": "R",
+  "palette": [
+    "#8e405a",
+    "#f08c73",
+    "#f8d8a4",
+    "#9bd8ff"
+  ],
+  "catchphrase": "I brought a rollback."
+}

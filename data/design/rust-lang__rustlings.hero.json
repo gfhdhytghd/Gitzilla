@@ -1,0 +1,14 @@
+{
+  "title": "rustlings Compile Guardi",
+  "archetype": "heavy",
+  "headgear": "bandana",
+  "accessory": "jetpack",
+  "emblem": "{}",
+  "palette": [
+    "#ac583c",
+    "#f3a76c",
+    "#ffdeb0",
+    "#77f2cd"
+  ],
+  "catchphrase": "Small hero. Clean commits."
+}
