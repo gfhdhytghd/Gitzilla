@@ -110,6 +110,41 @@ export interface QualityStat {
   tip: string;               // how to improve it in real code: "Break the cycle api <-> db to lose the weakness"
 }
 
+// ---------- Edu rubric + feedback (teacher uploads how repos are judged; students get feedback after the fight) ----------
+
+// Signals the server can measure for a repo (analysis/ + sim quality). "check" = a custom yes/no rule.
+export type RubricSignal = "tests" | "modularity" | "cohesion" | "documentation" | "size" | "cycles" | "tech-debt"
+  | "function-length" | "readme" | "ci" | "license" | "typing" | "commits" | "check";
+
+export interface RubricCriterion {
+  id: string;
+  name: string;              // teacher's wording, e.g. "Unit tests"
+  weight: number;            // relative weight (normalized server-side)
+  signal: RubricSignal;
+  description: string;       // teacher's text for this criterion (shown to students)
+  check?: { kind: "path-exists" | "path-absent" | "max-file-loc" | "min-commits" | "language"; value: string | number };
+  target?: number;           // optional pass threshold in the signal's natural unit (e.g. tests 0.2 = 20% of files)
+}
+
+export interface Rubric {
+  title: string;
+  criteria: RubricCriterion[];
+  source: "doc" | "default";   // parsed from the teacher's document, or the built-in default
+  unparsed?: string[];         // doc lines the parser couldn't map (teacher reviews them)
+}
+
+export interface CriterionResult { criterionId: string; score: number; evidence: string; tip?: string } // score 0..1
+
+export interface StudentFeedback {
+  playerId: string; name: string; repo: string;
+  rubricScore: number;                 // 0..100, weighted
+  results: CriterionResult[];
+  strengths: string[];                 // 1–3, grounded in real files/numbers
+  improvements: { text: string; file?: string }[];  // 1–3 concrete next steps
+  match: { rank: number; kos: number; damage: number; roundWins: number; quiz?: string }; // how they played
+  summary: string;                     // 2–3 sentence friendly teacher-style note
+}
+
 // ---------- Kits: what a repo becomes in the game (sim/kits.ts derives) ----------
 
 export type WeaponKind =
@@ -429,6 +464,7 @@ export interface LobbyState {
           progress?: GenesisProgress; genesis?: Genesis };
   phase: "lobby" | "match" | "autopsy";
   mode: GameMode;            // owner toggles; default "battle"
+  rubric?: Rubric;           // edu: the teacher's grading rubric (visible to everyone in the room)
 }
 
 export type ClientMsg =
@@ -437,7 +473,8 @@ export type ClientMsg =
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
   | { t: "setMode"; mode: GameMode }        // owner only, lobby only
-  | { t: "controls"; ready: boolean; mode: MotionProfile }  // phone reports: motion permission granted & sensors live (or touch chosen)
+  | { t: "controls"; ready: boolean; mode: MotionProfile }
+  | { t: "setRubric"; rubric: Rubric }    // owner only, edu, lobby (after previewing POST /api/rubric/parse)  // phone reports: motion permission granted & sensors live (or touch chosen)
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
@@ -448,6 +485,7 @@ export type ServerMsg =
   | { t: "lobby"; lobby: LobbyState }
   | { t: "snapshot"; state: MatchState; ack: number }
   | { t: "autopsy"; result: Autopsy }
+  | { t: "feedback"; items: StudentFeedback[] }  // edu, after the match: a student gets only their own; owner/screen get all
   | { t: "error"; message: string };
 
 export interface Autopsy {
