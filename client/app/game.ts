@@ -720,13 +720,15 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let recalBtn: HTMLElement | null = null;
   let tipsShown = false;
   const showMotionFlow = () => {
-    sensorBadge = h("div.kj-sensor-status", { "data-testid": "input-sensors" }, "motion: waiting");
+    sensorBadge = h("div.kj-sensor-status", { "data-testid": "input-sensors" }, "tap to enable tilt");
     recalBtn = h("button.btn.btn-tiny.recal", { "data-testid": "motion-recalibrate", onclick: () => (input?.calibrate(), vibrate(20)) }, "⟲ recalibrate");
     enablePill = h("button.btn.btn-tiny.enable-pill", { "data-testid": "motion-enable", hidden: true }, "tap to enable tilt") as HTMLButtonElement;
+    // The portrait deck is pointer-events:none; this permission button must opt in.
+    enablePill.style.pointerEvents = "auto";
     enablePill.addEventListener("click", (event) => {
       event.stopPropagation();
       // Both native permission calls execute synchronously inside this gesture.
-      void input!.requestPermission().then(() => enablePill && (enablePill.hidden = true));
+      void input!.requestPermission().then(updatePhoneControls);
     });
     // portrait: pill + buttons live in the control deck; landscape: top-left of the arena
     if (portrait) sensorRow.append(sensorBadge, enablePill, recalBtn);
@@ -739,12 +741,13 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const updatePhoneControls = () => {
     if (!input || !sensorBadge) return;
     const mode = input.mode, st = input.sensorStatus ?? "off";
-    sensorBadge.textContent = mode === "touch" ? "touch controls" : `motion: ${st}`;
+    const motionReady = st === "on";
+    sensorBadge.textContent = motionReady ? "motion: on" : input.motionProfile === "tap-only" ? "touch controls" : "tap to enable tilt";
     sensorBadge.dataset.status = mode === "touch" ? "touch" : st;
     sensorBadge.dataset.mode = mode;
-    if (recalBtn) recalBtn.hidden = mode !== "motion";
+    if (recalBtn) recalBtn.hidden = !motionReady;
     const introOver = performance.now() > introEnd;
-    if (enablePill) enablePill.hidden = !(introOver && mode === "motion" && input.needsPermission);
+    if (enablePill) enablePill.hidden = motionReady || input.motionProfile === "tap-only";
     if (introOver && !tipsShown && latest?.status === "fighting") {
       tipsShown = true;
       const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing/tap = attack · twist = dash · spin/hold = skill");
@@ -765,9 +768,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // Portrait works too: removed the old rotate-only blocker and forced landscape lock.
 
   setupInput();
-  // Register AFTER input: fullscreen consumes transient activation. Both iOS sensor
-  // permission requests must run first in this same gesture, not after fullscreen.
-  addEventListener("pointerdown", lockPortrait, { once: true, capture: true });
+  // Bubble after the touchend capture / target onclick permission handlers. A touch
+  // pointerdown is not activation, and fullscreen must not run ahead of a button's request.
+  addEventListener("click", lockPortrait, { once: true });
 
   // ---------------- render loop ----------------
   let raf = 0;

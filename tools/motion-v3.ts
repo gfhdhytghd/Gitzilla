@@ -69,11 +69,16 @@ try {
   await context.addInitScript(`(() => {
     if (location.protocol.startsWith('http')) localStorage.setItem('kaiju.name', 'motion-v3');
     const w = window;
-    w.__permissionCalls = [];
+    w.__permissionCalls = []; w.__permissionDecision = 'denied'; w.__holdPermission = false; w.__permissionResolvers = [];
     for (const key of ['DeviceMotionEvent', 'DeviceOrientationEvent']) {
       Object.defineProperty(w[key], 'requestPermission', { configurable: true, value: () => {
-        w.__permissionCalls.push({ api: key, event: w.event?.type, active: navigator.userActivation.isActive });
-        return Promise.resolve('granted');
+        const event = w.event;
+        const active = navigator.userActivation.isActive;
+        const accepted = active && event?.isTrusted && ['touchend', 'click'].includes(event.type);
+        w.__permissionCalls.push({ api: key, event: event?.type, trusted: event?.isTrusted, active, accepted, decision: w.__holdPermission ? 'pending' : w.__permissionDecision });
+        if (!accepted) return Promise.resolve('denied');
+        if (w.__holdPermission) return new Promise(resolve => w.__permissionResolvers.push(resolve));
+        return Promise.resolve(w.__permissionDecision);
       } });
     }
     Object.defineProperty(screen.orientation, 'angle', { configurable: true, get: () => 0 });
@@ -129,10 +134,35 @@ try {
   // Tap the actual attack area: permission must also work without a modal/enable button.
   // The compact pill is intentionally hidden during the cinematic in the current UI.
   await page.touchscreen.tap(120, 350);
-  const permissions = await page.evaluate(() => (window as any).__permissionCalls);
+  let permissions = await page.evaluate(() => (window as any).__permissionCalls);
   assert.equal(permissions.length, 2);
-  assert(permissions.every((p: any) => p.active && (p.event === 'pointerdown' || p.event === 'click')));
-  check('both iOS permissions in original user gesture', permissions);
+  assert(permissions.every((p: any) => p.active && p.trusted && p.accepted && (p.event === 'touchend' || p.event === 'click')));
+  check('both iOS permissions in trusted touchend/click activation', permissions);
+  await page.locator('[data-testid="input-sensors"][data-mode="touch"]').waitFor();
+  await page.getByTestId('motion-enable').waitFor({ state: 'visible' });
+  assert.equal(await page.getByTestId('input-sensors').innerText(), 'tap to enable tilt');
+  check('denied permission stays off and offers a real retry button', { label: await page.getByTestId('input-sensors').innerText() });
+  await page.evaluate(() => {
+    const w = window as any; w.__permissionDecision = 'granted'; w.__holdPermission = true;
+  });
+  await page.getByTestId('motion-enable').tap();
+  permissions = await page.evaluate(() => (window as any).__permissionCalls);
+  assert.equal(permissions.length, 4, 'denied native attempt must not remain cached');
+  assert(permissions.slice(2).every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted));
+  // Finite readings arriving while the native prompt is still unresolved must be ignored.
+  await page.evaluate(() => { (window as any).__motion.enabled = true; }); await sleep(120);
+  assert.notEqual(await page.getByTestId('input-sensors').getAttribute('data-status'), 'on');
+  assert.equal(await page.getByTestId('input-sensors').innerText(), 'tap to enable tilt');
+  check('pending native prompt + sensor samples cannot claim motion on', permissions.slice(2));
+  await page.evaluate(() => {
+    const w = window as any; w.__motion.enabled = false; w.__holdPermission = false;
+    for (const resolve of w.__permissionResolvers.splice(0)) resolve('granted');
+  });
+  await sleep(100);
+  assert.notEqual(await page.getByTestId('input-sensors').getAttribute('data-status'), 'on');
+  await page.getByTestId('motion-enable').waitFor({ state: 'visible' });
+  await page.screenshot({ path: join(output, 'permission-granted-awaiting-sensors.png') });
+  check('native granted without subsequent sensor data still asks to enable tilt', { label: await page.getByTestId('input-sensors').innerText() });
   await page.locator('[data-testid="input-sensors"][data-mode="touch"]').waitFor();
   assert.equal(await page.locator('.kj-touch-button,.kj-touch-joystick-zone,[data-testid=input-dash],[data-testid=input-skill]').count(), 0);
   check('no events -> touch fallback after 1.5s', { mode: await page.getByTestId('input-sensors').getAttribute('data-mode') });
@@ -236,7 +266,7 @@ try {
   await page.screenshot({ path: join(output, 'failure.png'), timeout: 4000 }).catch(() => {});
 } finally {
   const result = { pass, failure, base, viewport: { width: 390, height: 844, dpr: 3 },
-    proof: 'real DEV UI input -> WebSocket -> authoritative simulation snapshots; synthetic sensors, no physical phone; Vite HMR held inert in this tab only',
+    proof: 'real app input -> WebSocket -> authoritative simulation snapshots; strict trusted touchend/click permission mocks + synthetic sensors, no physical phone; Vite HMR held inert in this tab only',
     checks, errors, snapshots, inputs: inputs.length, ack, player: me(), consoleLog, traceUploads };
   writeFileSync(join(output, 'summary.json'), `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(join(output, 'inputs.json'), `${JSON.stringify(inputs, null, 2)}\n`);
