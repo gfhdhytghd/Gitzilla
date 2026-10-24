@@ -35,8 +35,37 @@ async function devIdentity(): Promise<Response> {
 }
 function send(index: number, message: ClientMsg) { sockets[index].send(JSON.stringify(message)); }
 
+async function checkDevHmr() {
+  const response = await fetch(new URL('/@vite/client', base));
+  assert.equal(response.status, 200);
+  const source = await response.text();
+  const constant = (name: string) => {
+    const match = source.match(new RegExp(`const ${name} = ([^;\\n]+);`));
+    assert.ok(match, `Vite injects ${name}`);
+    return JSON.parse(match[1]) as unknown;
+  };
+  assert.equal(constant('hmrPort'), null, 'Browser HMR port must follow the page through HTTPS tunnels');
+  const direct = String(constant('directSocketHost'));
+  assert.equal(new URL('ws://' + direct).port, target.port, 'Vite fallback targets the actual DEV port');
+  assert.ok(source.includes('hmrPort || importMetaUrl.port'));
+  assert.match(source, /const socketProtocol = null \|\|/, 'Browser chooses ws/wss from the page protocol');
+  const url = new URL('/', base); url.protocol = target.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.searchParams.set('token', String(constant('wsToken')));
+  const socket = new WebSocket(url, 'vite-hmr');
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('DEV HMR handshake timed out')), 3000);
+      socket.once('error', error => { clearTimeout(timeout); reject(error); });
+      socket.on('message', raw => {
+        if (JSON.parse(raw.toString()).type === 'connected') { clearTimeout(timeout); resolve(); }
+      });
+    });
+  } finally { socket.terminate(); }
+}
+
 try {
   const me = await devIdentity();
+  await checkDevHmr();
   assert.equal(me.status, 200, 'Auth routes run before the API catch-all');
   const identity = await me.json() as { enabled: boolean; user: unknown };
   assert.equal(typeof identity.enabled, 'boolean');
@@ -144,7 +173,7 @@ try {
   const denied = new Promise<number>(resolve => stale.once('close', resolve));
   stale.send(JSON.stringify({ t: 'hello', room, role: 'player', resume: owner.token }));
   assert.equal(await denied, 4002, 'A left tab cannot recreate the deleted room');
-  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${throughput.join(', ')}; Genesis/auth/QR/fallback/Hall + leave/owner/deletion/revocation OK`);
+  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${throughput.join(', ')}; HMR/Genesis/auth/QR/fallback/Hall + leave/owner/deletion/revocation OK`);
 } finally {
   clearInterval(timer);
   for (const socket of sockets) socket.close();

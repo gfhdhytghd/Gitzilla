@@ -57,11 +57,11 @@ describe('Genesis fallback stories', () => {
   it('uses final design names, palette, eyes, theme and weapon without changing budgets', () => {
     const p = profiles[0];
     const baseHero = playerKitFromProfile(p), baseBoss = bossKitFromProfile(p, 4);
-    const hd = { ...fallbackHero(p, baseHero), title: 'Actual Hero', weaponName: 'Actual Weapon' };
+    const hd = { ...fallbackHero(p, baseHero), title: 'Actual Hero', weaponName: 'unsafe { blast() }' };
     const bd = { ...fallbackBoss(p, baseBoss), name: 'Actual Boss', eyes: 7, theme: 'web' as const, attackNames: Object.fromEntries(baseBoss.attacks.map(a => [a.id, 'Actual Attack'])) };
     const h = buildGenesis(p, applyHeroDesign(baseHero, hd), 'hero');
     const b = buildGenesis(p, applyBossDesign(baseBoss, bd), 'boss');
-    expect(h.trace.find(t => t.part === 'weapon')?.to).toContain('Actual Weapon');
+    expect(h.trace.find(t => t.part === 'weapon')?.to).toBe('unsafe { blast() }');
     expect(h.trace.at(-1)?.to).toBe('name: Actual Hero');
     expect(b.trace.at(-1)?.to).toBe('name: Actual Boss');
     expect(b.trace.find(t => t.part === 'eyes')?.to).toContain('7');
@@ -75,11 +75,14 @@ describe('Genesis fallback stories', () => {
     const p = structuredClone(profiles[0]);
     p.primaryLanguage = 'Rust'; p.languages = { Rust: 9500, Python: 500 };
     p.components[0].loc = 12485; p.heart = 'src/ignore/gitignore.rs'; p.heartFanIn = 41; p.cycles = [];
-    const hero = buildGenesis(p, playerKitFromProfile(p), 'hero');
+    const heroKit = playerKitFromProfile(p);
+    const hero = buildGenesis(p, heroKit, 'hero');
     const kit = bossKitFromProfile(p, 4); kit.limbs[0].maxHp = 1703;
     const design = fallbackBoss(p, kit); design.limbNames[kit.limbs[0].id] = 'Core Claw';
     const boss = buildGenesis(p, applyBossDesign(kit, design), 'boss');
-    expect(hero.trace[0]).toMatchObject({ from: 'Rust · 95% of code', to: 'unsafe{} Cannon' });
+    expect(hero.trace[0].from).toContain('Rust · 95%');
+    expect(hero.trace[0].to).toBe(heroKit.code?.weapon?.name);
+    expect(`${hero.trace[0].from} → ${hero.trace[0].to}`.length).toBeLessThanOrEqual(40);
     expect(boss.trace[0]).toMatchObject({ from: `${p.components[0].name} · 12,485 LOC`, to: 'Core Claw · 1,703 HP' });
     expect(boss.trace[1]).toMatchObject({ from: '0 cycles · heart fan-in 41', to: 'heart: gitignore.rs' });
     expect(boss.trace.slice(0, 4).map(t => t.part)).toEqual(['limb', 'heart', 'eyes', 'attack']);
@@ -88,6 +91,25 @@ describe('Genesis fallback stories', () => {
       const g = buildGenesis(profile, applyBossDesign(base, fallbackBoss(profile, base)), 'boss');
       expect(g.trace.every(t => t.from.length <= 40 && t.to.length <= 40)).toBe(true);
     }
+  });
+
+  it('keeps complete 24-character code names and shortens the source caption to fit', () => {
+    const p = structuredClone(profiles[0]);
+    p.primaryLanguage = 'Go'; p.languages = { Go: 9500, Rust: 500 };
+    const kit = playerKitFromProfile(p);
+    for (const name of ['for { go serveLonger() }', 'unsafe { allocateBuf() }']) {
+      expect(name).toHaveLength(24);
+      kit.code!.weapon!.name = name;
+      const row = buildGenesis(p, kit, 'hero').trace[0];
+      expect(row).toEqual({ part: 'weapon', from: 'Go · 95%', to: name });
+      expect(`${row.from} → ${row.to}`.length).toBeLessThanOrEqual(40);
+      expect(row.to).not.toContain('…');
+    }
+    p.primaryLanguage = 'Jupyter Notebook'; p.languages = { 'Jupyter Notebook': 9500, Rust: 500 };
+    const row = buildGenesis(p, kit, 'hero').trace[0];
+    expect(row.to).toBe(kit.code!.weapon!.name);
+    expect(row.from).toContain('95%');
+    expect(`${row.from} → ${row.to}`.length).toBeLessThanOrEqual(40);
   });
 
   it('handles absent DNA/tree without inventing files, functions or source', () => {

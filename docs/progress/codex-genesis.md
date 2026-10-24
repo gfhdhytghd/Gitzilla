@@ -3,7 +3,15 @@ DONE (edu pvp) — codex-genesis
 Implemented the server-side pure TypeScript code → character story builder in `genesis/`.
 No commits, new dependencies, shared-contract edits, or other owners' implementation edits.
 
-## Classroom PvP revision (latest)
+## Code-expression weapon caption correction (latest)
+- Reproduced two stale assertions after code-expression weapon names landed: the phone-number test expected `unsafe{} Cannon`, and the design override used now-invalid prose `Actual Weapon`.
+- Weapon targets preserve the complete expression. The source language caption shortens first, retaining the percentage and keeping `from → to` within 40 characters. Payload compaction also preserves complete weapon expressions.
+- Updated the design fixture to valid `unsafe { blast() }`; the human-number test reads the actual final kit expression. Added explicit 24-character Go/Rust expression cases and a long-language case, asserting exact expression preservation and the whole-row limit.
+- `npx vitest run genesis`: **48/48 PASS** (3 files, including coordinator-added quality integration tests). Scoped `npx tsc -p genesis/tsconfig.json --noEmit`: **PASS**. Scoped `git diff --check`: **PASS**.
+- Full `npm test`: **573 PASS, 2 FAIL, 7 SKIP**. Both failures are teammate-owned `client/render/boss/layout.test.ts` (limb radius 15 vs 13; body kaiju vs blob), not Genesis.
+- Full `npm run typecheck`: blocked by teammate-owned `sim/regions.ts:18` TS2769 (literal radius 19 incompatible with inferred 13), no Genesis diagnostics. No unrelated files edited or commits made.
+
+## Classroom PvP revision
 - Completed `buildGenesis(profile, eduKit, 'hero')`: when `quality` is present, the trace IS the report card. First seven steps show all supplied grades (armor, speed, damage, weakness, HP, energy, regen), followed by concrete improvement tips, then hero identity/cosmetics. All captions stay ≤40 chars; grades/values come directly from sim, including zero and fractional values.
 - Exported `qualityTrace(quality)` for consumers needing only report-card rows. No `GameMode` API change or boss needed. Existing battle behavior remains when `quality` is absent; `quality: []` does not invent missing grades.
 - Read the new top section of `docs/tasks/edu.md` and `QualityStat` / nullable-boss contracts. No `MatchState`/`Autopsy` boss dereferences exist in `genesis/`; initial scoped typecheck PASS with the nullable contract.

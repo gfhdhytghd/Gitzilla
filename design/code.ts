@@ -33,7 +33,7 @@ export function dnaFingerprint(profile: RepoProfile, kit?: PlayerKit | BossKit):
   return createHash('sha256').update(JSON.stringify({
     recipe: 'dna-epithets-3', dna: artDNA(profile, kit), heart: profile.heart, cycles: profile.cycles, ageDays: profile.ageDays,
     longestFunction: profile.dna?.longestFunction ?? null,
-    ...(kit && 'weapon' in kit ? { heroRecipe: 'code-weapon-1', language: profile.primaryLanguage, weapon: kit.weapon,
+    ...(kit && 'weapon' in kit ? { heroRecipe: 'code-expression-2', language: profile.primaryLanguage, weapon: kit.weapon,
       glyphs: kit.code?.weapon ? { projectiles: kit.code.weapon.projectiles, muzzle: kit.code.weapon.muzzle, impact: kit.code.weapon.impact } : null } : {}),
   })).digest('hex').slice(0, 16);
 }

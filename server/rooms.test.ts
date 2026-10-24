@@ -383,13 +383,13 @@ describe('room protocol over real WebSockets', () => {
     owner.send({ t: 'setBoss', repo: 'public/boss' });
     await until(() => owner.lobby()?.players[0].status === 'ready' && owner.lobby()?.boss.status === 'ready');
     expect(analyzeRepo).toHaveBeenCalledWith('acme/private', expect.objectContaining({ token: fixtureToken }));
-    expect(analyzeRepo).toHaveBeenCalledWith('public/boss', expect.objectContaining({ onProgress: expect.any(Function) }));
-    expect(getGithubToken).toHaveBeenCalledTimes(1);
+    expect(analyzeRepo).toHaveBeenCalledWith('public/boss', expect.objectContaining({ token: fixtureToken, onProgress: expect.any(Function) }));
+    expect(getGithubToken).toHaveBeenCalledTimes(2);
     const peer = await connect('player', undefined, 'Other Player', 'session=bob');
     peer.send({ t: 'setRepo', repo: 'other/private' });
     await until(() => peer.lobby()?.players.find(p => p.id === peer.welcome.you)?.status === 'ready');
     expect(analyzeRepo).toHaveBeenCalledWith('other/private', expect.objectContaining({ token: secondToken }));
-    expect(getGithubToken).toHaveBeenCalledTimes(2);
+    expect(getGithubToken).toHaveBeenCalledTimes(3);
     expect(enhanceHeroKit).not.toHaveBeenCalled();
     owner.send({ t: 'start' });
     await until(() => owner.messages.find(m => m.t === 'autopsy'));
@@ -419,12 +419,86 @@ describe('room protocol over real WebSockets', () => {
     expect(recorded).toHaveLength(1);
   });
 
+  it('uses only the owner upgrade credential for a private boss and excludes it from Gemini and Hall', async () => {
+    const credential = 'mock-owner-boss-credential';
+    const getGithubToken = vi.fn(async (req: http.IncomingMessage) => req.headers.cookie === 'session=owner' ? credential : null);
+    const analyzeRepo = vi.fn(async (slug: string, options?: { token?: string }) => {
+      expect(options?.token).toBe(slug === 'owner/private-boss' ? credential : undefined);
+      return { slug, heart: 'core.ts' } as RepoProfile;
+    });
+    const enhanceBossKit = vi.fn(async (_profile: RepoProfile, kit: BossKit) => kit);
+    const test = await setup(0.2, { getGithubToken, analyzeRepo, enhanceBossKit });
+    const publicPlayer = await test.connect(); publicPlayer.send({ t: 'setRepo', repo: 'public/hero' });
+    await until(() => publicPlayer.lobby()?.players[0].status === 'ready');
+    publicPlayer.socket.close(); await once(publicPlayer.socket, 'close');
+    const owner = await test.connect('player', publicPlayer.welcome.token, '', 'session=owner');
+    const peer = await test.connect('player', undefined, 'Peer', 'session=someone-else');
+    const calls = getGithubToken.mock.calls.length;
+    peer.send({ t: 'setBoss', repo: 'peer/not-authorized' }); await until(() => peer.messages.find(m => m.t === 'error'));
+    expect(getGithubToken).toHaveBeenCalledTimes(calls);
+    expect(analyzeRepo).not.toHaveBeenCalledWith('peer/not-authorized', expect.anything());
+    owner.send({ t: 'setBoss', repo: 'owner/private-boss' }); await until(() => owner.lobby()?.boss.status === 'ready');
+    expect(analyzeRepo).toHaveBeenCalledWith('owner/private-boss', expect.objectContaining({ token: credential, onProgress: expect.any(Function) }));
+    expect(enhanceBossKit).not.toHaveBeenCalled();
+    owner.send({ t: 'start' }); await until(() => owner.messages.find(m => m.t === 'autopsy'));
+    expect(test.recorded).toHaveLength(0); // The hero was analyzed anonymously; only the boss is private.
+    expect(JSON.stringify([...owner.messages, ...peer.messages])).not.toContain(credential);
+    owner.send({ t: 'rematch' }); await until(() => owner.lobby()?.phase === 'lobby');
+    const left = once(peer.socket, 'close'); peer.send({ t: 'leave' }); await left;
+    owner.socket.close(); await once(owner.socket, 'close');
+    const anonymous = await test.connect('player', owner.welcome.token);
+    anonymous.send({ t: 'setBoss', repo: 'public/boss' }); await until(() => anonymous.lobby()?.boss.repo === 'public/boss' && anonymous.lobby()?.boss.status === 'ready');
+    expect(enhanceBossKit).toHaveBeenCalledTimes(1);
+    anonymous.send({ t: 'start' }); await until(() => anonymous.messages.find(m => m.t === 'autopsy'));
+    expect(test.recorded).toHaveLength(1); // A subsequent anonymous boss clears the credentialed-boss flag.
+  });
+
+  it('keeps private boss source/kit/Genesis out of persistence and requires fresh owner auth after restart', async () => {
+    const file = persistenceFile();
+    let credential = 'mock-first-owner-boss-token';
+    const secret = 'PRIVATE-BOSS-SOURCE-SENTINEL';
+    const analyzeRepo = vi.fn(async (slug: string, options?: { token?: string }) => {
+      const profile = offlineProfile('pallets/flask'); profile.slug = slug;
+      if (slug === 'owner/private-boss') {
+        expect(options?.token).toBe(credential); profile.heart = secret + '/heart.py'; profile.readme = secret;
+        profile.dna = { ...profile.dna!, heartLines: [secret], identifiers: [secret] };
+      }
+      return profile;
+    });
+    const services = { ...genesisServices, analyzeRepo,
+      getGithubToken: async (req: http.IncomingMessage) => req.headers.cookie === 'session=owner' ? credential : null };
+    const first = await setup(999, services, { persistenceFile: file });
+    const original = await first.connect(); original.send({ t: 'setRepo', repo: 'pallets/flask' });
+    await until(() => original.lobby()?.players[0].status === 'ready');
+    original.socket.close(); await once(original.socket, 'close');
+    const owner = await first.connect('player', original.welcome.token, '', 'session=owner');
+    owner.send({ t: 'setBoss', repo: 'owner/private-boss' }); await until(() => owner.lobby()?.boss.status === 'ready');
+    expect(owner.lobby()?.boss.genesis).toBeDefined();
+    await first.close();
+    const saved = readFileSync(file, 'utf8');
+    expect(saved).toContain('owner/private-boss'); expect(saved).not.toContain(secret); expect(saved).not.toContain(credential);
+    expect(JSON.parse(saved).rooms[0]).toEqual(expect.objectContaining({ privateBoss: true, boss: expect.objectContaining({ kit: null, status: 'error' }) }));
+    expect(JSON.parse(saved).rooms[0].bossProfile).toBeUndefined();
+    credential = 'mock-fresh-owner-boss-token';
+    const second = await setup(0.2, services, { persistenceFile: file }, first.room);
+    const resumed = await second.connect('player', owner.welcome.token, '', 'session=owner');
+    expect(resumed.welcome.lobby.boss.repo).toBe('owner/private-boss'); expect(resumed.welcome.lobby.boss.status).toBe('error');
+    resumed.send({ t: 'setBoss', repo: 'owner/private-boss' }); await until(() => resumed.lobby()?.boss.status === 'ready');
+    expect(analyzeRepo).toHaveBeenLastCalledWith('owner/private-boss', expect.objectContaining({ token: credential }));
+    resumed.send({ t: 'start' }); await until(() => resumed.messages.find(m => m.t === 'autopsy'));
+    expect(second.recorded).toHaveLength(0);
+  });
+
   it('does not expose upstream auth or authenticated-analysis error details', async () => {
     const { connect } = await setup(999, { getGithubToken: async () => { throw new Error('UPSTREAM-CREDENTIAL-SENTINEL'); } });
     const owner = await connect();
     owner.send({ t: 'setRepo', repo: 'acme/private' });
     await until(() => owner.lobby()?.players[0].status === 'error');
     expect(owner.lobby()?.players[0].error).toContain('Reconnect GitHub');
+    expect(JSON.stringify(owner.messages)).not.toContain('UPSTREAM-CREDENTIAL-SENTINEL');
+    owner.send({ t: 'setBoss', repo: 'acme/private-boss' });
+    await until(() => owner.lobby()?.boss.status === 'error');
+    expect(owner.lobby()?.boss.error).toContain('Reconnect GitHub');
     expect(JSON.stringify(owner.messages)).not.toContain('UPSTREAM-CREDENTIAL-SENTINEL');
     const next = await setup(999, {
       getGithubToken: async () => 'mock-private-token',
@@ -433,6 +507,11 @@ describe('room protocol over real WebSockets', () => {
     const second = await next.connect();
     second.send({ t: 'setRepo', repo: 'acme/private' });
     await until(() => second.lobby()?.players[0].status === 'error');
+    expect(JSON.stringify(second.messages)).not.toContain('PRIVATE-DETAIL-SENTINEL');
+    expect(JSON.stringify(second.messages)).not.toContain('mock-private-token');
+    second.send({ t: 'setBoss', repo: 'acme/private-boss' });
+    await until(() => second.lobby()?.boss.status === 'error');
+    expect(second.lobby()?.boss.error).toContain('Check GitHub access');
     expect(JSON.stringify(second.messages)).not.toContain('PRIVATE-DETAIL-SENTINEL');
     expect(JSON.stringify(second.messages)).not.toContain('mock-private-token');
   });
@@ -539,6 +618,10 @@ describe('room protocol over real WebSockets', () => {
     expect(contents).not.toContain('CONFIDENTIAL');
     const second = await setup(0.2, {}, { persistenceFile: file }, first.room);
     const resumed = await second.connect('player', owner.welcome.token, '');
+    expect(resumed.welcome.lobby.boss.status).toBe('error');
+    expect(resumed.welcome.lobby.boss.error).toContain('private boss');
+    resumed.send({ t: 'setBoss', repo: 'saved/boss' });
+    await until(() => resumed.lobby()?.boss.status === 'ready');
     resumed.send({ t: 'start' });
     await until(() => resumed.messages.find(m => m.t === 'autopsy'));
     expect(second.recorded).toHaveLength(0);

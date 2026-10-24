@@ -20,7 +20,8 @@ export interface SavedRoom {
   teacherId?: string;
   players: SavedPlayer[];
   boss: LobbyState['boss'];
-  bossProfile?: RepoProfile; // Boss analysis is public-only, never a player's private profile.
+  bossProfile?: RepoProfile; // Public-only. Credentialed boss source/kit is memory-only.
+  privateBoss?: boolean;
   phase: LobbyState['phase'];
   restartNotice?: string;
 }

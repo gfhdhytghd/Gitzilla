@@ -15,6 +15,11 @@ percentages and comma-separated counts. Long names get an ellipsis; numeric payo
 such as `1,703 HP` keep their space. Formulas, seed numbers and hex palettes stay
 out of captions. Stable limb/attack IDs remain in `ref`.
 
+Weapon mappings reserve the complete code expression (up to 24 characters) on the
+`to` side. The language caption shortens first, keeping the whole
+`from → to` mapping within 40 characters. Neither caption handling nor payload
+compaction cuts a weapon token or removes a closing delimiter.
+
 Battle heroes lead with weapon, skill, glyphs and signature (or class without a signature).
 Bosses lead with their largest component's limb, heart, a cycle weak point (or eyes),
 and an attack. The remaining mappings follow, with the final name reveal last, so

@@ -11,5 +11,5 @@
     "#77f2cd"
   ],
   "catchphrase": "new() saves the party.",
-  "weaponName": "unsafe{} Cannon"
+  "weaponName": "alloc(stdout())"
 }

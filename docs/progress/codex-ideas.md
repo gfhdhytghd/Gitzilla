@@ -1,0 +1,54 @@
+DONE
+
+Completed `docs/tasks/codex-ideas.md` as ideation/specification work only.
+
+## Deliverables
+
+- [Fun and codebase spec](../ideas/fun-and-codebase.md): **30 ideas**, each with a two-line pitch, why it is fun, exact existing/proposed repo fields, S/M/L effort with hour estimate, 1–5 demo impact and risks.
+- Ranked top five with explicit `(fun × codebase link × demo impact) / hours` arithmetic: **Break the Stack**, **Git Log Final Blow**, **Dependency Duet**, **Pair Review Rescue**, **Crowd Pull Request**.
+- Top three have implementable rules, initial numbers, ownership across all six requested module areas, coordinator-only contract sketches/assessment, deterministic tests, browser checks and human acceptance boundaries.
+- Coverage includes combat, architecture-driven boss behavior, 4–8-player cooperation, comebacks, people without phones, weekend progression, motion accessibility, and git history/blame/diffs/PRs/CI/stars/forks/issues/releases/contributors. Expensive metadata additions are marked stretch work with explicit missing/offline behavior.
+
+## Grounding
+
+Read the original `../repo-kaiju.md`, `docs/BRIEF.md`, `docs/social-impact.md`, round2/code-flavor/genesis/edu/motion-v3 task cards, `shared/types.ts`, and all 15 fallback profiles. Checked relevant sim/analysis/genesis/Hall/tooling code and docs.
+
+Latest constraints preserved: **DEV localhost:5175 only**, phone gestures with no combat buttons, battle equal-budget fairness, edu classroom PvP with explained code-quality stats, read-only GitHub access, room-only private DNA, 24h scope. Early pitch's port/landscape/shake/boss-edu instructions were treated as superseded.
+
+The spec distinguishes real fields from proposed metadata: commit subjects have no retained SHA/date/author/diff; source-note excerpts are not necessarily TODOs; heart excerpts may come from another file; test-file ratio is not coverage; sampled authors are not definitive bus factor. Local quality/kit extensions not yet declared in shared types are identified.
+
+## Playwright play record
+
+- Used the running DEV server exclusively; never accessed port 5173, changed server lifecycle/configuration, or installed dependencies.
+- Played `http://localhost:5175/r/IDEA?mock=match` for **30 seconds twice** with movement/fire/dash/skill controls. Mock gameplay is visual/interaction grounding, not authoritative production proof.
+- Created real rooms through the UI with two isolated player browser contexts, one desktop 1440×900 and one portrait 390×844 touch fallback, plus two normal bots. Selected real fallback-backed repos and started through the UI. No app-private function or direct game WebSocket input injection.
+- Initial PEDY run observed combat before a page navigation lost the canvas. SPAG explicitly received “Server restarted. Your fight was reset to the lobby; repos and kits were restored.” Held only non-game Vite HMR inert in subsequent test tabs; game `/ws` remained live.
+- Final **QAQA** run: **140.069-second control window**, recovering via normal UI after **two observed returns to the lobby**. Each player received **2,693 snapshots**. Desktop/phone sent **4,051 / 3,848 input frames**, and acknowledgements were observed. Last acknowledged sequence numbers were **2,743 / 2,607** after resets; do not compare these directly to cumulative frame counts as a packet-loss metric.
+- Cumulative authoritative event counts from one client across final-run attempts: **820 hits, 85 telegraphs, 25 skills, 11 cover breaks, 41 pickups, 12 downs, 12 revives, 4 limb breaks**. Both contexts saw matching counts. These are cumulative events across resets, not unique limbs or an uninterrupted encounter. The report's unused `observed.downs/revives` placeholders remain zero; `events.downed/revived` are the maintained counters used here.
+- Final snapshot: **fighting, phase 1, sim time 91.7s**. Real victory/autopsy, phase-two review, physical-phone sensors, crowd response and acceptance of the proposed features remain **UNVERIFIED / not reached**. No clean regression-pass claim: restart notices are retained in the evidence.
+- Viewed mock/real desktop/phone screenshots. Busy source glyphs and hit effects support reusing the existing warning panel, adding a restrained source-target outline, making rescue/co-op purpose readable, and placing git-log theatrics after combat.
+
+Local transient artifacts (outside product source):
+
+- `/tmp/gitzilla-codex-ideas/` — first mock + interrupted PEDY observations/screenshots.
+- `/tmp/gitzilla-codex-ideas-rerun/` — second mock + SPAG restart report/screenshots.
+- `/tmp/gitzilla-codex-ideas-final/report.json` and neighboring screenshots — completed QAQA timed observation, including reset notices and final authoritative snapshots.
+- `/tmp/codex-ideas-playtest.mjs` — temporary Playwright driver; current version corresponds to the final observation.
+
+## Validation
+
+Passed a documentation checker for all 30 sequential ideas, all required fields, two-line pitches, local link targets, three specs/contract assessments, balanced code fences, ranking arithmetic and trailing whitespace. Rechecked fairness, classroom/phone constraints, spectator/weekend coverage, proposed metadata labels and evidence boundaries.
+
+No product tests were run for these documentation-only additions. The implementation tests described in the spec are handoff requirements, not claims that unbuilt features passed.
+
+## Contract requests — coordinator only; not applied
+
+1. **Spec A:** add `GameEvent { type: "attackStopped"; attackId; limb; by }` at the existing source-limb cancellation. Live outlines/captions can use current types without the optional success flourish.
+2. **Spec B:** **no shared contract change**; existing commit subjects, victory state/event and killing-blow stats suffice.
+3. **Spec C:** optional verified limb-ID `BossKit.repoLinks`, `RepoDuet`, optional `MatchState.repoDuet`, one completion event and a bounded room-only `Autopsy.repoDuets` list. No `InputFrame`/network message/stat/quality change. Full diff sketches are in the spec.
+
+Recommended cut: implement #01 and #02 independently; add #03 only if four implementer-hours and the shared-contract merge remain available. #04 is the fallback priority if human play shows revive comprehension is the bigger problem.
+
+## Scope and remaining work
+
+Only `docs/ideas/fun-and-codebase.md` and this progress file were authored in the repository. Preserved other agents' pre-existing/parallel changes. **No product code, shared types, commits, pushes or memory changes.** No remaining work on this ideation card; implementation and physical/human acceptance belong to the coordinator and module owners.

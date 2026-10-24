@@ -11,5 +11,5 @@
     "#f7a6d8"
   ],
   "catchphrase": "sdslen() saves the party.",
-  "weaponName": "#define Shotgun"
+  "weaponName": "#define SPRAY(list)"
 }

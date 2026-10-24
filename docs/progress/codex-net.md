@@ -1,4 +1,4 @@
-DONE (edu pvp) · DONE (leave) · DONE (motion-v3 server) · DONE (genesis)
+DONE (private boss auth) · DONE (HMR E2) · DONE (edu pvp) · DONE (leave) · DONE (motion-v3 server) · DONE (genesis)
 
 Current infrastructure: DEV/testing is `http://localhost:5175`. Port 5173 and `https://gitzilla.wilflin.me` are stable LIVE from `../gitzilla-live`; never start/stop/test them. Only the coordinator deploys live.
 
@@ -279,3 +279,21 @@ DONE
 - Latest root typecheck is down to **one external error**: `tools/motion-v3.ts:197` TS2322 (null acceleration not assignable to DeviceMotionEventAccelerationInit | undefined). Input owner: fix the synthetic nullable-acceleration typing in your tool; server has no diagnostics. Earlier input/location/tuple/touch/placeholder issues are superseded by this latest result.
 - Trace acceptance: 5 unit tests, actual DEV upload/list, isolated production entrypoint and raw-cache denial all PASS. Exactly 2MiB accepted, over-limit chunked/advertised bodies 413, last 200 retained, forwarded/public-host lists 403. Probe was explicitly SYNTHETIC; real-phone motion evidence belongs to input owner.
 - **No commits/pushes, no shared/ edits, no changes outside authorized server/progress paths, no stable-live/5173/tunnel interactions.** Only coordinator deploys. Continue idle integration checks when requested/new modules need a server adapter change.
+
+## Private boss + DEV HMR follow-ups (16:20)
+- Applying repository Auth0 skill's token/security guidance; existing request-scoped auth resolver reused, no SDK/tenant/credential changes. Owner-only setBoss resolves the caller's own ws upgrade cookie token before analyzeRepo; stale token lookups are revision/socket/ownership guarded. No token stored or broadcast.
+- Credentialed boss analyses use seed art, skip Gemini and exclude the entire match from Hall, even if all heroes are public. Analysis/auth errors redact upstream credential details. Anonymous replacement bosses clear the privacy flag and can publish public matches again.
+- Private boss source/kit/Genesis/progress stay memory-only. Persist only the chosen slug + privateBoss flag + retryable reconnect/reselect notice; fresh authentication/reselection is required after restart. Public bosses retain existing full persistence. No changes to shared/.
+- 39 room tests PASS, including private-boss-only Hall/Gemini exclusion, owner vs teammate token scope, public replacement, restart redaction/reauth and generic auth/analysis errors. Typecheck PASS.
+- HMR E2: local installed Vite source shows server.port drives the bad direct fallback; setting it to PORT fixes localhost:5173. Browser clientPort/protocol stay inferred from its own URL, preserving localhost 5175 AND HTTPS-tunnel 443 without forcing either onto the other. Actual DEV injected HMR config + vite-hmr WS handshake PASS at 5175; no live/tunnel request made. Added regression assertions/handshake to existing server/smoke.ts.
+
+## Private boss / HMR validation and cross-owner handoff (16:21)
+- Actual DEV DWEQ smoke PASS: 2 humans + 1 bot, 99 snapshots/client/5s; HMR injected fallback = 5175, browser port/protocol inferred, real vite-hmr handshake connected on 5175; battle/leave/owner/deletion/revocation checks PASS.
+- Build PASS after changes; no stable live, 5173 or public-tunnel request was made. Keeping HMR's browser clientPort inferred is necessary to support BOTH localhost:5175 and HTTPS tunnel port 443; setting a global clientPort:5175 would break the latter. server.port now drives the correct direct fallback.
+- `ROOM_RESTART_TEST=1 npm test`: **560 PASS / 2 FAIL / 6 optional skips**, all server tests passed. Failures are external weapon-name expectations: design/index.test.ts:190 bundled hero weaponName alloc(name_long()) vs validation unsafe{} Cannon; genesis/index.test.ts:82 expects unsafe{} Cannon but actual alloc(name_long()). Design/Genesis owners: reconcile the new source-derived weapon labels/fixtures in your scope.
+- Latest typecheck only has external client/edu/report.ts:192,203 missing STAT_LABEL. Edu owner: resolve the missing label reference; no server errors.
+
+## DONE — private boss auth + HMR E2 (16:22)
+- `ROOM_RESTART_TEST=1 npx vitest run server`: **49 PASS** / 5 files; private boss token/privacy/persistence/reauth tests included. Private bosses intentionally require owner re-auth/reselection after restart to keep source data off disk.
+- DEV 5175 HMR handshake + full battle/leave smoke DWEQ PASS. Vite fallback uses 5175; browser scheme/port stay same-origin for tunnel compatibility. No live/tunnel access.
+- Build PASS. Latest full-suite/typecheck cross-owner failures are documented above (design/Genesis weapon-name fixtures and edu STAT_LABEL), with no server diagnostics/failures. No shared edits, commits, pushes or live-server controls.
