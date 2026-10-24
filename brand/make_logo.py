@@ -115,6 +115,14 @@ def lockup():
     return c
 
 
+def square(grid, side):
+    """Center a grid on a side x side canvas (PWA/maskable icons need square art inside a central safe zone)."""
+    h, w = len(grid), len(grid[0])
+    c = blank(side, side)
+    paste(c, ["".join(r) for r in grid], (side - w) // 2, (side - h) // 2)
+    return c
+
+
 def svg(grid, px=1, bg=None, pad=0):
     h, w = len(grid), len(grid[0])
     W, H = (w + 2 * pad) * px, (h + 2 * pad) * px
@@ -141,7 +149,10 @@ if __name__ == "__main__":
     out = lambda name, text: open(os.path.join(HERE, name), "w").write(text)
     out("gitzilla-mark.svg", svg(mark()))                     # transparent mark
     out("gitzilla-icon.svg", svg(mark(), bg=BG, pad=2))       # app icon / social
-    out("gitzilla-favicon.svg", svg(mark(roar=False), bg=BG, pad=1))  # tiny sizes: head + plates only
+    out("gitzilla-favicon.svg", svg(square(mark(roar=False), 28), bg=BG))  # tiny sizes: head + plates only
+    # Home-screen icons: square, full-bleed background.
+    out("gitzilla-app-icon.svg", svg(square(mark(), 44), bg=BG))       # iOS / "any": only corners get rounded
+    out("gitzilla-maskable.svg", svg(square(mark(), 54), bg=BG))       # Android "maskable": inside the 80% safe circle
     out("gitzilla-wordmark.svg", svg(wordmark()))
     out("gitzilla-lockup.svg", svg(lockup(), bg=BG, pad=3))   # mark + wordmark, for README / social
     print("wrote brand/*.svg")
