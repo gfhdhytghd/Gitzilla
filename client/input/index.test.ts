@@ -173,7 +173,7 @@ describe('desktop input', () => {
   });
 });
 
-describe('motion-v2 permissions and live sensors', () => {
+describe('motion-v3 permissions and live sensors', () => {
   const orientation = (beta: number | null, gamma: number | null, type = 'deviceorientation') => emit(win, type, { beta, gamma });
   const neutral = (beta = 0, gamma = 0, type = 'deviceorientation') => {
     for (let i = 0; i < 4; i++) { orientation(beta, gamma, type); advance(100); }
@@ -190,10 +190,10 @@ describe('motion-v2 permissions and live sensors', () => {
     expect(requestOrientation).toHaveBeenCalledOnce();
     expect(await input.requestPermission()).toBe(true);
     pointer(win, 'pointerup', 1);
-    expect(input.sample().fire).toBe(true); // even a zero-duration tap survives until a sample
+    expect(input.sample().fire).toBe(false); // defer until double-tap is ruled out
+    advance(300); expect(input.sample().fire).toBe(true);
     neutral();
-    expect(input.sample().fire).toBe(false);
-    advance(1500);
+    advance(601); expect(input.sample().fire).toBe(false);
     expect(input.mode).toBe('motion');
     expect(input.sensorStatus).toBe('on');
   });
@@ -283,20 +283,18 @@ describe('motion-v2 permissions and live sensors', () => {
     inclusive(-4.15, 0, 30);
     expect(input.sample().fire).toBe(true);
   });
-  it('shows action buttons in motion mode, excludes them from attack, and keeps tap/hold attack latched', () => {
+  it('has no drawn controls; long-press fires skill once without any tap attack', () => {
     mobile(); const input = start(); neutral();
-    const [zone, dashButton, skillButton] = doc.body.children[0].children as ElementFixture[];
-    expect(zone.style.display).toBe('none');
-    pointer(dashButton, 'pointerdown', 10); pointer(win, 'pointerdown', 10, { target: dashButton });
-    pointer(skillButton, 'pointerdown', 11); pointer(win, 'pointerdown', 11, { target: skillButton });
-    expect(input.sample()).toMatchObject({ dash: true, skill: true, fire: false });
-    expect(input.sample()).toMatchObject({ dash: false, skill: false });
-    pointer(win, 'pointerdown', 1, { target: canvas }); pointer(win, 'pointerup', 1);
-    expect(input.sample().fire).toBe(true);
-    advance(401); expect(input.sample().fire).toBe(false);
-    pointer(win, 'pointerdown', 2, { target: canvas }); advance(1000);
-    expect(input.sample().fire).toBe(true);
-    pointer(win, 'pointerup', 2); expect(input.sample().fire).toBe(false);
+    const overlay = doc.body.children[0];
+    expect(overlay.children).toHaveLength(1); // charging feedback only, no button or joystick
+    expect(overlay.children[0].attributes.get('data-testid')).toBe('input-charge');
+    pointer(win, 'pointerdown', 1, { target: canvas }); advance(549);
+    expect(input.sample()).toMatchObject({ fire: false, dash: false, skill: false });
+    advance(20);
+    expect(input.sample()).toMatchObject({ fire: false, dash: false, skill: true });
+    advance(200); expect(input.sample()).toMatchObject({ fire: false, skill: false });
+    pointer(win, 'pointerup', 1); advance(400);
+    expect(input.sample()).toMatchObject({ fire: false, skill: false });
   });
 });
 
@@ -322,7 +320,7 @@ describe('inclusive profile integration', () => {
     motion(7, 0, 0);
     expect(input.sample()).toMatchObject({ fire: true, dash: false, skill: false, source: 'motion' });
   });
-  it('tap-only shows the joystick, never requests sensors, and ignores late events', async () => {
+  it('tap-only uses invisible drag, never requests sensors, and ignores late events', async () => {
     const request = vi.fn(async () => 'granted');
     mobile(request);
     const input = start('tap-only');
@@ -331,11 +329,10 @@ describe('inclusive profile integration', () => {
     expect(await input.requestPermission()).toBe(false);
     emit(win, 'deviceorientation', { beta: 60, gamma: 40 }); motion(50, 50, 50);
     expect(input.sample()).toMatchObject({ move: [0, 0], fire: false, source: 'touch' });
-    const zone = doc.body.children[0].children[0];
-    expect(zone.style.display).toBe('');
+    expect(doc.body.children[0].attributes.get('data-mode')).toBe('touch');
     pointer(win, 'pointerdown', 7, { target: canvas }); pointer(win, 'pointerup', 7);
-    expect(input.sample().fire).toBe(true);
-    advance(401); expect(input.sample().fire).toBe(false);
+    advance(300); expect(input.sample().fire).toBe(true);
+    advance(601); expect(input.sample().fire).toBe(false);
     expect(request).not.toHaveBeenCalled();
   });
   it('switches live profiles without leaking sensor attacks and can re-enable permission', async () => {
@@ -366,45 +363,64 @@ describe('inclusive profile integration', () => {
   });
 });
 
+describe('v3 controller integration', () => {
+  it('freezes movement while a fast gyro gesture is still accumulating', () => {
+    mobile(); const input = start(); input.setProfile({ neutral: [0, 45] });
+    emit(win, 'devicemotion', { acceleration: { x: 0, y: 0, z: 0 }, rotationRate: { alpha: 300, beta: 0, gamma: 0 } });
+    emit(win, 'deviceorientation', { beta: 80, gamma: 50 }); advance(80);
+    expect(input.sample()).toMatchObject({ move: [0, 0], dash: false, skill: false });
+  });
+  it('persists per-player thresholds/neutral and training exposes bounded recorder APIs', () => {
+    mobile(); let input = start();
+    input.setProfile({ swingThreshold: 5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
+    input.dispose(); input = start();
+    expect(input.profile).toMatchObject({ swingThreshold: 5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
+    motion(5.5); expect(input.sample().fire).toBe(true);
+    input.calibration.startStep('neutral');
+    for (let i = 0; i < 10; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 1 }); advance(40); }
+    expect(input.calibration.meter()).toMatchObject({ step: 'neutral', ready: true });
+    expect(input.calibration.result().neutral?.[0]).toBeCloseTo(1);
+    // Don't upload the component fixture's training stream to a real server.
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true })));
+    input.calibration.stop();
+  });
+  it('processes gyro-only events and reports lost sensors, then recovers late readings', () => {
+    mobile(); const input = start();
+    const gyro = (alpha: number) => emit(win, 'devicemotion', { rotationRate: { alpha, beta: 0, gamma: 0 }, acceleration: null });
+    gyro(0);
+    for (let i = 0; i < 12; i++) { advance(30); gyro(800); }
+    expect(input.sample()).toMatchObject({ skill: true, dash: false, fire: false });
+    expect(input.lastGesture?.via).toBe('spin');
+    advance(2200); expect(input.sensorStatus).toBe('off');
+    gyro(0); expect(input.sensorStatus).toBe('on'); expect(input.mode).toBe('motion');
+  });
+});
+
 describe('touch fallback and helpers', () => {
-  it('provides joystick movement, one-shot buttons, and multi-touch hold-to-fire', () => {
-    mobile();
-    const input = start();
-    advance(1500);
+  it('provides invisible full-screen drag and cancels gesture actions on movement', () => {
+    mobile(); const input = start(); advance(1500);
     expect(input.mode).toBe('touch');
-    const overlay = doc.body.children[0] as ElementFixture;
-    const [zone, dashButton, skillButton] = overlay.children;
-    pointer(zone, 'pointerdown', 1, { clientX: 100, clientY: 100 });
+    pointer(win, 'pointerdown', 1, { clientX: 100, clientY: 100, target: canvas });
     pointer(win, 'pointermove', 1, { clientX: 144, clientY: 100 });
     expect(input.sample().move).toEqual([1, 0]);
-    pointer(dashButton, 'pointerdown', 2);
-    pointer(skillButton, 'pointerdown', 3);
-    expect(input.sample()).toMatchObject({ dash: true, skill: true, fire: false });
-    expect(input.sample()).toMatchObject({ dash: false, skill: false });
-    pointer(win, 'pointerdown', 4, { target: canvas });
-    pointer(win, 'pointerdown', 5, { target: canvas });
-    pointer(win, 'pointerup', 4);
-    expect(input.sample().fire).toBe(true);
-    pointer(win, 'pointercancel', 5);
-    pointer(win, 'pointerup', 1);
-    advance(401);
+    advance(800); expect(input.sample()).toMatchObject({ skill: false, dash: false, fire: false });
+    pointer(win, 'pointerup', 1); advance(400);
     expect(input.sample()).toMatchObject({ fire: false, move: [0, 0] });
-    input.dispose();
-    expect(doc.body.children).toHaveLength(0);
+    input.dispose(); expect(doc.body.children).toHaveLength(0);
   });
-  it('fires on the fallback joystick too, excludes buttons, and clears held state on blur', () => {
-    mobile();
-    const input = start();
-    advance(1500);
-    const [zone, dashButton] = doc.body.children[0].children as ElementFixture[];
-    pointer(win, 'pointerdown', 2, { target: dashButton });
+  it('double-taps dash once without fire, excludes settings, and clears pending taps on blur', () => {
+    mobile(); const input = start(); advance(1500);
+    const button = doc.createElement('button');
+    pointer(win, 'pointerdown', 2, { target: button }); pointer(win, 'pointerup', 2); advance(400);
     expect(input.sample().fire).toBe(false);
-    pointer(win, 'pointerdown', 1, { target: zone });
-    expect(input.sample().fire).toBe(true);
-    pointer(win, 'pointerdown', 3, { target: canvas });
-    expect(input.sample().fire).toBe(true);
-    emit(win, 'blur');
-    expect(input.sample().fire).toBe(false);
+    for (let id = 3; id <= 4; id++) {
+      pointer(win, 'pointerdown', id, { target: canvas }); advance(50); pointer(win, 'pointerup', id); advance(70);
+    }
+    expect(input.sample()).toMatchObject({ dash: true, fire: false, skill: false });
+    expect(input.sample().dash).toBe(false);
+    advance(400); expect(input.sample().fire).toBe(false);
+    pointer(win, 'pointerdown', 5, { target: canvas }); pointer(win, 'pointerup', 5);
+    emit(win, 'blur'); advance(400); expect(input.sample().fire).toBe(false);
   });
   it('exports a removable live debug panel and best-effort vibration', () => {
     start();

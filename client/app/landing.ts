@@ -81,6 +81,16 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   const hall = createHallBoard(opts.mock, { rows: 5 });
   hall.classList.add("landing-hall");
   const toggleHall = () => el.classList.toggle("hall-open");
+  // When the hall opens as a modal (phones / small screens) it needs its own way out: a close button,
+  // a tap on the dimmed backdrop, or Esc.
+  const closeHall = () => el.classList.remove("hall-open");
+  hall.prepend(h("button.btn.btn-ghost.hall-close", { "aria-label": "close hall of monsters", onclick: closeHall }, "[ x close ]"));
+  const onBackdrop = (e: Event) => {
+    if (el.classList.contains("hall-open") && !hall.contains(e.target as Node) && !(e.target as Element).closest?.(".hall-toggle")) closeHall();
+  };
+  const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeHall(); };
+  document.addEventListener("pointerup", onBackdrop, true);
+  document.addEventListener("keydown", onKey);
   // room codes are exactly 4 letters; digits that look like letters are mapped (0→O, 1→I, 5→S, 8→B)
   const code = h("input.code-input", { "data-testid": "join-code", maxlength: 4, placeholder: "ABCD", autocomplete: "off", autocapitalize: "characters", spellcheck: "false", inputmode: "text", "aria-label": "4-letter room code" }) as HTMLInputElement;
   const joinBtn = h("button.btn.join-btn", { "data-testid": "join-submit", disabled: true, onclick: () => join() }, "join") as HTMLButtonElement;
@@ -149,12 +159,14 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
       ),
     ),
     hall,
-    h("footer.landing-foot", null, "HackPSU · tilt to move · tap or swing to attack · DASH + SKILL buttons"),
+    h("footer.landing-foot", null, "HackPSU · tilt to move · swing to attack · twist to dash · spin for your skill"),
   );
   return {
     el,
     destroy() {
       cancelType();
+      document.removeEventListener("pointerup", onBackdrop, true);
+      document.removeEventListener("keydown", onKey);
       backdrop.destroy();
       logo.destroy();
       el.remove();

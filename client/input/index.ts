@@ -1,11 +1,18 @@
 import type { InputFrame, MotionProfile } from '../../shared/types';
 import { createGestureState, gravityTilt, normalize, recognizeGesture, removeGravity, screenTilt, tiltMove } from './gestures';
-import type { Acceleration } from './gestures';
+import type { Acceleration, RotationRate } from './gestures';
+import { loadThresholds, sanitizeThresholds, saveThresholds, type GestureThresholds } from './thresholds';
+import { createCalibrationRecorder, type CalibrationRecorder, type GestureNotice } from './calibration';
+import { createSensorTrace, type SensorTrace } from './trace';
 import { createInputDebugPanel, debugState, recordGesture } from './debug';
 import { createTouchControls } from './touch';
 import type { TouchControls } from './touch';
 import { isMotionProfile, loadMotionProfile, MOTION_SETTINGS, saveMotionProfile } from './profiles';
 
+export type { GestureThresholds } from './thresholds';
+export type { CalibrationRecorder, CalibrationStep, CalibrationMeter, GestureNotice } from './calibration';
+export { loadThresholds, defaultThresholds } from './thresholds';
+export { screenTilt } from './gestures';
 export { createInputDebugPanel } from './debug';
 export { loadMotionProfile, saveMotionProfile, MOTION_PROFILES, MOTION_PROFILE_LABELS } from './profiles';
 
@@ -14,12 +21,18 @@ export interface InputOptions {
   toArena: (clientX: number, clientY: number) => [number, number];
   getSelf: () => { x: number; y: number } | null;
   motionProfile?: MotionProfile;
+  onGesture?: (notice: GestureNotice) => void;
 }
 export interface InputController {
   readonly mode: InputFrame['source'];
   readonly needsPermission: boolean;
   readonly sensorStatus: 'on' | 'waiting' | 'off';
   readonly motionProfile: MotionProfile;
+  readonly profile: GestureThresholds;
+  readonly calibration: CalibrationRecorder;
+  readonly trace: SensorTrace;
+  readonly lastGesture: GestureNotice | null;
+  setProfile(thresholds: Partial<GestureThresholds>): void;
   setMotionProfile(profile: MotionProfile): void;
   requestPermission(): Promise<boolean>;
   calibrate(): void;
@@ -43,6 +56,9 @@ export function createInput(opts: InputOptions): InputController {
   const mobile = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   let motionProfile = opts.motionProfile ?? loadMotionProfile();
   if (opts.motionProfile) saveMotionProfile(opts.motionProfile);
+  let thresholds = loadThresholds(motionProfile);
+  const trace = createSensorTrace();
+  let lastGesture: GestureNotice | null = null;
   const requiresPermission = [sensors.DeviceMotionEvent, sensors.DeviceOrientationEvent]
     .some(sensor => typeof sensor?.requestPermission === 'function');
   // Listen first: API presence doesn't prove delivery, and some browsers hide constructors.
@@ -63,7 +79,7 @@ export function createInput(opts: InputOptions): InputController {
   let rawTilt: [number, number] = [0, 0];
   let lastOrientationAt = -Infinity;
   let gravitySign = 0;
-  let neutral: [number, number] | null = null;
+  let neutral: [number, number] | null = thresholds.neutral ? [...thresholds.neutral] : null;
   let calibrationAt: number | null = null;
   let calibrationSum: [number, number] = [0, 0];
   let calibrationCount = 0;
@@ -72,6 +88,7 @@ export function createInput(opts: InputOptions): InputController {
   let smoothedMove: [number, number] = [0, 0];
   let lastSample = performance.now();
   let sawSensor = false;
+  let lastSensorAt = -Infinity;
   let sensorTimer: number | undefined;
   let pendingPermission: Promise<boolean> | null = null;
   let permissionVersion = 0;
@@ -93,15 +110,16 @@ export function createInput(opts: InputOptions): InputController {
     sensorStatus = 'off';
     needsPermission = false;
     dash = skill = false;
-    touch ??= createTouchControls();
+    touch ??= createTouchControls({ onAction: (kind, via) => notify(kind, via, performance.now()) });
     touch.setJoystick(true);
     debugState.mode = mode;
     recordGesture('touch fallback');
   };
   const watchForMotion = () => {
     window.clearTimeout(sensorTimer);
+    const watchingSince = performance.now();
     sensorTimer = window.setTimeout(() => {
-      if (!sawSensor) {
+      if (lastSensorAt < watchingSince) {
         recordGesture('no sensors after 1.5s (use HTTPS or localhost)');
         fallback();
       }
@@ -109,6 +127,7 @@ export function createInput(opts: InputOptions): InputController {
   };
   const markSensor = () => {
     sawSensor = true;
+    lastSensorAt = performance.now();
     sensorStatus = 'on';
     window.clearTimeout(sensorTimer);
     if (mode !== 'motion') {
@@ -124,6 +143,19 @@ export function createInput(opts: InputOptions): InputController {
     calibrationSum = [0, 0];
     calibrationCount = 0;
     smoothedMove = [0, 0];
+  };
+  const calibration = createCalibrationRecorder(() => thresholds, {
+    start(step) {
+      trace.start(); reset(); gestures = createGestureState();
+      if (step === 'neutral') resetCalibration();
+    }, finish() { void trace.upload(); },
+  });
+  const notify = (kind: GestureNotice['kind'], via: string, at: number) => {
+    lastGesture = { kind, via, at }; freezeUntil = at + 250;
+    smoothedMove = [0, 0]; rawTilt = [...stableTilt];
+    calibration.observe({ at, gesture: lastGesture });
+    trace.add({ type: 'gesture', at, kind, via });
+    recordGesture(`${via} → ${kind}`); opts.onGesture?.(lastGesture);
   };
   const acceptTilt = (tilt: [number, number], now: number) => {
     if (now < freezeUntil) return;
@@ -213,7 +245,10 @@ export function createInput(opts: InputOptions): InputController {
     debugState.gamma = e.gamma;
     debugState.angle = angle();
     lastOrientationAt = performance.now();
-    acceptTilt(screenTilt(e.beta, e.gamma, angle()), lastOrientationAt);
+    const tilt = screenTilt(e.beta, e.gamma, angle());
+    trace.add({ type: 'orientation', at: lastOrientationAt, alpha: e.alpha, beta: e.beta, gamma: e.gamma, absolute: e.absolute, angle: angle() });
+    calibration.observe({ at: lastOrientationAt, tilt });
+    acceptTilt(tilt, lastOrientationAt);
   };
   on(window, 'deviceorientation', onOrientation);
   on(window, 'deviceorientationabsolute', onOrientation);
@@ -228,12 +263,17 @@ export function createInput(opts: InputOptions): InputController {
     const clean = e.acceleration;
     const valid = (a: DeviceMotionEventAcceleration | null | undefined): a is DeviceMotionEventAcceleration & Acceleration =>
       !!a && a.x != null && a.y != null && a.z != null && Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z);
+    const rate = e.rotationRate;
+    const gyro: RotationRate | null = rate && [rate.alpha, rate.beta, rate.gamma].some(v => v !== null && Number.isFinite(v))
+      ? { alpha: Number.isFinite(rate.alpha) ? rate.alpha! : 0, beta: Number.isFinite(rate.beta) ? rate.beta! : 0, gamma: Number.isFinite(rate.gamma) ? rate.gamma! : 0 } : null;
     const raw = valid(clean) ? clean : e.accelerationIncludingGravity;
-    // Null-valued events occur on unsupported desktop sensors; don't suppress fallback for them.
-    if (!valid(raw)) return;
+    if (!valid(raw) && !gyro) return;
     markSensor();
     const now = performance.now();
-    let acceleration = { x: raw.x, y: raw.y, z: raw.z };
+    trace.add({ type: 'motion', at: now, acceleration: e.acceleration ? { x: e.acceleration.x, y: e.acceleration.y, z: e.acceleration.z } : null,
+      accelerationIncludingGravity: e.accelerationIncludingGravity ? { x: e.accelerationIncludingGravity.x, y: e.accelerationIncludingGravity.y, z: e.accelerationIncludingGravity.z } : null,
+      rotationRate: gyro, interval: e.interval });
+    let acceleration: Acceleration = valid(raw) ? { x: raw.x, y: raw.y, z: raw.z } : { x: 0, y: 0, z: 0 };
     const includingGravity = e.accelerationIncludingGravity;
     if (valid(includingGravity)) {
       const result = removeGravity({ x: includingGravity.x, y: includingGravity.y, z: includingGravity.z }, gravity);
@@ -242,15 +282,27 @@ export function createInput(opts: InputOptions): InputController {
       if (!gravitySign && Math.abs(gravity.z) > 1) gravitySign = Math.sign(gravity.z);
     }
     debugState.acceleration = acceleration;
-    const result = recognizeGesture(gestures, acceleration, now, motionProfile);
+    debugState.rotationRate = gyro;
+    // Training uses permissive sane floors so low-motion users can record their own peaks.
+    const step = calibration.meter().step;
+    const trainingThresholds = step ? { ...thresholds, swingThreshold: step === 'swing' ? 4 : thresholds.swingThreshold,
+      releaseThreshold: step === 'swing' ? 2 : thresholds.releaseThreshold,
+      twistThreshold: step === 'twist' ? 80 : thresholds.twistThreshold, spinAngle: step === 'spin' ? 220 : thresholds.spinAngle } : thresholds;
+    const result = recognizeGesture(gestures, acceleration, now, motionProfile, gyro, trainingThresholds);
     gestures = result.state;
-    if (result.fired) {
-      freezeUntil = now + 250;
-      rawTilt = [...stableTilt];
-      recordGesture('SWING (any direction) → attack');
+    // Freeze during the candidate too: waiting for a twist to settle must not let
+    // its rotation steer the hero before the eventual dash/spin is classified.
+    if (gyro && Math.hypot(gyro.alpha, gyro.beta, gyro.gamma) >= 80) {
+      freezeUntil = now + 250; smoothedMove = [0, 0]; rawTilt = [...stableTilt];
     }
+    debugState.spinDegrees = result.spinDegrees;
+    calibration.observe({ at: now, acceleration, rotationRate: gyro, spinDegrees: result.spinDegrees });
+    if (result.skill) { skill = true; notify('skill', 'spin', now); }
+    else if (result.dash) { dash = true; notify('dash', 'twist', now); }
+    else if (result.fired) notify('attack', 'swing', now);
     if (gravity && gravitySign && now - lastOrientationAt > 500 && Math.hypot(...Object.values(acceleration)) < 5) {
-      acceptTilt(gravityTilt(gravity, angle(), gravitySign), now);
+      const tilt = gravityTilt(gravity, angle(), gravitySign);
+      calibration.observe({ at: now, tilt }); acceptTilt(tilt, now);
     }
   }));
 
@@ -259,14 +311,22 @@ export function createInput(opts: InputOptions): InputController {
     get needsPermission() { return needsPermission; },
     get sensorStatus() { return sensorStatus; },
     get motionProfile() { return motionProfile; },
+    get profile(): GestureThresholds { return { ...thresholds, neutral: thresholds.neutral ? [...thresholds.neutral] : null }; },
+    calibration, trace,
+    get lastGesture() { return lastGesture; },
+    setProfile(values) {
+      thresholds = sanitizeThresholds(values, thresholds); saveThresholds(thresholds, motionProfile);
+      reset(); resetCalibration(); neutral = thresholds.neutral ? [...thresholds.neutral] : null;
+    },
     setMotionProfile(profile) {
       if (disposed || !isMotionProfile(profile)) return;
       saveMotionProfile(profile);
       if (profile === motionProfile) return;
       motionProfile = profile;
+      thresholds = loadThresholds(profile);
       permissionVersion++;
       pendingPermission = null;
-      reset(); resetCalibration();
+      reset(); resetCalibration(); neutral = thresholds.neutral ? [...thresholds.neutral] : null;
       gravity = null; gravitySign = 0; lastOrientationAt = -Infinity;
       sawSensor = false;
       window.clearTimeout(sensorTimer);
@@ -281,9 +341,10 @@ export function createInput(opts: InputOptions): InputController {
       recordGesture(`profile → ${profile}; recalibrating`);
     },
     requestPermission() {
-      if (disposed || mode !== 'motion' || motionProfile === 'tap-only') return Promise.resolve(false);
+      if (disposed || !mobile || motionProfile === 'tap-only') return Promise.resolve(false);
+      mode = 'motion'; sensorStatus = 'waiting';
       if (pendingPermission) return pendingPermission;
-      if (permissionGranted) return Promise.resolve(true);
+      if (permissionGranted) { watchForMotion(); return Promise.resolve(true); }
       const version = permissionVersion;
       // Invoke both requests before awaiting so iOS retains the original tap activation.
       try {
@@ -341,14 +402,14 @@ export function createInput(opts: InputOptions): InputController {
         if (!neutral && calibrationAt !== null && now - calibrationAt >= 300 && calibrationCount) {
           neutral = [calibrationSum[0] / calibrationCount, calibrationSum[1] / calibrationCount];
         }
-        const target = neutral ? tiltMove(rawTilt, neutral, motionProfile) : [0, 0];
+        const target = neutral ? tiltMove(rawTilt, neutral, motionProfile, thresholds) : [0, 0];
         const blend = 1 - Math.exp(-Math.max(0, Math.min(now - lastSample, 100)) / MOTION_SETTINGS[motionProfile].smoothingMs);
         if (now >= freezeUntil) {
           smoothedMove = [smoothedMove[0] + (target[0] - smoothedMove[0]) * blend,
             smoothedMove[1] + (target[1] - smoothedMove[1]) * blend];
           stableTilt = [...rawTilt];
         }
-        move = smoothedMove;
+        move = now < freezeUntil ? [0, 0] : smoothedMove;
         fire = now < gestures.fireUntil;
       } else if (!disposed && touch) {
         move = [...touch.move];
@@ -372,6 +433,7 @@ export function createInput(opts: InputOptions): InputController {
       disposed = true;
       reset();
       window.clearTimeout(sensorTimer);
+      trace.dispose();
       cleanup.forEach(fn => fn());
       touch?.dispose();
       debugPanel?.dispose();
@@ -383,7 +445,15 @@ export function createInput(opts: InputOptions): InputController {
   debugState.calibrating = false;
   debugState.profile = motionProfile;
   debugState.permission = needsPermission ? 'tap to enable' : mode === 'motion' ? 'not required' : 'not applicable';
-  if (mobile) touch = createTouchControls({ joystick: motionProfile === 'tap-only' });
+  if (mobile) touch = createTouchControls({ joystick: motionProfile === 'tap-only', onAction: (kind, via) => {
+    if (kind !== 'attack') gestures.fireUntil = 0;
+    notify(kind, via, performance.now());
+  } });
+  const lostTimer = window.setInterval(() => {
+    if (mobile && motionProfile !== 'tap-only' && sawSensor && sensorStatus === 'on' && performance.now() - lastSensorAt > 1800) fallback();
+  }, 500);
+  cleanup.push(() => window.clearInterval(lostTimer));
+  if (new URLSearchParams(window.location?.search).get('trace') === '1') trace.start();
   const debugPanel = window.location && new URLSearchParams(window.location.search).get('debug') === 'input'
     ? createInputDebugPanel() : null;
   if (debugPanel) document.body.append(debugPanel);

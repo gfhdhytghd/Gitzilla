@@ -1,5 +1,5 @@
 // Entry: path router (/ landing, /r/<ROOM> room) + room controller that swaps lobby/game/autopsy screens.
-import type { Role, ServerMsg } from "../../shared/types";
+import type { LobbyState, Role, ServerMsg } from "../../shared/types";
 import { type AppCtx, type Screen, toast } from "./app";
 import { createAutopsy } from "./autopsy";
 import { createGame } from "./game";
@@ -187,8 +187,30 @@ function startRoom(room: string, role: Role, name: string) {
     document.body.append(displacedEl);
   }
 
+  let fatal = false;
+  /** PR-0: tell people when a match vanished (server restart) or the host changed, instead of silently moving them. */
+  function noticeLobbyChange(prev: LobbyState | null, next: LobbyState) {
+    if (!prev) return;
+    if (prev.phase === "match" && next.phase === "lobby" && !app.autopsy) {
+      showBanner(next.mode === "edu" ? "⚠ the brawl was interrupted — the teacher can start again" : "⚠ the match was interrupted — the host can start again");
+    }
+    if (prev.ownerId !== next.ownerId && next.ownerId) {
+      if (next.ownerId === app.you) toast("★ you are now the host", "ok", 4500);
+      else {
+        const who = next.players.find((p) => p.id === next.ownerId)?.name;
+        toast(who ? `host is now ${who}` : next.mode === "edu" ? "the teacher screen is now the host" : "the host changed", "info", 4000);
+      }
+    }
+  }
+  function showBanner(text: string) {
+    const b = h("div.interrupt-banner", { role: "alert", "data-testid": "match-interrupted" }, text, h("button.btn-link", { onclick: () => b.remove() }, "✕"));
+    document.body.append(b);
+    setTimeout(() => b.remove(), 9000);
+  }
+
   function wire() {
     app.conn.onStatus((s) => {
+      if (fatal) return; // keep "LINK ERR" after a fatal error instead of "retrying"
       app.status = s;
       link.className = `link-status ${s}`;
       link.textContent = s === "open" ? (mock ? "LINK MOCK" : "LINK OK") : s === "connecting" ? "LINK…" : s === "displaced" ? "OPEN IN ANOTHER TAB" : "LINK LOST · RETRYING";
@@ -198,9 +220,11 @@ function startRoom(room: string, role: Role, name: string) {
       switch (m.t) {
         case "welcome":
           app.you = m.you;
+          noticeLobbyChange(app.lobby, m.lobby);
           app.lobby = m.lobby;
           break;
         case "lobby":
+          noticeLobbyChange(app.lobby, m.lobby);
           app.lobby = m.lobby;
           break;
         case "snapshot":
@@ -216,6 +240,7 @@ function startRoom(room: string, role: Role, name: string) {
         case "error":
           // before we ever got a welcome, an error is fatal for this page: show a card with a way back
           if (!app.you && !app.lobby) {
+            fatal = true;
             app.conn.close();
             link.className = "link-status closed";
             link.textContent = "LINK ERR";

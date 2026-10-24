@@ -4,6 +4,7 @@ import { type AppCtx, type Screen, isOwner } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createHallBoard } from "./hall";
 import { markCanvas } from "./mark";
+import { codeSpan, drawCode } from "./codefmt";
 import { reportCard } from "./report";
 import { createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
@@ -82,6 +83,7 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
   }
   g.fillText(line, 58, y);
   const p = a.players.find((x) => x.id === pid);
+  if (heroKit) drawCode(g, `⌐ ${heroKit.code?.weapon?.name ?? heroKit.weapon}`, 330, 400, 34, 560);
   if (p) {
     g.fillStyle = "#3de8ff";
     g.font = '32px "VT323", monospace';
@@ -215,7 +217,7 @@ export function createAutopsy(app: AppCtx): Screen {
       { style: `animation-delay:${0.2 + i * 0.06}s` },
       h("span.rank", null, `#${i + 1}`),
       kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
-      h("span.ap-name", null, p.name, h("small", null, ` ${shortRepo(p.repo)}`)),
+      h("span.ap-name", null, p.name, h("small", null, ` ${shortRepo(p.repo)} `), kit?.code?.weapon?.name ? codeSpan(kit.code.weapon.name) : null),
       h("span.ap-dmg", null, String(Math.round(p.stats.damage))),
       h("span.ap-combo", null, `x${p.stats.bestCombo}`),
       h("span.ap-limbs", null, String(p.stats.limbsBroken)),

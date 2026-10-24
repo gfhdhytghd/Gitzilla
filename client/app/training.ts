@@ -1,0 +1,304 @@
+// Motion v3 gesture training (lobby, phones): 5 short steps with an animated pixel phone, a live meter and a ✓ per
+// step. Doubles as the tutorial. Reads DeviceOrientation/DeviceMotion directly (no dependency on the input module) and
+// stores per-player thresholds in localStorage (`kaiju.gestureProfile`), which game.ts hands to
+// input.setProfile(...) when the input module supports it (codex-input motion v3).
+import { defaultThresholds, sanitizeThresholds, saveThresholds } from "../input/thresholds";
+import { loadMotionProfile } from "../input";
+import { h, store, vibrate } from "./util";
+
+export interface GestureProfile {
+  v: 3;
+  neutral: [number, number]; // beta, gamma at the playing pose
+  tilt: { left: number; right: number; up: number; down: number }; // degrees reached
+  swing: number; // m/s² threshold for an attack swing
+  twist: number; // deg/s threshold for a dash twist
+  spin: number; // degrees accumulated within ~1.2s for a skill spin
+  at: number;
+}
+const KEY = "kaiju.gestureProfile";
+
+export function loadGestureProfile(): GestureProfile | null {
+  try {
+    const p = JSON.parse(store.get(KEY) ?? "null");
+    return p?.v === 3 ? (p as GestureProfile) : null;
+  } catch {
+    return null;
+  }
+}
+export const isTrained = () => !!loadGestureProfile();
+
+/** Map the trainer's result onto codex-input's GestureThresholds (partial; the rest keeps its defaults). */
+export function toThresholds(p: GestureProfile) {
+  return { swingThreshold: p.swing, twistThreshold: p.twist, spinAngle: p.spin, neutral: p.neutral };
+}
+
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const median = (xs: number[]) => (xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] : 0);
+
+type StepId = "hold" | "tilt" | "swing" | "twist" | "spin";
+const STEPS: { id: StepId; title: string; sub: string; anim: string; need: number }[] = [
+  { id: "hold", title: "hold it how you'll play", sub: "upright, tilted back a little. keep still for a second.", anim: "a-hold", need: 1 },
+  { id: "tilt", title: "tilt to move", sub: "lean the phone left, right, forward and back.", anim: "a-tilt", need: 4 },
+  { id: "swing", title: "swing to attack", sub: "flick the phone like a punch. ×3 (or just tap the screen)", anim: "a-swing", need: 3 },
+  { id: "twist", title: "twist to dash", sub: "a quick wrist twist that snaps back. ×3 (or double-tap)", anim: "a-twist", need: 3 },
+  { id: "spin", title: "spin for your skill", sub: "turn the phone all the way around. ×2 — or long-press the screen", anim: "a-spin", need: 2 },
+];
+
+/** Opens the full-screen trainer. Resolves when finished or skipped. */
+export function openTraining(opts: { onDone?(trained: boolean): void } = {}): () => void {
+  let stepIdx = 0;
+  let count = 0;
+  const got = new Set<string>(); // tilt directions reached
+  const peaks = { swing: [] as number[], twist: [] as number[], spin: [] as number[] };
+  const tiltMax = { left: 0, right: 0, up: 0, down: 0 };
+  let neutral: [number, number] | null = null;
+  let ori: [number, number] | null = null; // beta, gamma
+  let stableSince = 0;
+  const holdSamples: [number, number][] = [];
+  let lastGestureAt = 0;
+  let rotWindow: { t: number; deg: number }[] = []; // |rotationRate| integration for spins
+  let hpVec: [number, number, number] = [0, 0, 0], lowG: [number, number, number] | null = null;
+  let lastMotionT = 0;
+  let meterVal = 0, meterMax = 1;
+  let disposed = false;
+
+  const title = h("div.tr-title");
+  const sub = h("div.tr-sub");
+  const phone = h("div.tr-phone", null, h("div.tr-screen", null, h("span", null, "</>")));
+  const meterFill = h("i");
+  const meter = h("div.tr-meter", null, meterFill);
+  const meterLbl = h("div.tr-meter-lbl");
+  const pad = h("div.tr-tiltpad", null, h("b.tr-dot"));
+  const checks = h("div.tr-checks");
+  const dots = h("div.tr-steps");
+  const nextBtn = h("button.btn.btn-primary.tr-next", { "data-testid": "training-next", hidden: true }, "next ▶");
+  const skipBtn = h("button.btn.btn-ghost.tr-skip", { "data-testid": "training-skip" }, "skip training");
+  const el = h(
+    "div.training",
+    { "data-testid": "training" },
+    h("div.tr-head", null, h("span.prompt", null, "$ gesture-training"), dots),
+    h("div.tr-stage", null, phone, pad),
+    title,
+    sub,
+    meter,
+    meterLbl,
+    checks,
+    h("div.tr-actions", null, skipBtn, nextBtn),
+  );
+  document.body.append(el);
+
+  const render = () => {
+    const s = STEPS[stepIdx];
+    title.textContent = `${stepIdx + 1}/5 · ${s.title}`;
+    sub.textContent = s.sub;
+    phone.className = `tr-phone ${s.anim}`;
+    pad.hidden = s.id !== "tilt";
+    dots.replaceChildren(...STEPS.map((_, i) => h(`i${i < stepIdx ? ".done" : i === stepIdx ? ".on" : ""}`)));
+    const n = s.id === "tilt" ? got.size : s.id === "hold" ? (neutral ? 1 : 0) : count;
+    checks.replaceChildren(
+      ...(s.id === "tilt"
+        ? (["left", "right", "up", "down"] as const).map((d) => h(`span.tr-check${got.has(d) ? ".ok" : ""}`, null, `${got.has(d) ? "✓" : "·"} ${d === "up" ? "forward" : d === "down" ? "back" : d}`))
+        : Array.from({ length: s.need }, (_, i) => h(`span.tr-check${i < n ? ".ok" : ""}`, null, i < n ? "✓" : "·"))),
+    );
+    nextBtn.hidden = n < s.need;
+    nextBtn.textContent = stepIdx === STEPS.length - 1 ? "done ✓" : "next ▶";
+  };
+  const hit = (kind: StepId, value?: number) => {
+    const s = STEPS[stepIdx];
+    if (s.id !== kind || count >= s.need) return;
+    count++;
+    if (value !== undefined && (kind === "swing" || kind === "twist" || kind === "spin")) peaks[kind].push(value);
+    vibrate(30);
+    el.classList.remove("flash");
+    void el.offsetWidth;
+    el.classList.add("flash");
+    render();
+    if (count >= s.need) setTimeout(advance, 700);
+  };
+  const advance = () => {
+    if (disposed) return;
+    const s = STEPS[stepIdx];
+    const n = s.id === "tilt" ? got.size : s.id === "hold" ? (neutral ? 1 : 0) : count;
+    if (n < s.need) return;
+    if (stepIdx === STEPS.length - 1) return finish(true);
+    stepIdx++;
+    count = 0;
+    meterVal = 0;
+    render();
+  };
+  nextBtn.addEventListener("click", advance);
+  skipBtn.addEventListener("click", () => finish(false));
+
+  // ---- sensors ----
+  const onOri = (e: DeviceOrientationEvent) => {
+    if (e.beta == null || e.gamma == null) return;
+    const now = performance.now();
+    const prev = ori;
+    ori = [e.beta, e.gamma];
+    const s = STEPS[stepIdx];
+    if (s.id === "hold") {
+      const moved = prev ? Math.hypot(ori[0] - prev[0], ori[1] - prev[1]) : 99;
+      if (moved > 1.5) {
+        stableSince = now;
+        holdSamples.length = 0;
+      }
+      holdSamples.push(ori);
+      meterVal = clamp((now - stableSince) / 1200, 0, 1);
+      meterMax = 1;
+      if (!neutral && now - stableSince > 1200 && holdSamples.length > 5) {
+        neutral = [holdSamples.reduce((a, x) => a + x[0], 0) / holdSamples.length, holdSamples.reduce((a, x) => a + x[1], 0) / holdSamples.length];
+        vibrate(30);
+        render();
+        setTimeout(advance, 600);
+      }
+    } else if (s.id === "tilt" && neutral) {
+      const dx = ori[1] - neutral[1], dy = ori[0] - neutral[0];
+      if (dx < 0) tiltMax.left = Math.max(tiltMax.left, -dx);
+      else tiltMax.right = Math.max(tiltMax.right, dx);
+      if (dy < 0) tiltMax.up = Math.max(tiltMax.up, -dy);
+      else tiltMax.down = Math.max(tiltMax.down, dy);
+      const before = got.size;
+      if (-dx > 12) got.add("left");
+      if (dx > 12) got.add("right");
+      if (-dy > 12) got.add("up");
+      if (dy > 12) got.add("down");
+      const dot = pad.firstElementChild as HTMLElement;
+      dot.style.transform = `translate(${clamp(dx / 25, -1, 1) * 40}px, ${clamp(dy / 25, -1, 1) * 40}px)`;
+      meterVal = Math.min(1, Math.hypot(dx, dy) / 25);
+      if (got.size !== before) {
+        vibrate(20);
+        render();
+        if (got.size >= 4) setTimeout(advance, 700);
+      }
+    }
+  };
+  const onMotion = (e: DeviceMotionEvent) => {
+    const now = performance.now();
+    const dt = lastMotionT ? Math.min(0.1, (now - lastMotionT) / 1000) : (e.interval ?? 16) / 1000;
+    lastMotionT = now;
+    // linear acceleration (iOS may give null `acceleration`: high-pass accelerationIncludingGravity)
+    let lin = 0;
+    const a = e.acceleration;
+    if (a && a.x != null && a.y != null && a.z != null) lin = Math.hypot(a.x, a.y, a.z);
+    else if (e.accelerationIncludingGravity) {
+      const g = e.accelerationIncludingGravity;
+      const v: [number, number, number] = [g.x ?? 0, g.y ?? 0, g.z ?? 0];
+      lowG = lowG ? (lowG.map((x, i) => x + (v[i] - x) * 0.1) as [number, number, number]) : v;
+      hpVec = v.map((x, i) => x - lowG![i]) as [number, number, number];
+      lin = Math.hypot(...hpVec);
+    }
+    const r = e.rotationRate;
+    const rot = r ? Math.hypot(r.alpha ?? 0, r.beta ?? 0, r.gamma ?? 0) : 0; // deg/s
+    rotWindow.push({ t: now, deg: rot * dt });
+    rotWindow = rotWindow.filter((x) => now - x.t < 1200);
+    const spun = rotWindow.reduce((s, x) => s + x.deg, 0);
+    const s = STEPS[stepIdx];
+    const refractory = now - lastGestureAt < 450;
+    if (s.id === "swing") {
+      meterVal = lin;
+      meterMax = 18;
+      if (!refractory && lin > 9 && rot < 300) {
+        lastGestureAt = now;
+        hit("swing", lin);
+      }
+    } else if (s.id === "twist") {
+      meterVal = rot;
+      meterMax = 600;
+      // a twist is a sharp rotation spike whose total angle stays small (it snaps back); a spin is not a twist
+      const recent = rotWindow.filter((x) => now - x.t < 400).reduce((s2, x) => s2 + x.deg, 0);
+      if (!refractory && rot > 220 && recent < 120) {
+        lastGestureAt = now;
+        hit("twist", rot);
+      }
+    } else if (s.id === "spin") {
+      meterVal = spun;
+      meterMax = 360;
+      if (now - lastGestureAt > 900 && spun >= 270) {
+        lastGestureAt = now;
+        rotWindow = [];
+        hit("spin", spun);
+      }
+    }
+  };
+  // touch alternates: tap = attack, double-tap = dash, long-press = skill
+  let downAt = 0, lastTap = 0, pressTimer = 0;
+  const ring = h("div.press-ring");
+  const onDown = (e: PointerEvent) => {
+    if ((e.target as Element).closest("button")) return;
+    downAt = performance.now();
+    ring.style.left = `${e.clientX}px`;
+    ring.style.top = `${e.clientY}px`;
+    ring.classList.remove("go");
+    void ring.offsetWidth;
+    ring.classList.add("go");
+    el.append(ring);
+    pressTimer = window.setTimeout(() => {
+      ring.remove();
+      hit("spin", 270);
+      downAt = 0;
+    }, 550);
+  };
+  const onUp = () => {
+    clearTimeout(pressTimer);
+    ring.remove();
+    if (!downAt) return;
+    const held = performance.now() - downAt;
+    downAt = 0;
+    if (held > 250) return;
+    const now = performance.now();
+    if (now - lastTap < 300) {
+      hit("twist", 300);
+      lastTap = 0;
+    } else {
+      lastTap = now;
+      setTimeout(() => lastTap && performance.now() - lastTap >= 290 && hit("swing", 12), 310);
+    }
+  };
+  addEventListener("deviceorientation", onOri);
+  addEventListener("devicemotion", onMotion);
+  el.addEventListener("pointerdown", onDown);
+  addEventListener("pointerup", onUp);
+  addEventListener("pointercancel", onUp);
+
+  const raf = () => {
+    if (disposed) return;
+    meterFill.style.width = `${clamp(meterVal / meterMax, 0, 1) * 100}%`;
+    const s = STEPS[stepIdx].id;
+    meterLbl.textContent =
+      s === "hold" ? (ori ? "steady…" : "waiting for sensors…") : s === "tilt" ? "lean until each direction lights up" : s === "swing" ? `${meterVal.toFixed(1)} m/s²` : s === "twist" ? `${Math.round(meterVal)}°/s` : `${Math.round(meterVal)}° of 270°`;
+    requestAnimationFrame(raf);
+  };
+  requestAnimationFrame(raf);
+  render();
+
+  function finish(trained: boolean) {
+    if (disposed) return;
+    disposed = true;
+    if (trained && neutral) {
+      const prof: GestureProfile = {
+        v: 3,
+        neutral,
+        tilt: tiltMax,
+        swing: clamp(0.6 * (median(peaks.swing) || 12), 6, 14),
+        twist: clamp(0.6 * (median(peaks.twist) || 360), 150, 400),
+        spin: clamp(0.8 * (median(peaks.spin) || 330), 220, 320),
+        at: Date.now(),
+      };
+      store.set(KEY, JSON.stringify(prof));
+      // also persist in codex-input's own threshold store so the real recognizer loads them at match start
+      try {
+        const mp = loadMotionProfile();
+        saveThresholds(sanitizeThresholds(toThresholds(prof), defaultThresholds(mp)), mp);
+      } catch (e) {
+        console.warn("[kaiju] could not save input thresholds", e);
+      }
+    }
+    removeEventListener("deviceorientation", onOri);
+    removeEventListener("devicemotion", onMotion);
+    removeEventListener("pointerup", onUp);
+    removeEventListener("pointercancel", onUp);
+    el.remove();
+    opts.onDone?.(trained);
+  }
+  return () => finish(false);
+}

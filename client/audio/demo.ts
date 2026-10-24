@@ -31,7 +31,8 @@ document.querySelector('#unlock')!.addEventListener('click', () => {
   void audition('UNLOCKED // audio output is running', () => audio.onUi());
 });
 // Keyboard-clack is explicit, so the app can attach it only to its own UI actions.
-document.addEventListener('pointerdown', () => { void audio.unlock().then(() => audio.onUi()).catch(error => report(String(error))); }, { capture: true });
+for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'])
+  document.addEventListener(type, () => { void audio.unlock().catch(error => report(String(error))); }, { capture: true, passive: true });
 document.querySelector<HTMLInputElement>('#muted')!.addEventListener('change', event => {
   const muted = (event.target as HTMLInputElement).checked;
   audio.setMuted(muted);

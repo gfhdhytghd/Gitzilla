@@ -2,8 +2,14 @@ import type { ArenaTheme, GameEvent, WeaponKind } from '../../shared/types';
 import { eventsToSfx } from './events';
 import { isArenaTheme, renderMusic, renderSfx } from './synth';
 import type { MusicTheme, SfxName } from './synth';
+import { createPhoneAudio } from './phone';
+import { publishAudioDebugStatus, type AudioDebugStatus } from './status';
+
+export { readAudioDebugStatus } from './status';
 
 export interface KaijuAudio {
+  readonly state: AudioDebugStatus['state'];
+  readonly musicPlaying: boolean;
   unlock(): Promise<void>;
   onEvents(events: GameEvent[], selfId: string): void;
   onFire(weapon: WeaponKind): void;
@@ -32,6 +38,7 @@ export function createAudio(): KaijuAudio {
   let volume = 0.6;
   let muted = false;
   let disposed = false;
+  let unsupported = false;
   let desired: { theme: MusicTheme; phase: 1 | 2 | 3 } | null = null;
   let currentMusic: MusicVoice | null = null;
   let pendingIntro = false;
@@ -40,6 +47,14 @@ export function createAudio(): KaijuAudio {
   const lastPlayed = new Map<string, number>();
   const sfxBuffers = new Map<SfxName, AudioBuffer>();
   const musicBuffers = new Map<string, AudioBuffer>();
+  const phone = createPhoneAudio({ muted: () => muted,
+    onRunning: () => { if (!currentMusic) startMusic(); }, onStatus: () => publishStatus() });
+
+  function publishStatus() {
+    publishAudioDebugStatus({ state: unsupported ? 'unsupported' : phone.state, session: phone.session,
+      musicPlaying: !disposed && !muted && context?.state === 'running' && !!currentMusic,
+      needsGesture: !unsupported && phone.needsGesture, muted, error: phone.error });
+  }
 
   const ready = () => !disposed && !muted && context?.state === 'running';
   const toBuffer = (pcm: Float32Array): AudioBuffer => {
@@ -93,6 +108,7 @@ export function createAudio(): KaijuAudio {
     old.gain.gain.cancelScheduledValues(context.currentTime);
     old.gain.gain.setTargetAtTime(0, context.currentTime, 0.025);
     old.source.stop(context.currentTime + 0.15);
+    publishStatus();
   };
   const startMusic = () => {
     if (!ready() || !context || !musicBus || !desired) return;
@@ -128,17 +144,22 @@ export function createAudio(): KaijuAudio {
     source.onended = () => {
       musicVoices.delete(voice);
       source.disconnect(); gain.disconnect(); drive?.disconnect();
+      if (currentMusic === voice) { currentMusic = null; publishStatus(); }
     };
     source.start();
+    publishStatus();
     if (pendingIntro) { pendingIntro = false; play('intro', 0.6, 0, 5, 2.5); }
   };
 
   const api: KaijuAudio = {
-    async unlock() {
-      if (disposed || typeof window === 'undefined') return;
+    get state() { return unsupported ? 'unsupported' : phone.state; },
+    get musicPlaying() { return !disposed && !muted && context?.state === 'running' && !!currentMusic; },
+    unlock() {
+      if (disposed || typeof window === 'undefined') return Promise.resolve();
+      phone.prepare();
       if (!context) {
         const Context = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (!Context) return;
+        if (!Context) { unsupported = true; publishStatus(); return Promise.resolve(); }
         context = new Context({ latencyHint: 'interactive' });
         master = context.createGain();
         master.gain.value = muted ? 0 : volume;
@@ -162,9 +183,13 @@ export function createAudio(): KaijuAudio {
         prime.onended = () => prime.disconnect();
         prime.start();
       }
-      // Call resume before the first await to preserve click/tap activation.
-      await context.resume();
-      if (!disposed && !currentMusic) startMusic();
+      // Deliberately non-async: phone.unlock invokes native resume + media.play NOW,
+      // inside the caller's trusted gesture, before any promise/microtask boundary.
+      const resumed = phone.unlock(context);
+      return resumed.then(() => {
+        if (!disposed && !currentMusic) startMusic();
+        publishStatus();
+      });
     },
     onEvents(events, selfId) {
       if (disposed) return;
@@ -202,6 +227,8 @@ export function createAudio(): KaijuAudio {
       outputLevel();
       if (muted) { fadeMusic(); for (const voice of [...voices]) stopVoice(voice); }
       else if (!currentMusic) startMusic();
+      phone.mutedChanged();
+      publishStatus();
     },
     setVolume(value) { if (!disposed) { volume = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0; outputLevel(); } },
     onUi() { play('ui', 0.32, 0, 1, 0.035); },
@@ -212,13 +239,16 @@ export function createAudio(): KaijuAudio {
     dispose() {
       if (disposed) return;
       disposed = true;
+      phone.dispose();
       if (context && context.state !== 'closed') void context.close().catch(() => {});
       for (const voice of voices) { voice.source.disconnect(); voice.gain.disconnect(); }
       for (const voice of musicVoices) { voice.source.disconnect(); voice.gain.disconnect(); voice.drive?.disconnect(); }
       voices.clear(); musicVoices.clear(); sfxBuffers.clear(); musicBuffers.clear(); lastPlayed.clear();
       sfxBus?.disconnect(); musicBus?.disconnect(); compressor?.disconnect(); limiter?.disconnect(); master?.disconnect();
       currentMusic = null;
+      publishStatus();
     },
   };
+  publishStatus();
   return api;
 }
