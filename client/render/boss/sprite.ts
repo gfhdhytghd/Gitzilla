@@ -57,8 +57,8 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   const C = L.extent;
   const R = rng(kit.seed ^ 0x51ed);
   const ph = (frame / BREATH_FRAMES) * Math.PI * 2;
-  const blend = L.body === "swarm" ? 2.5 : L.body === "golem" || L.body === "machine" ? 4 : L.body === "serpent" ? 5 : L.body === "kaiju" ? 6 : 9;
-  const isKaiju = L.body === "kaiju";
+  const isKaiju = !!L.kaiju; // kaiju / mecha / dragon / abyssal share the anatomy pipeline
+  const blend = L.body === "swarm" ? 2.5 : L.body === "golem" || L.body === "machine" || L.body === "mecha" ? 4 : L.body === "serpent" || L.body === "abyssal" ? 4.5 : isKaiju ? 6 : 9;
   const cuts: { x: number; y: number; r: number }[] = []; // kaiju: where a severed part was cut off
 
   // lobes with breathing + broken limbs collapsed to stumps
@@ -149,6 +149,20 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
           dith = 0.6;
           break;
         }
+        case "gold": {
+          // dragon scales: overlapping rows, bright stepped highlights
+          const u = (x + ((y >> 1) & 1) * 2) & 3, w = y & 1;
+          if (w === 1 && u === 0) v -= 0.14; else if (w === 0 && u === 2) v += 0.08;
+          dith = 0.5;
+          break;
+        }
+        case "void": {
+          // black crystal: faceted planes with hard glossy edges
+          v = 0.15 + Math.round(v * 4) / 4 * 0.8;
+          if (((x * 3 + y * 5) % 23) === 0) v += 0.35;
+          dith = 0.25;
+          break;
+        }
         case "belly": {
           // horizontal armored belly bands
           if (((y - C) & 3) === 0) v -= 0.22; else if (((y - C) & 3) === 1) v += 0.08;
@@ -212,6 +226,8 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   if (L.heart.style !== "iris") drawSocket(bctx, L, art);
   // kaiju damage: cut ends (severed tail tip / forearm) and charred, cracked parts that stay attached
   if (isKaiju) drawKaijuDamage(bctx, kit, L, art, broken, cuts);
+  // crescent veins (ref boss-5): the abyssal always glows; every archetype's veins flare when enraged / last stand
+  if (L.kaiju && (L.kaiju.kind === "abyssal" || tint > 0)) drawVeinCrescents(bctx, L, art, tint);
   // broken stumps: charred
   if (!isKaiju) L.limbs.forEach((l, i) => {
     if (!broken[i]) return;
@@ -273,6 +289,21 @@ function drawKaijuDamage(ctx: CanvasRenderingContext2D, kit: BossKit, L: BossLay
       }
     }
   });
+}
+
+function drawVeinCrescents(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, tint: number) {
+  const K = L.kaiju!;
+  K.veins.forEach((v, i) => {
+    const cyan = tint === 0 ? true : tint === 2 ? i % 2 === 1 : false;
+    const core = cyan ? "#9ff8ff" : "#ffb0b8", mid = cyan ? "#2ee6ff" : "#ff2a3a";
+    for (let k = 0; k <= 10; k++) {
+      const a = v.a + (k / 10) * 2.3;
+      const x = v.x + Math.cos(a) * v.r, y = v.y + Math.sin(a) * v.r;
+      ctx.fillStyle = mid; ctx.fillRect(Math.round(x), Math.round(y), 2, 1);
+      if (k > 2 && k < 8) { ctx.fillStyle = core; ctx.fillRect(Math.round(x), Math.round(y), 1, 1); }
+    }
+  });
+  void art;
 }
 
 function drawCutWires(ctx: CanvasRenderingContext2D, c: { x: number; y: number; r: number }, art: BossArt, seed: number) {

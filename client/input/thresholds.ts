@@ -28,7 +28,7 @@ export function sanitizeThresholds(value: Partial<GestureThresholds>, base = def
     twistThreshold: clamp(value.twistThreshold!, 80, 350, base.twistThreshold),
     spinAngle: clamp(value.spinAngle!, 220, 300, base.spinAngle),
     spinWindowMs: clamp(value.spinWindowMs!, 900, 1400, base.spinWindowMs),
-    deadzone: Math.min(fullSpeed - 1, clamp(value.deadzone!, 3, 8, base.deadzone)), fullSpeed,
+    deadzone: Math.min(fullSpeed - 1, clamp(value.deadzone!, 0, 1, base.deadzone)), fullSpeed,
     neutral: Array.isArray(value.neutral) && value.neutral.length === 2 && value.neutral.every(Number.isFinite)
       ? [value.neutral[0], value.neutral[1]] : value.neutral === null ? null : base.neutral,
   };

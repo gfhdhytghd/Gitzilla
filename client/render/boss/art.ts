@@ -65,14 +65,17 @@ export function bossArt(kit: BossKit, tint = 0): BossArt {
     scales: body,
     chitin: mk(shiftHue(base, 0, 1.1, -0.05)),
     stone: mk(redden(mix(base, [118, 116, 124], 0.55))),
-    metal: mk(redden(mix(base, [120, 134, 158], 0.6))),
+    metal: mk(redden(mix(base, [140, 144, 154], 0.82))),                       // mecha steel (ref boss-3)
     bark: mk(redden(mix(base, [104, 72, 48], 0.65))),
     foliage: mk(redden(mix(base, [70, 150, 80], 0.72))),
     sclera: mk(tint ? mix(bone, danger, 0.35) : mix(bone, base, 0.12)),
-    // kaiju hide: charcoal/obsidian with a hint of the repo hue; belly: ash-grey plates
-    // stays charcoal when enraged (only a faint red undertone); the plates and cracks carry the rage
-    obsidian: mk(mix(mix(base, [30, 32, 42], 0.66), [70, 12, 24], tint ? 0.18 : 0)),
-    belly: mk(redden(mix(base, [128, 122, 120], 0.55))),
+    // kaiju hide (refs boss-1/4): very dark teal with a hint of the repo hue; enraged it goes near-black (ref boss-5)
+    obsidian: mk(tint === 2 ? mix(base, [14, 12, 16], 0.9) : tint === 1 ? mix(base, [22, 20, 26], 0.86) : mix(base, [24, 53, 50], 0.8)),
+    // hydra dragon: golden scales (ref boss-2); abyssal: near-black crystal (ref boss-5)
+    gold: mk(tint === 2 ? mix(base, [40, 30, 20], 0.85) : tint === 1 ? mix(base, [150, 90, 30], 0.8) : mix(base, [196, 150, 48], 0.85)),
+    void: mk(mix(base, [18, 16, 24], 0.92)),
+    // pale grey-teal underside
+    belly: mk(tint ? mix(base, [74, 70, 76], 0.85) : mix(base, [106, 138, 135], 0.85)),
   };
   const flesh = ramp(shiftHue(base, -22, 1.1, -0.04), 4);
   const art: BossArt = {

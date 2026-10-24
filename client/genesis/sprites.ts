@@ -24,6 +24,9 @@ export interface CharSprite {
   eyes: { x: number; y: number; r: number }[];
   heart: { x: number; y: number; r: number } | null;
   center: Pt;                    // boss center (drawBoss state.x/y) in sprite px
+  ridge?: Pt[];                  // boss: top contour, every 2 px left -> right (dorsal fins / back)
+  /** boss: drawBoss logical space -> sprite px (sprite = off + logical * s; the body center is at logical bx/by) */
+  bossXf?: { s: number; off: number; bx: number; by: number };
 }
 
 const HERO_SIZE = 32;
@@ -132,13 +135,21 @@ export function heroSprite(kit: PlayerKit, hires = false): CharSprite {
 }
 
 export function bossSprite(kit: BossKit): CharSprite {
-  const key = "b|" + kit.repo + "|" + kit.seed + "|" + kit.name + "|" + kit.palette.join("") + "|" + (kit.design?.body ?? "");
+  const key = "b|" + kit.repo + "|" + kit.seed + "|" + kit.name + "|" + kit.palette.join("") + "|" + (kit.design?.body ?? "") + "|" + kit.archetype;
   const hit = cache.get(key);
   if (hit) return hit;
   const portrait = bossPortrait(kit, BOSS_SIZE);
   const { bbox, cells } = scan(portrait, 4);
   const L = bossLayout(kit);
-  const cx = BOSS_SIZE / 2, cy = BOSS_SIZE / 2 - 8;
+  // mirrors bossPortrait (render/boss): kaiju-family bodies draw on a 196 px logical canvas centered at (76,104),
+  // the older bodies on 176 px at (88,80); the portrait scales that canvas to BOSS_SIZE
+  const kaiju = L.body === "kaiju";
+  const LOGICAL = kaiju ? 196 : 176;
+  const s0 = BOSS_SIZE / LOGICAL >= 1 ? Math.floor(BOSS_SIZE / LOGICAL) : BOSS_SIZE / LOGICAL;
+  const xf = { s: s0, off: Math.round((BOSS_SIZE - LOGICAL * s0) / 2), bx: kaiju ? 76 : LOGICAL / 2, by: kaiju ? 104 : LOGICAL / 2 - 8 };
+  const at = (x: number, y: number): Pt => ({ x: xf.off + (xf.bx + x) * xf.s, y: xf.off + (xf.by + y) * xf.s });
+  const c0 = at(0, 0);
+  const cx = c0.x, cy = c0.y;
   const sp: CharSprite = {
     kind: "boss", frames: [portrait], size: BOSS_SIZE, bbox, cells,
     silhouette: flat(portrait, "#ffffff"), outline: outlineOf(portrait),
@@ -146,14 +157,26 @@ export function bossSprite(kit: BossKit): CharSprite {
       body: { x: cx, y: cy },
       top: { x: cx, y: bbox.y0 },
       feet: { x: cx, y: bbox.y1 },
-      head: { x: cx + (L.eyes[0]?.x ?? 0), y: cy + (L.eyes[0]?.y ?? -20) },
+      head: L.eyes[0] ? at(L.eyes[0].x, L.eyes[0].y) : { x: cx, y: cy - 20 },
     },
-    limbs: L.limbs.map((l) => ({ id: l.id, component: l.component, x: cx + l.x, y: cy + l.y, r: Math.max(6, l.r), weak: l.weakPoint })),
-    eyes: L.eyes.map((e) => ({ x: cx + e.x, y: cy + e.y, r: e.r })),
-    heart: { x: cx + L.heart.x, y: cy + L.heart.y, r: L.heart.r },
+    limbs: L.limbs.map((l) => ({ id: l.id, component: l.component, ...at(l.x, l.y), r: Math.max(6, l.r * s0), weak: l.weakPoint })),
+    eyes: L.eyes.map((e) => ({ ...at(e.x, e.y), r: e.r * s0 })),
+    heart: { ...at(L.heart.x, L.heart.y), r: L.heart.r * s0 },
     center: { x: cx, y: cy },
+    bossXf: xf,
+    ridge: ridgeOf(portrait, bbox),
   };
   if (cache.size > 40) cache.clear();
   cache.set(key, sp);
   return sp;
+}
+
+function ridgeOf(src: HTMLCanvasElement, bbox: CharSprite["bbox"]): Pt[] {
+  const w = src.width;
+  const d = src.getContext("2d", { willReadFrequently: true })!.getImageData(0, 0, w, src.height).data;
+  const out: Pt[] = [];
+  for (let x = bbox.x0; x <= bbox.x1; x += 2) {
+    for (let y = bbox.y0; y <= bbox.y1; y++) if (d[(y * w + x) * 4 + 3] > 40) { out.push({ x, y }); break; }
+  }
+  return out;
 }

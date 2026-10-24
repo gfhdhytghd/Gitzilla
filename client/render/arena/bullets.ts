@@ -121,7 +121,18 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
       const glyph = bossGlyph(b.kind, b.id);
       const r = Math.max(3, Math.round(b.r));
       const pulse = Math.floor(time * 10 + b.id) % 4 === 0;
-      const s = bossPlate(glyph, r, pulse ? "#ff7a9a" : "#c0103a", pulse ? "#ffffff" : danger);
+      if (fx.bossKind === "mecha" && (b.kind === "ring" || b.kind === "spiral")) {
+        // missile barrage: a little rocket pointing along its flight, with an exhaust flame
+        const px = -uy, py = ux;
+        for (let k = 1; k <= 4; k++) { ctx.fillStyle = k < 2 ? "#ffffff" : k < 3 ? "#ffd23f" : "#ff5a2a"; ctx.fillRect(Math.round(x - ux * (3 + k)), Math.round(y - uy * (3 + k)), 1, 1); }
+        ctx.fillStyle = "#07040c";
+        for (let k = -3; k <= 3; k++) for (const o of [-1.5, 1.5]) ctx.fillRect(Math.round(x + ux * k + px * o), Math.round(y + uy * k + py * o), 1, 1);
+        ctx.fillStyle = "#c8ccd8"; for (let k = -2; k <= 2; k++) ctx.fillRect(Math.round(x + ux * k), Math.round(y + uy * k), 1, 1);
+        ctx.fillStyle = "#ff2a1a"; ctx.fillRect(Math.round(x + ux * 3), Math.round(y + uy * 3), 1, 1);
+        continue;
+      }
+      const tintPlate = fx.bossKind === "dragon" ? ["#a06010", "#ffd84a"] : fx.bossKind === "abyssal" ? ["#14121e", fx.boss?.phase === 3 ? "#ff2a3a" : "#2ee6ff"] : null;
+      const s = tintPlate ? bossPlate(glyph, r, pulse ? tintPlate[1] : tintPlate[0], pulse ? "#ffffff" : tintPlate[1]) : bossPlate(glyph, r, pulse ? "#ff7a9a" : "#c0103a", pulse ? "#ffffff" : danger);
       ctx.drawImage(s, x - (s.width >> 1), y - (s.height >> 1));
     } else {
       const base = PLAYER[b.kind] ?? PLAYER.blaster;

@@ -33,6 +33,7 @@ function kitFor(p: RepoProfile, n: number, useDesign = q.get("design") !== "0"):
   }
   if (q.get("theme")) kit = { ...kit, theme: q.get("theme") as ArenaTheme };
   if (q.get("body")) kit = { ...kit, forceBody: q.get("body") } as BossKit;
+  if (q.get("arch")) kit = { ...kit, archetype: q.get("arch") as BossKit["archetype"] };
   if (!kit.code?.heartLines?.length && q.get("code") !== "0") kit = { ...kit, code: fakeCode(p, kit) };
   if (q.get("fragile")) kit = { ...kit, limbs: kit.limbs.map((l, i) => ({ ...l, fragile: i % 3 === 0 || l.fragile, maintainers: i % 3 === 0 ? 1 : l.maintainers, parasites: i === 1 ? [{ id: "GHSA-xxxx-1234", pkg: "lodash", ecosystem: "npm", summary: "prototype pollution", fixed: "4.17.21" }, { id: "CVE-2024-0001", pkg: "regex", ecosystem: "crates.io", summary: "ReDoS" }] : l.parasites })) };
   return kit;
@@ -60,7 +61,7 @@ function pickProfile(): RepoProfile {
 
 function nav() {
   const el = document.getElementById("nav")!;
-  const links: [string, string][] = [["live", "?mode=live"], ["grid", "?mode=grid"], ["grid p3", "?mode=grid&phase=3"], ["portraits", "?mode=portraits"], ["bodies", "?mode=bodies"], ["fx", "?mode=fx"], ["pvp", "?mode=pvp"]];
+  const links: [string, string][] = [["live", "?mode=live"], ["grid", "?mode=grid"], ["grid p3", "?mode=grid&phase=3"], ["portraits", "?mode=portraits"], ["bodies", "?mode=bodies"], ["fx", "?mode=fx"], ["pvp", "?mode=pvp"], ["film", "?mode=film&pose=walk"]];
   profiles.forEach((p, i) => links.push([p.slug.split("/")[1], "?mode=live&boss=" + i]));
   el.innerHTML = links.map(([t, h]) => `<a href="${h}">${t}</a>`).join("");
 }
@@ -215,6 +216,13 @@ function grid() {
   requestAnimationFrame(frame);
 }
 
+/** ?pose=<name> forces a pose (looping over 2 s); otherwise windup while casting, idle otherwise. */
+function stagedPose(time: number, casting: boolean): BossState["pose"] {
+  const forced = q.get("pose") as BossState["pose"]["name"] | null;
+  if (forced) return { name: forced, t: time % 2, total: 2, dir: [-1, 0], head: Math.floor(time / 2) % 3 };
+  return casting ? { name: "windup", t: time % 4, total: 1.2, dir: [-1, 0] } : { name: "idle", t: time % 3, total: 3, dir: [-1, 0] };
+}
+
 function stagedState(kit: BossKit, time: number, phase: 1 | 2 | 3, idx: number): MatchState {
   const x = 300 + Math.sin(time * 0.3) * 20, y = 140 + Math.cos(time * 0.4) * 10;
   const broken = (q.get("broken") ?? (phase === 3 ? "0,2" : "")).split(",").filter(Boolean).map(Number);
@@ -230,6 +238,7 @@ function stagedState(kit: BossKit, time: number, phase: 1 | 2 | 3, idx: number):
     limbs: kit.limbs.map((l, i) => ({ id: l.id, hp: broken.includes(i) ? 0 : l.maxHp, maxHp: l.maxHp, broken: broken.includes(i) })),
     casting: casting && atk ? { attackId: atk.id, t: (time % 4), total: 1.2, target: [110, 200] } : null,
     targetPlayer: "p0", enraged: phase >= 2, regions: [], kit,
+    pose: stagedPose(time, casting), airborne: false,
   };
   b.regions = bossRegions(b);
   const bullets: Bullet[] = [];
@@ -428,6 +437,48 @@ function bulletsShow() {
   requestAnimationFrame(frame);
 }
 
+// pose filmstrips: rows = archetypes, columns = the pose at t = 0 .. 1 (?pose=walk|windup|attack|roar|stagger|fly|dive|burrow|emerge|death|...)
+function film() {
+  const ARCHS = ["kaiju", "hydra", "mecha", "abyssal"] as const;
+  const pose = (q.get("pose") ?? "windup") as BossState["pose"]["name"];
+  const frames = 6, cw = 220, ch = 180, sc = Number(q.get("scale") ?? 2);
+  const wrap = document.getElementById("wrap")!;
+  document.getElementById("title")!.textContent = "$ gitzilla --film pose=" + pose;
+  const prof = pickProfile();
+  const cells: { ctx: CanvasRenderingContext2D; kit: BossKit; f: number }[] = [];
+  for (const arch of ARCHS) {
+    const kit = { ...kitFor(prof, 4), archetype: arch } as BossKit;
+    for (let f = 0; f < frames; f++) {
+      const kitF = { ...kit, repo: kit.repo + "#" + f } as BossKit;
+      const cell = document.createElement("div"); cell.className = "cell";
+      const c = document.createElement("canvas"); c.width = cw * sc; c.height = ch * sc;
+      cell.appendChild(c);
+      const lab = document.createElement("span"); lab.textContent = arch + " " + pose + " t=" + (f / (frames - 1)).toFixed(1); cell.appendChild(lab);
+      wrap.appendChild(cell);
+      const ctx = c.getContext("2d")!; ctx.imageSmoothingEnabled = false;
+      cells.push({ ctx, kit: kitF, f });
+    }
+  }
+  function frame() {
+    const now = performance.now() / 1000;
+    for (const { ctx, kit, f } of cells) {
+      const st: BossState = {
+        x: 92, y: 100, hp: kit.maxHp, maxHp: kit.maxHp, phase: q.get("phase") ? Number(q.get("phase")) as 1 | 2 | 3 : 1,
+        limbs: kit.limbs.map((l) => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })), casting: null, targetPlayer: null,
+        enraged: q.get("phase") === "2" || q.get("phase") === "3", regions: [], kit,
+        pose: { name: pose, t: (f / (frames - 1)) * 1.2, total: 1.2, dir: [-1, 0], head: f % 3 },
+        airborne: (pose === "fly" && kit.archetype !== "kaiju") || (pose === "burrow" && f === frames - 1),
+      };
+      ctx.setTransform(sc, 0, 0, sc, 0, 0);
+      ctx.fillStyle = "#14101e"; ctx.fillRect(0, 0, cw, ch);
+      ctx.fillStyle = "#1e1a2a"; ctx.fillRect(0, 158, cw, ch - 158);
+      drawBoss(ctx, st, now + f * 0.05);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 function bodies() {
   const wrap = document.getElementById("wrap")!;
   const BODIES = ["kaiju", "blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"] as const;
@@ -451,6 +502,7 @@ nav();
 if (mode === "bodies") bodies();
 else if (mode === "fx") fxSeq();
 else if (mode === "pvp") pvp();
+else if (mode === "film") film();
 else if (mode === "bullets") bulletsShow();
 else if (mode === "grid") grid();
 else if (mode === "portraits") portraits();

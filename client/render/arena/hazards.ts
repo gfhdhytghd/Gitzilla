@@ -5,6 +5,7 @@ import { bayer, disc, drawGlow, hash2, line, TAU } from "./pix.ts";
 import { boldSprite, drawText, textSprite } from "./font.ts";
 import { addShake, burst, emit, fx } from "./fx.ts";
 
+const eruptions: { x: number; y: number; r: number; at: number; seed: number }[] = [];
 const names = new Map<number, string>();      // hazard id -> attack name (from latest telegraph event)
 const firstSeen = new Map<number, number>();
 const armedAt = new Map<number, number>();
@@ -54,11 +55,19 @@ export function drawHazards(ctx: CanvasRenderingContext2D, hazards: Hazard[], ti
       bolt(ctx, a.x, a.y, b.x, b.y, time, a.armed || b.armed ? "#ffffff" : red, a.armed || b.armed ? 2 : 1);
     }
   }
+  drawEruptions(ctx, time);
   for (const id of lastSeen) if (!seen.has(id)) { names.delete(id); armedAt.delete(id); firstSeen.delete(id); }
   lastSeen = seen;
 }
 
 function onArm(h: Hazard, red: string) {
+  if ((h.kind === "slam" || h.kind === "cascade") && fx.bossKind === "abyssal") {
+    // crystal eruption: shards burst up out of the floor
+    addShake(5);
+    eruptions.push({ x: h.x, y: h.y, r: h.r, at: fx.now, seed: h.id });
+    burst(h.x, h.y, 16, { kind: "shard", speed: 120, max: 0.8, text: "/\\<>{}", spin: 14, colors: ["#2ee6ff", "#ffffff"], color2: "#2a2838", grav: 220 });
+    return;
+  }
   if (h.kind === "slam") {
     addShake(6);
     burst(h.x, h.y, 26, { kind: "spark", speed: 120, max: 0.5, colors: ["#ffffff", red, "#ffd23f"], drag: 3 });
@@ -223,8 +232,16 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
     const fade = Math.max(0, 1 - Math.max(0, since - 0.55) / 0.2);
     const w = h.r + Math.sin(time * 60) * 1.2;
     // the kaiju's atomic breath is cyan and made of </> glyphs; other bosses fire a red beam with the attack name
-    const atomic = fx.bossKind === "kaiju";
-    const cCore = "#ffffff", cMid = atomic ? "#9ff8ff" : "#ffb0c0", cEdge = atomic ? "#3ee6ff" : red;
+    // per-archetype beams: kaiju </> atomic breath (cyan), hydra gravity beams (gold), mecha eye laser (red 01), abyssal void ray (cyan/red)
+    const BEAM: Record<string, { mid: string; edge: string; text: string; ink: string }> = {
+      kaiju: { mid: "#9ff8ff", edge: "#3ee6ff", text: "</> ", ink: "#0a3a5a" },
+      dragon: { mid: "#fff0a0", edge: "#ffc030", text: "λ ", ink: "#6a4000" },
+      mecha: { mid: "#ffb0a0", edge: "#ff3a1a", text: "01 ", ink: "#5a0a00" },
+      abyssal: { mid: "#c8fbff", edge: fx.boss?.phase === 3 ? "#ff2a3a" : "#2ee6ff", text: "<> ", ink: "#10061a" },
+    };
+    const beam = BEAM[fx.bossKind];
+    const atomic = !!beam;
+    const cCore = "#ffffff", cMid = beam ? beam.mid : "#ffb0c0", cEdge = beam ? beam.edge : red;
     let endS = 0;
     for (let s = 0; s < len; s += 1) {
       const x = h.x + ux * s, y = h.y + uy * s;
@@ -239,22 +256,22 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
       if (s % 14 === 0) drawGlow(ctx, x, y, cEdge, 14, 0.5 * fade);
     }
     // the beam is made of text crawling along its white core
-    const text = atomic ? "</> " : ((names.get(h.id) ?? "") || "RACE CONDITION").split("::")[0].trim().toUpperCase() + "  ";
+    const text = beam ? beam.text : ((names.get(h.id) ?? "") || "RACE CONDITION").split("::")[0].trim().toUpperCase() + "  ";
     if (fade > 0.6 && w >= 3) {
       const off = (time * (atomic ? 220 : 140)) % (text.length * 5);
       for (let s2 = 10 - off; s2 < endS - 4; s2 += 5) {
         const ci = Math.floor((s2 + off) / 5) % text.length;
         const ch = text[ci];
         if (ch === " " || s2 < 8) continue;
-        const g = atomic ? boldSprite(ch, "#0a3a5a") : textSprite(ch, "#7a0a24", null);
+        const g = beam ? boldSprite(ch, beam.ink) : textSprite(ch, "#7a0a24", null);
         ctx.drawImage(g, Math.round(h.x + ux * s2) - (g.width >> 1), Math.round(h.y + uy * s2) - (g.height >> 1));
       }
     }
-    if (atomic && Math.random() < 0.5) emit({ kind: "bold", x: h.x + ux * (20 + Math.random() * endS * 0.8) + px * (Math.random() - 0.5) * 16, y: h.y + uy * (20 + Math.random() * endS * 0.8) + py * (Math.random() - 0.5) * 16, vx: px * 20 * (Math.random() - 0.5), vy: -10, max: 0.35, text: ["<", "/", ">", "{}"][Math.floor(Math.random() * 4)], color: "#3ee6ff" });
+    if (atomic && Math.random() < 0.5) emit({ kind: "bold", x: h.x + ux * (20 + Math.random() * endS * 0.8) + px * (Math.random() - 0.5) * 16, y: h.y + uy * (20 + Math.random() * endS * 0.8) + py * (Math.random() - 0.5) * 16, vx: px * 20 * (Math.random() - 0.5), vy: -10, max: 0.35, text: beam!.text.trim().split("")[Math.floor(Math.random() * beam!.text.trim().length)] || "<", color: beam!.edge });
     // impact sparks where the beam hits the wall
     const ex = h.x + ux * endS, ey = h.y + uy * endS;
     drawGlow(ctx, ex, ey, "#ffffff", 10, fade);
-    if (Math.random() < 0.6) emit({ kind: "spark", x: ex, y: ey, vx: -ux * 60 + (Math.random() - 0.5) * 120, vy: -uy * 60 + (Math.random() - 0.5) * 120, max: 0.3, color: atomic ? "#3ee6ff" : red, color2: atomic ? "#ffffff" : "#ffd23f" });
+    if (Math.random() < 0.6) emit({ kind: "spark", x: ex, y: ey, vx: -ux * 60 + (Math.random() - 0.5) * 120, vy: -uy * 60 + (Math.random() - 0.5) * 120, max: 0.3, color: beam ? beam.edge : red, color2: beam ? "#ffffff" : "#ffd23f" });
   }
 }
 
@@ -328,4 +345,28 @@ function firewall(ctx: CanvasRenderingContext2D, h: Hazard, time: number) {
   antsRing(ctx, h.x, h.y, h.r - 1, -time * 0.5, "#2a7ad8", c);
   drawText(ctx, "FIREWALL", h.x, h.y - h.r - 7, c, { align: "center" });
   ctx.globalAlpha = 1;
+}
+
+/** Abyssal crystal eruptions: jagged black crystals with cyan edges jut out of the floor, then sink back. */
+function drawEruptions(ctx: CanvasRenderingContext2D, time: number) {
+  for (let i = eruptions.length - 1; i >= 0; i--) {
+    const e = eruptions[i];
+    const t = time - e.at;
+    if (t > 1.1 || t < 0) { eruptions.splice(i, 1); continue; }
+    const grow = Math.min(1, t / 0.12), sink = t > 0.75 ? 1 - (t - 0.75) / 0.35 : 1;
+    const n = 7;
+    for (let k = 0; k < n; k++) {
+      const a = hash2(e.seed, k) * TAU, d = hash2(e.seed, k + 9) * e.r * 0.8;
+      const x = Math.round(e.x + Math.cos(a) * d), y = Math.round(e.y + Math.sin(a) * d * 0.6);
+      const h = Math.round((10 + hash2(e.seed, k + 20) * 16) * grow * sink);
+      const w = 3 + Math.round(hash2(e.seed, k + 30) * 3);
+      for (let r = 0; r < h; r++) {
+        const ww = Math.max(0, Math.round(w * (1 - r / h)));
+        ctx.fillStyle = "#07040c"; ctx.fillRect(x - ww - 1, y - r, ww * 2 + 3, 1);
+        ctx.fillStyle = r > h - 3 ? "#c8fbff" : "#1a1826"; ctx.fillRect(x - ww, y - r, ww * 2 + 1, 1);
+        ctx.fillStyle = "#2ee6ff"; ctx.fillRect(x + ww, y - r, 1, 1);
+      }
+      if (h > 4) drawGlow(ctx, x, y - h, "#2ee6ff", 6, 0.5 * sink);
+    }
+  }
 }

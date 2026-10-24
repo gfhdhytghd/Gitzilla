@@ -6,15 +6,15 @@
 //   assemble the real sprite builds from falling real-code glyphs that settle into pixels
 //   reveal   name card types out; the equal stat budget flows into bars
 // Everything is a pure function of the scene time `t` (skip = jump t), plus a small FX particle pool.
-import type { BossKit, BossState, Genesis, PlayerKit, TraceStep } from "../../shared/types.ts";
+import type { BossArchetype, BossKit, BossState, Genesis, PlayerKit, TraceStep } from "../../shared/types.ts";
 import { drawBoss } from "../render/boss/index.ts";
 import { fx as arenaFx } from "../render/arena/fx.ts";
 import { textSprite } from "../render/arena/font.ts";
 import { drawGlow, disc, ring, line } from "../render/arena/pix.ts";
 import { playerPortraitFrame } from "../render/player/index.ts";
 import { bezierPts, clamp01, componentOf, cycleEdges, ease, forceLayout, longestChain, rng, type Pt } from "./graph.ts";
-import { isBossKit } from "./local.ts";
-import { PART_COLOR, UI, brighten, langColor, langOfPath } from "./palette.ts";
+import { archetypeOf, archetypeStep, isBossKit, isFormStep } from "./local.ts";
+import { ARCH_LOOK, PART_COLOR, UI, brighten, langColor, langOfPath } from "./palette.ts";
 import { bossSprite, heroSprite, type CharSprite } from "./sprites.ts";
 import type { TextLayer } from "./text.ts";
 import { eduGenesisNotes, type EduNote, type EduStage } from "../edu/genesis.ts";
@@ -35,7 +35,7 @@ export interface Layout {
 
 interface Tile { path: string; color: string; comp: number; born: number; hx: number; hy: number; ox: number; oy: number; seed: number }
 interface Node { name: string; short: string; loc: number; files: number; r: number; heart: boolean }
-interface Step extends TraceStep { t0: number; t1: number; color: string; idx: number; comp: number }
+interface Step extends TraceStep { t0: number; t1: number; color: string; idx: number; comp: number; form: boolean }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; glyph?: string; g: number }
 interface LogLine { t: number; text: string; color: string; dim?: string }
 
@@ -85,6 +85,8 @@ export class Scene {
   flash = 0;
   glitch = 0;
   private bossState: BossState | null = null;
+  /** Boss archetype (silhouette + behavior preset); null for heroes. */
+  arch: BossArchetype | null = null;
   private rainOrder: number[] = [];
 
   notes: Record<EduStage, EduNote> | null = null;
@@ -121,6 +123,7 @@ export class Scene {
 
   setKit(kit: PlayerKit | BossKit | null) {
     this.kit = kit;
+    this.arch = kit && isBossKit(kit) ? archetypeOf(kit) : null;
     this.sprite = kit ? (isBossKit(kit) ? bossSprite(kit) : heroSprite(kit, this.edu)) : null;
     if (this.edu) this.notes = eduGenesisNotes(this.g, this.kind, kit && !isBossKit(kit) ? kit.quality : undefined);
     if (kit && isBossKit(kit)) {
@@ -128,6 +131,7 @@ export class Scene {
         x: 0, y: 0, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1,
         limbs: kit.limbs.map((l) => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })),
         casting: null, targetPlayer: null, enraged: false, regions: [], kit,
+        pose: { name: "idle", t: 0, total: 1, dir: [-1, 0] }, airborne: false,
       };
     }
     if (this.sprite) {
@@ -182,10 +186,15 @@ export class Scene {
 
   private buildSteps() {
     const [m0, m1] = this.T.at.map;
-    const trace = this.g.trace;
+    let trace = this.g.trace;
+    // bosses open the map with their silhouette: why this repo became a kaiju / hydra / mecha / abyssal
+    if (this.kit && isBossKit(this.kit)) {
+      const form = trace.find(isFormStep) ?? archetypeStep(this.g, this.kit);
+      trace = [form, ...trace.filter((s) => s !== form)];
+    }
     // runs of the same part (7 limbs, 8 attacks...) overlap like a volley; a new part gets a full beat
     const run = this.kind === "boss" ? 0.18 : 0.32;
-    const w = trace.map((s, i) => (i > 0 && trace[i - 1].part === s.part ? run : s.part === "name" ? 1.2 : 1));
+    const w = trace.map((s, i) => (isFormStep(s) && this.arch ? 1.5 : i > 0 && trace[i - 1].part === s.part && !isFormStep(trace[i - 1]) ? run : s.part === "name" ? 1.2 : 1));
     const sum = w.reduce((a, b) => a + b, 0) || 1;
     const span = m1 - m0 - 0.2;
     const minD = this.condensed ? 0.3 : 0.5;
@@ -193,7 +202,9 @@ export class Scene {
     this.steps = trace.map((s, i) => {
       const slot = (w[i] / sum) * span;
       const d = Math.max(slot, Math.min(minD, (m1 - t) * 0.9));
-      const st: Step = { ...s, t0: t, t1: Math.min(m1, t + d), color: PART_COLOR[s.part] ?? UI.green, idx: i, comp: this.resolveComp(s) };
+      const form = !!this.arch && isFormStep(s);
+      const color = form ? ARCH_LOOK[this.arch!].accent : PART_COLOR[s.part] ?? UI.green;
+      const st: Step = { ...s, t0: t, t1: Math.min(m1, t + d), color, idx: i, comp: form ? -1 : this.resolveComp(s), form };
       t += slot;
       return st;
     });
@@ -240,7 +251,7 @@ export class Scene {
     if (g.cycles.length) add(T.graph[0] + 0.5, `cycles: ${g.cycles.length}  ${g.cycles[0].slice(0, 3).map(short).join(" -> ")} -> ...`, UI.red);
     else add(T.graph[0] + 0.5, "cycles: 0  (acyclic, nice)", UI.dim);
     if (this.chain.length > 1) add(T.graph[0] + 0.75, `depth ${this.chain.length - 1}: ${this.chain.map((i) => this.nodes[i].short).join(" > ")}`, UI.amber);
-    add(T.map[0], `$ gitzilla map --${this.kind}`, UI.green);
+    add(T.map[0], `$ gitzilla map --${this.kind}${this.arch ? ` --form ${this.arch}` : ""}`, UI.green);
     for (const s of this.steps) add(s.t0 + (s.t1 - s.t0) * 0.35, `  ${s.from}`, UI.dim, `-> ${s.to}`);
     add(T.assemble[0], "$ gitzilla compile --sprite", UI.green);
     add(T.assemble[0] + 0.1, `rasterizing ${this.sprite?.cells.length ?? 0} ${this.kind === "boss" ? "blocks" : "pixels"} from real code...`, UI.dim);
@@ -293,7 +304,9 @@ export class Scene {
     k = sp.kind === "hero" ? Math.max(sp.size > 40 ? 1 : 2, Math.min(8, Math.floor(k))) : k >= 1 ? Math.min(3, Math.floor(k)) : k;
     const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
     const ox = Math.round(cx - ((sp.bbox.x0 + sp.bbox.x1 + 1) / 2) * k);
-    const oy = Math.round(cy - ((sp.bbox.y0 + sp.bbox.y1 + 1) / 2) * k);
+    let oy = Math.round(cy - ((sp.bbox.y0 + sp.bbox.y1 + 1) / 2) * k);
+    // bosses stand on the floor (just above the reveal's budget bar): heads and wings get the room under the name card
+    if (sp.kind === "boss") oy = Math.max(oy, Math.round(Math.min(box.y + box.h - 2, this.L.counters.y - 16) - (sp.bbox.y1 + 1) * k));
     return { ox, oy, k };
   }
 
@@ -411,7 +424,10 @@ export class Scene {
       const lb = this.L.langBar;
       return { x: lb.x + Math.max(4, (this.langs[0]?.frac ?? 0.5) * lb.w * 0.5), y: lb.y + 1 };
     }
+    if (f.includes("depth") && this.chain.length > 1) return nodes[this.chain[this.chain.length - 1]];
     if (f.includes("todo") || f.includes("fixme")) return this.counterAnchor("todo");
+    if (/\bloc\b/.test(f)) return this.counterAnchor("loc");
+    if (f.includes("days")) return this.counterAnchor(this.L.counters.w > 210 ? "commits" : "loc");
     if (f.includes("contributor")) return this.counterAnchor(this.L.counters.w > 210 ? "authors" : "files");
     if (f.includes("commit")) return this.counterAnchor(this.L.counters.w > 210 ? "commits" : "loc");
     if (f.includes("test") || f.includes("files") || f.includes("shape")) return this.counterAnchor("files");
@@ -427,6 +443,7 @@ export class Scene {
   private toAnchor(s: Step): Pt {
     const sp = this.sprite!;
     const A = sp.anchors;
+    if (s.form) return this.spr(sp.center);
     switch (s.part) {
       case "weapon": return this.spr(A.weapon ?? A.body);
       case "class": return this.spr(A.body);
@@ -489,6 +506,13 @@ export class Scene {
       this.emit(10, p.x, p.y, s.color, 50, "01{};");
       this.flash = Math.max(this.flash, 0.06);
     });
+    const fs = this.formStamp();
+    if (this.arch && fs !== null) this.once("form", t, fs, () => {
+      this.flash = Math.max(this.flash, 0.22);
+      if (!this.reduced) this.shake = Math.max(this.shake, 2);
+      const c = this.sprite ? this.spr(this.sprite.center) : { x: this.L.W / 2, y: this.L.H / 2 };
+      this.emit(18, c.x, c.y, ARCH_LOOK[this.arch!].accent, 70, "{}<>");
+    });
     this.once("heart", t, T.graph[0] + 0.25, () => {
       const hi = this.nodes.findIndex((n) => n.heart);
       if (hi >= 0) this.emit(14, nodes[hi].x, nodes[hi].y, UI.red, 60, "<3");
@@ -543,6 +567,7 @@ export class Scene {
     this.drawTiles(ctx, t, nodes, graphFade);
     if (this.sprite && t >= T.map[0]) this.drawCharacter(ctx, tx, t, now, nodes);
     if (t >= T.map[0] && t < T.reveal[1] + 0.5) this.drawWires(ctx, tx, t, now, nodes);
+    if (this.arch && t >= T.map[0] && t < T.reveal[0]) this.drawForm(ctx, tx, t, now);
     this.drawParticles(ctx);
     if (this.sprite && t >= T.reveal[0]) this.drawReveal(ctx, tx, t, now);
     if (!this.sprite && t >= T.map[0] - 0.01) this.drawWaiting(ctx, tx, now);
@@ -878,7 +903,7 @@ export class Scene {
       const fy = clamp(a.y - 9, st.y + 2, st.y + st.h - 10);
       const fx = clamp(a.x, st.x + 4 + Math.min(maxW, tx.measure(cur.from, size, "term", 10)) / 2, st.x + st.w - 4 - Math.min(maxW, tx.measure(cur.from, size, "term", 10)) / 2);
       tx.text(cur.from, fx, fy, { size, min: 10, color: UI.text, align: "center", maxW, alpha: clamp01(k * 5) * (k > 0.92 ? 0.5 : 1), bg: "rgba(3,8,6,0.82)" });
-      if (k > 0.62) {
+      if (k > 0.62 && !cur.form) {
         const w = Math.min(maxW, tx.measure(cur.to, size, "term", 10));
         const ty = clamp(b.y + 8, st.y + 12, st.y + st.h - 12);
         const tx0 = clamp(b.x, st.x + 4 + w / 2, st.x + st.w - 4 - w / 2);
@@ -917,7 +942,7 @@ export class Scene {
 
     if (live) {
       if (sp.kind === "hero") this.drawHeroLive(ctx, tx, t, now, ox, oy, k);
-      else this.drawBossLive(ctx, now, ox, oy, k);
+      else this.drawBossLive(ctx, t, now, ox, oy, k);
     }
   }
 
@@ -1030,7 +1055,13 @@ export class Scene {
     ctx.globalAlpha = alpha * (0.18 + 0.5 * arrived);
     ctx.drawImage(tintCached(sp.silhouette, kit.palette[1] ?? "#59365e"), ox, oy, S, S);
     ctx.globalAlpha = alpha * (0.35 + 0.4 * arrived) * (0.8 + 0.2 * Math.sin(now * 9));
-    ctx.drawImage(tintCached(sp.outline, kit.palette[2] ?? UI.red), ox, oy, S, S);
+    ctx.drawImage(tintCached(sp.outline, this.arch ? ARCH_LOOK[this.arch].accent : kit.palette[2] ?? UI.red), ox, oy, S, S);
+    // the form stamp: the whole silhouette flashes in the archetype's color
+    const fs = this.formStamp();
+    if (this.arch && fs !== null && t >= fs && t < fs + 0.6) {
+      ctx.globalAlpha = alpha * 0.55 * (1 - (t - fs) / 0.6);
+      ctx.drawImage(tintCached(sp.silhouette, ARCH_LOOK[this.arch].accent), ox, oy, S, S);
+    }
     ctx.globalAlpha = alpha;
     // tentacles: heart -> each limb that has arrived
     this.nodes.forEach((n, i) => {
@@ -1172,19 +1203,182 @@ export class Scene {
     this.drawHeroExtras(ctx, tx, t, now, ox, oy, k, 1);
   }
 
-  private drawBossLive(ctx: CanvasRenderingContext2D, now: number, ox: number, oy: number, k: number) {
+  /** Scene time the archetype stamp lands (the form step's wire arrives), or null. */
+  private formStamp(): number | null {
+    const s = this.steps.find((x) => x.form);
+    return s ? s.t0 + (s.t1 - s.t0) * 0.7 : null;
+  }
+
+  /** The archetype title stamped over the forming silhouette ("HYDRA · many heads, wings"), held until assembly. */
+  private drawForm(ctx: CanvasRenderingContext2D, tx: TextLayer, t: number, now: number) {
+    const at = this.formStamp();
+    if (at === null || t < at) return;
+    const look = ARCH_LOOK[this.arch!];
+    const st = this.L.stage, T = this.T.at;
+    const d = t - at;
+    // full strength for its beat, then it steps back so the organs' captions read; gone once assembly runs
+    const alpha = clamp01(d * 8) * (1 - 0.55 * clamp01((d - 0.9) / 0.3)) * (1 - clamp01((t - T.assemble[0] - 0.2) / 0.4));
+    if (alpha <= 0) return;
+    const pop = 1 + 0.7 * (1 - ease.out(clamp01(d / 0.22)));
+    const base = this.L.compact ? 9 : 12;
+    let size = base * pop;
+    const w = tx.measure(look.label, size, "pix", 12);
+    if (w > st.w - 16) size *= (st.w - 16) / w;
+    const y = st.y + (this.L.wide ? st.h * 0.15 : 4);
+    tx.text(look.label, st.x + st.w / 2, y, { size, min: 12, font: "pix", color: look.accent, glow: look.accent, align: "center", alpha });
+    const sub = (this.steps.find((x) => x.form)?.to ?? "").replace(/^(?:[a-z]+\s*:\s*)?(?:kaiju|hydra|mecha|abyssal)\s*[·:-]?\s*/i, "") || look.form;
+    tx.text(sub, st.x + st.w / 2, y + tx.lineH(base, "pix", 12) + 1, { size: 6.5, min: 10, color: look.accent2, align: "center", alpha: alpha * clamp01((d - 0.15) * 5) * (1 - clamp01((d - 0.8) / 0.25)), bg: "rgba(3,6,10,0.7)", maxW: st.w - 12 });
+    void ctx; void now;
+  }
+
+  /** Reveal: the archetype's entrance (kaiju fin charge + roar, hydra descent, mecha boot, abyssal emerge),
+   *  then the live body. Poses go through BossState.pose so the boss renderer animates the same moves. */
+  private drawBossLive(ctx: CanvasRenderingContext2D, t: number, now: number, ox: number, oy: number, k: number) {
     const sp = this.sprite!;
     const b = this.bossState!;
-    // drawBoss keeps a little shared FX state for the arena; don't disturb a match in progress
+    const arch = this.arch ?? "kaiju";
+    const look = ARCH_LOOK[arch];
+    const rk = t - this.T.at.reveal[0];
+    const bb = sp.bbox;
+    const head = sp.anchors.head;
+    const ent = this.reduced ? 99 : rk; // reduced motion: no flights or rises, poses only
+    // pose timeline: entrance move, a roar, then idle with an occasional roar so the lobby boss stays alive
+    const intro: [BossState["pose"]["name"], number][] = arch === "kaiju" ? [["windup", 0.7], ["roar", 0.9]]
+      : arch === "hydra" ? [["fly", 0.8], ["roar", 0.8]] : arch === "mecha" ? [["windup", 0.7], ["roar", 0.7]] : [["emerge", 0.9], ["roar", 0.8]];
+    let pt = rk, pose: BossState["pose"]["name"] = "idle", total = 2;
+    for (const [name, dur] of intro) {
+      if (pt < dur) { pose = name; total = dur; break; }
+      pt -= dur;
+    }
+    if (pose === "idle") {
+      const c = pt % 8;
+      if (c > 7.1) { pose = "roar"; pt = c - 7.1; total = 0.9; } else { pt = c % 2; total = 2; }
+    }
+    b.pose = { name: pose, t: pt, total, dir: [-1, 0] };
+    b.airborne = false;
+
+    // offsets in sprite px: the hydra drops in from above (landing where the renderer's hover leaves it for the
+    // roar), the mecha boots top-down; the abyssal's rise out of the floor is the renderer's own "emerge" pose
+    let dy = 0, clipY = Infinity;
+    if (arch === "hydra" && ent < 0.8) { const e = ease.out(ent / 0.8); dy = -(1 - e) * 64 + 6 * e; }
+    if (arch === "mecha" && ent < 0.6) clipY = bb.y0 + (bb.y1 - bb.y0 + 2) * ease.inOut(ent / 0.6);
+    const sx = (x: number) => ox + x * k, sy = (y: number) => oy + y * k;
+
+    // one-shot beats
+    this.once("arch-land", t, this.T.at.reveal[0] + (arch === "hydra" ? 0.8 : arch === "kaiju" ? 0.7 : arch === "mecha" ? 0.65 : 0.9), () => {
+      if (!this.reduced) this.shake = Math.max(this.shake, arch === "mecha" ? 1.5 : 3);
+      const p = arch === "kaiju" || arch === "mecha" ? { x: sx(head.x), y: sy(head.y) } : { x: sx((bb.x0 + bb.x1) / 2), y: sy(bb.y1) };
+      this.emit(arch === "kaiju" ? 18 : 12, p.x, p.y, look.accent, 80, arch === "kaiju" ? "</>" : arch === "mecha" ? "01" : arch === "hydra" ? "~^" : "<>");
+    });
+    if (arch === "abyssal" && ent < 0.9 && !this.reduced) this.shake = Math.max(this.shake, 1.2);
+    if (arch === "mecha") this.once("arch-steam", t, this.T.at.reveal[0] + 0.95, () => {
+      for (const side of [bb.x0 + 6, bb.x1 - 6]) this.emit(6, sx(side), sy((bb.y0 + bb.y1) / 2), "#c9d4dc", 30, "~");
+    });
+
+    // ground shadow (hydra: grows as it lands)
+    if (arch === "hydra" && ent < 1.2) {
+      const g = ease.out(clamp01(ent / 0.8));
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      const w = (bb.x1 - bb.x0) * k * (0.3 + 0.4 * g);
+      ctx.fillRect(Math.round(sx((bb.x0 + bb.x1) / 2) - w / 2), Math.round(sy(bb.y1) - 1), Math.round(w), 2);
+    }
+    // mecha: the wireframe below the boot scanline
+    if (arch === "mecha" && ent < 0.6) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(tintCached(sp.outline, look.accent), ox, oy, sp.size * k, sp.size * k);
+      ctx.restore();
+    }
+
+    // the live body
     const saved = { boss: arenaFx.boss, now: arenaFx.now, victoryAt: arenaFx.victoryAt };
     arenaFx.victoryAt = -1;
-    b.x = sp.center.x; b.y = sp.center.y;
+    const xf = sp.bossXf ?? { s: 1, off: 0, bx: sp.center.x, by: sp.center.y };
+    b.x = xf.bx; b.y = xf.by + dy / xf.s;
     ctx.save();
-    ctx.translate(ox, oy);
-    ctx.scale(k, k);
+    if (clipY < Infinity) { ctx.beginPath(); ctx.rect(ox - sp.size * k, oy - sp.size * k, sp.size * k * 3, (clipY + sp.size) * k); ctx.clip(); }
+    ctx.translate(ox + xf.off * k, oy + xf.off * k);
+    ctx.scale(k * xf.s, k * xf.s);
     try { drawBoss(ctx, b, now); } finally {
       arenaFx.boss = saved.boss; arenaFx.now = saved.now; arenaFx.victoryAt = saved.victoryAt;
       ctx.restore();
+    }
+    if (this.reduced || ent > 2) return;
+
+    if (arch === "kaiju") {
+      // fins charge from the tail to the head, then the roar shockwave
+      const sweep = bb.x1 - (bb.x1 - bb.x0) * ease.inOut(clamp01(ent / 0.7));
+      const fade = 1 - clamp01((ent - 0.9) / 0.7);
+      if (fade > 0) for (const p of sp.ridge ?? []) {
+        if (p.x < sweep) continue;
+        const hot = Math.max(0, 1 - (p.x - sweep) / 30);
+        ctx.globalAlpha = fade * (0.45 + 0.55 * hot);
+        ctx.fillStyle = hot > 0.6 ? look.accent2 : look.accent;
+        ctx.fillRect(Math.round(sx(p.x)), Math.round(sy(p.y)), Math.max(1, Math.round(k)), Math.max(1, Math.round(k)));
+        if (hot > 0.8) drawGlow(ctx, sx(p.x), sy(p.y), look.accent, 8, 0.7 * fade);
+      }
+      ctx.globalAlpha = 1;
+      const r = ent - 0.7;
+      if (r > 0 && r < 0.8) {
+        ctx.fillStyle = look.accent;
+        for (let i = 0; i < 2; i++) {
+          const rr = (r - i * 0.15) * 140;
+          if (rr <= 0) continue;
+          ctx.globalAlpha = Math.max(0, 1 - r / 0.8) * 0.8;
+          ring(ctx, sx(head.x), sy(head.y), rr, 1);
+        }
+        ctx.globalAlpha = 1;
+        drawGlow(ctx, sx(head.x), sy(head.y), look.accent, 18, 0.9 * (1 - r / 0.8));
+      }
+    } else if (arch === "hydra") {
+      // wing gusts while descending, then the heads' eyes ignite one by one
+      if (ent < 0.9) {
+        ctx.fillStyle = look.accent2;
+        ctx.globalAlpha = 0.7 * (1 - clamp01(ent / 0.9));
+        for (let i = 0; i < 6; i++) {
+          const yy = sy(bb.y0 + ((i * 37) % (bb.y1 - bb.y0)) + dy);
+          const off = ((ent * 140 + i * 13) % 50);
+          ctx.fillRect(Math.round(sx(bb.x0) - off - 8), Math.round(yy), 6, 1);
+          ctx.fillRect(Math.round(sx(bb.x1) + off + 2), Math.round(yy), 6, 1);
+        }
+        ctx.globalAlpha = 1;
+      }
+      sp.eyes.forEach((e, i) => {
+        const a = clamp01((ent - 0.8 - i * 0.12) / 0.15) * (1 - clamp01((ent - 1.6) / 0.4));
+        if (a > 0) drawGlow(ctx, sx(e.x), sy(e.y), look.accent, 7, 0.9 * a);
+      });
+    } else if (arch === "mecha") {
+      if (ent < 0.6) {
+        const y = sy(clipY);
+        ctx.fillStyle = look.accent2;
+        ctx.fillRect(Math.round(sx(bb.x0) - 4), Math.round(y), Math.round((bb.x1 - bb.x0) * k + 8), 1);
+        drawGlow(ctx, sx((bb.x0 + bb.x1) / 2), y, look.accent, 14, 0.5);
+      }
+      // visor ignites
+      const v = clamp01((ent - 0.6) / 0.1) * (1 - clamp01((ent - 1.3) / 0.5));
+      if (v > 0) for (const e of sp.eyes) drawGlow(ctx, sx(e.x), sy(e.y), look.accent, 9, v);
+    } else {
+      // abyssal: crystal shards erupt along the crack it rises from (the renderer's emerge ground line), then the veins flare
+      const gy = sy(sp.center.y + 42 * (sp.bossXf?.s ?? 1));
+      const crack = 1 - clamp01((ent - 1.1) / 0.5);
+      if (crack > 0) {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(Math.round(sx(bb.x0) - 6), Math.round(gy), Math.round((bb.x1 - bb.x0) * k + 12), 2);
+        drawGlow(ctx, sx((bb.x0 + bb.x1) / 2), gy, look.accent, 22, 0.35 * crack);
+        const n = 9;
+        for (let i = 0; i < n; i++) {
+          const x = sx(bb.x0 + ((i + 0.5) / n) * (bb.x1 - bb.x0));
+          const h = Math.sin(clamp01((ent - i * 0.04) / 1.2) * Math.PI) * (10 + ((i * 7) % 5) * 3) * Math.min(2, k);
+          if (h < 1) continue;
+          ctx.fillStyle = i % 2 ? look.accent2 : look.accent;
+          for (let r = 0; r < h; r++) {
+            const w = Math.max(1, Math.round((1 - r / h) * 4));
+            ctx.fillRect(Math.round(x - w / 2), Math.round(gy - r), w, 1);
+          }
+        }
+      }
+      const vk = clamp01((ent - 0.9) / 0.2) * (1 - clamp01((ent - 1.5) / 0.5));
+      if (vk > 0) sp.limbs.forEach((l, i) => drawGlow(ctx, sx(l.x), sy(l.y), i % 2 ? look.accent2 : look.accent, 10, 0.6 * vk * (0.7 + 0.3 * Math.sin(now * 9 + i))));
     }
   }
 
@@ -1196,9 +1390,10 @@ export class Scene {
     const boss = isBossKit(kit);
     const title = boss ? kit.name : kit.title;
     const typed = title.slice(0, Math.floor(rk * 42));
-    const sub = boss ? (kit.design?.epithet ?? "") : (kit.design?.catchphrase ? `"${kit.design.catchphrase}"` : "");
+    // boss: title + archetype up top; the epithet and counts sit with the budget bar so the head stays visible
+    const sub = boss ? "" : kit.design?.catchphrase ? `"${kit.design.catchphrase}"` : "";
     const lines: [string, string][] = boss
-      ? [[`${kit.limbs.length} limbs · ${kit.attacks.length} attacks · theme ${kit.theme}`, UI.dim]]
+      ? [[`${ARCH_LOOK[archetypeOf(kit)].label} · ${ARCH_LOOK[archetypeOf(kit)].moves}`, ARCH_LOOK[archetypeOf(kit)].accent]]
       : [[`weapon  ${kit.code?.weapon?.name ?? kit.weapon}`, PART_COLOR.weapon], [`skill   ${SKILL_LABEL[kit.skill] ?? kit.skill}`, PART_COLOR.skill]];
     // name card: hero on the left half (graph faded), boss across the top of the stage
     const box: Rect = boss ? { x: st.x + 6, y: L.langBar.y - 1, w: st.w - 12, h: 0 } : { x: L.graphMap.x + 2, y: L.graphMap.y + 2, w: L.graphMap.w - 4, h: 0 };
@@ -1261,7 +1456,14 @@ export class Scene {
     const sum = bud.reduce((s, b) => s + b.value, 0) || 1;
     if (boss) {
       // one stacked bar: the room-wide HP budget split between core and limbs
-      tx.text(`threat budget split (same total for every boss)`, r.x, r.y - tx.lineH(5.5, "term", 9), { size: 5.5, min: 9, color: UI.dim, maxW: r.w });
+      const kit = this.kit as BossKit;
+      const counts = `${kit.limbs.length} limbs · ${kit.attacks.length} attacks`;
+      let head = `threat budget (same total for every boss) · ${counts}`;
+      if (tx.measure(head, 5.5, "term", 9) > r.w) head = `threat budget (equal for all) · ${counts}`;
+      tx.text(head, r.x, r.y - tx.lineH(5.5, "term", 9), { size: 5.5, min: 9, color: UI.dim, maxW: r.w });
+      const epi = kit.design?.epithet ?? "";
+      if (epi) tx.text(epi.slice(0, Math.max(0, Math.floor((t - T.reveal[0] - 0.3) * 60))), r.x + r.w / 2, r.y + 7 + tx.lineH(5, "term", 9) + 1,
+        { size: 6, min: 10, color: UI.text, align: "center", maxW: r.w });
       let x = r.x;
       const cols = [UI.red, "#ffb000", "#ff7a3d", "#c8a2ff", "#7ad7ff", "#9dff5a", "#ff9de2"];
       bud.forEach((b, i) => {

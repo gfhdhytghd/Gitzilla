@@ -1,6 +1,6 @@
 // Offline Genesis gallery: replays data/fallback repos through the real sim kit rules + the local genesis builder.
-// URL params: ?repo=<idx|slug> &mode=edu &src=local &kind=hero|boss &layout=big|desktop|phone|card &condensed=1 &live=1 &t=<sec freeze> &loop=1
-import type { BossDesign, BossKit, GenesisProgress, HeroDesign, PlayerKit, RepoProfile } from "../../shared/types.ts";
+// URL params: ?repo=<idx|slug> &arch=kaiju|hydra|mecha|abyssal &mode=edu &src=local &kind=hero|boss &layout=big|desktop|phone|card &condensed=1 &live=1 &t=<sec freeze> &loop=1
+import type { BossArchetype, BossDesign, BossKit, GenesisProgress, HeroDesign, PlayerKit, RepoProfile } from "../../shared/types.ts";
 import { bossKitFromProfile, playerKitFromProfile } from "../../sim/kits.ts";
 import { buildGenesis } from "../../genesis/index.ts";
 import { buildGenesisLocal, playGenesis, type GenesisHandle } from "./index.ts";
@@ -29,10 +29,17 @@ function heroKit(p: RepoProfile): PlayerKit {
   };
 }
 function bossKit(p: RepoProfile): BossKit {
-  const kit = bossKitFromProfile(p, 4);
+  const kit = withArch(bossKitFromProfile(p, 4));
   const d = bossDesigns[`/data/design/${file}.boss.json`];
   if (!d || q.get("design") === "0") return kit;
   return { ...kit, design: d, name: d.name, palette: [...d.palette], theme: d.theme, attacks: kit.attacks.map((a) => ({ ...a, name: d.attackNames[a.id] || a.name })) };
+}
+
+// ?arch=kaiju|hydra|mecha|abyssal previews a boss archetype regardless of what the sim picked
+const archQ = q.get("arch") as BossArchetype | null;
+function withArch(kit: BossKit): BossKit {
+  // the sim's selection reason belongs to the archetype it picked; the server genesis explains overrides on its own
+  return archQ && archQ !== kit.archetype ? { ...kit, archetype: archQ, code: kit.code && { ...kit.code, archetypeReason: undefined } as BossKit["code"] } : kit;
 }
 
 const kit = kind === "boss" ? bossKit(profile) : heroKit(profile);
@@ -60,6 +67,7 @@ for (const l of ["big", "desktop", "card", "phone"]) link(l, { layout: l }, layo
 link("edu", { mode: mode === "edu" ? null : "edu" }, mode === "edu");
 link("condensed", { condensed: q.get("condensed") ? null : "1" }, !!q.get("condensed"));
 link("live", { live: q.get("live") ? null : "1" }, !!q.get("live"));
+if (kind === "boss") for (const a of ["kaiju", "hydra", "mecha", "abyssal"]) link(a, { arch: archQ === a ? null : a }, archQ === a);
 const replay = document.createElement("button");
 replay.textContent = "replay";
 bar.append(replay);

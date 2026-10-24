@@ -71,3 +71,11 @@ export const PART_COLOR: Record<string, string> = {
   heart: "#ff3355", weakpoint: "#ff3355", eyes: "#fff4c4", minions: "#9dff5a", attack: "#ff7a3d", theme: "#3de8ff",
   name: "#ffffff", glyphs: "#39ff88", cape: "#7ad7ff", scars: "#ff8a8a",
 };
+
+/** Boss archetypes (BossKit.archetype): accent color, name-card label, and the behavior preset in a few words. */
+export const ARCH_LOOK: Record<string, { label: string; accent: string; accent2: string; form: string; moves: string }> = {
+  kaiju: { label: "KAIJU", accent: "#5ff3ff", accent2: "#c8fbff", form: "upright saurian · glowing fins", moves: "stomp-walk · tail sweep · </> breath" },
+  hydra: { label: "HYDRA", accent: "#ffcf4a", accent2: "#fff1b0", form: "many heads · wings", moves: "flies in arcs · a beam per head · dive bomb" },
+  mecha: { label: "MECHA", accent: "#ff3b3b", accent2: "#ffb0a0", form: "armored machine · visor eyes", moves: "jet hops · rocket fists · missile barrage" },
+  abyssal: { label: "ABYSSAL", accent: "#ff2d6a", accent2: "#5ff3ff", form: "crystal serpent · glowing veins", moves: "burrows · crystal eruptions · emerge strike" },
+};

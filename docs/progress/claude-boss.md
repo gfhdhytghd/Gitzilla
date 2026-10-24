@@ -1,3 +1,25 @@
+DONE (archetypes) — claude-boss   (also DONE (kaiju refs))
+
+## Boss archetypes v1 (docs/tasks/boss-archetypes.md, refs docs/design-refs/boss-1..5 + BOSS-README.md)
+- The body follows `kit.archetype` from the sim (bundled repos spread over all four: kaiju lodash/golang-example/nanogpt/petclinic, hydra django/react/fastapi, mecha ripgrep/gin/redis, abyssal express/jquery/flask/rustlings/vue).
+  - **kaiju** (refs 1+4): dark-teal scaly saurian, heavier hips/legs, pale belly + throat, ground-dragging tail with a curled tip, and tall jagged crystalline dorsal fins. The fins are rasterized faceted spike clusters with forked side jags, each etched with a bracket from the repo's tokens. They're mint at rest; charging turns them white-hot cyan tail→head; red in phase 2, alternating red/cyan in phase 3, cracked grey when broken.
+  - **hydra** (ref 2): golden dragon with 2–3 heads on S-necks (one per `mouths[]` entry) with horns and neck spines, one big ribbed flapping wing, thick thighs and a long tail. The acting head (`pose.head`) glows and opens its jaw; a severed head disappears.
+  - **mecha** (ref 3): steel-armored kaiju frame with boxy segments and panel grid, a red scanning visor, steel fin modules, a shoulder cannon barrel, a rocket fist, vents that glow while charging and steam on recover, and jets on a hop.
+  - **abyssal** (ref 5): a low coiled black-crystal serpent-dragon running through all the anchors, with a horned crystal crest, cyan crescent veins (red when enraged), crystal ridges, and a burrow mound while underground.
+- **Poses from BossState.pose** (`poseMotion` in boss/index.ts, no logic of its own beyond interpreting t/total/dir/head/airborne):
+  - walk (2-step stomp with shake and dust; CLANK for mecha; slither for abyssal)
+  - windup (lean back, charge glow on fins/vents/veins/head, jaw opens) → attack (lunge along dir) → recover
+  - roar (shockwave rings), stagger (knockback jitter), enrage (pulsing charge)
+  - death (topple onto the tail and fade, then the victory segfault)
+  - fly (hydra hover with fast wing beats; mecha jet hop), dive
+  - burrow/emerge (the body sinks below a ground clip line with crystal shards; hidden while airborne)
+  - Hydra stays hovering while `airborne`.
+- **Attack FX per archetype:** beams are kaiju `</>` cyan breath, hydra gold λ beams, mecha red `01` eye laser, abyssal cyan/red void ray. Mecha ring/spiral bullets are drawn as rockets with exhaust (missile barrage). Abyssal slams/cascades erupt black crystals with cyan edges from the floor. Hydra and abyssal bullets get gold / black-crystal plates.
+- **Phase 3 (all archetypes):** the hide goes near-black and crescent veins glow red/cyan (ref 5), plus the existing glitch.
+- **shared/kaiju-anatomy.ts:** `bossAnchors(kit)` per archetype (`kaijuAnchors` alias). Every limb has `slot` + `tag` (head | neck | wing | arm | leg | tail | plate | coil | jet) + `aloft`; `chest.tag = "core"`; `mouths[]` has one entry per head (hydra 3 if ≥6 limbs, else 2). codex-sim already uses it (sim/regions.ts `bossMouth(boss, head)`, airborne filtering by tag).
+- **Gallery:** `?mode=film&pose=<name>` (4 archetypes × 6 frames, `&phase=` too), `&arch=` to force an archetype in any mode, `?pose=` in grid mode.
+- Hit flash on the big bodies dropped to 40% white (a full-body flash on a 150 px boss washed out the screen).
+
 DONE (kaiju default) — claude-boss
 
 ## Kaiju is THE boss design
@@ -223,3 +245,15 @@ Every renderer in my BRIEF interface is in and verified in headless Chromium scr
 - Sim: `regions = limbs.map(l => ({ id: l.id, x: b.x + l.dx, y: b.y + l.dy, r: l.r })).concat({ id: "heart", x: b.x + chest.dx, y: b.y + chest.dy, r: chest.r })`.
 - Laser / atomic breath: please originate the laser hazard at `b + mouth` (dx -48, dy -39). The renderer draws the breath from the hazard origin.
 - The kaiju is ~150 px wide: head at dx ≈ -56, tail tip at dx ≈ +tailLen (94–112). Suggested clamp for the boss center: x ∈ [70, 370], y ∈ [70, 222].
+
+## Archetype anchors handoff (for codex-sim) — shared/kaiju-anatomy.ts
+- `bossAnchors(kit)` → `{ archetype, chest, mouth, mouths[], limbs: [{ id, slot, dx, dy, r, aloft }] }`, per `kit.archetype` (kaiju | hydra | mecha | abyssal). `kaijuAnchors` is an alias, so sim/regions.ts keeps working.
+- Slots (limb i → slot i):
+  - kaiju: plates, tail, jaw, arms, leg, neck-plates, leg-back, tail-tip
+  - hydra: wing, tail, head-0, head-1, leg, head-2, neck, tail-tip
+  - mecha: back-armor, tail, head, rocket-fist, leg, shoulder-cannon, leg-back, tail-tip
+  - abyssal: coil, tail, head, crest, coil-front, neck, coil-back, tail-tip
+- `mouths[]`: hydra has one per head (use `pose.head` / the attack's head index for the beam origin); mecha's mouth is the visor eye; abyssal's is the jaw.
+- `aloft: true` marks the limbs that stay hittable while the hydra is airborne (heads, neck, wing). Abyssal burrowed: nothing is hittable (sim decides).
+- Every limb has a `tag`: head | neck | wing | arm | leg | tail | plate | coil | jet. `chest.tag` = "core".
+- `mouths.length` = drawn heads: hydra 3 if the kit has ≥6 limbs (head-2 slot exists), else 2; others 1.

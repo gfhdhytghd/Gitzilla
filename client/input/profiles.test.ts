@@ -1,3 +1,4 @@
+import { MOTION_SETTINGS } from './profiles';
 import { describe, expect, it } from 'vitest';
 import { createGestureState, recognizeGesture, tiltMove } from './gestures';
 import { loadMotionProfile, MOTION_PROFILE_KEY, saveMotionProfile } from './profiles';
@@ -17,11 +18,10 @@ describe('inclusive motion profiles', () => {
     expect(loadMotionProfile({ getItem() { throw new Error('disabled'); } })).toBe('standard');
     expect(() => saveMotionProfile('seated', { setItem() { throw new Error('disabled'); } })).not.toThrow();
   });
-  it('seated full speed needs 8°, with a larger tremor deadzone than standard', () => {
-    expect(tiltMove([4.8, 0], [0, 0], 'seated')).toEqual([0, 0]);
-    expect(tiltMove([4.8, 0], [0, 0], 'standard')[0]).toBeGreaterThan(0);
-    expect(tiltMove([8, 0], [0, 0], 'seated')).toEqual([1, 0]);
-    expect(tiltMove([8, 0], [0, 0], 'standard')).toEqual([0.25, 0]);
+  it('seated and standard share the latest horizontal15° movement while retaining gesture thresholds', () => {
+    expect(tiltMove([7.5, 0], [45, 45], 'seated')[0]).toBeCloseTo(0.5);
+    expect(tiltMove([15, 0], [0, 0], 'standard')[0]).toBeCloseTo(1);
+    expect(MOTION_SETTINGS.seated.swingThreshold).toBe(6);
   });
   it.each([[7, 0, 0], [-7, 0, 0], [0, 7, 0], [0, -7, 0], [0, 0, 7], [0, 0, -7]])
     ('small seated flick (%s, %s, %s) attacks without needing the standard swing', (x, y, z) => {

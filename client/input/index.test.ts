@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createInput, createInputDebugPanel, vibrate } from './index';
+import { createInput, createInputDebugPanel, vibrate, requestMotionPermission, getMotionPermissionState } from './index';
 import type { InputController } from './index';
 import type { MotionProfile } from '../../shared/types';
 
@@ -297,29 +297,22 @@ describe('motion-v3 permissions and live sensors', () => {
     advance(2000);
     expect(doc.body.children).toHaveLength(0);
   });
-  it('averages 300ms of neutral samples, and recalibrates on explicit request or screen rotation', () => {
+  it('moves relative to horizontal and never makes the held upright pose a zero', () => {
     mobile(); const input = start();
-    win.screen.orientation.angle = 90;
-    orientation(10, 0); advance(100); orientation(12, 0); advance(100); orientation(8, 0); advance(100);
-    expect(input.sample().move).toEqual([0, 0]);
-    orientation(30, 0); advance(100);
-    expect(input.sample().move[0]).toBeGreaterThan(0.7);
-    input.calibrate(); neutral(30, 0);
-    expect(input.sample().move).toEqual([0, 0]);
-    win.screen.orientation.angle = 270; emit(win.screen.orientation, 'change'); neutral();
-    orientation(20, 0); advance(100);
-    expect(input.sample().move[0]).toBeLessThan(-0.7);
+    orientation(45, 0); expect(input.sample().move[1]).toBeCloseTo(1);
+    for (let i = 0; i < 8; i++) { advance(30); orientation(0, 0); }
+    expect(Math.hypot(...input.sample().move)).toBeLessThan(0.02);
+    input.calibrate(); orientation(15, 0); expect(input.sample().move[1]).toBeCloseTo(1);
+    win.screen.orientation.angle = 90; emit(win.screen.orientation, 'change');
+    orientation(15, 0); expect(input.sample().move[0]).toBeCloseTo(1);
   });
-  it('freezes tilt movement for 250ms after swings, and swings never dash or skill', () => {
-    mobile(); const input = start(); neutral();
-    input.sample(); motion(-15, 0, 0);
-    orientation(0, 70); advance(100);
+  it('freezes movement for120ms after a swing, then resumes gravity-relative movement', () => {
+    mobile(); const input = start(); orientation(0, 0); input.sample(); motion(-15, 0, 0);
+    orientation(80, 60); advance(100);
     expect(input.sample()).toMatchObject({ move: [0, 0], fire: true, dash: false, skill: false, aim: null });
-    orientation(0, 20); advance(100);
-    expect(input.sample().move).toEqual([0, 0]);
-    advance(60); orientation(0, 20); advance(100);
-    expect(input.sample().move[0]).toBeGreaterThan(0.7);
-    advance(350); expect(input.sample().fire).toBe(false);
+    advance(30); orientation(0, 15);
+    expect(input.sample().move[0]).toBeGreaterThan(0.8);
+    advance(500); expect(input.sample().fire).toBe(false);
   });
   it('uses gravity-only sensors for tilt and filters gravity out of swing recognition', () => {
     mobile(); const input = start();
@@ -411,6 +404,43 @@ describe('inclusive profile integration', () => {
   });
 });
 
+describe('automatic traces and horizontal sensitivity', () => {
+  it('uploads the first phone capture without a trace query flag', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 201 })));
+    mobile(); const input = start();
+    emit(win, 'deviceorientation', { beta: 0, gamma: 7.5 }); input.sample();
+    time = 20_000; await vi.advanceTimersByTimeAsync(20_000);
+    expect(fetch).toHaveBeenCalledOnce();
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+    expect(body.source).toBe('fight'); expect(body.samples.some((s: any) => s.type === 'orientation')).toBe(true);
+    expect(body.samples.some((s: any) => s.type === 'input' && Math.abs(s.move[0] - 0.5) < 0.01)).toBe(true);
+  });
+  it('uses upright portrait coordinates on phones even if WebKit reports a stale90° screen angle', () => {
+    mobile(); win.innerWidth = 390; win.innerHeight = 844; win.screen.orientation.angle = 90;
+    const input = start(); emit(win, 'deviceorientation', { beta: 0, gamma: 7.5 });
+    expect(input.sample().move[0]).toBeCloseTo(0.5); expect(input.sample().move[1]).toBeCloseTo(0);
+  });
+  it('defaults to15°, persists fast10°, and ignores a bad legacy stored movement zero', () => {
+    mobile(); let input = start(); input.setProfile({ neutral: [45, 0], fullSpeed: 40 });
+    emit(win, 'deviceorientation', { beta: 0, gamma: 7.5 });
+    expect(input.sample().move[0]).toBeCloseTo(0.5);
+    input.setTiltSensitivity('fast'); input.dispose(); input = start();
+    expect(input.tiltSensitivity).toBe('fast'); emit(win, 'deviceorientation', { beta: 0, gamma: 7.5 });
+    expect(input.sample().move[0]).toBeCloseTo(0.75);
+  });
+});
+
+describe('page permission handoff', () => {
+  it('shares an actual lobby grant and sensor readiness with game controllers on the same page', async () => {
+    const request = vi.fn(async () => 'granted'); mobile(request);
+    await requestMotionPermission(); emit(win, 'deviceorientation', { beta: 45, gamma: 0 });
+    expect(getMotionPermissionState().ready).toBe(true);
+    let input = start(); expect(input.needsPermission).toBe(false); expect(input.sensorStatus).toBe('on');
+    input.dispose(); input = start();
+    expect(input.needsPermission).toBe(false); expect(input.sensorStatus).toBe('on'); expect(request).toHaveBeenCalledOnce();
+  });
+});
+
 describe('v3 controller integration', () => {
   it('freezes movement while a fast gyro gesture is still accumulating', () => {
     mobile(); const input = start(); input.setProfile({ neutral: [0, 45] });
@@ -427,7 +457,7 @@ describe('v3 controller integration', () => {
     input.calibration.startStep('neutral');
     for (let i = 0; i < 10; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 1 }); advance(40); }
     expect(input.calibration.meter()).toMatchObject({ step: 'neutral', ready: true });
-    expect(input.calibration.result().neutral?.[0]).toBeCloseTo(1);
+    expect(input.calibration.result().neutral).toBeNull();
     // Don't upload the component fixture's training stream to a real server.
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true })));
     input.calibration.stop();

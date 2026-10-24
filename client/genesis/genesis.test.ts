@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { RepoProfile } from "../../shared/types.ts";
 import { bossKitFromProfile, playerKitFromProfile } from "../../sim/kits.ts";
 import { componentOf, cycleEdges, forceLayout, longestChain } from "./graph.ts";
-import { buildGenesisLocal, genesisFromKit, heroBudget } from "./local.ts";
+import { archetypeStep, buildGenesisLocal, genesisFromKit, heroBudget, isFormStep } from "./local.ts";
 
 const dir = new URL("../../data/fallback/", import.meta.url);
 const profiles = readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(readFileSync(new URL(f, dir), "utf8")) as RepoProfile);
@@ -59,5 +59,21 @@ describe("local genesis", () => {
     expect(genesisFromKit(bossKitFromProfile(p, 4)).trace.length).toBeGreaterThan(2);
     const hero = playerKitFromProfile(p);
     expect(genesisFromKit(hero).budget).toEqual(heroBudget(hero));
+  });
+  it("boss stories open with why this archetype", () => {
+    for (const p of profiles) {
+      const boss = bossKitFromProfile(p, 4);
+      const g = buildGenesisLocal(p, boss);
+      expect(isFormStep(g.trace[0])).toBe(true);
+      expect(g.trace[0].ref).toBe(boss.archetype ?? "kaiju");
+      expect(g.trace.filter(isFormStep)).toHaveLength(1);
+      expect(isFormStep(genesisFromKit(boss).trace[0])).toBe(true);
+    }
+    const kit = { ...bossKitFromProfile(profiles[0], 4), archetype: "hydra" as const };
+    kit.code = { ...kit.code!, archetypeReason: "4 circular dependency groups → multiple heads and winged flight." } as typeof kit.code;
+    expect(archetypeStep(buildGenesisLocal(profiles[0], kit), kit)).toMatchObject({ from: "4 circular dependency groups", to: "form: HYDRA · multiple heads and winged flight", ref: "hydra" });
+    // limb / name steps never count as the form step, even when a limb is named after the archetype
+    expect(isFormStep({ from: "src", to: "limb: hydra", part: "limb", ref: "hydra" })).toBe(false);
+    expect(isFormStep({ from: "5 modules · 0 cycles", to: "Kaiju · crystal-backed titan", part: "class", ref: "archetype" })).toBe(true);
   });
 });

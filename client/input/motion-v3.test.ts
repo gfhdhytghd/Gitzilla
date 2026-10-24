@@ -108,7 +108,7 @@ describe('per-player calibration and trace capture', () => {
         gesture: { kind: step === 'swing' ? 'attack' : step === 'twist' ? 'dash' : 'skill', via: step, at: now } });
       expect(recorder.meter().ready).toBe(true);
     }
-    expect(recorder.result()).toMatchObject({ neutral: [2, 45], swingThreshold: 6, twistThreshold: 120, spinAngle: 220, fullSpeed: 9.600000000000001 });
+    expect(recorder.result()).toMatchObject({ neutral: null, swingThreshold: 6, twistThreshold: 120, spinAngle: 220, fullSpeed: 15 });
   });
   it('allows no-gyro long-press training alternate and skipped steps keep defaults', () => {
     const recorder = createCalibrationRecorder(() => defaultThresholds()); recorder.startStep('spin');
@@ -136,7 +136,7 @@ describe('per-player calibration and trace capture', () => {
     let raw = '';
     const storage = { getItem: () => raw, setItem: (_key: string, value: string) => { raw = value; } };
     const thresholds = sanitizeThresholds({ swingThreshold: -1, twistThreshold: 2000, fullSpeed: NaN, spinAngle: 0 });
-    expect(thresholds).toMatchObject({ swingThreshold: 4, twistThreshold: 350, fullSpeed: 20, spinAngle: 220 });
+    expect(thresholds).toMatchObject({ swingThreshold: 4, twistThreshold: 350, fullSpeed: 15, spinAngle: 220 });
     saveThresholds(thresholds, 'standard', storage); expect(loadThresholds('standard', storage)).toEqual(thresholds);
     expect(loadThresholds('seated', storage).swingThreshold).toBe(6);
     raw = 'broken'; expect(loadThresholds('standard', storage).spinAngle).toBe(270);
