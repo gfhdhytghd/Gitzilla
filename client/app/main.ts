@@ -1,4 +1,4 @@
-import { configureSettings, installSettings } from './settings';
+import { configureSettings, installSettings, placeSettingsButton } from './settings';
 import { installLanguageUi, setClassroomLanguage } from '../i18n';
 import { createClassroom } from './classroom';
 // Entry: path router (/ landing, /r/<ROOM> room) + room controller that swaps lobby/game/autopsy screens.
@@ -73,6 +73,7 @@ function showLanding() {
     mock,
   });
   root.append(landing.el);
+  placeSettingsButton(landing.el);
 }
 
 function enterRoom(room: string) {
@@ -86,6 +87,7 @@ function enterRoom(room: string) {
       modulesReady.finally(() => startRoom(room, role, name));
     });
     root.append(gate.el);
+    placeSettingsButton(gate.el);
     return;
   }
   modulesReady.finally(() => startRoom(room, role, stored ?? "screen"));
@@ -157,7 +159,7 @@ function startRoom(room: string, role: Role, name: string) {
     screen?.destroy();
     screen = kind === "classroom" ? createClassroom(app) : kind === "lobby" ? createLobby(app) : kind === "game" ? createGame(app) : kind === "autopsy" ? createAutopsy(app) : null;
     screenKind = kind;
-    if (screen) root.append(screen.el);
+    if (screen) { root.append(screen.el); placeSettingsButton(screen.el); }
   };
 
   function refresh() {

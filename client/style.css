@@ -1505,7 +1505,7 @@ body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .hud-log { display: none;
 
 
 /* Settings are a secondary surface; first-run setup uses the same controls. */
-.settings-button { position:fixed; z-index:900; top:calc(env(safe-area-inset-top,0px) + 10px); right:12px; margin:0; min-height:40px; background:#101a2b; color:#e8edf7; border:1px solid #53647d; }
+.settings-button { position:absolute; z-index:900; top:calc(env(safe-area-inset-top,0px) + 10px); right:12px; margin:0; min-height:40px; background:#101a2b; color:#e8edf7; border:1px solid #53647d; }
 .settings-dialog { width:min(540px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); box-sizing:border-box; overflow:auto; padding:24px; border:2px solid #68d8ff; color:#e8edf7; background:#080d18; font:18px/1.5 var(--term); }
 .settings-dialog::backdrop { background:#02060ddb; }
 .settings-dialog h2 { font-size:28px; margin:0 0 12px; color:#68d8ff; }
@@ -1523,6 +1523,7 @@ body.settings-open .kj-touch-overlay { display:none; }
 .settings-dialog .cc-train { display:grid; gap:8px; padding:8px 0; border:0; }
 .settings-dialog .cc-train .btn-link { white-space:normal; text-align:left; overflow-wrap:anywhere; }
 .settings-dialog .cc-legend { white-space:normal; overflow-wrap:anywhere; }
-.settings-button.settings-inline { position:static; flex:none; }
+.settings-page:not(.game):not(.landing):not(.whoami) { padding-top:calc(env(safe-area-inset-top,0px) + 68px); }
+.settings-button[hidden] { display:none; }
 .settings-dialog .btn, .settings-button { font-family:var(--term); font-size:16px; }
 .settings-dialog .controls-card { box-shadow:none; }

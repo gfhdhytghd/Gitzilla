@@ -52,7 +52,6 @@ export function createClassroom(app: AppCtx): Screen {
     h('div.cr-title', null, title, phase),
     h('div.cr-room', null, h('span', null, 'Join room'), h('b', { 'data-testid': 'classroom-code', translate: 'no' }, app.room)),
     clock, button('Leave', 'classroom-leave', () => { if (confirm(t(teacher() ? 'End this lesson and leave?' : 'Leave this classroom?'))) app.leave(); }));
-  placeSettingsButton(head);
   const taskTitle = h('h2'), taskText = h('p.cr-instructions'), stepRail = h('nav.cr-steps', { 'aria-label': 'Lesson steps' });
   const notice = h('div.cr-notice', { role: 'status' });
   const teacherEntry = h('a.btn.btn-primary', { href: `${location.pathname}?screen=1`, 'data-testid': 'classroom-open-teacher' }, 'Open teacher screen for this room');
