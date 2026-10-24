@@ -1,3 +1,71 @@
+DONE (edu pvp)
+
+Edu classroom PvP summary (claude-player part: 2x high-detail heroes for heroScale 2, same identity as 1x):
+- **Null boss.** The player renderer never reads `MatchState.boss`, so it's null-safe. Typecheck is clean.
+- **2x sprites (`client/render/player/hires.ts`).** The same 1x color grid of each frame is upscaled with EPX/Scale2x (smooth diagonals and curves, never loses a pixel), then gets a 2x-only detail pass:
+  - anime catchlights, hair strands, dithered cloth shading on the shadow side, a helmet glint
+  - a 1px top-light/bottom-shade pass on every shape
+  - a crisp 1px outline at 2x
+  The result is a 52x56 sprite. The weapon, rim, lying (downed) frame, and RGB-split slices use the same pipeline. Capes and laptop screens show real code at 2x line density.
+  `?compare=1` in the gallery shows 1x (pixel-doubled) next to 2x for 12 heroes: same heroes, finer detail.
+- **API (backward compatible).** `drawPlayer(ctx, p, time, isYou, { scale: state.heroScale, pvp: state.mode === "edu" })`.
+  - At scale 2 every hero-local layer (rings, tags, auras, badges, callouts) draws inside a 2x transform around the hero. World-space layers (particles, trails, ghosts, fork decoy, duck) stay in world space.
+  - Text scales 2x too, so it stays readable when the edu camera zooms out.
+- **PvP look** (`pvp: true`):
+  - Rivals get a ground ring in their own color (`playerColor(kit)`), not the friendly mint.
+  - Every hero shows a one-line full name in their color, because students need to know whose hero is whose. No truncation.
+  - No revive ring (KO = respawn). You keep the yellow ring, arrow, and name.
+- **New exports.**
+  - `playerColor(kit)`: a vivid per-hero identity color for PvP bullets, leaderboard rows, and minimap dots.
+  - `playerPortrait(kit, size, frame, hires = true)`: a 2x high-detail lobby portrait (needs size >= 52, drawn at an even integer scale).
+- **Performance** (`?benchsync=N`, headless software rendering):
+  - 30 heroes at 2x: about 3.7 ms/frame of JS at canvas scale 1. At scale 3 (1440x864, software fill) it's about 10 ms, which is pixel fill and cheap on a GPU.
+  - 8 heroes at 2x: about 3 ms at scale 3.
+  - Per-hero caches: the code overlay is rebuilt only when the frame or scroll changes, ground rings are pre-rasterized, and a `WeakMap` sits in front of `lookFor`.
+- **Tests.** `hires.test.ts` checks that the upscale keeps identity, smooths diagonals, and outlines and shades. Player tests: 11 pass.
+
+### Requests
+- **claude-ui:**
+  - Pass `{ scale: state.heroScale, pvp: state.mode === "edu" }` as the 5th arg of `R.drawPlayer`.
+  - In the edu lobby use `R.playerPortrait(kit, size, frame, true)`.
+  - Use `R.playerColor(kit)` for leaderboard rows and minimap dots so colors match the heroes' rings.
+- **claude-boss:** PvP bullets "readable per player color": `playerColor(kit)` from `client/render/player/index.ts` gives the same color as that hero's ring.
+- **coordinator (infra):** the shared dev server on :5175 (and any Vite here) is serving **stale module transforms**. File edits under `client/render/player/` were not picked up even after `touch`; a `?v=` query returned fresh code, and only restarting Vite helped. The file watcher seems not to fire on this machine, so playtests on :5175 may run old client code until it's restarted. I used a short-lived private Vite on :5291 for gallery screenshots and benchmarks, and it's stopped now.
+
+DONE (code flavor)
+
+Code-flavor summary (docs/tasks/code-flavor.md, claude-player section). Heroes stay cute chibis; code is the material.
+- **Weapons as code objects (new pixel art):** a `{ }`-braced pistol (blaster), a `;`-magazine SMG, a mechanical-switch shotgun, a keycap cannon, a USB-stick staff with an upright glowing `λ` at the tip, a regex-ring emitter (laser), and a cursor-bar katana (blade). The real-token etch from round 2 still applies.
+- **Muzzle and impact text:** firing pops `kit.code.weapon.muzzle`, with per-kind defaults from the table (`printf`, `loop`, `switch`, `alloc`, `=>`, `match`, `cut`). Your shots spark `weapon.impact` (`\n`, `++`, `break;`, `free()`, `return`, `$1`, `rm`) where they land.
+  - Rate-limited so fights stay readable: your muzzle words every 1.6s, teammates' every 3.2s at half alpha. Impact words: yours every 1s (crits 0.35s); teammates' only on crits.
+  - Impact text needs `notePlayerEvents` wired (see the claude-ui request below).
+- **Faces:** helmet visors are a `>_` prompt with a blinking cursor (`><` hurt, `x_x` KO, `^_^` victory). Mages get glowing `{ }` eyes. Everyone else gets an `x_x` KO face and `^_^` on victory.
+- **Syntax crests from real tokens:** `{` brace, `</>` horns, `#` mohawk, `~` curl, `*` pointer spikes. They go on helmets (accent color) or hair (when there's no topper).
+- **Syntax-highlighted armor:** the knight's brow band is a highlighted code line, and knight/heavy plates and pauldrons get 1px keyword/function/string stripes.
+- **Cape and laptop show code:** the cape interior and the laptop lid are dark editor panels where the hero's real `kit.code.snippet` and identifiers scroll as 1px syntax-colored minimap lines (faster when running). Hoodies get a token sticker on the pocket.
+- **Footsteps and trail:** `;` / `.` footprints, a faint git-branch commit line along your recent path, and a `--force` streak on dash.
+- **Orbiting tokens:** up to 2 compact symbol tokens (`=>`, `:=`, `{}`...) orbit the head at low alpha and brighten while the skill is ready. Word tokens are excluded on purpose (clutter).
+- **Idle:** after 3s idle a tiny keyboard floats up and the hero types (clacks); after 8s, `sleep(1)` drifts up.
+- **Version tag:** your name shows `v1.N` for N picked perks.
+- **Hurt, downed, revive:** hurt flicks red `-` diff lines. Going down types a short stack trace (`SEGFAULT` / `AT parse_args()` from real identifiers) beside the body, fading after 2s. Reviving re-materializes the hero line by line like `git checkout`, with a green `+` scan.
+- **Skill vocabulary:**
+  - firewall: `try { } catch` braces hug the bubble
+  - fork: the decoy carries a `#a3f9c1e` commit hash
+  - hotfix: green `+ ----` patch lines
+  - overclock: a `SUDO` aura plus `!!` afterimages
+  - rollback: `HEAD~1` at the origin
+
+  Fallback callouts when there's no usable signature: `$ TRY{}CATCH`, `$ GIT FORK`, `$ +PATCH`, `$ SUDO !!`, `$ GIT REVERT`.
+- **Lobby terminal card:** new `paintHeroTerminal(canvas, kit, time, readyAge?)`. The hero stands on a mini terminal window titled `~/repo (main)` that shows their real snippet and identifiers with line numbers, syntax-colored, and a blinking cursor. Code types in during spin-up. Best at >= 160x120 px; drawn at an integer scale.
+- **Victory mood:** new `setPlayerMood("victory" | "defeat" | "fight")`. On victory every standing hero hops with `^_^`.
+- **Gallery:** kits carry `code.weapon`. The arena scene feeds impacts, `?mood=victory` works, the strip has an `idle-type` row, and there's a new terminal-cards row.
+- **Tests:** `code.test.ts` gained crest, face, and code-rows tests. Player tests: 8 pass. Typecheck for my files is clean.
+
+### Requests: claude-ui (all optional, one line each in renderers.ts + game.ts / lobby.ts)
+- `R.notePlayerEvents?.(events)` once per released snapshot event batch. It enables weapon impact words, crit flashes, and knockback.
+- `R.setPlayerMood?.(status === "victory" ? "victory" : status === "defeat" ? "defeat" : "fight")` when the match status changes. Reset to `"fight"` on rematch.
+- Lobby card: `R.paintHeroTerminal?.(canvas, kit, now/1000, (now - readyAt)/1000)` per animation tick, for the terminal card (or keep `paintHeroCard` for small slots).
+
 DONE (round 2)
 
 Round 2 summary (heroes from real code):

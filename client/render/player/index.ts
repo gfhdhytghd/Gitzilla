@@ -38,6 +38,7 @@ interface Mem {
   kbT: number; kbX: number; kbY: number; kbAmp: number; crit: boolean;
   perks: Set<string>; perkT: Record<string, number>;
   muzzleT: number; impactT: number; stepFrame: number; stepN: number; moveT: number; clackT: number; sleepT: number;
+  codeCv: HTMLCanvasElement | null; codeKey: string;
 }
 
 const mems = new Map<string, Mem>();
@@ -46,6 +47,7 @@ const mems = new Map<string, Mem>();
 // hero and the body/weapon use 2x high-detail sprites; world-stored things (particles, trails, ghosts)
 // convert between world and that local frame with LX/LY and WX/WY.
 let S = 1, RES = 1, PVP = false, OX = 0, OY = 0;
+let curMem: Mem | null = null;
 const LX = (v: number) => OX + (v - OX) / S;
 const LY = (v: number) => OY + (v - OY) / S;
 const WX = (v: number) => OX + (v - OX) * S;
@@ -115,7 +117,7 @@ function memFor(p: PlayerState, t: number): Mem {
       lastGhost: 0, lastDust: 0, lastFlame: 0, lastPlus: 0, swingDir: 1, duckX: p.x - 12, duckY: p.y - 10, duckFlip: 1,
       kbT: -99, kbX: 0, kbY: 0, kbAmp: 0, crit: false,
       perks: new Set(p.perks ?? []), perkT: {},
-      muzzleT: -99, impactT: -99, stepFrame: -1, stepN: 0, moveT: t, clackT: 0, sleepT: 0,
+      muzzleT: -99, impactT: -99, stepFrame: -1, stepN: 0, moveT: t, clackT: 0, sleepT: 0, codeCv: null, codeKey: "",
       phase: (hashStr(p.id) % 1000) / 1000,
     };
     if (mems.size > 48) for (const [k, v] of mems) if (t - v.t > 5) mems.delete(k);
@@ -273,6 +275,21 @@ function pixEllipse(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: n
   }
 }
 
+const ringCache = new Map<string, HTMLCanvasElement>();
+/** Static ground ring (rx 9, ry 3.5) pre-rasterized: one drawImage per hero instead of ~40 fillRects. */
+function ringCanvas(color: string): HTMLCanvasElement {
+  let c = ringCache.get(color);
+  if (c) return c;
+  c = document.createElement("canvas");
+  c.width = 21; c.height = 11;
+  const g = c.getContext("2d")!;
+  g.fillStyle = color;
+  pixEllipse(g, 10, 5, 9, 3.5, 0, Math.PI * 2);
+  if (ringCache.size > 200) ringCache.clear();
+  ringCache.set(color, c);
+  return c;
+}
+
 function filledEllipse(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number) {
   cx = Math.round(cx); cy = Math.round(cy);
   for (let dy = -ry; dy <= ry; dy++) {
@@ -312,6 +329,26 @@ function paintCodeCells(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpe
   const cells = heroCodeCells(L, fr);
   if (!cells.length || !L.codeRows.length) return;
   const rows = L.codeRows, n = rows.length;
+  // cache the overlay per hero; it only changes when the frame or the scroll step changes
+  const m = curMem;
+  const key = L.key + fr.pose + fr.i + fr.expr + "|" + (scroll % n) + "|" + RES;
+  if (m) {
+    if (m.codeKey !== key || !m.codeCv) {
+      const cv = m.codeCv ?? document.createElement("canvas");
+      cv.width = SW * RES; cv.height = SH * RES;
+      const g = cv.getContext("2d")!;
+      g.clearRect(0, 0, cv.width, cv.height);
+      for (const [cx, cy] of cells) for (let sy = 0; sy < RES; sy++) for (let sx = 0; sx < RES; sx++) {
+        const col = rows[(cy * RES + sy + scroll) % n][(cx * RES + sx) % 8];
+        if (!col) continue;
+        g.fillStyle = col;
+        g.fillRect(cx * RES + sx, cy * RES + sy, 1, 1);
+      }
+      m.codeCv = cv; m.codeKey = key;
+    }
+    ctx.drawImage(m.codeCv, -ANCHOR_X, -SPRITE_FOOT, SW, SH);
+    return;
+  }
   if (RES > 1) {
     // 2x: each cell holds 2x2 code pixels -> twice the line density (reads like real minimap text)
     for (const [cx, cy] of cells) for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
@@ -513,6 +550,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   const t = normTime(time);
   const L = lookFor(p.kit);
   const m = memFor(p, t);
+  curMem = m;
   const dt = Math.max(0, Math.min(0.1, t - m.t));
   observe(p, m, L, t, dt);
 
@@ -541,11 +579,9 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
       pixEllipse(ctx, x, feet, 10, 4, 0, Math.PI * 2, 6, t * 2);
     } else if (PVP) {
       // classroom PvP: everyone else is a rival -> ring in their own hero color
-      ctx.fillStyle = rgba(playerColor(p.kit), 0.8);
-      pixEllipse(ctx, x, feet, 9, 3.5, 0, Math.PI * 2);
+      ctx.drawImage(ringCanvas(rgba(playerColor(p.kit), 0.8)), x - 10, feet - 5);
     } else {
-      ctx.fillStyle = rgba(L.c.ring, 0.62);
-      pixEllipse(ctx, x, feet, 9, 3.5, 0, Math.PI * 2);
+      ctx.drawImage(ringCanvas(rgba(L.c.ring, 0.62)), x - 10, feet - 5);
     }
   }
 
@@ -1053,9 +1089,16 @@ function updateDrawParticles(ctx: CanvasRenderingContext2D, m: Mem, dt: number, 
 }
 
 /** A hero's identity color (vivid primary): use it for their bullets, rings, leaderboard rows (PvP). */
+const colorCache = new Map<string, string>();
 export function playerColor(kit: PlayerKit): string {
-  const [h, sat, l] = hexToHsl(lookFor(kit).c.primary);
-  return hslToHex(h, Math.max(0.6, sat), Math.min(0.62, Math.max(0.5, l)));
+  const L = lookFor(kit);
+  let c = colorCache.get(L.key);
+  if (!c) {
+    const [h, sat, l] = hexToHsl(L.c.primary);
+    c = hslToHex(h, Math.max(0.6, sat), Math.min(0.62, Math.max(0.5, l)));
+    colorCache.set(L.key, c);
+  }
+  return c;
 }
 
 function repoColor(L: HeroLook): string {

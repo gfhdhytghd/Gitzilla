@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gitzilla Genesis Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #05070a; color: #d9ffe9; font: 18px "VT323", ui-monospace, monospace; }
+  #bar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 6px 10px; border-bottom: 1px solid #1d3b2b; }
+  #bar a, #bar button, #bar select { color: #39ff88; background: #08130d; border: 1px solid #1d3b2b; font: inherit; padding: 0 6px; cursor: pointer; text-decoration: none; }
+  #bar a.on { background: #1a8a4a; color: #05070a; }
+  #stage { display: grid; place-items: center; height: calc(100% - 44px); }
+  #host { position: relative; }
+  .hint { color: #6f9b85; }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage"><div id="host"></div></div>
+<script type="module" src="./demo.ts"></script>
+</body>
+</html>
