@@ -1,4 +1,6 @@
-IN PROGRESS — follow-up: tools/playtest.ts
+DONE
+
+Follow-up complete: `tools/playtest.ts` is ready, Playwright installed, stable selector contract documented, CLI and real-browser harness self-tests pass. Live-app diagnostics correctly report unfinished UI; full live-game acceptance remains pending those screens.
 
 Completed keyboard/mouse, calibrated motion gestures, permission-driven touch fallback, haptics, debug panel, and 25 input tests. Ready for claude-ui integration.
 
@@ -47,18 +49,23 @@ Selector request is ready for the coordinator to relay to claude-ui. Missing sel
 - `tools/README.md` contains command examples, selector contract, artifact format, exit codes and browser setup.
 - Added CLI option tests and opt-in browser fixture integration tests (explicitly synthetic; never claimed as real-game validation).
 
-### Follow-up validation so far
+### Follow-up validation
 - Tools-only strict TypeScript check: PASS.
 - CLI option tests: 11 PASS.
 - Real application run `--players 4 --seconds 10` reused the server and emitted exit 2 with missing `create-room` selector while UI main/screens were incomplete. Artifact: `docs/shots/2026-10-24T18-26-23-520Z-1186888/`. Landing desktop/phone screenshots captured; logs include missing UI/test-ID inventories and failed diagnostic screenshots.
-- Latest whole-repository `npm test`: 73 PASS (before tools tests added). Whole-repository typecheck temporarily fails in parallel-owned UI/sim code due missing screen modules and newly added shared heart/region fields; not edited by input agent.
-- Browser fixture integration tests running next, then final current-workspace gates.
+- Second real-app run `--players 4 --boss pallets/flask --seconds 12`: expected exit 2 while imported UI game/autopsy/lobby modules were still being written; reports missing visible create-room, Vite/resource console errors, and screenshot availability. Artifact: `docs/shots/2026-10-24T18-28-46-710Z-1199422/`. This is an incomplete-UI diagnostic, not a successful fight.
+- Final `PLAYTEST_SELF_TEST=1 npx vitest run tools/playtest.integration.test.ts tools/playtest.test.ts`: 13 PASS (11 CLI + 2 real-browser fixture tests). Successful synthetic run verifies room creation/join, all repo/boss/start controls, per-player movement/J/Space/E input frames and acknowledgements, 10-second mid-fight shots, natural fixture autopsy, PNG dimensions 1280×720 and 844×390. Error fixture verifies exit 1 with uncaught page errors, console errors and WS protocol errors. Summaries label fixture runs `syntheticFixture: true`.
+- Final fixture artifacts: `docs/shots/2026-10-24T18-30-08-889Z-1207035/` (success, 10 screenshots, 219 fighting snapshots per player) and `docs/shots/2026-10-24T18-30-22-178Z-1207035/` (injected errors, expected exit 1). These prove the harness only; real-game status is recorded separately above.
+- Latest whole-repository `npm test`: 89 PASS, 2 opt-in browser tests skipped by design.
+- Latest whole-repository `npm run typecheck`: blocked only by parallel-owned UI's missing `client/app/{autopsy,game,lobby}.ts` at check time; tools-only strict TypeScript check PASS (including test files). No UI/shared edits by input agent.
+- Server reuse and browser execution verified live. Owned server spawning/cleanup implemented; startup branch was not exercised against port 5173 because another agent's server is already using it.
+- Final tools-only strict TypeScript check and `--help`: PASS. Direct `node --import tsx` loader smoke PASS. Screenshots retain live animations to avoid fast-forwarding the UI while capturing. Final `git diff --check`: PASS for owned changes.
 
-## Verification
-- `npm run typecheck`: PASS (whole repository at current snapshot).
+## Original input-card verification (earlier snapshot)
+- `npm run typecheck`: PASS at original input-card completion.
 - `npm test`: PASS, 41 tests across 4 files; 25 tests belong to input (10 pure recognizer/tilt/gravity tests, 15 input lifecycle/permission/touch integration tests).
 - `npm run dev`: server/input smoke PASS: server started on 5173; HTTP GET of `/client/input/index.ts` and `/client/input/gestures.ts` returned 200 with Vite-transformed JavaScript. Stopped this smoke server afterward. Full-app smoke was unavailable at that moment because claude-ui's `/client/app/main.ts` was still missing (Vite reported it); no end-to-end game claim.
 - Real phone sensors, iOS permission UI, haptics, and landscape feel: UNVERIFIED, require venue/device testing. Synthetic tests do not claim physical sensor or visual proof.
 
 ## Remaining
-Finish follow-up harness validation and mark DONE. Physical-device acceptance for the original input card remains a venue handoff.
+None for the assigned cards. Live game acceptance awaits the UI screens being finished and the coordinator relaying/merging the selector contract. Physical-device acceptance for the original input card remains a venue handoff.

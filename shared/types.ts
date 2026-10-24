@@ -29,7 +29,45 @@ export interface RepoProfile {
   maxDepth: number;                    // longest import chain between components
   testRatio: number;                   // 0..1 test files / all files
   seed: number;                        // stable 32-bit hash of slug, for procedural art
+  readme?: string;                     // first ~4 KB of README (for Gemini design)
+  tree?: string[];                     // up to ~120 notable paths (for Gemini design)
   fallback?: boolean;                  // true if served from the precomputed set
+}
+
+// ---------- Gemini-authored designs (design/ produces; renderers consume) ----------
+// Pure look + flavor. Never affects stats. Optional everywhere: renderers must fall back to seed-based art.
+
+export type HeroArchetype = "knight" | "ranger" | "mage" | "heavy" | "engineer" | "rogue";
+export type HeroHeadgear = "helmet" | "hood" | "wizard-hat" | "goggles" | "bandana" | "cat-ears" | "headphones" | "crown" | "antenna" | "beanie" | "none";
+export type HeroAccessory = "cape" | "scarf" | "laptop-backpack" | "jetpack" | "sticker-shield" | "rubber-duck" | "coffee-mug" | "tail" | "none";
+
+export interface HeroDesign {
+  title: string;             // "Borrow-Checker Paladin" (<= 24 chars)
+  archetype: HeroArchetype;
+  headgear: HeroHeadgear;
+  accessory: HeroAccessory;
+  emblem: string;            // 1–2 ASCII chars on the chest, e.g. "λ", "{}", "R"
+  palette: string[];         // 4 hex: primary, secondary, skin/visor, accent
+  catchphrase: string;       // <= 40 chars, shown on lobby card
+}
+
+export type BossBody = "blob" | "serpent" | "spider" | "hydra" | "golem" | "swarm" | "eye" | "tree" | "machine";
+export type BossMouth = "maw" | "brackets" | "beak" | "zipper" | "none";
+export type BossGrowth = "spikes" | "cables" | "crystals" | "moss" | "servers" | "wings" | "horns" | "tentacles" | "gears" | "pipes";
+
+export interface BossDesign {
+  name: string;              // "FLASK, THE MICRO-HORROR"
+  epithet: string;           // one-line lore
+  body: BossBody;
+  eyes: number;              // 1..12
+  mouth: BossMouth;
+  growths: BossGrowth[];     // 1..3
+  palette: string[];         // 5 hex: body dark, body light, glow, accent, eye
+  theme: ArenaTheme;
+  intro: string[];           // 2–4 terminal lines for the summon cinematic
+  taunts: string[];          // 3–6 short lines the boss "says" during the fight
+  attackNames: Record<string, string>;  // BossAttack.id -> flavor name (<= 22 chars)
+  limbNames: Record<string, string>;    // BossLimb.id -> creature-part name, e.g. "Router Claw"
 }
 
 // ---------- Kits: what a repo becomes in the game (sim/kits.ts derives) ----------
@@ -62,6 +100,7 @@ export interface PlayerKit {
   damageMul: number;         // 0.8..1.25
   palette: string[];         // 4 hex colors derived from language + seed
   seed: number;
+  design?: HeroDesign;       // Gemini look; when present its title/palette override the defaults
 }
 
 export type BossAttackKind =
@@ -104,6 +143,7 @@ export interface BossKit {
   theme: ArenaTheme;     // arena look follows the boss
   heart: string;         // analyzed heart file path (flavor, autopsy)
   seed: number;
+  design?: BossDesign;   // Gemini look/flavor; name/palette/theme/attack names already merged into the kit
 }
 
 export type ArenaTheme =
