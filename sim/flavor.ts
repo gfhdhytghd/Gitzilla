@@ -15,14 +15,15 @@ export const SKILL_FLAVOR: Record<SkillKind, string> = {
   firewall: 'try { } catch', fork: 'git fork', hotfix: '+patch', overclock: 'sudo !!', rollback: 'git revert',
 };
 export const ATTACK_FLAVOR_POOLS: Record<BossAttackKind, readonly string[]> = {
-  ring: ['while(true) Loop', 'Infinite Scroll', 'Busy Wait'],
-  spiral: ['Recursion', 'Callback Hell', 'Deep Clone'],
-  fan: ['throw', 'Exception Spray', 'Panic!'],
-  laser: ['</> Breath', 'Race Condition', 'grep Beam'],
-  slam: ['Stack Overflow', 'Segfault', 'Kernel Panic'],
-  charge: ['git push --force', 'rm -rf', 'Hard Reset'],
-  summon: ['npm install Swarm', 'Dependency Hell'],
-  cascade: ['Merge Conflict', 'Memory Leak'],
+  ring: ['while(true) Loop', 'Infinite Scroll', 'Busy Wait', 'Event Loop', 'Spin Lock', 'Retry Storm'],
+  spiral: ['Recursion', 'Callback Hell', 'Deep Clone', 'Stack Trace', 'Recursive Descent', 'Nested Promises'],
+  fan: ['throw', 'Exception Spray', 'Panic!', 'Unhandled Error', 'Throw Storm', 'Null Pointer'],
+  laser: ['</> Breath', 'Race Condition', 'grep Beam', 'Atomic Fault', 'Hot Path', 'Null Ray'],
+  slam: ['Stack Overflow', 'Segfault', 'Kernel Panic', 'Core Dump', 'Stack Smash', 'OOM Crash'],
+  charge: ['git push --force', 'rm -rf', 'Hard Reset', 'Force Push', 'Branch Crash', 'History Rewrite'],
+  summon: ['npm install Swarm', 'Dependency Hell', 'Package Flood', 'Transitive Swarm', 'Lockfile Storm', 'Version Drift'],
+  // Eight covers the analyzer's full component cap, including React's seven cascades.
+  cascade: ['Merge Conflict', 'Memory Leak', 'Rebase Hell', 'Circular Import', 'Cache Stampede', 'Dangling Pointer', 'Deadlock', 'Split Brain'],
 };
 /** First-choice aliases retained for older callers; generation uses the full pools. */
 export const ATTACK_FLAVOR = Object.fromEntries(Object.entries(ATTACK_FLAVOR_POOLS).map(([kind, pool]) => [kind, pool[0]])) as Record<BossAttackKind, string>;
