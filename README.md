@@ -12,7 +12,7 @@ Gitzilla is a co-op pixel-art boss fight for 4+ players, built in 24 hours at Ha
   - The heart is the most-imported file.
   - Circular dependencies glow red as weak points.
   - Its attacks (`rm -rf /`, Merge Conflict, Segfault Storm…) come from the component that sources each one. Break the limb and that attack is gone.
-- **Play on anything.** On a desktop, use the keyboard and mouse. On a phone, use motion: tilt to move, thrust to fire, swing to dash, shake for your skill. A touch joystick is the fallback. Players join by scanning the QR code.
+- **Play on anything.** On a desktop, use the keyboard and mouse. On a phone, tilt to move, swing or tap to attack, twist to dash, and spin or hold for your skill. Drag, tap, and hold are the touch fallback. Players join by scanning the QR code.
 - **Gemini art direction (optional).** Gemini designs each hero's and boss's look, names and taunts from the repo's README and structure. It never touches stats. Without a key, the designs fall back to deterministic ones.
 - **Extras.** AI teammates fill out small squads. A chiptune soundtrack changes with the arena theme and the boss phase. An autopsy screen shows which real modules died, and a Hall of Monsters leaderboard tracks the best runs.
 
