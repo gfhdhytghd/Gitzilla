@@ -306,9 +306,46 @@ export interface MatchState {
 
 export type Role = "player" | "screen";   // screen = spectator big screen
 
+// ---------- Genesis: the visible code -> character pipeline ----------
+// Streamed while a repo is analyzed, then kept so the client can replay the "compile" cinematic.
+
+export type GenesisStage = "clone" | "parse" | "graph" | "dna" | "map" | "design" | "ready";
+
+export interface GenesisProgress {
+  stage: GenesisStage;
+  pct: number;               // 0..1 within the whole pipeline
+  paths?: string[];          // a few real file paths just processed (clone/parse), <= 8 per update
+  note?: string;             // e.g. "resolving 1,204 imports"
+}
+
+// One visible mapping step: a real fact about the repo becoming part of the character.
+export interface TraceStep {
+  from: string;              // "language: Rust 78%", "heart: src/core.js (fan-in 41)", "TODO x12"
+  to: string;                // "weapon: unsafe{} Cannon", "core: pulsing heart", "minions: 12 bugs"
+  part: "class" | "weapon" | "skill" | "stats" | "palette" | "limb" | "heart" | "weakpoint" | "eyes" | "minions"
+      | "attack" | "theme" | "name" | "glyphs" | "cape" | "scars";
+  ref?: string;              // component / limb / attack id / file this step refers to
+}
+
+export interface Genesis {
+  slug: string;
+  languages: Record<string, number>;
+  metrics: { files: number; loc: number; functions: number; todos: number; contributors: number; commits: number; ageDays: number; testRatio: number };
+  components: { name: string; loc: number; files: number }[];
+  edges: [number, number][];
+  cycles: string[][];
+  heart: string; heartFanIn: number;
+  sampleFiles: string[];     // ~40 real paths for the file-tile storm
+  snippets: string[];        // a few real lines for the code-rain
+  trace: TraceStep[];        // ordered: the story of how this repo became this hero/boss
+  budget: { label: string; value: number }[]; // equal stat budget split, e.g. hp 2, armor 1, speed 1, damage 1
+}
+
 export interface LobbyPlayer {
   id: string; name: string; repo: string | null;
   bot?: boolean;
+  progress?: GenesisProgress;  // while status === "analyzing"
+  genesis?: Genesis;           // once ready
   status: "empty" | "analyzing" | "ready" | "error";
   error?: string;
   kit: PlayerKit | null;
@@ -318,7 +355,8 @@ export interface LobbyState {
   room: string;
   ownerId: string;
   players: LobbyPlayer[];
-  boss: { repo: string | null; status: "empty" | "analyzing" | "ready" | "error"; error?: string; kit: BossKit | null };
+  boss: { repo: string | null; status: "empty" | "analyzing" | "ready" | "error"; error?: string; kit: BossKit | null;
+          progress?: GenesisProgress; genesis?: Genesis };
   phase: "lobby" | "match" | "autopsy";
 }
 
