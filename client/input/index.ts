@@ -226,16 +226,19 @@ export function createInput(opts: InputOptions): InputController {
   on(opts.canvas, 'contextmenu', e => e.preventDefault());
   on(window, 'blur', reset);
   on(document, 'visibilitychange', () => { if (document.hidden) reset(); });
-  on(window, 'pointerdown', (event => {
-    const e = event as PointerEvent;
-    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
-    const target = e.target as Element | null;
+  // iOS only shows the motion permission prompt for requests made inside touchend/click — a request from
+  // touchstart/pointerdown is silently refused (no prompt) and the page would wrongly think it's enabled.
+  const askFromGesture = (event: Event) => {
+    if (event.type === 'touchend' && (event as TouchEvent).changedTouches.length === 0) return;
+    const target = event.target as Element | null;
     // Choosing tap-only or opening settings must not accidentally request sensors.
     // The dedicated enable button still requests here, before fullscreen consumes activation.
     if (target?.closest?.('button, input, textarea, select, a, [data-motion-profile]')
       && !target.closest?.('[data-testid="motion-enable"]')) return;
     if (needsPermission) void controller.requestPermission();
-  }), { capture: true });
+  };
+  on(window, 'touchend', askFromGesture, { capture: true });
+  on(window, 'click', askFromGesture, { capture: true });
   const onOrientation: EventListener = event => {
     const e = event as DeviceOrientationEvent;
     if (!mobile || motionProfile === 'tap-only' || !permissionGranted || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;

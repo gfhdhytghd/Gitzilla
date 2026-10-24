@@ -185,7 +185,10 @@ describe('motion-v3 permissions and live sensors', () => {
     win.DeviceOrientationEvent = { requestPermission: requestOrientation };
     const input = start();
     expect(input.needsPermission).toBe(true);
+    // iOS refuses permission requests from pointerdown/touchstart without showing a prompt.
     pointer(win, 'pointerdown', 1);
+    expect(requestMotion).not.toHaveBeenCalled();
+    win.dispatchEvent(Object.assign(new Event('click'), { pointerType: 'touch' }));
     expect(requestMotion).toHaveBeenCalledOnce();
     expect(requestOrientation).toHaveBeenCalledOnce();
     expect(await input.requestPermission()).toBe(true);
