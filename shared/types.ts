@@ -333,7 +333,8 @@ export type GameMode = "battle" | "edu";
 export type Concept = "dependency-graph" | "fan-in" | "fan-out" | "heart-module" | "circular-dependency" | "coupling"
   | "component" | "cascade" | "dead-code" | "tech-debt" | "test-coverage" | "recursion" | "stack-overflow" | "race-condition"
   | "memory-leak" | "merge-conflict" | "force-push" | "dependency-hell" | "null-pointer" | "infinite-loop" | "refactor"
-  | "bus-factor" | "good-first-issue" | "open-source-maintenance" | "supply-chain" | "vulnerability";
+  | "bus-factor" | "good-first-issue" | "open-source-maintenance" | "supply-chain" | "vulnerability"
+  | "code-quality" | "modularity" | "cohesion" | "documentation" | "code-size";
 
 // Accessibility (social impact #4): per-player, client-side; sent to nobody.
 export type MotionProfile = "standard" | "seated" | "tap-only"; // seated = small tilt/nod enough; tap-only = no motion
