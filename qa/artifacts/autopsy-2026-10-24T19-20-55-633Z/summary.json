@@ -1,0 +1,24 @@
+{
+  "target": "http://localhost:5175",
+  "viewport": {
+    "width": 360,
+    "height": 640
+  },
+  "phone": true,
+  "isolatedRealRoomSocket": false,
+  "success": true,
+  "ids": [
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7",
+    "cf65f15e-7f04-4b60-814a-61614f2713b7"
+  ],
+  "autopsies": 2,
+  "duration": 17.066666666666773,
+  "errors": [],
+  "pageErrors": []
+}

@@ -1,0 +1,4 @@
+npm notice run npx
+npm notice run 'tsx' qa/portrait.ts
+INCONCLUSIVE 430x932-dpr3: AssertionError [ERR_ASSERTION]: Portrait viewport occupies useful vertical space
+Evidence: qa/artifacts/portrait-2026-10-24T19-21-33-256Z/summary.json

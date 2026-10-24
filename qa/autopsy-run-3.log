@@ -1,0 +1,4 @@
+npm notice run npx
+npm notice run 'tsx' qa/autopsy.ts
+Error: Server restarted. Your fight was reset to the lobby; repos and kits were restored.
+Evidence: qa/artifacts/autopsy-2026-10-24T19-06-23-941Z/summary.json

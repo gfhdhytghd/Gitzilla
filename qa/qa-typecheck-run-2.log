@@ -1,0 +1,9 @@
+npm notice run npx
+npm notice run 'tsc' --noEmit --target es2023 --module esnext --moduleResolution bundler --allowImportingTsExtensions --skipLibCheck --strict qa/browser.ts qa/common.ts qa/fixture.ts qa/protocol.ts qa/reconnect.test.ts qa/robustness.test.ts qa/soak.ts qa/takeover.ts qa/upstream.test.ts
+qa/protocol.ts(102,36): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(actual: unknown, expected: undefined, message?: Error | AssertMessageFunction | undefined): asserts actual is undefined', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'Error | AssertMessageFunction | undefined'.
+      Type 'string' is not assignable to type 'Error | AssertMessageFunction | undefined'.
+  Overload 2 of 2, '(actual: unknown, expected: undefined, message: string, ...args: unknown[]): asserts actual is undefined', gave the following error.
+    Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+      Type 'undefined' is not assignable to type 'string'.

@@ -1,0 +1,21 @@
+Match 1/20: sim duration 17.07s, heap 12564432, intervals 0
+Match 2/20: sim duration 17.07s, heap 12742872, intervals 0
+Match 3/20: sim duration 17.07s, heap 12737936, intervals 0
+Match 4/20: sim duration 17.07s, heap 12752912, intervals 0
+Match 5/20: sim duration 17.07s, heap 12764192, intervals 0
+Match 6/20: sim duration 17.07s, heap 12812376, intervals 0
+Match 7/20: sim duration 17.07s, heap 12822464, intervals 0
+Match 8/20: sim duration 17.07s, heap 12886640, intervals 0
+Match 9/20: sim duration 17.07s, heap 12931704, intervals 0
+Match 10/20: sim duration 17.07s, heap 12973816, intervals 0
+Match 11/20: sim duration 17.07s, heap 12995408, intervals 0
+Match 12/20: sim duration 17.07s, heap 13026200, intervals 0
+Match 13/20: sim duration 17.07s, heap 13004352, intervals 0
+Match 14/20: sim duration 17.07s, heap 13016624, intervals 0
+Match 15/20: sim duration 17.07s, heap 13084552, intervals 0
+Match 16/20: sim duration 17.07s, heap 13056952, intervals 0
+Match 17/20: sim duration 17.07s, heap 13068704, intervals 0
+Match 18/20: sim duration 17.07s, heap 13089784, intervals 0
+Match 19/20: sim duration 17.07s, heap 13064496, intervals 0
+Match 20/20: sim duration 17.07s, heap 13130352, intervals 0
+Completed 20 matches; remaining match intervals 0; mean retained-heap delta 369589 bytes; qa/artifacts/soak-2026-10-24T19-07-32-320Z/summary.json

@@ -1,0 +1,11 @@
+npm notice run npx
+npm notice run 'vitest' run qa/
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+
+ Test Files  2 passed | 1 skipped (3)
+      Tests  9 passed | 3 skipped (12)
+   Start at  15:05:05
+   Duration  2.37s (tests 96%, import 3%, transform 1%)
+

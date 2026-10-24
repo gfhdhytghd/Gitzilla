@@ -1,0 +1,16 @@
+npm notice run npx
+npm notice run 'tsx' qa/browser.ts
+PASS slow-network landing/create/join and repository selection
+PASS lobby reload resumes kit and transfers owner to remaining player
+PASS phone landscape/portrait flips retain room and controls
+PASS owner double-click start enters one match in both browsers
+PASS frozen tab wakes and receives current authoritative snapshots
+PASS mid-match reload restores same player and visible game
+PASS mid-match phone portrait rotation shows hint and recovers canvas
+Waiting up to 180s for a natural idle-squad defeat; no forced result.
+FAIL natural autopsy renders and survives reload: TimeoutError: locator.waitFor: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('autopsy') to be visible[22m
+
+PASS no uncaught browser exceptions across recovery scenarios
+Evidence: qa/artifacts/browser-2026-10-24T19-01-19-289Z/summary.json

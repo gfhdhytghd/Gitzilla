@@ -1,0 +1,33 @@
+npm notice run test
+npm notice run vitest run
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+ ❯ design/index.test.ts (33 tests | 1 failed) 139ms
+   ❯ cache and offline assets (6)
+     × ships valid hero/boss assets for every fallback repo, loadable offline at any squad size 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  design/index.test.ts > cache and offline assets > ships valid hero/boss assets for every fallback repo, loadable offline at any squad size
+AssertionError: expected 'RIPGREP, GUARDIAN OF LOST DIRS' to be 'RIPGREP, THE DIRS PARADOX' // Object.is equality
+
+Expected: "RIPGREP, THE DIRS PARADOX"
+Received: "RIPGREP, GUARDIAN OF LOST DIRS"
+
+ ❯ design/index.test.ts:184:79
+    182|       const h = JSON.parse(await readFile(new URL(`../data/design/${de…
+    183|       const b = JSON.parse(await readFile(new URL(`../data/design/${de…
+    184|       if (manifest.entries[p.slug].boss.source === 'fallback') expect(…
+       |                                                                               ^
+    185|       savedEpithets.push(b.name.slice(b.name.indexOf(',') + 1).trim());
+    186|       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(val…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 26 passed | 3 skipped (30)
+      Tests  1 failed | 279 passed | 6 skipped (286)
+   Start at  15:22:42
+   Duration  4.83s (tests 86%, import 10%, transform 3%, worker 1%)
+

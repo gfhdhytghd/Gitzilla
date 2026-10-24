@@ -1,0 +1,10 @@
+{
+  "target": "http://localhost:5175",
+  "isolatedRealRoomSocket": true,
+  "success": false,
+  "ids": [],
+  "autopsies": 0,
+  "errors": [],
+  "pageErrors": [],
+  "failure": "Error: Timeout: natural defeat"
+}

@@ -1,0 +1,42 @@
+npm notice run test
+npm notice run vitest run
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+ ❯ design/index.test.ts (27 tests | 1 failed) 126ms
+   ❯ cache and offline assets (6)
+     × ships valid hero/boss assets for every fallback repo, loadable offline at any squad size 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  design/index.test.ts > cache and offline assets > ships valid hero/boss assets for every fallback repo, loadable offline at any squad size
+AssertionError: expected { title: 'new Compile Guardian', …(6) } to deeply equal { title: 'new Compile Guardian', …(7) }
+
+- Expected
++ Received
+
+@@ -9,7 +9,6 @@
+      "#f3a76c",
+      "#ffdeb0",
+      "#77f2cd",
+    ],
+    "title": "new Compile Guardian",
+-   "weaponName": "malloc() Cannon",
+  }
+
+ ❯ design/index.test.ts:186:17
+    184|       if (manifest.entries[p.slug].boss.source === 'fallback') expect(…
+    185|       savedEpithets.push(b.name.slice(b.name.indexOf(',') + 1).trim());
+    186|       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(val…
+       |                 ^
+    187|       expect(await api.designHero(p, pk)).toEqual(h); expect(await api…
+    188|       expect(onResult).toHaveBeenCalledWith({ slug: p.slug, kind: 'her…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 25 passed | 3 skipped (29)
+      Tests  1 failed | 256 passed | 6 skipped (263)
+   Start at  15:19:11
+   Duration  4.72s (tests 88%, import 9%, transform 2%, worker 1%)
+

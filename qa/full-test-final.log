@@ -1,0 +1,57 @@
+npm notice run test
+npm notice run vitest run
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+ ❯ design/index.test.ts (25 tests | 1 failed) 124ms
+   ❯ cache and offline assets (5)
+     × ships valid hero/boss assets for every fallback repo, loadable offline at any squad size 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  design/index.test.ts > cache and offline assets > ships valid hero/boss assets for every fallback repo, loadable offline at any squad size
+AssertionError: expected { …(12) } to deeply equal { Object (name, epithet, ...) }
+
+- Expected
++ Received
+
+@@ -32,21 +32,20 @@
+      "limb-5": "len Coil",
+      "limb-6": "new Claw",
+      "limb-7": "build Tendril",
+    },
+    "mouth": "maw",
+-   "name": "RIPGREP, THE UNMERGED",
++   "name": "RIPGREP, GUARDIAN OF LOST DIRS",
+    "palette": [
+      "#211329",
+      "#5a4145",
+      "#ff547b",
+      "#bb83ef",
+      "#fff4bd",
+    ],
+    "taunts": [
+      "Known bug: TODO: In the next semver breaking release, we should",
+-     "Recent sin: cargo: remove the `homepage` field",
+      "Your new() cannot save you.",
+      "Your PR has conflicts.",
+      "There is no base case.",
+      "Works on my machine.",
+    ],
+
+ ❯ design/index.test.ts:183:91
+    181|       const b = JSON.parse(await readFile(new URL(`../data/design/${de…
+    182|       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(val…
+    183|       expect(await api.designHero(p, pk)).toEqual(h); expect(await api…
+       |                                                                                           ^
+    184|       expect(onResult).toHaveBeenCalledWith({ slug: p.slug, kind: 'her…
+    185|       expect(onResult).toHaveBeenCalledWith({ slug: p.slug, kind: 'bos…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 25 passed | 3 skipped (29)
+      Tests  1 failed | 237 passed | 6 skipped (244)
+   Start at  15:11:09
+   Duration  4.68s (tests 89%, import 8%, transform 2%, worker 1%)
+

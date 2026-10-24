@@ -1,0 +1,4 @@
+npm notice run npx
+npm notice run 'tsx' qa/autopsy.ts
+Error: Timeout: natural defeat
+Evidence: qa/artifacts/autopsy-2026-10-24T19-07-32-688Z/summary.json

@@ -1,0 +1,11 @@
+npm notice run npx
+npm notice run 'vitest' run qa/upstream.test.ts
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  15:01:57
+   Duration  337ms (tests 81%, import 10%, transform 6%, worker 2%)
+

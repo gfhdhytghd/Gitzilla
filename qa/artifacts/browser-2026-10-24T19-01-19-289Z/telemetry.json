@@ -1,0 +1,30 @@
+{
+  "owner": {
+    "welcomes": 10,
+    "snapshots": 387,
+    "autopsies": 1,
+    "opened": 10,
+    "closes": 2,
+    "lastAck": 52,
+    "id": "a9005cc3-7696-41a6-a51b-781471f8f1fa",
+    "lobby": "lobby",
+    "state": {
+      "t": 19.500000000000128,
+      "status": "defeat"
+    }
+  },
+  "phone": {
+    "welcomes": 8,
+    "snapshots": 386,
+    "autopsies": 1,
+    "opened": 8,
+    "closes": 2,
+    "lastAck": 52,
+    "id": "7bcbaff0-cd22-44d3-b286-771d54a21a36",
+    "lobby": "lobby",
+    "state": {
+      "t": 19.500000000000128,
+      "status": "defeat"
+    }
+  }
+}

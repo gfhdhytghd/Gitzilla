@@ -1,0 +1,6 @@
+npm notice run npx
+npm notice run 'tsx' qa/portrait.ts
+INCONCLUSIVE 360x800-dpr3: TypeError: Cannot read properties of null (reading 'x')
+INCONCLUSIVE 430x932-dpr3: Error: Timeout: natural phone autopsy
+FAIL 360x640-dpr2: AssertionError [ERR_ASSERTION]: Portrait viewport occupies useful vertical space
+Evidence: qa/artifacts/portrait-2026-10-24T19-18-36-110Z/summary.json

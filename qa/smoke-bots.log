@@ -1,0 +1,17 @@
+npm notice run npx
+npm notice run 'tsx' server/smoke.ts
+node:internal/modules/run_main:111
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Authoritative simulation advances
+    at <anonymous> (/home/wilf/data/HackPSU/repo-kaiju/server/smoke.ts:87:12) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v26.12.0

@@ -1,0 +1,25 @@
+{
+  "target": "http://localhost:5175",
+  "results": [
+    {
+      "name": "slow-network landing/create/join and repository selection",
+      "status": "FAIL",
+      "detail": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByTestId('create-room')\u001b[22m\n"
+    },
+    {
+      "name": "browser harness",
+      "status": "FAIL",
+      "detail": "Error: Cannot run dependent scenarios without joined clients"
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+  ],
+  "protocolErrors": [],
+  "shots": [
+    "failure-1.png"
+  ],
+  "limits": "Emulated phone; no real sensors, login, OS sleep or production traffic."
+}
