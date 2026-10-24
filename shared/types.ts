@@ -8,7 +8,15 @@ export interface RepoComponent {
   loc: number;
   fanIn: number;         // how many other components import it
   fanOut: number;
+  maintainers?: number;  // distinct commit authors touching this path (bus factor); 1 => fragile organ
+  topMaintainers?: string[]; // up to 3 GitHub logins
+  issues?: AdoptIssue[]; // open good-first-issue / help-wanted issues mapped to this component
 }
+
+// Social impact: real open issues a player can adopt (read-only GitHub API).
+export interface AdoptIssue { number: number; title: string; url: string; labels: string[] }
+// Social impact (stretch): publicly known vulnerabilities in the repo's declared dependencies (OSV.dev, read-only).
+export interface KnownVuln { id: string; pkg: string; ecosystem: string; summary: string; fixed?: string; component?: string }
 
 export interface RepoProfile {
   slug: string;              // "owner/name"
@@ -33,6 +41,9 @@ export interface RepoProfile {
   tree?: string[];                     // up to ~120 notable paths (for Gemini design)
   fallback?: boolean;                  // true if served from the precomputed set
   dna?: CodeDNA;                       // real-code fingerprint; drives names, art and flavor (never stats)
+  busFactor?: number;                  // repo-wide: fewest people who account for >50% of commits
+  repoIssues?: AdoptIssue[];           // good-first-issue/help-wanted not mapped to a component (up to 10)
+  vulns?: KnownVuln[];                 // stretch: OSV.dev matches for declared dependencies
 }
 
 // Real code pulled out of the repo so heroes and bosses are made of it. All strings are verbatim
@@ -160,6 +171,10 @@ export interface BossLimb {
   component: string;     // component name
   maxHp: number;
   weakPoint: boolean;    // part of a cycle -> bonus damage, glows red
+  fragile?: boolean;     // single-maintainer component -> cracked glowing organ, takes critical hits
+  maintainers?: number;
+  issues?: AdoptIssue[]; // "Adopt this organ" in the autopsy
+  parasites?: KnownVuln[]; // stretch: vulns living in this organ
 }
 
 export interface BossKit {
@@ -299,7 +314,11 @@ export type GameMode = "battle" | "edu";
 // Concepts the lesson engine knows; sim/server tag events with them so the client can teach in context.
 export type Concept = "dependency-graph" | "fan-in" | "fan-out" | "heart-module" | "circular-dependency" | "coupling"
   | "component" | "cascade" | "dead-code" | "tech-debt" | "test-coverage" | "recursion" | "stack-overflow" | "race-condition"
-  | "memory-leak" | "merge-conflict" | "force-push" | "dependency-hell" | "null-pointer" | "infinite-loop" | "refactor";
+  | "memory-leak" | "merge-conflict" | "force-push" | "dependency-hell" | "null-pointer" | "infinite-loop" | "refactor"
+  | "bus-factor" | "good-first-issue" | "open-source-maintenance" | "supply-chain" | "vulnerability";
+
+// Accessibility (social impact #4): per-player, client-side; sent to nobody.
+export type MotionProfile = "standard" | "seated" | "tap-only"; // seated = small tilt/nod enough; tap-only = no motion
 
 export interface MatchState {
   t: number;                 // seconds since fight start
@@ -394,7 +413,9 @@ export type ServerMsg =
 export interface Autopsy {
   victory: boolean;
   duration: number;
-  boss: { repo: string; limbs: { component: string; broken: boolean; damageTaken: number }[]; heart: string };
+  boss: { repo: string; limbs: { component: string; broken: boolean; damageTaken: number;
+    fragile?: boolean; maintainers?: number; issues?: AdoptIssue[]; parasites?: KnownVuln[] }[]; heart: string;
+    busFactor?: number; repoIssues?: AdoptIssue[] };
   players: { id: string; name: string; repo: string; stats: PlayerState["stats"] }[];
   mvp: string | null;
 }
