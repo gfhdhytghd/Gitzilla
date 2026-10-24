@@ -473,8 +473,8 @@ export type ClientMsg =
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
   | { t: "setMode"; mode: GameMode }        // owner only, lobby only
-  | { t: "controls"; ready: boolean; mode: MotionProfile }
-  | { t: "setRubric"; rubric: Rubric }    // owner only, edu, lobby (after previewing POST /api/rubric/parse)  // phone reports: motion permission granted & sensors live (or touch chosen)
+  | { t: "controls"; ready: boolean; mode: MotionProfile }  // phone reports: motion permission granted & sensors live (or touch chosen)
+  | { t: "setRubric"; rubric: Rubric }      // owner only, edu, lobby (after previewing POST /api/rubric/parse)
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
