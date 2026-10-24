@@ -554,6 +554,20 @@ export function tinted(src: HTMLCanvasElement, color: string): HTMLCanvasElement
 
 const frameCache = new Map<string, HTMLCanvasElement>();
 
+/** 1px dilated flat-color silhouette (sprite + 1px border each side), drawn under the body as a rim/glow. */
+export function heroRim(L: HeroLook, f: FrameSpec, color: string): HTMLCanvasElement {
+  const k = L.key + "|" + f.pose + f.i + f.expr + "|rim" + color;
+  let cv = frameCache.get(k);
+  if (cv) return cv;
+  const flat = heroFrame(L, f, color);
+  cv = document.createElement("canvas");
+  cv.width = SW + 2; cv.height = SH + 2;
+  const g = cv.getContext("2d")!;
+  for (const [ox, oy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) g.drawImage(flat, ox, oy);
+  frameCache.set(k, cv);
+  return cv;
+}
+
 /** Variant: "" normal, or a CSS color to flat-tint the silhouette (white flash, RGB split, ghosts). */
 export function heroFrame(L: HeroLook, f: FrameSpec, variant = ""): HTMLCanvasElement {
   const k = L.key + "|" + f.pose + f.i + f.expr + "|" + variant;

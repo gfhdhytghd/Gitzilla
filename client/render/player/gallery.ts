@@ -1,7 +1,7 @@
 // Dev gallery: 24 heroes across all weapons / skills / states, plus lobby portraits.
 // Open via vite: /client/render/player/gallery.html  (?scale=3)
 import type { HeroDesign, PlayerKit, PlayerState, SkillKind, WeaponKind } from "../../../shared/types.ts";
-import { drawPlayer, playerPortrait, playerPortraitFrame } from "./index.ts";
+import { drawPlayer, notePlayerEvents, paintHeroCard } from "./index.ts";
 import { drawText } from "./font.ts";
 
 const WEAPONS: WeaponKind[] = ["blade", "blaster", "smg", "shotgun", "cannon", "staff", "laser"];
@@ -233,7 +233,13 @@ function stripScene() {
       for (let t = 0; t <= tEnd + 1e-6; t += 1 / 60) {
         const after = t >= T0;
         if (ev === "hurt-armor" && after && p.armor === 5) p.armor = 4;
-        if (ev === "hurt-hp") { p.armor = 0; if (after && p.hp === 7) p.hp = 6; }
+        if (ev === "hurt-hp") {
+          p.armor = 0;
+          if (after && p.hp === 7) {
+            p.hp = 6;
+            notePlayerEvents([{ type: "hit", target: p.id, amount: 1, x: p.x, y: p.y, crit: true, direction: [-1, 0], impact: 1 }]);
+          }
+        }
         if (ev === "dash") {
           if (after && p.dashCd === 0) p.dashCd = 1.7;
           const dashing = after && t - T0 < 0.19;
@@ -273,8 +279,10 @@ function frame() {
   for (const s of order) drawPlayer(ctx, s.p, t, s.b === "you");
   for (const c of cards) {
     const g = c.cv.getContext("2d")!;
-    g.clearRect(0, 0, c.size, c.size);
-    g.drawImage(playerPortrait(c.kit, c.size, playerPortraitFrame(now, c.kit.seed)), 0, 0);
+    void g;
+    const ci = cards.indexOf(c);
+    const fixedAge = params.get("age");
+    paintHeroCard(c.cv, c.kit, now, fixedAge !== null ? Number(fixedAge) + ci * 0.08 : (now + ci * 0.37) % 4);
   }
   if (!fixedT) if (params.get("arena")) arenaScene();
 else if (params.get("strip")) stripScene();
