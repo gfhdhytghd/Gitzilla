@@ -59,3 +59,11 @@ npx tsx tools/playtest.ts --players 4   # end-to-end browser playtest with scree
 ```
 
 Built with Claude Code coordinating a team of Claude and Codex agents.
+
+## Classroom mode
+
+Choose **classroom: code together, raid together** on the landing page. The teacher publishes1–12 ordered coding tasks, each with instructions, a timer, its own rubric and optional evidence checks. Students join the four-letter room, work in their own editor, push to GitHub and submit a branch/tag/commit. Each grade pins the resolved commit; detailed feedback goes to that student and the teacher.
+
+The teacher pauses/extends coding, reviews functionality, then launches a10second automatic class attack. The projector shows a ranked roster and one shared Boss. Retry the task to improve the score or open the next task; unchanged scores cannot farm damage. Export frozen attack-round results as CSV or Markdown. New classrooms support30students and run no arena or motion-control loop.
+
+Evidence checks use `file: README.md`, `contains: src/main.py :: def calculate`, or `ci: unit-tests`. File/literal checks inspect the bounded source archive; they do not execute code. CI checks require a successful GitHub check run for that exact commit. Connect GitHub for private repositories and higher provider quotas. After a server restart, aggregate results are restored and coding is paused; detailed feedback requires resubmission. See [design and acceptance](docs/design/classroom-raid.md).

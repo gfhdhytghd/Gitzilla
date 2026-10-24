@@ -1237,3 +1237,52 @@ it('encodes an SVG QR with white quiet zone and no injected markup', () => {
   expect(svg).not.toContain('<script>');
   expect(svg).toMatch(/M4,4h1v1h-1z/);
 });
+
+describe('cooperative staged classroom protocol', () => {
+  it('handles30students with4analysis slots, private feedback, teacher-only controls and reconnect', async () => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const { profileFromFiles } = await import('../analysis/graph');
+    const files = [{ path: 'src/main.ts', text: 'export const x = 42' }];
+    const profile = profileFromFiles('demo/repo', files);
+    let active=0, peak=0, jobs=0;
+    const test = await setup(999, { analyzeClassroomSubmission: async () => {
+      active++; peak=Math.max(peak,active); jobs++; await wait(30); active--;
+      return {profile,files,commit:'a'.repeat(40),checks:[]};
+    } }, {}, undefined, 'edu');
+    const teacher=await test.connect('screen');
+    teacher.send({t:'classroomPlan',plan:defaultClassroomPlan()});
+    await until(()=>teacher.messages.find(m=>m.t==='classroom'));
+    const students: Awaited<ReturnType<typeof test.connect>>[]=[];for(let i=0;i<30;i++) students.push(await test.connect('player',undefined,`Student ${i+1}`));
+    const latest=(client:typeof teacher)=>client.messages.filter(m=>m.t==='classroom').at(-1);
+    await until(()=>latest(teacher)?.state.rows.length===30);
+    students[0].send({t:'classroomControl',action:'start'});
+    await until(()=>students[0].messages.find(m=>m.t==='error'&&m.message.includes('teacher')));
+    teacher.send({t:'classroomControl',action:'start'});await until(()=>latest(teacher)?.state.phase==='coding');
+    for(const student of students)student.send({t:'classroomSubmit',repo:'demo/repo'});
+    await until(()=>latest(teacher)?.state.rows.every(r=>r.status==='submitted'),500);
+    expect(jobs).toBe(30);expect(peak).toBe(4);expect(Object.keys(latest(teacher)!.reports)).toHaveLength(30);
+    for(const student of students)expect(Object.keys(latest(student)!.reports)).toEqual([student.welcome.you]);
+    expect(teacher.messages.some(m=>m.t==='snapshot')).toBe(false);
+    teacher.socket.close();await once(teacher.socket,'close');
+    students[0].send({t:'classroomControl',action:'attack'});await wait(30);expect(latest(students[0])!.state.phase).toBe('coding');
+    const rejoined=await test.connect('screen',teacher.welcome.token);expect(rejoined.welcome.you).toBe(teacher.welcome.you);
+    const resumed=await test.connect('player',students[0].welcome.token);expect(resumed.welcome.you).toBe(students[0].welcome.you);
+    rejoined.send({t:'classroomControl',action:'attack'});await until(()=>latest(rejoined)?.state.phase==='raid');
+    expect(latest(rejoined)!.state.rounds[0].attacks).toHaveLength(30);
+    const denied=await fetch(`${test.base}/api/room/${test.room}/classroom.csv`,{headers:{'X-Room-Token':students[1].welcome.token}});expect(denied.status).toBe(403);
+    const exported=await fetch(`${test.base}/api/room/${test.room}/classroom.csv`,{headers:{'X-Room-Token':teacher.welcome.token}});expect(exported.status).toBe(200);expect((await exported.text()).split('\r\n')).toHaveLength(32);
+  });
+
+  it('restores the reserved teacher and paused lesson without private evidence', async () => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const file=persistenceFile(); const test=await setup(999,{}, {persistenceFile:file},undefined,'edu');
+    const teacher=await test.connect('screen'), student=await test.connect();teacher.send({t:'classroomPlan',plan:defaultClassroomPlan()});
+    await until(()=>teacher.messages.find(m=>m.t==='classroom'));teacher.send({t:'classroomControl',action:'start'});
+    await until(()=>teacher.messages.find(m=>m.t==='classroom'&&m.state.phase==='coding'));await test.close();
+    const restarted=await setup(999,{}, {persistenceFile:file},test.room,'edu');
+    const s=await restarted.connect('player',student.welcome.token);
+    const current=await until(()=>s.messages.find(m=>m.t==='classroom'));expect(current.state.phase).toBe('paused');expect(current.reports).toEqual({});expect(s.welcome.lobby.ownerId).toBe(teacher.welcome.you);
+    const t=await restarted.connect('screen',teacher.welcome.token);t.send({t:'classroomControl',action:'resume'});
+    await until(()=>t.messages.find(m=>m.t==='classroom'&&m.state.phase==='coding'));
+  });
+});

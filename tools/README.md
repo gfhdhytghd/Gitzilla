@@ -74,3 +74,13 @@ Takeover integration: generic playtest explicitly selects the lobby's touch-only
 `node tools/phone-performance.mjs http://localhost:<isolated-port>/r/PERF?mock=match /tmp/phone-perf.json` measures a production build at390×844/DPR3 with4× Chromium CPU throttling,12s warmup and10s capture. It selects the real touch-only option in the mock fight. Reports CPU/task/layout work, DOM mutations, actual game draw intervals, canvas calls, a CPU profile and screenshot. Run baseline/candidate sequentially with other browser workloads stopped. The mock also runs simulation in the browser; this is a rendering comparison, not physical iPhone FPS, GPU power or temperature acceptance.
 
 Phone fight rendering is capped at30Hz; HUD15Hz. The independent30Hz input sender and server snapshot stream are unchanged. The motion harness additionally proves both tap and swing attacks transmit simultaneous tilt movement and produce authoritative displacement/projectiles.
+
+## Staged cooperative classroom (current edu UI)
+
+```sh
+npx tsx tools/classroom-smoke.ts
+```
+
+This self-contained harness starts an ephemeral local server and injects synthetic grading through `GameServices`; production has no fixture route. It drives the teacher and two browser students plus28 WebSocket students through task configuration,30submissions, teacher review, pause, automatic raid, CSV export, improved commit, reload/reconnect and the next task. Artifacts: `docs/shots/classroom-raid/`. It asserts no battle input/snapshot traffic, no uncaught browser errors and no horizontal overflow at390/360px. Two real10second raid timers are included. `/usr/bin/chromium` must be available.
+
+The old `playtest.ts --mode edu` flow above covers the legacy PvP protocol and is no longer the current classroom browser UI. Use `classroom-smoke.ts` for new edu acceptance; retain `playtest.ts --mode battle` for ordinary fights.

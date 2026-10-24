@@ -1,3 +1,4 @@
+import type { ClassroomPlan, ClassroomState, ClassroomReport, ClassroomCommand } from "./classroom";
 // Shared contracts. Every module imports from here; change only via the coordinator (Claude, pane wQ:p9).
 
 // ---------- Repo analysis (analysis/ produces, sim/ + render/ consume) ----------
@@ -465,10 +466,15 @@ export interface LobbyState {
           progress?: GenesisProgress; genesis?: Genesis };
   phase: "lobby" | "match" | "autopsy";
   mode: GameMode;            // owner toggles; default "battle"
+  classroom?: ClassroomState; // staged cooperative classroom; no motion controls
   rubric?: Rubric;           // edu: the teacher's grading rubric (visible to everyone in the room)
 }
 
 export type ClientMsg =
+  | { t: "classroomPlan"; plan: ClassroomPlan }
+  | { t: "classroomControl"; action: ClassroomCommand }
+  | { t: "classroomSubmit"; repo: string; ref?: string }
+  | { t: "classroomReview"; playerId: string; score: number; note: string }
   | { t: "hello"; room: string; role: Role; name: string; resume?: string }
   | { t: "setRepo"; repo: string }
   | { t: "setBoss"; repo: string }          // owner only
@@ -482,6 +488,7 @@ export type ClientMsg =
   | { t: "rematch" };                       // owner only
 
 export type ServerMsg =
+  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string> }
   | { t: "welcome"; you: string; token: string; lobby: LobbyState }
   | { t: "lobby"; lobby: LobbyState }
   | { t: "snapshot"; state: MatchState; ack: number }

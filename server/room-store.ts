@@ -1,3 +1,4 @@
+import type { ClassroomState } from '../shared/classroom';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -18,6 +19,7 @@ export interface SavedRoom {
   ownerId: string;
   mode?: GameMode;
   teacherId?: string;
+  classroom?: ClassroomState;
   rubric?: Rubric;
   players: SavedPlayer[];
   boss: LobbyState['boss'];

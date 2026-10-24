@@ -27,7 +27,7 @@ function readUpload(req: IncomingMessage): Promise<Buffer> {
 
 export async function handleEduRoute(req: IncomingMessage, res: ServerResponse, url: URL, rooms: RoomServer): Promise<boolean> {
   const parse = url.pathname === '/api/rubric/parse';
-  const download = url.pathname.match(/^\/api\/room\/([^/]+)\/feedback\.(csv|md)$/);
+  const download = url.pathname.match(/^\/api\/room\/([^/]+)\/(feedback|classroom)\.(csv|md)$/);
   if (!parse && !download) return false;
   const code = (parse ? url.searchParams.get('room') ?? '' : download![1]).toUpperCase();
   const tokenHeader = req.headers['x-room-token'];
@@ -38,10 +38,10 @@ export async function handleEduRoute(req: IncomingMessage, res: ServerResponse, 
     req.resume(); res.setHeader('Allow', parse ? 'POST' : 'GET'); json(res, 405, { error: 'Method not allowed' }); return true;
   }
   if (download) {
-    const format = download[2] as 'csv' | 'md', body = rooms.exportFeedback(code, format);
-    if (body === undefined) { json(res, 404, { error: 'Feedback is available after this classroom match finishes' }); return true; }
+    const format = download[3] as 'csv' | 'md', body = download[2] === 'classroom' ? rooms.exportClassroom(code, format) : rooms.exportFeedback(code, format);
+    if (body === undefined) { json(res, 404, { error: 'No report is available for this session yet' }); return true; }
     res.writeHead(200, { 'Content-Type': format === 'csv' ? 'text/csv; charset=utf-8' : 'text/markdown; charset=utf-8',
-      'Content-Disposition': `attachment; filename="gitzilla-${code}-feedback.${format}"`, 'Cache-Control': 'no-store' });
+      'Content-Disposition': `attachment; filename="gitzilla-${code}-${download[2]}.${format}"`, 'Cache-Control': 'no-store' });
     res.end(body); return true;
   }
   try {

@@ -1,3 +1,4 @@
+import type { ClassroomReport } from '../../shared/classroom';
 // Shared app context passed to every screen.
 import type { Autopsy, LobbyState, Role, ServerMsg, StudentFeedback } from "../../shared/types";
 import type { Conn, ConnStatus } from "./net";
@@ -11,6 +12,8 @@ export interface AppCtx {
   lobby: LobbyState | null;
   autopsy: Autopsy | null;
   feedback?: StudentFeedback[];
+  classroomReports?: Record<string, ClassroomReport>;
+  classroomErrors?: Record<string, string>;
   token?: string;
   conn: Conn;
   status: ConnStatus;

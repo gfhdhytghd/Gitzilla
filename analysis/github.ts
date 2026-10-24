@@ -4,10 +4,14 @@ import { extractTarGz, ARCHIVE_LIMITS } from './tar.ts';
 import { cleanCommitSubjects } from './dna.ts';
 import { cloneProgress, notifyProgress, type ProgressCallback } from './progress.ts';
 import { enrichSocial } from './social.ts';
+import type { SourceFile } from './files.ts';
 import { queryDeclaredVulns } from './vulns.ts';
 
 export interface GitHubOptions {
   token?: string;
+  ref?: string; // immutable SHA for classroom submissions
+  onFiles?: (files: SourceFile[]) => void;
+  skipEnrichment?: boolean;
   onProgress?: ProgressCallback;
   publicOnly?: boolean; // snapshot generation: authenticated archives need verified public metadata
   timeoutMs?: number;
@@ -24,6 +28,7 @@ export function countFromPage(link: string | null, items: unknown[]): number {
 }
 
 export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {}): Promise<RepoProfile> {
+  if (options.ref && !/^[a-f0-9]{40,64}$/i.test(options.ref)) throw new Error("Classroom source must use an immutable commit SHA");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new Error('GitHub analysis timed out')), options.timeoutMs ?? 12_000);
   const fetcher = options.fetcher ?? fetch;
@@ -66,8 +71,8 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
       notifyProgress(options.onProgress, { stage: 'clone', pct: 0.02, note: 'Downloading repository archive' });
       // GitHub's API issues an authorized archive redirect for private repositories.
       const archiveUrl = token
-        ? `https://api.github.com/repos/${slug}/tarball`
-        : `https://codeload.github.com/${slug}/tar.gz/HEAD`;
+        ? `https://api.github.com/repos/${slug}/tarball${options.ref ? `/${options.ref}` : ""}`
+        : `https://codeload.github.com/${slug}/tar.gz/${options.ref ?? "HEAD"}`;
       const response = await fetcher(archiveUrl, {
         signal: controller.signal,
         headers: token ? headers : { 'User-Agent': 'Repo-Kaiju-HackPSU' },
@@ -104,11 +109,12 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
       commits: commits?.count ?? previous?.commits ?? 0, recentCommits: commits?.subjects ?? [], contributors: contributors ?? previous?.contributors ?? 0,
       ageDays: raw?.created_at ? Math.max(0, Math.floor((Date.now() - Date.parse(raw.created_at)) / 86_400_000)) : previous?.ageDays ?? 0,
     };
+    options.onFiles?.(files);
     const profile = profileFromFiles(slug, files, metadata, options.onProgress);
     if (!profile.totalFiles) throw new Error('No supported source files in archive sample');
     await Promise.allSettled([
-      ...(meta ? [enrichSocial(profile, api, { fullContributorHistory: options.publicOnly })] : []),
-      ...(!token || raw?.private === false ? [queryDeclaredVulns(files, profile, { fetcher, signal: controller.signal }).then(vulns => { if (vulns !== undefined) profile.vulns = vulns; })] : []),
+      ...(!options.skipEnrichment && meta ? [enrichSocial(profile, api, { fullContributorHistory: options.publicOnly })] : []),
+      ...(!options.skipEnrichment && (!token || raw?.private === false) ? [queryDeclaredVulns(files, profile, { fetcher, signal: controller.signal }).then(vulns => { if (vulns !== undefined) profile.vulns = vulns; })] : []),
     ]);
     return profile;
   } finally {

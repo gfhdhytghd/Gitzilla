@@ -1,3 +1,4 @@
+import { createClassroom } from './classroom';
 // Entry: path router (/ landing, /r/<ROOM> room) + room controller that swaps lobby/game/autopsy screens.
 import type { LobbyState, Role, ServerMsg } from "../../shared/types";
 import { type AppCtx, type Screen, toast } from "./app";
@@ -88,7 +89,7 @@ function enterRoom(room: string) {
 function startRoom(room: string, role: Role, name: string) {
   const mk = mock ? createMockConn : connect;
   let screen: Screen | null = null;
-  let screenKind: "lobby" | "game" | "autopsy" | null = null;
+  let screenKind: "lobby" | "game" | "autopsy" | "classroom" | null = null;
   const link = h("div.link-status.connecting", null, "LINK…");
   document.body.append(link);
 
@@ -139,7 +140,7 @@ function startRoom(room: string, role: Role, name: string) {
   };
 
   const reportControls = () => {
-    if (role === "screen" || !app.you || app.status !== "open") return;
+    if (role === "screen" || app.lobby?.mode === "edu" || !app.you || app.status !== "open") return;
     const state = getMotionPermissionState();
     app.conn.send({ t: "controls", ready: state.ready, mode: state.profile });
   };
@@ -148,13 +149,16 @@ function startRoom(room: string, role: Role, name: string) {
   const show = (kind: typeof screenKind) => {
     if (kind === screenKind) return;
     screen?.destroy();
-    screen = kind === "lobby" ? createLobby(app) : kind === "game" ? createGame(app) : kind === "autopsy" ? createAutopsy(app) : null;
+    screen = kind === "classroom" ? createClassroom(app) : kind === "lobby" ? createLobby(app) : kind === "game" ? createGame(app) : kind === "autopsy" ? createAutopsy(app) : null;
     screenKind = kind;
     if (screen) root.append(screen.el);
   };
 
   function refresh() {
     if (!app.lobby) return;
+    if (app.lobby.mode === "edu" && (app.lobby.classroom || app.lobby.phase === "lobby")) {
+      show("classroom"); screen?.update?.(app); return;
+    }
     const ph = app.lobby.phase;
     if (ph === "lobby") {
       app.autopsy = null;
@@ -229,6 +233,10 @@ function startRoom(room: string, role: Role, name: string) {
     });
     app.conn.onMessage((m: ServerMsg) => {
       switch (m.t) {
+        case "classroom":
+          if (app.lobby) app.lobby.classroom = m.state;
+          app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {};
+          break;
         case "welcome":
           app.you = m.you;
           app.token = m.token;
