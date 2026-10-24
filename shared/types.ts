@@ -32,6 +32,25 @@ export interface RepoProfile {
   readme?: string;                     // first ~4 KB of README (for Gemini design)
   tree?: string[];                     // up to ~120 notable paths (for Gemini design)
   fallback?: boolean;                  // true if served from the precomputed set
+  dna?: CodeDNA;                       // real-code fingerprint; drives names, art and flavor (never stats)
+}
+
+// Real code pulled out of the repo so heroes and bosses are made of it. All strings are verbatim
+// (trimmed) excerpts. Private repos: never send to Gemini or Hall (server enforces).
+export interface CodeDNA {
+  identifiers: string[];                 // ~24 real function/class names, most-referenced first
+  componentSymbols: Record<string, string[]>; // component name -> up to 4 top exported/defined symbols
+  heartLines: string[];                  // ~12 real lines from the heart file, each <= 40 chars
+  snippets: { file: string; line: number; code: string }[]; // 6–12 striking real lines <= 48 chars (signatures, gnarliest line)
+  todos: { file: string; text: string }[];   // up to 12 real TODO/FIXME/HACK/XXX comments, <= 60 chars
+  commits: string[];                     // up to 10 recent commit subjects (empty offline)
+  tokens: string[];                      // ~12 most frequent language keywords/operators, e.g. "fn", "=>", "def", "::"
+  bigFiles: { path: string; loc: number }[]; // top 8 files by LOC
+  longestFunction: { name: string; file: string; lines: number } | null;
+  counts: { functions: number; classes: number; todo: number; fixme: number; hack: number; comments: number };
+  maxNesting: number;                    // deepest brace/indent nesting seen
+  avgLineLength: number;
+  indent: "tabs" | "spaces2" | "spaces4" | "mixed";
 }
 
 // ---------- Gemini-authored designs (design/ produces; renderers consume) ----------
@@ -101,6 +120,12 @@ export interface PlayerKit {
   palette: string[];         // 4 hex colors derived from language + seed
   seed: number;
   design?: HeroDesign;       // Gemini look; when present its title/palette override the defaults
+  code?: {                   // from CodeDNA, cosmetic only
+    tokens: string[];        // projectile glyphs come from these (real keywords of the repo's language)
+    signature: string;       // signature move name, a real identifier, e.g. "parse_args()"
+    snippet: string;         // one real line shown on the hero card / weapon skin
+    identifiers: string[];
+  };
 }
 
 export type BossAttackKind =
@@ -144,6 +169,14 @@ export interface BossKit {
   heart: string;         // analyzed heart file path (flavor, autopsy)
   seed: number;
   design?: BossDesign;   // Gemini look/flavor; name/palette/theme/attack names already merged into the kit
+  code?: {               // from CodeDNA, cosmetic only; renderers paint real code onto the monster
+    heartLines: string[];      // scroll inside the heart core
+    snippets: string[];        // carved into the body / limbs
+    todos: string[];           // bug minions carry these labels; taunts may quote them
+    commits: string[];         // taunt material
+    tokens: string[];          // boss projectile glyphs
+    limbSymbols: Record<string, string[]>; // BossLimb.id -> real symbols of that component
+  };
 }
 
 export type ArenaTheme =
@@ -190,6 +223,7 @@ export interface PlayerState {
   buffs: string[];           // active skill ids, e.g. "firewall"
   kit: PlayerKit;
   stats: { damage: number; bestCombo: number; limbsBroken: number; revives: number; killingBlow: boolean };
+  perks: string[];           // perk ids picked at code review
 }
 
 export interface BossState {
@@ -235,7 +269,18 @@ export type GameEvent =
   | { type: "revived"; player: string; by: string }
   | { type: "skill"; player: string; skill: SkillKind }
   | { type: "phase"; phase: 1 | 2 | 3 }
+  | { type: "pickup"; player: string; kind: Pickup["kind"]; x: number; y: number }
+  | { type: "obstacleBroken"; id: number; label: string; x: number; y: number }
+  | { type: "perk"; player: string; perk: string }
   | { type: "victory" } | { type: "defeat" };
+
+// Cover: destructible blocks named after real files of the boss repo. Block bullets (both sides).
+export interface Obstacle { id: number; x: number; y: number; w: number; h: number; hp: number; maxHp: number; label: string }
+// Soul Knight drops from broken limbs, minions and blocks.
+export interface Pickup { id: number; kind: "energy" | "heart" | "armor"; x: number; y: number }
+// "Code review" at a phase change: sim pauses boss ~5s, 3 pads appear; each player picks by walking onto one.
+export interface PerkPad { id: string; name: string; desc: string; x: number; y: number; r: number }
+export interface PerkOffer { endsAt: number; pads: PerkPad[]; picked: Record<string, string> } // playerId -> pad id
 
 export interface MatchState {
   t: number;                 // seconds since fight start
@@ -246,6 +291,9 @@ export interface MatchState {
   hazards: Hazard[];
   minions: Minion[];
   events: GameEvent[];       // events produced since the previous snapshot
+  obstacles: Obstacle[];
+  pickups: Pickup[];
+  perkOffer: PerkOffer | null;
 }
 
 // ---------- Network protocol (server/ <-> client/app) ----------
