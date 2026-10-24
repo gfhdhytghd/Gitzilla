@@ -1,14 +1,15 @@
 {
-  "title": "gin Branch Ranger",
+  "title": "Render Branch Ranger",
   "archetype": "ranger",
   "headgear": "crown",
   "accessory": "laptop-backpack",
-  "emblem": "#",
+  "emblem": "{",
   "palette": [
     "#267f8c",
     "#65e0df",
     "#ffe4ba",
     "#f8f7d6"
   ],
-  "catchphrase": "Small hero. Clean commits."
+  "catchphrase": "Render() saves the party.",
+  "weaponName": "goroutine SMG"
 }

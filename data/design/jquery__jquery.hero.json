@@ -1,14 +1,15 @@
 {
-  "title": "jquery Branch Ranger",
+  "title": "get Branch Ranger",
   "archetype": "ranger",
   "headgear": "hood",
   "accessory": "sticker-shield",
-  "emblem": "++",
+  "emblem": ";",
   "palette": [
     "#96712d",
     "#f3d75c",
     "#ffdeb0",
     "#82f4d2"
   ],
-  "catchphrase": "One more patch saves the party."
+  "catchphrase": "get() saves the party.",
+  "weaponName": "Promise Blaster"
 }

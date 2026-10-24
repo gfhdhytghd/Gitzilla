@@ -1,5 +1,5 @@
 {
-  "name": "LODASH, THE UNMERGED",
+  "name": "LODASH, GUARDIAN OF LOST RUN IN CONTEXT",
   "epithet": "Its 5 limbs feed the sleepless heart of lodash.js.",
   "body": "tree",
   "eyes": 12,
@@ -19,26 +19,30 @@
   "intro": [
     "$ git clone lodash/lodash",
     "[##########] architecture awakened",
-    "FATAL: lodash.js"
+    "FATAL: lodash.js",
+    "function arrayReduceRight(array, iterate"
   ],
   "taunts": [
+    "Known bug: bug in Safari 9.",
+    "Recent sin: ci: update actions to latest versions (#6279)",
+    "Your Foo() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "Segfault Halo",
-    "0-charge-1": "Fast Forward",
-    "1-spiral-0": "Stack Overflow",
-    "2-ring-0": "Exception Orbit",
-    "3-spiral-0": "Stack Overflow",
-    "4-ring-0": "Exception Orbit"
+    "0-ring-0": "iteratee() ring",
+    "0-charge-1": "iteratee() charge",
+    "1-spiral-0": "iteratee() spiral",
+    "2-ring-0": "log() ring",
+    "3-spiral-0": "wrap() spiral",
+    "4-ring-0": "build() ring"
   },
   "limbNames": {
-    "limb-0": "test Claw",
-    "limb-1": "root Tendril",
-    "limb-2": "perf Mandible",
-    "limb-3": "fp Coil",
-    "limb-4": "lib Claw"
+    "limb-0": "iteratee Claw",
+    "limb-1": "apply Tendril",
+    "limb-2": "basename Mandible",
+    "limb-3": "baseAry Coil",
+    "limb-4": "build Claw"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "RIPGREP, THE UNMERGED",
+  "name": "RIPGREP, THE DIRS COLOSSUS",
   "epithet": "Its 8 limbs feed the sleepless heart of crates/ignore/src/gitignore.rs.",
   "body": "serpent",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone burntsushi/ripgrep",
     "[##########] architecture awakened",
-    "FATAL: crates/ignore/src/gitignore.rs"
+    "FATAL: crates/ignore/src/gitignore.rs",
+    "fn strip<'a, P: 'a + AsRef<Path> + ?Size"
   ],
   "taunts": [
+    "Known bug: TODO: In the next semver breaking release, we should",
+    "Recent sin: cargo: remove the `homepage` field",
+    "Your new() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "Segfault Halo",
-    "0-charge-1": "Fast Forward",
-    "1-spiral-0": "Stack Overflow",
-    "2-ring-0": "Exception Orbit",
-    "3-spiral-0": "Stack Overflow",
-    "4-ring-0": "Exception Orbit",
-    "5-spiral-0": "Stack Overflow",
-    "6-ring-0": "Exception Orbit",
-    "7-spiral-0": "Stack Overflow"
+    "0-ring-0": "new() ring",
+    "0-charge-1": "new() charge",
+    "1-spiral-0": "new() spiral",
+    "2-ring-0": "new() ring",
+    "3-spiral-0": "new() spiral",
+    "4-ring-0": "new() ring",
+    "5-spiral-0": "new() spiral",
+    "6-ring-0": "new() ring",
+    "7-spiral-0": "new() spiral"
   },
   "limbNames": {
-    "limb-0": "core Mandible",
-    "limb-1": "ignore Coil",
-    "limb-2": "printer Claw",
-    "limb-3": "searcher Tendril",
-    "limb-4": "tests Mandible",
-    "limb-5": "misc Coil",
-    "limb-6": "globset Claw",
-    "limb-7": "regex Tendril"
+    "limb-0": "build Mandible",
+    "limb-1": "matched Coil",
+    "limb-2": "new Claw",
+    "limb-3": "build Tendril",
+    "limb-4": "args Mandible",
+    "limb-5": "len Coil",
+    "limb-6": "new Claw",
+    "limb-7": "build Tendril"
   }
 }

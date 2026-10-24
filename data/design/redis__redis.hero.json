@@ -1,14 +1,15 @@
 {
-  "title": "redis Hotfix Engineer",
+  "title": "sdslen Hotfix Engineer",
   "archetype": "engineer",
   "headgear": "antenna",
   "accessory": "scarf",
-  "emblem": "#",
+  "emblem": ";",
   "palette": [
     "#476987",
     "#99d8d4",
     "#ffe1b5",
     "#f7a6d8"
   ],
-  "catchphrase": "I brought a rollback."
+  "catchphrase": "sdslen() saves the party.",
+  "weaponName": "#define Shotgun"
 }

@@ -1,14 +1,15 @@
 {
-  "title": "example Branch Ranger",
+  "title": "main Branch Ranger",
   "archetype": "ranger",
   "headgear": "none",
   "accessory": "jetpack",
-  "emblem": "*",
+  "emblem": "}",
   "palette": [
     "#267f8c",
     "#65e0df",
     "#ffe4ba",
     "#f8f7d6"
   ],
-  "catchphrase": "Tests green. Sword ready."
+  "catchphrase": "main() saves the party.",
+  "weaponName": "goroutine SMG"
 }

@@ -1,14 +1,15 @@
 {
-  "title": "express Branch Ranger",
+  "title": "app Branch Ranger",
   "archetype": "ranger",
   "headgear": "beanie",
   "accessory": "cape",
-  "emblem": "<>",
+  "emblem": ";",
   "palette": [
     "#96712d",
     "#f3d75c",
     "#ffdeb0",
     "#82f4d2"
   ],
-  "catchphrase": "One more patch saves the party."
+  "catchphrase": "app() saves the party.",
+  "weaponName": "Promise Blaster"
 }

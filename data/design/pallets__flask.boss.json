@@ -1,5 +1,5 @@
 {
-  "name": "FLASK, THE UNMERGED",
+  "name": "FLASK, THE MAKE RESPONSE TYRANT",
   "epithet": "Its 5 limbs feed the sleepless heart of src/flask/__init__.py.",
   "body": "serpent",
   "eyes": 12,
@@ -19,26 +19,30 @@
   "intro": [
     "$ git clone pallets/flask",
     "[##########] architecture awakened",
-    "FATAL: src/flask/__init__.py"
+    "FATAL: src/flask/__init__.py",
+    "class ProxyMixin(t.Protocol[T]):"
   ],
   "taunts": [
+    "Known bug: Note that if you are testing for assertions or except",
+    "Recent sin: explain seek",
+    "Your app() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "Segfault Halo",
-    "0-slam-1": "Core Dump",
-    "1-summon-0": "Bug Factory",
-    "2-ring-0": "Exception Orbit",
-    "3-spiral-0": "Stack Overflow",
+    "0-ring-0": "app() ring",
+    "0-slam-1": "app() slam",
+    "1-summon-0": "app() summon",
+    "2-ring-0": "app() ring",
+    "3-spiral-0": "github_link() spiral",
     "4-ring-0": "Exception Orbit"
   },
   "limbNames": {
-    "limb-0": "flask Claw",
-    "limb-1": "tests Tendril",
-    "limb-2": "examples Mandible",
-    "limb-3": "docs Coil",
+    "limb-0": "app Claw",
+    "limb-1": "get Tendril",
+    "limb-2": "client Mandible",
+    "limb-3": "setup Coil",
     "limb-4": ".devcontainer Claw"
   }
 }

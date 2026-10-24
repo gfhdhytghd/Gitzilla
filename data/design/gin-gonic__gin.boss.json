@@ -1,5 +1,5 @@
 {
-  "name": "GIN, THE UNMERGED",
+  "name": "GIN, ANCIENT BYTESCONV REVENANT",
   "epithet": "Its 6 limbs feed the sleepless heart of internal/bytesconv/bytesconv.go.",
   "body": "eye",
   "eyes": 12,
@@ -19,28 +19,32 @@
   "intro": [
     "$ git clone gin-gonic/gin",
     "[##########] architecture awakened",
-    "FATAL: internal/bytesconv/bytesconv.go"
+    "FATAL: internal/bytesconv/bytesconv.go",
+    "type Core interface {"
   ],
   "taunts": [
+    "Known bug: TODO",
+    "Recent sin: docs: include HTTP QUERY method in RouterGroup.Any (",
+    "Your Render() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-fan-0": "Force Push",
-    "0-charge-1": "Race Condition",
-    "1-laser-0": "Traceback Beam",
-    "2-ring-0": "Segfault Halo",
-    "3-spiral-0": "Recursive Regret",
-    "4-ring-0": "Segfault Halo",
-    "5-spiral-0": "Recursive Regret"
+    "0-fan-0": "Render() fan",
+    "0-charge-1": "Render() charge",
+    "1-laser-0": "Name() laser",
+    "2-ring-0": "Render() ring",
+    "3-spiral-0": "GET() spiral",
+    "4-ring-0": "Open() ring",
+    "5-spiral-0": "Marshal() spiral"
   },
   "limbNames": {
-    "limb-0": "root Tendril",
-    "limb-1": "binding Mandible",
-    "limb-2": "render Coil",
-    "limb-3": "ginS Claw",
-    "limb-4": "internal Tendril",
-    "limb-5": "codec Mandible"
+    "limb-0": "Bind Tendril",
+    "limb-1": "Error Mandible",
+    "limb-2": "WriteContentType Coil",
+    "limb-3": "GET Claw",
+    "limb-4": "StringToBytes Tendril",
+    "limb-5": "NewDecoder Mandible"
   }
 }

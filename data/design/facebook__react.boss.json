@@ -1,5 +1,5 @@
 {
-  "name": "REACT, THE KNOT THAT IMPORTS",
+  "name": "REACT, THE MOSSBOUND SHARED RUNTIME",
   "epithet": "Its 8 limbs feed the sleepless heart of compiler/packages/snap/src/sprout/shared-runtime.ts.",
   "body": "hydra",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone facebook/react",
     "[##########] architecture awakened",
-    "FATAL: compiler/packages/snap/src/sprout/shared-runtime.ts"
+    "FATAL: compiler/packages/snap/src/sprout/shared-runtime.ts",
+    "export function mutateAndReturnNewValue<"
   ],
   "taunts": [
+    "Known bug: Todo is Hint",
+    "Recent sin: Allow resumeAndPrerender to postpone an existing bou",
+    "Your render() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "npm install",
-    "0-slam-1": "rm -rf /",
-    "1-cascade-0": "Circular Import",
-    "2-cascade-0": "Dependency Hell",
-    "3-cascade-0": "Circular Import",
-    "4-cascade-0": "Dependency Hell",
-    "5-cascade-0": "Circular Import",
-    "6-cascade-0": "Dependency Hell",
-    "7-cascade-0": "Circular Import"
+    "0-summon-0": "render() summon",
+    "0-slam-1": "render() slam",
+    "1-cascade-0": "render() cascade",
+    "2-cascade-0": "render() cascade",
+    "3-cascade-0": "render() cascade",
+    "4-cascade-0": "render() cascade",
+    "5-cascade-0": "render() cascade",
+    "6-cascade-0": "fn() cascade",
+    "7-cascade-0": "fn() cascade"
   },
   "limbNames": {
-    "limb-0": "compiler Tendril",
-    "limb-1": "react-dom Mandible",
-    "limb-2": "misc Coil",
-    "limb-3": "react-reconciler Claw",
-    "limb-4": "react-devtools-shared Tendril",
-    "limb-5": "fixtures Mandible",
-    "limb-6": "react-dom-bindings Coil",
-    "limb-7": "eslint-plugin-react-hooks Claw"
+    "limb-0": "Component Tendril",
+    "limb-1": "App Mandible",
+    "limb-2": "fn Coil",
+    "limb-3": "render Claw",
+    "limb-4": "Component Tendril",
+    "limb-5": "App Mandible",
+    "limb-6": "resolve Coil",
+    "limb-7": "fn Claw"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "EXPRESS, THE UNMERGED",
+  "name": "EXPRESS, THE MOSSBOUND SEND",
   "epithet": "Its 4 limbs feed the sleepless heart of index.js.",
   "body": "swarm",
   "eyes": 12,
@@ -19,24 +19,28 @@
   "intro": [
     "$ git clone expressjs/express",
     "[##########] architecture awakened",
-    "FATAL: index.js"
+    "FATAL: index.js",
+    "function shouldHaveBody (buf) {"
   ],
   "taunts": [
+    "Known bug: NOTE: This is not a real part of the API, but",
+    "Recent sin: docs: correct crossed names in the emeritus triagers",
+    "Your app() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "npm install",
-    "0-charge-1": "Race Condition",
-    "1-spiral-0": "Recursive Regret",
-    "2-summon-0": "Bug Factory",
+    "0-summon-0": "createApp() summon",
+    "0-charge-1": "createApp() charge",
+    "1-spiral-0": "app() spiral",
+    "2-summon-0": "get() summon",
     "3-spiral-0": "Recursive Regret"
   },
   "limbNames": {
     "limb-0": "test Coil",
-    "limb-1": "lib Claw",
-    "limb-2": "examples Tendril",
+    "limb-1": "app Claw",
+    "limb-2": "json Tendril",
     "limb-3": "root Mandible"
   }
 }

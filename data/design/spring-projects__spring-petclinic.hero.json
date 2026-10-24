@@ -1,14 +1,15 @@
 {
-  "title": "spring-petclinic Hotfix",
+  "title": "Owner Hotfix Engineer",
   "archetype": "engineer",
   "headgear": "helmet",
   "accessory": "coffee-mug",
-  "emblem": "R",
+  "emblem": ";",
   "palette": [
     "#8e405a",
     "#f08c73",
     "#f8d8a4",
     "#9bd8ff"
   ],
-  "catchphrase": "I brought a rollback."
+  "catchphrase": "Owner() saves the party.",
+  "weaponName": "Stream Beam"
 }

@@ -1,14 +1,15 @@
 {
-  "title": "react Branch Ranger",
+  "title": "render Branch Ranger",
   "archetype": "ranger",
   "headgear": "cat-ears",
   "accessory": "scarf",
-  "emblem": "++",
+  "emblem": ";",
   "palette": [
     "#96712d",
     "#f3d75c",
     "#ffdeb0",
     "#82f4d2"
   ],
-  "catchphrase": "Small hero. Clean commits."
+  "catchphrase": "render() saves the party.",
+  "weaponName": "Promise Blaster"
 }

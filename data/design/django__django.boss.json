@@ -1,5 +1,5 @@
 {
-  "name": "DJANGO, THE KNOT THAT IMPORTS",
+  "name": "DJANGO, KEEPER OF DB",
   "epithet": "Its 8 limbs feed the sleepless heart of django/db/__init__.py.",
   "body": "golem",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone django/django",
     "[##########] architecture awakened",
-    "FATAL: django/db/__init__.py"
+    "FATAL: django/db/__init__.py",
+    "connections = ConnectionHandler()"
   ],
   "taunts": [
+    "Known bug: XXX Is this used at all?",
+    "Recent sin: Fixed #37449 -- Corrected local name for Punjabi in",
+    "Your __init__() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-fan-0": "Merge Conflict",
-    "0-charge-1": "Fast Forward",
-    "1-cascade-0": "Dependency Hell",
-    "2-cascade-0": "Circular Import",
-    "3-cascade-0": "Dependency Hell",
-    "4-cascade-0": "Circular Import",
-    "5-cascade-0": "Dependency Hell",
-    "6-cascade-0": "Circular Import",
-    "7-cascade-0": "Dependency Hell"
+    "0-fan-0": "__init__() fan",
+    "0-charge-1": "__init__() charge",
+    "1-cascade-0": "__init__() cascade",
+    "2-cascade-0": "__init__() cascade",
+    "3-cascade-0": "__init__() cascade",
+    "4-cascade-0": "__init__() cascade",
+    "5-cascade-0": "__init__() cascade",
+    "6-cascade-0": "__init__() cascade",
+    "7-cascade-0": "__init__() cascade"
   },
   "limbNames": {
-    "limb-0": "tests Claw",
-    "limb-1": "db Tendril",
-    "limb-2": "contrib Mandible",
-    "limb-3": "misc Coil",
-    "limb-4": "core Claw",
-    "limb-5": "utils Tendril",
-    "limb-6": "test Mandible",
-    "limb-7": "template Coil"
+    "limb-0": "__init__ Claw",
+    "limb-1": "get Tendril",
+    "limb-2": "name Mandible",
+    "limb-3": "clean Coil",
+    "limb-4": "__init__ Claw",
+    "limb-5": "create Tendril",
+    "limb-6": "request Mandible",
+    "limb-7": "check Coil"
   }
 }

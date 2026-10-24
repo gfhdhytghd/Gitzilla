@@ -11,14 +11,14 @@ export const themes = ['terminal', 'kernel', 'web', 'notebook', 'enterprise', 'l
 const string = (maxLength: number) => ({ type: 'string', minLength: 1, maxLength });
 const enumeration = (values: readonly string[]) => ({ type: 'string', enum: values });
 const array = (items: object, minItems: number, maxItems: number) => ({ type: 'array', items, minItems, maxItems });
-const object = (properties: Record<string, object>) => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
+const object = (properties: Record<string, object>, optional: string[] = []) => ({ type: 'object', properties, required: Object.keys(properties).filter(key => !optional.includes(key)), additionalProperties: false });
 const palette = (count: number) => array({ type: 'string', pattern: '^#[0-9a-fA-F]{6}$' }, count, count);
 
 export const heroSchema = object({
   title: string(24), archetype: enumeration(archetypes), headgear: enumeration(headgear), accessory: enumeration(accessories),
   emblem: { type: 'string', minLength: 1, maxLength: 2, pattern: '^[ -~]{1,2}$' },
-  palette: palette(4), catchphrase: string(40),
-});
+  palette: palette(4), catchphrase: string(40), weaponName: string(20),
+}, ['weaponName']);
 
 export function bossSchema(kit: BossKit) {
   return object({
