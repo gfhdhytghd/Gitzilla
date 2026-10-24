@@ -68,6 +68,12 @@ const KEYWORDS = new Set(("fn let mut const var function def class return if els
   "struct enum match async await yield go func package public private static void new this self try catch throw end do " +
   "then lambda val fun type interface trait where loop break continue switch case default nil null None true false").split(" "));
 
+/** Syntax color for one word of real code. */
+export function syntaxColor(w: string, syn: SyntaxColors, idents: string[] = []): string {
+  return KEYWORDS.has(w) ? syn.kw : /^["'`]/.test(w) ? syn.str : /^\d/.test(w) ? syn.num
+    : /^[A-Z]/.test(w) ? syn.type : idents.includes(w) || /\($/.test(w) ? syn.fn : /^(\/\/|#)/.test(w) ? syn.com : syn.plain;
+}
+
 /** Turn a real code line (+ identifiers/tokens) into 1px syntax-colored "minimap" rows, 8px wide. */
 function buildCodeRows(snippet: string, idents: string[], toks: string[], syn: SyntaxColors): (string | null)[][] {
   const W = 8;
@@ -82,8 +88,7 @@ function buildCodeRows(snippet: string, idents: string[], toks: string[], syn: S
     if (w === "¶") { flush(); continue; }
     if (w === "{" || w === "(") indent = Math.min(3, indent + 1);
     if (w === "}" || w === ")") indent = Math.max(0, indent - 1);
-    const col = KEYWORDS.has(w) ? syn.kw : /^["'`]/.test(w) ? syn.str : /^\d/.test(w) ? syn.num
-      : /^[A-Z]/.test(w) ? syn.type : idents.includes(w) || /\($/.test(w) ? syn.fn : /^(\/\/|#)/.test(w) ? syn.com : syn.plain;
+    const col = syntaxColor(w, syn, idents);
     const len = Math.max(1, Math.min(4, Math.round(w.length / 2)));
     if (x + len > W) flush();
     for (let i = 0; i < len && x + i < W; i++) row[x + i] = col;

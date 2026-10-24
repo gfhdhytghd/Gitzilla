@@ -65,14 +65,20 @@ function nav() {
 
 // &portrait=1 simulates claude-ui's phone camera: 390x490 CSS viewport at the page DPR, height-fit integer scale.
 const PORTRAIT = q.get("portrait") === "1";
-const PORT_CSS = [390, 490];
+const PORT_CSS = [430, 960];
+const RES1 = q.get("res1") === "1";
 let camX = 0;
 
 function makeStage(scale: number, label?: string): CanvasRenderingContext2D {
   const cell = document.createElement("div");
   cell.className = "cell";
   const c = document.createElement("canvas");
-  if (PORTRAIT) {
+  if (PORTRAIT && RES1) {
+    // claude-ui style: 1 canvas px per logical px, upscaled by CSS
+    const css = PORT_CSS[1] / ARENA_H;
+    c.width = Math.floor(PORT_CSS[0] / css); c.height = ARENA_H;
+    c.style.width = Math.round(c.width * css) + "px"; c.style.height = PORT_CSS[1] + "px";
+  } else if (PORTRAIT) {
     const dpr = window.devicePixelRatio || 1;
     c.width = Math.round(PORT_CSS[0] * dpr); c.height = Math.round(PORT_CSS[1] * dpr);
     c.style.width = PORT_CSS[0] + "px"; c.style.height = PORT_CSS[1] + "px";
