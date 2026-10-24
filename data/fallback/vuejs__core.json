@@ -1,7 +1,7 @@
 {
   "slug": "vuejs/core",
   "description": "🖖 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.",
-  "stars": 54801,
+  "stars": 54802,
   "primaryLanguage": "TypeScript",
   "languages": {
     "TypeScript": 4526123,
@@ -12,7 +12,7 @@
   },
   "totalFiles": 566,
   "totalLoc": 152032,
-  "commits": 7234,
+  "commits": 7240,
   "contributors": 662,
   "ageDays": 3056,
   "components": [
@@ -21,56 +21,106 @@
       "files": 113,
       "loc": 50070,
       "fanIn": 4,
-      "fanOut": 5
+      "fanOut": 5,
+      "issues": [],
+      "maintainers": 43,
+      "topMaintainers": [
+        "edison1105",
+        "serkodev",
+        "ondrhn"
+      ]
     },
     {
       "name": "packages/compiler-core",
       "files": 52,
       "loc": 23534,
       "fanIn": 5,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 25,
+      "topMaintainers": [
+        "edison1105",
+        "yyx990803",
+        "KazariEX"
+      ]
     },
     {
       "name": "misc",
       "files": 164,
       "loc": 21296,
       "fanIn": 7,
-      "fanOut": 5
+      "fanOut": 5,
+      "issues": []
     },
     {
       "name": "packages/compiler-sfc",
       "files": 52,
       "loc": 16688,
       "fanIn": 2,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 21,
+      "topMaintainers": [
+        "edison1105",
+        "danielroe",
+        "KazariEX"
+      ]
     },
     {
       "name": "packages/reactivity",
       "files": 37,
       "loc": 11305,
       "fanIn": 2,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 31,
+      "topMaintainers": [
+        "edison1105",
+        "yyx990803",
+        "jh-leong"
+      ]
     },
     {
       "name": "packages/runtime-dom",
       "files": 34,
       "loc": 11217,
       "fanIn": 5,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 35,
+      "topMaintainers": [
+        "edison1105",
+        "KazariEX",
+        "rzzf"
+      ]
     },
     {
       "name": "packages/vue",
       "files": 61,
       "loc": 11030,
       "fanIn": 6,
-      "fanOut": 5
+      "fanOut": 5,
+      "issues": [],
+      "maintainers": 22,
+      "topMaintainers": [
+        "edison1105",
+        "yyx990803",
+        "linzhe141"
+      ]
     },
     {
       "name": "packages-private",
       "files": 53,
       "loc": 6892,
       "fanIn": 0,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 19,
+      "topMaintainers": [
+        "edison1105",
+        "jh-leong",
+        "Alfred-Skyblue"
+      ]
     }
   ],
   "heart": "packages/shared/index.js",
@@ -416,10 +466,25 @@
       ]
     },
     "heartLines": [
-      "if (process.env.NODE_ENV === 'production",
-      "} else {"
+      "export interface ComponentCustomProps {}",
+      "export interface GlobalDirectives {}",
+      "export interface ComponentInternalInstan",
+      "export const setCurrentInstance = (insta",
+      "export const unsetCurrentInstance = (): ",
+      "export function registerRuntimeCompiler(",
+      "export const isRuntimeOnly = (): boolean",
+      "function getSlotsProxy(instance: Compone",
+      "const expose: SetupContext['expose'] = e",
+      "const classify = (str: string): string =",
+      "export function isClassComponent(value: ",
+      "export interface ComponentCustomElementI"
     ],
     "snippets": [
+      {
+        "file": "packages/runtime-core/src/component.ts",
+        "line": 777,
+        "code": "export const setCurrentInstance = (instance: Com"
+      },
       {
         "file": "packages/compiler-core/src/errors.ts",
         "line": 179,
@@ -474,11 +539,6 @@
         "file": "packages/server-renderer/src/renderToString.ts",
         "line": 76,
         "code": "return renderToString(createApp({ render: () => "
-      },
-      {
-        "file": "packages/runtime-core/__tests__/componentSlots.spec.ts",
-        "line": 456,
-        "code": "return () => h(Comp, null, { _foo: () => 'foo' }"
       }
     ],
     "todos": [
@@ -531,7 +591,18 @@
         "text": "TODO warn when we provide a better way to do it?"
       }
     ],
-    "commits": [],
+    "commits": [
+      "fix(v-model): respect number modifier for Set select values",
+      "docs: add merchandise link to readme (#15960)",
+      "fix(runtime-dom): treat disablepictureinpicture and disableremoteplayback as boolean attributes (#15",
+      "chore: replace `semver` with `verkit` in release script (#15914)",
+      "release: v3.5.44",
+      "fix(server-renderer): propagate async setup errors (#15857)",
+      "chore(deps): update all non-major dependencies (#15585)",
+      "chore(deps): update playground (#15685)",
+      "chore(deps): update dawidd6/action-download-artifact action to v27 (#15768)",
+      "chore(deps): update compiler (#15586)"
+    ],
     "tokens": [
       "{",
       "}",
@@ -591,10 +662,15 @@
       "todo": 29,
       "fixme": 0,
       "hack": 10,
-      "comments": 11138
+      "comments": 11172
     },
     "maxNesting": 12,
     "avgLineLength": 29.8,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 12.6,
+    "hasTestDir": true
+  },
+  "repoIssues": [],
+  "vulns": [],
+  "busFactor": 1
 }

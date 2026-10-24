@@ -21,56 +21,163 @@
       "files": 143,
       "loc": 37470,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [
+        {
+          "number": 4968,
+          "title": "animate() in Chrome triggers hundreds of HTTP requests",
+          "url": "https://github.com/jquery/jquery/issues/4968",
+          "labels": [
+            "help wanted"
+          ]
+        },
+        {
+          "number": 4317,
+          "title": "Is not possible to listen events on ShadowRoot",
+          "url": "https://github.com/jquery/jquery/issues/4317",
+          "labels": [
+            "Event",
+            "help wanted"
+          ]
+        },
+        {
+          "number": 3877,
+          "title": "delegated Mouse Event targeted on SVG `<use>` element are not caught",
+          "url": "https://github.com/jquery/jquery/issues/3877",
+          "labels": [
+            "Event",
+            "help wanted"
+          ]
+        }
+      ],
+      "maintainers": 12,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "gibson042"
+      ]
     },
     {
       "name": "src",
       "files": 24,
       "loc": 5749,
       "fanIn": 6,
-      "fanOut": 5
+      "fanOut": 5,
+      "issues": [
+        {
+          "number": 4317,
+          "title": "Is not possible to listen events on ShadowRoot",
+          "url": "https://github.com/jquery/jquery/issues/4317",
+          "labels": [
+            "Event",
+            "help wanted"
+          ]
+        },
+        {
+          "number": 3607,
+          "title": "Standardize DOM node type checking",
+          "url": "https://github.com/jquery/jquery/issues/3607",
+          "labels": [
+            "Core",
+            "help wanted"
+          ]
+        }
+      ],
+      "maintainers": 15,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "gibson042"
+      ]
     },
     {
       "name": "misc",
       "files": 62,
       "loc": 1254,
       "fanIn": 5,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": []
     },
     {
       "name": "src/attributes",
       "files": 4,
       "loc": 451,
       "fanIn": 1,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 17,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "markelog"
+      ]
     },
     {
       "name": "src/core",
       "files": 16,
       "loc": 422,
       "fanIn": 4,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 19,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "dmethvin"
+      ]
     },
     {
       "name": "root",
       "files": 2,
       "loc": 401,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 11,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "apoorvdarshan"
+      ]
     },
     {
       "name": "src/selector",
       "files": 21,
       "loc": 391,
       "fanIn": 1,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 10,
+      "topMaintainers": [
+        "jeresig",
+        "mgol",
+        "brandonaaron"
+      ]
     },
     {
       "name": "src/css",
       "files": 13,
       "loc": 387,
       "fanIn": 2,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [
+        {
+          "number": 2700,
+          "title": "Add CSS tests for setting negative padding and borderWidth",
+          "url": "https://github.com/jquery/jquery/issues/2700",
+          "labels": [
+            "CSS",
+            "Tests",
+            "help wanted"
+          ]
+        }
+      ],
+      "maintainers": 16,
+      "topMaintainers": [
+        "mgol",
+        "gibson042",
+        "markelog"
+      ]
     }
   ],
   "heart": "src/core.js",
@@ -487,7 +594,18 @@
         "text": "TODO: uncrowd this"
       }
     ],
-    "commits": [],
+    "commits": [
+      "Build: Group Dependabot npm security update PRs",
+      "Build: Bump the github-actions group with 3 updates (#5921)",
+      "Docs: Add a new commercial support vendor: TuxCare",
+      "Selector: Work around a Safari 27 regex interepreter bug",
+      "Build: Test on Safari 27, iOS 27 & iPadOS 27, drop Safari 18 & iOS 17",
+      "Core: Refactor loops to avoid going behind array bounds",
+      "Build: upgrade dependencies, sans sinon, eslint, and jsdom (#5899)",
+      "Tests: Make the \"jQuery.parseXML - error reporting\" test less strict",
+      "Build: Run `brew update` before installing Safari TP via Homebrew",
+      "Build: Bump the github-actions group with 3 updates"
+    ],
     "tokens": [
       ";",
       "{",
@@ -547,10 +665,43 @@
       "todo": 8,
       "fixme": 3,
       "hack": 6,
-      "comments": 5437
+      "comments": 5478
     },
     "maxNesting": 13,
     "avgLineLength": 37,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 16.3,
+    "hasTestDir": true
+  },
+  "vulns": [],
+  "repoIssues": [
+    {
+      "number": 3488,
+      "title": "Improve .offset(...) setter testing",
+      "url": "https://github.com/jquery/jquery/issues/3488",
+      "labels": [
+        "Offset",
+        "help wanted"
+      ]
+    },
+    {
+      "number": 2636,
+      "title": "Add tests for contextmenu event",
+      "url": "https://github.com/jquery/jquery/issues/2636",
+      "labels": [
+        "Event",
+        "help wanted"
+      ]
+    },
+    {
+      "number": 2255,
+      "title": "Rearrange animation options logic",
+      "url": "https://github.com/jquery/jquery/issues/2255",
+      "labels": [
+        "Effects",
+        "help wanted"
+      ]
+    }
+  ],
+  "busFactor": 4
 }

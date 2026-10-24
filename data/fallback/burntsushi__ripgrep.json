@@ -22,56 +22,177 @@
       "files": 22,
       "loc": 12485,
       "fanIn": 0,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 31,
+      "topMaintainers": [
+        "BurntSushi",
+        "okdana",
+        "blyxxyz"
+      ]
     },
     {
       "name": "crates/ignore",
       "files": 13,
       "loc": 8837,
       "fanIn": 1,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [
+        {
+          "number": 1086,
+          "title": "globset: case-insensitive matching of literal globs is unnecessarily slow",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/1086",
+          "labels": [
+            "enhancement",
+            "help wanted",
+            "icebox"
+          ]
+        }
+      ],
+      "maintainers": 55,
+      "topMaintainers": [
+        "BurntSushi",
+        "charliermarsh",
+        "jgarte"
+      ]
     },
     {
       "name": "crates/printer",
       "files": 13,
       "loc": 8601,
       "fanIn": 0,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 17,
+      "topMaintainers": [
+        "BurntSushi",
+        "ltrzesniewski",
+        "atouchet"
+      ]
     },
     {
       "name": "crates/searcher",
       "files": 11,
       "loc": 5904,
       "fanIn": 1,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 15,
+      "topMaintainers": [
+        "BurntSushi",
+        "atouchet",
+        "3point2"
+      ]
     },
     {
       "name": "tests",
       "files": 10,
       "loc": 4974,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [
+        {
+          "number": 2962,
+          "title": "Missing support for `[[:space:]]` match group in the ignore crate",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/2962",
+          "labels": [
+            "enhancement",
+            "help wanted"
+          ]
+        }
+      ],
+      "maintainers": 34,
+      "topMaintainers": [
+        "BurntSushi",
+        "alessandroasm",
+        "amaanq"
+      ]
     },
     {
       "name": "misc",
       "files": 23,
       "loc": 4340,
       "fanIn": 3,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": []
     },
     {
       "name": "crates/globset",
       "files": 6,
       "loc": 3118,
       "fanIn": 1,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [
+        {
+          "number": 2229,
+          "title": "[globset] support more options on GlobBuilder?",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/2229",
+          "labels": [
+            "enhancement",
+            "help wanted",
+            "question"
+          ]
+        },
+        {
+          "number": 1086,
+          "title": "globset: case-insensitive matching of literal globs is unnecessarily slow",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/1086",
+          "labels": [
+            "enhancement",
+            "help wanted",
+            "icebox"
+          ]
+        }
+      ],
+      "maintainers": 29,
+      "topMaintainers": [
+        "BurntSushi",
+        "atouchet",
+        "dtolnay"
+      ]
     },
     {
       "name": "crates/regex",
       "files": 9,
       "loc": 2537,
       "fanIn": 2,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [
+        {
+          "number": 1791,
+          "title": "Support apply smart case to each individual search pattern separately",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/1791",
+          "labels": [
+            "enhancement",
+            "help wanted"
+          ]
+        },
+        {
+          "number": 1086,
+          "title": "globset: case-insensitive matching of literal globs is unnecessarily slow",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/1086",
+          "labels": [
+            "enhancement",
+            "help wanted",
+            "icebox"
+          ]
+        },
+        {
+          "number": 478,
+          "title": "improve error messages when -f flag fails",
+          "url": "https://github.com/BurntSushi/ripgrep/issues/478",
+          "labels": [
+            "enhancement",
+            "help wanted"
+          ]
+        }
+      ],
+      "maintainers": 8,
+      "topMaintainers": [
+        "BurntSushi",
+        "atouchet",
+        "albatrossflyon-coder"
+      ]
     }
   ],
   "heart": "crates/ignore/src/gitignore.rs",
@@ -118,8 +239,8 @@
   "tree": [
     "crates/",
     "tests/",
-    "ci/",
     "fuzz/",
+    "ci/",
     "pkg/",
     "crates/core/",
     "crates/ignore/",
@@ -154,6 +275,7 @@
     "crates/printer/src/hyperlink/",
     "crates/core/flags/complete/",
     "crates/core/flags/doc/",
+    "Cargo.lock",
     "Cargo.toml",
     "README.md",
     "crates/ignore/src/gitignore.rs",
@@ -234,8 +356,7 @@
     "crates/cli/src/hostname.rs",
     "crates/core/flags/complete/bash.rs",
     "crates/core/flags/complete/powershell.rs",
-    "crates/core/flags/complete/fish.rs",
-    "crates/printer/src/hyperlink/aliases.rs"
+    "crates/core/flags/complete/fish.rs"
   ],
   "dna": {
     "identifiers": [
@@ -440,7 +561,18 @@
         "text": "TODO(burntsushi): Figure out how to make this test work on W"
       }
     ],
-    "commits": [],
+    "commits": [
+      "ignore: use byte keys for incremental parent lookups",
+      "globset: reject impossible literal lengths before hashing",
+      "ignore: skip empty absolute parent matchers (#3557)",
+      "ignore: reuse parent repository detection",
+      "ignore: avoid scratch pools for empty matchers",
+      "ignore: benchmark Python workspace discovery and matching (#3554)",
+      "ignore: treat dotfiles ending in a dot as hidden (#3564)",
+      "doc: document Windows path separators and UTF-8 locale",
+      "cargo: remove the `homepage` field",
+      "index: revert indexing additions"
+    ],
     "tokens": [
       ";",
       "{",
@@ -504,6 +636,39 @@
     },
     "maxNesting": 9,
     "avgLineLength": 36.4,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 12.1,
+    "hasTestDir": true
+  },
+  "vulns": [],
+  "repoIssues": [
+    {
+      "number": 3243,
+      "title": "Add linkable headings to options in man pages",
+      "url": "https://github.com/BurntSushi/ripgrep/issues/3243",
+      "labels": [
+        "enhancement",
+        "help wanted"
+      ]
+    },
+    {
+      "number": 2930,
+      "title": "add `blink` style support",
+      "url": "https://github.com/BurntSushi/ripgrep/issues/2930",
+      "labels": [
+        "enhancement",
+        "help wanted"
+      ]
+    },
+    {
+      "number": 1518,
+      "title": "ngram indexing implementation details",
+      "url": "https://github.com/BurntSushi/ripgrep/issues/1518",
+      "labels": [
+        "enhancement",
+        "help wanted"
+      ]
+    }
+  ],
+  "busFactor": 1
 }

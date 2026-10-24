@@ -8,7 +8,7 @@ const BETA = 'fixture-token-beta';
 const LABELS: Record<string, string> = { [ALPHA]: 'Alpha private source', [BETA]: 'Beta private source' };
 const json = (data: unknown) => new Response(JSON.stringify(data));
 
-function installFetch() {
+function installFetch(withDependencies = false, unknownVisibility = false) {
   const fetcher = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input);
     const authorization = new Headers(init?.headers).get('Authorization');
@@ -18,13 +18,14 @@ function installFetch() {
     if (url.includes('codeload.github.com') || url.endsWith('/tarball')) {
       return new Response(new Uint8Array(archive([
         { path: 'README.md', text: `# ${label}` },
+        ...(withDependencies ? [{ path: 'package.json', text: '{"dependencies":{"demo":"1.0.0"}}' }] : []),
         { path: 'src/main.ts', text: `import './heart';` },
         { path: 'src/heart.ts', text: `export function ${token === ALPHA ? 'alphaHandler' : token === BETA ? 'betaHandler' : 'publicHandler'}() { return 1; }` },
       ])));
     }
     if (url.endsWith('/languages')) return json({ TypeScript: 100 });
     if (url.includes('/commits?') || url.includes('/contributors?')) return json([{}]);
-    return json({ description: label, language: 'TypeScript', private: !!token });
+    return json({ description: label, language: 'TypeScript', ...(unknownVisibility ? {} : { private: !!token }) });
   });
   vi.stubGlobal('fetch', fetcher);
   return fetcher;
@@ -44,7 +45,7 @@ describe('per-request GitHub authentication', () => {
     const profile = await analyzeRepo('demo/private', { token: ALPHA });
     expect(profile.fallback).toBeUndefined(); expect(profile.readme).toBe('Alpha private source');
     expect(profile.heart).toBe('src/heart.ts'); expect(profile.totalFiles).toBe(2);
-    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(fetcher).toHaveBeenCalledTimes(9);
     for (const [url, init] of fetcher.mock.calls) {
       expect(String(url)).toMatch(/^https:\/\/api\.github\.com\/repos\/demo\/private(?:\/|$)/);
       expect(new Headers(init?.headers).get('Authorization')).toBe(`Bearer ${ALPHA}`);
@@ -65,11 +66,11 @@ describe('per-request GitHub authentication', () => {
     expect(a.dna?.identifiers).toContain('alphaHandler'); expect(b.dna?.identifiers).toContain('betaHandler');
     expect(anonymous.dna?.identifiers).toContain('publicHandler'); expect(anonymous.dna?.identifiers).not.toContain('alphaHandler');
     expect(anonymous.readme).toBe('Public source'); expect(aAgain).toEqual(a); expect(aAgain).not.toBe(a);
-    expect(fetcher).toHaveBeenCalledTimes(15);
+    expect(fetcher).toHaveBeenCalledTimes(27);
     expect((await analyzeRepo('demo/project', { token: ALPHA })).readme).toBe('Alpha private source');
     expect((await analyzeRepo('demo/project', { token: BETA })).readme).toBe('Beta private source');
     expect((await analyzeRepo('demo/project')).readme).toBe('Public source');
-    expect(fetcher).toHaveBeenCalledTimes(15);
+    expect(fetcher).toHaveBeenCalledTimes(27);
     expect(disk.readFile).toHaveBeenCalledTimes(1); expect(disk.writeFile).toHaveBeenCalledTimes(1);
     const written = disk.writeFile.mock.calls[0];
     expect(written[0]).toContain('/.cache/analysis/demo/project.json');
@@ -95,6 +96,20 @@ describe('per-request GitHub authentication', () => {
     expect(publicProfile.readme).toBe('Public source'); expect(publicProfile.fallback).toBeUndefined();
     expect(fetcher.mock.calls.some(([url]) => String(url).startsWith('https://codeload.github.com/'))).toBe(true);
   });
+  it('never sends private or unknown-visibility dependency declarations to OSV', async () => {
+    const fetcher = installFetch(true);
+    const { analyzeRepo } = await import('./index.ts');
+    await analyzeRepo('demo/private', { token: ALPHA });
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes('api.osv.dev'))).toBe(false);
+    const opaque = installFetch(true, true);
+    await analyzeRepo('demo/unknown-visibility', { token: BETA });
+    expect(opaque.mock.calls.some(([url]) => String(url).includes('api.osv.dev'))).toBe(false);
+    const publicFetcher = installFetch(true);
+    await analyzeRepo('demo/public', { token: '' });
+    const osv = publicFetcher.mock.calls.filter(([url]) => String(url).includes('api.osv.dev'));
+    expect(osv).toHaveLength(1); expect(new Headers(osv[0][1]?.headers).has('Authorization')).toBe(false);
+    expect(String(osv[0][1]?.body)).not.toContain(ALPHA);
+  });
   it('treats env-token requests as authenticated and allows an explicit empty token to use anonymous mode', async () => {
     vi.stubEnv('GITHUB_TOKEN', BETA);
     const fetcher = installFetch();
@@ -104,7 +119,7 @@ describe('per-request GitHub authentication', () => {
     expect((await analyzeRepo('demo/project', { token: '' })).readme).toBe('Public source');
     expect(disk.writeFile).toHaveBeenCalledOnce();
     const anonymous = fetcher.mock.calls.filter(([, init]) => !new Headers(init?.headers).has('Authorization'));
-    expect(anonymous).toHaveLength(5);
+    expect(anonymous).toHaveLength(9);
     expect(anonymous.some(([url]) => String(url).includes('codeload.github.com'))).toBe(true);
   });
 });

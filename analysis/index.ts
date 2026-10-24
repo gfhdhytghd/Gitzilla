@@ -3,18 +3,24 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import type { RepoProfile } from '../shared/types.ts';
+import type { GenesisProgress, RepoProfile } from '../shared/types.ts';
 import { analyzeGitHubRepo } from './github.ts';
 import { componentTopology, fnv1a } from './graph.ts';
 import { selectPrimaryLanguage } from './files.ts';
 import { emptyDNA } from './dna.ts';
+import { notifyProgress, replayProfileProgress, type ProgressCallback } from './progress.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const CACHE_ROOT = join(ROOT, '.cache/analysis');
 const FALLBACK_ROOT = join(ROOT, 'data/fallback');
 const CACHE_TTL = 24 * 60 * 60 * 1000;
-const memory = new Map<string, { profile: RepoProfile; expires: number }>();
-const inFlight = new Map<string, Promise<RepoProfile>>();
+const memory = new Map<string, { profile: RepoProfile; expires: number; source: 'cache' | 'fallback' | 'synthetic' }>();
+interface AnalysisJob {
+  promise: Promise<RepoProfile>;
+  subscribers: Map<symbol, ProgressCallback>;
+  latest?: GenesisProgress;
+}
+const inFlight = new Map<string, AnalysisJob>();
 
 export function normalizeSlug(input: string): string {
   let value = input.trim();
@@ -86,39 +92,67 @@ async function loadCache(slug: string): Promise<{ profile: RepoProfile; fresh: b
     const [contents, info] = await Promise.all([readFile(file, 'utf8'), stat(file)]);
     const profile = JSON.parse(contents) as RepoProfile;
     if (profile.slug !== slug || !Array.isArray(profile.components) || !profile.totalFiles) return null;
-    return { profile: refreshLanguage(profile), fresh: Date.now() - info.mtimeMs < CACHE_TTL && typeof profile.readme === 'string' && Array.isArray(profile.tree) && profile.dna !== undefined };
+    return { profile: refreshLanguage(profile), fresh: Date.now() - info.mtimeMs < CACHE_TTL && typeof profile.readme === 'string' && Array.isArray(profile.tree) && profile.dna !== undefined && 'avgFunctionLength' in profile.dna && 'hasTestDir' in profile.dna };
   } catch { return null; }
 }
 
-export async function analyzeRepo(slugOrUrl: string, opts: { token?: string } = {}): Promise<RepoProfile> {
+export async function analyzeRepo(slugOrUrl: string, opts: { token?: string; onProgress?: ProgressCallback } = {}): Promise<RepoProfile> {
   const slug = normalizeSlug(slugOrUrl);
   const token = (opts.token ?? process.env.GITHUB_TOKEN)?.trim() || undefined;
   // Authenticated results never enter public disk cache or another credential's jobs.
   const cacheKey = token ? `${slug}:${createHash('sha256').update(token).digest('hex')}` : slug;
   const cachedMemory = memory.get(cacheKey);
-  // Callers can mutate their kits without corrupting a future caller's cached profile.
-  if (cachedMemory && cachedMemory.expires > Date.now()) return structuredClone(cachedMemory.profile);
-  let pending = inFlight.get(cacheKey);
-  if (!pending) {
-    pending = (async () => {
-      const cached = token ? null : await loadCache(slug);
-      let profile: RepoProfile;
-      if (cached?.fresh) profile = cached.profile;
-      else {
-        try {
-          profile = await analyzeGitHubRepo(slug, { token: token ?? '' });
-          if (!token) try {
-            const file = join(CACHE_ROOT, `${slug}.json`);
-            await mkdir(dirname(file), { recursive: true });
-            await writeFile(file, JSON.stringify(profile) + '\n');
-          } catch { /* A read-only cache must not stop the demo. */ }
-        } catch { profile = cached ? { ...cached.profile, fallback: true } : offlineProfile(slug); }
-      }
-      memory.set(cacheKey, { profile, expires: Date.now() + (profile.fallback ? 60_000 : CACHE_TTL) });
-      return profile;
-    })();
-    inFlight.set(cacheKey, pending);
+  if (cachedMemory && cachedMemory.expires > Date.now()) {
+    replayProfileProgress(cachedMemory.profile, opts.onProgress, cachedMemory.source);
+    return structuredClone(cachedMemory.profile);
   }
-  try { return structuredClone(await pending); }
-  finally { if (inFlight.get(cacheKey) === pending) inFlight.delete(cacheKey); }
+  let job = inFlight.get(cacheKey);
+  if (!job) {
+    // The microtask starts after every initial caller can register its own observer.
+    const next: AnalysisJob = {
+      subscribers: new Map(),
+      promise: Promise.resolve().then(async () => {
+        const stages = ['clone', 'parse', 'graph', 'dna', 'map', 'design', 'ready'];
+        const emit: ProgressCallback = progress => {
+          if (next.latest && stages.indexOf(progress.stage) < stages.indexOf(next.latest.stage)) return;
+          next.latest = { ...progress, pct: Math.max(next.latest?.pct ?? 0, progress.pct), ...(progress.paths ? { paths: progress.paths.slice(0, 8) } : {}) };
+          for (const callback of [...next.subscribers.values()]) notifyProgress(callback, next.latest);
+        };
+        emit({ stage: 'clone', pct: 0, note: `Loading ${slug}` });
+        const cached = token ? null : await loadCache(slug);
+        let profile: RepoProfile;
+        let source: 'live' | 'cache' | 'fallback' | 'synthetic' = 'live';
+        if (cached?.fresh) { profile = cached.profile; source = 'cache'; }
+        else {
+          try {
+            profile = await analyzeGitHubRepo(slug, { token: token ?? '', onProgress: emit });
+            if (!token) try {
+              const file = join(CACHE_ROOT, `${slug}.json`);
+              await mkdir(dirname(file), { recursive: true });
+              await writeFile(file, JSON.stringify(profile) + '\n');
+            } catch { /* A read-only cache must not stop the demo. */ }
+          } catch {
+            const known = cached ? undefined : fallbackProfiles().find(p => p.slug.toLowerCase() === slug);
+            profile = cached ? { ...cached.profile, fallback: true } : known ? { ...known, fallback: true } : syntheticProfile(slug);
+            source = cached ? 'cache' : known ? 'fallback' : 'synthetic';
+          }
+        }
+        if (source !== 'live') replayProfileProgress(profile, emit, source);
+        memory.set(cacheKey, { profile, expires: Date.now() + (profile.fallback ? 60_000 : CACHE_TTL), source: source === 'live' ? 'cache' : source });
+        return profile;
+      }),
+    };
+    job = next;
+    inFlight.set(cacheKey, job);
+  }
+  const subscription = Symbol();
+  if (opts.onProgress) {
+    job.subscribers.set(subscription, opts.onProgress);
+    if (job.latest) notifyProgress(opts.onProgress, job.latest);
+  }
+  try { return structuredClone(await job.promise); }
+  finally {
+    job.subscribers.delete(subscription);
+    if (inFlight.get(cacheKey) === job) inFlight.delete(cacheKey);
+  }
 }

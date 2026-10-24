@@ -1,7 +1,7 @@
 {
   "slug": "redis/redis",
   "description": "For developers, who are building real-time data-driven applications, Redis is the preferred, fastest, and most feature-rich cache, data structure server, and document and vector query engine.",
-  "stars": 77079,
+  "stars": 77080,
   "primaryLanguage": "C",
   "languages": {
     "C": 9930015,
@@ -25,49 +25,94 @@
       "files": 222,
       "loc": 199046,
       "fanIn": 4,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 43,
+      "topMaintainers": [
+        "vitahlin",
+        "ShooterIT",
+        "tezc"
+      ]
     },
     {
       "name": "tests",
       "files": 48,
       "loc": 13441,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 41,
+      "topMaintainers": [
+        "vitahlin",
+        "hristostaykov-del",
+        "ShooterIT"
+      ]
     },
     {
       "name": "modules",
       "files": 54,
       "loc": 11227,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 34,
+      "topMaintainers": [
+        "gabsow",
+        "alonre24",
+        "oshadmi"
+      ]
     },
     {
       "name": "utils",
       "files": 23,
       "loc": 2293,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 36,
+      "topMaintainers": [
+        "antirez",
+        "enjoy-binbin",
+        "guybe7"
+      ]
     },
     {
       "name": "scripts",
       "files": 13,
       "loc": 1809,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 1,
+      "topMaintainers": [
+        "TalBarYakar"
+      ]
     },
     {
       "name": "src/modules",
       "files": 8,
       "loc": 1416,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 21,
+      "topMaintainers": [
+        "antirez",
+        "yossigo",
+        "dvirsky"
+      ]
     },
     {
       "name": "tools",
       "files": 1,
       "loc": 392,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 1,
+      "topMaintainers": [
+        "antirez"
+      ],
+      "issues": []
     }
   ],
   "heart": "src/server.h",
@@ -110,6 +155,7 @@
     "utils/hyperloglog/",
     "utils/releasetools/",
     "utils/srandmember/",
+    "utils/req-res-validator/",
     "modules/vector-sets/tests/",
     "modules/vector-sets/examples/",
     "modules/vector-sets/examples/cli-tool/",
@@ -214,8 +260,7 @@
     "src/zmalloc.c",
     "src/estore.h",
     "src/kvstore.c",
-    "src/chk.h",
-    "tests/modules/basics.c"
+    "src/chk.h"
   ],
   "dna": {
     "identifiers": [
@@ -414,7 +459,18 @@
         "text": "TODO"
       }
     ],
-    "commits": [],
+    "commits": [
+      "Fix GCC maybe-uninitialized warning in zset B+ tree (#16058)",
+      "Fix double free of reply in redis-cli --cluster add-node (#16053)",
+      "Reduce large sorted set memory with a packed B+ tree (#15635)",
+      "Fix ebuckets defrag assert when resuming after the remaining buckets were removed (#15950)",
+      "Redis cli cmddocs hardening (#16034)",
+      "Keep XTRIM cursor valid after listpack flags re-encode (#16044)",
+      "Fix lua shebang/function metadata RESP injection (#16032)",
+      "Fix lua tostring exposing heap addresses space (#16031)",
+      "Fix use-after-free in cluster bus FORGOTTEN_NODE handling (#15685)",
+      "RED-213286: Add a BLESS test for the repl-diskless-load swapdb path (#16010)"
+    ],
     "tokens": [
       ";",
       "=",
@@ -474,10 +530,48 @@
       "todo": 22,
       "fixme": 0,
       "hack": 6,
-      "comments": 60010
+      "comments": 60172
     },
     "maxNesting": 14,
     "avgLineLength": 43.7,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 25.2,
+    "hasTestDir": true
+  },
+  "repoIssues": [],
+  "vulns": [
+    {
+      "id": "GHSA-24wv-mv5m-xv4h",
+      "pkg": "redis",
+      "ecosystem": "PyPI",
+      "summary": "redis-py Race Condition vulnerability",
+      "fixed": "4.5.3",
+      "component": "utils"
+    },
+    {
+      "id": "GHSA-8fww-64cx-x8p5",
+      "pkg": "redis",
+      "ecosystem": "PyPI",
+      "summary": "redis-py Race Condition due to incomplete fix",
+      "fixed": "4.5.4",
+      "component": "utils"
+    },
+    {
+      "id": "PYSEC-2023-45",
+      "pkg": "redis",
+      "ecosystem": "PyPI",
+      "summary": "redis-py before 4.5.3, as used in ChatGPT and other products, leaves a connection open after canceling an async Redis command at an inopportune time (in the case of a pipeline oper",
+      "fixed": "4.5.3",
+      "component": "utils"
+    },
+    {
+      "id": "PYSEC-2023-46",
+      "pkg": "redis",
+      "ecosystem": "PyPI",
+      "summary": "redis-py through 4.5.3 leaves a connection open after canceling an async Redis command at an inopportune time (in the case of a non-pipeline operation), and can send response data ",
+      "fixed": "4.5.4",
+      "component": "utils"
+    }
+  ],
+  "busFactor": 1
 }

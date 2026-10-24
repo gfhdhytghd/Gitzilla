@@ -18,42 +18,82 @@
       "files": 40,
       "loc": 14361,
       "fanIn": 1,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 50,
+      "topMaintainers": [
+        "appleboy",
+        "Amirhf1",
+        "zeek0x"
+      ]
     },
     {
       "name": "binding",
       "files": 30,
       "loc": 4168,
       "fanIn": 1,
-      "fanOut": 3
+      "fanOut": 3,
+      "issues": [],
+      "maintainers": 63,
+      "topMaintainers": [
+        "thinkerou",
+        "vkd",
+        "guonaihong"
+      ]
     },
     {
       "name": "render",
       "files": 17,
       "loc": 1343,
       "fanIn": 2,
-      "fanOut": 2
+      "fanOut": 2,
+      "issues": [],
+      "maintainers": 56,
+      "topMaintainers": [
+        "thinkerou",
+        "manucorporat",
+        "appleboy"
+      ]
     },
     {
       "name": "ginS",
       "files": 2,
       "loc": 333,
       "fanIn": 0,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 15,
+      "topMaintainers": [
+        "thinkerou",
+        "jbampton",
+        "1911860538"
+      ]
     },
     {
       "name": "internal",
       "files": 4,
       "loc": 178,
       "fanIn": 3,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 16,
+      "topMaintainers": [
+        "thinkerou",
+        "panjf2000",
+        "1911860538"
+      ]
     },
     {
       "name": "codec",
       "files": 5,
       "loc": 170,
       "fanIn": 3,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 1,
+      "topMaintainers": [
+        "timandy"
+      ]
     }
   ],
   "heart": "internal/bytesconv/bytesconv.go",
@@ -281,12 +321,25 @@
       ]
     },
     "heartLines": [
-      "func StringToBytes(s string) []byte {",
-      "return unsafe.Slice(unsafe.StringData(s)",
-      "func BytesToString(b []byte) string {",
-      "return unsafe.String(unsafe.SliceData(b)"
+      "type Core interface {",
+      "Marshal(v any) ([]byte, error)",
+      "Unmarshal(data []byte, v any) error",
+      "MarshalIndent(v any, prefix, indent stri",
+      "NewEncoder(writer io.Writer) Encoder",
+      "NewDecoder(reader io.Reader) Decoder",
+      "type Encoder interface {",
+      "SetEscapeHTML(on bool)",
+      "Encode(v any) error",
+      "type Decoder interface {",
+      "DisallowUnknownFields()",
+      "Decode(v any) error"
     ],
     "snippets": [
+      {
+        "file": "codec/json/api.go",
+        "line": 13,
+        "code": "type Core interface {"
+      },
       {
         "file": "context_test.go",
         "line": 1463,
@@ -341,11 +394,6 @@
         "file": "binding/form_mapping.go",
         "line": 245,
         "code": "func setByForm(value reflect.Value, field reflec"
-      },
-      {
-        "file": "binding/header.go",
-        "line": 35,
-        "code": "func (hs headerSource) TrySet(value reflect.Valu"
       }
     ],
     "todos": [
@@ -364,9 +412,52 @@
       {
         "file": "tree.go",
         "text": "xxx, not match :id)."
+      },
+      {
+        "file": "binding/binding_test.go",
+        "text": "note: for badbody, we remove first byte to make it invalid"
+      },
+      {
+        "file": "context.go",
+        "text": "Note that this will not stop the current handler."
+      },
+      {
+        "file": "context.go",
+        "text": "Note: When using sonic or go-json as JSON encoder, they do n"
+      },
+      {
+        "file": "context.go",
+        "text": "NOTE: This method reads the body before binding. So you shou"
+      },
+      {
+        "file": "gin.go",
+        "text": "Note: this method will block the calling goroutine indefinit"
+      },
+      {
+        "file": "gin.go",
+        "text": "Note: this method will block the calling goroutine indefinit"
+      },
+      {
+        "file": "gin.go",
+        "text": "Note: this method will block the calling goroutine indefinit"
+      },
+      {
+        "file": "gin.go",
+        "text": "Note: this method will block the calling goroutine indefinit"
       }
     ],
-    "commits": [],
+    "commits": [
+      "docs: include HTTP QUERY method in RouterGroup.Any (#4879)",
+      "fix(tree): grow skippedNodes when pooled capacity is stale (#4852)",
+      "feat(routergroup): include HTTP QUERY method in Any (#4878)",
+      "docs: fix SecureJSON default prefix and default-binding example output (#4861)",
+      "fix(context): load Keys under the mutex in Copy (#4854)",
+      "fix: reset skipped-nodes stack on getValue entry to prevent slice overflow panic [#4818] (#4819)",
+      "fix(engine): add default ReadHeaderTimeout to http.Server in Run methods (#4800)",
+      "docs: fix the graceful shutdown example (#4809)",
+      "feat(gin): add support for the HTTP QUERY method (RFC 10008) (#4806)",
+      "chore(deps): bump github.com/stretchr/testify to v1.12.1 (#4822)"
+    ],
     "tokens": [
       "{",
       "}",
@@ -430,6 +521,59 @@
     },
     "maxNesting": 9,
     "avgLineLength": 32.7,
-    "indent": "tabs"
-  }
+    "indent": "tabs",
+    "avgFunctionLength": 14.2,
+    "hasTestDir": false
+  },
+  "repoIssues": [],
+  "busFactor": 4,
+  "vulns": [
+    {
+      "id": "GO-2026-6603",
+      "pkg": "golang.org/x/net",
+      "ecosystem": "Go",
+      "summary": "HTTP/2 server memory exhaustion due to Trailer headers in net/http",
+      "fixed": "0.60.0",
+      "component": "root"
+    },
+    {
+      "id": "GO-2026-6610",
+      "pkg": "golang.org/x/net",
+      "ecosystem": "Go",
+      "summary": "HTTP/2 transport accepts malformed framing-related headers in net/http",
+      "fixed": "0.60.0",
+      "component": "root"
+    },
+    {
+      "id": "GO-2026-6611",
+      "pkg": "golang.org/x/net",
+      "ecosystem": "Go",
+      "summary": "Excessive CPU consumption from repeated initial window changes in net/http",
+      "fixed": "0.60.0",
+      "component": "root"
+    },
+    {
+      "id": "GO-2026-6612",
+      "pkg": "golang.org/x/net",
+      "ecosystem": "Go",
+      "summary": "Double flow control refund on HTTP/2 server streams in net/http",
+      "fixed": "0.60.0",
+      "component": "root"
+    },
+    {
+      "id": "GO-2026-6617",
+      "pkg": "golang.org/x/net",
+      "ecosystem": "Go",
+      "summary": "HTTP/2 server crash due to HPACK encoder race in net/http",
+      "fixed": "0.60.0",
+      "component": "root"
+    },
+    {
+      "id": "GO-2026-5932",
+      "pkg": "golang.org/x/crypto",
+      "ecosystem": "Go",
+      "summary": "The golang.org/x/crypto/openpgp package is unmaintained, unsafe by design, and has known security issues",
+      "component": "root"
+    }
+  ]
 }

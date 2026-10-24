@@ -17,11 +17,14 @@ export function cleanCommitSubjects(messages: string[]): string[] {
   return messages.map(message => message.split(/\r?\n/, 1)[0].trim()).filter(subject => subject && safeCodeText(subject)).slice(0, LIMITS.commits).map(subject => excerpt(subject, 100));
 }
 
-export function emptyDNA(): CodeDNA {
+// Local extension while the coordinator merges the optional quality-signal fields.
+export interface AnalyzedDNA extends CodeDNA { avgFunctionLength: number; hasTestDir: boolean }
+
+export function emptyDNA(): AnalyzedDNA {
   return {
     identifiers: [], componentSymbols: {}, heartLines: [], snippets: [], todos: [], commits: [], tokens: [], bigFiles: [],
     longestFunction: null, counts: { functions: 0, classes: 0, todo: 0, fixme: 0, hack: 0, comments: 0 },
-    maxNesting: 0, avgLineLength: 0, indent: 'mixed',
+    maxNesting: 0, avgLineLength: 0, indent: 'mixed', avgFunctionLength: 0, hasTestDir: false,
   };
 }
 
@@ -51,7 +54,7 @@ const IMPORT_LINE = /^\s*(?:import\b|from\s+\S+\s+import\b|(?:pub\s+)?use\b|(?:p
 
 type Definition = { name: string; line: number; column: number; kind: 'function' | 'class'; exported: boolean; file: string; component: string; safe: boolean };
 type Candidate = { file: string; line: number; raw: string; score: number; signature: boolean; depth: number; length: number };
-interface LexState { block: boolean; quote: string; raw?: boolean }
+interface LexState { block: boolean; quote: string; raw?: boolean; doc?: boolean }
 
 /** Lightweight string/comment masking preserves columns for brace matching and exact excerpts. */
 function codeLine(raw: string, language: string, state: LexState): { code: string; comments: string[] } {
@@ -70,11 +73,14 @@ function codeLine(raw: string, language: string, state: LexState): { code: strin
     } else if (state.quote) {
       const quote = state.quote;
       let end = i;
+      let contentEnd: number | undefined;
       while (end < raw.length) {
         if (raw[end] === '\\') { end += 2; continue; }
-        if (raw.startsWith(quote, end)) { end += quote.length; state.quote = ''; state.raw = false; break; }
+        if (raw.startsWith(quote, end)) { contentEnd = end; end += quote.length; state.quote = ''; state.raw = false; break; }
         end++;
       }
+      if (state.doc) comments.push(raw.slice(i, contentEnd));
+      if (!state.quote) state.doc = false;
       chars.fill(' ', i, Math.min(end, raw.length)); i = end;
       // Single-line quotes don't continue unless explicitly escaped (backticks/triples do).
       if (state.quote.length === 1 && state.quote !== '`' && !state.raw && !raw.endsWith('\\')) state.quote = '';
@@ -93,6 +99,7 @@ function codeLine(raw: string, language: string, state: LexState): { code: strin
       if (language === 'Rust' && raw[i] === "'" && /^'[a-zA-Z_]\w*(?!')/.test(raw.slice(i)) && !/^'[^']'/.test(raw.slice(i))) { i++; continue; }
       const triple = (['Python', 'Java', 'Kotlin', 'Scala', 'Swift'].includes(language) && raw.startsWith('"""', i)) || (language === 'Python' && raw.startsWith("'''", i));
       const quote = triple ? raw.slice(i, i + 3) : raw[i];
+      state.doc = language === 'Python' && triple && !raw.slice(0, i).trim();
       chars.fill(' ', i, i + quote.length); state.quote = quote; state.raw = language === 'Rust'; i += quote.length;
     } else i++;
   }
@@ -186,8 +193,8 @@ function spanOfFunction(def: Definition, raw: string[], code: string[], braceEnd
 }
 
 export function extractCodeDNA(
-  input: SourceFile[], options: { heart: string; componentForFile?: (file: string) => string; components?: string[]; commits?: string[] },
-): CodeDNA {
+  input: SourceFile[], options: { heart: string; componentForFile?: (file: string) => string; components?: string[]; commits?: string[]; fileFanIn?: ReadonlyMap<string, number> },
+): AnalyzedDNA {
   const dna = emptyDNA();
   const files = input.filter(file => isSourcePath(file.path)).sort((a, b) => a.path.localeCompare(b.path));
   dna.bigFiles = files.map(file => ({ path: file.path, loc: countLoc(file.text) })).sort((a, b) => b.loc - a.loc || a.path.localeCompare(b.path)).slice(0, 8);
@@ -197,12 +204,40 @@ export function extractCodeDNA(
   const allDefinitions: Definition[] = [];
   const candidates: Candidate[] = [];
   const styles = new Set<CodeDNA['indent']>();
-  let lineLength = 0, lineCount = 0;
+  const notes: CodeDNA['todos'] = [];
+  const highlights = new Map<string, Candidate[]>();
+  const locs = new Map(files.map(file => [file.path, countLoc(file.text)]));
+  let lineLength = 0, lineCount = 0, functionLines = 0;
+  dna.hasTestDir = files.some(file => file.path.split('/').slice(0, -1).some(part => /^(?:__tests__|tests?|specs?)$/i.test(part)));
   const increment = (map: Map<string, number>, name: string) => map.set(name, (map.get(name) ?? 0) + 1);
+  const collectComments = (file: string, original: string, comments: string[]) => {
+    if (comments.length && original.trim()) dna.counts.comments++;
+    for (const comment of comments) {
+      for (const tag of comment.matchAll(/\b(TODO|FIXME|HACK|XXX|NOTE|BUG|OPTIMIZE|TBD)\b/gi)) {
+        const label = tag[1].toUpperCase();
+        if (label === 'TODO') dna.counts.todo++;
+        else if (label === 'FIXME') dna.counts.fixme++;
+        else if (label === 'HACK' || label === 'XXX') dna.counts.hack++;
+        const target = ['TODO', 'FIXME', 'HACK', 'XXX'].includes(label) ? dna.todos : notes;
+        const text = comment.slice(tag.index!).trim();
+        if (target.length < LIMITS.todos && safeCodeText(original) && safeCodeText(text)) target.push({ file, text: excerpt(text, 60) });
+      }
+    }
+  };
 
   for (const file of files) {
     const language = languageOf(file.path)!;
-    if (selectPrimaryLanguage({ [language]: 1 }) === 'Unknown') continue;
+    if (selectPrimaryLanguage({ [language]: 1 }) === 'Unknown') {
+      if (['CSS', 'SCSS', 'Sass', 'Less'].includes(language)) {
+        const state: LexState = { block: false, quote: '' };
+        for (const line of file.text.split(/\r?\n/)) collectComments(file.path, line, codeLine(line, language, state).comments);
+      } else if (language === 'HTML') {
+        for (const match of file.text.matchAll(/<!--([\s\S]*?)-->/g)) {
+          for (const line of match[1].split(/\r?\n/)) collectComments(file.path, line, [line]);
+        }
+      }
+      continue;
+    }
     const keywords = KEYWORDS[language] ? new Set(KEYWORDS[language].split(/\s+/)) : ALL_KEYWORDS;
     const raw = file.text.split(/\r?\n/);
     const code: string[] = [];
@@ -213,24 +248,16 @@ export function extractCodeDNA(
     const braceEnds = new Map<string, number>();
     const rubyStack: number[] = [];
     const rubyEnds = new Map<number, number>();
-    let tabs = 0, minSpaces = Infinity, deepestIndent = 0, mixedPrefix = false;
+    let tabs = 0, minSpaces = Infinity, deepestIndent = 0, mixedPrefix = false, importDepth = 0;
     for (let i = 0; i < raw.length; i++) {
       const original = raw[i];
       const parsed = codeLine(original, language, state);
       const clean = parsed.code;
       code.push(clean);
       if (original.trim()) { lineLength += original.length; lineCount++; }
-      if (parsed.comments.length) dna.counts.comments++;
-      for (const comment of parsed.comments) {
-        for (const tag of comment.matchAll(/\b(TODO|FIXME|HACK|XXX)\b/gi)) {
-          const label = tag[1].toUpperCase();
-          if (label === 'TODO') dna.counts.todo++;
-          else if (label === 'FIXME') dna.counts.fixme++;
-          else dna.counts.hack++;
-          const text = comment.slice(tag.index!).trim();
-          if (dna.todos.length < LIMITS.todos && safeCodeText(original) && safeCodeText(text)) dna.todos.push({ file: file.path, text: excerpt(text, 60) });
-        }
-      }
+      collectComments(file.path, original, parsed.comments);
+      const isImport = importDepth > 0 || /^\s*(?:import\b|from\s+\S+\s+import\b|export\s+(?:type\s+)?[{*])/.test(clean);
+      if (isImport) importDepth = Math.max(0, importDepth + (clean.match(/[({[]/g)?.length ?? 0) - (clean.match(/[)}\]]/g)?.length ?? 0));
       const indent = original.match(/^[ \t]+/)?.[0];
       if (clean.trim() && indent) {
         const spaces = indent.replace(/\t/g, '').length;
@@ -265,7 +292,7 @@ export function extractCodeDNA(
         fileDefinitions.push(defined);
         if (def.kind === 'function') dna.counts.functions++; else dna.counts.classes++;
       }
-      if (eligible(original, clean, file.path)) {
+      if (!isImport && eligible(original, clean, file.path)) {
         const score = found.length * 100 + (/\b(?:return|yield|match|raise|throw)\b/.test(clean) ? 30 : 0) + (clean.match(OPERATORS)?.length ?? 0) + Math.min(original.trim().length, 120) / 10;
         fileCandidates.push({ file: file.path, line: i + 1, raw: original.trim(), score, signature: found.some(def => def.kind === 'function'), depth, length: original.trim().length });
       }
@@ -276,9 +303,10 @@ export function extractCodeDNA(
     }
     if (language === 'Python') dna.maxNesting = Math.max(dna.maxNesting, Math.floor(deepestIndent / (minSpaces < Infinity ? minSpaces : 4)));
     for (const def of fileDefinitions) {
-      if (def.kind === 'function' && def.safe) {
+      if (def.kind === 'function') {
         const lines = spanOfFunction(def, raw, code, braceEnds, rubyEnds);
-        if (!dna.longestFunction || lines > dna.longestFunction.lines) dna.longestFunction = { name: def.name, file: file.path, lines };
+        functionLines += lines;
+        if (def.safe && (!dna.longestFunction || lines > dna.longestFunction.lines)) dna.longestFunction = { name: def.name, file: file.path, lines };
       }
       allDefinitions.push(def);
     }
@@ -288,9 +316,25 @@ export function extractCodeDNA(
     const deepest = fileCandidates.slice().sort((a, b) => b.depth - a.depth || b.score - a.score || a.line - b.line)[0];
     const signature = byScore.find(candidate => candidate.signature);
     for (const candidate of [signature, longest, deepest, byScore[0]]) if (candidate) candidates.push(candidate);
-    if (file.path === options.heart) dna.heartLines = byScore.slice(0, LIMITS.heart).sort((a, b) => a.line - b.line).map(candidate => excerpt(candidate.raw, 40));
+    highlights.set(file.path, byScore.slice(0, LIMITS.heart).sort((a, b) => a.line - b.line));
   }
 
+  let heartSource = options.heart;
+  let heartHighlights = highlights.get(heartSource) ?? [];
+  if (heartHighlights.length < 6) {
+    const rich = [...highlights.keys()].filter(file => highlights.get(file)!.length >= 6);
+    const bySize = (a: string, b: string) => (locs.get(b) ?? 0) - (locs.get(a) ?? 0) || a.localeCompare(b);
+    const imported = rich.filter(file => (options.fileFanIn?.get(file) ?? 0) > 0)
+      .sort((a, b) => (options.fileFanIn!.get(b) ?? 0) - (options.fileFanIn!.get(a) ?? 0) || bySize(a, b));
+    const sameComponent = rich.filter(file => options.componentForFile?.(file) === options.componentForFile?.(options.heart)).sort(bySize);
+    const fallback = imported[0] ?? sameComponent[0] ?? rich.sort(bySize)[0]
+      ?? [...highlights.keys()].sort((a, b) => highlights.get(b)!.length - highlights.get(a)!.length || bySize(a, b))[0];
+    if (fallback && highlights.get(fallback)!.length > heartHighlights.length) {
+      heartSource = fallback; heartHighlights = highlights.get(fallback)!;
+    }
+  }
+  dna.heartLines = heartHighlights.map(candidate => excerpt(candidate.raw, 40));
+  dna.todos.push(...notes.slice(0, LIMITS.todos - dna.todos.length));
   const named = new Map<string, { definitions: number; exported: boolean; components: Set<string> }>();
   for (const def of allDefinitions.filter(def => def.safe)) {
     const entry = named.get(def.name) ?? { definitions: 0, exported: false, components: new Set<string>() };
@@ -307,6 +351,7 @@ export function extractCodeDNA(
   const showcase = [...unique.values()];
   const selected = new Map<string, Candidate>();
   const add = (candidate: Candidate | undefined) => { if (candidate && selected.size < LIMITS.snippets) selected.set(`${candidate.file}:${candidate.line}`, candidate); };
+  if (heartSource !== options.heart) add(heartHighlights.find(candidate => candidate.signature) ?? heartHighlights[0]);
   add(showcase.slice().sort((a, b) => b.length - a.length || a.file.localeCompare(b.file) || a.line - b.line)[0]);
   add(showcase.slice().sort((a, b) => b.depth - a.depth || b.score - a.score || a.file.localeCompare(b.file) || a.line - b.line)[0]);
   for (const candidate of showcase.sort((a, b) => Number(b.signature) - Number(a.signature) || b.score - a.score || a.file.localeCompare(b.file) || a.line - b.line)) add(candidate);
@@ -314,5 +359,6 @@ export function extractCodeDNA(
   dna.tokens = [...tokenCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12).map(([token]) => token);
   dna.avgLineLength = lineCount ? Math.round(lineLength / lineCount * 10) / 10 : 0;
   dna.indent = styles.size === 1 ? [...styles][0] : 'mixed';
+  dna.avgFunctionLength = dna.counts.functions ? Math.round(functionLines / dna.counts.functions * 10) / 10 : 0;
   return dna;
 }

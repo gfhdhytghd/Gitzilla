@@ -1,7 +1,7 @@
 {
   "slug": "rust-lang/rustlings",
   "description": ":crab: Small exercises to get you used to reading and writing Rust code!",
-  "stars": 64448,
+  "stars": 64449,
   "primaryLanguage": "Rust",
   "languages": {
     "Rust": 341440,
@@ -21,56 +21,105 @@
       "files": 95,
       "loc": 3001,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 20,
+      "topMaintainers": [
+        "mo8it",
+        "senekor",
+        "YangSiJun528"
+      ]
     },
     {
       "name": "exercises",
       "files": 95,
       "loc": 2876,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 27,
+      "topMaintainers": [
+        "mo8it",
+        "senekor",
+        "foxfromworld"
+      ]
     },
     {
       "name": "src",
       "files": 15,
       "loc": 2509,
       "fanIn": 4,
-      "fanOut": 4
+      "fanOut": 4,
+      "issues": [],
+      "maintainers": 5,
+      "topMaintainers": [
+        "mo8it",
+        "senekor",
+        "Nahor"
+      ]
     },
     {
       "name": "src/dev",
       "files": 3,
       "loc": 487,
       "fanIn": 1,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 4,
+      "topMaintainers": [
+        "mo8it",
+        "senekor",
+        "SandmeyerX"
+      ]
     },
     {
       "name": "src/list",
       "files": 2,
       "loc": 471,
       "fanIn": 1,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 3,
+      "topMaintainers": [
+        "mo8it",
+        "frroossst",
+        "senekor"
+      ]
     },
     {
       "name": "src/watch",
       "files": 3,
       "loc": 440,
       "fanIn": 1,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": [],
+      "maintainers": 2,
+      "topMaintainers": [
+        "mo8it",
+        "Nahor"
+      ]
     },
     {
       "name": "misc",
       "files": 10,
       "loc": 279,
       "fanIn": 1,
-      "fanOut": 1
+      "fanOut": 1,
+      "issues": []
     },
     {
       "name": "website",
       "files": 7,
       "loc": 189,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 4,
+      "topMaintainers": [
+        "mo8it",
+        "MatrixFrog",
+        "eoncheole"
+      ]
     }
   ],
   "heart": "src/exercise.rs",
@@ -163,6 +212,7 @@
     "solutions/03_if/",
     "rustlings-macros/src/",
     "solutions/06_move_semantics/",
+    "Cargo.lock",
     "Cargo.toml",
     "README.md",
     "src/exercise.rs",
@@ -241,8 +291,7 @@
     "exercises/17_tests/tests3.rs",
     "solutions/07_structs/structs2.rs",
     "solutions/20_threads/threads2.rs",
-    "solutions/09_strings/strings3.rs",
-    "exercises/13_error_handling/errors1.rs"
+    "solutions/09_strings/strings3.rs"
   ],
   "dna": {
     "identifiers": [
@@ -442,7 +491,18 @@
         "text": "TODO: Fix the function signature."
       }
     ],
-    "commits": [],
+    "commits": [
+      "Merge pull request #2452",
+      "parse command output consistently",
+      "modules2: obey name convention for reexported consts",
+      "use --message-format=plain for `cargo locate-project`",
+      "fix parsing of cargo locate-project output",
+      "Add triagebot config to aid with code review",
+      "optimize loop",
+      "write input files to disk before running exercise",
+      "run exercises with CWD set to their directory",
+      "fix tests"
+    ],
     "tokens": [
       ";",
       "{",
@@ -506,6 +566,11 @@
     },
     "maxNesting": 9,
     "avgLineLength": 32.7,
-    "indent": "spaces4"
-  }
+    "indent": "spaces4",
+    "avgFunctionLength": 9.2,
+    "hasTestDir": true
+  },
+  "vulns": [],
+  "repoIssues": [],
+  "busFactor": 2
 }

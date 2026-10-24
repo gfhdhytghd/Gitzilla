@@ -1,6 +1,6 @@
-DONE (round 2)
+DONE (edu pvp)
 
-Round 2 summary: real-source CodeDNA is implemented and all 15 public snapshots are regenerated. Analysis/Hall tests 76/76 PASS; workspace typecheck PASS. The two current full-suite failures belong to design asset regeneration and input signed-zero handling; see the final handoff below. Privacy isolation and existing Hall/token behavior are preserved.
+Edu PvP analysis/Hall summary: actual quality measurements, real maintenance/adoption metadata and public advisory lookups are implemented; all 15 snapshots are refreshed. Hall excludes edu/null-boss results. Focused tests 106/106 PASS; workspace typecheck PASS; workspace tests 448 PASS / 7 skipped. The two optional DNA field declarations remain a coordinator contract request; typed producer/helper and current sim consumption work.
 
 # codex-repo — repository analysis
 
@@ -249,4 +249,160 @@ Server service wrappers can expose the same optional second argument. No changes
 - `git diff --check` on owned tracked paths: PASS. No git commits, dependency changes, shared/server/sim/client/design edits, live deployments, or port-5173 access by codex-repo.
 - `analysis/README.md` documents DNA extraction/safety/limits, one-call recent commits, empty source-free DNA, privacy boundaries, and anonymous-only public snapshot generation. No open contract requests or remaining codex-repo implementation work.
 
-DONE (round 2)
+
+## Round 2b scope
+- Coordinator requested authenticated precompute using the user's logged-in gh CLI, richer heart text for barrel modules, and real NOTE-ish comment fallback. Runtime metadata remains best effort.
+- Credentials will stay only in process memory/environment; no token output, files, cache, or documentation. Precompute must verify authenticated source is public before writing fallback snapshots.
+- Keep structural `heart` unchanged; select a meaningful alternate source and pin its path/line in snippets. Regenerate all 15 snapshots, run tests, and notify codex-gemini via this progress file.
+- Own paths only; no commits, shared/design/client/server edits, deployment, or port-5173 access.
+
+## Round 2b implementation update (15:20 local)
+- Precompute now honors GITHUB_TOKEN and requests verified public metadata before any authenticated archive download. Private/unknown-visibility repos fail the snapshot path; runtime's best-effort metadata behavior and private credential-isolated caching are unchanged.
+- Heart text falls back when fewer than six eligible lines exist: most-imported rich non-barrel implementation, otherwise biggest implementation in the heart component, then richest available source. The structural heart/fan-in stay untouched. A representative snippet from the chosen alternate file is pinned for path/line provenance.
+- Multiline import/re-export continuations no longer become misleading heart text.
+- Real NOTE/BUG/OPTIMIZE/TBD comments can fill remaining todo slots after TODO/FIXME/HACK/XXX. Python documentation strings, CSS-family block comments and HTML comments participate. Ordinary assigned string literals are not comment material. Existing TODO/FIXME/HACK counts retain their literal meanings.
+- New fixtures cover barrel fallback, source provenance, same-component fallback, multiline re-exports, doc/style note extraction, marker priorities and credential filtering. Authenticated-public snapshot guard is mocked for public/private/unknown visibility.
+- Focused tests: 82/82 PASS; explicit strict owned-module typecheck: PASS.
+- Authenticated 15-repo regeneration started using the user's gh CLI credential only in the child process environment; no credential output/files/caches.
+
+## Round 2b regenerated data / audit (15:23 local)
+- Authenticated precompute completed all 15 repos. FastAPI had one transient public-metadata failure; its old snapshot was preserved, and the targeted retry succeeded.
+- **All 15 now have 9–10 real recent commit subjects and 12 meaningful heart lines.** NanoGPT has 9 safe subjects after credential-pattern filtering; the other 14 have 10. Runtime metadata failure remains best effort as before.
+- Previously sparse hearts now use traced implementation excerpts: Flask → src/flask/globals.py; Express → test/support/utils.js; Vue → packages/runtime-core/src/component.ts; FastAPI → an alternate central implementation (see its pinned first snippet). The structural heart field remains unchanged.
+- TODO/note evidence: Flask **7** real comments, Express **6**, Lodash **12**. Their literal TODO/FIXME/HACK counters remain zero; these are NOTE/BUG-type code/documentation comments, not invented bugs.
+- Spring Petclinic remains **0**, genuinely: audited all **74 retained supported source files**. No TODO/FIXME/XXX/HACK/NOTE/BUG/OPTIMIZE/TBD markers occur in those source files. Extra WARNING/IMPORTANT text is CSS class names/!important, not comments; audited CSS/SCSS block/line comments separately and found no marked comments. Root README has NOTE/BUG prose but that is not a source comment and was not relabeled as a TODO.
+- No credential output, files, caches or public private-source exports. Public visibility is verified before authenticated archive download. No live/5173 access.
+
+## Handoff to codex-gemini — ROUND 2b fallback data changed again
+- `data/fallback/*.json` has been regenerated again and is now ready for your **data/design** regeneration. All 15 profiles now provide real commit subjects and 12 useful heart lines, plus improved real NOTE-style comment material.
+- The previous "recent commits empty due to rate limit" handoff is superseded. Use the current on-disk profiles; don't reuse pre-2b cached designs/fingerprints.
+- `profile.heart` is still the real highest-fan-in module. When a barrel is too sparse, `dna.heartLines` comes from a central non-barrel implementation, whose source file/1-based line is represented by the pinned snippet. No shared contract change.
+- Flask/Express/Lodash now have NOTE/BUG comments; Spring's empty todo list is real in supported source. Design fallbacks should tolerate no bugs rather than fabricate TODOs.
+- Please regenerate your owned design assets after this final data update; codex-repo did not edit/run generators that write design/ or data/design/.
+
+
+## Round 2b final validation / completion
+- All 15 regenerated public profiles have 9–10 safe recent commit subjects and 12 meaningful heart lines. Total size 227,730 bytes; maximum 20,409 bytes (under 20 KiB).
+- Structural comparison against HEAD across 15 profiles: no changes to totalFiles, totalLoc, components, heart/fan-in, edges, cycles, maxDepth, testRatio, seed or primaryLanguage.
+- `npx vitest run analysis hall`: **82/82 PASS**. `npm run typecheck`: **PASS**.
+- `npm test`: **279 PASS / 1 FAIL / 6 skipped**, 30 files. The only failure is `design/index.test.ts:184`, expected old fallback boss naming versus regenerated DNA; the design owner must regenerate its data/design assets. Input signed-zero failure is now resolved by its owner.
+- FastAPI pinned heart-text provenance is `tests/utils.py`; Flask is `src/flask/globals.py`; Express is `test/support/utils.js`; Vue is `packages/runtime-core/src/component.ts`. Their structural hearts remain unchanged.
+- The round-2b codex-gemini handoff above is current. No further codex-repo implementation work remains for round 2b.
+- No token files/output, commits, dependency changes, shared/design/client/server edits or live/5173 access.
+
+DONE (round 2b)
+
+
+## Genesis progress-events scope
+- Round 2b is complete (validation and codex-gemini handoff immediately above). Read `docs/tasks/genesis.md` and current GenesisProgress contract.
+- Extend `analyzeRepo(slug, { token?, onProgress? })`; emit clone real paths from streaming tar extraction (throttled), then parse/graph/dna progress.
+- Cache/fallback paths emit a quick replay sequence derived from real profile paths/metrics; source-free synthetic fallbacks must not claim invented paths are real.
+- Coalesced same-credential requests need independent observers, late-subscriber updates, bounded path batches and callback isolation. No new shared fields, stats or persistence.
+- Only analysis/ and this log will be changed for this card; server broadcast and Genesis building/rendering remain with their owners. Dev only 5175, never live/5173.
+
+## Genesis implementation update (15:29 local)
+- Added `analysis/progress.ts` and `progress.test.ts`; extended the public analysis options with typed onProgress.
+- Clone progress originates at retained tar members (after source/metadata text extraction), with <=8 paths/update, 125 ms spacing for streamed batches, and an unconditional final flush. No timer or unbounded buffer survives extraction.
+- Live parsing/graph/DNA emit at their actual work boundaries. Percentages reserve room for kit mapping/design: clone 0–0.35; parse 0.40; graph 0.55; DNA 0.60–0.70. Analysis never emits map/design/ready.
+- Same-credential concurrent requests share work but have independent subscriber registrations. Late subscribers receive the latest update; each callback gets detached data. Throwing or async-rejecting observers cannot fail analysis, trigger fallback, or affect another room. Subscribers are removed when their result settles.
+- Fresh disk/memory cache and real offline snapshots replay clone/parse/graph/dna from profile paths and real metrics. Unknown source-free synthetic fallback uses empty path batches and explicit synthetic/source-unavailable captions.
+- Focused analysis/Hall suite: 89/89 PASS; workspace typecheck: PASS. New tests cover real archive paths, stage/pct order, <=8 batch caps, 8 Hz stream throttling/final flush, cache/offline replay, private coalescing, late joins, observer isolation and cleanup. No token or source body enters progress.
+- Read-only check shows codex-net has already added the compatible GameServices options and hero/boss callbacks. A dev-only lobby smoke is running against localhost:5175; no live/5173 access or server restarts.
+
+## Handoff to codex-net — Genesis progress API
+
+```ts
+import type { GenesisProgress } from '../shared/types.ts';
+const profile = await analyzeRepo(slug, {
+  token, // optional, request-scoped; unchanged cache isolation
+  onProgress: (progress: GenesisProgress) => {
+    // Apply the existing room/member revision guard, then forward/coalesce for this room.
+  },
+});
+```
+
+- Analysis emits only clone/parse/graph/dna; it ends at pct **0.70**, reserving map/design/ready for the other owners (current server map 0.82 already fits). Every paths batch is <=8; live clone batches are spaced >=125ms apart except explicit begin/final flush boundaries.
+- Fresh cached/fallback sequences are intentionally immediate. Preserve stage boundaries/final path batches in the transport, or let the final Genesis replay supply the cinematic when an analysis completes inside one throttle window. Do not add timers/delays to analysis merely to animate cached data.
+- Late subscribers receive the latest state and subsequent events. Independent same-token requests each receive callbacks; different tokens/anonymous requests do not share jobs. Callback errors/rejections/mutation do not affect analysis or other subscribers. No source bodies, token or DNA snippets enter telemetry; private paths still require room scoping and ephemeral handling.
+- No schema changes or analysis result changes. Current `server/rooms.ts` GameServices signature plus heroProgress/bossProgress are already compatible (read-only verified).
+
+### DEV integration observation — cached stage coalescing (server owner)
+- Ran a probe only on **http://localhost:5175**, room LAEG, player GenesisAnalysisProbe, repo golang/example. The kit reached ready; observed lobby progress was **clone → map → design**. The probe's stricter clone+DNA assertion failed because no DNA packet reached the socket before ready.
+- `server/rooms.ts:181–200` stores only the latest progress callback per key in pendingProgress until its 125ms flush; `setRepo` completion at line 275 deletes the pending entry before map/ready. Therefore fast cached analysis phases (which the module emits, verified independently) can all be dropped by transport coalescing. No server files were changed by codex-repo.
+- Integration follow-up for codex-net: preserve/flush phase changes or rely explicitly on complete Genesis replay after ready; add a cached-analysis websocket test. Module-level progress delivery is PASS; all-four-phase socket delivery is **not claimed** by codex-repo.
+- No live/5173 access, server starts/stops, deployment, or private-repo probes.
+
+
+## Genesis final validation / completion (15:32 local)
+- Public API: `analyzeRepo(slugOrUrl, { token?, onProgress? })`, with clone → parse → graph → dna events, bounded real path batches and whole-pipeline progress ending at 0.70. All old callers remain compatible.
+- Direct uncached GitHub/source run for golang/example: all four stages observed, 44 source files, 7 updates, 6 path-bearing updates, max path batch 8, final pct 0.70. No source bodies or token logged.
+- Focused analysis/Hall tests: **89/89 PASS**. Latest workspace `npm test`: **341 PASS / 6 skipped**, 34 files. Design snapshot failure is now resolved by its owner.
+- Workspace typecheck passed earlier; the latest run after the new education contract is blocked only by `client/app/mock.ts:118` missing LobbyState.mode and `client/audio/events.ts:19` missing a new-event return branch. No analysis-owned mode fixtures or errors.
+- Dev 5175 socket smoke limitation and exact codex-net cached-phase coalescing handoff are recorded above; all-four-phase websocket delivery is not claimed. No server edits or artificial analysis delays were added.
+- No live/5173 access, starts/stops, deployment, commits, dependencies or shared-contract edits. Genesis progress owner section is complete.
+
+DONE (genesis)
+
+
+## Education PvP + social-impact scope (latest user override)
+- Read the new top of `docs/tasks/edu.md`, reusable social-impact section, `docs/social-impact.md`, and current shared contracts. Edu is classroom PvP with null boss and code-quality report cards; the old boss-raid edu rules are superseded.
+- Own analysis/ quality and social data; Hall will skip edu/null-boss results so classroom scores never mix with the battle leaderboard. No gameplay/renderer/server edits.
+- Preserve completed round-2b fallback regeneration and Genesis progress work. Social impact stays in battle as specified; accessibility remains input owner's work.
+- New owned typecheck errors were only Hall Autopsy fixtures (required mode + nullable boss); fixed first. Added skip/null-boss persistence regression coverage.
+
+## Contract requests — edu PvP quality signals
+Please add these optional fields to **CodeDNA** (coordinator-owned shared/types.ts):
+```ts
+avgFunctionLength?: number; // mean recognized function source-line span; 0 when none (not derivable from longestFunction)
+hasTestDir?: boolean;       // any supported source file under a tests/test/spec/__tests__ directory
+```
+- Other requested signals already derive from existing fields: commentRatio = nonblank comment lines / totalLoc, README length = readme.length (cleaned excerpt, capped at 4KiB), functionsPerFile = counts.functions / totalFiles.
+- I will expose the derivation helper in analysis/ for codex-sim and compute the two missing raw signals while extracting DNA, with tests. No shared edits or untyped public-contract fields will be added by codex-repo.
+- Also implementing the existing social contract fields: sampled path maintainers/top maintainers (<=8 path calls), repo-wide bus factor when supported by actual contributor data, real adoptable open issues with path mapping, plus read-only OSV dependency matches if available. Missing/rate-limited data remains absent.
+
+## Edu PvP / social implementation update (15:45 local)
+- Hall null-boss and edu guard is complete; no classroom score is added to battle boards and no empty Hall file is created for PvP. Owned Autopsy mode/null fixtures are fixed.
+- Added `analysis/quality.ts` with raw comment ratio, README length/presence, functions/file, mean function length, test-dir presence, and literal tech-debt count/density. NOTE/BUG prose does not inflate TODO/FIXME/HACK debt counters.
+- DNA now computes mean recognized function source-line span and hasTestDir. A typed local `AnalyzedDNA extends CodeDNA` exposes these while the coordinator merges the optional shared declarations requested above; no shared edits or untyped fields. Pre-quality disk caches trigger refresh; old unavailable measurements remain unknown instead of substituting longest-function length.
+- Added `analysis/social.ts`: <=8 real component path history requests (100 recent commits each), distinct human-author counts and top 3 GitHub logins (no emails persisted), complete-list contributor bus factor, and actual open good-first-issue/help-wanted issues mapped by title/body/labels. Virtual misc has no fake path query; root uses repo-root history. Component lists cap at 3 issues; repoIssues at 10. API failures leave fields absent.
+- Runtime bus factor is returned only when all contributors fit the one 100-row response; never claim a partial top-100 list is repo-wide. Authenticated precompute reads the complete list up to 50 pages, five concurrent at a time; missing pages mean no bus-factor claim.
+- Added declared dependency parsing for package.json, requirements*.txt/requirements/*.txt, pyproject.toml, Cargo.toml/Cargo.lock, go.mod and pom.xml. Only exact/pinned versions are queried; ranges, local/git replacements and commented/managed-unresolved versions are skipped rather than guessed.
+- Added public read-only OSV querybatch + advisory lookups, <=100 declarations / 12 advisory records. Match component from manifest path, preserve actual ID/package/summary and a matching higher fixed version when available. No active scanning, package execution or dependency installation.
+- Private or unknown-visibility authenticated declarations never leave GitHub for OSV. Verified public authenticated precompute may look up publicly declared dependency versions. OSV receives only package/ecosystem/version and no GitHub Authorization header, path, source body or DNA.
+- Focused tests: 106/106 PASS before the final unknown-visibility expansion; owned strict typecheck: PASS. Tests cover raw quality metrics, full-vs-partial contributor lists, human/bot/anonymous authors, issue routing/caps/real URLs, manifest parsing and advisory fixes/offline/privacy.
+- Authenticated 15-repo fallback regeneration is running, reusing the gh CLI token only in the child environment with public-visibility verification.
+
+## Handoff — edu PvP / social data (codex-sim, codex-genesis, codex-net, UI)
+
+```ts
+import { qualitySignalsFromProfile } from '../analysis/quality.ts';
+const signals = qualitySignalsFromProfile(profile);
+// signals.avgFunctionLength, hasTestDir, commentRatio, readmeLength,
+// functionsPerFile, techDebtCount, techDebtDensity (per LOC).
+```
+
+- Actual extra measurements are serialized as `profile.dna.avgFunctionLength` / `hasTestDir` via typed local AnalyzedDNA. The optional shared field declarations remain the coordinator's contract request above. Codex-sim already consumes these structurally in sim/quality.ts (read-only verified); the helper also works with old optional DNA and avoids inventing an average from the longest function.
+- Use `counts.todo + counts.fixme + counts.hack` for classroom tech debt. `dna.todos` also carries explanatory NOTE/BUG prose and is not a tech-debt count. README length is the actual available cleaned excerpt (max 4KiB), not an invented full-document byte count. Mean function length is recognized source-line span, not compiler-level semantic complexity.
+- `component.maintainers/topMaintainers`: observed distinct human authors from up to 100 recent commits at the path, excluding automation. This is sample evidence, not a lifetime staffing guarantee. Root is repository-root history; virtual misc has no fake filesystem query. `maintainers === 1` gives the requested sampled fragile-organ signal.
+- `busFactor` uses the complete GitHub contributor contribution distribution (humans only). It is not total contributors or the same thing as "only one maintainer". Runtime omits it when the 100-row list is incomplete; public precompute reads all pages (bounded at 50). Do not turn absent metadata into zero people/zero bus factor.
+- Issues are actual open good-first-issue/help-wanted records, <=3 per component and <=10 repo-wide; issue bodies/emails are not retained. Unmapped issues belong in repoIssues. Empty lists are a successful empty query; absent lists mean data unavailable. Use the UI's real contributing/issues-page fallback when a fragile component has no mapped issue.
+- `vulns` is at most 12 real public OSV matches against exact declared/lockfile versions; ranges and unresolved declarations are not guessed. Fixed values come from the matching package advisory and are higher than the declared version. Root/global manifests can have no component. Development dependencies can participate; do not call these proof of an installed/exploitable build. Absent vulns is not a clean bill; [] means no matches in the checked declarations.
+- Private/unknown-authenticated dependency data is never sent to OSV; private profiles/issues/source still must not enter Gemini/Hall/public persistence. Analysis's authenticated disk-cache isolation is unchanged.
+- Hall `recordMatch` now returns before disk IO for edu or null-boss autopsies, preserving the battle board. Existing battle signature/records remain compatible. Class ranking is handled by the classroom flow.
+
+## Handoff to codex-gemini — edu/social fallback refresh
+- All 15 `data/fallback/*.json` profiles were regenerated again, authenticated with public visibility verified. Real quality fields, maintenance/issue data and public advisory matches are now present. DNA identifiers/heart text/snippets remain real source excerpts; blank comment lines no longer inflate documentation counts.
+- Rebuild your owned design fingerprints/assets against current data if needed. No design/ or data/design/ files were edited or generated by codex-repo. Current whole-workspace tests already pass.
+
+## Edu PvP final validation / completion (15:51 local)
+- Nullable-boss fixes completed first in Hall and owned Autopsy fixtures. Analysis owns no LobbyState/MatchState mocks requiring mode/boss changes. No other owners' files were edited.
+- Focused `npx vitest run analysis hall`: **106/106 PASS**, 14 files. Explicit strict owned-module typecheck: **PASS**.
+- `npm run typecheck`: **PASS** across the current workspace.
+- `npm test`: **448 PASS / 7 skipped**, 44 files. No remaining failing workspace checks in this run.
+- Regenerated all 15 public snapshots (Express retried after a transient metadata failure): **15 quality profiles, 15 complete-list bus factors, 88 measured component histories, 4 single-human-author path samples, 21 real issue placements, 51 public advisory matches**. Total profile JSON size 260,052 bytes.
+- Single-author samples: FastAPI docs; Gin codec; Redis scripts/tools. These come from GitHub history, not synthetic maintainers. Issue/advisory counts are placements/matches, not claims of unique project bugs or exploitability.
+- Real OSV service probe using a public lodash@4.17.15 fixture succeeded with six actual advisory records and returned fixed versions; no source execution or active scanning. Private/unknown-visibility request isolation is covered by mocked-fetch tests. No private real-repo probe was performed.
+- Authenticated precompute used the user's gh token only in the child process environment. No token files/output, new dependencies, git commits, shared/server/sim/client/design edits, live deployment, or 5173 access.
+- Only coordination item: coordinator-owned optional CodeDNA.avgFunctionLength/hasTestDir declarations requested above; typed analysis production/helper and sim structural consumption already work and typecheck. All codex-repo owner implementation work is complete.
+
+DONE (edu pvp)

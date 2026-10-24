@@ -37,6 +37,7 @@ function paxPath(buffer: Buffer): string | undefined {
  * A capped archive is a deterministic prefix sample, containing only complete files. */
 export async function extractTarGz(
   input: AsyncIterable<Uint8Array>, overrides: ArchiveLimits = {},
+  onFile?: (path: string, files: number, expandedBytes: number) => void,
 ): Promise<SourceFile[]> {
   const limits = { ...ARCHIVE_LIMITS, ...overrides };
   const source = Readable.from(input);
@@ -93,7 +94,10 @@ export async function extractTarGz(
           const content = Buffer.concat(file.chunks);
           if (file.type === 'L') nextName = cString(content).trim();
           else if (file.type === 'x') nextName = paxPath(content);
-          else if (!content.includes(0)) files.push({ path: file.name, text: content.toString('utf8') });
+          else if (!content.includes(0)) {
+            files.push({ path: file.name, text: content.toString('utf8') });
+            try { onFile?.(file.name, files.length, Math.min(expanded, limits.maxBytes)); } catch { /* Optional observer. */ }
+          }
         }
         file = undefined;
         if (files.length >= limits.maxFiles) { stopped = true; break archive; }

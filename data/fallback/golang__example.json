@@ -22,56 +22,105 @@
       "files": 9,
       "loc": 1011,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": [],
+      "maintainers": 4,
+      "topMaintainers": [
+        "jba",
+        "bitlux",
+        "cuishuang"
+      ]
     },
     {
       "name": "ragserver",
       "files": 11,
       "loc": 727,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 3,
+      "topMaintainers": [
+        "eliben",
+        "danp",
+        "ianlancetaylor"
+      ],
+      "issues": []
     },
     {
       "name": "gotypes",
       "files": 11,
       "loc": 723,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 8,
+      "topMaintainers": [
+        "adonovan",
+        "jba",
+        "AlekSi"
+      ],
+      "issues": []
     },
     {
       "name": "internal",
       "files": 1,
       "loc": 262,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 4,
+      "topMaintainers": [
+        "findleyr",
+        "jba",
+        "bitlux"
+      ],
+      "issues": []
     },
     {
       "name": "outyet",
       "files": 2,
       "loc": 184,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 3,
+      "topMaintainers": [
+        "adg",
+        "rsc",
+        "broady"
+      ],
+      "issues": []
     },
     {
       "name": "misc",
       "files": 5,
       "loc": 119,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "issues": []
     },
     {
       "name": "hello",
       "files": 4,
       "loc": 107,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 3,
+      "topMaintainers": [
+        "rsc",
+        "adg",
+        "suzmue"
+      ],
+      "issues": []
     },
     {
       "name": "template",
       "files": 1,
       "loc": 74,
       "fanIn": 0,
-      "fanOut": 0
+      "fanOut": 0,
+      "maintainers": 2,
+      "topMaintainers": [
+        "adg",
+        "rsc"
+      ],
+      "issues": []
     }
   ],
   "heart": "hello/reverse/reverse.go",
@@ -239,13 +288,25 @@
       ]
     },
     "heartLines": [
-      "func String(s string) string {",
-      "r := []rune(s)",
-      "for i, j := 0, len(r)-1; i < len(r)/2; i",
-      "r[i], r[j] = r[j], r[i]",
-      "return string(r)"
+      "func usage() {",
+      "fmt.Fprintf(os.Stderr, \"usage: hello [op",
+      "greeting    = flag.String(\"g\", \"Hello\", ",
+      "reverseFlag = flag.Bool(\"r\", false, \"Gre",
+      "func main() {",
+      "if len(args) >= 2 {",
+      "if len(args) >= 1 {",
+      "if name == \"\" { // hello '' is an error",
+      "if *reverseFlag {",
+      "fmt.Printf(\"%s, %s!\\n\", reverse.String(*",
+      "return",
+      "fmt.Printf(\"%s, %s!\\n\", *greeting, name)"
     ],
     "snippets": [
+      {
+        "file": "hello/hello.go",
+        "line": 33,
+        "code": "func usage() {"
+      },
       {
         "file": "ragserver/ragserver-langchaingo/main.go",
         "line": 131,
@@ -300,11 +361,6 @@
         "file": "slog-handler-guide/indenthandler4/indent_handler.go",
         "line": 140,
         "code": "func (h *IndentHandler) appendAttr(buf []byte, a"
-      },
-      {
-        "file": "outyet/main.go",
-        "line": 98,
-        "code": "func (s *Server) ServeHTTP(w http.ResponseWriter"
       }
     ],
     "todos": [
@@ -327,9 +383,24 @@
       {
         "file": "slog-handler-guide/indenthandler1/indent_handler.go",
         "text": "TODO: output the Attrs and groups from WithAttrs and WithGro"
+      },
+      {
+        "file": "slog-handler-guide/indenthandler4/indent_handler.go",
+        "text": "Optimize to minimize allocation."
       }
     ],
-    "commits": [],
+    "commits": [
+      "internal/cmd/weave: print two levels of headings in TOC",
+      "internal/cmd/weave: keep track of minimum header depth",
+      "internal/cmd/weave: fix missing newline",
+      "internal/cmd/weave: add -o flag",
+      "go.mod: update golang.org/x dependencies",
+      "weave: fix %include parsing, add highlighting",
+      "example/slog-handler-guide: run `make`",
+      "example/weave: update TOC anchors to remove **, _, and `",
+      "slog-handler-guide: remove doubled word",
+      "slog-handler-guide: warn against embedding"
+    ],
     "tokens": [
       "}",
       "{",
@@ -389,10 +460,110 @@
       "todo": 5,
       "fixme": 0,
       "hack": 0,
-      "comments": 632
+      "comments": 639
     },
     "maxNesting": 5,
     "avgLineLength": 26.2,
-    "indent": "mixed"
-  }
+    "indent": "mixed",
+    "avgFunctionLength": 20.7,
+    "hasTestDir": true
+  },
+  "busFactor": 3,
+  "repoIssues": [],
+  "vulns": [
+    {
+      "id": "GO-2026-6179",
+      "pkg": "golang.org/x/mod",
+      "ecosystem": "Go",
+      "summary": "Fix transparency log tile verification bypass in golang.org/x/mod/sumdb/tlog",
+      "fixed": "0.40.0"
+    },
+    {
+      "id": "GO-2026-6180",
+      "pkg": "golang.org/x/mod",
+      "ecosystem": "Go",
+      "summary": "Ignore unrelated, unauthenticated hashes in Lookup in golang.org/x/mod/sumdb",
+      "fixed": "0.40.0"
+    },
+    {
+      "id": "GHSA-6g7g-w4f8-9c9x",
+      "pkg": "github.com/buger/jsonparser",
+      "ecosystem": "Go",
+      "summary": "github.com/buger/jsonparser has a denial of service vulnerability",
+      "fixed": "1.1.2",
+      "component": "ragserver"
+    },
+    {
+      "id": "GO-2026-4514",
+      "pkg": "github.com/buger/jsonparser",
+      "ecosystem": "Go",
+      "summary": "Denial of service in github.com/buger/jsonparser",
+      "fixed": "1.1.2",
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-7v39-2hx7-7c43",
+      "pkg": "github.com/weaviate/weaviate",
+      "ecosystem": "Go",
+      "summary": "Weaviate OSS has a Path Traversal Vulnerability via Backup ZipSlip",
+      "fixed": "1.30.20",
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-jqpm-wf57-qx5c",
+      "pkg": "github.com/weaviate/weaviate",
+      "ecosystem": "Go",
+      "summary": "Weaviate has an Improper Authorization issue",
+      "fixed": "1.38.0-rc.0",
+      "component": "ragserver"
+    },
+    {
+      "id": "GO-2025-4237",
+      "pkg": "github.com/weaviate/weaviate",
+      "ecosystem": "Go",
+      "summary": "Weaviate OSS has a Path Traversal Vulnerability via Backup ZipSlip in github.com/weaviate/weaviate",
+      "fixed": "1.30.20",
+      "component": "ragserver"
+    },
+    {
+      "id": "GO-2026-6140",
+      "pkg": "github.com/weaviate/weaviate",
+      "ecosystem": "Go",
+      "summary": "Weaviate has an Improper Authorization issue in github.com/weaviate/weaviate",
+      "fixed": "1.38.0-rc.0",
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-cp6g-7hqx-qxhp",
+      "pkg": "go.mongodb.org/mongo-driver",
+      "ecosystem": "Go",
+      "summary": "mongo-go-driver has Heap Out-of-Bounds Read in GSSAPI Error Handling",
+      "fixed": "1.17.7",
+      "component": "ragserver"
+    },
+    {
+      "id": "GO-2026-5327",
+      "pkg": "go.mongodb.org/mongo-driver",
+      "ecosystem": "Go",
+      "summary": "Mongo-go-driver: Heap Out-of-Bounds Read in GSSAPI Error Handling in go.mongodb.org/mongo-driver",
+      "fixed": "1.17.7",
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-8wmf-6v46-5gfg",
+      "pkg": "go.opentelemetry.io/otel/sdk",
+      "ecosystem": "Go",
+      "summary": "OpenTelemetry-Go: Exporter config logging may leak endpoint URLs in info logs",
+      "fixed": "1.45.0",
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-9h8m-3fm2-qjrq",
+      "pkg": "go.opentelemetry.io/otel/sdk",
+      "ecosystem": "Go",
+      "summary": "OpenTelemetry Go SDK Vulnerable to Arbitrary Code Execution via PATH Hijacking",
+      "fixed": "1.40.0",
+      "component": "ragserver"
+    }
+  ]
 }
