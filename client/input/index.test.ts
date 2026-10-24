@@ -168,8 +168,12 @@ describe('desktop input', () => {
   });
 });
 
-describe('motion permission and input', () => {
-  it('requests iOS motion and orientation permission in the original first tap', async () => {
+describe('motion-v2 permissions and live sensors', () => {
+  const orientation = (beta: number | null, gamma: number | null, type = 'deviceorientation') => emit(win, type, { beta, gamma });
+  const neutral = (beta = 0, gamma = 0, type = 'deviceorientation') => {
+    for (let i = 0; i < 4; i++) { orientation(beta, gamma, type); advance(100); }
+  };
+  it('calls BOTH iOS permission requests synchronously on the original first tap', async () => {
     const requestMotion = vi.fn(async () => 'granted');
     const requestOrientation = vi.fn(async () => 'granted');
     mobile(requestMotion);
@@ -180,94 +184,114 @@ describe('motion permission and input', () => {
     expect(requestMotion).toHaveBeenCalledOnce();
     expect(requestOrientation).toHaveBeenCalledOnce();
     expect(await input.requestPermission()).toBe(true);
-    expect(input.needsPermission).toBe(false);
-    motion();
-    expect(input.sample().fire).toBe(true);
     pointer(win, 'pointerup', 1);
+    expect(input.sample().fire).toBe(true); // even a zero-duration tap survives until a sample
+    neutral();
     expect(input.sample().fire).toBe(false);
-    advance(1100);
+    advance(1500);
     expect(input.mode).toBe('motion');
+    expect(input.sensorStatus).toBe('on');
   });
-  it('falls back if permission is denied, throws, or no usable motion arrives after 1s', async () => {
-    mobile(async () => 'denied');
-    let input = start();
-    expect(await input.requestPermission()).toBe(false);
-    expect(input.mode).toBe('touch');
-    expect(input.needsPermission).toBe(false);
-    input.dispose();
-    mobile(() => { throw new Error('insecure context'); });
-    input = start();
-    expect(await input.requestPermission()).toBe(false);
-    expect(input.mode).toBe('touch');
-    input.dispose();
-    mobile(async () => 'granted');
-    input = start();
+  it('also requests permission on orientation-only iOS browsers', async () => {
+    mobile();
+    win.DeviceOrientationEvent = { requestPermission: vi.fn(async () => 'granted') };
+    const input = start();
+    expect(input.needsPermission).toBe(true);
     expect(await input.requestPermission()).toBe(true);
+    neutral(0, 0, 'deviceorientationabsolute');
+    expect(input.sensorStatus).toBe('on');
+  });
+  it('falls back on denial, synchronous throws, rejected promises, or no usable sensors in 1.5s', async () => {
+    for (const request of [async () => 'denied', () => { throw new Error('denied'); }, async () => { throw new Error('denied'); }]) {
+      mobile(request);
+      const input = start();
+      expect(await input.requestPermission()).toBe(false);
+      expect(input.mode).toBe('touch');
+      expect(input.sensorStatus).toBe('off');
+      input.dispose();
+    }
+    mobile(async () => 'granted');
+    const input = start();
+    await input.requestPermission();
+    orientation(null, null);
     emit(win, 'devicemotion', { acceleration: { x: null, y: null, z: null } });
-    advance(999);
-    expect(input.mode).toBe('motion');
+    advance(1499);
+    expect(input.sensorStatus).toBe('waiting');
     advance(1);
     expect(input.mode).toBe('touch');
+    expect(input.sensorStatus).toBe('off');
   });
-  it('does not request permissions until a tap, or mount UI after disposal', async () => {
+  it('listens without constructor feature detection, and recovers from delayed sensors after fallback', () => {
+    win.matchMedia = () => ({ matches: true });
+    const input = start();
+    expect(input.mode).toBe('motion');
+    advance(1500);
+    expect(input.mode).toBe('touch');
+    neutral(0, 0, 'deviceorientationabsolute');
+    expect(input.mode).toBe('motion');
+    expect(input.sensorStatus).toBe('on');
+    orientation(0, 20, 'deviceorientationabsolute'); advance(100);
+    expect(input.sample().move[0]).toBeGreaterThan(0.7);
+  });
+  it('does not request permission until a gesture or mount UI after disposal', async () => {
     let resolve!: (result: string) => void;
     const request = vi.fn(() => new Promise<string>(r => { resolve = r; }));
     mobile(request);
-    const input = start();
-    advance(2000);
+    const input = start(); advance(2000);
     expect(request).not.toHaveBeenCalled();
-    expect(input.mode).toBe('motion');
-    const result = input.requestPermission();
-    input.dispose();
-    resolve('granted');
+    const result = input.requestPermission(); input.dispose(); resolve('granted');
     expect(await result).toBe(false);
     advance(2000);
     expect(doc.body.children).toHaveLength(0);
   });
-  it('calibrates on the first sensor event, smooths tilt, and recalibrates after rotation', () => {
-    mobile();
-    const input = start();
-    input.calibrate();
-    motion();
+  it('averages 300ms of neutral samples, and recalibrates on explicit request or screen rotation', () => {
+    mobile(); const input = start();
     win.screen.orientation.angle = 90;
-    emit(win, 'deviceorientation', { beta: 30, gamma: 10 });
-    advance(100);
+    orientation(10, 0); advance(100); orientation(12, 0); advance(100); orientation(8, 0); advance(100);
     expect(input.sample().move).toEqual([0, 0]);
-    emit(win, 'deviceorientation', { beta: 55, gamma: 10 });
-    advance(100);
+    orientation(30, 0); advance(100);
     expect(input.sample().move[0]).toBeGreaterThan(0.7);
-    input.calibrate();
-    advance(100);
+    input.calibrate(); neutral(30, 0);
     expect(input.sample().move).toEqual([0, 0]);
-    win.screen.orientation.angle = 270;
-    emit(win.screen.orientation, 'change');
-    emit(win, 'deviceorientation', { beta: 30, gamma: 10 });
-    advance(100);
-    expect(input.sample().move).toEqual([0, 0]);
-    emit(win, 'deviceorientation', { beta: 55, gamma: 10 });
-    advance(100);
+    win.screen.orientation.angle = 270; emit(win.screen.orientation, 'change'); neutral();
+    orientation(20, 0); advance(100);
     expect(input.sample().move[0]).toBeLessThan(-0.7);
   });
-  it('queues short gestures until sampling, and uses screen-relative sideways swings', () => {
-    mobile();
-    const input = start();
-    win.screen.orientation.angle = 90;
-    motion(0, 12, 0);
-    motion();
-    expect(input.sample()).toMatchObject({ dash: true, aim: null, source: 'motion' });
-    expect(input.sample().dash).toBe(false);
-    motion(0, 0, 9);
-    expect(input.sample().fire).toBe(true);
-    advance(601);
-    expect(input.sample().fire).toBe(false);
+  it('freezes tilt movement for 250ms after swings, and swings never dash or skill', () => {
+    mobile(); const input = start(); neutral();
+    input.sample(); motion(-15, 0, 0);
+    orientation(0, 70); advance(100);
+    expect(input.sample()).toMatchObject({ move: [0, 0], fire: true, dash: false, skill: false, aim: null });
+    orientation(0, 20); advance(100);
+    expect(input.sample().move).toEqual([0, 0]);
+    advance(60); orientation(0, 20); advance(100);
+    expect(input.sample().move[0]).toBeGreaterThan(0.7);
+    advance(350); expect(input.sample().fire).toBe(false);
   });
-  it('uses gravity-inclusive sensors without firing while the phone rests', () => {
-    mobile();
-    const input = start();
-    emit(win, 'devicemotion', { accelerationIncludingGravity: { x: 0, y: 0, z: 9.81 } });
+  it('uses gravity-only sensors for tilt and filters gravity out of swing recognition', () => {
+    mobile(); const input = start();
+    const inclusive = (x: number, y: number, z: number) => emit(win, 'devicemotion', { accelerationIncludingGravity: { x, y, z } });
+    for (let i = 0; i < 4; i++) { inclusive(0, 0, 9.81); advance(100); }
     expect(input.sample().fire).toBe(false);
-    emit(win, 'devicemotion', { accelerationIncludingGravity: { x: 0, y: 0, z: 20 } });
+    for (let i = 0; i < 25; i++) { inclusive(-4.15, 0, 8.89); advance(20); input.sample(); }
+    expect(input.sample().move[0]).toBeGreaterThan(0.6);
+    inclusive(-4.15, 0, 30);
     expect(input.sample().fire).toBe(true);
+  });
+  it('shows action buttons in motion mode, excludes them from attack, and keeps tap/hold attack latched', () => {
+    mobile(); const input = start(); neutral();
+    const [zone, dashButton, skillButton] = doc.body.children[0].children as ElementFixture[];
+    expect(zone.style.display).toBe('none');
+    pointer(dashButton, 'pointerdown', 10); pointer(win, 'pointerdown', 10, { target: dashButton });
+    pointer(skillButton, 'pointerdown', 11); pointer(win, 'pointerdown', 11, { target: skillButton });
+    expect(input.sample()).toMatchObject({ dash: true, skill: true, fire: false });
+    expect(input.sample()).toMatchObject({ dash: false, skill: false });
+    pointer(win, 'pointerdown', 1, { target: canvas }); pointer(win, 'pointerup', 1);
+    expect(input.sample().fire).toBe(true);
+    advance(401); expect(input.sample().fire).toBe(false);
+    pointer(win, 'pointerdown', 2, { target: canvas }); advance(1000);
+    expect(input.sample().fire).toBe(true);
+    pointer(win, 'pointerup', 2); expect(input.sample().fire).toBe(false);
   });
 });
 
@@ -275,7 +299,7 @@ describe('touch fallback and helpers', () => {
   it('provides joystick movement, one-shot buttons, and multi-touch hold-to-fire', () => {
     mobile();
     const input = start();
-    advance(1000);
+    advance(1500);
     expect(input.mode).toBe('touch');
     const overlay = doc.body.children[0] as ElementFixture;
     const [zone, dashButton, skillButton] = overlay.children;
@@ -292,18 +316,20 @@ describe('touch fallback and helpers', () => {
     expect(input.sample().fire).toBe(true);
     pointer(win, 'pointercancel', 5);
     pointer(win, 'pointerup', 1);
+    advance(401);
     expect(input.sample()).toMatchObject({ fire: false, move: [0, 0] });
     input.dispose();
     expect(doc.body.children).toHaveLength(0);
   });
-  it('does not fire from joystick or button touches, and clears touch state on blur', () => {
+  it('fires on the fallback joystick too, excludes buttons, and clears held state on blur', () => {
     mobile();
     const input = start();
-    advance(1000);
+    advance(1500);
     const [zone, dashButton] = doc.body.children[0].children as ElementFixture[];
-    pointer(win, 'pointerdown', 1, { target: zone });
     pointer(win, 'pointerdown', 2, { target: dashButton });
     expect(input.sample().fire).toBe(false);
+    pointer(win, 'pointerdown', 1, { target: zone });
+    expect(input.sample().fire).toBe(true);
     pointer(win, 'pointerdown', 3, { target: canvas });
     expect(input.sample().fire).toBe(true);
     emit(win, 'blur');

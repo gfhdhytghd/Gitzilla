@@ -126,7 +126,7 @@ if(location.pathname === '/') {
       const desktop = readFileSync(join(artifactDir, 'landing-desktop.png'));
       const phone = readFileSync(join(artifactDir, 'landing-phone.png'));
       expect([desktop.readUInt32BE(16), desktop.readUInt32BE(20)]).toEqual([1280, 720]);
-      expect([phone.readUInt32BE(16), phone.readUInt32BE(20)]).toEqual([844, 390]);
+      expect([phone.readUInt32BE(16), phone.readUInt32BE(20)]).toEqual([1170, 2532]); // 390×844 CSS at DPR 3
     } finally {
       console.log = originalLog;
       if (previousURL === undefined) delete process.env.PLAYTEST_URL;

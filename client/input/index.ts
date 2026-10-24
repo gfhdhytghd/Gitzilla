@@ -1,7 +1,7 @@
 import type { InputFrame } from '../../shared/types';
-import { createGestureState, normalize, recognizeGesture, removeGravity, screenTilt, tiltMove } from './gestures';
+import { createGestureState, gravityTilt, normalize, recognizeGesture, removeGravity, screenTilt, tiltMove } from './gestures';
 import type { Acceleration } from './gestures';
-import { debugState, recordGesture } from './debug';
+import { createInputDebugPanel, debugState, recordGesture } from './debug';
 import { createTouchControls } from './touch';
 import type { TouchControls } from './touch';
 
@@ -15,6 +15,7 @@ export interface InputOptions {
 export interface InputController {
   readonly mode: InputFrame['source'];
   readonly needsPermission: boolean;
+  readonly sensorStatus: 'on' | 'waiting' | 'off';
   requestPermission(): Promise<boolean>;
   calibrate(): void;
   sample(): InputFrame;
@@ -35,9 +36,12 @@ export function vibrate(pattern: number | number[]): boolean {
 export function createInput(opts: InputOptions): InputController {
   const sensors = window as SensorWindow;
   const mobile = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-  let mode: InputFrame['source'] = mobile && sensors.DeviceMotionEvent ? 'motion' : 'keyboard';
-  let needsPermission = mode === 'motion' && typeof sensors.DeviceMotionEvent?.requestPermission === 'function';
-  let permissionGranted = mode === 'motion' && !needsPermission;
+  // Listen first: API presence doesn't prove delivery, and some browsers hide constructors.
+  let mode: InputFrame['source'] = mobile ? 'motion' : 'keyboard';
+  let sensorStatus: InputController['sensorStatus'] = mobile ? 'waiting' : 'off';
+  let needsPermission = !!mobile && [sensors.DeviceMotionEvent, sensors.DeviceOrientationEvent]
+    .some(sensor => typeof sensor?.requestPermission === 'function');
+  let permissionGranted = !!mobile && !needsPermission;
   let disposed = false;
   let seq = 0;
   let dash = false;
@@ -49,16 +53,21 @@ export function createInput(opts: InputOptions): InputController {
   let gestures = createGestureState();
   let gravity: Acceleration | null = null;
   let rawTilt: [number, number] = [0, 0];
-  let hasOrientation = false;
+  let lastOrientationAt = -Infinity;
+  let gravitySign = 0;
   let neutral: [number, number] | null = null;
+  let calibrationAt: number | null = null;
+  let calibrationSum: [number, number] = [0, 0];
+  let calibrationCount = 0;
+  let freezeUntil = 0;
+  let stableTilt: [number, number] = [0, 0];
   let smoothedMove: [number, number] = [0, 0];
   let lastSample = performance.now();
-  let sawMotion = false;
+  let sawSensor = false;
   let sensorTimer: number | undefined;
   let pendingPermission: Promise<boolean> | null = null;
   let touch: TouchControls | null = null;
   const keys = new Set<string>();
-  const heldTouches = new Set<number>();
   const cleanup: (() => void)[] = [];
   const originalTouchAction = opts.canvas.style.touchAction;
   opts.canvas.style.touchAction = 'none';
@@ -72,31 +81,64 @@ export function createInput(opts: InputOptions): InputController {
   const fallback = () => {
     if (disposed) return;
     mode = 'touch';
+    sensorStatus = 'off';
     needsPermission = false;
-    heldTouches.clear();
     dash = skill = false;
     touch ??= createTouchControls();
+    touch.setJoystick(true);
     debugState.mode = mode;
     recordGesture('touch fallback');
   };
   const watchForMotion = () => {
     window.clearTimeout(sensorTimer);
     sensorTimer = window.setTimeout(() => {
-      if (!sawMotion) {
-        debugState.permission = 'no sensor events (HTTPS may be required)';
+      if (!sawSensor) {
+        recordGesture('no sensors after 1.5s (use HTTPS or localhost)');
         fallback();
       }
-    }, 1000);
+    }, 1500);
+  };
+  const markSensor = () => {
+    sawSensor = true;
+    sensorStatus = 'on';
+    window.clearTimeout(sensorTimer);
+    if (mode !== 'motion') {
+      mode = 'motion';
+      touch?.setJoystick(false);
+      recordGesture('late sensors recovered → motion');
+    }
+    debugState.mode = mode;
+  };
+  const resetCalibration = () => {
+    neutral = null;
+    calibrationAt = null;
+    calibrationSum = [0, 0];
+    calibrationCount = 0;
+    smoothedMove = [0, 0];
+  };
+  const acceptTilt = (tilt: [number, number], now: number) => {
+    if (now < freezeUntil) return;
+    rawTilt = tilt;
+    if (neutral) return;
+    calibrationAt ??= now;
+    if (now - calibrationAt < 300 || calibrationCount === 0) {
+      calibrationSum[0] += tilt[0]; calibrationSum[1] += tilt[1];
+      calibrationCount++;
+    }
+    if (now - calibrationAt >= 300 && calibrationCount) {
+      neutral = [calibrationSum[0] / calibrationCount, calibrationSum[1] / calibrationCount];
+      recordGesture('neutral calibrated (300ms)');
+    }
   };
   const reset = () => {
     keys.clear();
     mouseFire = false;
     mouseSkill = false;
     mouseAt = -Infinity;
-    heldTouches.clear();
     dash = skill = false;
     gestures = createGestureState();
     smoothedMove = [0, 0];
+    freezeUntil = 0;
     touch?.clear();
   };
   const dashKeys = new Set(['Space', 'KeyK', 'ShiftLeft', 'ShiftRight']);
@@ -136,11 +178,9 @@ export function createInput(opts: InputOptions): InputController {
   on(window, 'pointerup', (event => {
     const e = event as PointerEvent;
     if (e.pointerType === 'mouse' && e.button === 0) mouseFire = false;
-    heldTouches.delete(e.pointerId);
   }));
   on(window, 'pointercancel', (event => {
     mouseFire = false;
-    heldTouches.delete((event as PointerEvent).pointerId);
   }));
   on(opts.canvas, 'contextmenu', e => e.preventDefault());
   on(window, 'blur', reset);
@@ -149,52 +189,61 @@ export function createInput(opts: InputOptions): InputController {
     const e = event as PointerEvent;
     if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
     if (needsPermission) void controller.requestPermission();
-    if (mode === 'motion' && !editable(e.target)) heldTouches.add(e.pointerId);
   }), { capture: true });
-  on(window, 'deviceorientation', (event => {
+  const onOrientation: EventListener = event => {
     const e = event as DeviceOrientationEvent;
-    if (mode !== 'motion' || !permissionGranted || e.beta === null || e.gamma === null) return;
+    if (!mobile || !permissionGranted || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
+    if (e.beta == null || e.gamma == null) return;
+    markSensor();
     debugState.beta = e.beta;
     debugState.gamma = e.gamma;
     debugState.angle = angle();
-    rawTilt = screenTilt(e.beta, e.gamma, angle());
-    hasOrientation = true;
-    neutral ??= [...rawTilt];
-  }));
-  const resetOrientation = () => { neutral = null; hasOrientation = false; smoothedMove = [0, 0]; };
+    lastOrientationAt = performance.now();
+    acceptTilt(screenTilt(e.beta, e.gamma, angle()), lastOrientationAt);
+  };
+  on(window, 'deviceorientation', onOrientation);
+  on(window, 'deviceorientationabsolute', onOrientation);
+  const resetOrientation = () => { resetCalibration(); freezeUntil = 0; };
   on(window, 'orientationchange', resetOrientation);
   if (window.screen?.orientation) {
     on(window.screen.orientation, 'change', resetOrientation);
   }
   on(window, 'devicemotion', (event => {
     const e = event as DeviceMotionEvent;
-    if (mode !== 'motion' || !permissionGranted) return;
+    if (!mobile || !permissionGranted) return;
     const clean = e.acceleration;
-    const raw = clean?.x != null && clean.y != null && clean.z != null ? clean : e.accelerationIncludingGravity;
+    const valid = (a: DeviceMotionEventAcceleration | null | undefined): a is DeviceMotionEventAcceleration & Acceleration =>
+      !!a && a.x != null && a.y != null && a.z != null && Number.isFinite(a.x) && Number.isFinite(a.y) && Number.isFinite(a.z);
+    const raw = valid(clean) ? clean : e.accelerationIncludingGravity;
     // Null-valued events occur on unsupported desktop sensors; don't suppress fallback for them.
-    if (raw?.x == null || raw.y == null || raw.z == null) return;
-    sawMotion = true;
-    window.clearTimeout(sensorTimer);
+    if (!valid(raw)) return;
+    markSensor();
+    const now = performance.now();
     let acceleration = { x: raw.x, y: raw.y, z: raw.z };
-    if (raw !== clean) {
-      const result = removeGravity(acceleration, gravity);
+    const includingGravity = e.accelerationIncludingGravity;
+    if (valid(includingGravity)) {
+      const result = removeGravity({ x: includingGravity.x, y: includingGravity.y, z: includingGravity.z }, gravity);
       gravity = result.gravity;
-      acceleration = result.acceleration;
+      if (raw !== clean) acceleration = result.acceleration;
+      if (!gravitySign && Math.abs(gravity.z) > 1) gravitySign = Math.sign(gravity.z);
     }
     debugState.acceleration = acceleration;
-    // A sideways swing follows the screen's horizontal axis in either landscape orientation.
-    const [x, y] = screenTilt(acceleration.y, acceleration.x, angle());
-    const previousFire = gestures.lastFire;
-    const result = recognizeGesture(gestures, { x, y, z: acceleration.z }, performance.now());
+    const result = recognizeGesture(gestures, acceleration, now);
     gestures = result.state;
-    if (result.dash) { dash = true; recordGesture('SWING → dash'); }
-    if (result.skill) { skill = true; recordGesture('SHAKE → skill'); }
-    if (gestures.lastFire !== previousFire) recordGesture('THRUST → fire');
+    if (result.fired) {
+      freezeUntil = now + 250;
+      rawTilt = [...stableTilt];
+      recordGesture('SWING (any direction) → attack');
+    }
+    if (gravity && gravitySign && now - lastOrientationAt > 500 && Math.hypot(...Object.values(acceleration)) < 5) {
+      acceptTilt(gravityTilt(gravity, angle(), gravitySign), now);
+    }
   }));
 
   const controller: InputController = {
     get mode() { return mode; },
     get needsPermission() { return needsPermission; },
+    get sensorStatus() { return sensorStatus; },
     requestPermission() {
       if (disposed || mode !== 'motion') return Promise.resolve(false);
       if (pendingPermission) return pendingPermission;
@@ -225,11 +274,12 @@ export function createInput(opts: InputOptions): InputController {
       return pendingPermission;
     },
     calibrate() {
-      neutral = hasOrientation ? [...rawTilt] : null;
-      smoothedMove = [0, 0];
+      resetCalibration();
       gravity = null;
+      gravitySign = 0;
       gestures = createGestureState();
-      recordGesture('calibrated');
+      freezeUntil = 0;
+      recordGesture('recalibrating neutral (300ms)');
     },
     sample() {
       const now = performance.now();
@@ -249,21 +299,31 @@ export function createInput(opts: InputOptions): InputController {
           if (length > 0) aim = [dx / length, dy / length];
         }
       } else if (!disposed && mode === 'motion') {
-        const target = tiltMove(rawTilt, neutral ?? rawTilt);
+        if (!neutral && calibrationAt !== null && now - calibrationAt >= 300 && calibrationCount) {
+          neutral = [calibrationSum[0] / calibrationCount, calibrationSum[1] / calibrationCount];
+        }
+        const target = neutral ? tiltMove(rawTilt, neutral) : [0, 0];
         const blend = 1 - Math.exp(-Math.max(0, Math.min(now - lastSample, 100)) / 65);
-        smoothedMove = [smoothedMove[0] + (target[0] - smoothedMove[0]) * blend,
-          smoothedMove[1] + (target[1] - smoothedMove[1]) * blend];
+        if (now >= freezeUntil) {
+          smoothedMove = [smoothedMove[0] + (target[0] - smoothedMove[0]) * blend,
+            smoothedMove[1] + (target[1] - smoothedMove[1]) * blend];
+          stableTilt = [...rawTilt];
+        }
         move = smoothedMove;
-        fire = now < gestures.fireUntil || heldTouches.size > 0;
+        fire = now < gestures.fireUntil;
       } else if (!disposed && touch) {
         move = [...touch.move];
-        fire = touch.fire;
+      }
+      if (!disposed && touch) {
+        fire ||= touch.fire;
         dash ||= touch.dash;
         skill ||= touch.skill;
         touch.dash = touch.skill = false;
       }
       lastSample = now;
       debugState.move = move;
+      debugState.sensors = sensorStatus;
+      debugState.calibrating = calibrationAt !== null && neutral === null;
       const frame: InputFrame = { seq: ++seq, move, aim, fire, dash: !disposed && dash, skill: !disposed && skill, source: mode };
       dash = skill = false;
       return frame;
@@ -275,11 +335,18 @@ export function createInput(opts: InputOptions): InputController {
       window.clearTimeout(sensorTimer);
       cleanup.forEach(fn => fn());
       touch?.dispose();
+      debugPanel?.dispose();
       opts.canvas.style.touchAction = originalTouchAction;
     },
   };
   debugState.mode = mode;
+  debugState.sensors = sensorStatus;
+  debugState.calibrating = false;
   debugState.permission = needsPermission ? 'tap to enable' : mode === 'motion' ? 'not required' : 'not applicable';
+  if (mobile) touch = createTouchControls({ joystick: false });
+  const debugPanel = window.location && new URLSearchParams(window.location.search).get('debug') === 'input'
+    ? createInputDebugPanel() : null;
+  if (debugPanel) document.body.append(debugPanel);
   if (permissionGranted) watchForMotion();
   return controller;
 }
