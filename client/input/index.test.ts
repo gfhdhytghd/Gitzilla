@@ -200,6 +200,51 @@ describe('motion-v3 permissions and live sensors', () => {
     expect(input.mode).toBe('motion');
     expect(input.sensorStatus).toBe('on');
   });
+  it('touchend requests synchronously, touchstart/down never request, and its follow-up click is deduplicated', async () => {
+    const request = vi.fn(async () => 'denied'); mobile(request); const input = start();
+    pointer(win, 'pointerdown', 1); emit(win, 'touchstart', { changedTouches: [{}] });
+    expect(request).not.toHaveBeenCalled();
+    emit(win, 'touchend', { changedTouches: [{}] }); expect(request).toHaveBeenCalledOnce();
+    expect(await input.requestPermission()).toBe(false); // settle the shared native attempt
+    emit(win, 'click'); expect(request).toHaveBeenCalledOnce();
+    expect(input.needsPermission).toBe(true); expect(input.sensorStatus).toBe('off');
+    advance(600); emit(win, 'click'); expect(request).toHaveBeenCalledTimes(2);
+  });
+  it('never reports on until both native grants resolve AND a subsequent valid sensor event arrives', async () => {
+    let motionGranted!: (result: string) => void, orientationGranted!: (result: string) => void;
+    mobile(() => new Promise(r => { motionGranted = r; }));
+    win.DeviceOrientationEvent = { requestPermission: () => new Promise(r => { orientationGranted = r; }) };
+    const input = start(); const permission = input.requestPermission();
+    motion(15); orientation(45, 0);
+    expect(input.sensorStatus).toBe('waiting'); expect(input.sample().fire).toBe(false);
+    motionGranted('granted'); await Promise.resolve();
+    orientation(45, 0); expect(input.sensorStatus).toBe('waiting');
+    orientationGranted('granted'); expect(await permission).toBe(true);
+    expect(input.sensorStatus).toBe('waiting'); expect(input.needsPermission).toBe(false);
+    orientation(null, null); expect(input.sensorStatus).toBe('waiting');
+    orientation(45, 0); expect(input.sensorStatus).toBe('on');
+    expect(await input.requestPermission()).toBe(true); expect(input.sensorStatus).toBe('on');
+  });
+  it.each(['denied', 'reject', 'throw'] as const)('native %s remains retryable on the next activating tap', async failure => {
+    let first = true;
+    const request = vi.fn(() => {
+      if (!first) return Promise.resolve('granted');
+      first = false;
+      if (failure === 'throw') throw new Error('not activated');
+      return failure === 'reject' ? Promise.reject(new Error('not activated')) : Promise.resolve('denied');
+    });
+    mobile(request); const input = start();
+    expect(await input.requestPermission()).toBe(false);
+    expect(input.needsPermission).toBe(true); expect(input.sensorStatus).toBe('off');
+    motion(30); orientation(45, 0); expect(input.sensorStatus).toBe('off');
+    expect(await input.requestPermission()).toBe(true); expect(request).toHaveBeenCalledTimes(2);
+    expect(input.sensorStatus).toBe('waiting'); orientation(45, 0); expect(input.sensorStatus).toBe('on');
+  });
+  it('one granted API and one denied API never enables motion', async () => {
+    mobile(async () => 'granted'); win.DeviceOrientationEvent = { requestPermission: async () => 'denied' };
+    const input = start(); expect(await input.requestPermission()).toBe(false);
+    motion(30); orientation(45, 0); expect(input.sensorStatus).toBe('off'); expect(input.needsPermission).toBe(true);
+  });
   it('also requests permission on orientation-only iOS browsers', async () => {
     mobile();
     win.DeviceOrientationEvent = { requestPermission: vi.fn(async () => 'granted') };

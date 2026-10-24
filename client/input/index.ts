@@ -91,6 +91,7 @@ export function createInput(opts: InputOptions): InputController {
   let lastSensorAt = -Infinity;
   let sensorTimer: number | undefined;
   let pendingPermission: Promise<boolean> | null = null;
+  let lastAutomaticRequest = -Infinity;
   let permissionVersion = 0;
   let touch: TouchControls | null = null;
   const keys = new Set<string>();
@@ -108,7 +109,7 @@ export function createInput(opts: InputOptions): InputController {
     if (disposed) return;
     mode = 'touch';
     sensorStatus = 'off';
-    needsPermission = false;
+    needsPermission = !!mobile && motionProfile !== 'tap-only' && requiresPermission && !permissionGranted;
     dash = skill = false;
     touch ??= createTouchControls({ onAction: (kind, via) => notify(kind, via, performance.now()) });
     touch.setJoystick(true);
@@ -226,16 +227,21 @@ export function createInput(opts: InputOptions): InputController {
   on(opts.canvas, 'contextmenu', e => e.preventDefault());
   on(window, 'blur', reset);
   on(document, 'visibilitychange', () => { if (document.hidden) reset(); });
-  // iOS only shows the motion permission prompt for requests made inside touchend/click — a request from
-  // touchstart/pointerdown is silently refused (no prompt) and the page would wrongly think it's enabled.
+  // Touch pointerdown/start does not grant transient activation (WebKit's activation API).
+  // Ask on touchend/click; native results and subsequent valid sensor events are separate gates.
   const askFromGesture = (event: Event) => {
-    if (event.type === 'touchend' && (event as TouchEvent).changedTouches.length === 0) return;
+    if (event.type === 'touchend' && !(event as TouchEvent).changedTouches?.length) return;
     const target = event.target as Element | null;
     // Choosing tap-only or opening settings must not accidentally request sensors.
-    // The dedicated enable button still requests here, before fullscreen consumes activation.
-    if (target?.closest?.('button, input, textarea, select, a, [data-motion-profile]')
-      && !target.closest?.('[data-testid="motion-enable"]')) return;
-    if (needsPermission) void controller.requestPermission();
+    // Buttons (including the enable pill) have their own synchronous onclick requests.
+    if (target?.closest?.('button, input, textarea, select, a, [data-motion-profile]')) return;
+    const now = performance.now();
+    // One touch produces touchend followed by click. A denied end must not immediately
+    // prompt again on that same tap, while a later tap must remain retryable.
+    if (needsPermission && now - lastAutomaticRequest >= 500) {
+      lastAutomaticRequest = now;
+      void controller.requestPermission();
+    }
   };
   on(window, 'touchend', askFromGesture, { capture: true });
   on(window, 'click', askFromGesture, { capture: true });
@@ -345,19 +351,23 @@ export function createInput(opts: InputOptions): InputController {
     },
     requestPermission() {
       if (disposed || !mobile || motionProfile === 'tap-only') return Promise.resolve(false);
-      mode = 'motion'; sensorStatus = 'waiting';
       if (pendingPermission) return pendingPermission;
-      if (permissionGranted) { watchForMotion(); return Promise.resolve(true); }
+      if (permissionGranted) {
+        if (sensorStatus !== 'on') { mode = 'motion'; sensorStatus = 'waiting'; watchForMotion(); }
+        return Promise.resolve(true);
+      }
+      mode = 'motion'; sensorStatus = 'waiting';
+      debugState.permission = 'requesting (await Safari)';
       const version = permissionVersion;
       // Invoke both requests before awaiting so iOS retains the original tap activation.
       try {
         const requests = [sensors.DeviceMotionEvent, sensors.DeviceOrientationEvent]
           .filter((sensor): sensor is PermissionSensor => !!sensor?.requestPermission)
           .map(sensor => sensor.requestPermission!());
-        pendingPermission = Promise.all(requests).then(results => {
+        const attempt = Promise.all(requests).then(results => {
           if (disposed || version !== permissionVersion) return false;
-          needsPermission = false;
           permissionGranted = results.every(result => result === 'granted');
+          needsPermission = requiresPermission && !permissionGranted;
           if (motionProfile === 'tap-only') return false; // profile may change while a native prompt is open
           debugState.permission = permissionGranted ? 'granted' : 'denied';
           if (permissionGranted) watchForMotion();
@@ -365,14 +375,18 @@ export function createInput(opts: InputOptions): InputController {
           return permissionGranted;
         }).catch(() => {
           if (disposed || version !== permissionVersion) return false;
+          permissionGranted = false;
           debugState.permission = 'denied';
           fallback();
           return false;
         });
+        pendingPermission = attempt;
+        void attempt.then(() => { if (pendingPermission === attempt) pendingPermission = null; });
       } catch {
+        permissionGranted = false;
         debugState.permission = 'denied';
         fallback();
-        pendingPermission = Promise.resolve(false);
+        return Promise.resolve(false);
       }
       return pendingPermission;
     },
