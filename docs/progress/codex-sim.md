@@ -2,7 +2,7 @@ DONE (edu pvp)
 DONE (code flavor)
 DONE (round 2)
 
-## Latest coordinator follow-up — final verification
+## Latest coordinator follow-up — complete
 - Fragility now uses measured maintainers≤2 OR (busFactor=1 and least-maintained measured component). Stable component-order tie break; absent counts stay unknown. Effective limb HP and core-chip threat remain budget-neutral. Cycle-only weakPoint stays distinct from fragile; both receive crit multipliers, so architecture narration never labels a maintenance weakness as a dependency loop.
 - Ripgrep now has a fragile organ (`crates/regex`,8 measured maintainers, repo busFactor1). Regression verifies the real profile across4/6/8 squads and normalized36% effective limb HP.
 - RepoIssues already flows through cloned kit.social into detached battle autopsy. Regression proves adoption fallback works without any component issue.
@@ -23,7 +23,7 @@ DONE (round 2)
 - Non-blocking real-data lessons: damage/cohesion, tests/armor, cycles, heart, tech debt, public dependency advisories. At most one card/8s; unseen concepts first. Detached autopsy has `mode:'edu',victory:false,boss:null,ranking` plus every student's quality rows. Terminal status/victory event is used only for the existing end transport, never raid scoring.
 
 ## Evidence
-- Final post-follow-up merged test rerun pending; previously449 PASS /7 skipped. Scoped social regressions pass. Includes87 sim tests. `npx tsc --noEmit`: PASS.
+- **Full merged suite: 452 PASS, 7 skipped, 41 passing files /3 skipped.** Includes87 sim tests. `npx tsc --noEmit`: PASS.
 - A prior full run under four concurrent balance workers hit one QA real-time fixture's 5s timeout; final full run after workers completed passed without modifying QA files or timeouts.
 - **DEV 5175 classroom WS smoke PASS:** teacher +30 students, no boss selected, quality + report-card Genesis on every kit, heroScale=2, teacher consumes no student slot, about 100 snapshots/student in 5s. Command: `SMOKE_URL=http://localhost:5175 CLASSROOM_PLAYERS=30 npx tsx server/classroom-smoke.ts`.
 - **DEV 5175 battle smoke PASS:** 4 humans, 99 snapshots/client in 5s; Genesis/auth/QR/fallback/Hall endpoints pass. Command: `SMOKE_URL=http://localhost:5175 npx tsx server/smoke.ts`.
