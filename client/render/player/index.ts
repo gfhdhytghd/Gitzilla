@@ -1,8 +1,8 @@
 // Player renderer: Soul Knight-style chibi heroes generated from repo kits.
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
-import type { PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
+import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
 import { lookFor, type HeroLook } from "./look.ts";
-import { heroFrame, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
+import { heroFrame, heroRim, tinted, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle } from "./weapons.ts";
 import { drawText } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
@@ -33,10 +33,32 @@ interface Mem {
   swingDir: number;
   phase: number;
   duckX: number; duckY: number; duckFlip: number;
+  kbT: number; kbX: number; kbY: number; kbAmp: number; crit: boolean;
 }
 
 const mems = new Map<string, Mem>();
+/** Last known position of the local player (for proximity-revealed teammate tags). */
+let youPos: { x: number; y: number; t: number } | null = null;
 const externalShots = new Map<string, number>();
+const externalHits = new Map<string, { dir: [number, number]; impact: number; crit: boolean }>();
+
+/**
+ * Optional hook: forward each snapshot's events (call once per released batch). "hit" events that
+ * target a player give that hero directional knockback scaled by `impact`, and a harder flash on crits.
+ * Hurt FX still trigger without this from hp/armor drops; this only adds direction/strength.
+ */
+export function notePlayerEvents(events: GameEvent[]): void {
+  for (const e of events) {
+    if (e.type !== "hit" || e.target === "boss") continue;
+    const d = e.direction;
+    const len = d ? Math.hypot(d[0], d[1]) : 0;
+    externalHits.set(e.target, {
+      dir: len > 0 ? [d![0] / len, d![1] / len] : [0, 0],
+      impact: Math.max(0, Math.min(1, e.impact ?? 0.4)),
+      crit: !!e.crit,
+    });
+  }
+}
 
 function normTime(time: number): number {
   return time > 1e4 ? time / 1000 : time;
@@ -59,6 +81,7 @@ function memFor(p: PlayerState, t: number): Mem {
       hurtT: -99, hpHit: false, shotT: -99, dashT: -99, reviveT: -99, downT: -99, skillT: {},
       ghosts: [], parts: [], hist: [], forkX: p.x, forkY: p.y, rollX: p.x, rollY: p.y,
       lastGhost: 0, lastDust: 0, lastFlame: 0, lastPlus: 0, swingDir: 1, duckX: p.x - 12, duckY: p.y - 10, duckFlip: 1,
+      kbT: -99, kbX: 0, kbY: 0, kbAmp: 0, crit: false,
       phase: (hashStr(p.id) % 1000) / 1000,
     };
     if (mems.size > 48) for (const [k, v] of mems) if (t - v.t > 5) mems.delete(k);
@@ -85,6 +108,12 @@ function spawn(m: Mem, n: number, f: (i: number) => Particle) {
 
 /** Observe state transitions -> trigger FX timers & particles. */
 function observe(p: PlayerState, m: Mem, L: HeroLook, t: number, dt: number) {
+  const hit = externalHits.get(p.id);
+  if (hit) {
+    externalHits.delete(p.id);
+    m.kbT = t; m.kbX = hit.dir[0]; m.kbY = hit.dir[1]; m.kbAmp = 1.5 + 3 * hit.impact; m.crit = hit.crit;
+    if (t - m.hurtT > 0.1) m.hurtT = t; // event may land before the hp drop is visible
+  }
   const tot = p.hp + p.armor, lastTot = m.hp + m.armor;
   if (p.alive && m.alive && tot < lastTot - 0.001) {
     m.hurtT = t;
@@ -346,6 +375,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   const L = lookFor(p.kit);
   const m = memFor(p, t);
   const dt = Math.max(0, Math.min(0.1, t - m.t));
+  if (isYou) youPos = { x: p.x, y: p.y, t };
   observe(p, m, L, t, dt);
 
   const x = Math.round(p.x), y = Math.round(p.y);
@@ -472,12 +502,15 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   // --- squash & stretch
   let sx = 1, sy = 1;
   const hk = Math.max(0, 1 - (t - m.hurtT) / 0.16);
-  if (hk > 0) { sx += 0.16 * hk; sy -= 0.12 * hk; }
+  if (hk > 0) { const c = m.crit && t - m.kbT < 0.3 ? 1.6 : 1; sx += 0.16 * hk * c; sy -= 0.12 * hk * c; }
   const dk = Math.max(0, 1 - (t - m.dashT) / 0.18);
   if (dk > 0) { sx += 0.2 * dk; sy -= 0.12 * dk; }
   const rk = Math.max(0, 1 - (t - m.reviveT) / 0.3);
   if (rk > 0) { sx -= 0.2 * rk; sy += 0.3 * rk; }
   const bob = fr.pose === "run" ? (fr.i % 2 === 1 ? -1 : 0) : 0;
+  // directional knockback lean from forwarded hit events (snaps back over ~150ms)
+  const kk = Math.max(0, 1 - (t - m.kbT) / 0.15);
+  const bx = x + Math.round(m.kbX * m.kbAmp * kk), bfeet = feet + Math.round(m.kbY * m.kbAmp * kk * 0.6);
 
   // invulnerability blink (not during dashes)
   let alpha = 1;
@@ -486,43 +519,52 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   ctx.save();
   ctx.globalAlpha = alpha;
   const aimUp = p.facing[1] < -0.55;
-  if (aimUp) drawWeapon(ctx, L, p, m, t, x, feet, flip, bob);
+  if (aimUp) drawWeapon(ctx, L, p, m, t, bx, bfeet, flip, bob);
 
   // glow outline for overclock / hotfix
   const glowCol = overclock ? "#ffb13a" : p.buffs.includes("hotfix") ? "#5dff8a" : p.buffs.includes("rollback") ? "#6aa8ff" : "";
-  if (glowCol) {
+  const since = t - m.hurtT;
+  const flashT = m.crit && t - m.kbT < 0.3 ? 0.11 : 0.07;
+  if (since >= flashT) {
+    // light rim (or buff glow) hugging the dark outline: makes heroes pop off busy arena floors
     ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = alpha * (0.8 + 0.2 * Math.sin(t * 12));
-    for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) drawBody(ctx, L, fr, x + ox, feet + oy, flip, sx, sy, glowCol);
+    if (glowCol) {
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = alpha * (0.8 + 0.2 * Math.sin(t * 12));
+    } else {
+      ctx.globalAlpha = alpha * (isYou ? 0.6 : 0.45);
+    }
+    const rim = heroRim(L, fr, glowCol || L.c.rim);
+    ctx.translate(bx, bfeet);
+    ctx.scale(flip * sx, sy);
+    ctx.drawImage(rim, -ANCHOR_X - 1, -SPRITE_FOOT - 1);
     ctx.restore();
   }
 
-  const since = t - m.hurtT;
-  if (since < 0.07) {
-    drawBody(ctx, L, fr, x, feet, flip, sx, sy, "#ffffff");
+  if (since < flashT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "#ffffff");
   } else if (since < 0.24) {
     // RGB split glitch
     const o = since < 0.15 ? 2 : 1;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = alpha * 0.8;
-    drawBody(ctx, L, fr, x - o, feet, flip, sx, sy, "#ff2050");
-    drawBody(ctx, L, fr, x + o, feet, flip, sx, sy, "#20e0ff");
+    drawBody(ctx, L, fr, bx - o, bfeet, flip, sx, sy, "#ff2050");
+    drawBody(ctx, L, fr, bx + o, bfeet, flip, sx, sy, "#20e0ff");
     ctx.restore();
-    drawBody(ctx, L, fr, x, feet, flip, sx, sy);
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy);
     // horizontal slice displacement
     const cv = heroFrame(L, fr);
     const band = 3 + ((Math.floor(t * 60) * 7) % 14);
     ctx.save();
-    ctx.translate(x + (Math.floor(t * 60) % 2 ? 2 : -2), feet);
+    ctx.translate(bx + (Math.floor(t * 60) % 2 ? 2 : -2), bfeet);
     ctx.scale(flip, 1);
     ctx.drawImage(cv, 0, band, cv.width, 3, -ANCHOR_X, -SPRITE_FOOT + band, cv.width, 3);
     ctx.restore();
   } else {
-    drawBody(ctx, L, fr, x, feet, flip, sx, sy);
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy);
   }
-  if (!aimUp) drawWeapon(ctx, L, p, m, t, x, feet, flip, bob);
+  if (!aimUp) drawWeapon(ctx, L, p, m, t, bx, bfeet, flip, bob);
   ctx.restore();
 
   if (L.duck) {
@@ -752,33 +794,54 @@ function shortRepo(slug: string): string {
   return name.length > 10 ? name.slice(0, 9) + "~" : name;
 }
 
+function shortName(n: string): string {
+  const s = (n || "anon").trim();
+  return s.length > 7 ? s.slice(0, 6) + "~" : s;
+}
+
+function repoColor(L: HeroLook): string {
+  const [h, sat, l] = hexToHsl(L.c.primaryL);
+  return hslToHex(h, Math.min(sat, 0.85), Math.max(l, 0.68));
+}
+
+/**
+ * Tags: you = arrow + name + repo (2 lines). Teammates = 1-line short name; their repo slides in
+ * when you're close (or when they're downed) to keep 8-player fights readable.
+ */
 function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isYou: boolean, x: number, y: number, t: number, downed = false) {
-  const name = (p.name || "anon").slice(0, 10);
   const top = y - 25;
-  if (downed) {
-    drawText(ctx, name + " 404", x, top, Math.floor(t * 3) % 2 ? "#ff4a5a" : (isYou ? "#ffe45c" : "#f4f1ff"));
-    return;
-  }
+  const repo = shortRepo(p.kit.repo);
   if (isYou) {
+    const name = (p.name || "anon").slice(0, 10);
     const b = Math.round(Math.sin(t * 6) * 1.5);
+    const ay = top - 14 + b;
     ctx.fillStyle = "#120b18";
-    // down arrow (outlined)
-    const ay = top - 8 + b;
     ctx.fillRect(x - 4, ay - 1, 9, 1);
     for (let i = 0; i < 4; i++) ctx.fillRect(x - 4 + i, ay + i, 9 - i * 2, 1);
     ctx.fillRect(x - 1, ay + 4, 3, 1);
     ctx.fillStyle = "#ffe45c";
     for (let i = 0; i < 3; i++) ctx.fillRect(x - 3 + i, ay + i, 7 - i * 2, 1);
     ctx.fillRect(x, ay + 3, 1, 1);
-    drawText(ctx, name, x, top, "#ffe45c");
-  } else {
-    drawText(ctx, name, x, top - 6, "#f4f1ff");
-    ctx.save();
-    ctx.globalAlpha *= 0.85;
-    const [h, sat, l] = hexToHsl(L.c.primaryL);
-    drawText(ctx, shortRepo(p.kit.repo), x, top, hslToHex(h, Math.min(sat, 0.85), Math.max(l, 0.68)));
-    ctx.restore();
+    drawText(ctx, downed ? name + " 404" : name, x, top - 6, downed && Math.floor(t * 3) % 2 ? "#ff4a5a" : "#ffe45c");
+    drawText(ctx, repo, x, top, "#d8c25a");
+    return;
   }
+  let near = 0;
+  if (youPos && t - youPos.t < 0.5) {
+    const d = Math.hypot(p.x - youPos.x, p.y - youPos.y);
+    near = Math.max(0, Math.min(1, (64 - d) / 16));
+  }
+  if (downed) near = 1;
+  const nameY = top - Math.round(6 * near);
+  const label = downed ? shortName(p.name) + " 404" : shortName(p.name);
+  ctx.save();
+  ctx.globalAlpha *= downed ? 1 : 0.92;
+  drawText(ctx, label, x, nameY, downed && Math.floor(t * 3) % 2 ? "#ff4a5a" : "#f4f1ff");
+  if (near > 0) {
+    ctx.globalAlpha *= near;
+    drawText(ctx, repo, x, top, repoColor(L));
+  }
+  ctx.restore();
 }
 
 // ---------------------------------------------------------------- portraits
@@ -834,4 +897,94 @@ export function playerPortraitFrame(time: number, seed = 0): number {
   const t = normTime(time) + (seed % 100) / 37;
   if (t % 3.1 < 0.13) return 2;
   return Math.floor(t * 1.6) % 2;
+}
+
+// ---------------------------------------------------------------- lobby card spin-up
+const SPIN = 0.9;
+const tintCache = new Map<string, HTMLCanvasElement>();
+function tintOf(src: HTMLCanvasElement, key: string, color: string): HTMLCanvasElement {
+  const k = key + "|" + color;
+  let c = tintCache.get(k);
+  if (!c) {
+    c = tinted(src, color);
+    if (tintCache.size > 200) tintCache.clear();
+    tintCache.set(k, c);
+  }
+  return c;
+}
+
+/**
+ * Animated lobby card painter. Call every animation tick with the same canvas (square, any size).
+ * `readyAge` = seconds since the hero's kit arrived (status -> ready): for the first 0.9s the hero
+ * materializes bottom-up behind a scanline (wireframe + glitch slices + flash); afterwards it idles
+ * (breathe/blink) with a rare RGB-split flicker. Omit readyAge for an already-revealed hero.
+ */
+export function paintHeroCard(c: HTMLCanvasElement, kit: PlayerKit, time: number, readyAge = 99): void {
+  const size = c.width;
+  const g = c.getContext("2d")!;
+  g.imageSmoothingEnabled = false;
+  g.clearRect(0, 0, c.width, c.height);
+  const t = normTime(time);
+  const L = lookFor(kit);
+  const s = Math.max(1, Math.floor(size / 26));
+  const key = L.key + "|" + size;
+
+  if (readyAge >= SPIN) {
+    const src = playerPortrait(kit, size, playerPortraitFrame(t, kit.seed));
+    const glitch = (t + (kit.seed % 97) / 13) % 5.3 < 0.12;
+    if (glitch) {
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      g.globalAlpha = 0.7;
+      g.drawImage(tintOf(src, key + "|" + playerPortraitFrame(t, kit.seed), "#ff2050"), -s, 0);
+      g.drawImage(tintOf(src, key + "|" + playerPortraitFrame(t, kit.seed), "#20e0ff"), s, 0);
+      g.restore();
+      g.drawImage(src, 0, 0);
+      const band = Math.floor((size * 0.3 + ((t * 977) % (size * 0.5))) / s) * s;
+      g.clearRect(0, band, size, s * 2);
+      g.drawImage(src, 0, band, size, s * 2, s * 2, band, size, s * 2);
+    } else {
+      g.drawImage(src, 0, 0);
+    }
+    const fa = readyAge - SPIN;
+    if (fa < 0.3) {
+      g.save();
+      g.globalAlpha = 1 - fa / 0.3;
+      g.drawImage(tintOf(playerPortrait(kit, size, 0), key + "|0", "#ffffff"), 0, 0);
+      g.restore();
+    }
+    return;
+  }
+
+  const k = Math.max(0, readyAge) / SPIN;
+  const src = playerPortrait(kit, size, 0);
+  const wire = tintOf(src, key + "|0", L.c.accentL);
+  const ease = 1 - (1 - k) * (1 - k);
+  const scanY = Math.round((size * (1 - ease)) / s) * s;
+  // above the scanline: flickering wireframe silhouette
+  g.save();
+  g.globalAlpha = 0.18 + 0.22 * Math.random();
+  if (scanY > 0) g.drawImage(wire, 0, 0, size, scanY, 0, 0, size, scanY);
+  g.restore();
+  // below: the real hero, with a couple of glitch-offset slices near the scan
+  if (scanY < size) g.drawImage(src, 0, scanY, size, size - scanY, 0, scanY, size, size - scanY);
+  for (let i = 0; i < 2; i++) {
+    const by = scanY + Math.floor(Math.random() * 6) * s;
+    const off = (Math.random() < 0.5 ? -1 : 1) * s * (1 + Math.floor(Math.random() * 3));
+    g.clearRect(0, by, size, s);
+    g.drawImage(src, 0, by, size, s, off, by, size, s);
+  }
+  // data bits rising off the scanline
+  g.fillStyle = L.c.accentL;
+  for (let i = 0; i < 8; i++) {
+    const px0 = Math.floor((Math.random() * size) / s) * s;
+    g.fillRect(px0, scanY - Math.floor(Math.random() * 5) * s, s, s);
+  }
+  // the scanline itself + glow
+  g.fillStyle = L.c.accent;
+  g.globalAlpha = 0.45;
+  g.fillRect(0, scanY - s, size, s * 3);
+  g.globalAlpha = 1;
+  g.fillStyle = "#ffffff";
+  g.fillRect(0, scanY, size, s);
 }

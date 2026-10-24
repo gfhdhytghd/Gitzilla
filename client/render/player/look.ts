@@ -25,6 +25,7 @@ export interface HeroColors {
   cloth: string; clothD: string; boot: string;
   wood: string; woodL: string;
   ring: string; // friendly ground ring
+  rim: string;  // light 1px rim around the outline so heroes pop off busy floors
 }
 
 export interface HeroLook {
@@ -174,6 +175,7 @@ export function lookFor(kit: PlayerKit): HeroLook {
     cloth: clothBase, clothD: shade(clothBase, 0.8), boot: "#2a1f2b",
     wood: "#8a5a34", woodL: "#b98450",
     ring: mix("#5dffb0", primary, 0.25),
+    rim: mix(mix("#5dffb0", primary, 0.25), "#ffffff", 0.6),
   };
 
   // ---- seeded fallback choices (always drawn from rng so seeds stay stable)
