@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import type { RepoProfile } from '../shared/types.ts';
 import { analyzeGitHubRepo } from './github.ts';
 import { componentTopology, fnv1a } from './graph.ts';
+import { selectPrimaryLanguage } from './files.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const CACHE_ROOT = join(ROOT, '.cache/analysis');
@@ -28,10 +29,14 @@ export function normalizeSlug(input: string): string {
   return value.toLowerCase();
 }
 
+function refreshLanguage(profile: RepoProfile): RepoProfile {
+  return { ...profile, primaryLanguage: selectPrimaryLanguage(profile.languages, profile.primaryLanguage), readme: profile.readme ?? '', tree: profile.tree ?? [profile.heart] };
+}
+
 function fallbackProfiles(): RepoProfile[] {
   try {
     return readdirSync(FALLBACK_ROOT).filter(name => name.endsWith('.json')).flatMap(name => {
-      try { return [JSON.parse(readFileSync(join(FALLBACK_ROOT, name), 'utf8')) as RepoProfile]; }
+      try { return [refreshLanguage(JSON.parse(readFileSync(join(FALLBACK_ROOT, name), 'utf8')) as RepoProfile)]; }
       catch { return []; }
     });
   } catch { return []; }
@@ -64,7 +69,7 @@ export function syntheticProfile(slug: string): RepoProfile {
     heart: `${components[0].name}/index.${extension}`, heartFanIn: components[0].fanIn,
     ...componentTopology(components.map(c => c.name), edges),
     testRatio: components.filter(c => c.name === 'tests').reduce((n, c) => n + c.files, 0) / totalFiles,
-    seed, fallback: true,
+    seed, fallback: true, readme: '', tree: [...components.map(c => c.name + '/'), `${components[0].name}/index.${extension}`],
   };
 }
 
@@ -79,7 +84,7 @@ async function loadCache(slug: string): Promise<{ profile: RepoProfile; fresh: b
     const [contents, info] = await Promise.all([readFile(file, 'utf8'), stat(file)]);
     const profile = JSON.parse(contents) as RepoProfile;
     if (profile.slug !== slug || !Array.isArray(profile.components) || !profile.totalFiles) return null;
-    return { profile, fresh: Date.now() - info.mtimeMs < CACHE_TTL };
+    return { profile: refreshLanguage(profile), fresh: Date.now() - info.mtimeMs < CACHE_TTL && typeof profile.readme === 'string' && Array.isArray(profile.tree) };
   } catch { return null; }
 }
 

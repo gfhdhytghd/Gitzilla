@@ -1,6 +1,7 @@
 import { posix as path } from 'node:path';
 import type { RepoProfile } from '../shared/types.ts';
-import { countLoc, isSourcePath, isTestFile, languageOf, type SourceFile } from './files.ts';
+import { notableTree, readmeFromFiles } from './context.ts';
+import { countLoc, isSourcePath, isTestFile, languageOf, selectPrimaryLanguage, type SourceFile } from './files.ts';
 
 export interface RepoMetadata {
   description?: string; stars?: number; primaryLanguage?: string;
@@ -329,7 +330,7 @@ export function profileFromFiles(slug: string, input: SourceFile[], metadata: Re
     measuredLanguages[language] = (measuredLanguages[language] ?? 0) + Buffer.byteLength(file.text);
   }
   const languages = metadata.languages && Object.keys(metadata.languages).length ? metadata.languages : measuredLanguages;
-  const primaryLanguage = metadata.primaryLanguage ?? Object.entries(languages).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? 'Unknown';
+  const primaryLanguage = selectPrimaryLanguage(languages, metadata.primaryLanguage, measuredLanguages);
   return {
     slug, description: metadata.description ?? '', stars: metadata.stars ?? 0,
     primaryLanguage, languages, totalFiles: files.length, totalLoc,
@@ -338,5 +339,6 @@ export function profileFromFiles(slug: string, input: SourceFile[], metadata: Re
     ...componentTopology(components.map(component => component.name), edges),
     testRatio: files.length ? files.filter(file => isTestFile(file.path)).length / files.length : 0,
     seed: fnv1a(slug.toLowerCase()),
+    readme: readmeFromFiles(input), tree: notableTree(input, graph, heart),
   };
 }
