@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { WebSocket } from 'ws';
 import type { ClientMsg, InputFrame, ServerMsg } from '../shared/types.ts';
 
-const base = process.env.SMOKE_URL || 'http://localhost:5173';
+const base = process.env.SMOKE_URL || 'http://localhost:5175';
 const humanCount = Number(process.env.SMOKE_PLAYERS || 4);
 const botCount = Number(process.env.SMOKE_BOTS || 0);
 assert.ok(humanCount >= 1 && humanCount <= 8 && botCount >= 0 && humanCount + botCount <= 8);
@@ -23,6 +23,12 @@ async function waitFor<T>(get: () => T | undefined | false, label: string, timeo
 function send(index: number, message: ClientMsg) { sockets[index].send(JSON.stringify(message)); }
 
 try {
+  const me = await fetch(new URL('/api/me', base));
+  assert.equal(me.status, 200, 'Auth routes run before the API catch-all');
+  const identity = await me.json() as { enabled: boolean; user: unknown };
+  assert.equal(typeof identity.enabled, 'boolean');
+  assert.equal(identity.user, null, 'Smoke starts without a session cookie');
+  assert.equal((await fetch(new URL('/api/me/repos', base))).status, 401, 'Anonymous private-repo listing requires login');
   const response = await fetch(new URL('/api/room', base), { method: 'POST' });
   assert.equal(response.status, 201);
   const { room } = await response.json() as { room: string };
@@ -87,7 +93,7 @@ try {
   }
   const hall = await (await fetch(new URL('/api/hall', base))).json() as Record<string, unknown>;
   for (const key of ['fastestKills', 'topDamage', 'bossRecords']) assert.ok(Array.isArray(hall[key]), `Hall ${key} is an array`);
-  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${snapshots.map((n, i) => n - before[i]).join(', ')}; QR/fallback/Hall endpoints OK`);
+  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${snapshots.map((n, i) => n - before[i]).join(', ')}; auth/QR/fallback/Hall endpoints OK`);
 } finally {
   clearInterval(timer);
   for (const socket of sockets) socket.close();
