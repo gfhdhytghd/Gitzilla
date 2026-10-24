@@ -1,5 +1,5 @@
-import type { BossKit, PlayerKit, RepoProfile, WeaponKind } from '../shared/types.ts';
-import { ATTACK_FLAVOR, weaponCode } from './flavor.ts';
+import type { BossKit, PlayerKit, RepoProfile } from '../shared/types.ts';
+import { ATTACK_FLAVOR } from './flavor.ts';
 
 export type BossCode = NonNullable<BossKit['code']> & {
   bigFiles: { path: string; loc: number }[];
@@ -39,12 +39,11 @@ export function symbolAllocator(p: RepoProfile, reserved: string[] = []) {
   };
 }
 
-export function heroCode(p: RepoProfile, weapon: WeaponKind): NonNullable<PlayerKit['code']> {
+export function heroCode(p: RepoProfile): NonNullable<PlayerKit['code']> {
   const dna = p.dna;
   return {
     tokens: [...(dna?.tokens ?? [])], identifiers: [...(dna?.identifiers ?? [])],
     signature: signature(dna?.identifiers[0] ?? ''), snippet: dna?.snippets[0]?.code ?? dna?.heartLines[0] ?? '',
-    weapon: weaponCode(weapon, p.primaryLanguage, p.seed, dna?.tokens),
   };
 }
 

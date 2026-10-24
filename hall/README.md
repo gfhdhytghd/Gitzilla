@@ -23,3 +23,5 @@ npx vitest run hall
 ```
 
 Exact HTTP/match-end wiring is in `docs/progress/codex-repo.md` under `Handoff to codex-net`. Server wiring belongs to codex-net.
+
+Classroom PvP (`autopsy.mode === 'edu'`) and any null-boss result are skipped before storage is read or created. They never affect battle damage, wins/losses, or kill records; classroom ranking remains with the classroom flow.

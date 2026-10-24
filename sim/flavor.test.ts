@@ -6,13 +6,14 @@ import type { BossCode } from './code.ts';
 import { BossAi } from './bossAi.ts';
 import { createMatch } from './match.ts';
 import { loadBalanceProfiles, syntheticProfile } from './bots.ts';
+import ts from 'typescript';
 
 describe('code weapon flavor', () => {
   it('covers every weapon with short, detached, deterministic visual metadata', () => {
     for (const kind of ['blaster', 'smg', 'shotgun', 'cannon', 'staff', 'laser', 'blade'] as WeaponKind[]) {
       const a = weaponCode(kind, 'Unknown', 17, ['real']);
       expect(a).toEqual(weaponCode(kind, 'Unknown', 17, ['real']));
-      expect(a.name.length).toBeLessThanOrEqual(20);
+      expect(a.name.length).toBeLessThanOrEqual(24);
       expect(a.projectiles.length).toBeGreaterThan(0); expect(a.projectiles.length).toBeLessThanOrEqual(4);
       expect(a.projectiles.every(glyph => glyph.length > 0 && glyph.length <= 8)).toBe(true);
       expect(a.projectiles).toContain('real'); expect(a.muzzle).toBeTruthy(); expect(a.impact).toBeTruthy();
@@ -20,15 +21,67 @@ describe('code weapon flavor', () => {
     }
   });
   it.each([
-    ['TypeScript', 'blaster', 'as any Blaster', 'any'], ['JavaScript', 'blaster', 'Promise Blaster', '.then()'],
-    ['Rust', 'cannon', 'unsafe{} Cannon', '&mut'], ['Go', 'smg', 'goroutine SMG', '<-ch'],
-    ['C++', 'shotgun', 'template<> Shotgun', '::'], ['Python', 'staff', 'yield Staff', 'λ'],
-    ['Java', 'laser', 'Stream Beam', '.map()'], ['C#', 'laser', 'LINQ Ray', 'JOIN'],
-    ['PHP', 'blade', 'die() Saber', '?>'],
-  ])('gives %s a language-specific code construct', (language, kind, name, glyph) => {
-    const flavor = weaponCode(kind as WeaponKind, language, 1);
-    expect(flavor.name).toBe(name); expect(flavor.projectiles).toContain(glyph);
-    expect(flavor).toEqual(weaponCode(kind as WeaponKind, language.toLowerCase(), 1));
+    ['TypeScript', 'blaster', /await|Blaster|emit/], ['JavaScript', 'blaster', /await|then|emit/],
+    ['Rust', 'cannon', /unsafe|blast|alloc/], ['Go', 'smg', /for|go/],
+    ['C++', 'shotgun', /std::|Burst|scatter/], ['Python', 'staff', /yield|lambda|next/],
+    ['Java', 'laser', /stream|map|trace/], ['C#', 'laser', /Select|select/], ['PHP', 'blade', /unset|exit|die/],
+    ['Ruby', 'blaster', /puts|then|fire/], ['Kotlin', 'smg', /launch|repeat/], ['Haskell', 'staff', /fmap|cast/],
+    ['Zig', 'cannon', /comptime|@as|blast/], ['SQL', 'laser', /^SELECT/], ['Lua', 'blade', /nil|remove/],
+  ])('gives %s a language-specific code expression', (language, kind, pattern) => {
+    const flavor = weaponCode(kind as WeaponKind, language as string, 1, [], ['route']);
+    expect(flavor.name).toMatch(pattern as RegExp); expect(flavor.name).toContain('route');
+    expect(flavor).toEqual(weaponCode(kind as WeaponKind, (language as string).toLowerCase(), 1, [], ['route']));
+  });
+  it('uses real identifiers and never repeats across all 15 fallback repositories', () => {
+    const profiles = loadBalanceProfiles(), names = new Set<string>();
+    expect(profiles).toHaveLength(15);
+    for (const p of profiles) {
+      const name = playerKitFromProfile(p).code!.weapon!.name;
+      const symbols = [...p.dna!.identifiers, ...Object.values(p.dna!.componentSymbols).flat()];
+      expect(symbols.some(id => name.includes(id))).toBe(true);
+      expect(name.length).toBeLessThanOrEqual(24); expect(name).not.toMatch(/\b(Pistol|Blaster|SMG|Shotgun|Cannon|Staff|Beam|Katana|Saber)\s*$/);
+      expect(names.has(name)).toBe(false); names.add(name);
+    }
+  });
+  it('varies complete expressions by seed for every weapon/language without losing the repo identifier', () => {
+    const languages = ['TypeScript', 'JavaScript', 'Go', 'C', 'C++', 'Rust', 'Python', 'Jupyter Notebook', 'Java', 'Kotlin', 'C#', 'Ruby', 'PHP', 'Lua', 'R', 'Julia', 'Zig', 'Haskell', 'Lisp', 'SQL'];
+    for (const language of languages) for (const kind of ['blaster', 'smg', 'shotgun', 'cannon', 'staff', 'laser', 'blade'] as const) {
+      const names = new Set<string>();
+      for (let seed = 0; seed < 12; seed++) {
+        const w = weaponCode(kind, language, seed, [], ['route']); names.add(w.name);
+        expect(w.name).toContain('route'); expect(w.name.length).toBeLessThanOrEqual(24);
+        expect(w.name).not.toContain('{id}'); expect(w.name).not.toContain('…');
+        expect(w.projectiles.every(g => g.length <= 8)).toBe(true);
+        expect(w.projectiles).toContain('route'); expect(w.muzzle).toBeTruthy(); expect(w.impact).toBeTruthy();
+      }
+      expect(names.size, `${language}/${kind}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+  it('fits a shorter whole template or another real identifier instead of clipping syntax', () => {
+    const long = 'extremelyLongRepositoryFunctionIdentifier';
+    for (const language of ['JavaScript', 'Python', 'Rust', 'C', 'Go']) {
+      for (let seed = 0; seed < 8; seed++) {
+        const w = weaponCode('blaster', language, seed, [], [long, 'route']);
+        expect(w.name).toContain('route'); expect(w.name).not.toContain('extremely'); expect(w.name.length).toBeLessThanOrEqual(24);
+      }
+    }
+    expect(weaponCode('blaster', 'JavaScript', 1, [], ['$router']).name).toContain('$router');
+    const w = weaponCode('staff', 'Python', 0, [], ['class', 'for', 'app']); expect(w.name).toContain('app');
+    expect(weaponCode('blade', 'Ruby', 0, [], ['dispatch!']).name).toContain('dispatch!');
+  });
+  it('keeps missing-source fallbacks complete, deterministic and short for all kinds', () => {
+    for (const language of ['SQL', 'Lisp', 'Haskell', 'Unknown']) for (const kind of ['blaster', 'smg', 'shotgun', 'cannon', 'staff', 'laser', 'blade'] as const) {
+      const w = weaponCode(kind, language, 0xffffffff, [], ['not a symbol', 'x'.repeat(100)]);
+      expect(w.name.length).toBeLessThanOrEqual(24); expect(w.name).not.toContain('not a symbol');
+      expect(w).toEqual(weaponCode(kind, language, 0xffffffff, [], ['not a symbol', 'x'.repeat(100)]));
+    }
+  });
+  it('parses generated JS/TS expressions without executing them', () => {
+    for (const language of ['JavaScript', 'TypeScript']) for (let seed = 0; seed < 24; seed++) {
+      const name = weaponCode('blaster', language, seed, [], ['render']).name;
+      const source = ts.createSourceFile('weapon.ts', `async function weapon(){ return (${name}); }`, ts.ScriptTarget.Latest, true, language === 'JavaScript' ? ts.ScriptKind.JS : ts.ScriptKind.TS);
+      expect((source as typeof source & { parseDiagnostics: unknown[] }).parseDiagnostics).toEqual([]);
+    }
   });
   it('fills all real fallback kits while preserving the existing weapon and stat budget', () => {
     for (const p of loadBalanceProfiles()) {
