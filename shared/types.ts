@@ -79,6 +79,7 @@ export interface HeroDesign {
   emblem: string;            // 1–2 ASCII chars on the chest, e.g. "λ", "{}", "R"
   palette: string[];         // 4 hex: primary, secondary, skin/visor, accent
   catchphrase: string;       // <= 40 chars, shown on lobby card
+  weaponName?: string;       // <= 20 chars, maps into PlayerKit.code.weapon.name (cosmetic)
 }
 
 export type BossBody = "blob" | "serpent" | "spider" | "hydra" | "golem" | "swarm" | "eye" | "tree" | "machine";

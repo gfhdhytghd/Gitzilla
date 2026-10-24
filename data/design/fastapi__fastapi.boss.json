@@ -1,5 +1,5 @@
 {
-  "name": "FASTAPI, THE KNOT THAT IMPORTS",
+  "name": "FASTAPI, THE TEST OPENAPI LEVIATHAN",
   "epithet": "Its 8 limbs feed the sleepless heart of fastapi/__init__.py.",
   "body": "spider",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone fastapi/fastapi",
     "[##########] architecture awakened",
-    "FATAL: fastapi/__init__.py"
+    "FATAL: fastapi/__init__.py",
+    "needs_py310 = pytest.mark.skipif("
   ],
   "taunts": [
+    "Known bug: TODO remove when deprecating Pydantic v1",
+    "Recent sin: 🐛 Restore default handling for omitted boolean form",
+    "Your app() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-fan-0": "Merge Conflict",
-    "0-charge-1": "Fast Forward",
-    "1-cascade-0": "Dependency Hell",
-    "2-fan-0": "Force Push",
-    "3-summon-0": "Bug Factory",
-    "4-cascade-0": "Circular Import",
-    "5-cascade-0": "Dependency Hell",
-    "6-cascade-0": "Circular Import",
-    "7-spiral-0": "Stack Overflow"
+    "0-fan-0": "app() fan",
+    "0-charge-1": "app() charge",
+    "1-cascade-0": "app() cascade",
+    "2-fan-0": "Item() fan",
+    "3-summon-0": "__init__() summon",
+    "4-cascade-0": "__init__() cascade",
+    "5-cascade-0": "Header() cascade",
+    "6-cascade-0": "__init__() cascade",
+    "7-spiral-0": "main() spiral"
   },
   "limbNames": {
-    "limb-0": "tests Claw",
-    "limb-1": "fastapi Tendril",
-    "limb-2": "docs_src Mandible",
-    "limb-3": "scripts Coil",
-    "limb-4": "misc Claw",
-    "limb-5": "openapi Tendril",
-    "limb-6": "security Mandible",
-    "limb-7": "docs Coil"
+    "limb-0": "app Claw",
+    "limb-1": "get Tendril",
+    "limb-2": "User Mandible",
+    "limb-3": "Settings Coil",
+    "limb-4": "__init__ Claw",
+    "limb-5": "Response Tendril",
+    "limb-6": "make_not_authenticated_error Man",
+    "limb-7": "type Coil"
   }
 }

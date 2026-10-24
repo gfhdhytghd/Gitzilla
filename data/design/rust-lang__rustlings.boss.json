@@ -1,5 +1,5 @@
 {
-  "name": "RUSTLINGS, THE KNOT THAT IMPORTS",
+  "name": "RUSTLINGS, THE OVERCLOCKED DIRS",
   "epithet": "Its 8 limbs feed the sleepless heart of src/exercise.rs.",
   "body": "swarm",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone rust-lang/rustlings",
     "[##########] architecture awakened",
-    "FATAL: src/exercise.rs"
+    "FATAL: src/exercise.rs",
+    "fn name(&self) -> &str;"
   ],
   "taunts": [
+    "Known bug: TODO: Fix the function call.",
+    "Recent sin: write input files to disk before running exercise",
+    "Your new() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "Bug Factory",
-    "0-charge-1": "Fast Forward",
-    "1-summon-0": "Bug Factory",
-    "2-cascade-0": "Circular Import",
-    "3-cascade-0": "Dependency Hell",
-    "4-cascade-0": "Circular Import",
-    "5-cascade-0": "Dependency Hell",
-    "6-cascade-0": "Circular Import",
+    "0-summon-0": "new() summon",
+    "0-charge-1": "new() charge",
+    "1-summon-0": "new() summon",
+    "2-cascade-0": "new() cascade",
+    "3-cascade-0": "new() cascade",
+    "4-cascade-0": "new() cascade",
+    "5-cascade-0": "done() cascade",
+    "6-cascade-0": "args() cascade",
     "7-spiral-0": "Stack Overflow"
   },
   "limbNames": {
-    "limb-0": "solutions Mandible",
-    "limb-1": "exercises Coil",
-    "limb-2": "src Claw",
-    "limb-3": "dev Tendril",
-    "limb-4": "list Mandible",
-    "limb-5": "watch Coil",
-    "limb-6": "misc Claw",
+    "limb-0": "parse Mandible",
+    "limb-1": "make_sausage Coil",
+    "limb-2": "new Claw",
+    "limb-3": "check Tendril",
+    "limb-4": "build Mandible",
+    "limb-5": "check_all_exercises Coil",
+    "limb-6": "args Claw",
     "limb-7": "website Tendril"
   }
 }

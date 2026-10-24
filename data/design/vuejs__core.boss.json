@@ -1,5 +1,5 @@
 {
-  "name": "CORE, THE KNOT THAT IMPORTS",
+  "name": "CORE, THE BASE CREATE RENDERER PARADOX",
   "epithet": "Its 8 limbs feed the sleepless heart of packages/shared/index.js.",
   "body": "swarm",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone vuejs/core",
     "[##########] architecture awakened",
-    "FATAL: packages/shared/index.js"
+    "FATAL: packages/shared/index.js",
+    "export interface ComponentCustomProps {}"
   ],
   "taunts": [
+    "Known bug: TODO: check for cases where using innerHTML will resu",
+    "Recent sin: chore(deps): update playground (#15685)",
+    "Your render() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-cascade-0": "Dependency Hell",
-    "0-charge-1": "Fast Forward",
-    "1-cascade-0": "Dependency Hell",
-    "2-cascade-0": "Circular Import",
-    "3-cascade-0": "Dependency Hell",
-    "4-cascade-0": "Circular Import",
-    "5-cascade-0": "Dependency Hell",
-    "6-cascade-0": "Circular Import",
-    "7-fan-0": "Merge Conflict"
+    "0-cascade-0": "render() cascade",
+    "0-charge-1": "render() charge",
+    "1-cascade-0": "foo() cascade",
+    "2-cascade-0": "render() cascade",
+    "3-cascade-0": "resolve() cascade",
+    "4-cascade-0": "render() cascade",
+    "5-cascade-0": "render() cascade",
+    "6-cascade-0": "render() cascade",
+    "7-fan-0": "render() fan"
   },
   "limbNames": {
-    "limb-0": "runtime-core Mandible",
-    "limb-1": "compiler-core Coil",
-    "limb-2": "misc Claw",
-    "limb-3": "compiler-sfc Tendril",
-    "limb-4": "reactivity Mandible",
-    "limb-5": "runtime-dom Coil",
-    "limb-6": "vue Claw",
-    "limb-7": "packages-private Tendril"
+    "limb-0": "foo Mandible",
+    "limb-1": "NodeTypes Coil",
+    "limb-2": "render Claw",
+    "limb-3": "compile Tendril",
+    "limb-4": "nextTick Mandible",
+    "limb-5": "resolve Coil",
+    "limb-6": "render Claw",
+    "limb-7": "foo Tendril"
   }
 }

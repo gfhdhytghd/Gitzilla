@@ -1,5 +1,5 @@
 {
-  "name": "EXAMPLE, THE UNMERGED",
+  "name": "EXAMPLE, THE UNFINISHED REVERSE",
   "epithet": "Its 8 limbs feed the sleepless heart of hello/reverse/reverse.go.",
   "body": "swarm",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone golang/example",
     "[##########] architecture awakened",
-    "FATAL: hello/reverse/reverse.go"
+    "FATAL: hello/reverse/reverse.go",
+    "func usage() {"
   ],
   "taunts": [
+    "Known bug: TODO(adonovan): escape /^```/ in s",
+    "Recent sin: go.mod: update golang.org/x dependencies",
+    "Your main() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "Segfault Halo",
-    "0-charge-1": "Fast Forward",
-    "1-spiral-0": "Stack Overflow",
-    "2-ring-0": "Exception Orbit",
-    "3-spiral-0": "Stack Overflow",
-    "4-ring-0": "Exception Orbit",
-    "5-spiral-0": "Stack Overflow",
-    "6-ring-0": "Exception Orbit",
-    "7-spiral-0": "Stack Overflow"
+    "0-ring-0": "appendAttr() ring",
+    "0-charge-1": "appendAttr() charge",
+    "1-spiral-0": "main() spiral",
+    "2-ring-0": "main() ring",
+    "3-spiral-0": "main() spiral",
+    "4-ring-0": "main() ring",
+    "5-spiral-0": "main() spiral",
+    "6-ring-0": "main() ring",
+    "7-spiral-0": "main() spiral"
   },
   "limbNames": {
-    "limb-0": "slog-handler-guide Mandible",
-    "limb-1": "ragserver Coil",
-    "limb-2": "gotypes Claw",
-    "limb-3": "internal Tendril",
-    "limb-4": "outyet Mandible",
-    "limb-5": "misc Coil",
-    "limb-6": "hello Claw",
-    "limb-7": "template Tendril"
+    "limb-0": "parseLogEntries Mandible",
+    "limb-1": "queryHandler Coil",
+    "limb-2": "main Claw",
+    "limb-3": "cleanListing Tendril",
+    "limb-4": "ServeHTTP Mandible",
+    "limb-5": "greet Coil",
+    "limb-6": "main Claw",
+    "limb-7": "imageHandler Tendril"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "SPRING-PETCLINIC, THE UNMERGED",
+  "name": "SPRING-PETCLINIC, DEVOURER OF NAMED ENTITY",
   "epithet": "Its 2 limbs feed the sleepless heart of src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java.",
   "body": "serpent",
   "eyes": 12,
@@ -19,20 +19,23 @@
   "intro": [
     "$ git clone spring-projects/spring-petclinic",
     "[##########] architecture awakened",
-    "FATAL: src/main/java/org/springframework/samples/petclinic/model/NamedEntity.jav"
+    "FATAL: src/main/java/org/springframework/samples/petclinic/model/NamedEntity.jav",
+    "@MappedSuperclass"
   ],
   "taunts": [
+    "Recent sin: adding integer overflow mitigations from user contro",
+    "Your Owner() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "npm install",
-    "0-slam-1": "rm -rf /",
-    "1-spiral-0": "Recursive Regret"
+    "0-summon-0": "Owner() summon",
+    "0-slam-1": "Owner() slam",
+    "1-spiral-0": "validate() spiral"
   },
   "limbNames": {
-    "limb-0": "main Coil",
-    "limb-1": "test Claw"
+    "limb-0": "PetType Coil",
+    "limb-1": "validate Claw"
   }
 }

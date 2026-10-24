@@ -1,12 +1,14 @@
-import type { BossDesign, BossKit, HeroDesign, PlayerKit, RepoProfile } from '../shared/types.ts';
+import type { BossDesign, BossKit, PlayerKit, RepoProfile } from '../shared/types.ts';
 import { fallbackBoss, fallbackHero } from './fallback.ts';
 import { accessories, archetypes, bodies, growths, headgear, mouths, themes } from './schema.ts';
+import { cleanWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
 
 function record(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 function text(value: unknown, fallback: string, limit: number): string {
-  return typeof value === 'string' && value.trim() ? value.replace(/[\x00-\x1f\x7f]/g, ' ').trim().slice(0, limit).trimEnd() : fallback;
+  const cleaned = typeof value === 'string' ? value.replace(/[\x00-\x1f\x7f]/g, ' ').trim().slice(0, limit).trimEnd() : '';
+  return cleaned || fallback;
 }
 function enumeration<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === 'string' && allowed.includes(value as T) ? value as T : fallback;
@@ -16,18 +18,19 @@ function palette(value: unknown, fallback: string[]): string[] {
   return fallback.map((color, i) => typeof colors[i] === 'string' && /^#[0-9a-f]{6}$/i.test(colors[i]) ? colors[i].toLowerCase() : color);
 }
 function lines(value: unknown, fallback: string[], min: number, max: number, length: number): string[] {
-  const result = Array.isArray(value) ? value.filter(v => typeof v === 'string' && v.trim()).slice(0, max).map(v => text(v, '', length)) : [];
+  const result = Array.isArray(value) ? value.map(v => text(v, '', length)).filter(Boolean).slice(0, max) : [];
   while (result.length < min) result.push(fallback[result.length % fallback.length]);
   return result;
 }
 
-export function validateHero(value: unknown, profile: RepoProfile, kit: PlayerKit): HeroDesign {
+export function validateHero(value: unknown, profile: RepoProfile, kit: PlayerKit): HeroDesignWithWeapon {
   const source = record(value), fallback = fallbackHero(profile, kit);
   const emblem = typeof source.emblem === 'string' ? source.emblem.replace(/[^\x20-\x7e]/g, '').trim().slice(0, 2) : '';
   return {
     title: text(source.title, fallback.title, 24), archetype: enumeration(source.archetype, archetypes, fallback.archetype),
     headgear: enumeration(source.headgear, headgear, fallback.headgear), accessory: enumeration(source.accessory, accessories, fallback.accessory),
     emblem: emblem || fallback.emblem, palette: palette(source.palette, fallback.palette), catchphrase: text(source.catchphrase, fallback.catchphrase, 40),
+    weaponName: cleanWeaponName(source.weaponName) ?? fallback.weaponName,
   };
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "JQUERY, THE KNOT THAT IMPORTS",
+  "name": "JQUERY, THE AJAX HACK",
   "epithet": "Its 8 limbs feed the sleepless heart of src/core.js.",
   "body": "spider",
   "eyes": 12,
@@ -19,32 +19,36 @@
   "intro": [
     "$ git clone jquery/jquery",
     "[##########] architecture awakened",
-    "FATAL: src/core.js"
+    "FATAL: src/core.js",
+    "pushStack: function( elems ) {"
   ],
   "taunts": [
+    "Known bug: FIXME why is this double only when run with other tes",
+    "Recent sin: Build: Run `brew update` before installing Safari TP",
+    "Your get() cannot save you.",
     "Your PR has conflicts.",
     "There is no base case.",
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "Bug Factory",
-    "0-charge-1": "Fast Forward",
-    "1-cascade-0": "Dependency Hell",
-    "2-cascade-0": "Circular Import",
-    "3-cascade-0": "Dependency Hell",
-    "4-cascade-0": "Circular Import",
+    "0-summon-0": "nodeName() summon",
+    "0-charge-1": "nodeName() charge",
+    "1-cascade-0": "nodeName() cascade",
+    "2-cascade-0": "dir() cascade",
+    "3-cascade-0": "get() cascade",
+    "4-cascade-0": "nodeName() cascade",
     "5-spiral-0": "Stack Overflow",
-    "6-cascade-0": "Circular Import",
-    "7-cascade-0": "Dependency Hell"
+    "6-cascade-0": "tokenize() cascade",
+    "7-cascade-0": "showHide() cascade"
   },
   "limbNames": {
-    "limb-0": "test Mandible",
-    "limb-1": "src Coil",
-    "limb-2": "misc Claw",
-    "limb-3": "attributes Tendril",
-    "limb-4": "core Mandible",
+    "limb-0": "dir Mandible",
+    "limb-1": "siblings Coil",
+    "limb-2": "dir Claw",
+    "limb-3": "set Tendril",
+    "limb-4": "stripAndCollapse Mandible",
     "limb-5": "root Coil",
-    "limb-6": "selector Claw",
-    "limb-7": "css Tendril"
+    "limb-6": "tokenize Claw",
+    "limb-7": "finalPropName Tendril"
   }
 }

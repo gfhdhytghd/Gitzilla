@@ -1,14 +1,15 @@
 {
-  "title": "flask Byte Mage",
+  "title": "app Byte Mage",
   "archetype": "mage",
   "headgear": "bandana",
   "accessory": "rubber-duck",
-  "emblem": "R",
+  "emblem": "=",
   "palette": [
     "#355b99",
     "#65b8ed",
     "#ffdda1",
     "#ffe36c"
   ],
-  "catchphrase": "I brought a rollback."
+  "catchphrase": "app() saves the party.",
+  "weaponName": "yield Staff"
 }

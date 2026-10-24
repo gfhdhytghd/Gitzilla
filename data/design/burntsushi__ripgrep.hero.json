@@ -1,14 +1,15 @@
 {
-  "title": "ripgrep Compile Guardian",
+  "title": "new Compile Guardian",
   "archetype": "heavy",
   "headgear": "beanie",
   "accessory": "none",
-  "emblem": "{}",
+  "emblem": ";",
   "palette": [
     "#ac583c",
     "#f3a76c",
     "#ffdeb0",
     "#77f2cd"
   ],
-  "catchphrase": "One more patch saves the party."
+  "catchphrase": "new() saves the party.",
+  "weaponName": "unsafe{} Cannon"
 }
