@@ -6,8 +6,11 @@ export const audio = createAudio();
 
 let muted = store.get("kaiju.muted") === "1";
 audio.setMuted(muted);
-document.addEventListener("pointerdown", () => void audio.unlock().catch(() => {}), { capture: true });
-document.addEventListener("keydown", () => void audio.unlock().catch(() => {}), { capture: true });
+// Only some events grant user activation: a touch pointerdown does NOT (mouse pointerdown does), so phones need
+// pointerup/touchend/click. Keep listening: iOS can re-suspend the context after app switches or calls.
+const unlock = () => void audio.unlock().catch(() => {});
+for (const type of ["pointerdown", "pointerup", "touchend", "click", "keydown"])
+  document.addEventListener(type, unlock, { capture: true, passive: true });
 
 export const muteBtn = h("button.mute-btn", { "aria-label": "toggle sound", title: "sound (M)" });
 const paint = () => (muteBtn.textContent = muted ? "♪ off" : "♪ on");
