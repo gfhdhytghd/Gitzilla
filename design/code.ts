@@ -41,7 +41,9 @@ export function dnaFingerprint(profile: RepoProfile, kit?: PlayerKit | BossKit):
 /** Prompt/art recipe changes invalidate bundles without rerolling DNA-based creature names. */
 export function designFingerprint(profile: RepoProfile, kind: 'hero' | 'boss', kit?: PlayerKit | BossKit): string {
   const dna = dnaFingerprint(profile, kit);
-  return kind === 'boss' ? createHash('sha256').update(`upright-kaiju-1:${dna}`).digest('hex').slice(0, 16) : dna;
+  const theme = kit && 'theme' in kit ? kit.theme : '';
+  const archetype = kit && 'attacks' in kit ? kit.archetype : '';
+  return kind === 'boss' ? createHash('sha256').update(`boss-archetypes-1:${archetype}:${profile.primaryLanguage.toLowerCase()}:${theme}:${dna}`).digest('hex').slice(0, 16) : dna;
 }
 
 export function dnaEmblem(tokens: string[]): string | undefined {

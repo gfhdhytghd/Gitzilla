@@ -3,12 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import rawProfile from '../data/fallback/pallets__flask.json';
-import type { CodeDNA, RepoProfile, WeaponKind } from '../shared/types.ts';
+import type { BossArchetype, CodeDNA, RepoProfile, WeaponKind } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from '../sim/kits.ts';
 import { applyBossDesign, applyHeroDesign, createDesignService, designCacheFilename, designCacheKey, designFileStem, fallbackBoss, fallbackHero, parseApiKey, readApiKey, validateBoss, validateHero } from './index.ts';
 import { bodies, bossSchema, heroSchema } from './schema.ts';
 import { cleanWeaponName, validWeaponName } from './weapon.ts';
 import { dnaFingerprint } from './code.ts';
+import { bossArt, chooseBossBody } from './archetypes.ts';
 
 // JSON imports infer tuples/union-valued fields as broad arrays/strings; use the producer's contract.
 const profile = JSON.parse(JSON.stringify(rawProfile)) as RepoProfile;
@@ -52,7 +53,8 @@ describe('appearance only', () => {
     const b = validateBoss({ body: 'cute knight', eyes: 99, growths: ['cables', 'bad', 'cables', 'moss', 'gears', 'pipes'], intro: ['hi'], taunts: [], attackNames: { extra: 'bad', [bossKit.attacks[0].id]: 'x'.repeat(100) } }, profile, bossKit);
     expect(b.body).toBe(boss.body); expect(b.eyes).toBe(12); expect(b.growths).toEqual(['cables', 'moss', 'gears']);
     expect(b.intro).toHaveLength(2); expect(b.taunts).toHaveLength(3);
-    expect(b.attackNames[bossKit.attacks[0].id]).toHaveLength(22);
+    expect(b.attackNames[bossKit.attacks[0].id]).toMatch(/^app\(\) /);
+    expect(b.attackNames[bossKit.attacks[0].id].length).toBeLessThanOrEqual(64);
     expect(Object.keys(b.attackNames)).toEqual(bossKit.attacks.map(a => a.id));
     expect(b.limbNames).toEqual(boss.limbNames);
     expect(validateBoss({ eyes: -50 }, profile, bossKit).eyes).toBe(1);
@@ -96,12 +98,18 @@ describe('credentials', () => {
 });
 
 describe('Gemini REST', () => {
-  it('treats every boss body as an upright kaiju variant in the model prompt', async () => {
-    const fetcher = vi.fn().mockResolvedValue(response(boss));
-    await service(fetcher).designBoss(profile, bossKit);
-    const prompt = JSON.parse(fetcher.mock.calls[0][1].body).contents[0].parts[0].text;
-    for (const text of ['Godzilla-inspired', 'upright', 'two powerful legs', 'long heavy tail', 'hydra=multiple heads', 'machine=mech plating', 'city-shaking footfalls', 'atomic code breath']) expect(prompt).toContain(text);
-    for (const body of bodies) expect(prompt).toContain(`${body}=`);
+  it.each(['kaiju', 'hydra', 'mecha', 'abyssal'] as const)('grounds the %s prompt in its sim preset and real source', async archetype => {
+    const kit = { ...bossKit, archetype };
+    const fetcher = vi.fn().mockResolvedValue(response(fallbackBoss(profile, kit)));
+    await service(fetcher).designBoss(profile, kit);
+    const request = JSON.parse(fetcher.mock.calls[0][1].body);
+    const prompt = request.contents[0].parts[0].text;
+    expect(prompt).toContain(`archetype=${archetype}`);
+    expect(prompt).toContain(`"archetype":"${archetype}"`);
+    expect(prompt).toContain(bossArt[archetype].direction);
+    for (const text of ['phase 3', 'dark crystalline corruption', 'real identifiers', 'TODOs', 'commit subjects', 'selected archetype', 'sim pose']) expect(prompt).toContain(text);
+    expect(prompt).not.toContain('Always one upright');
+    expect(request.generationConfig.responseJsonSchema.properties.body.enum).toEqual(bossArt[archetype].bodies);
   });
   it('sends JSON schemas, context and the key only in a header; validates the result', async () => {
     const fetcher = vi.fn().mockResolvedValue(response({ ...hero, title: 'Flask Spellguard' }));
@@ -156,9 +164,13 @@ describe('Gemini REST', () => {
 });
 
 describe('cache and offline assets', () => {
-  it('versions kaiju art separately from the DNA name seed and hero artwork', () => {
+  it('versions archetype art separately from the DNA name seed and hero artwork', () => {
     expect(designCacheKey(profile, 'hero', heroKit).endsWith(dnaFingerprint(profile, heroKit))).toBe(true);
     expect(designCacheKey(profile, 'boss', bossKit).endsWith(dnaFingerprint(profile, bossKit))).toBe(false);
+    expect(designCacheKey({ ...profile, primaryLanguage: 'Rust' }, 'boss', bossKit)).not.toBe(designCacheKey(profile, 'boss', bossKit));
+    expect(designCacheKey(profile, 'boss', { ...bossKit, theme: 'legacy' })).not.toBe(designCacheKey(profile, 'boss', bossKit));
+    const keys = (['kaiju', 'hydra', 'mecha', 'abyssal'] as const).map(archetype => designCacheKey(profile, 'boss', { ...bossKit, archetype }));
+    expect(new Set(keys).size).toBe(4);
   });
   it('deduplicates simultaneous requests and returns isolated mutable results', async () => {
     const fetcher = vi.fn().mockImplementation(async () => response(hero)); const api = service(fetcher);
@@ -197,6 +209,7 @@ describe('cache and offline assets', () => {
     const manifest = JSON.parse(await readFile(new URL('../data/design/manifest.json', import.meta.url), 'utf8'));
     const savedEpithets: string[] = [];
     const savedWeapons: string[] = [];
+    const savedArchetypes = new Set<BossArchetype>();
     expect(files.length).toBeGreaterThanOrEqual(10);
     for (const file of files) {
       const p = JSON.parse(await readFile(new URL(file, fallbackDir), 'utf8')) as RepoProfile;
@@ -210,7 +223,15 @@ describe('cache and offline assets', () => {
       expect(suffix.replace(/[^a-z0-9]/gi, '').toLowerCase()).not.toContain(p.slug.split('/').pop()!.replace(/[^a-z0-9]/gi, '').toLowerCase());
       savedEpithets.push(suffix);
       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(validateBoss(b, p, bk));
-      expect(b.epithet).toContain('kaiju'); expect(b.intro.join(' ')).toContain('dorsal plates');
+      savedArchetypes.add(bk.archetype);
+      if (manifest.entries[p.slug].boss.source === 'fallback') {
+        const expected = fallbackBoss(p, bk);
+        expect(b).toEqual(expected);
+        expect(b.body).toBe(chooseBossBody(p, bk));
+        expect(b.epithet).toContain(bk.archetype);
+        expect(b.intro).toContain(bossArt[bk.archetype].intro);
+        expect(b.palette).toEqual(bossArt[bk.archetype].palette);
+      }
       const symbols = bk.attacks.map(a => b.attackNames[a.id].match(/^(.+?\(\))/)?.[1]);
       expect(symbols.every(Boolean)).toBe(true); expect(new Set(symbols).size).toBe(bk.attacks.length);
       expect(h.weaponName.length).toBeGreaterThan(0); expect(h.weaponName.length).toBeLessThanOrEqual(24);
@@ -223,6 +244,7 @@ describe('cache and offline assets', () => {
     }
     expect(new Set(savedEpithets).size, savedEpithets.join('\n')).toBe(files.length);
     expect(new Set(savedWeapons).size, savedWeapons.join('\n')).toBe(files.length);
+    expect([...savedArchetypes].sort()).toEqual(['abyssal', 'hydra', 'kaiju', 'mecha']);
     expect(fetcher).not.toHaveBeenCalled();
   });
   it('gives every fallback boss a distinct DNA-derived epithet, stable across squad sizes', async () => {
@@ -243,21 +265,65 @@ describe('cache and offline assets', () => {
   });
 });
 
-describe('upright kaiju flavor', () => {
-  it('gives every seeded body kaiju reactor/dorsal lore without changing the kit', () => {
-    const before = structuredClone(bossKit);
-    for (const [i, body] of bodies.entries()) {
-      const design = fallbackBoss({ ...profile, seed: i << 4, cycles: [] }, bossKit);
-      expect(design.body).toBe(body);
-      expect(design.epithet).toContain('kaiju'); expect(design.epithet).toContain('chest reactor');
-      expect(design.intro.join(' ')).toContain('dorsal plates charged');
-      expect(design.intro.join(' ')).toContain('atomic code breath');
-      expect(design.intro.length).toBeLessThanOrEqual(4);
-      expect(design.intro.every(line => line.length <= 80)).toBe(true);
-      if (body === 'hydra') expect(design.epithet).toContain('many-headed');
-      if (body === 'machine') expect(design.epithet).toContain('mech-plated');
+describe('archetype flavor', () => {
+  const archetypes = ['kaiju', 'hydra', 'mecha', 'abyssal'] as const;
+  const motifs = {
+    kaiju: ['dorsal', 'ROAR!', 'STOMP!', '</> breath'],
+    hydra: ['wing', 'Three throats', 'Wings unfurl', 'Dive bomb'],
+    mecha: ['visor', 'rocket fist', 'Eye laser', 'Missile barrage'],
+    abyssal: ['crystal', 'coil', 'Crystal eruption', 'Burrow'],
+  };
+  it.each(archetypes)('gives %s its own source-grounded lore, palette and body without changing gameplay', archetype => {
+    const source = { ...profile, dna: { ...profile.dna!, commits: ['fix fern recursion'], todos: [{ file: profile.heart, text: 'TODO: remove this hack' }] } };
+    const kit = { ...bossKit, archetype };
+    const before = structuredClone(kit);
+    const design = fallbackBoss(source, kit);
+    expect(design).toEqual(fallbackBoss(source, kit));
+    expect(bossArt[archetype].bodies).toContain(design.body);
+    expect(design.epithet).toContain(archetype);
+    expect(design.epithet).toContain('app()');
+    expect(design.palette).toEqual(bossArt[archetype].palette);
+    const text = [design.epithet, ...design.intro, ...design.taunts].join(' ');
+    for (const motif of motifs[archetype]) expect(text).toContain(motif);
+    expect(text).toContain('TODO: remove this hack'); expect(text).toContain('fix fern recursion');
+    expect(design.intro).toContain(source.dna.heartLines[0]);
+    expect(design.intro.length).toBeLessThanOrEqual(4);
+    expect(design.intro.every(line => line.length <= 80)).toBe(true);
+    expect(design.taunts.length).toBeGreaterThanOrEqual(3); expect(design.taunts.length).toBeLessThanOrEqual(6);
+    expect(design.taunts.every(line => line.length <= 64)).toBe(true);
+    expect(design.name.length).toBeLessThanOrEqual(64); expect(design.epithet.length).toBeLessThanOrEqual(120);
+    const changed = applyBossDesign(kit, design);
+    expect(changed.archetype).toBe(archetype);
+    expect(changed.maxHp).toBe(kit.maxHp); expect(changed.speed).toBe(kit.speed);
+    expect(changed.limbs).toEqual(kit.limbs);
+    expect(changed.attacks.map(({ name, ...stats }) => stats)).toEqual(kit.attacks.map(({ name, ...stats }) => stats));
+    expect(kit).toEqual(before);
+  });
+  it('keeps archetype selection authoritative even when cosmetic source traits disagree', () => {
+    const cyclic = { ...profile, cycles: [['a', 'b'], ['c', 'd']] };
+    expect(chooseBossBody(cyclic, { ...bossKit, archetype: 'mecha' })).toBe('machine');
+    expect(chooseBossBody({ ...profile, cycles: [] }, { ...bossKit, archetype: 'hydra' })).toBe('hydra');
+    expect(chooseBossBody(profile, { ...bossKit, archetype: 'abyssal' })).toBe('serpent');
+    const rooted = { ...profile, dna: { ...profile.dna!, identifiers: ['grow_tree'] } };
+    expect(chooseBossBody(rooted, { ...bossKit, archetype: 'kaiju' })).toBe('tree');
+  });
+  it.each(archetypes)('repairs model/cached body hints that disagree with %s', archetype => {
+    const kit = { ...bossKit, archetype };
+    for (const body of bodies) {
+      const design = validateBoss({ ...boss, body }, profile, kit);
+      expect(design.body).toBe(bossArt[archetype].bodies.includes(body) ? body : chooseBossBody(profile, kit));
+      expect(applyBossDesign(kit, design).archetype).toBe(archetype);
     }
-    expect(bossKit).toEqual(before);
+  });
+  it('does not reuse memory/disk artwork when a sim-selected archetype changes', async () => {
+    const cacheDir = await root();
+    const fetcher = vi.fn().mockImplementation(async () => response(boss));
+    const api = service(fetcher, { cacheDir });
+    await api.designBoss(profile, { ...bossKit, archetype: 'kaiju' });
+    const hydra = await api.designBoss(profile, { ...bossKit, archetype: 'hydra' });
+    expect(hydra.body).toBe('hydra'); expect(fetcher).toHaveBeenCalledTimes(2);
+    expect((await readdir(cacheDir)).length).toBe(2);
+    expect(new Set(archetypes.map(archetype => fallbackBoss(profile, { ...bossKit, archetype }).name)).size).toBe(4);
   });
 });
 

@@ -1,45 +1,46 @@
 {
-  "name": "DJANGO, KEEPER OF DB",
-  "epithet": "A stone-scaled, fortress-plated kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "golem",
+  "name": "DJANGO, SKYBORNE DB DEVOURER",
+  "epithet": "A gold-scaled winged hydra; __init__() fuels the shared heart between branching necks.",
+  "body": "hydra",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
-    "moss",
-    "tentacles"
+    "wings",
+    "horns",
+    "crystals"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#302011",
+    "#a97b22",
+    "#ffdf68",
+    "#f5b83e",
+    "#fff3be"
   ],
   "theme": "notebook",
   "intro": [
     "$ git clone django/django",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: django/db/__init__.py",
+    "[##########] branching necks awake; wings unfurl",
+    "FATAL: head beam :: django/db/__init__.py",
     "connections = ConnectionHandler()"
   ],
   "taunts": [
-    "Known bug: XXX Is this used at all?",
-    "Recent sin: Fixed #37449 -- Corrected local name for Punjabi in",
-    "Your __init__() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Wing gust: XXX Is this used at all?",
+    "Neck scars: Fixed #37449 -- Corrected local name for Punjabi in",
+    "Three throats call __init__() in turn.",
+    "Wings unfurl: __init__() takes the gust.",
+    "Dive bomb queued for __init__().",
+    "One head returns. Two more recurse."
   ],
   "attackNames": {
-    "0-fan-0": "__init__() throw Spray",
-    "0-charge-1": "get() git push --force",
-    "1-cascade-0": "name() Merge Conflict",
-    "2-cascade-0": "clean() Merge Conflict",
+    "0-fan-0": "__init__() Null Pointer",
+    "0-charge-1": "get() Branch Crash",
+    "1-cascade-0": "name() Deadlock",
+    "2-cascade-0": "clean() Split Brain",
     "3-cascade-0": "value() Merge Conflict",
-    "4-cascade-0": "path() Merge Conflict",
-    "5-cascade-0": "create() Merge Conflict",
-    "6-cascade-0": "request() Merge Conflict",
-    "7-cascade-0": "render() Merge Conflict"
+    "4-cascade-0": "path() Memory Leak",
+    "5-cascade-0": "create() Rebase Hell",
+    "6-cascade-0": "request() Circular Import",
+    "7-cascade-0": "render() Cache Stampede"
   },
   "limbNames": {
     "limb-0": "deconstruct() Coil",

@@ -1,37 +1,38 @@
 {
-  "name": "SPRING-PETCLINIC, DEVOURER OF NAMED ENTITY",
-  "epithet": "A long-necked, whip-tailed kaiju; 2 code-limbs guard the chest reactor.",
-  "body": "serpent",
+  "name": "SPRING-PETCLINIC, THE NAMED ENTITY COLOSSUS",
+  "epithet": "A dorsal-crowned kaiju; Owner() fuels the chest reactor.",
+  "body": "tree",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
     "moss",
-    "gears"
+    "crystals",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
+    "#09292c",
+    "#346769",
+    "#51f5df",
+    "#207eac",
     "#fff4bd"
   ],
   "theme": "legacy",
   "intro": [
     "$ git clone spring-projects/spring-petclinic",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: src/main/java/org/springframework/samples/petclinic",
+    "[##########] dorsal fins charged; kaiju rising",
+    "FATAL: </> breath :: src/main/java/org/springframework/samples/petclinic/model/N",
     "@MappedSuperclass"
   ],
   "taunts": [
-    "Recent sin: adding integer overflow mitigations from user contro",
-    "Your Owner() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Dorsal scars: adding integer overflow mitigations from user cont",
+    "ROAR! Owner() shakes beneath my feet.",
+    "Dorsal fins charging: Owner()",
+    "</> breath burns Owner().",
+    "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-summon-0": "Owner() npm install Swarm",
-    "0-slam-1": "Pet() Stack Overflow",
+    "0-summon-0": "Owner() Package Flood",
+    "0-slam-1": "Pet() Stack Smash",
     "1-spiral-0": "validate() Recursion"
   },
   "limbNames": {

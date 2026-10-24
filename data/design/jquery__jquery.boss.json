@@ -1,45 +1,46 @@
 {
-  "name": "JQUERY, THE AJAX HACK",
-  "epithet": "A chitin-plated, extra-clawed kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "spider",
+  "name": "JQUERY, THE AJAX CRYSTAL MAW",
+  "epithet": "A black-crystalline abyssal serpent; get() fuels the veined coil core.",
+  "body": "serpent",
   "eyes": 12,
   "mouth": "none",
   "growths": [
-    "moss",
-    "tentacles"
+    "crystals",
+    "tentacles",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#100f1d",
+    "#363349",
+    "#ef426b",
+    "#38dfef",
+    "#aefaff"
   ],
   "theme": "web",
   "intro": [
     "$ git clone jquery/jquery",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: src/core.js",
+    "[##########] crystal coils stir beneath the floor",
+    "FATAL: crystal eruption :: src/core.js",
     "pushStack: function( elems ) {"
   ],
   "taunts": [
-    "Known bug: FIXME why is this double only when run with other tes",
-    "Recent sin: Build: Run `brew update` before installing Safari TP",
-    "Your get() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Buried debt: FIXME why is this double only when run with other t",
+    "Vein scars: Build: Run `brew update` before installing Safari TP",
+    "I coil around get() beneath the floor.",
+    "Crystal eruption breaches get().",
+    "Red veins pulse through get().",
+    "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-summon-0": "nodeName() npm install Swarm",
-    "0-charge-1": "Deferred() git push --force",
+    "0-summon-0": "nodeName() Version Drift",
+    "0-charge-1": "Deferred() Branch Crash",
     "1-cascade-0": "jQueryFactory() Merge Conflict",
-    "2-cascade-0": "dir() Merge Conflict",
-    "3-cascade-0": "get() Merge Conflict",
-    "4-cascade-0": "camelCase() Merge Conflict",
-    "5-spiral-0": "assert() Recursion",
-    "6-cascade-0": "tokenize() Merge Conflict",
-    "7-cascade-0": "showHide() Merge Conflict"
+    "2-cascade-0": "dir() Memory Leak",
+    "3-cascade-0": "get() Rebase Hell",
+    "4-cascade-0": "camelCase() Circular Import",
+    "5-spiral-0": "assert() Nested Promises",
+    "6-cascade-0": "tokenize() Cache Stampede",
+    "7-cascade-0": "showHide() Dangling Pointer"
   },
   "limbNames": {
     "limb-0": "trigger() Plating",

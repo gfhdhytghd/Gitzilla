@@ -1,44 +1,45 @@
 {
-  "name": "REDIS, THE UNFIXED QUICKLIST TEST",
-  "epithet": "A bulky, armored-bellied kaiju; 7 code-limbs guard the chest reactor.",
-  "body": "blob",
+  "name": "REDIS, ARMORED QUICKLIST TEST EXECUTOR",
+  "epithet": "A silver-armored mecha; sdslen() fuels the red-visor reactor.",
+  "body": "machine",
   "eyes": 12,
   "mouth": "brackets",
   "growths": [
-    "moss",
-    "gears"
+    "gears",
+    "pipes",
+    "servers"
   ],
   "palette": [
-    "#211329",
-    "#5a4145",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#202936",
+    "#a3b3c2",
+    "#ff5368",
+    "#5ce5ef",
+    "#ffaf8a"
   ],
   "theme": "legacy",
   "intro": [
     "$ git clone redis/redis",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: src/server.h",
+    "[##########] red visor online; jet vents armed",
+    "FATAL: missile barrage :: src/server.h",
     "static inline void kvSpecInit(kvSpec *sp"
   ],
   "taunts": [
-    "Known bug: TODO: Use separate misses stats and notify event for",
-    "Recent sin: Redis cli cmddocs hardening (#16034)",
-    "Your sdslen() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Rocket-fist fault: TODO: Use separate misses stats and notify ev",
+    "Panel scars: Redis cli cmddocs hardening (#16034)",
+    "Target lock: sdslen(); rocket fist armed.",
+    "Eye laser compiling sdslen().",
+    "Missile barrage seeks sdslen().",
+    "Vents open. Cooling with git reset --hard."
   ],
   "attackNames": {
-    "0-summon-0": "main() npm install Swarm",
-    "0-slam-1": "crc64() Stack Overflow",
+    "0-summon-0": "main() Version Drift",
+    "0-slam-1": "crc64() Segfault",
     "1-summon-0": "strlen() npm install Swarm",
-    "2-summon-0": "test() npm install Swarm",
-    "3-spiral-0": "fullname() Recursion",
-    "4-ring-0": "manifest_modules() while(true) Loop",
-    "5-spiral-0": "RedisModule_OnLoad() Recursion",
-    "6-ring-0": "resp() while(true) Loop"
+    "2-summon-0": "test() Dependency Hell",
+    "3-spiral-0": "fullname() Stack Trace",
+    "4-ring-0": "manifest_modules() Spin Lock",
+    "5-spiral-0": "RedisModule_OnLoad() Recursive Descent",
+    "6-ring-0": "resp() Retry Storm"
   },
   "limbNames": {
     "limb-0": "size_t() Claw",

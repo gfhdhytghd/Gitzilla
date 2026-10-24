@@ -1,4 +1,5 @@
 import type { ArenaTheme, BossBody, BossGrowth, BossKit, BossMouth, HeroAccessory, HeroArchetype, HeroHeadgear } from '../shared/types.ts';
+import { bossArt } from './archetypes.ts';
 
 export const archetypes = ['knight', 'ranger', 'mage', 'heavy', 'engineer', 'rogue'] as const satisfies readonly HeroArchetype[];
 export const headgear = ['helmet', 'hood', 'wizard-hat', 'goggles', 'bandana', 'cat-ears', 'headphones', 'crown', 'antenna', 'beanie', 'none'] as const satisfies readonly HeroHeadgear[];
@@ -22,7 +23,7 @@ export const heroSchema = object({
 
 export function bossSchema(kit: BossKit) {
   return object({
-    name: string(64), epithet: string(120), body: { ...enumeration(bodies), description: 'Variant flavor of the upright reptilian kaiju: hydra means multiple heads, machine means mech plating, etc. The base silhouette stays a kaiju.' }, eyes: { type: 'integer', minimum: 1, maximum: 12 },
+    name: string(64), epithet: string(120), body: { ...enumeration(bossArt[kit.archetype].bodies), description: `Cosmetic body hint within the sim-selected ${kit.archetype} archetype; never changes its silhouette or preset.` }, eyes: { type: 'integer', minimum: 1, maximum: 12 },
     mouth: enumeration(mouths), growths: array(enumeration(growths), 1, 3), palette: palette(5), theme: enumeration(themes),
     intro: array(string(80), 2, 4), taunts: array(string(64), 3, 6),
     attackNames: object(Object.fromEntries(kit.attacks.map(a => [a.id, string(64)]))),

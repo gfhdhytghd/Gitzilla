@@ -5,7 +5,7 @@
       "seed": 3221300618,
       "keys": {
         "hero": "burntsushi/ripgrep:3221300618:hero:v2:218cd722f622907e",
-        "boss": "burntsushi/ripgrep:3221300618:boss:v2:4f21fedbffdced7e"
+        "boss": "burntsushi/ripgrep:3221300618:boss:v2:84609386d597a13d"
       },
       "hero": {
         "slug": "burntsushi/ripgrep",
@@ -22,7 +22,7 @@
       "seed": 478723125,
       "keys": {
         "hero": "facebook/react:478723125:hero:v2:40bf6b51c730fa45",
-        "boss": "facebook/react:478723125:boss:v2:943d0b0ed1ca5c9b"
+        "boss": "facebook/react:478723125:boss:v2:21c3e6a4778c45f0"
       },
       "hero": {
         "slug": "facebook/react",
@@ -39,7 +39,7 @@
       "seed": 3030858016,
       "keys": {
         "hero": "pallets/flask:3030858016:hero:v2:9365412b7908ed94",
-        "boss": "pallets/flask:3030858016:boss:v2:27300d8d62a22522"
+        "boss": "pallets/flask:3030858016:boss:v2:7a35a1ebff2830ab"
       },
       "hero": {
         "slug": "pallets/flask",
@@ -56,7 +56,7 @@
       "seed": 4244418796,
       "keys": {
         "hero": "django/django:4244418796:hero:v2:44881ed2b4c79f08",
-        "boss": "django/django:4244418796:boss:v2:caa547711fa3a419"
+        "boss": "django/django:4244418796:boss:v2:6f2ca10133a58ac2"
       },
       "hero": {
         "slug": "django/django",
@@ -73,7 +73,7 @@
       "seed": 4042100819,
       "keys": {
         "hero": "expressjs/express:4042100819:hero:v2:842787ee1f0576ee",
-        "boss": "expressjs/express:4042100819:boss:v2:06c56cc84071d8f6"
+        "boss": "expressjs/express:4042100819:boss:v2:918c4a69d2901d8b"
       },
       "hero": {
         "slug": "expressjs/express",
@@ -90,7 +90,7 @@
       "seed": 3386353004,
       "keys": {
         "hero": "fastapi/fastapi:3386353004:hero:v2:5b60ed07ccc83a06",
-        "boss": "fastapi/fastapi:3386353004:boss:v2:d5c5a2fed54d9bcb"
+        "boss": "fastapi/fastapi:3386353004:boss:v2:c557d756f69f0a09"
       },
       "hero": {
         "slug": "fastapi/fastapi",
@@ -107,7 +107,7 @@
       "seed": 3650359213,
       "keys": {
         "hero": "gin-gonic/gin:3650359213:hero:v2:fb5518ecacf41c4f",
-        "boss": "gin-gonic/gin:3650359213:boss:v2:6cc7c7b21f4e41e5"
+        "boss": "gin-gonic/gin:3650359213:boss:v2:3e566dbfc022321e"
       },
       "hero": {
         "slug": "gin-gonic/gin",
@@ -124,7 +124,7 @@
       "seed": 810435114,
       "keys": {
         "hero": "golang/example:810435114:hero:v2:2ee83329a314700b",
-        "boss": "golang/example:810435114:boss:v2:02d318c73bcce582"
+        "boss": "golang/example:810435114:boss:v2:eaa0f1e2d4f55d9e"
       },
       "hero": {
         "slug": "golang/example",
@@ -141,7 +141,7 @@
       "seed": 1484102062,
       "keys": {
         "hero": "jquery/jquery:1484102062:hero:v2:65e28a6117c69b3d",
-        "boss": "jquery/jquery:1484102062:boss:v2:8932e08885e826e1"
+        "boss": "jquery/jquery:1484102062:boss:v2:b554bc75b2778cf6"
       },
       "hero": {
         "slug": "jquery/jquery",
@@ -158,7 +158,7 @@
       "seed": 593896085,
       "keys": {
         "hero": "karpathy/nanogpt:593896085:hero:v2:8b9f24195dcb34f4",
-        "boss": "karpathy/nanogpt:593896085:boss:v2:d5927b43bb3c01ae"
+        "boss": "karpathy/nanogpt:593896085:boss:v2:a363972f0b4720b6"
       },
       "hero": {
         "slug": "karpathy/nanogpt",
@@ -175,7 +175,7 @@
       "seed": 416011368,
       "keys": {
         "hero": "lodash/lodash:416011368:hero:v2:74a1063a8f22f874",
-        "boss": "lodash/lodash:416011368:boss:v2:adfcf347efc3489c"
+        "boss": "lodash/lodash:416011368:boss:v2:ff0be784307eb63c"
       },
       "hero": {
         "slug": "lodash/lodash",
@@ -192,7 +192,7 @@
       "seed": 1696836392,
       "keys": {
         "hero": "redis/redis:1696836392:hero:v2:23ae0b65b708ed80",
-        "boss": "redis/redis:1696836392:boss:v2:96c991fd1e255e7b"
+        "boss": "redis/redis:1696836392:boss:v2:ac08979eaa62409f"
       },
       "hero": {
         "slug": "redis/redis",
@@ -209,7 +209,7 @@
       "seed": 2349371326,
       "keys": {
         "hero": "rust-lang/rustlings:2349371326:hero:v2:15e490860762eef1",
-        "boss": "rust-lang/rustlings:2349371326:boss:v2:10c1c962e7fe51e6"
+        "boss": "rust-lang/rustlings:2349371326:boss:v2:983c7e51c54241fd"
       },
       "hero": {
         "slug": "rust-lang/rustlings",
@@ -226,7 +226,7 @@
       "seed": 1701789151,
       "keys": {
         "hero": "spring-projects/spring-petclinic:1701789151:hero:v2:dac3764ead860ef6",
-        "boss": "spring-projects/spring-petclinic:1701789151:boss:v2:1aac40018b8ba8eb"
+        "boss": "spring-projects/spring-petclinic:1701789151:boss:v2:33a8298a1ee44d13"
       },
       "hero": {
         "slug": "spring-projects/spring-petclinic",
@@ -243,7 +243,7 @@
       "seed": 3482187646,
       "keys": {
         "hero": "vuejs/core:3482187646:hero:v2:25f4d5fdb9af4a9e",
-        "boss": "vuejs/core:3482187646:boss:v2:f70bed4e47731e30"
+        "boss": "vuejs/core:3482187646:boss:v2:8357f6814a28759c"
       },
       "hero": {
         "slug": "vuejs/core",

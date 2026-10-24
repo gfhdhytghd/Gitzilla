@@ -1,41 +1,42 @@
 {
-  "name": "EXPRESS, THE MOSSBOUND SEND",
-  "epithet": "A parasite-crowned, ember-shedding kaiju; 4 code-limbs guard the chest reactor.",
-  "body": "swarm",
+  "name": "EXPRESS, THE SEND CRYSTAL MAW",
+  "epithet": "A black-crystalline abyssal serpent; app() fuels the veined coil core.",
+  "body": "serpent",
   "eyes": 12,
   "mouth": "brackets",
   "growths": [
-    "moss",
-    "gears"
+    "crystals",
+    "tentacles",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#5a4145",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#100f1d",
+    "#363349",
+    "#ef426b",
+    "#38dfef",
+    "#aefaff"
   ],
   "theme": "web",
   "intro": [
     "$ git clone expressjs/express",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: index.js",
+    "[##########] crystal coils stir beneath the floor",
+    "FATAL: crystal eruption :: index.js",
     "function shouldHaveBody (buf) {"
   ],
   "taunts": [
-    "Known bug: NOTE: This is not a real part of the API, but",
-    "Recent sin: docs: correct crossed names in the emeritus triagers",
-    "Your app() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Buried debt: NOTE: This is not a real part of the API, but",
+    "Vein scars: docs: correct crossed names in the emeritus triagers",
+    "I coil around app() beneath the floor.",
+    "Crystal eruption breaches app().",
+    "Red veins pulse through app().",
+    "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
     "0-summon-0": "createApp() npm install Swarm",
-    "0-charge-1": "send() git push --force",
-    "1-spiral-0": "app() Recursion",
-    "2-summon-0": "get() npm install Swarm",
-    "3-spiral-0": "use() Recursion"
+    "0-charge-1": "send() rm -rf",
+    "1-spiral-0": "app() Recursive Descent",
+    "2-summon-0": "get() Dependency Hell",
+    "3-spiral-0": "use() Nested Promises"
   },
   "limbNames": {
     "limb-0": "render() Tendril",

@@ -1,42 +1,43 @@
 {
-  "name": "LODASH, GUARDIAN OF LOST RUN IN CONTEXT",
-  "epithet": "A bark-armored, root-spined kaiju; 5 code-limbs guard the chest reactor.",
+  "name": "LODASH, DORSAL KING OF RUN IN CONTEXT",
+  "epithet": "A dorsal-crowned kaiju; Foo() fuels the chest reactor.",
   "body": "tree",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
     "moss",
-    "gears"
+    "crystals",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#683b65",
-    "#ff547b",
-    "#bb83ef",
+    "#09292c",
+    "#346769",
+    "#51f5df",
+    "#207eac",
     "#fff4bd"
   ],
   "theme": "web",
   "intro": [
     "$ git clone lodash/lodash",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: lodash.js",
+    "[##########] dorsal fins charged; kaiju rising",
+    "FATAL: </> breath :: lodash.js",
     "function arrayReduceRight(array, iterate"
   ],
   "taunts": [
-    "Known bug: bug in Safari 9.",
-    "Recent sin: ci: update actions to latest versions (#6279)",
-    "Your Foo() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Tail stomp: bug in Safari 9.",
+    "Dorsal scars: ci: update actions to latest versions (#6279)",
+    "ROAR! Foo() shakes beneath my feet.",
+    "Dorsal fins charging: Foo()",
+    "</> breath burns Foo().",
+    "STOMP! My tail will git push --force."
   ],
   "attackNames": {
     "0-ring-0": "iteratee() while(true) Loop",
-    "0-charge-1": "message() git push --force",
-    "1-spiral-0": "apply() Recursion",
-    "2-ring-0": "log() while(true) Loop",
-    "3-spiral-0": "wrap() Recursion",
-    "4-ring-0": "build() while(true) Loop"
+    "0-charge-1": "message() Branch Crash",
+    "1-spiral-0": "apply() Stack Trace",
+    "2-ring-0": "log() Infinite Scroll",
+    "3-spiral-0": "wrap() Recursive Descent",
+    "4-ring-0": "build() Busy Wait"
   },
   "limbNames": {
     "limb-0": "object() Claw",

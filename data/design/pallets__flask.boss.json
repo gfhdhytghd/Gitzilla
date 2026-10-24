@@ -1,41 +1,42 @@
 {
-  "name": "FLASK, THE MAKE RESPONSE TYRANT",
-  "epithet": "A long-necked, whip-tailed kaiju; 5 code-limbs guard the chest reactor.",
+  "name": "FLASK, BURROWER OF MAKE RESPONSE",
+  "epithet": "A black-crystalline abyssal serpent; app() fuels the veined coil core.",
   "body": "serpent",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
-    "moss",
-    "gears"
+    "crystals",
+    "tentacles",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#100f1d",
+    "#363349",
+    "#ef426b",
+    "#38dfef",
+    "#aefaff"
   ],
   "theme": "notebook",
   "intro": [
     "$ git clone pallets/flask",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: src/flask/__init__.py",
+    "[##########] crystal coils stir beneath the floor",
+    "FATAL: crystal eruption :: src/flask/__init__.py",
     "class ProxyMixin(t.Protocol[T]):"
   ],
   "taunts": [
-    "Known bug: Note that if you are testing for assertions or except",
-    "Recent sin: explain seek",
-    "Your app() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Buried debt: Note that if you are testing for assertions or exce",
+    "Vein scars: explain seek",
+    "I coil around app() beneath the floor.",
+    "Crystal eruption breaches app().",
+    "Red veins pulse through app().",
+    "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-ring-0": "app() while(true) Loop",
-    "0-slam-1": "get() Stack Overflow",
-    "1-summon-0": "index() npm install Swarm",
-    "2-ring-0": "client() while(true) Loop",
-    "3-spiral-0": "github_link() Recursion",
+    "0-ring-0": "app() Spin Lock",
+    "0-slam-1": "get() OOM Crash",
+    "1-summon-0": "index() Version Drift",
+    "2-ring-0": "client() Retry Storm",
+    "3-spiral-0": "github_link() Stack Trace",
     "4-ring-0": "create_app() while(true) Loop"
   },
   "limbNames": {

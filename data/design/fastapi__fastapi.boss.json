@@ -1,45 +1,46 @@
 {
-  "name": "FASTAPI, THE TEST OPENAPI LEVIATHAN",
-  "epithet": "A chitin-plated, extra-clawed kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "spider",
+  "name": "FASTAPI, THE TEST OPENAPI NECKSTORM",
+  "epithet": "A gold-scaled winged hydra; app() fuels the shared heart between branching necks.",
+  "body": "hydra",
   "eyes": 12,
   "mouth": "brackets",
   "growths": [
-    "cables",
-    "tentacles"
+    "wings",
+    "horns",
+    "crystals"
   ],
   "palette": [
-    "#211329",
-    "#5a4145",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#302011",
+    "#a97b22",
+    "#ffdf68",
+    "#f5b83e",
+    "#fff3be"
   ],
   "theme": "notebook",
   "intro": [
     "$ git clone fastapi/fastapi",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: fastapi/__init__.py",
+    "[##########] branching necks awake; wings unfurl",
+    "FATAL: head beam :: fastapi/__init__.py",
     "needs_py310 = pytest.mark.skipif("
   ],
   "taunts": [
-    "Known bug: TODO remove when deprecating Pydantic v1",
-    "Recent sin: 🐛 Restore default handling for omitted boolean form",
-    "Your app() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Wing gust: TODO remove when deprecating Pydantic v1",
+    "Neck scars: 🐛 Restore default handling for omitted boolean form",
+    "Three throats call app() in turn.",
+    "Wings unfurl: app() takes the gust.",
+    "Dive bomb queued for app().",
+    "One head returns. Two more recurse."
   ],
   "attackNames": {
-    "0-fan-0": "app() throw Spray",
+    "0-fan-0": "app() Unhandled Error",
     "0-charge-1": "Item() git push --force",
-    "1-cascade-0": "get() Merge Conflict",
-    "2-fan-0": "User() throw Spray",
-    "3-summon-0": "__init__() npm install Swarm",
-    "4-cascade-0": "lifespan() Merge Conflict",
+    "1-cascade-0": "get() Deadlock",
+    "2-fan-0": "User() Throw Storm",
+    "3-summon-0": "__init__() Version Drift",
+    "4-cascade-0": "lifespan() Split Brain",
     "5-cascade-0": "Header() Merge Conflict",
-    "6-cascade-0": "__call__() Merge Conflict",
-    "7-spiral-0": "main() Recursion"
+    "6-cascade-0": "__call__() Memory Leak",
+    "7-spiral-0": "main() Nested Promises"
   },
   "limbNames": {
     "limb-0": "get_client() Coil",

@@ -1,45 +1,46 @@
 {
-  "name": "REACT, THE MOSSBOUND SHARED RUNTIME",
-  "epithet": "A many-headed, branching-necked kaiju; 8 code-limbs guard the chest reactor.",
+  "name": "REACT, MANY MAWS OF SHARED RUNTIME",
+  "epithet": "A gold-scaled winged hydra; render() fuels the shared heart between branching necks.",
   "body": "hydra",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
-    "moss",
-    "tentacles"
+    "wings",
+    "horns",
+    "crystals"
   ],
   "palette": [
-    "#211329",
-    "#683b65",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#302011",
+    "#a97b22",
+    "#ffdf68",
+    "#f5b83e",
+    "#fff3be"
   ],
   "theme": "web",
   "intro": [
     "$ git clone facebook/react",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: compiler/packages/snap/src/sprout/shared-runtime.ts",
+    "[##########] branching necks awake; wings unfurl",
+    "FATAL: head beam :: compiler/packages/snap/src/sprout/shared-runtime.ts",
     "export function mutateAndReturnNewValue<"
   ],
   "taunts": [
-    "Known bug: Todo is Hint",
-    "Recent sin: Allow resumeAndPrerender to postpone an existing bou",
-    "Your render() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Wing gust: Todo is Hint",
+    "Neck scars: Allow resumeAndPrerender to postpone an existing bou",
+    "Three throats call render() in turn.",
+    "Wings unfurl: render() takes the gust.",
+    "Dive bomb queued for render().",
+    "One head returns. Two more recurse."
   ],
   "attackNames": {
-    "0-summon-0": "render() npm install Swarm",
-    "0-slam-1": "Component() Stack Overflow",
-    "1-cascade-0": "App() Merge Conflict",
-    "2-cascade-0": "fn() Merge Conflict",
-    "3-cascade-0": "Foo() Merge Conflict",
+    "0-summon-0": "render() Lockfile Storm",
+    "0-slam-1": "Component() Kernel Panic",
+    "1-cascade-0": "App() Dangling Pointer",
+    "2-cascade-0": "fn() Deadlock",
+    "3-cascade-0": "Foo() Split Brain",
     "4-cascade-0": "Child() Merge Conflict",
-    "5-cascade-0": "get() Merge Conflict",
-    "6-cascade-0": "callback() Merge Conflict",
-    "7-cascade-0": "create() Merge Conflict"
+    "5-cascade-0": "get() Memory Leak",
+    "6-cascade-0": "callback() Rebase Hell",
+    "7-cascade-0": "create() Circular Import"
   },
   "limbNames": {
     "limb-0": "x() Antenna",
