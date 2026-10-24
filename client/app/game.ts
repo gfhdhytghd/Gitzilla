@@ -77,10 +77,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (portrait) {
       const cs = getComputedStyle(safeProbe);
       const safeTop = parseFloat(cs.paddingTop) || 0, safeBot = parseFloat(cs.paddingBottom) || 0;
-      const barH = 50 + safeTop;
+      const barH = 44 + safeTop; // boss bar sits directly under the notch inset
       const avail = H - barH - safeBot;
       // Height budget for the viewport: leave a full deck on tall phones, a compact one (~210px) on short ones.
-      const deckMin = avail >= 640 ? 300 : 210;
+      const deckMin = avail >= 640 ? 240 : 210;
       const budget = Math.min(avail * 0.66, avail - deckMin);
       // Prefer the biggest integer DEVICE-pixel scale (crisp); if that wastes >15% of the budget (e.g. 360x640 @2x
       // would floor to 1 device px = a 144px-tall arena), use a fractional scale that fills it (pixelated upscaling).
@@ -161,7 +161,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (snaps.length > 30) snaps.shift();
     for (const e of s.events) pendingEvents.push({ t: s.t, e });
     // audio runs on arrival (once per authoritative snapshot), not on the delayed render timeline
-    audio.music(s.status === "victory" || s.status === "defeat" ? s.status : s.boss.kit.theme, s.boss.phase);
+    audio.music(s.status === "victory" || s.status === "defeat" ? s.status : arenaTheme(s), s.boss?.phase ?? 1);
     audio.onEvents(s.events, app.you ?? "");
     // muzzle flashes for everyone: a player's new bullet ids mean they just fired
     for (const b of s.bullets)
@@ -190,6 +190,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     introStarted = true;
   };
 
+  // arena look: follows the boss in battle; edu PvP (no boss) uses the notebook "classroom" theme
+  const arenaSeed = [...app.room].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const arenaTheme = (s: MatchState) => s.boss?.kit.theme ?? "notebook";
+
   // ---------------- juice state ----------------
   let trauma = 0;
   let hitstop = 0;
@@ -203,8 +207,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const releasedEvents: GameEvent[] = [];
 
   let lastStopAt = 0;
+  // prefers-reduced-motion: quarter shake, no full-screen flashes/glitches (photosensitivity)
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches || new URLSearchParams(location.search).has("calm");
   const kick = (t: number, stop = 0, slow = 0) => {
-    trauma = Math.min(1, trauma + t);
+    trauma = Math.min(1, trauma + (calm ? t * 0.25 : t));
     // small hit-stops are rate-limited so rapid-fire crits don't turn into a stutter
     const now = performance.now();
     if (stop >= 0.06 || (stop > 0 && now - lastStopAt > 350)) {
@@ -213,7 +219,12 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     slowmo = Math.max(slowmo, slow);
   };
+  let lastFlashAt = 0;
   const doFlash = (a: number, col = "255,255,255") => {
+    if (calm) a = Math.min(a, 0.12); // a faint tint, never a strobe
+    const now = performance.now();
+    if (now - lastFlashAt < 340 && a < flashA + 0.2) return; // ≤3 full-screen flashes per second
+    lastFlashAt = now;
     if (a >= flashA) flashCol = col;
     flashA = Math.max(flashA, a);
   };
@@ -267,6 +278,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         break;
       case "revived":
         if (e.player === you) {
+          youRingUntil = performance.now() + 4000;
           doFlash(0.4, "57,255,136");
           vibrate([20, 20, 20]);
         }
@@ -277,7 +289,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       case "phase":
         taunt(s, true);
         kick(0.55, 0.05, 0.35);
-        glitchUntil = performance.now() + 700;
+        if (!calm) glitchUntil = performance.now() + 700;
         doFlash(0.3, "255,40,90");
         break;
       case "victory":
@@ -301,7 +313,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let nextTaunt = 0;
   let tauntIdx = 0;
   const taunt = (s: MatchState, force = false) => {
-    const lines = s.boss.kit.design?.taunts;
+    const lines = s.boss?.kit.design?.taunts;
     if (!lines?.length || s.status !== "fighting") return;
     if (!force && performance.now() < bubbleUntil + 2000) return;
     const text = lines[tauntIdx++ % lines.length];
@@ -319,6 +331,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let introEnd = 0;
   const intro = h("div.intro", { "data-testid": "boss-intro" });
   const startIntro = (s: MatchState) => {
+    if (!s.boss) return startPvpIntro(s);
     const kit = s.boss.kit;
     const t0 = performance.now();
     const lines = kit.design?.intro?.length ? kit.design.intro.slice(0, 4) : ["WARNING: KAIJU DETECTED"];
@@ -372,6 +385,41 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }, 50);
   };
 
+  const startPvpIntro = (s: MatchState) => {
+    const t0 = performance.now();
+    introEnd = t0 + 2600;
+    intro.replaceChildren(
+      h("div.lb.top"),
+      h("div.lb.bot"),
+      h(
+        "div.in-card",
+        null,
+        h(
+          "div.in-text",
+          null,
+          h("div.in-line.dim", null, `$ make class ROOM=${app.room}`),
+          h("div.in-line.green", null, `${s.players.length} heroes compiled · stats graded from code quality`),
+          h("div.in-name", null, "CLASSROOM BRAWL"),
+          h("div.in-line.in-epithet", null, s.pvp ? `best of ${s.pvp.rounds} rounds · most KOs wins` : "free-for-all"),
+        ),
+      ),
+    );
+    intro.classList.remove("out");
+    overlay.append(intro);
+    el.classList.add("intro-on");
+    const iv = setInterval(() => {
+      if (performance.now() > introEnd && latest?.status !== "countdown") {
+        clearInterval(iv);
+        intro.classList.add("out");
+        el.classList.remove("intro-on");
+        const go = h("div.fight-flash", null, "$ ./fight --pvp");
+        overlay.append(go);
+        setTimeout(() => go.remove(), 1100);
+        setTimeout(() => intro.remove(), 500);
+      }
+    }, 50);
+  };
+
   // ---------------- outro ----------------
   let outro: { victory: boolean; at: number } | null = null;
   const result = { outroDone: false };
@@ -383,7 +431,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const startOutro = (victory: boolean) => {
     if (outro) return;
     outro = { victory, at: performance.now() };
-    const kit = latest?.boss.kit;
+    const kit = latest?.boss?.kit;
     setTimeout(() => {
       const card = victory
         ? h(
@@ -430,14 +478,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
       app.conn.send({ t: "input", frame: input.sample() });
-      if (sensorBadge) {
-        sensorBadge.textContent = `sensors: ${input.sensorStatus ?? "off"}`;
-        sensorBadge.dataset.status = input.sensorStatus ?? "off";
-        sensorBadge.dataset.mode = input.mode;
-      }
+      updatePhoneControls();
     }, 1000 / 30);
-    if (input.mode === "motion") showMotionFlow();
-    else if (input.mode === "keyboard") showKeyHint();
+    if (input.mode === "keyboard") showKeyHint();
+    else showMotionFlow();
   };
 
   const showKeyHint = () => {
@@ -475,31 +519,53 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
   };
 
+  // Phones (motion or touch): sensor pill, recalibrate, a compact "enable tilt" pill, and mode-specific hints.
+  // Nothing covers the arena during the intro; permission is normally granted in the lobby controls card.
+  let enablePill: HTMLButtonElement | null = null;
+  let recalBtn: HTMLElement | null = null;
+  let tipsShown = false;
   const showMotionFlow = () => {
-    sensorBadge = h("div.kj-sensor-status", { "data-testid": "input-sensors" }, "sensors: waiting");
-    const recal = h("button.btn.btn-tiny.recal", { "data-testid": "motion-recalibrate", onclick: () => (input?.calibrate(), vibrate(20)) }, "⟲ recalibrate");
-    // portrait: pill + recalibrate live in the control deck; landscape: top-left of the arena
-    if (portrait) sensorRow.append(sensorBadge, recal);
-    else {
-      sensorBadge.classList.add("floating");
-      overlay.append(sensorBadge, recal);
-    }
-    const tips = h("div.motion-tips", null, "tilt = move · tap / swing = attack · DASH / SKILL buttons");
-    Object.assign(tips.style, { whiteSpace: "normal", textAlign: "center", fontSize: "12px", bottom: "28px", width: "70%" });
-    overlay.append(tips);
-    setTimeout(() => tips.classList.add("fade"), 6000);
-    if (!input?.needsPermission) return; // neutral auto-calibrates, no mandatory second tap
-    const enable = h("button.btn.btn-big.btn-primary", { "data-testid": "motion-enable" }, "TAP TO ENABLE SENSORS");
-    motionOverlay = h("div.motion-flow", null,
-      h("div.mf-title", null, "$ sudo enable-sensors"),
-      h("div.mf-sub", null, "Hold comfortably. Neutral calibrates automatically; tilt to move, tap or swing to attack."), enable);
-    enable.addEventListener("click", event => {
+    sensorBadge = h("div.kj-sensor-status", { "data-testid": "input-sensors" }, "motion: waiting");
+    recalBtn = h("button.btn.btn-tiny.recal", { "data-testid": "motion-recalibrate", onclick: () => (input?.calibrate(), vibrate(20)) }, "⟲ recalibrate");
+    enablePill = h("button.btn.btn-tiny.enable-pill", { "data-testid": "motion-enable", hidden: true }, "tap to enable tilt") as HTMLButtonElement;
+    enablePill.addEventListener("click", (event) => {
       event.stopPropagation();
       // Both native permission calls execute synchronously inside this gesture.
-      const request = input!.requestPermission();
-      void request.then(() => { motionOverlay?.remove(); motionOverlay = null; });
+      void input!.requestPermission().then(() => enablePill && (enablePill.hidden = true));
     });
-    overlay.append(motionOverlay);
+    // portrait: pill + buttons live in the control deck; landscape: top-left of the arena
+    if (portrait) sensorRow.append(sensorBadge, enablePill, recalBtn);
+    else {
+      sensorBadge.classList.add("floating");
+      overlay.append(sensorBadge, enablePill, recalBtn);
+    }
+  };
+  /** Called every input tick: keeps the phone controls UI truthful about the live input mode. */
+  const updatePhoneControls = () => {
+    if (!input || !sensorBadge) return;
+    const mode = input.mode, st = input.sensorStatus ?? "off";
+    sensorBadge.textContent = mode === "touch" ? "touch controls" : `motion: ${st}`;
+    sensorBadge.dataset.status = mode === "touch" ? "touch" : st;
+    sensorBadge.dataset.mode = mode;
+    if (recalBtn) recalBtn.hidden = mode !== "motion";
+    const introOver = performance.now() > introEnd;
+    if (enablePill) enablePill.hidden = !(introOver && mode === "motion" && input.needsPermission);
+    if (introOver && !tipsShown && latest?.status === "fighting") {
+      tipsShown = true;
+      const tips = h("div.motion-tips", null, mode === "touch" ? "drag on the arena to move · tap to attack · DASH / SKILL buttons" : "tilt to move · tap or swing to attack · DASH / SKILL buttons");
+      overlay.append(tips);
+      setTimeout(() => tips.classList.add("fade"), 6000);
+      if (mode === "touch") showTouchSplit();
+    }
+  };
+  /** 5s ghost hint over the viewport for touch mode: what the left/right of the arena do. */
+  const showTouchSplit = () => {
+    const ghost = h("div.touch-ghost", { "aria-hidden": "true" }, h("div.tg-l", null, "MOVE", h("small", null, "drag here")), h("div.tg-r", null, "ATTACK", h("small", null, "tap anywhere")));
+    stage.append(ghost);
+    const off = () => ghost.classList.add("fade");
+    setTimeout(off, 5000);
+    addEventListener("pointerdown", off, { once: true });
+    setTimeout(() => ghost.remove(), 6500);
   };
   // Portrait works too: removed the old rotate-only blocker and forced landscape lock.
 
@@ -515,6 +581,27 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let skillCdMax = 1;
   let ambientTick = 0;
   let miniTick = 0;
+  // "where am I?": pulsing ring + YOU tag under your hero for the first seconds and after a revive
+  let youRingUntil = 0;
+  let youRingStarted = false;
+  const drawYouRing = (me: PlayerState, now: number, scale: number) => {
+    const pulse = 0.5 + 0.5 * Math.sin(now * 8);
+    const rx = (10 + pulse * 3) * scale, ry = (4 + pulse) * scale;
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,210,61,${0.55 + 0.45 * pulse})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(Math.round(me.x) + 0.5, Math.round(me.y + 8 * scale) + 0.5, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.font = '8px "Press Start 2P", monospace';
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#000";
+    ctx.fillText("YOU", Math.round(me.x) + 1, Math.round(me.y + 22 * scale) + 1);
+    ctx.fillStyle = "#ffd23d";
+    ctx.fillText("YOU", Math.round(me.x), Math.round(me.y + 22 * scale));
+    ctx.textAlign = "left";
+    ctx.restore();
+  };
   let camX = 0;
   let camInit = false;
 
@@ -556,7 +643,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const pulse = 0.5 + 0.5 * Math.sin(now * 10);
     // boss (or an attack aimed at you, which outranks it)
     const b = s.boss;
-    if (offscreen(b.x)) {
+    if (b && offscreen(b.x)) {
       const { ex, ey, dir } = place(b.x, b.y);
       const atMe = !!b.casting && b.targetPlayer === app.you;
       if (atMe) {
@@ -584,7 +671,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     g.fillStyle = "rgba(3,6,5,.78)";
     g.fillRect(0, 0, minimap.width, minimap.height);
     // faint "code" rows like an editor minimap, shaped by the boss's real heart lines
-    const lines = s.boss.kit.code?.heartLines?.length ? s.boss.kit.code.heartLines : ["function f() {", "  return x;", "}"];
+    const lines = s.boss?.kit.code?.heartLines?.length ? s.boss.kit.code.heartLines : ["function f() {", "  return x;", "}"];
     const SYN = ["rgba(97,175,239,.16)", "rgba(198,120,221,.16)", "rgba(152,195,121,.14)", "rgba(171,178,191,.1)"];
     for (let row = 0, i = 0; row < minimap.height; row += 3, i++) {
       const ln = lines[i % lines.length];
@@ -616,9 +703,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       g.fillRect(Math.round(p.x * k), Math.round(p.y * k), 1, 1);
     }
     g.fillStyle = "#8a1328";
-    for (const r of s.boss.regions ?? []) g.fillRect(Math.round((r.x - r.r) * k), Math.round((r.y - r.r) * k), Math.max(2, Math.round(r.r * 2 * k)), Math.max(2, Math.round(r.r * 2 * k)));
+    for (const r of s.boss?.regions ?? []) g.fillRect(Math.round((r.x - r.r) * k), Math.round((r.y - r.r) * k), Math.max(2, Math.round(r.r * 2 * k)), Math.max(2, Math.round(r.r * 2 * k)));
     g.fillStyle = "#ff3355";
-    g.fillRect(Math.round(s.boss.x * k) - 1, Math.round(s.boss.y * k) - 1, 3, 3);
+    if (s.boss) g.fillRect(Math.round(s.boss.x * k) - 1, Math.round(s.boss.y * k) - 1, 3, 3);
     for (const p of s.players) {
       if (p.id === app.you) continue;
       g.fillStyle = "#000";
@@ -658,11 +745,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (!q || Math.hypot(p.x - q.x, p.y - q.y) > 80) return p;
       return { ...p, x: lerp(q.x, p.x, f), y: lerp(q.y, p.y, f) };
     });
-    const bx = lerp(A.boss.x, S.boss.x, f), by = lerp(A.boss.y, S.boss.y, f);
-    const regions = (S.boss.regions ?? []).map((r) => {
-      const q = A.boss.regions?.find((x) => x.id === r.id);
-      return q ? { ...r, x: lerp(q.x, r.x, f), y: lerp(q.y, r.y, f) } : r;
-    });
+    const SB = S.boss, AB = A.boss ?? S.boss;
     const dtB = clamp(rt - b.t, -0.15, 0.1);
     const bullets = S.bullets.map((u) => ({ ...u, x: u.x + u.vx * dtB, y: u.y + u.vy * dtB }));
     const minions = S.minions.map((m) => {
@@ -670,8 +753,16 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       return q ? { ...m, x: lerp(q.x, m.x, f), y: lerp(q.y, m.y, f) } : m;
     });
     const hazards = S.hazards.map((z) => ({ ...z, t: clamp(z.t + dtB, 0, z.total) }));
-    const casting = S.boss.casting ? { ...S.boss.casting, t: clamp(S.boss.casting.t + dtB, 0, S.boss.casting.total) } : null;
-    return { ...S, t: lerp(A.t, S.t, f), players, bullets, minions, hazards, boss: { ...S.boss, x: bx, y: by, regions, casting } };
+    let boss: MatchState["boss"] = null;
+    if (SB && AB) {
+      const regions = (SB.regions ?? []).map((r) => {
+        const q = AB.regions?.find((x) => x.id === r.id);
+        return q ? { ...r, x: lerp(q.x, r.x, f), y: lerp(q.y, r.y, f) } : r;
+      });
+      const casting = SB.casting ? { ...SB.casting, t: clamp(SB.casting.t + dtB, 0, SB.casting.total) } : null;
+      boss = { ...SB, x: lerp(AB.x, SB.x, f), y: lerp(AB.y, SB.y, f), regions, casting };
+    }
+    return { ...S, t: lerp(A.t, S.t, f), players, bullets, minions, hazards, boss };
   };
 
   const frame = (nowMs: number) => {
@@ -719,7 +810,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
     // camera: portrait follows the hero (slight lead in the move direction); the intro looks at the boss first
     if (view.w < ARENA_W) {
-      const focus = performance.now() < introEnd - 600 || !me ? s.boss.x : me.x + clamp(me.vx * 0.35, -36, 36);
+      const focus = (performance.now() < introEnd - 600 || !me) && s.boss ? s.boss.x : me ? me.x + clamp(me.vx * 0.35, -36, 36) : ARENA_W / 2;
       const target = clamp(focus - view.w / 2, 0, ARENA_W - view.w);
       camX = camInit ? camX + (target - camX) * (1 - Math.exp(-dtReal * 5)) : target;
       camInit = true;
@@ -738,19 +829,19 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       ctx.translate(-zx, -zy);
     }
     ctx.translate(sx, sy);
-    const kit = s.boss.kit;
     X.trackPlayers(s.players);
-    const tgt = s.players.find((p) => p.id === s.boss.targetPlayer);
+    const tgt = s.boss ? s.players.find((p) => p.id === s.boss!.targetPlayer) : null;
     if (tgt) X.bossLookAt(tgt.x, tgt.y);
-    safe("drawArenaBackground", R.drawArenaBackground, ctx, kit.theme, kit.seed, visTime);
+    safe("drawArenaBackground", R.drawArenaBackground, ctx, arenaTheme(s), s.boss?.kit.seed ?? arenaSeed, visTime);
     safe("drawPerkPads", R.drawPerkPads, ctx, s.perkOffer ?? null, s.players, visTime);
     safe("drawObstacles", R.drawObstacles, ctx, s.obstacles ?? [], visTime);
     safe("drawPickups", R.drawPickups, ctx, s.pickups ?? [], visTime);
     safe("drawHazards", R.drawHazards, ctx, s.hazards, visTime);
     safe("drawMinions", R.drawMinions, ctx, s.minions, visTime);
-    safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
+    if (s.boss) safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
     const order = [...s.players].sort((a, b) => a.y - b.y);
     for (const p of order) safe("drawPlayer", R.drawPlayer, ctx, p, visTime, p.id === app.you);
+    if (me && me.alive && performance.now() < youRingUntil) drawYouRing(me, now, s.heroScale ?? 1);
     safe("drawBullets", R.drawBullets, ctx, s.bullets, visTime);
     safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime, view);
     ctx.restore();
@@ -778,7 +869,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         } else if (Math.hypot(me.x - z.x, me.y - z.y) < z.r + 6) inDanger = true;
       }
     danger.classList.toggle("on", inDanger);
-    stage.classList.toggle("enraged", s.boss.enraged || s.boss.phase >= 2);
+    stage.classList.toggle("enraged", !!s.boss && (s.boss.enraged || s.boss.phase >= 2));
 
     hud.update(s, app.you, input?.mode ?? null);
     if (me) {
@@ -798,19 +889,25 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         da.dataset.cd = me.dashCd > 0 ? me.dashCd.toFixed(1) : "";
       }
     }
-    if (portrait && miniTab.dataset.boss !== s.boss.kit.repo) {
-      miniTab.dataset.boss = s.boss.kit.repo;
-      miniTab.textContent = `▾ ${(s.boss.kit.heart || "arena").split("/").pop()} · map`;
+    const mapKey = s.boss?.kit.repo ?? "pvp";
+    if (portrait && miniTab.dataset.boss !== mapKey) {
+      miniTab.dataset.boss = mapKey;
+      miniTab.textContent = s.boss ? `▾ ${(s.boss.kit.heart || "arena").split("/").pop()} · map` : "▾ classroom.map";
+    }
+    if (s.status === "fighting" && !youRingStarted && performance.now() > introEnd) {
+      youRingStarted = true;
+      youRingUntil = performance.now() + 10000;
     }
     if (s.status === "fighting") {
       if (!nextTaunt) nextTaunt = performance.now() + 5000;
       else if (performance.now() > nextTaunt) taunt(s);
     }
-    const showBubble = performance.now() < bubbleUntil;
+    const showBubble = performance.now() < bubbleUntil && !!s.boss;
     bubble.classList.toggle("show", showBubble);
     if (showBubble) {
-      const top = s.boss.regions?.length ? Math.min(...s.boss.regions.map((r) => r.y - r.r)) : s.boss.y - 50;
-      bubble.style.left = `${stage.offsetLeft + clamp(s.boss.x - view.x, 30, view.w - 30) * cssScale}px`;
+      const b = s.boss!;
+      const top = b.regions?.length ? Math.min(...b.regions.map((r) => r.y - r.r)) : b.y - 50;
+      bubble.style.left = `${stage.offsetLeft + clamp(b.x - view.x, 30, view.w - 30) * cssScale}px`;
       bubble.style.top = `${stage.offsetTop + Math.max(20, top) * cssScale}px`;
     }
     if (motionOverlay && input && (!input.needsPermission || input.mode !== "motion")) {

@@ -2,6 +2,7 @@
 import type { WeaponKind } from "../../../shared/types.ts";
 import type { HeroLook } from "./look.ts";
 import { hashStr } from "./color.ts";
+import { scale2x, shadePass, outlinePass, rasterCells, type Cells } from "./hires.ts";
 
 // keys: M metal light, m metal, d metal dark, p primary, P primary light, s secondary,
 //       a accent, A accent light (glow; rightmost A = muzzle), w wood, W wood light, k near-black, h hand,
@@ -62,14 +63,15 @@ const ART: Record<WeaponKind, string[]> = {
 
 export interface WeaponSprite {
   canvas: HTMLCanvasElement;
-  px: number; py: number;     // pivot (hand) in sprite px
-  tipX: number; tipY: number; // muzzle relative to pivot
+  px: number; py: number;     // pivot (hand) in 1x logical px
+  tipX: number; tipY: number; // muzzle relative to pivot (1x logical px)
+  res: number;                // canvas px per logical px (draw at canvas size / res)
 }
 
 const cache = new Map<string, WeaponSprite>();
 
-export function weaponSprite(L: HeroLook, kind: WeaponKind): WeaponSprite {
-  const key = L.key + "|w|" + kind + "|" + L.etch;
+export function weaponSprite(L: HeroLook, kind: WeaponKind, res = 1): WeaponSprite {
+  const key = L.key + "|w|" + kind + "|" + L.etch + "|r" + res;
   const hit = cache.get(key);
   if (hit) return hit;
   const c = L.c;
@@ -111,6 +113,15 @@ export function weaponSprite(L: HeroLook, kind: WeaponKind): WeaponSprite {
       }
     }
   }
+  if (res > 1) {
+    const flat: Cells = grid.flat();
+    const cells = scale2x(flat, w, h);
+    shadePass(cells, w * 2, h * 2);
+    outlinePass(cells, w * 2, h * 2, c.outline);
+    const ws2: WeaponSprite = { canvas: rasterCells(cells, w * 2, h * 2), px, py, tipX: tipX + 1 - px, tipY: tipY - py, res: 2 };
+    cache.set(key, ws2);
+    return ws2;
+  }
   // outline
   const out: [number, number][] = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -125,7 +136,7 @@ export function weaponSprite(L: HeroLook, kind: WeaponKind): WeaponSprite {
     const col = grid[y][x];
     if (col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   }
-  const ws: WeaponSprite = { canvas: cv, px, py, tipX: tipX + 1 - px, tipY: tipY - py };
+  const ws: WeaponSprite = { canvas: cv, px, py, tipX: tipX + 1 - px, tipY: tipY - py, res: 1 };
   cache.set(key, ws);
   return ws;
 }

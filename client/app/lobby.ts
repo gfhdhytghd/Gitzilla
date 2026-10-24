@@ -4,11 +4,13 @@ import type { BossKit, LobbyPlayer, LobbyState, PlayerKit } from "../../shared/t
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
+import { loadMotionProfile, saveMotionProfile } from "../input";
+import type { MotionProfile } from "../../shared/types";
 import { createLogo } from "./logo";
 import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
 import { audio } from "./sound";
-import { asciiBar, esc, h, hash32, normalizeRepo, shortRepo } from "./util";
+import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo } from "./util";
 
 const WEAPON_ICON: Record<string, string> = { blaster: "⌐╦", smg: "≡╤", shotgun: "═╦═", cannon: "▄█▀", staff: "─o", laser: "═══►", blade: "─┼══" };
 const SKILL_DESC: Record<string, string> = {
@@ -56,6 +58,65 @@ function bossCode(k: BossKit): HTMLElement[] {
   if (c.commits?.length)
     out.push(h("div.code-list", null, h("div.cl-h", null, "recent sins"), ...c.commits.slice(0, 3).map((t) => h("div.cl-row.sin", { title: t }, t))));
   return out;
+}
+
+/**
+ * Phones: pick controls in the lobby (a real user gesture, so iOS permission prompts work) instead of
+ * mid-intro. The choice is a client-local motion profile read by client/input at match start.
+ */
+function createControlsCard(): HTMLElement {
+  const el = h("div.controls-card", { "data-testid": "controls-card" });
+  const hasSensors = typeof (window as { DeviceMotionEvent?: unknown }).DeviceMotionEvent !== "undefined";
+  const render = () => {
+    const prof = loadMotionProfile();
+    const chosen = (() => {
+      try {
+        return localStorage.getItem("kaiju.controlsChosen") === "1";
+      } catch {
+        return false;
+      }
+    })();
+    const pick = (p: MotionProfile) => {
+      saveMotionProfile(p);
+      try {
+        localStorage.setItem("kaiju.controlsChosen", "1");
+      } catch {
+        /* private mode */
+      }
+      render();
+    };
+    const enableMotion = (p: MotionProfile) => {
+      // iOS: both permission APIs must be called synchronously inside this tap
+      type Perm = { requestPermission?: () => Promise<string> };
+      const w = window as unknown as { DeviceMotionEvent?: Perm; DeviceOrientationEvent?: Perm };
+      const reqs = [w.DeviceMotionEvent?.requestPermission?.(), w.DeviceOrientationEvent?.requestPermission?.()].filter(Boolean) as Promise<string>[];
+      pick(p);
+      Promise.all(reqs).then(
+        (r) => {
+          if (r.some((x) => x !== "granted")) {
+            pick("tap-only");
+            toast("motion permission denied — using touch controls", "info");
+          }
+        },
+        () => pick("tap-only"),
+      );
+    };
+    const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : prof === "seated" ? "motion (seated, small tilts)" : "motion: tilt to move · tap or swing to attack";
+    el.replaceChildren(
+      h("div.cc-title", null, "🎮 controls ", chosen ? h("span.cc-chosen", null, `✓ ${label}`) : h("span.dim", null, "— choose before the fight")),
+      h(
+        "div.cc-btns",
+        null,
+        hasSensors
+          ? h(`button.btn${prof === "standard" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-motion", onclick: () => enableMotion("standard") }, "tilt phone")
+          : null,
+        hasSensors ? h(`button.btn${prof === "seated" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-seated", onclick: () => enableMotion("seated") }, "seated / small moves") : null,
+        h(`button.btn${prof === "tap-only" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-touch", onclick: () => pick("tap-only") }, "touch only"),
+      ),
+    );
+  };
+  render();
+  return el;
 }
 
 let fallbackCache: Promise<string[]> | null = null;
@@ -169,6 +230,12 @@ function paintNoise(c: HTMLCanvasElement, t: number, hue: string) {
   g.fillRect(0, Math.floor((t * 24) % s), s, 1);
 }
 
+/** Relative 5-pip stat bar ("damage ▮▮▮▯▯") — judges don't know what ×1.00 or 85px/s means. */
+function statBar(label: string, v: number, lo: number, hi: number, col: string): HTMLElement {
+  const n = Math.max(1, Math.min(5, Math.round(((v - lo) / (hi - lo)) * 4) + 1));
+  return h("div.kv.statbar", { title: `${label}: ${Math.round(v * 100) / 100}` }, h("span", null, label), h(`b.pips.${col}`, null, "▮".repeat(n) + "▯".repeat(5 - n)));
+}
+
 function hearts(kit: PlayerKit): string {
   return "♥".repeat(Math.min(9, kit.maxHp)) + " " + "◆".repeat(Math.min(9, kit.maxArmor));
 }
@@ -185,6 +252,7 @@ export function createLobby(app: AppCtx): Screen {
   const cardEls = new Map<string, HTMLElement>();
   const noiseEls = new Set<{ c: HTMLCanvasElement; hue: string }>();
   let bossSig = "";
+  let revealedRepo: string | null = null;
   let bossRevealAt = 0;
 
   // ----- your panel -----
@@ -194,38 +262,79 @@ export function createLobby(app: AppCtx): Screen {
   const submitRepo = () => {
     const r = normalizeRepo(repoInput.value);
     if (!r.includes("/")) {
-      toast("repo must look like owner/name", "err");
+      repoErr.textContent = "a repo looks like owner/name — e.g. pallets/flask";
       return repoInput.focus();
     }
+    repoErr.textContent = "";
     repoInput.value = r;
     app.conn.send({ t: "setRepo", repo: r });
+    changingRepo = false;
     audio.onUi();
     repoInput.blur();
   };
   repoInput.addEventListener("keydown", (e) => e.key === "Enter" && submitRepo());
+  const repoErr = h("div.input-err", { role: "alert" });
+  repoInput.addEventListener("input", () => (repoErr.textContent = ""));
   const youChips = h("div.chips");
   const youStatus = h("div.you-status");
   const youCard = h("div.you-card");
   const nameEl = h("span.you-name");
+  const renameInput = h("input.term-input.rename-input", { maxlength: 16, "aria-label": "your name", hidden: true }) as HTMLInputElement;
+  const finishRename = (save: boolean) => {
+    const n = renameInput.value.trim().replace(/\s+/g, "_").slice(0, 16);
+    renameInput.hidden = true;
+    nameEl.hidden = false;
+    renameBtn.hidden = false;
+    if (save && n && n !== app.name) app.rename(n);
+  };
+  renameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") finishRename(true);
+    if (e.key === "Escape") finishRename(false);
+  });
+  renameInput.addEventListener("blur", () => finishRename(true));
   const renameBtn = h("button.btn.btn-tiny", {
     onclick: () => {
-      const n = prompt("$ whoami", app.name)?.trim();
-      if (n) app.rename(n.replace(/\s+/g, "_").slice(0, 16));
+      renameInput.value = app.name;
+      renameInput.hidden = false;
+      nameEl.hidden = true;
+      renameBtn.hidden = true;
+      renameInput.focus();
+      renameInput.select();
     },
   }, "edit");
 
-  const youPanel = h(
-    "section.panel.you-panel",
+  // repo picker; collapses to one line once your hero is summoned (tap "change" to reopen)
+  let changingRepo = false;
+  const summonBtn = h("button.btn.btn-primary", { "data-testid": "player-repo-submit", onclick: submitRepo }, "▶ summon hero");
+  const pickerBox = h(
+    "div.picker",
     null,
-    h("h2.panel-title", null, "$ whoami ", nameEl, " ", renameBtn),
     h("label.term-line", null, h("span.prompt", null, "$ git clone "), repoInput),
-    h("button.btn.btn-primary", { "data-testid": "player-repo-submit", onclick: submitRepo }, "▶ summon hero"),
+    repoErr,
+    summonBtn,
     youChips,
     createGithubPicker((full) => {
       repoInput.value = full;
       submitRepo();
     }),
+  );
+  const pickerDoneRepo = h("b");
+  const pickerDone = h(
+    "div.picker-done",
+    null,
+    h("span.ok", null, "✓ "),
+    pickerDoneRepo,
+    " ",
+    h("button.btn-link", { "data-testid": "player-repo-change", onclick: () => ((changingRepo = true), render(), repoInput.focus()) }, "change"),
+  );
+  const youPanel = h(
+    "section.panel.you-panel",
+    null,
+    h("h2.panel-title", null, "$ whoami ", nameEl, renameInput, " ", renameBtn),
+    pickerDone,
+    pickerBox,
     youStatus,
+    ...(isPhone() ? [createControlsCard()] : []),
     youCard,
   );
 
@@ -236,27 +345,54 @@ export function createLobby(app: AppCtx): Screen {
   const submitBoss = () => {
     const r = normalizeRepo(bossInput.value);
     if (!r.includes("/")) {
-      toast("boss repo must look like owner/name", "err");
+      bossErr.textContent = "a repo looks like owner/name — e.g. lodash/lodash";
       return bossInput.focus();
     }
+    bossErr.textContent = "";
     bossInput.value = r;
     app.conn.send({ t: "setBoss", repo: r });
+    changingBoss = false;
     audio.onUi();
     bossInput.blur();
   };
   bossInput.addEventListener("keydown", (e) => e.key === "Enter" && submitBoss());
+  const bossErr = h("div.input-err", { role: "alert" });
+  bossInput.addEventListener("input", () => (bossErr.textContent = ""));
   const bossChips = h("div.chips");
   const bossOwnerCtl = h(
     "div.boss-owner",
     null,
     h("label.term-line", null, h("span.prompt.red", null, "$ summon-boss "), bossInput),
+    bossErr,
     h("button.btn.btn-danger", { "data-testid": "boss-repo-submit", onclick: submitBoss }, "☠ summon boss"),
     bossChips,
   );
+  let changingBoss = false;
+  const changeBossLink = h("button.btn-link.change-boss", {
+    "data-testid": "boss-change",
+    onclick: () => {
+      changingBoss = true;
+      render();
+      bossInput.focus();
+      bossInput.select();
+    },
+  }, "⟲ change boss");
   const bossStage = h("div.boss-stage");
   const bossInfo = h("div.boss-info");
   const bossStatus = h("div.boss-status");
-  const startBtn = h("button.btn.btn-big.btn-start", { "data-testid": "start-match", onclick: () => (audio.onUi(), app.conn.send({ t: "start" })) }, "$ ./fight.sh") as HTMLButtonElement;
+  let startArmedAt = 0;
+  const tryStart = () => {
+    const cloning = app.lobby?.players.filter((p) => p.status === "analyzing") ?? [];
+    if (cloning.length && performance.now() - startArmedAt > 4000) {
+      startArmedAt = performance.now();
+      startHint.textContent = `${cloning.map((p) => p.name).join(", ")} still cloning… press again to start anyway`;
+      startHint.classList.add("warn");
+      return;
+    }
+    audio.onUi();
+    app.conn.send({ t: "start" });
+  };
+  const startBtn = h("button.btn.btn-big.btn-start", { "data-testid": "start-match", onclick: () => tryStart() }, "$ ./fight.sh") as HTMLButtonElement;
   const startHint = h("div.start-hint");
   const bossPanel = h(
     "section.panel.boss-panel",
@@ -266,6 +402,7 @@ export function createLobby(app: AppCtx): Screen {
     bossStatus,
     bossInfo,
     bossOwnerCtl,
+    changeBossLink,
     startBtn,
     startHint,
   );
@@ -332,7 +469,11 @@ export function createLobby(app: AppCtx): Screen {
     body = h("div.lobby-grid", null, youPanel, squad, bossPanel);
   }
 
-  const el = h("div.screen.lobby" + (screen ? ".is-screen" : ""), null, backdrop.canvas, h("div.crt"), h("div.lobby-scroll", null, header, body));
+  // phones: a sticky "what do I do next" bar at the bottom of the lobby
+  const nextBar = h("button.next-bar", { "data-testid": "next-step" });
+  let nextAction: (() => void) | null = null;
+  nextBar.addEventListener("click", () => nextAction?.());
+  const el = h("div.screen.lobby" + (screen ? ".is-screen" : ""), null, backdrop.canvas, h("div.crt"), h("div.lobby-scroll", null, header, body), screen ? null : nextBar);
 
   // chips
   fallbacks(app.mock).then((list) => {
@@ -425,6 +566,11 @@ export function createLobby(app: AppCtx): Screen {
   function renderYou(lobby: LobbyState) {
     nameEl.textContent = app.name;
     const me = lobby.players.find((p) => p.id === app.you);
+    const collapse = !!me && me.status === "ready" && !changingRepo;
+    pickerBox.hidden = collapse;
+    pickerDone.hidden = !collapse;
+    pickerDoneRepo.textContent = me?.repo ?? "";
+    summonBtn.classList.toggle("btn-primary", !me || me.status !== "ready");
     if (!me) {
       youStatus.replaceChildren(statusMarker("player-ready", "empty", "not in squad"));
       return;
@@ -453,9 +599,11 @@ export function createLobby(app: AppCtx): Screen {
             h("div.kv", null, h("span", null, "skill"), h("b", null, `⚡ ${k.skill}`)),
             h("div.kv.dim", null, SKILL_DESC[k.skill] ?? ""),
             ...codeBits(k, true),
-            h("div.kv", null, h("span", null, "hp/armor"), h("b.red", null, hearts(k))),
-            h("div.kv", null, h("span", null, "energy"), h("b.cyan", null, String(k.maxEnergy))),
-            h("div.kv", null, h("span", null, "dmg/spd"), h("b", null, `×${k.damageMul.toFixed(2)} · ${Math.round(k.speed)}px/s`)),
+            statBar("health", k.maxHp, 4, 10, "red"),
+            statBar("armor", k.maxArmor, 2, 8, "grey"),
+            statBar("energy", k.maxEnergy, 120, 260, "cyan"),
+            statBar("damage", k.damageMul, 0.75, 1.3, "yellow"),
+            statBar("speed", k.speed, 60, 115, "green"),
           ),
         );
       } else youCard.replaceChildren();
@@ -466,6 +614,10 @@ export function createLobby(app: AppCtx): Screen {
     const b = lobby.boss;
     const owner = isOwner(app);
     bossOwnerCtl.style.display = owner ? "" : "none";
+    // once a boss is summoned, ./fight.sh is the only primary action; changing the boss is a small link
+    const collapse = b.status === "ready" && !changingBoss;
+    bossOwnerCtl.classList.toggle("collapsed", collapse);
+    changeBossLink.style.display = owner && collapse ? "" : "none";
     bossChips.style.display = b.status === "ready" ? "none" : "";
     if (b.repo && owner && document.activeElement !== bossInput && !bossInput.value) bossInput.value = b.repo;
     const label = b.status === "ready" ? "✓ boss summoned" : b.status === "analyzing" ? "summoning…" : b.status === "error" ? `✗ ${b.error ?? "error"}` : owner ? "pick a rival repo" : "owner is choosing…";
@@ -483,8 +635,12 @@ export function createLobby(app: AppCtx): Screen {
         const full = bossPortraitCanvas(k, 160);
         full.classList.add("boss-full");
         sil.classList.add("boss-sil");
-        bossStage.replaceChildren(h("div.boss-frame.revealing", null, sil, full, h("div.boss-flash")));
-        bossRevealAt = performance.now();
+        // the silhouette -> colour reveal plays once per boss repo; later kit updates (e.g. the Gemini design
+        // arriving) swap the art in place so the boss is never left looking like a dark silhouette
+        const firstReveal = revealedRepo !== b.repo;
+        revealedRepo = b.repo;
+        bossStage.replaceChildren(h(`div.boss-frame${firstReveal ? ".revealing" : ".redesign"}`, null, sil, full, h("div.boss-flash")));
+        if (firstReveal) bossRevealAt = performance.now();
         const nameEl = h("div.boss-name");
         bossInfo.replaceChildren(
           nameEl,
@@ -501,15 +657,16 @@ export function createLobby(app: AppCtx): Screen {
           ),
           h("div.boss-attacks", null, ...k.attacks.slice(0, 6).map((a) => h("span.atk", { title: `${a.kind} from ${a.source}` }, a.name))),
         );
-        // name types in after the silhouette glitches into colour
-        setTimeout(() => {
+        // name types in as the silhouette glitches into colour (instantly on in-place updates)
+        if (!firstReveal) nameEl.textContent = k.name;
+        else setTimeout(() => {
           nameEl.innerHTML = "";
           let i = 0;
           const iv = setInterval(() => {
             nameEl.textContent = k.name.slice(0, ++i);
             if (i >= k.name.length) clearInterval(iv);
           }, 45);
-        }, wasAnalyzing ? 900 : 0);
+        }, wasAnalyzing ? 450 : 0);
         backdrop.setTheme(k.theme);
         if (screen) backdrop.setBoss(k, true);
       } else if (b.status === "analyzing") {
@@ -529,6 +686,8 @@ export function createLobby(app: AppCtx): Screen {
     const canStart = owner && readyPlayers >= 1 && b.status === "ready";
     startBtn.style.display = owner ? "" : "none";
     startBtn.disabled = !canStart;
+    if (performance.now() - startArmedAt < 4000) return; // keep the "still cloning… press again" warning visible
+    startHint.classList.remove("warn");
     startHint.textContent = owner
       ? !readyPlayers
         ? "need ≥1 ready hero"
@@ -549,6 +708,39 @@ export function createLobby(app: AppCtx): Screen {
     renderSquad(lobby);
     if (!screen) renderYou(lobby);
     renderBoss(lobby);
+    if (!screen) renderNext(lobby);
+  }
+
+  function renderNext(lobby: LobbyState) {
+    const me = lobby.players.find((p) => p.id === app.you);
+    const owner = isOwner(app);
+    const ready = lobby.players.filter((p) => p.status === "ready").length;
+    const edu = lobby.mode === "edu";
+    const bossOk = edu || lobby.boss.status === "ready";
+    const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "the host";
+    let text = "", cls = "", act: (() => void) | null = null;
+    const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
+    if (!me || me.status === "empty" || me.status === "error") {
+      text = me?.status === "error" ? "✗ that repo failed — pick another above" : "① pick your repo above (or tap a chip)";
+      act = toTop;
+    } else if (me.status === "analyzing") {
+      text = `⟳ cloning ${me.repo ?? "your repo"}…`;
+      cls = "busy";
+    } else if (!owner) {
+      text = `✓ ready as ${me.kit?.design?.title ?? me.kit?.title ?? "your hero"} · waiting for ${ownerName} to start (${ready} in)`;
+      cls = "done";
+    } else if (!bossOk) {
+      text = lobby.boss.status === "analyzing" ? "⟳ summoning the boss…" : "② pick the BOSS repo ↓";
+      cls = lobby.boss.status === "analyzing" ? "busy" : "";
+      act = () => (bossPanel.scrollIntoView({ behavior: "smooth", block: "start" }), bossInput.focus());
+    } else {
+      text = `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
+      cls = "go";
+      act = tryStart;
+    }
+    nextBar.textContent = text;
+    nextBar.className = `next-bar ${cls}`;
+    nextAction = act;
   }
 
   // animation tick for clone logs + noise portraits

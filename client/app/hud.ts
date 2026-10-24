@@ -16,8 +16,8 @@ const SKILL_KEY = { keyboard: "E", motion: "SHAKE", touch: "SKILL" } as const;
 const DASH_KEY = { keyboard: "SPACE", motion: "SWING", touch: "DASH" } as const;
 const SKILL_CD_GUESS: Record<string, number> = { firewall: 12, fork: 14, hotfix: 12, overclock: 10, rollback: 9 };
 
-export function limbName(kit: BossKit, id: string | undefined): string {
-  if (!id) return "core";
+export function limbName(kit: BossKit | undefined, id: string | undefined): string {
+  if (!id || !kit) return "core";
   if (id === "heart") return kit.heart || "heart";
   return kit.design?.limbNames?.[id] ?? kit.limbs.find((l) => l.id === id)?.component ?? id;
 }
@@ -25,6 +25,14 @@ const shortComp = (c: string) => {
   const parts = c.split("/");
   return parts[parts.length - 1] || c;
 };
+
+/** PvP standings: round wins, then KOs, then damage. */
+export function rankPvp(s: MatchState) {
+  const sc = s.pvp?.scores ?? {};
+  return s.players
+    .map((p) => ({ id: p.id, name: p.name, kos: sc[p.id]?.kos ?? 0, damage: sc[p.id]?.damage ?? 0, roundWins: sc[p.id]?.roundWins ?? 0, downs: sc[p.id]?.downs ?? 0 }))
+    .sort((a, b) => b.roundWins - a.roundWins || b.kos - a.kos || b.damage - a.damage);
+}
 
 export interface Hud {
   el: HTMLElement;
@@ -52,9 +60,9 @@ export function createHud(spectator: boolean): Hud {
     perkRow,
     weaponLine,
     // code vocabulary with the plain meaning as a tooltip / tiny hint
-    h("div.hs-row", { title: "health: hit points (hearts)" }, h("span.lbl.red", null, "hp"), hpBar, hpNum),
-    h("div.hs-row", { title: "armor: a shield that regenerates" }, h("span.lbl.grey", null, "try{}"), arBar, arNum),
-    h("div.hs-row", { title: "energy: ammo for your weapon" }, h("span.lbl.cyan", null, "RAM"), h("div.en-bar", null, enFill), enNum),
+    h("div.hs-row", { title: "health: hit points (hearts)" }, h("span.lbl.red", null, "♥ hp"), hpBar, hpNum),
+    h("div.hs-row", { title: "armor: a shield that regenerates" }, h("span.lbl.grey", null, "◆ armor"), arBar, arNum),
+    h("div.hs-row", { title: "energy: ammo for your weapon" }, h("span.lbl.cyan", null, "⚡ energy"), h("div.en-bar", null, enFill), enNum),
   );
 
   // --- boss panel ---
@@ -72,6 +80,31 @@ export function createHud(spectator: boolean): Hud {
     limbsRow,
   );
   let limbEls: { id: string; el: HTMLElement; fill: HTMLElement }[] = [];
+
+  // --- edu PvP scoreboard (replaces the boss bar when there is no boss) ---
+  const pvRound = h("span.pv-round"), pvClock = h("span.pv-clock"), pvLeader = h("div.pv-leader"), pvYou = h("div.pv-you");
+  const pvpPanel = h(
+    "div.hud-boss.hud-pvp.term.hidden",
+    null,
+    h("div.hb-top", null, h("span.prompt", null, "$ ./brawl "), pvRound, h("span.hb-phase", null, pvClock)),
+    pvLeader,
+    pvYou,
+  );
+  const updatePvp = (s: MatchState, you: string | null) => {
+    const pv = s.pvp;
+    if (!pv) return;
+    setText(pvRound, `round ${pv.round}/${pv.rounds}`);
+    const left = Math.max(0, pv.roundEndsAt - s.t);
+    setText(pvClock, `${fmtTime(left)} left`);
+    toggle(pvClock, "urgent", left < 10);
+    const ranked = rankPvp(s);
+    const lead = ranked[0];
+    const leadName = lead ? (lead.id === you ? "you" : lead.name) : "—";
+    setText(pvLeader, lead ? `★ leader: ${leadName} · ${lead.kos} KO · ${lead.roundWins} round${lead.roundWins === 1 ? "" : "s"}` : "");
+    const i = ranked.findIndex((r) => r.id === you);
+    if (i >= 0) setText(pvYou, `you: #${i + 1} of ${ranked.length} · ${ranked[i].kos} KO · ${Math.round(ranked[i].damage)} dmg`);
+    toggle(pvYou, "hidden", i < 0);
+  };
   let limbKitSig = "";
 
   // --- telegraph ---
@@ -116,7 +149,7 @@ export function createHud(spectator: boolean): Hud {
   );
   const dnBar = downed.querySelector(".dn-bar") as HTMLElement;
 
-  const el = h("div.hud" + (spectator ? ".spectator" : ""), null, bossPanel, telegraph, review, timer, spectator ? null : selfPanel, team, spectator ? null : skillBox, combo, log, spectator ? null : downed, toasts);
+  const el = h("div.hud" + (spectator ? ".spectator" : ""), null, bossPanel, pvpPanel, telegraph, review, timer, spectator ? null : selfPanel, team, spectator ? null : skillBox, combo, log, spectator ? null : downed, toasts);
 
   let skillMax = new Map<string, number>();
   let lastTelegraphName = "";
@@ -147,8 +180,10 @@ export function createHud(spectator: boolean): Hud {
     parts: { self: selfPanel, team, combo, log, review, toasts, skill: skillBox, timer },
     update(s, you, inputMode) {
       const boss = s.boss;
-      const kit = boss.kit;
       const me = s.players.find((p) => p.id === you) ?? null;
+      toggle(bossPanel, "hidden", !boss);
+      toggle(pvpPanel, "hidden", !!boss);
+      if (!boss) updatePvp(s, you);
       setText(timer, `T+${fmtTime(s.t)}`);
 
       // self (players left out of the match because they had no ready repo just watch)
@@ -160,6 +195,7 @@ export function createHud(spectator: boolean): Hud {
         segs(arBar, me.kit.maxArmor, me.armor, "ar");
         setText(hpNum, `${Math.ceil(me.hp)}/${me.kit.maxHp}`);
         setText(arNum, `${Math.floor(me.armor)}/${me.kit.maxArmor}`);
+        arNum.title = "armor = try{} — catches hits first, regenerates";
         setText(enNum, `${Math.round(me.energy)}MB`);
         const w = me.kit.code?.weapon;
         setText(weaponLine, w ? `⌐ ${w.name}  ${w.projectiles.slice(0, 2).map((x) => `"${x}"`).join(" ")}` : `⌐ ${me.kit.weapon}`);
@@ -193,6 +229,8 @@ export function createHud(spectator: boolean): Hud {
       }
 
       // boss
+      if (boss) {
+      const kit = boss.kit;
       setText(bossName, kit.name);
       const pct = Math.max(0, boss.hp / boss.maxHp);
       bossHpLag = Math.max(pct, bossHpLag - 0.004);
@@ -241,9 +279,13 @@ export function createHud(spectator: boolean): Hud {
         toggle(telegraph, "show", false);
         lastTelegraphName = "";
       }
+      } else toggle(telegraph, "show", false);
 
       // team
-      const others = s.players.filter((p) => spectator || p.id !== you);
+      // PvP: a live leaderboard (top N by standing, 30-student classes don't fit a full list)
+      const others = s.pvp
+        ? rankPvp(s).slice(0, spectator ? 12 : 6).map((r) => s.players.find((p) => p.id === r.id)!).filter(Boolean)
+        : s.players.filter((p) => spectator || p.id !== you);
       const seen = new Set<string>();
       for (const p of others) {
         seen.add(p.id);
@@ -259,7 +301,10 @@ export function createHud(spectator: boolean): Hud {
         setStyle(r.bar.firstElementChild as HTMLElement, "width", `${Math.max(0, (p.hp / p.kit.maxHp) * 100).toFixed(0)}%`);
         setStyle(r.row, "--c", p.kit.palette[0] ?? "#39ff88");
         toggle(r.row, "down", !p.alive);
-        setText(r.st, p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");
+        if (s.pvp) team.append(r.row); // keep rows in leaderboard order
+        toggle(r.row, "me", p.id === you);
+        const sc = s.pvp?.scores[p.id];
+        setText(r.st, sc ? `${sc.kos} KO` : p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");
         r.st.title = p.alive ? "health" : "downed: stand next to them to revive (systemctl restart)";
       }
       for (const [id, r] of teamRows) if (!seen.has(id)) (r.row.remove(), teamRows.delete(id));
@@ -283,7 +328,7 @@ export function createHud(spectator: boolean): Hud {
               return h(
                 `div.rv-card${mine ? ".mine" : ""}`,
                 { onclick: () => toastAt(`walk onto the ${pad.name} pad`, "pk-perk") },
-                h("div.rv-pr", null, `PR #${(s.boss.kit.seed % 900) + 100 + i}`),
+                h("div.rv-pr", null, `PR #${((s.boss?.kit.seed ?? 7) % 900) + 100 + i}`),
                 h("div.rv-name", null, pad.name),
                 h("div.rv-desc", null, pad.desc),
                 h("div.rv-by", null, by.length ? `✓ approved by ${by.join(", ")}` : "awaiting review…"),
@@ -298,7 +343,7 @@ export function createHud(spectator: boolean): Hud {
     },
     event(e, s, you) {
       const name = (id: string) => (id === you ? "you" : s.players.find((p) => p.id === id)?.name ?? id);
-      const kit = s.boss.kit;
+      const kit = s.boss?.kit;
       switch (e.type) {
         case "hit":
           if (e.combo && e.combo >= 2) {

@@ -36,9 +36,11 @@ function layoutFor(b: BossState): BossLayout {
   return L;
 }
 
-export function drawBoss(ctx: CanvasRenderingContext2D, b: BossState, time: number): void {
-  fx.boss = b;
+export function drawBoss(ctx: CanvasRenderingContext2D, b: BossState | null, time: number): void {
   fx.now = time;
+  if (!b) { fx.boss = null; return; }
+  fx.boss = b;
+  fx.bossSeenAt = time;
   drawBossAt(ctx, b, time, {});
 }
 
@@ -119,6 +121,35 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
     const p = 0.5 + 0.5 * Math.sin(time * 5 + i);
     drawGlow(ctx, bx + l.x, by + l.y, art.danger, l.r + 2, 0.1 + p * 0.25);
     if (p > 0.85) { ctx.fillStyle = "#ffffff"; ctx.fillRect(bx + Math.round(l.x), by + Math.round(l.y), 1, 1); }
+  });
+
+  // ---- fragile organs (bus factor 1): pulsing amber glow + tiny "1 MAINTAINER" tag ----
+  L.limbs.forEach((l, i) => {
+    const kl = kit.limbs[i];
+    if (broken[i] || !kl?.fragile) return;
+    const p = 0.5 + 0.5 * Math.sin(time * 3.2 + i * 1.3);
+    drawGlow(ctx, bx + l.x, by + l.y, "#ffb02e", l.r + 4, 0.25 + p * 0.35);
+    if (!opts.portrait) {
+      const n = kl.maintainers ?? 1;
+      const tag = n + " MAINTAINER" + (n === 1 ? "" : "S");
+      const tx = Math.round(bx + l.x), ty = Math.round(by + l.y + (l.y >= 0 ? l.r + 3 : -l.r - 9));
+      ctx.globalAlpha = 0.85;
+      drawText(ctx, tag, tx, ty, p > 0.5 ? "#ffd27a" : "#ffb02e", { align: "center" });
+      ctx.globalAlpha = 1;
+    }
+  });
+
+  // ---- parasites: publicly known vulnerabilities crawling on their organ ----
+  L.limbs.forEach((l, i) => {
+    const vulns = kit.limbs[i]?.parasites;
+    if (broken[i] || !vulns?.length) return;
+    const n = Math.min(3, vulns.length);
+    for (let k = 0; k < n; k++) {
+      const a = time * (0.5 + k * 0.17) * (k % 2 ? -1 : 1) + k * 2.1 + i;
+      const rr = l.r * (0.55 + 0.25 * Math.sin(time * 0.7 + k));
+      drawParasite(ctx, bx + l.x + Math.cos(a) * rr, by + l.y + Math.sin(a) * rr * 0.85, a + Math.PI / 2 * (k % 2 ? -1 : 1), time + k);
+    }
+    if (!opts.portrait && every("cve" + l.id, 2.6 + i * 0.3, time)) emit({ kind: "glyph", x: bx + l.x, y: by + l.y - l.r, vy: -12, max: 1.2, text: vulns[Math.floor(time) % vulns.length].id.slice(0, 16).toUpperCase(), color: "#b6ff3a" });
   });
 
   // ---- appendage + growth dynamics ----
@@ -729,6 +760,20 @@ function drawHeartCode(ctx: CanvasRenderingContext2D, x: number, y: number, r: n
     drawText(ctx, text, mx, ry - 2, col, { outline: null });
   }
   ctx.restore();
+}
+
+/** A tiny tick-like parasite (a CVE) with wiggling legs. */
+function drawParasite(ctx: CanvasRenderingContext2D, x: number, y: number, dir: number, time: number) {
+  x = Math.round(x); y = Math.round(y);
+  const ux = Math.cos(dir), uy = Math.sin(dir), px = -uy, py = ux;
+  const w = Math.floor(time * 10) % 2;
+  ctx.fillStyle = "#0a1a04";
+  for (const s of [-1, 1]) for (let k = -1; k <= 1; k++) ctx.fillRect(Math.round(x + ux * k * 1.5 + px * s * (2.5 + (w ^ (k & 1)))), Math.round(y + uy * k * 1.5 + py * s * (2.5 + (w ^ (k & 1)))), 1, 1);
+  ctx.fillStyle = "#0a1a04"; disc(ctx, x, y, 2.5);
+  ctx.fillStyle = "#6a9a1a"; disc(ctx, x, y, 1.6);
+  ctx.fillStyle = "#b6ff3a"; ctx.fillRect(x - 1, y - 1, 1, 1);
+  ctx.fillStyle = "#ff2a3a"; ctx.fillRect(Math.round(x + ux * 2), Math.round(y + uy * 2), 1, 1);
+  drawGlow(ctx, x, y, "#9dff3a", 4, 0.35);
 }
 
 // ---------- portrait ----------

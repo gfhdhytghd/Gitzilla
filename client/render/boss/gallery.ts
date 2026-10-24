@@ -33,6 +33,7 @@ function kitFor(p: RepoProfile, n: number, useDesign = q.get("design") !== "0"):
   }
   if (q.get("theme")) kit = { ...kit, theme: q.get("theme") as ArenaTheme };
   if (!kit.code?.heartLines?.length && q.get("code") !== "0") kit = { ...kit, code: fakeCode(p, kit) };
+  if (q.get("fragile")) kit = { ...kit, limbs: kit.limbs.map((l, i) => ({ ...l, fragile: i % 3 === 0 || l.fragile, maintainers: i % 3 === 0 ? 1 : l.maintainers, parasites: i === 1 ? [{ id: "GHSA-xxxx-1234", pkg: "lodash", ecosystem: "npm", summary: "prototype pollution", fixed: "4.17.21" }, { id: "CVE-2024-0001", pkg: "regex", ecosystem: "crates.io", summary: "ReDoS" }] : l.parasites })) };
   return kit;
 }
 
@@ -58,7 +59,7 @@ function pickProfile(): RepoProfile {
 
 function nav() {
   const el = document.getElementById("nav")!;
-  const links: [string, string][] = [["live", "?mode=live"], ["grid", "?mode=grid"], ["grid p3", "?mode=grid&phase=3"], ["portraits", "?mode=portraits"], ["bodies", "?mode=bodies"], ["fx", "?mode=fx"]];
+  const links: [string, string][] = [["live", "?mode=live"], ["grid", "?mode=grid"], ["grid p3", "?mode=grid&phase=3"], ["portraits", "?mode=portraits"], ["bodies", "?mode=bodies"], ["fx", "?mode=fx"], ["pvp", "?mode=pvp"]];
   profiles.forEach((p, i) => links.push([p.slug.split("/")[1], "?mode=live&boss=" + i]));
   el.innerHTML = links.map(([t, h]) => `<a href="${h}">${t}</a>`).join("");
 }
@@ -132,7 +133,7 @@ function live() {
 function bot(i: number) {
   let seq = 0, dashT = 0, ang = i * 1.7;
   return (s: MatchState, p: PlayerState): InputFrame => {
-    const b = s.boss;
+    const b = s.boss!;
     ang += 0.012 * (i % 2 ? 1 : -1);
     const want = 110 + (i % 3) * 20;
     const tx = b.x + Math.cos(ang) * want, ty = b.y + Math.sin(ang) * want * 0.7;
@@ -168,17 +169,17 @@ function render(ctx: CanvasRenderingContext2D, scale: number, s: MatchState, eve
   const ox = Math.round((Math.random() - 0.5) * sh) * scale, oy = Math.round((Math.random() - 0.5) * sh) * scale;
   ctx.setTransform(scale, 0, 0, scale, ox - Math.round((view?.x ?? 0) * scale), oy + (PORTRAIT ? Math.floor((ctx.canvas.height - ARENA_H * scale) / 2) : 0));
   if (!PORTRAIT) { ctx.fillStyle = "#000"; ctx.fillRect(-10, -10, ARENA_W + 20, ARENA_H + 20); }
-  drawArenaBackground(ctx, s.boss.kit.theme, s.boss.kit.seed, time);
+  drawArenaBackground(ctx, s.boss!.kit.theme, s.boss!.kit.seed, time);
   drawPerkPads(ctx, s.perkOffer ?? null, s.players, time);
   drawHazards(ctx, s.hazards, time);
   drawObstacles(ctx, s.obstacles ?? [], time);
   drawPickups(ctx, s.pickups ?? [], time);
   drawMinions(ctx, s.minions, time);
-  const target = s.players.find((p) => p.id === s.boss.targetPlayer);
+  const target = s.players.find((p) => p.id === s.boss!.targetPlayer);
   if (target) bossLookAt(target.x, target.y);
   trackPlayers(s.players);
   // y-sort boss + players
-  const actors: { y: number; draw: () => void }[] = [{ y: s.boss.y + 30, draw: () => drawBoss(ctx, s.boss, time) }];
+  const actors: { y: number; draw: () => void }[] = [{ y: s.boss!.y + 30, draw: () => drawBoss(ctx, s.boss!, time) }];
   for (const p of s.players) actors.push({ y: p.y, draw: () => (drawPlayerMod ? drawPlayerMod(ctx, p, time, p.id === "p0") : stubPlayer(ctx, p)) });
   actors.sort((a, b) => a.y - b.y).forEach((a) => a.draw());
   drawBullets(ctx, s.bullets, time);
@@ -261,7 +262,7 @@ function stagedState(kit: BossKit, time: number, phase: 1 | 2 | 3, idx: number):
     ],
   } : null;
   if (perkOffer) { bullets.length = 0; hz.length = 0; ps[0].x = 110; ps[0].y = 200; ps[1].x = 240; ps[1].y = 232; }
-  return { t: time, status: "fighting", players: ps, boss: b, bullets, hazards: hz, minions, events: [], obstacles, pickups, perkOffer };
+  return { t: time, status: "fighting", mode: "battle", heroScale: 1, pvp: null, players: ps, boss: b, bullets, hazards: hz, minions, events: [], obstacles, pickups, perkOffer };
 }
 
 function fakePlayer(k: number, x: number, y: number): PlayerState {
@@ -276,7 +277,7 @@ function renderStaged(ctx: CanvasRenderingContext2D, scale: number, kit: BossKit
   const last = fakeEventsAt.get(idx) ?? 0;
   if (time - last > 0.35) {
     fakeEventsAt.set(idx, time);
-    const r = s.boss.regions[Math.floor(Math.random() * s.boss.regions.length)];
+    const r = s.boss!.regions[Math.floor(Math.random() * s.boss!.regions.length)];
     ev.push({ type: "hit", target: "boss", limb: r.id === "heart" ? undefined : r.id, amount: Math.round(4 + Math.random() * 30), x: r.x, y: r.y, combo: Math.random() < 0.2 ? 3 : undefined });
   }
   render(ctx, scale, s, ev, time);
@@ -313,8 +314,8 @@ function fxSeq() {
     if (t < 0.1) fired.clear();
     const phase: 1 | 2 | 3 = t > 6 ? 3 : t > 3 ? 2 : 1;
     const s = stagedState(kit, now, phase, 0);
-    s.boss.limbs.forEach((l, i) => (l.broken = (i === 0 && t > 1.5) || (i === 2 && t > 6)));
-    if (t > 9) s.boss.hp = 0;
+    s.boss!.limbs.forEach((l, i) => (l.broken = (i === 0 && t > 1.5) || (i === 2 && t > 6)));
+    if (t > 9) s.boss!.hp = 0;
     s.bullets = []; s.hazards = s.hazards.filter((h) => h.kind !== "cascade");
     const ev: GameEvent[] = [];
     const fire = (k: string, at: number, e: GameEvent) => { if (t >= at && !fired.has(k)) { fired.add(k); ev.push(e); } };
@@ -322,8 +323,53 @@ function fxSeq() {
     fire("p2", 3, { type: "phase", phase: 2 });
     fire("p3", 6, { type: "phase", phase: 3 });
     fire("v", 9, { type: "victory" });
-    if (Math.random() < 0.3 && t < 9) { const r = s.boss.regions[Math.floor(Math.random() * s.boss.regions.length)]; ev.push({ type: "hit", target: "boss", limb: r.id, amount: 5 + Math.round(Math.random() * 30), x: r.x, y: r.y, crit: Math.random() < 0.2 }); }
+    if (Math.random() < 0.3 && t < 9) { const r = s.boss!.regions[Math.floor(Math.random() * s.boss!.regions.length)]; ev.push({ type: "hit", target: "boss", limb: r.id, amount: 5 + Math.round(Math.random() * 30), x: r.x, y: r.y, crit: Math.random() < 0.2 }); }
     render(ctx, scale, s, ev, now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// edu classroom PvP: no boss, N students shooting each other (staged, not the real sim)
+function pvp() {
+  const scale = Number(q.get("scale") ?? 3);
+  const n = Number(q.get("n") ?? 12);
+  const ctx = makeStage(scale);
+  const ps = Array.from({ length: n }, (_, k) => {
+    const p = fakePlayer(k % 4, 60 + ((k * 97) % 360), 50 + ((k * 61) % 200));
+    return { ...p, id: "s" + k, name: "student" + k, kit: playerKitFromProfile(profiles[k % profiles.length]) };
+  });
+  let bullets: Bullet[] = [];
+  let id = 1;
+  let last = performance.now() / 1000;
+  function frame() {
+    const time = performance.now() / 1000;
+    const dt = Math.min(0.05, time - last); last = time;
+    const ev: GameEvent[] = [];
+    ps.forEach((p, k) => {
+      p.x = 240 + Math.cos(time * 0.3 + k) * (120 + (k % 3) * 40); p.y = 150 + Math.sin(time * 0.4 + k * 1.7) * 90;
+      if (Math.random() < 0.06) {
+        const t = ps[(k + 1 + Math.floor(Math.random() * (n - 1))) % n];
+        const dx = t.x - p.x, dy = t.y - p.y, l = Math.hypot(dx, dy) || 1;
+        bullets.push({ id: id++, owner: p.id, kind: p.kit.weapon, x: p.x, y: p.y, vx: (dx / l) * 160, vy: (dy / l) * 160, r: 3 });
+      }
+    });
+    bullets = bullets.filter((b) => {
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      const hit = ps.find((p) => p.id !== b.owner && Math.hypot(p.x - b.x, p.y - b.y) < 8);
+      if (hit) ev.push({ type: "hit", target: hit.id, amount: 3 + Math.round(Math.random() * 12), x: hit.x, y: hit.y, source: b.owner, impact: Math.random() } as GameEvent);
+      return !hit && b.x > 0 && b.x < ARENA_W && b.y > 0 && b.y < ARENA_H;
+    });
+    const s: MatchState = { t: time, status: "fighting", mode: "edu", heroScale: 2, pvp: null, players: ps, boss: null, bullets, hazards: [], minions: [], events: [], obstacles: [], pickups: [], perkOffer: null };
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    drawArenaBackground(ctx, "notebook", 7, time, "classroom");
+    drawObstacles(ctx, s.obstacles, time);
+    drawBoss(ctx, null, time);
+    trackPlayers(s.players);
+    [...s.players].sort((a, b) => a.y - b.y).forEach((p) => (drawPlayerMod ? drawPlayerMod(ctx, p, time, p.id === "s0") : stubPlayer(ctx, p)));
+    drawBullets(ctx, s.bullets, time);
+    drawEvents(ctx, ev, time);
+    drawPostFx(ctx, time, 0);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -351,6 +397,7 @@ function bodies() {
 nav();
 if (mode === "bodies") bodies();
 else if (mode === "fx") fxSeq();
+else if (mode === "pvp") pvp();
 else if (mode === "grid") grid();
 else if (mode === "portraits") portraits();
 else live();

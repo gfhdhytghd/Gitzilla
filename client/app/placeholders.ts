@@ -247,6 +247,9 @@ export function createInput(opts: {
   addEventListener("contextmenu", cm);
   return {
     mode: "keyboard",
+    sensorStatus: "off",
+    motionProfile: "standard",
+    setMotionProfile() {},
     needsPermission: false,
     requestPermission: async () => true,
     calibrate() {},

@@ -1,4 +1,32 @@
-DONE (code flavor) — claude-boss
+DONE (edu pvp) — claude-boss
+(also: DONE (edu) for the earlier boss-based edu + social-impact parts below)
+
+## Edu = classroom PvP (docs/tasks/edu.md, top section)
+- **Null-boss safe.** `drawBoss(ctx, null, t)` is a no-op that clears the boss. drawArenaBackground drops a stale boss (not drawn for >0.5 s, or any time in PvP), so FX never use a previous match's boss. Boss end screens (BSOD/KERNEL PANIC), the boss death sequence and the defeat glitch are skipped in PvP.
+- **Classroom arena.** `drawArenaBackground(ctx, theme, seed, t, "classroom")` is the edu variant:
+  - Floor: a calm, low-contrast parquet.
+  - Top wall: a chalkboard covered in chalk code ("CLASS HERO:", "# TODO: WRITE TESTS!", "QUIZ: WHAT IS COUPLING?"), with a chalk tray and a ticking wall clock.
+  - Props: a teacher's desk with a laptop and an apple, a CS101 bookshelf, a bin of paper balls, and floating chalk dust.
+  - Passing the variant also switches the renderers into PvP mode (`fx.pvp`).
+- **PvP bullets are readable per player.** `playerColor(id)` is exported from `client/render/arena/index.ts`: 8 base colors, then golden-angle hues, always hex, stable per id, so 30 students get distinct colors. claude-ui and claude-player can use it for name tags. Player projectiles (glyph, trail, glow, cannon-shell rim) wear the shooter's color in PvP.
+- **PvP hits.**
+  - Damage numbers wear the attacker's color: at most one per target every 0.25 s, and at most 7 on screen.
+  - Impact words are off in PvP, since the bullets are already code words.
+  - Only heavy hits (impact ≥ 0.6) shake the screen or hit-stop, and there's no red danger vignette, which with 30 students would flash the projector constantly.
+- **Gallery:** `?mode=pvp&n=24` stages a 24-student classroom FFA. Verified 24 heroes at 60 fps with readable per-player bullets.
+
+## Edu (boss quiz) + social impact parts (still valid for battle)
+- **Fragile organs** (`BossLimb.fragile`, bus factor 1): glowing amber fissures baked into the organ sprite, a pulsing amber glow, a tiny "1 MAINTAINER" tag (or "N MAINTAINERS"), and amber crack sparks plus `/\|` shards on hits.
+- **Parasites** (`BossLimb.parasites`, OSV advisories): up to 3 tick-like parasites crawl on the organ, and the advisory ID (e.g. `GHSA-…`) occasionally rises as a glyph.
+- **Quiz pads** (`PerkOffer.quiz`, `PerkPad.answer/correct`): cards read "ANSWER A: <real name>". After the reveal they show ✓ RIGHT / ✗ WRONG with green/red edges, and the in-world tag reads "QUIZ: PICK AN ANSWER T-x.xS". Perk event `correct` → "CORRECT! <perk>" / "NOT QUITE: <perk>".
+- **Gallery:** `&fragile=1` marks every third limb fragile and puts 2 fake advisories on limb 1.
+
+## Contract requests
+- If the sim scales the edu arena with player count (>8 students), add `MatchState.arena?: { w: number; h: number }`. My renderers currently assume 480×288 (ARENA_W/H); with the size available I'd tile the classroom floor and walls to fit.
+
+## Dev note
+- My scratch Vite on 5199 stopped picking up file changes once during this card, which showed stale code. Restart it with `--force` before trusting screenshots.
+
 
 ## Portrait review fix (qa/artifacts/portrait-2026-10-24T19-23-11-618Z)
 - **Root cause:** `fx.textScale` estimated zoom as `transform scale / devicePixelRatio`. claude-ui renders at 1 canvas px per logical px (RES = 1) and upscales with CSS (~3.3 CSS px per logical px), so texts were wrongly doubled.

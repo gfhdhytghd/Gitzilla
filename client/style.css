@@ -1027,3 +1027,138 @@ body:has(.screen.game.phone-portrait) .kj-touch-joystick-zone { top: var(--gy); 
 .screen.game.phone-portrait.deck-compact .deck-sensors .btn-tiny { min-height: 26px; padding: 3px 6px; }
 body:has(.screen.game.phone-portrait.deck-compact) .kj-touch-button { height: 64px; bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); font-size: 13px; }
 .screen.game.phone-portrait.deck-compact .mini-wrap .minimap { width: 90px; height: 54px; }
+
+/* qa-fixes: lobby boss panel */
+.boss-owner.collapsed { display: none !important; }
+.change-boss { display: block; margin: 10px 0 0; font-size: 18px; }
+.boss-frame.redesign .boss-full { animation: redesign .6s steps(6) both; }
+.boss-frame.redesign .boss-sil { display: none; }
+.boss-frame .boss-full { animation-duration: .8s; }
+.boss-frame.revealing .boss-sil { animation-duration: .8s; }
+
+/* qa-fixes: portrait deck — collapse empty boxes, boss bar uses the notch inset as its own background */
+.deck .hud-log:empty, .deck .hud-team:empty, .deck .hud-combo:not(.show) { display: none; }
+.deck-mid:not(:has(.hud-team:not(:empty), .hud-combo.show)) { display: none; }
+.screen.game.phone-portrait .deck { justify-content: flex-start; }
+.screen.game.phone-portrait .hud-boss { top: 0; left: 0; right: 0; padding: calc(env(safe-area-inset-top, 0px) + 4px) 10px 4px; box-shadow: 0 2px 0 0 rgba(29,59,43,.9); background: rgba(6,10,8,.96); }
+.screen.game.phone-portrait .hud-timer { top: calc(env(safe-area-inset-top, 0px) + 4px); }
+
+/* edu PvP HUD */
+.hud .hidden { display: none !important; }
+.hud-pvp .pv-round { font-family: var(--small); font-size: 11px; color: var(--yellow); }
+.hud-pvp .hb-phase.urgent, .hud-pvp .urgent { color: var(--red); animation: blink .5s steps(2) infinite; }
+.pv-leader { font-size: 17px; color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-you { font-size: 16px; color: var(--cyan); }
+.tm-row.me .tm-name { color: var(--yellow); }
+
+/* edu report card */
+.report { font-size: 16px; line-height: 1.1; }
+.report.empty { color: var(--dim); font-size: 15px; }
+.rp-head { display: flex; justify-content: space-between; font-family: var(--small); font-size: 9px; color: var(--dim); margin-bottom: 3px; }
+.rp-gpa { color: var(--yellow); }
+.rp-row { display: grid; grid-template-columns: 20px 96px minmax(0, 1fr); column-gap: 6px; padding: 1px 0; }
+.rp-grade { font-family: var(--pix); font-size: 11px; text-align: center; }
+.g-A .rp-grade { color: var(--green); } .g-B .rp-grade { color: #9be15d; } .g-C .rp-grade { color: var(--yellow); } .g-D .rp-grade { color: var(--amber); } .g-F .rp-grade { color: var(--red); }
+.rp-stat { color: var(--dim); white-space: nowrap; }
+.rp-signal { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-tip { grid-column: 2 / -1; color: #9fd9b8; font-size: 14px; }
+.rp-card { margin: 8px 0; padding: 6px 8px; background: rgba(0,0,0,.4); box-shadow: inset 3px 0 0 var(--line); }
+.rp-who { font-size: 18px; color: var(--yellow); }
+.rp-intro { font-size: 16px; margin: 0 0 6px; }
+
+/* ux P0-3: join validation + fatal screen */
+.join-btn { font-size: 11px; min-width: 64px; }
+.join-msg { min-height: 1.2em; font-size: 19px; color: var(--text); text-align: center; }
+.join-msg .btn-link { font-size: 19px; color: var(--yellow); }
+.screen.fatal { display: grid; place-items: center; background: #05070a; padding: 16px; }
+.term-title.err { background: var(--red-d); color: #fff; }
+
+/* ux P0-1/P0-2: phone controls */
+.kj-sensor-status[data-status="touch"] { color: #9aa7b4; border-color: #3a4652; animation: none; }
+.kj-sensor-status[data-status="off"] { color: #9aa7b4; border-color: #3a4652; }
+.enable-pill { color: #04120a; background: var(--yellow); min-height: 32px; font-size: 9px; animation: pulse-start 1.2s ease-in-out infinite; }
+.enable-pill[hidden], .recal[hidden] { display: none !important; }
+body:has(.screen.game.phone-portrait) .kj-touch-joystick-zone { width: 50%; }
+.touch-ghost { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; pointer-events: none; z-index: 3; transition: opacity .6s; }
+.touch-ghost.fade { opacity: 0; }
+.touch-ghost > div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: var(--pix); font-size: 14px; color: rgba(255,255,255,.75); text-shadow: 2px 2px 0 #000; background: rgba(0,0,0,.18); }
+.touch-ghost .tg-l { border-right: 2px dashed rgba(57,255,136,.6); color: var(--green); }
+.touch-ghost .tg-r { color: var(--yellow); }
+.touch-ghost small { font-family: var(--term); font-size: 16px; color: #fff; }
+.motion-tips { white-space: normal; text-align: center; font-size: 14px; width: 80%; max-width: 420px; }
+.screen.game.phone-portrait .motion-tips { top: auto; bottom: auto; top: calc(var(--deck-top) - 46px); }
+
+/* lobby controls card */
+.controls-card { margin: 10px 0 4px; padding: 8px; background: rgba(61,232,255,.06); box-shadow: inset 2px 0 0 var(--cyan); }
+.cc-title { font-size: 18px; margin-bottom: 6px; }
+.cc-chosen { color: var(--green); font-size: 16px; }
+.cc-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.cc-btns .btn { flex: 1 1 30%; font-size: 10px; min-height: 44px; padding: 8px; }
+
+/* ux P0-4: phone lobby next-step bar + collapsed picker */
+.picker[hidden], .picker-done[hidden] { display: none !important; }
+.picker-done { font-size: 20px; margin: 6px 0; }
+.picker-done b { font-weight: normal; color: var(--text); }
+.picker-done .btn-link { font-size: 18px; margin-left: 6px; }
+.next-bar { display: none; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .next-bar {
+    display: block; position: fixed; left: 8px; right: 8px; bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 20; min-height: 56px;
+    font-family: var(--term); font-size: 21px; text-align: left; padding: 8px 14px; border: none; color: var(--text); background: rgba(8,16,12,.96);
+    box-shadow: 0 0 0 2px var(--green-d), 0 0 0 4px #000, 0 -8px 24px rgba(0,0,0,.6); cursor: pointer;
+  }
+  .next-bar.busy { color: var(--amber); }
+  .next-bar.done { color: var(--green); cursor: default; }
+  .next-bar.go { font-family: var(--pix); font-size: 14px; text-align: center; color: #1a0306; background: var(--yellow); box-shadow: 0 0 0 2px #fff3a8, 0 0 0 4px #000, 0 0 24px rgba(255,210,61,.5); animation: pulse-start 1.2s ease-in-out infinite; }
+  .lobby-scroll { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px); }
+  body:has(.next-bar) .mute-btn, body:has(.next-bar) .link-status { bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
+}
+/* plain-language labels */
+.hs-row .lbl { width: 62px; white-space: nowrap; }
+.deck .hud-self .hs-row .lbl { width: 70px; }
+.screen.game.dock-narrow .hs-row .lbl { width: 40px; font-size: 10px; }
+.ap-row { grid-template-columns: 30px 36px minmax(0, 1fr) 60px 52px 52px 52px 54px; }
+.ap-row.ap-header > span { font-size: 13px; line-height: 1; white-space: normal; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .ap-row { grid-template-columns: 22px 30px minmax(0, 1fr) 46px 40px 40px 44px 36px; font-size: 15px; }
+  .ap-row.ap-header > span { font-size: 11px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  body:has(.next-bar) .link-status.open { display: none; }
+  body:has(.next-bar) .mute-btn { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 6px); right: 8px; }
+}
+/* ux P1 */
+.input-err { color: var(--red); font-size: 17px; min-height: 0; }
+.input-err:empty { display: none; }
+.start-hint.warn { color: var(--amber); font-size: 12px; }
+.rename-input { font-size: 18px; max-width: 160px; }
+.rename-input[hidden], .panel-title [hidden] { display: none; }
+.statbar b.pips { letter-spacing: 1px; font-size: 18px; }
+.pips.red { color: var(--red); } .pips.grey { color: #c8d4e0; } .pips.cyan { color: var(--cyan); } .pips.yellow { color: var(--yellow); } .pips.green { color: var(--green); }
+
+/* ux P1-2: no pixel font under 10px in the game HUD; phone limb segments drop their text */
+.hb-name, .screen.game.phone-portrait .hb-name { font-size: 10px; }
+.hb-phase, .screen.game.phone-portrait .hb-phase { font-size: 10px; }
+.hs-name, .deck .hud-self .hs-name, .screen.game.dock-narrow .hs-name { font-size: 10px; }
+.tg-target, .screen.game.phone-portrait .tg-target { font-size: 10px; }
+.sk .key, .sk .sk-name { font-size: 10px; }
+.hud-combo .cl, .deck .hud-combo .cl { font-size: 10px; }
+.limb span { font-size: 9px; line-height: 13px; }
+.limb { height: 14px; }
+.screen.game.phone-portrait .limb span, .screen.game.dock-narrow .limb span { display: none; }
+.screen.game.phone-portrait .limb { height: 8px; }
+.kj-sensor-status { font-size: 10px; }
+.rv-pr { font-size: 10px; }
+.screen.game.dock-narrow .hs-row .lbl { font-size: 10px; }
+
+/* ux P1-9: taunt bubble reads as a sentence, 2 lines max */
+.taunt { min-width: min(60vw, 260px); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.1; }
+
+/* ux P2-2 / P2-8: touch targets + room for fixed pills */
+@media (pointer: coarse) {
+  .mute-btn { min-width: 44px; min-height: 36px; font-size: 10px; }
+  .btn-tiny { min-height: 36px; }
+  .chip { min-height: 40px; }
+  .hall-toggle { min-height: 44px; }
+}
+.ap-scroll { padding-bottom: 72px; }

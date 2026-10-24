@@ -3,6 +3,7 @@ import type { Autopsy, BossKit, PlayerKit } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createHallBoard } from "./hall";
+import { gpaOf, reportCard } from "./report";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
 import { fmtTime, fontsReady, h, shortRepo } from "./util";
 
@@ -63,9 +64,9 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
   g.fillText(a.victory ? "BOSS DELETED" : "SQUAD WIPED", 56, 56);
   g.fillStyle = "#e8fff2";
   g.font = '40px "VT323", monospace';
-  g.fillText(`GITZILLA · ${shortRepo(a.boss.repo)} · ${fmtTime(a.duration)}`, 58, 110);
+  g.fillText(`GITZILLA · ${a.boss ? shortRepo(a.boss.repo) : "classroom brawl"} · ${fmtTime(a.duration)}`, 58, 110);
   g.fillStyle = "#ffd23d";
-  const text = brag(a, pid, a.boss.repo);
+  const text = brag(a, pid, a.boss?.repo ?? "the class");
   const words = text.split(" ");
   let line = "", y = 160;
   g.font = '34px "VT323", monospace';
@@ -98,7 +99,9 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
 }
 
 export function createAutopsy(app: AppCtx): Screen {
-  const a = app.autopsy!;
+  const a0 = app.autopsy!;
+  if (!a0.boss) return createPvpAutopsy(app);
+  const a = { ...a0, boss: a0.boss };
   const lobby = app.lobby;
   const bossKit = lobby?.boss.kit ?? null;
   const kitOf = (id: string) => lobby?.players.find((p) => p.id === id)?.kit ?? null;
@@ -155,7 +158,7 @@ export function createAutopsy(app: AppCtx): Screen {
       h("span.ap-combo", null, `x${p.stats.bestCombo}`),
       h("span.ap-limbs", null, String(p.stats.limbsBroken)),
       h("span.ap-rev", null, String(p.stats.revives)),
-      h("span.ap-kb", null, p.stats.killingBlow ? "☠" : ""),
+      h("span.ap-kb", null, p.stats.killingBlow ? "☠ yes" : ""),
     );
   });
 
@@ -210,7 +213,7 @@ export function createAutopsy(app: AppCtx): Screen {
           "section.panel.ap-players",
           null,
           h("h2.panel-title", null, "SQUAD STATS"),
-          h("div.ap-row.ap-header", null, h("span.rank", null, ""), h("span.ap-port"), h("span.ap-name", null, "dev"), h("span.ap-dmg", null, "dmg"), h("span.ap-combo", null, "combo"), h("span.ap-limbs", null, "limbs"), h("span.ap-rev", null, "rev"), h("span.ap-kb", null, "kb")),
+          h("div.ap-row.ap-header", null, h("span.rank", null, ""), h("span.ap-port"), h("span.ap-name", null, "dev"), h("span.ap-dmg", null, "damage"), h("span.ap-combo", null, "best combo"), h("span.ap-limbs", null, "limbs broken"), h("span.ap-rev", null, "revives"), h("span.ap-kb", null, "final blow")),
           ...rows,
           mvp
             ? h(
@@ -235,6 +238,81 @@ export function createAutopsy(app: AppCtx): Screen {
             h("button.btn.btn-primary", { onclick: download }, "⤓ save card.png"),
             h("a.btn.btn-ghost", { href: "/" }, "new room"),
           ),
+        ),
+      ),
+    ),
+  );
+  return {
+    el,
+    destroy() {
+      backdrop.destroy();
+      el.remove();
+    },
+  };
+}
+
+/** Edu (classroom PvP) autopsy: class ranking + each student's report card with tips. */
+function createPvpAutopsy(app: AppCtx): Screen {
+  const a = app.autopsy!;
+  const kitOf = (id: string) => app.lobby?.players.find((p) => p.id === id)?.kit ?? null;
+  const ranking = a.ranking ?? a.players.map((p) => ({ id: p.id, name: p.name, repo: p.repo, kos: 0, damage: p.stats.damage, roundWins: 0, quality: kitOf(p.id)?.quality ?? [] }));
+  const backdrop = createBackdrop({ dim: 0.85 });
+  backdrop.setTheme("notebook");
+  const me = ranking.find((r) => r.id === app.you);
+  const winner = ranking[0];
+  const rows = ranking.map((r, i) => {
+    const kit = kitOf(r.id);
+    return h(
+      `div.ap-row.pv${r.id === app.you ? ".you" : ""}${i === 0 ? ".mvp" : ""}`,
+      { style: `animation-delay:${0.1 + i * 0.05}s` },
+      h("span.rank", null, `#${i + 1}`),
+      kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
+      h("span.ap-name", null, r.name, h("small", null, ` ${shortRepo(r.repo)}`)),
+      h("span.ap-dmg", null, `${r.kos} KO`),
+      h("span.ap-combo", null, `${r.roundWins}W`),
+      h("span.ap-limbs", null, String(Math.round(r.damage))),
+      h("span.ap-rev", { title: "code-quality GPA" }, gpaOf(r.quality).toFixed(1)),
+      h("span.ap-kb", null, ""),
+    );
+  });
+  const cards = ranking.map((r) =>
+    h("div.rp-card", null, h("div.rp-who", null, `${r.name} `, h("small.dim", null, r.repo)), reportCard(r.quality, { tips: r.id === app.you || app.role === "screen" })),
+  );
+  const owner = isOwner(app);
+  const el = h(
+    "div.screen.autopsy.edu",
+    { "data-testid": "autopsy" },
+    backdrop.canvas,
+    h("div.crt"),
+    h(
+      "div.ap-scroll",
+      null,
+      h(
+        "header.ap-head",
+        null,
+        h("div.ap-verdict.win", null, "CLASS RESULTS"),
+        h("div.ap-sub", null, `$ make grade · ${fmtTime(a.duration)} · winner: ${winner ? winner.name : "—"}${me ? ` · you: #${ranking.indexOf(me) + 1}` : ""}`),
+        h("div.ap-top-actions", null,
+          owner ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "$ make rematch") : h("div.dim", null, "waiting for the teacher to start the next round…"),
+        ),
+      ),
+      h(
+        "div.ap-grid",
+        null,
+        h(
+          "section.panel.ap-players",
+          null,
+          h("h2.panel-title", null, "CLASS RANKING"),
+          h("div.ap-row.ap-header", null, h("span.rank"), h("span.ap-port"), h("span.ap-name", null, "student"), h("span.ap-dmg", null, "KOs"), h("span.ap-combo", null, "rounds"), h("span.ap-limbs", null, "dmg"), h("span.ap-rev", null, "GPA"), h("span.ap-kb")),
+          ...rows,
+        ),
+        h(
+          "section.panel.ap-reports",
+          null,
+          h("h2.panel-title", null, me ? "YOUR REPORT CARD" : "REPORT CARDS"),
+          h("p.dim.rp-intro", null, "every stat came from real code quality. better-engineered code = stronger hero; each line says why and how to improve it."),
+          ...(me ? [cards[ranking.indexOf(me)]] : []),
+          ...(app.role === "screen" || !me ? cards : []),
         ),
       ),
     ),

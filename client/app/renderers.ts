@@ -5,7 +5,7 @@ import type {
 } from "../../shared/types";
 import * as ph from "./placeholders";
 // Essential input is eager: a failed optional chunk must never leave phones on a placeholder.
-import { createInput as realCreateInput } from "../input";
+import { createInput as realCreateInput, type InputController, type InputOptions } from "../input";
 
 export interface View { x: number; y: number; w: number; h: number }
 
@@ -27,21 +27,8 @@ export interface Renderers {
   drawPerkPads(ctx: CanvasRenderingContext2D, offer: PerkOffer | null, players: PlayerState[], time: number): void;
 }
 
-export interface InputHandle {
-  mode: "keyboard" | "motion" | "touch";
-  needsPermission: boolean;
-  readonly sensorStatus?: "on" | "waiting" | "off";
-  requestPermission(): Promise<boolean>;
-  calibrate(): void;
-  sample(): InputFrame;
-  dispose(): void;
-}
-
-export type CreateInput = (opts: {
-  canvas: HTMLCanvasElement;
-  toArena: (clientX: number, clientY: number) => [number, number];
-  getSelf: () => { x: number; y: number } | null;
-}) => InputHandle;
+export type InputHandle = InputController;
+export type CreateInput = (opts: InputOptions) => InputHandle;
 
 /** Optional extras some renderer modules export; no-ops until they land. */
 export interface Extras {

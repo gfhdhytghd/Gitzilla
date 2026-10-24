@@ -19,3 +19,33 @@ describe("look from kit.code", () => {
     expect(L.etch).toBe("");
   });
 });
+
+describe("code flavor look", () => {
+  const kit = (over: Partial<PlayerKit>): PlayerKit => ({
+    repo: "a/b", title: "Go Ranger", weapon: "smg", skill: "hotfix", maxHp: 7, maxArmor: 5, maxEnergy: 200,
+    speed: 90, damageMul: 1, palette: ["#172131", "#00add8", "#ffe2ac", "#f4faf7"], seed: 4242, ...over,
+  });
+  const code = (tokens: string[]) => ({ tokens, signature: "run()", snippet: "if err != nil { return err }", identifiers: ["ListenAndServe"] });
+
+  it("picks a syntax crest from the real tokens", () => {
+    expect(lookFor(kit({ code: code(["{}", "fn"]) })).crestGlyph).toBe("{");
+    expect(lookFor(kit({ seed: 4243, code: code(["=>", "let"]) })).crestGlyph).toBe("<>");
+    expect(lookFor(kit({ seed: 4244, code: code(["#", "def"]) })).crestGlyph).toBe("#");
+    expect(lookFor(kit({ seed: 4245 })).crestGlyph).toBe("");
+  });
+
+  it("gives helmets a prompt visor and mages brace eyes", () => {
+    expect(lookFor(kit({ seed: 1, weapon: "blade" })).face).toBe("prompt");
+    expect(lookFor(kit({ seed: 2, weapon: "staff" })).face).toBe("braces");
+    expect(lookFor(kit({ seed: 3, weapon: "smg" })).face).toBe("eyes");
+  });
+
+  it("turns the real snippet into syntax-colored minimap rows", () => {
+    const L = lookFor(kit({ seed: 77, code: code([":=", "err"]) }));
+    expect(L.codeRows.length).toBeGreaterThanOrEqual(12);
+    expect(L.codeRows.every((r) => r.length === 8)).toBe(true);
+    const colors = new Set(L.codeRows.flat().filter(Boolean));
+    expect(colors.has(L.syn.kw)).toBe(true);   // "if", "return", "nil"
+    expect(colors.has(L.syn.fn)).toBe(true);   // ListenAndServe()
+  });
+});

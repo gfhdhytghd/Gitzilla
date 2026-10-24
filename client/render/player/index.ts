@@ -2,7 +2,7 @@
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
 import { lookFor, syntaxColor, type HeroLook } from "./look.ts";
-import { heroFrame, heroRim, heroCodeCells, tinted, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
+import { heroFrame, heroRim, heroCodeCells, tinted, ANCHOR_X, SW, SH, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle } from "./weapons.ts";
 import { drawText, glyphBits, textCanvas, GLYPH_W } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
@@ -41,6 +41,15 @@ interface Mem {
 }
 
 const mems = new Map<string, Mem>();
+
+// Per-call scale state. heroScale 2 (edu): every hero-local layer is drawn inside a 2x transform around the
+// hero and the body/weapon use 2x high-detail sprites; world-stored things (particles, trails, ghosts)
+// convert between world and that local frame with LX/LY and WX/WY.
+let S = 1, RES = 1, PVP = false, OX = 0, OY = 0;
+const LX = (v: number) => OX + (v - OX) / S;
+const LY = (v: number) => OY + (v - OY) / S;
+const WX = (v: number) => OX + (v - OX) * S;
+const WY = (v: number) => OY + (v - OY) * S;
 
 const externalShots = new Map<string, number>();
 const externalHits = new Map<string, { dir: [number, number]; impact: number; crit: boolean }>();
@@ -172,9 +181,9 @@ function observe(p: PlayerState, m: Mem, L: HeroLook, t: number, dt: number) {
 
   if (p.dashCd > m.dashCd + 0.05 && p.alive) {
     m.dashT = t;
-    spawn(m, 1, () => ({ x: m.x, y: m.y + FOOT - 4, vx: 0, vy: -6, g: 0, life: 0.6, max: 0.6, col: "#a8ecff", sz: 1, glyph: "--force" }));
+    spawn(m, 1, () => ({ x: m.x, y: m.y + (FOOT - 4) * S, vx: 0, vy: -6, g: 0, life: 0.6, max: 0.6, col: "#a8ecff", sz: 1, glyph: "--force" }));
     spawn(m, 6, () => ({
-      x: p.x + (Math.random() - 0.5) * 6, y: p.y + FOOT - 1, vx: -p.vx * 0.1 + (Math.random() - 0.5) * 30, vy: -Math.random() * 15, g: 0,
+      x: p.x + (Math.random() - 0.5) * 6, y: p.y + (FOOT - 1) * S, vx: -p.vx * 0.1 + (Math.random() - 0.5) * 30, vy: -Math.random() * 15, g: 0,
       life: 0.35, max: 0.35, col: "#d8d0e8", sz: 2,
     }));
   }
@@ -289,11 +298,11 @@ function pickFrame(p: PlayerState, m: Mem, t: number): FrameSpec {
 
 // ---------------------------------------------------------------- body composition
 function drawBody(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, x: number, feet: number, flip: number, sx: number, sy: number, variant = "", scroll = -1) {
-  const cv = heroFrame(L, fr, variant);
+  const cv = heroFrame(L, fr, variant, RES);
   ctx.save();
   ctx.translate(x, feet);
   ctx.scale(flip * sx, sy);
-  ctx.drawImage(cv, -ANCHOR_X, -SPRITE_FOOT);
+  ctx.drawImage(cv, -ANCHOR_X, -SPRITE_FOOT, SW, SH);
   if (scroll >= 0 && !variant) paintCodeCells(ctx, L, fr, scroll);
   ctx.restore();
 }
@@ -303,6 +312,16 @@ function paintCodeCells(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpe
   const cells = heroCodeCells(L, fr);
   if (!cells.length || !L.codeRows.length) return;
   const rows = L.codeRows, n = rows.length;
+  if (RES > 1) {
+    // 2x: each cell holds 2x2 code pixels -> twice the line density (reads like real minimap text)
+    for (const [cx, cy] of cells) for (let sy = 0; sy < 2; sy++) for (let sx = 0; sx < 2; sx++) {
+      const col = rows[(cy * 2 + sy + scroll) % n][(cx * 2 + sx) % 8];
+      if (!col) continue;
+      ctx.fillStyle = col;
+      ctx.fillRect(cx - ANCHOR_X + sx / 2, cy - SPRITE_FOOT + sy / 2, 0.5, 0.5);
+    }
+    return;
+  }
   for (const [cx, cy] of cells) {
     const col = rows[(cy + scroll) % n][cx % 8];
     if (!col) continue;
@@ -313,21 +332,21 @@ function paintCodeCells(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpe
 
 /** git checkout: the body re-materializes line by line (top -> down) with a green "+" scan. */
 function drawBodyReveal(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, x: number, feet: number, flip: number, k: number) {
-  const cv = heroFrame(L, fr);
-  const rows = Math.max(1, Math.min(cv.height, Math.round(cv.height * k)));
+  const cv = heroFrame(L, fr, "", RES);
+  const rows = Math.max(1, Math.min(SH, Math.round(SH * k)));
   ctx.save();
   ctx.translate(x, feet);
   ctx.scale(flip, 1);
-  ctx.drawImage(cv, 0, 0, cv.width, rows, -ANCHOR_X, -SPRITE_FOOT, cv.width, rows);
+  ctx.drawImage(cv, 0, 0, cv.width, rows * RES, -ANCHOR_X, -SPRITE_FOOT, SW, rows);
   ctx.fillStyle = "#5dff8a";
-  ctx.fillRect(-ANCHOR_X + 4, -SPRITE_FOOT + rows, cv.width - 8, 1);
+  ctx.fillRect(-ANCHOR_X + 4, -SPRITE_FOOT + rows, SW - 8, 1);
   ctx.restore();
   drawText(ctx, "+", x - 12, feet - SPRITE_FOOT + rows - 3, "#5dff8a");
 }
 
 function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, m: Mem, t: number, x: number, feet: number, flip: number, bob: number): [number, number] {
   const kind = p.kit.weapon;
-  const ws = weaponSprite(L, kind);
+  const ws = weaponSprite(L, kind, RES);
   let ang = Math.atan2(p.facing[1], p.facing[0]);
   if (!isFinite(ang) || (p.facing[0] === 0 && p.facing[1] === 0)) ang = flip < 0 ? Math.PI : 0;
   const since = t - m.shotT;
@@ -367,7 +386,7 @@ function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
   if (leftward) ctx.scale(1, -1);
   ctx.rotate(swing);
   ctx.translate(-Math.round(recoil), 0);
-  ctx.drawImage(ws.canvas, -ws.px, -ws.py);
+  ctx.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / ws.res, ws.canvas.height / ws.res);
   // tip glow for staff/laser, muzzle flash on shot
   if (kind === "staff" || kind === "laser") {
     ctx.save();
@@ -468,7 +487,29 @@ function drawRevive(ctx: CanvasRenderingContext2D, x: number, y: number, prog: n
 }
 
 // ---------------------------------------------------------------- main entry
-export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean): void {
+export interface DrawPlayerOpts {
+  /** MatchState.heroScale: 1 battle, 2 edu (2x hero with high-detail sprites). */
+  scale?: number;
+  /** Classroom PvP (MatchState.mode === "edu"): every other hero is a rival -> name tags + own-color rings, no revive ring. */
+  pvp?: boolean;
+}
+
+export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean, opts?: DrawPlayerOpts): void {
+  S = Math.max(1, Math.min(3, opts?.scale ?? 1));
+  RES = S >= 2 ? 2 : 1;
+  PVP = !!opts?.pvp;
+  OX = Math.round(p.x); OY = Math.round(p.y);
+  ctx.save();
+  if (S !== 1) { ctx.translate(OX, OY); ctx.scale(S, S); ctx.translate(-OX, -OY); }
+  try {
+    drawPlayerLocal(ctx, p, time, isYou);
+  } finally {
+    ctx.restore();
+    S = 1; RES = 1; PVP = false;
+  }
+}
+
+function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean): void {
   const t = normTime(time);
   const L = lookFor(p.kit);
   const m = memFor(p, t);
@@ -498,6 +539,10 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     if (isYou) {
       ctx.fillStyle = rgba("#ffe45c", 0.5 + 0.4 * pulse);
       pixEllipse(ctx, x, feet, 10, 4, 0, Math.PI * 2, 6, t * 2);
+    } else if (PVP) {
+      // classroom PvP: everyone else is a rival -> ring in their own hero color
+      ctx.fillStyle = rgba(playerColor(p.kit), 0.8);
+      pixEllipse(ctx, x, feet, 9, 3.5, 0, Math.PI * 2);
     } else {
       ctx.fillStyle = rgba(L.c.ring, 0.62);
       pixEllipse(ctx, x, feet, 9, 3.5, 0, Math.PI * 2);
@@ -513,7 +558,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
       const h = m.hist[i];
       const age = t - h.t;
       ctx.globalAlpha = 0.28 * (1 - age / 2.2);
-      const hx = Math.round(h.x), hy = Math.round(h.y) + FOOT;
+      const hx = Math.round(LX(h.x)), hy = Math.round(LY(h.y)) + FOOT;
       if (prev) pixLine(ctx, prev.x, prev.y, hx, hy);
       if (k % 3 === 1) ctx.fillRect(hx - 1, hy - 1, 2, 2);
       prev = { x: hx, y: hy };
@@ -523,7 +568,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   // --- footprints: ; and . left on each step
   if (p.alive && fr.pose === "run" && (fr.i === 0 || fr.i === 2) && fr.i !== m.stepFrame) {
     m.stepN++;
-    spawn(m, 1, () => ({ x: x - flip * 2 + (m.stepN % 2 ? 2 : -1), y: feet - 2, vx: 0, vy: 0, g: 0, life: 1.2, max: 1.2,
+    spawn(m, 1, () => ({ x: WX(x - flip * 2 + (m.stepN % 2 ? 2 : -1)), y: WY(feet - 2), vx: 0, vy: 0, g: 0, life: 1.2, max: 1.2,
       col: "#d9d0ec", sz: 1, mark: m.stepN % 2 ? ";" : "." }));
   }
   m.stepFrame = fr.pose === "run" ? fr.i : -1;
@@ -531,24 +576,24 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   // --- emitters
   if (p.alive && sp > 25 && t - m.lastDust > 0.14 && !dashing) {
     m.lastDust = t;
-    spawn(m, 2, () => ({ x: x - Math.sign(p.vx || flip) * 3 + (Math.random() - 0.5) * 3, y: feet - 1, vx: -p.vx * 0.15 + (Math.random() - 0.5) * 10, vy: -Math.random() * 8, g: 0,
+    spawn(m, 2, () => ({ x: WX(x - Math.sign(p.vx || flip) * 3 + (Math.random() - 0.5) * 3), y: WY(feet - 1), vx: -p.vx * 0.15 + (Math.random() - 0.5) * 10, vy: -Math.random() * 8, g: 0,
       life: 0.35, max: 0.35, col: "#c9bfd8", sz: Math.random() < 0.4 ? 2 : 1 }));
   }
   if (p.alive && (dashing || (overclock && sp > 20)) && t - m.lastGhost > (dashing ? 0.04 : 0.08)) {
     m.lastGhost = t;
     const tint = overclock && !dashing ? "#ff8a2a" : "#a8ecff";
-    m.ghosts.push({ x, y: feet, fr: heroFrame(L, fr, tint), flip, t, life: dashing ? 0.22 : 0.3, alpha: dashing ? 0.42 : 0.3 });
+    m.ghosts.push({ x: WX(x), y: WY(feet), fr: heroFrame(L, fr, tint, RES), flip, t, life: dashing ? 0.22 : 0.3, alpha: dashing ? 0.42 : 0.3 });
     if (m.ghosts.length > 14) m.ghosts.shift();
   }
   if (overclock && p.alive && t - m.lastFlame > 0.04) {
-    if (Math.random() < 0.08) spawn(m, 1, () => ({ x: x - flip * 8, y: y - 4, vx: -flip * 10, vy: -20, g: 0, life: 0.5, max: 0.5, col: "#ffb13a", sz: 1, glyph: "!!" }));
+    if (Math.random() < 0.08) spawn(m, 1, () => ({ x: WX(x - flip * 8), y: WY(y - 4), vx: -flip * 10, vy: -20, g: 0, life: 0.5, max: 0.5, col: "#ffb13a", sz: 1, glyph: "!!" }));
     m.lastFlame = t;
-    spawn(m, 2, () => ({ x: x + (Math.random() - 0.5) * 10, y: feet - Math.random() * 6, vx: (Math.random() - 0.5) * 10 - p.vx * 0.2, vy: -25 - Math.random() * 25, g: -20,
+    spawn(m, 2, () => ({ x: WX(x + (Math.random() - 0.5) * 10), y: WY(feet - Math.random() * 6), vx: (Math.random() - 0.5) * 10 - p.vx * 0.2, vy: -25 - Math.random() * 25, g: -20,
       life: 0.45, max: 0.45, col: Math.random() < 0.5 ? "#ffcf3a" : "#ff6a1a", sz: Math.random() < 0.3 ? 2 : 1, add: true }));
   }
   if (p.buffs.includes("hotfix") && p.alive && t - m.lastPlus > 0.18) {
     m.lastPlus = t;
-    spawn(m, 1, () => ({ x: x + (Math.random() - 0.5) * 20, y: y + (Math.random() - 0.5) * 8, vx: 0, vy: -18, g: 0,
+    spawn(m, 1, () => ({ x: WX(x + (Math.random() - 0.5) * 20), y: WY(y + (Math.random() - 0.5) * 8), vx: 0, vy: -18, g: 0,
       life: 0.9, max: 0.9, col: "#5dff8a", sz: 1, glyph: "+", len: 2 + Math.floor(Math.random() * 4), front: true }));
   }
 
@@ -560,9 +605,9 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     if (k <= 0) { m.ghosts.splice(i, 1); continue; }
     ctx.save();
     ctx.globalAlpha = gh.alpha * k;
-    ctx.translate(gh.x, gh.y);
+    ctx.translate(LX(gh.x), LY(gh.y));
     ctx.scale(gh.flip, 1);
-    ctx.drawImage(gh.fr, -ANCHOR_X, -SPRITE_FOOT);
+    ctx.drawImage(gh.fr, -ANCHOR_X, -SPRITE_FOOT, SW, SH);
     ctx.restore();
   }
 
@@ -574,7 +619,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   }
   // --- skill: fork decoy
   if (p.buffs.includes("fork")) {
-    const dx = Math.round(m.forkX), dy = Math.round(m.forkY) + FOOT;
+    const dx = Math.round(LX(m.forkX)), dy = Math.round(LY(m.forkY)) + FOOT;
     const glitch = Math.floor(t * 12) % 7 === 0 ? 2 : 0;
     ctx.fillStyle = "rgba(8,4,16,0.35)";
     filledEllipse(ctx, dx, dy, 6, 2);
@@ -595,14 +640,14 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
       const n = Math.max(2, Math.min(5, Math.round(Math.hypot(p.x - m.rollX, p.y - m.rollY) / 12)));
       for (let i = 0; i < n; i++) {
         const u = i / n;
-        const gx = Math.round(m.rollX + (p.x - m.rollX) * u), gy = Math.round(m.rollY + (p.y - m.rollY) * u) + FOOT;
+        const gx = Math.round(LX(m.rollX + (p.x - m.rollX) * u)), gy = Math.round(LY(m.rollY + (p.y - m.rollY) * u)) + FOOT;
         ctx.save();
         ctx.globalAlpha = (0.1 + 0.3 * u) * (1 - age / 0.5);
         ctx.globalCompositeOperation = "lighter";
         drawBody(ctx, L, fr, gx, gy, flip, 1, 1, "#6aa8ff");
         ctx.restore();
       }
-      drawText(ctx, "HEAD~1", m.rollX, m.rollY - 14, "#6aa8ff");
+      drawText(ctx, "HEAD~1", LX(m.rollX), LY(m.rollY) - 14, "#6aa8ff");
     }
   }
 
@@ -612,7 +657,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     if (Math.hypot(h0.x - p.x, h0.y - p.y) > 10) {
       ctx.save();
       ctx.globalAlpha = 0.22 + 0.06 * Math.sin(t * 4);
-      drawBody(ctx, L, { pose: "idle", i: 0, expr: "normal" }, Math.round(h0.x), Math.round(h0.y) + FOOT, flip, 1, 1, "#6aa8ff");
+      drawBody(ctx, L, { pose: "idle", i: 0, expr: "normal" }, Math.round(LX(h0.x)), Math.round(LY(h0.y)) + FOOT, flip, 1, 1, "#6aa8ff");
       ctx.restore();
     }
   }
@@ -665,10 +710,10 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     } else {
       ctx.globalAlpha = alpha * (isYou ? 0.6 : 0.45);
     }
-    const rim = heroRim(L, fr, glowCol || L.c.rim);
+    const rim = heroRim(L, fr, glowCol || L.c.rim, RES);
     ctx.translate(bx, bfeet);
     ctx.scale(flip * sx, sy);
-    ctx.drawImage(rim, -ANCHOR_X - 1, -SPRITE_FOOT - 1);
+    ctx.drawImage(rim, -ANCHOR_X - 1 / RES, -SPRITE_FOOT - 1 / RES, rim.width / RES, rim.height / RES);
     ctx.restore();
   }
 
@@ -685,12 +730,12 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     ctx.restore();
     drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
     // horizontal slice displacement
-    const cv = heroFrame(L, fr);
+    const cv = heroFrame(L, fr, "", RES);
     const band = 3 + ((Math.floor(t * 60) * 7) % 14);
     ctx.save();
     ctx.translate(bx + (Math.floor(t * 60) % 2 ? 2 : -2), bfeet);
     ctx.scale(flip, 1);
-    ctx.drawImage(cv, 0, band, cv.width, 3, -ANCHOR_X, -SPRITE_FOOT + band, cv.width, 3);
+    ctx.drawImage(cv, 0, band * RES, cv.width, 3 * RES, -ANCHOR_X, -SPRITE_FOOT + band, SW, 3);
     ctx.restore();
   } else if (t - m.reviveT < 0.45) {
     drawBodyReveal(ctx, L, fr, bx, bfeet, flip, (t - m.reviveT) / 0.45);
@@ -703,18 +748,19 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   // --- weapon-as-code text: muzzle word pops on firing; impact word sparks where your shots land
   const wf = p.kit.code?.weapon;
   const flavor = WEAPON_FLAVOR[p.kit.weapon] ?? WEAPON_FLAVOR.blaster;
-  if (t - m.shotT < 0.02 && t - m.muzzleT > 1.6) {
+  if (t - m.shotT < 0.02 && t - m.muzzleT > (isYou ? 1.6 : 3.2)) {
     m.muzzleT = t;
     const word = (wf?.muzzle || flavor.muzzle).trim();
     const fx = p.facing[0] || flip, fy = p.facing[1] || 0;
-    if (word && word.length <= 6) spawn(m, 1, () => ({ x: tip[0] + fx * 10, y: tip[1] + fy * 8 - 4, vx: fx * 14, vy: -10, g: 0, life: 0.32, max: 0.32,
+    if (word && word.length <= 6) spawn(m, 1, () => ({ x: WX(tip[0] + fx * 10), y: WY(tip[1] + fy * 8 - 4), vx: fx * 14, vy: -10, g: 0, life: 0.32, max: 0.32,
       col: isYou ? L.c.accentL : rgba(L.c.accentL, 0.55), sz: 1, glyph: word, front: true }));
   }
   const hits = pendingImpacts.get(p.id);
   if (hits?.length) {
     pendingImpacts.delete(p.id);
     const h = hits[hits.length - 1];
-    if (t - m.impactT > (h.crit ? 0.35 : 1.0)) {
+    // teammates only spark on crits so 8-player fights don't bury the boss in words
+    if ((isYou || h.crit) && t - m.impactT > (h.crit ? 0.35 : 1.0)) {
       m.impactT = t;
       const word = (wf?.impact || flavor.impact).trim().slice(0, 8);
       spawn(m, 1, () => ({ x: h.x + (Math.random() - 0.5) * 6, y: h.y - 4, vx: (Math.random() - 0.5) * 16, vy: -22, g: 20, life: 0.4, max: 0.4,
@@ -740,12 +786,12 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   }
 
   if (L.duck) {
-    const tx = p.x - flip * 13, ty = p.y - 12;
+    const tx = p.x - flip * 13 * S, ty = p.y - 12 * S;
     const k = 1 - Math.exp(-dt * 5);
     m.duckX += (tx - m.duckX) * k; m.duckY += (ty - m.duckY) * k;
     if (Math.abs(tx - m.duckX) > 1.5) m.duckFlip = tx > m.duckX ? 1 : -1;
     else m.duckFlip = flip;
-    drawDuck(ctx, m.duckX, m.duckY, m.duckFlip, t, m.phase);
+    drawDuck(ctx, LX(m.duckX), LY(m.duckY), m.duckFlip, t, m.phase);
   }
 
   if (p.perks?.length) drawPerkBadges(ctx, p.perks, x, y, t, m.phase, true);
@@ -817,25 +863,25 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
   const fall = Math.min(1, (t - m.downT) / 0.25);
   const ko: FrameSpec = { pose: "idle", i: 0, expr: "ko" };
   if (fall < 1) {
-    const cv = heroFrame(L, ko);
+    const cv = heroFrame(L, ko, "", RES);
     ctx.save();
     ctx.translate(x, feet - 1);
     ctx.rotate(-flip * (Math.PI / 2) * fall);
     ctx.scale(flip, 1);
-    ctx.drawImage(cv, -ANCHOR_X, -SPRITE_FOOT + 4);
+    ctx.drawImage(cv, -ANCHOR_X, -SPRITE_FOOT + 4, SW, SH);
     ctx.restore();
   } else {
-    const ly = lyingFrame(L);
+    const ly = lyingFrame(L, RES);
     ctx.save();
     ctx.translate(x, 0);
     ctx.scale(flip, 1);
-    ctx.drawImage(ly, -14, y + 3 - 12);
+    ctx.drawImage(ly, -14, y + 3 - 12, SH, SW);
     ctx.restore();
   }
   void fr;
 
   // revive ring
-  drawRevive(ctx, x, y + 2, p.reviveProgress, t);
+  if (!PVP || p.reviveProgress > 0) drawRevive(ctx, x, y + 2, p.reviveProgress, t);
 
   // the crash dump: a short stack trace of the hero's real functions types out, then fades
   const sa = t - m.downT;
@@ -879,17 +925,18 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
 
 const lyingCache = new Map<string, HTMLCanvasElement>();
 /** KO frame rotated 90deg counter-clockwise (head toward -x), pixel-exact. */
-function lyingFrame(L: HeroLook): HTMLCanvasElement {
-  let cv = lyingCache.get(L.key);
+function lyingFrame(L: HeroLook, res = 1): HTMLCanvasElement {
+  const key = L.key + "|r" + res;
+  let cv = lyingCache.get(key);
   if (cv) return cv;
-  const src = heroFrame(L, { pose: "idle", i: 0, expr: "ko" });
+  const src = heroFrame(L, { pose: "idle", i: 0, expr: "ko" }, "", res);
   cv = document.createElement("canvas");
   cv.width = src.height; cv.height = src.width;
   const g = cv.getContext("2d")!;
   g.translate(0, src.width);
   g.rotate(-Math.PI / 2);
   g.drawImage(src, 0, 0);
-  lyingCache.set(L.key, cv);
+  lyingCache.set(key, cv);
   return cv;
 }
 
@@ -983,25 +1030,37 @@ function updateDrawParticles(ctx: CanvasRenderingContext2D, m: Mem, dt: number, 
     q.x += q.vx * dt; q.y += q.vy * dt;
     q.vx *= 1 - 2 * dt;
     const k = q.life / q.max;
+    const qx = LX(q.x), qy = LY(q.y);
     ctx.save();
     if (q.add) ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = Math.min(1, k * 1.5);
     if (q.mark) {
       ctx.fillStyle = q.col;
-      const mx = Math.round(q.x), my = Math.round(q.y);
+      const mx = Math.round(qx), my = Math.round(qy);
       ctx.fillRect(mx, my, 1, 1);
       if (q.mark === ";") { ctx.fillRect(mx, my + 2, 1, 1); ctx.fillRect(mx - 1, my + 3, 1, 1); }
     } else if (q.glyph) {
-      drawText(ctx, q.glyph, q.x, q.y - 2, q.col);
-      if (q.len) { ctx.fillStyle = q.col; ctx.fillRect(Math.round(q.x) + 3, Math.round(q.y), q.len, 1); }
+      drawText(ctx, q.glyph, qx, qy - 2, q.col);
+      if (q.len) { ctx.fillStyle = q.col; ctx.fillRect(Math.round(qx) + 3, Math.round(qy), q.len, 1); }
     }
     else {
       ctx.fillStyle = q.col;
       const s = k < 0.4 && q.sz > 1 ? 1 : q.sz;
-      px(ctx, q.x, q.y, s, s);
+      px(ctx, qx, qy, s, s);
     }
     ctx.restore();
   }
+}
+
+/** A hero's identity color (vivid primary): use it for their bullets, rings, leaderboard rows (PvP). */
+export function playerColor(kit: PlayerKit): string {
+  const [h, sat, l] = hexToHsl(lookFor(kit).c.primary);
+  return hslToHex(h, Math.max(0.6, sat), Math.min(0.62, Math.max(0.5, l)));
+}
+
+function repoColor(L: HeroLook): string {
+  const [h, sat, l] = hexToHsl(L.c.primaryL);
+  return hslToHex(h, Math.min(sat, 0.85), Math.max(l, 0.68));
 }
 
 const pipCache = new Map<string, HTMLCanvasElement>();
@@ -1061,6 +1120,11 @@ function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isY
     drawText(ctx, (p.perks?.length ? name + " v1." + p.perks.length : name), x, top, "#ffe45c");
     return;
   }
+  if (PVP) {
+    // classroom: students need to know whose hero is whose -> full name, in that hero's color
+    drawText(ctx, name, x, top, repoColor(L));
+    return;
+  }
   const pip = pipCanvas(L, initialOf(name));
   ctx.drawImage(pip, x - 4, y - 27);
 }
@@ -1097,11 +1161,11 @@ function drawIdleKeyboard(ctx: CanvasRenderingContext2D, m: Mem, kx: number, ky:
   ctx.restore();
   if (t - m.clackT > 0.13) {
     m.clackT = t;
-    spawn(m, 1, () => ({ x: x0 + 1 + Math.random() * 8, y: yy - 1, vx: (Math.random() - 0.5) * 12, vy: -18, g: 60, life: 0.22, max: 0.22, col: "#ffffff", sz: 1, front: true }));
+    spawn(m, 1, () => ({ x: WX(x0 + 1 + Math.random() * 8), y: WY(yy - 1), vx: (Math.random() - 0.5) * 12, vy: -18, g: 60, life: 0.22, max: 0.22, col: "#ffffff", sz: 1, front: true }));
   }
   if (idleFor > 8 && t - m.sleepT > 1.6) {
     m.sleepT = t;
-    spawn(m, 1, () => ({ x: kx + flip * 16, y: yy - 8, vx: flip * 5, vy: -8, g: 0, life: 1.5, max: 1.5, col: "#9aa0b8", sz: 1, glyph: "sleep(1)", front: true }));
+    spawn(m, 1, () => ({ x: WX(kx + flip * 16), y: WY(yy - 8), vx: flip * 5, vy: -8, g: 0, life: 1.5, max: 1.5, col: "#9aa0b8", sz: 1, glyph: "sleep(1)", front: true }));
   }
 }
 
@@ -1166,30 +1230,31 @@ const portraitCache = new Map<string, HTMLCanvasElement>();
  * Big crisp portrait for lobby cards. `frame` (optional) picks an idle animation frame:
  * 0/1 breathe, 2 blink. Call with frame = playerPortraitFrame(time) to animate cheaply (all cached).
  */
-export function playerPortrait(kit: PlayerKit, size: number, frame = 0): HTMLCanvasElement {
+export function playerPortrait(kit: PlayerKit, size: number, frame = 0, hires = false): HTMLCanvasElement {
   const L = lookFor(kit);
-  const key = L.key + "|" + size + "|" + frame;
+  const res = hires && size >= 52 ? 2 : 1; // edu: 2x high-detail sprite (needs an even integer scale)
+  const key = L.key + "|" + size + "|" + frame + "|r" + res;
   const hit = portraitCache.get(key);
   if (hit) return hit;
   const cv = document.createElement("canvas");
   cv.width = size; cv.height = size;
   const g = cv.getContext("2d")!;
   g.imageSmoothingEnabled = false;
-  const s = Math.max(1, Math.floor(size / 26));
+  const s = res > 1 ? Math.floor(size / 52) * 2 : Math.max(1, Math.floor(size / 26));
   const fr: FrameSpec = { pose: "idle", i: frame === 1 ? 1 : 0, expr: frame === 2 ? "blink" : "normal" };
   g.save();
   g.translate(Math.floor(size / 2), Math.floor(size / 2 + 12.5 * s));
   g.scale(s, s);
   g.fillStyle = "rgba(8,4,16,0.42)";
   filledEllipse(g, -1, 0, 7, 2);
-  const body = heroFrame(L, fr);
-  g.drawImage(body, -ANCHOR_X - 1, -SPRITE_FOOT);
+  const body = heroFrame(L, fr, "", res);
+  g.drawImage(body, -ANCHOR_X - 1, -SPRITE_FOOT, SW, SH);
   // weapon held forward-down, like a hero pose
-  const ws = weaponSprite(L, kit.weapon);
+  const ws = weaponSprite(L, kit.weapon, res);
   g.save();
   g.translate(2, -6 + (fr.i === 1 ? 0 : 0));
   g.rotate(kit.weapon === "blade" ? -0.9 : kit.weapon === "staff" ? -1.2 : -0.25);
-  g.drawImage(ws.canvas, -ws.px, -ws.py);
+  g.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / ws.res, ws.canvas.height / ws.res);
   if (kit.weapon === "staff" || kit.weapon === "laser") {
     g.globalCompositeOperation = "lighter";
     g.globalAlpha = 0.35;
@@ -1336,7 +1401,8 @@ export function paintHeroTerminal(c: HTMLCanvasElement, kit: PlayerKit, time: nu
   // body: real code with line numbers
   const words = (kit.code?.snippet || L.lang + " " + repoName).split(/(\s+)/).filter((w) => w.trim());
   const idents = (kit.code?.identifiers ?? []).slice(0, 4);
-  const cols = Math.max(4, Math.floor((W - 14) / GLYPH_W));
+  const P = Math.max(26, Math.floor((H * 0.95) / 26) * 26);
+  const cols = Math.max(4, Math.floor((W - 12 - P * 0.42) / GLYPH_W));
   const lines: { text: string; color: string }[][] = [];
   let line: { text: string; color: string }[] = [], len = 0;
   const push = (w: string, color: string) => {
@@ -1367,11 +1433,10 @@ export function paintHeroTerminal(c: HTMLCanvasElement, kit: PlayerKit, time: nu
   if (Math.floor(normTime(time) * 2) % 2 === 0) { g.fillStyle = "#e8f4ff"; g.fillRect(11, 10 + Math.min(lines.length, maxLines) * 7, 3, 5); }
   g.restore();
   // the hero stands on the window's bottom edge, right side
-  const P = Math.max(26, Math.floor((H * 0.8) / 26) * 26);
   const key = L.key + "|" + P;
   let tmp = termTmp.get(key);
   if (!tmp) { tmp = document.createElement("canvas"); tmp.width = tmp.height = P; termTmp.set(key, tmp); }
   paintHeroCard(tmp, kit, time, readyAge);
-  g.drawImage(tmp, W - P + Math.floor(P * 0.12), H - P + Math.floor(P * 0.02));
+  g.drawImage(tmp, W - Math.floor(P * 0.74), H - P + Math.floor(P * 0.02));
   g.setTransform(1, 0, 0, 1, 0, 0);
 }
