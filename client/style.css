@@ -1162,3 +1162,65 @@ body:has(.screen.game.phone-portrait) .kj-touch-joystick-zone { width: 50%; }
   .hall-toggle { min-height: 44px; }
 }
 .ap-scroll { padding-bottom: 72px; }
+/* ux P1-7 big screen */
+.qr-help { font-size: 26px; color: var(--text); }
+.qr-help.yellow { color: var(--yellow); }
+body.bigscreen .pcard { min-height: 120px; }
+body.bigscreen .pcard-portrait { width: 108px; height: 108px; }
+body.bigscreen .pcard-portrait canvas { width: 96px; height: 96px; }
+body.bigscreen .pcard-name { font-size: 14px; }
+body.bigscreen .pcard-info { font-size: 22px; }
+body.bigscreen .squad-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.late-qr { position: absolute; right: 10px; bottom: 10px; z-index: 7; background: #fff; padding: 6px; text-align: center; font-family: var(--pix); font-size: 10px; color: #000; box-shadow: 0 0 0 3px var(--green); }
+.late-qr img { width: 120px; height: 120px; display: block; image-rendering: pixelated; }
+/* P2-6 */
+.mark-short { display: none; }
+@media (max-width: 600px) and (orientation: portrait) {
+  .diff-line { grid-template-columns: 12px minmax(0, 1fr) 40px 62px 16px; }
+  .diff-line .mark-short { display: inline; }
+}
+.hall-row { grid-template-columns: 22px auto minmax(0, 1fr) auto; }
+.landing-hall { width: 460px; }
+@media (max-width: 600px) and (orientation: portrait) { body:has(.next-bar) .mute-btn { top: auto; right: auto; left: 8px; bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); } }
+
+/* edu: mode toggle, classroom panel, gpa chips */
+.mode-ctl { display: inline-flex; gap: 0; box-shadow: 0 0 0 2px var(--line); }
+.mode-btn { font-family: var(--small); font-size: 10px; padding: 6px 10px; min-height: 32px; border: none; background: #07140d; color: var(--dim); cursor: pointer; }
+.mode-btn.on { background: var(--green); color: #04120a; }
+.mode-btn:disabled { cursor: default; }
+.mode-ctl:not(.owner) .mode-btn:not(.on) { display: none; }
+.edu-info p { font-size: 18px; margin: 4px 0 8px; }
+.edu-info[hidden], .boss-stage[hidden], .boss-status[hidden], .boss-info[hidden] { display: none !important; }
+.pcard-gpa { font-family: var(--small); font-size: 10px; color: var(--c, var(--green)); }
+.screen.lobby.edu .boss-panel { box-shadow: 0 -3px 0 0 #1f4630, 0 3px 0 0 #1f4630, -3px 0 0 0 #1f4630, 3px 0 0 0 #1f4630, 0 0 0 6px rgba(0,0,0,.6); }
+.screen.lobby.edu .boss-panel .panel-title { color: var(--yellow); }
+/* 30-student roster on the projector */
+body.bigscreen .screen.lobby.edu .squad-list { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; }
+body.bigscreen .screen.lobby.edu .pcard { min-height: 70px; padding: 4px; }
+body.bigscreen .screen.lobby.edu .pcard-portrait { width: 60px; height: 60px; }
+body.bigscreen .screen.lobby.edu .pcard-portrait canvas { width: 48px; height: 48px; }
+body.bigscreen .screen.lobby.edu .pcard-info { font-size: 16px; }
+body.bigscreen .screen.lobby.edu .pcard-kit, body.bigscreen .screen.lobby.edu .sig, body.bigscreen .screen.lobby.edu .code-mini, body.bigscreen .screen.lobby.edu .pcard-quote { display: none; }
+.pvp-end .df-title { color: var(--yellow); animation: none; }
+.screen.game:not(.phone-portrait) .edu-feed.v-desktop.edu-mount { position: absolute; left: max(6px, calc(var(--gx) - 2px)); top: 50%; width: max(220px, calc(var(--gx) - 12px)); max-width: 340px; z-index: 6; pointer-events: auto; }
+.deck .edu-feed.edu-mount { flex: none; pointer-events: auto; }
+.screen.game:not(.phone-portrait) .edu-quiz.edu-mount.v-desktop { position: absolute; left: 50%; top: calc(var(--gy) + 30px); transform: translateX(-50%); width: min(560px, calc(var(--gw) - 40px)); z-index: 7; }
+.screen.game .edu-quiz.edu-mount.v-screen { position: absolute; left: 50%; top: 12vh; transform: translateX(-50%); width: min(1000px, 80vw); z-index: 7; }
+.deck .edu-quiz.edu-mount { flex: none; pointer-events: auto; }
+.deck:has(.edu-quiz.show) .deck-mid, .deck:has(.edu-quiz.show) .hud-log { display: none; }
+.you-card { flex-wrap: wrap; }
+.you-report { flex-basis: 100%; min-width: 0; }
+.rc-why { font-size: 15px; margin-bottom: 4px; }
+.screen.game.phone-portrait .deck .edu-feed { flex: none; }
+.screen.game.phone-portrait .deck:has(.edu-card) .hud-log, .screen.game.phone-portrait .deck:has(.edu-card) .deck-mid { display: none; }
+.ap-class { grid-column: 1 / -1; }
+/* projector: classroom scoreboard readable from the back of the room */
+body.bigscreen .hud-pvp { width: min(900px, 60vw); padding: 8px 16px; }
+body.bigscreen .hud-pvp .hb-top { font-size: 30px; }
+body.bigscreen .hud-pvp .pv-round { font-size: 18px; }
+body.bigscreen .hud-pvp .hb-phase { font-size: 18px; }
+body.bigscreen .pv-leader { font-size: 32px; }
+body.bigscreen .screen.game .hud-team { width: 300px; }
+body.bigscreen .screen.game .tm-row { font-size: 26px; grid-template-columns: minmax(0, 1fr) 70px auto; }
+body.bigscreen .screen.game .tm-st { font-size: 22px; color: var(--yellow); }
+body.bigscreen .screen.game .hud-timer { font-size: 30px; }

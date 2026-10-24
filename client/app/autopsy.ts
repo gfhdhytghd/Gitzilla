@@ -3,9 +3,10 @@ import type { Autopsy, BossKit, PlayerKit } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createHallBoard } from "./hall";
-import { gpaOf, reportCard } from "./report";
+import { reportCard } from "./report";
+import { createClassReport } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
-import { fmtTime, fontsReady, h, shortRepo } from "./util";
+import { fmtTime, fontsReady, h, isPhone, shortRepo } from "./util";
 
 function brag(a: Autopsy, pid: string, bossRepo: string): string {
   const p = a.players.find((x) => x.id === pid);
@@ -130,7 +131,8 @@ export function createAutopsy(app: AppCtx): Screen {
           h("span.comp", null, l.component),
           h("span.dmgbar", null, h("i", { style: `width:${((l.damageTaken / maxDmg) * 100).toFixed(0)}%` })),
           h("span.dmg", null, `${Math.round(l.damageTaken)} dmg`),
-          h("span.mark", null, l.broken ? "✗ broken" : "survived"),
+          h("span.mark", null, l.broken ? "✗ broken" : "✓ survived"),
+          h("span.mark-short", null, l.broken ? "✗" : "✓"),
         ),
         // the real code that lived in this limb: deleted lines for broken limbs, context for survivors
         ...codeOf(l.component).slice(0, l.broken ? 3 : 1).map((line) =>
@@ -174,6 +176,21 @@ export function createAutopsy(app: AppCtx): Screen {
       c.className = "share-card";
       cardImg.replaceChildren(c);
     });
+  const share = async () => {
+    if (!cardCanvas) return;
+    try {
+      const blob: Blob | null = await new Promise((r) => cardCanvas!.toBlob(r, "image/png"));
+      const file = blob && new File([blob], `gitzilla-${a.boss ? shortRepo(a.boss.repo) : "class"}.png`, { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (file && nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: "GITZILLA", text: brag(a, meId ?? "", a.boss?.repo ?? "") });
+        return;
+      }
+    } catch {
+      /* cancelled or unsupported: fall back to a download */
+    }
+    download();
+  };
   const download = () => {
     if (!cardCanvas) return;
     const link = document.createElement("a");
@@ -235,7 +252,8 @@ export function createAutopsy(app: AppCtx): Screen {
           h("h2.panel-title", null, "BRAGGING RIGHTS"),
           cardImg,
           h("div.ap-actions", null,
-            h("button.btn.btn-primary", { onclick: download }, "⤓ save card.png"),
+            h("button.btn.btn-primary", { onclick: share }, "share ↗"),
+            h("button.btn", { onclick: download }, "⤓ save card.png"),
             h("a.btn.btn-ghost", { href: "/" }, "new room"),
           ),
         ),
@@ -260,21 +278,6 @@ function createPvpAutopsy(app: AppCtx): Screen {
   backdrop.setTheme("notebook");
   const me = ranking.find((r) => r.id === app.you);
   const winner = ranking[0];
-  const rows = ranking.map((r, i) => {
-    const kit = kitOf(r.id);
-    return h(
-      `div.ap-row.pv${r.id === app.you ? ".you" : ""}${i === 0 ? ".mvp" : ""}`,
-      { style: `animation-delay:${0.1 + i * 0.05}s` },
-      h("span.rank", null, `#${i + 1}`),
-      kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
-      h("span.ap-name", null, r.name, h("small", null, ` ${shortRepo(r.repo)}`)),
-      h("span.ap-dmg", null, `${r.kos} KO`),
-      h("span.ap-combo", null, `${r.roundWins}W`),
-      h("span.ap-limbs", null, String(Math.round(r.damage))),
-      h("span.ap-rev", { title: "code-quality GPA" }, gpaOf(r.quality).toFixed(1)),
-      h("span.ap-kb", null, ""),
-    );
-  });
   const cards = ranking.map((r) =>
     h("div.rp-card", null, h("div.rp-who", null, `${r.name} `, h("small.dim", null, r.repo)), reportCard(r.quality, { tips: r.id === app.you || app.role === "screen" })),
   );
@@ -299,21 +302,16 @@ function createPvpAutopsy(app: AppCtx): Screen {
       h(
         "div.ap-grid",
         null,
-        h(
-          "section.panel.ap-players",
-          null,
-          h("h2.panel-title", null, "CLASS RANKING"),
-          h("div.ap-row.ap-header", null, h("span.rank"), h("span.ap-port"), h("span.ap-name", null, "student"), h("span.ap-dmg", null, "KOs"), h("span.ap-combo", null, "rounds"), h("span.ap-limbs", null, "dmg"), h("span.ap-rev", null, "GPA"), h("span.ap-kb")),
-          ...rows,
-        ),
-        h(
-          "section.panel.ap-reports",
-          null,
-          h("h2.panel-title", null, me ? "YOUR REPORT CARD" : "REPORT CARDS"),
-          h("p.dim.rp-intro", null, "every stat came from real code quality. better-engineered code = stronger hero; each line says why and how to improve it."),
-          ...(me ? [cards[ranking.indexOf(me)]] : []),
-          ...(app.role === "screen" || !me ? cards : []),
-        ),
+        // claude-edu's class report: highlights, improvement tips, quiz results, glossary (+ every report card)
+        (() => {
+          try {
+            const students = (app.lobby?.players ?? []).filter((p) => p.kit).map((p) => ({ id: p.id, name: p.name, repo: p.repo ?? "", quality: p.kit!.quality }));
+            return h("section.panel.ap-class", null, createClassReport({ autopsy: a, students, engine: null, you: app.you, variant: app.role === "screen" ? "screen" : isPhone() ? "phone" : "desktop" }));
+          } catch (e) {
+            console.warn("[kaiju] class report failed", e);
+            return h("section.panel.ap-class", null, ...cards);
+          }
+        })(),
       ),
     ),
   );

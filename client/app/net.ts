@@ -25,7 +25,8 @@ export interface ConnOpts {
   name: string;
 }
 
-const tokenKey = (room: string) => `kaiju.token.${room}`;
+// players and the teacher's projector screen resume separately (a teacher may also have a phone in the same browser)
+const tokenKey = (room: string, role: Role = "player") => (role === "screen" ? `kaiju.screenToken.${room}` : `kaiju.token.${room}`);
 
 export function connect(opts: ConnOpts): Conn {
   const msgFns: ((m: ServerMsg) => void)[] = [];
@@ -55,7 +56,7 @@ export function connect(opts: ConnOpts): Conn {
     ws = sock;
     sock.onopen = () => {
       retry = 0;
-      const resume = opts.role === "player" ? store.get(tokenKey(opts.room)) ?? undefined : undefined;
+      const resume = store.get(tokenKey(opts.room, opts.role)) ?? undefined;
       sock.send(JSON.stringify({ t: "hello", room: opts.room, role: opts.role, name, resume } satisfies ClientMsg));
       setStatus("open");
       while (queue.length) sock.send(JSON.stringify(queue.shift()));
@@ -67,7 +68,7 @@ export function connect(opts: ConnOpts): Conn {
       } catch {
         return;
       }
-      if (m.t === "welcome" && opts.role === "player") store.set(tokenKey(opts.room), m.token);
+      if (m.t === "welcome" && m.token) store.set(tokenKey(opts.room, opts.role), m.token);
       for (const f of msgFns) f(m);
     };
     sock.onclose = (ev?: { code?: number }) => {

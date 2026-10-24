@@ -5,7 +5,8 @@
 import type { GameEvent, MatchState, PlayerState, ServerMsg } from "../../shared/types";
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import { type AppCtx, type Screen } from "./app";
-import { createHud } from "./hud";
+import { createHud, rankPvp } from "./hud";
+import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay } from "../edu";
 import { audio, muteBtn } from "./sound";
 import { bossPortraitCanvas } from "./lobby";
 import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
@@ -41,7 +42,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const sensorRow = h("div.deck-sensors");
   const deckMid = h("div.deck-mid");
   const deck = h("div.deck", null, sensorRow, deckMid);
-  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay);
+  const lateQr = spectator
+    ? h("div.late-qr", null, h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
+    : null;
+  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr);
 
   // ---------------- layout ----------------
   let cssScale = 1;
@@ -186,6 +190,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     latest = s;
     el.classList.remove("waiting");
+    if (s.mode === "edu") updateEdu(s);
     if (!introStarted && (s.status === "countdown" || s.t < 1.2)) startIntro(s);
     introStarted = true;
   };
@@ -193,6 +198,36 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // arena look: follows the boss in battle; edu PvP (no boss) uses the notebook "classroom" theme
   const arenaSeed = [...app.room].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
   const arenaTheme = (s: MatchState) => s.boss?.kit.theme ?? "notebook";
+
+  // ---------------- edu (classroom PvP): lesson cards + quiz overlay from client/edu ----------------
+  let feed: LessonFeed | null = null;
+  let quiz: QuizOverlay | null = null;
+  const eduVariant = () => (spectator ? "screen" : portrait ? "phone" : "desktop") as "screen" | "phone" | "desktop";
+  const updateEdu = (s: MatchState) => {
+    const students = s.players.map((p) => ({ id: p.id, name: p.name, repo: p.kit.repo, quality: p.kit.quality }));
+    if (!feed) {
+      try {
+        feed = createLessonFeed({ variant: eduVariant(), ctx: { mode: s.mode, you: app.you, spectator, players: students, boss: null } });
+        quiz = createQuizOverlay({ variant: eduVariant(), engine: feed.engine });
+        feed.el.classList.add("edu-mount");
+        quiz.el.classList.add("edu-mount");
+        if (portrait) sensorRow.after(feed.el); // phone: lesson cards replace the event log in the deck
+        else overlay.append(feed.el);
+        (portrait ? deck : overlay).append(quiz.el);
+      } catch (e) {
+        console.warn("[kaiju] edu components failed", e);
+        return;
+      }
+    } else if (students.length !== lastStudentCount) feed.setContext({ players: students });
+    lastStudentCount = students.length;
+    try {
+      feed.update(s);
+      quiz?.update(s, app.you);
+    } catch (e) {
+      console.warn("[kaiju] edu update failed", e);
+    }
+  };
+  let lastStudentCount = 0;
 
   // ---------------- juice state ----------------
   let trauma = 0;
@@ -433,6 +468,21 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     outro = { victory, at: performance.now() };
     const kit = latest?.boss?.kit;
     setTimeout(() => {
+      if (latest && !latest.boss) {
+        const ranked = rankPvp(latest);
+        const meIdx = ranked.findIndex((r) => r.id === app.you);
+        overlay.append(
+          h(
+            "div.defeat.pvp-end",
+            null,
+            h("div.df-title", null, "CLASS DISMISSED"),
+            h("p", null, `★ ${ranked[0]?.name ?? "—"} wins with ${ranked[0]?.kos ?? 0} KOs`),
+            meIdx >= 0 ? h("p", null, `you placed #${meIdx + 1} of ${ranked.length}`) : null,
+            h("p.dim", null, "loading report cards…"),
+          ),
+        );
+        return;
+      }
       const card = victory
         ? h(
             "div.bsod",
@@ -584,6 +634,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // "where am I?": pulsing ring + YOU tag under your hero for the first seconds and after a revive
   let youRingUntil = 0;
   let youRingStarted = false;
+  let meWasDown = false;
   const drawYouRing = (me: PlayerState, now: number, scale: number) => {
     const pulse = 0.5 + 0.5 * Math.sin(now * 8);
     const rx = (10 + pulse * 3) * scale, ry = (4 + pulse) * scale;
@@ -797,6 +848,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
     const me = s.players.find((p) => p.id === app.you);
     selfPos = me ? { x: me.x, y: me.y } : null;
+    if (me && me.alive && meWasDown) youRingUntil = Math.max(youRingUntil, performance.now() + 3000); // respawn / revive
+    meWasDown = !!me && !me.alive;
 
     // camera
     trauma = Math.max(0, trauma - dtReal * 1.6);
@@ -943,6 +996,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       removeEventListener("keydown", onKey);
       if (sendIv) clearInterval(sendIv);
       input?.dispose();
+      feed?.dispose();
+      quiz?.dispose();
       el.remove();
     },
   });

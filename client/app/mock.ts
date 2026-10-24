@@ -2,7 +2,7 @@
 // Uses the real sim (sim/index.ts) + fallback profiles in the browser when they exist; otherwise a tiny fake sim.
 import type {
   Autopsy, BossKit, BossState, Bullet, ClientMsg, GameEvent, Hazard, InputFrame, LobbyState, MatchState, Minion,
-  PlayerKit, PlayerState, RepoProfile, ServerMsg,
+  PlayerKit, PlayerState, PvpState, QualityStat, RepoProfile, ServerMsg,
 } from "../../shared/types";
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import type { Conn, ConnOpts, ConnStatus } from "./net";
@@ -99,6 +99,7 @@ export function createMockConn(opts: ConnOpts): Conn {
   // until analysis produces CodeDNA, give mock kits some plausible code so the UI can be exercised
   const pkit = (slug: string): PlayerKit => {
     const k = pkit0(slug);
+    if (lobby.mode === "edu" && !k.quality?.length) k.quality = fakeQuality(k.seed);
     if (!k.code?.signature) k.code = { weapon: k.code?.weapon, tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
     return k;
   };
@@ -161,6 +162,7 @@ export function createMockConn(opts: ConnOpts): Conn {
     pushLobby();
     const ps = lobby.players.filter((p) => p.kit);
     const boss = lobby.boss.kit ?? bkit("lodash/lodash", ps.length);
+    const edu = lobby.mode === "edu";
     let match: { step(dt: number, inputs: Map<string, InputFrame>): void; snapshot(): MatchState; autopsy(): Autopsy; readonly over: boolean };
     try {
       match = sim ? sim.createMatch(ps.map((p) => ({ id: p.id, name: p.name, kit: p.kit! })), boss) : fakeMatch(ps.map((p) => ({ id: p.id, name: p.name, kit: p.kit! })), boss);
@@ -192,7 +194,9 @@ export function createMockConn(opts: ConnOpts): Conn {
       evBuf.push(...snap.events);
       // 20 Hz: send 2 of every 3 ticks
       if (tick % 3 !== 2) {
-        emit({ t: "snapshot", state: { ...snap, events: evBuf }, ack: lastInput?.seq ?? 0 });
+        // edu mock: dress the fake boss match as a classroom brawl (no boss, PvP scoreboard, 2x heroes)
+        const st = edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap;
+        emit({ t: "snapshot", state: { ...st, events: evBuf }, ack: lastInput?.seq ?? 0 });
         evBuf = [];
       }
       if (match.over) {
@@ -221,6 +225,22 @@ export function createMockConn(opts: ConnOpts): Conn {
           setTimeout(() => setRepo("b3", "rust-lang/rust", 3000), 50);
           setTimeout(() => setBoss("pallets/flask", 3500), 50);
         }
+        if (mode === "edu" || mode === "edu-match" || mode === "edu-autopsy") {
+          lobby.mode = "edu";
+          for (const p of lobby.players) if (p.kit) p.kit.quality = fakeQuality(p.kit.seed);
+        }
+        if (mode === "edu-match" || mode === "edu-autopsy") {
+          setTimeout(async () => {
+            await ready;
+            if (opts.role === "player") Object.assign(lobby.players[0], { repo: "golang/go", status: "ready", kit: pkit("golang/go") });
+            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo) });
+            if (mode === "edu-autopsy") {
+              lobby.phase = "autopsy";
+              pushLobby();
+              emit({ t: "autopsy", result: fakeEduAutopsy(lobby) });
+            } else startMatch();
+          }, 100);
+        }
         if (mode === "match" || mode === "autopsy" || mode === "review") {
           setTimeout(async () => {
             await ready;
@@ -246,6 +266,11 @@ export function createMockConn(opts: ConnOpts): Conn {
         break;
       case "input":
         lastInput = m.frame;
+        break;
+      case "setMode":
+        lobby.mode = m.mode;
+        for (const p of lobby.players) if (p.kit) p.kit.quality = m.mode === "edu" ? fakeQuality(p.kit.seed) : undefined;
+        pushLobby();
         break;
       case "setBots": {
         lobby.players = lobby.players.filter((p) => !p.bot);
@@ -275,6 +300,34 @@ export function createMockConn(opts: ConnOpts): Conn {
       pushLobby();
     },
     close: () => loop && clearInterval(loop),
+  };
+}
+
+const GR = ["A", "B", "C", "D", "F"] as const;
+function fakeQuality(seed: number): QualityStat[] {
+  const r = mulberry32(seed);
+  const g = () => GR[Math.floor(r() * 4)];
+  return [
+    { stat: "armor", value: 4, grade: g(), signal: `tests: ${Math.round(r() * 35)}% of files`, tip: "add tests for src/parser to raise armor" },
+    { stat: "hp", value: 6, grade: g(), signal: `${Math.round(5 + r() * 60)}k LOC · README ✓`, tip: "a README that explains setup counts too" },
+    { stat: "speed", value: 85, grade: g(), signal: `avg fan-out ${(1 + r() * 4).toFixed(1)}`, tip: "split utils/ so fewer modules import everything" },
+    { stat: "damage", value: 1, grade: g(), signal: `avg function ${Math.round(8 + r() * 40)} lines`, tip: "break up the 300-line handler() into smaller functions" },
+    { stat: "energy", value: 180, grade: g(), signal: `comments: ${Math.round(r() * 25)}% of lines`, tip: "document the public API" },
+    { stat: "weakness", value: 0.1, grade: g(), signal: `${Math.floor(r() * 3)} circular deps · ${Math.floor(r() * 20)} TODOs`, tip: "break the cycle api <-> db" },
+  ];
+}
+function mockPvp(s: MatchState): PvpState {
+  const scores: PvpState["scores"] = {};
+  for (const p of s.players) scores[p.id] = { kos: Math.floor(p.stats.damage / 120), downs: 0, damage: p.stats.damage, roundWins: 0 };
+  const round = Math.min(3, 1 + Math.floor(s.t / 75));
+  return { round, rounds: 3, roundEndsAt: round * 75, scores, leader: null };
+}
+function fakeEduAutopsy(lobby: LobbyState): Autopsy {
+  const ps = lobby.players.filter((p) => p.kit);
+  return {
+    mode: "edu", victory: false, duration: 225, boss: null, mvp: ps[0]?.id ?? null,
+    players: ps.map((p, i) => ({ id: p.id, name: p.name, repo: p.repo!, stats: { damage: 900 - i * 120, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false } })),
+    ranking: ps.map((p, i) => ({ id: p.id, name: p.name, repo: p.repo!, kos: 9 - i * 2, damage: 900 - i * 120, roundWins: Math.max(0, 2 - i), quality: p.kit!.quality ?? fakeQuality(p.kit!.seed) })),
   };
 }
 

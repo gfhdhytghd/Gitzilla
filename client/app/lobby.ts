@@ -9,6 +9,7 @@ import type { MotionProfile } from "../../shared/types";
 import { createLogo } from "./logo";
 import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
+import { createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
 import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo } from "./util";
 
@@ -367,6 +368,13 @@ export function createLobby(app: AppCtx): Screen {
     h("button.btn.btn-danger", { "data-testid": "boss-repo-submit", onclick: submitBoss }, "☠ summon boss"),
     bossChips,
   );
+  const bossTitle = h("h2.panel-title.red", null, "BOSS KAIJU");
+  const eduInfo = h(
+    "div.edu-info",
+    { hidden: true },
+    h("p", null, "no boss: every student's hero fights everyone else. best of 3 rounds, most KOs wins."),
+    h("p", null, "your hero's stats come from your code quality — tests become armor, modular code becomes speed, circular dependencies become a weakness. check your report card."),
+  );
   let changingBoss = false;
   const changeBossLink = h("button.btn-link.change-boss", {
     "data-testid": "boss-change",
@@ -397,7 +405,8 @@ export function createLobby(app: AppCtx): Screen {
   const bossPanel = h(
     "section.panel.boss-panel",
     null,
-    h("h2.panel-title.red", null, "BOSS KAIJU"),
+    bossTitle,
+    eduInfo,
     bossStage,
     bossStatus,
     bossInfo,
@@ -440,11 +449,16 @@ export function createLobby(app: AppCtx): Screen {
     },
   }, "copy link");
   const ownerBadge = h("span.owner-badge");
+  // game mode: owner toggles boss raid ⇄ classroom PvP (lobby only); others see a badge
+  const modeBtn = (m: "battle" | "edu", label: string) =>
+    h("button.mode-btn", { "data-testid": `mode-${m}`, "data-mode": m, onclick: () => app.conn.send({ t: "setMode", mode: m }) }, label);
+  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode" }, modeBtn("battle", "⚔ boss raid"), modeBtn("edu", "🎓 classroom"));
   const header = h(
     "header.lobby-head",
     null,
     h("div.room-code", null, h("span.dim", null, "ROOM "), app.room),
     ownerBadge,
+    modeCtl,
     screen ? null : copyBtn,
   );
 
@@ -461,7 +475,8 @@ export function createLobby(app: AppCtx): Screen {
         h("img.qr", { src: `/api/qr?text=${encodeURIComponent(url)}`, alt: "join QR code" }),
         h("div.qr-url", null, url.replace(/^https?:\/\//, "")),
         h("div.qr-code-big", null, app.room),
-        h("div.dim", null, "scan to join · landscape · tilt to move · tap or swing to attack"),
+        h("div.qr-help", null, "scan with your phone (hold it upright)"),
+        h("div.qr-help.yellow", null, "★ the first phone to join is the host"),
       ),
       h("div.big-right", null, squad, bossPanel),
     );
@@ -514,7 +529,9 @@ export function createLobby(app: AppCtx): Screen {
         h("div.pcard-title", null, p.kit.design?.title ?? p.kit.title),
         ...(p.kit.design?.catchphrase ? [h("div.pcard-quote", null, `“${p.kit.design.catchphrase}”`)] : []),
         h("div.pcard-kit", null, h("span.tag", { title: `weapon (${p.kit.weapon})` }, `${WEAPON_ICON[p.kit.weapon] ?? ""} ${p.kit.code?.weapon?.name ?? p.kit.weapon}`), h("span.tag.tag-skill", { title: "skill" }, `⚡ ${p.kit.skill}`)),
-        h("div.pcard-hearts", null, hearts(p.kit)),
+        lobby.mode === "edu" && p.kit.quality?.length
+          ? h("div.pcard-gpa", { style: `--c:${GRADE_COLOR[gpaGrade(gpa(p.kit.quality))]}` }, `code grade ${gpaGrade(gpa(p.kit.quality))} · GPA ${gpa(p.kit.quality).toFixed(1)}`)
+          : h("div.pcard-hearts", null, hearts(p.kit)),
         ...codeBits(p.kit, false),
       );
     } else if (p.status === "analyzing") {
@@ -537,7 +554,7 @@ export function createLobby(app: AppCtx): Screen {
     const seen = new Set<string>();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, dsig(p.kit)].join("|");
+      const sig = [p.name, p.repo, p.status, p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
@@ -580,10 +597,19 @@ export function createLobby(app: AppCtx): Screen {
     const st = me.status;
     const label = st === "ready" ? "✓ hero summoned" : st === "analyzing" ? "analyzing repo…" : st === "error" ? `✗ ${me.error ?? "error"}` : "no repo yet";
     youStatus.replaceChildren(statusMarker("player-ready", st, label));
-    const sig = `${st}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}`;
+    const edu = lobby.mode === "edu";
+    const sig = `${st}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}|${edu}|${me.kit?.quality?.map((q) => q.grade).join("")}`;
     if (youCard.dataset.sig !== sig) {
       youCard.dataset.sig = sig;
-      if (me.kit && st === "ready") {
+      if (me.kit && st === "ready" && edu && me.kit.quality?.length) {
+        // classroom: stats ARE the code-quality report card
+        const k = me.kit;
+        youCard.replaceChildren(
+          h("div.you-hero.reveal", null, heroPortrait(k, 96)),
+          h("div.you-stats", null, h("div.you-title", null, k.design?.title ?? k.title), h("div.dim.rc-why", null, "in classroom mode your stats are graded from your code ↓"), ...codeBits(k, true)),
+          h("div.you-report", null, createReportCard({ id: me.id, name: me.name, repo: me.repo ?? "", quality: k.quality }, { size: "md", you: true })),
+        );
+      } else if (me.kit && st === "ready") {
         const k = me.kit;
         youCard.replaceChildren(
           h("div.you-hero.reveal", null, heroPortrait(k, 96)),
@@ -613,6 +639,11 @@ export function createLobby(app: AppCtx): Screen {
   function renderBoss(lobby: LobbyState) {
     const b = lobby.boss;
     const owner = isOwner(app);
+    bossTitle.textContent = lobby.mode === "edu" ? "CLASSROOM BRAWL" : "BOSS KAIJU";
+    if (lobby.mode === "edu") return renderClassroom(lobby, owner);
+    eduInfo.hidden = true;
+    for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = false;
+    startBtn.textContent = "$ ./fight.sh";
     bossOwnerCtl.style.display = owner ? "" : "none";
     // once a boss is summoned, ./fight.sh is the only primary action; changing the boss is a small link
     const collapse = b.status === "ready" && !changingBoss;
@@ -699,9 +730,32 @@ export function createLobby(app: AppCtx): Screen {
       : `waiting for ${lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "owner"} to start…`;
   }
 
+  function renderClassroom(lobby: LobbyState, owner: boolean) {
+    eduInfo.hidden = false;
+    for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = true;
+    bossOwnerCtl.style.display = "none";
+    changeBossLink.style.display = "none";
+    const ready = lobby.players.filter((p) => p.status === "ready").length;
+    startBtn.style.display = owner ? "" : "none";
+    startBtn.disabled = !(owner && ready >= 2);
+    startBtn.textContent = "$ make brawl";
+    if (performance.now() - startArmedAt < 4000) return;
+    startHint.classList.remove("warn");
+    startHint.textContent = owner
+      ? ready < 2 ? `need ≥2 ready students (${ready} now) — or add AI teammates` : `${ready} students ready. go.`
+      : `waiting for ${lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "the teacher"} to start…`;
+  }
+
   function render() {
     const lobby = app.lobby;
     if (!lobby) return;
+    const edu = lobby.mode === "edu";
+    el.classList.toggle("edu", edu);
+    modeCtl.classList.toggle("owner", isOwner(app));
+    for (const b of modeCtl.querySelectorAll<HTMLButtonElement>(".mode-btn")) {
+      b.classList.toggle("on", b.dataset.mode === lobby.mode);
+      b.disabled = !isOwner(app);
+    }
     ownerBadge.textContent = isOwner(app) ? "★ you own this room" : "";
     botCtl.style.display = isOwner(app) ? "" : "none";
     botCount.textContent = String(lobby.players.filter((p) => p.bot).length);
@@ -717,7 +771,7 @@ export function createLobby(app: AppCtx): Screen {
     const ready = lobby.players.filter((p) => p.status === "ready").length;
     const edu = lobby.mode === "edu";
     const bossOk = edu || lobby.boss.status === "ready";
-    const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "the host";
+    const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? (edu ? "the teacher" : "the host");
     let text = "", cls = "", act: (() => void) | null = null;
     const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
     if (!me || me.status === "empty" || me.status === "error") {
@@ -733,8 +787,11 @@ export function createLobby(app: AppCtx): Screen {
       text = lobby.boss.status === "analyzing" ? "⟳ summoning the boss…" : "② pick the BOSS repo ↓";
       cls = lobby.boss.status === "analyzing" ? "busy" : "";
       act = () => (bossPanel.scrollIntoView({ behavior: "smooth", block: "start" }), bossInput.focus());
+    } else if (edu && ready < 2) {
+      text = `waiting for classmates (${ready} ready) — or add AI teammates`;
+      cls = "busy";
     } else {
-      text = `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
+      text = edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
       cls = "go";
       act = tryStart;
     }

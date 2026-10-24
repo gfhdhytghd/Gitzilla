@@ -313,7 +313,7 @@ export function createHud(spectator: boolean): Hud {
 
       // code review
       const offer = s.perkOffer;
-      toggle(review, "show", !!offer);
+      toggle(review, "show", !!offer && !offer.quiz); // edu quizzes have their own overlay (client/edu)
       if (offer) {
         for (const pad of offer.pads) perkNames.set(pad.id, pad.name);
         setText(reviewTimer, `${Math.max(0, offer.endsAt - s.t).toFixed(1)}s`);
