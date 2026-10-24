@@ -2,6 +2,7 @@ import type { BossDesign, BossKit, PlayerKit, RepoProfile } from '../shared/type
 import { fallbackBoss, fallbackHero } from './fallback.ts';
 import { accessories, archetypes, bodies, growths, headgear, mouths, themes } from './schema.ts';
 import { validWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
+import { reconcileCodeNames } from '../sim/code.ts';
 
 function record(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -38,14 +39,18 @@ export function validateBoss(value: unknown, profile: RepoProfile, kit: BossKit)
   const source = record(value), fallback = fallbackBoss(profile, kit);
   const attackNames = record(source.attackNames), limbNames = record(source.limbNames);
   const selectedGrowths = Array.isArray(source.growths) ? [...new Set(source.growths.filter((g): g is typeof growths[number] => growths.includes(g)))].slice(0, 3) : [];
-  return {
+  const design: BossDesign = {
     name: text(source.name, fallback.name, 64), epithet: text(source.epithet, fallback.epithet, 120),
     body: enumeration(source.body, bodies, fallback.body),
     eyes: typeof source.eyes === 'number' && Number.isFinite(source.eyes) ? Math.max(1, Math.min(12, Math.round(source.eyes))) : fallback.eyes,
     mouth: enumeration(source.mouth, mouths, fallback.mouth), growths: selectedGrowths.length ? selectedGrowths : fallback.growths,
     palette: palette(source.palette, fallback.palette), theme: enumeration(source.theme, themes, fallback.theme),
     intro: lines(source.intro, fallback.intro, 2, 4, 80), taunts: lines(source.taunts, fallback.taunts, 3, 6, 64),
-    attackNames: Object.fromEntries(kit.attacks.map(a => [a.id, text(attackNames[a.id], fallback.attackNames[a.id], 22)])),
+    attackNames: Object.fromEntries(kit.attacks.map(a => [a.id, text(attackNames[a.id], fallback.attackNames[a.id], 64)])),
     limbNames: Object.fromEntries(kit.limbs.map(l => [l.id, text(limbNames[l.id], fallback.limbNames[l.id], 32)])),
   };
+  const attackSymbols = Object.fromEntries(Object.entries(fallback.attackNames).flatMap(([id, name]) => {
+    const symbol = name.match(/^(.+?\(\))/)?.[1]; return symbol ? [[id, symbol]] : [];
+  }));
+  return reconcileCodeNames({ ...kit, design, attacks: kit.attacks.map(a => ({ ...a, name: design.attackNames[a.id] })) }, { attackSymbols, limbNames: fallback.limbNames }).design!;
 }

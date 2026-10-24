@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WeaponKind } from '../shared/types.ts';
 import { ATTACK_FLAVOR, SKILL_FLAVOR, weaponCode } from './flavor.ts';
 import { bossKitFromProfile, playerKitFromProfile } from './kits.ts';
-import type { BossCode } from './code.ts';
+import { reconcileCodeNames, type BossCode } from './code.ts';
 import { BossAi } from './bossAi.ts';
 import { createMatch } from './match.ts';
 import { loadBalanceProfiles, syntheticProfile } from './bots.ts';
@@ -118,5 +118,12 @@ describe('code weapon flavor', () => {
     expect(new Set(names).size).toBe(names.length);
     expect(kit.attacks.every(a => a.name.startsWith('app()'))).toBe(true);
     expect(state.boss.kit.attacks.map(a => ({ ...a, name: '' }))).toEqual(kit.attacks.map(a => ({ ...a, name: '' })));
+  });
+  it('also repairs decorative names with no real identifier, so every attack retains its own assigned symbol', () => {
+    const p = loadBalanceProfiles().find(p => p.slug === 'pallets/flask')!, kit = bossKitFromProfile(p, 4);
+    kit.attacks.forEach((a, i) => { a.name = i % 2 ? 'Exception Orbit' : `app() ${a.kind}`; });
+    const repaired = reconcileCodeNames(kit), symbols = (kit.code as BossCode).attackSymbols;
+    expect(repaired.attacks.every(a => a.name.startsWith(symbols[a.id]))).toBe(true);
+    expect(new Set(repaired.attacks.map(a => a.name.match(/^(.+?\(\))/)![1])).size).toBe(kit.attacks.length);
   });
 });

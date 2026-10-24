@@ -1,6 +1,6 @@
 {
   "name": "NANOGPT, KEEPER OF FROM PRETRAINED",
-  "epithet": "Its 3 limbs feed the sleepless heart of model.py.",
+  "epithet": "A many-headed, branching-necked kaiju; 3 code-limbs guard the chest reactor.",
   "body": "hydra",
   "eyes": 12,
   "mouth": "none",
@@ -18,8 +18,8 @@
   "theme": "notebook",
   "intro": [
     "$ git clone karpathy/nanogpt",
-    "[##########] architecture awakened",
-    "FATAL: model.py",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: model.py",
     "class LayerNorm(nn.Module):"
   ],
   "taunts": [
@@ -31,14 +31,14 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "__init__() ring",
-    "0-charge-1": "__init__() charge",
-    "1-spiral-0": "encode() spiral",
-    "2-ring-0": "Segfault Halo"
+    "0-ring-0": "__init__() while(true) Loop",
+    "0-charge-1": "get_batch() git push --force",
+    "1-spiral-0": "encode() Recursion",
+    "2-ring-0": "GPT() while(true) Loop"
   },
   "limbNames": {
-    "limb-0": "get_batch Tendril",
-    "limb-1": "encode Mandible",
-    "limb-2": "config Coil"
+    "limb-0": "LayerNorm() Antenna",
+    "limb-1": "process() Plating",
+    "limb-2": "configure_optimizers() Root"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "SPRING-PETCLINIC, DEVOURER OF NAMED ENTITY",
-  "epithet": "Its 2 limbs feed the sleepless heart of src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java.",
+  "epithet": "A long-necked, whip-tailed kaiju; 2 code-limbs guard the chest reactor.",
   "body": "serpent",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "legacy",
   "intro": [
     "$ git clone spring-projects/spring-petclinic",
-    "[##########] architecture awakened",
-    "FATAL: src/main/java/org/springframework/samples/petclinic/model/NamedEntity.jav",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: src/main/java/org/springframework/samples/petclinic",
     "@MappedSuperclass"
   ],
   "taunts": [
@@ -30,12 +30,12 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "Owner() summon",
-    "0-slam-1": "Owner() slam",
-    "1-spiral-0": "validate() spiral"
+    "0-summon-0": "Owner() npm install Swarm",
+    "0-slam-1": "Pet() Stack Overflow",
+    "1-spiral-0": "validate() Recursion"
   },
   "limbNames": {
-    "limb-0": "PetType Coil",
-    "limb-1": "validate Claw"
+    "limb-0": "Visit() Root",
+    "limb-1": "EntityUtils() Claw"
   }
 }

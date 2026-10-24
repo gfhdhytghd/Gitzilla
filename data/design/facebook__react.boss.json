@@ -1,6 +1,6 @@
 {
   "name": "REACT, THE MOSSBOUND SHARED RUNTIME",
-  "epithet": "Its 8 limbs feed the sleepless heart of compiler/packages/snap/src/sprout/shared-runtime.ts.",
+  "epithet": "A many-headed, branching-necked kaiju; 8 code-limbs guard the chest reactor.",
   "body": "hydra",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "web",
   "intro": [
     "$ git clone facebook/react",
-    "[##########] architecture awakened",
-    "FATAL: compiler/packages/snap/src/sprout/shared-runtime.ts",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: compiler/packages/snap/src/sprout/shared-runtime.ts",
     "export function mutateAndReturnNewValue<"
   ],
   "taunts": [
@@ -31,24 +31,24 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "render() summon",
-    "0-slam-1": "render() slam",
-    "1-cascade-0": "render() cascade",
-    "2-cascade-0": "render() cascade",
-    "3-cascade-0": "render() cascade",
-    "4-cascade-0": "render() cascade",
-    "5-cascade-0": "render() cascade",
-    "6-cascade-0": "fn() cascade",
-    "7-cascade-0": "fn() cascade"
+    "0-summon-0": "render() npm install Swarm",
+    "0-slam-1": "Component() Stack Overflow",
+    "1-cascade-0": "App() Merge Conflict",
+    "2-cascade-0": "fn() Merge Conflict",
+    "3-cascade-0": "Foo() Merge Conflict",
+    "4-cascade-0": "Child() Merge Conflict",
+    "5-cascade-0": "get() Merge Conflict",
+    "6-cascade-0": "callback() Merge Conflict",
+    "7-cascade-0": "create() Merge Conflict"
   },
   "limbNames": {
-    "limb-0": "Component Tendril",
-    "limb-1": "App Mandible",
-    "limb-2": "fn Coil",
-    "limb-3": "render Claw",
-    "limb-4": "Component Tendril",
-    "limb-5": "App Mandible",
-    "limb-6": "resolve Coil",
-    "limb-7": "fn Claw"
+    "limb-0": "x() Antenna",
+    "limb-1": "Parent() Plating",
+    "limb-2": "push() Root",
+    "limb-3": "act() Claw",
+    "limb-4": "env() Lens",
+    "limb-5": "Hello() Mandible",
+    "limb-6": "resolve() Tendril",
+    "limb-7": "Identifier() Coil"
   }
 }

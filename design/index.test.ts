@@ -6,8 +6,9 @@ import rawProfile from '../data/fallback/pallets__flask.json';
 import type { CodeDNA, RepoProfile, WeaponKind } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from '../sim/kits.ts';
 import { applyBossDesign, applyHeroDesign, createDesignService, designCacheFilename, designCacheKey, designFileStem, fallbackBoss, fallbackHero, parseApiKey, readApiKey, validateBoss, validateHero } from './index.ts';
-import { bossSchema, heroSchema } from './schema.ts';
+import { bodies, bossSchema, heroSchema } from './schema.ts';
 import { cleanWeaponName, validWeaponName } from './weapon.ts';
+import { dnaFingerprint } from './code.ts';
 
 // JSON imports infer tuples/union-valued fields as broad arrays/strings; use the producer's contract.
 const profile = JSON.parse(JSON.stringify(rawProfile)) as RepoProfile;
@@ -58,6 +59,16 @@ describe('appearance only', () => {
     expect(validateHero({ title: '\x00\x01' }, profile, heroKit).title).toBe(hero.title);
     expect(validateBoss({ intro: ['\x00'], taunts: ['\x01'] }, profile, bossKit).intro).toEqual(boss.intro.slice(0, 2));
   });
+  it('keeps unique real attack identifiers through fallback, cached validation and direct lobby application', () => {
+    const symbols = (bossKit.code as typeof bossKit.code & { attackSymbols: Record<string, string> }).attackSymbols;
+    const legacy = { ...boss, attackNames: Object.fromEntries(bossKit.attacks.map(a => [a.id, `app() ${a.kind}`])) };
+    for (const design of [fallbackBoss(profile, bossKit), validateBoss(legacy, profile, bossKit), applyBossDesign(bossKit, legacy).design!]) {
+      const names = bossKit.attacks.map(a => design.attackNames[a.id]);
+      expect(names.every((name, i) => name.startsWith(symbols[bossKit.attacks[i].id]))).toBe(true);
+      expect(new Set(names.map(name => name.match(/^(.+?\(\))/)![1])).size).toBe(names.length);
+    }
+    expect(Object.values(legacy.attackNames).every(name => name.startsWith('app()'))).toBe(true);
+  });
 });
 
 describe('credentials', () => {
@@ -85,6 +96,13 @@ describe('credentials', () => {
 });
 
 describe('Gemini REST', () => {
+  it('treats every boss body as an upright kaiju variant in the model prompt', async () => {
+    const fetcher = vi.fn().mockResolvedValue(response(boss));
+    await service(fetcher).designBoss(profile, bossKit);
+    const prompt = JSON.parse(fetcher.mock.calls[0][1].body).contents[0].parts[0].text;
+    for (const text of ['Godzilla-inspired', 'upright', 'two powerful legs', 'long heavy tail', 'hydra=multiple heads', 'machine=mech plating', 'city-shaking footfalls', 'atomic code breath']) expect(prompt).toContain(text);
+    for (const body of bodies) expect(prompt).toContain(`${body}=`);
+  });
   it('sends JSON schemas, context and the key only in a header; validates the result', async () => {
     const fetcher = vi.fn().mockResolvedValue(response({ ...hero, title: 'Flask Spellguard' }));
     const result = await service(fetcher).designHero({ ...profile, readme: 'A micro web framework', tree: ['src/flask/app.py'] }, heroKit);
@@ -138,6 +156,10 @@ describe('Gemini REST', () => {
 });
 
 describe('cache and offline assets', () => {
+  it('versions kaiju art separately from the DNA name seed and hero artwork', () => {
+    expect(designCacheKey(profile, 'hero', heroKit).endsWith(dnaFingerprint(profile, heroKit))).toBe(true);
+    expect(designCacheKey(profile, 'boss', bossKit).endsWith(dnaFingerprint(profile, bossKit))).toBe(false);
+  });
   it('deduplicates simultaneous requests and returns isolated mutable results', async () => {
     const fetcher = vi.fn().mockImplementation(async () => response(hero)); const api = service(fetcher);
     const [a, b] = await Promise.all([api.designHero(profile, heroKit), api.designHero(profile, heroKit)]);
@@ -188,6 +210,9 @@ describe('cache and offline assets', () => {
       expect(suffix.replace(/[^a-z0-9]/gi, '').toLowerCase()).not.toContain(p.slug.split('/').pop()!.replace(/[^a-z0-9]/gi, '').toLowerCase());
       savedEpithets.push(suffix);
       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(validateBoss(b, p, bk));
+      expect(b.epithet).toContain('kaiju'); expect(b.intro.join(' ')).toContain('dorsal plates');
+      const symbols = bk.attacks.map(a => b.attackNames[a.id].match(/^(.+?\(\))/)?.[1]);
+      expect(symbols.every(Boolean)).toBe(true); expect(new Set(symbols).size).toBe(bk.attacks.length);
       expect(h.weaponName.length).toBeGreaterThan(0); expect(h.weaponName.length).toBeLessThanOrEqual(24);
       expect(validWeaponName(h.weaponName, p, pk)).toBe(h.weaponName);
       if (manifest.entries[p.slug].hero.source === 'fallback') expect(h.weaponName).toBe(pk.code!.weapon!.name);
@@ -215,6 +240,24 @@ describe('cache and offline assets', () => {
       epithets.push(suffix);
     }
     expect(new Set(epithets).size, epithets.join('\n')).toBe(files.length);
+  });
+});
+
+describe('upright kaiju flavor', () => {
+  it('gives every seeded body kaiju reactor/dorsal lore without changing the kit', () => {
+    const before = structuredClone(bossKit);
+    for (const [i, body] of bodies.entries()) {
+      const design = fallbackBoss({ ...profile, seed: i << 4, cycles: [] }, bossKit);
+      expect(design.body).toBe(body);
+      expect(design.epithet).toContain('kaiju'); expect(design.epithet).toContain('chest reactor');
+      expect(design.intro.join(' ')).toContain('dorsal plates charged');
+      expect(design.intro.join(' ')).toContain('atomic code breath');
+      expect(design.intro.length).toBeLessThanOrEqual(4);
+      expect(design.intro.every(line => line.length <= 80)).toBe(true);
+      if (body === 'hydra') expect(design.epithet).toContain('many-headed');
+      if (body === 'machine') expect(design.epithet).toContain('mech-plated');
+    }
+    expect(bossKit).toEqual(before);
   });
 });
 

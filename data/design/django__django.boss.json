@@ -1,6 +1,6 @@
 {
   "name": "DJANGO, KEEPER OF DB",
-  "epithet": "Its 8 limbs feed the sleepless heart of django/db/__init__.py.",
+  "epithet": "A stone-scaled, fortress-plated kaiju; 8 code-limbs guard the chest reactor.",
   "body": "golem",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "notebook",
   "intro": [
     "$ git clone django/django",
-    "[##########] architecture awakened",
-    "FATAL: django/db/__init__.py",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: django/db/__init__.py",
     "connections = ConnectionHandler()"
   ],
   "taunts": [
@@ -31,24 +31,24 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-fan-0": "__init__() fan",
-    "0-charge-1": "__init__() charge",
-    "1-cascade-0": "__init__() cascade",
-    "2-cascade-0": "__init__() cascade",
-    "3-cascade-0": "__init__() cascade",
-    "4-cascade-0": "__init__() cascade",
-    "5-cascade-0": "__init__() cascade",
-    "6-cascade-0": "__init__() cascade",
-    "7-cascade-0": "__init__() cascade"
+    "0-fan-0": "__init__() throw Spray",
+    "0-charge-1": "get() git push --force",
+    "1-cascade-0": "name() Merge Conflict",
+    "2-cascade-0": "clean() Merge Conflict",
+    "3-cascade-0": "value() Merge Conflict",
+    "4-cascade-0": "path() Merge Conflict",
+    "5-cascade-0": "create() Merge Conflict",
+    "6-cascade-0": "request() Merge Conflict",
+    "7-cascade-0": "render() Merge Conflict"
   },
   "limbNames": {
-    "limb-0": "__init__ Claw",
-    "limb-1": "get Tendril",
-    "limb-2": "name Mandible",
-    "limb-3": "clean Coil",
-    "limb-4": "__init__ Claw",
-    "limb-5": "create Tendril",
-    "limb-6": "request Mandible",
-    "limb-7": "check Coil"
+    "limb-0": "deconstruct() Coil",
+    "limb-1": "check() Antenna",
+    "limb-2": "filter() Plating",
+    "limb-3": "save() Root",
+    "limb-4": "func() Claw",
+    "limb-5": "Person() Lens",
+    "limb-6": "output_field() Mandible",
+    "limb-7": "choices() Tendril"
   }
 }

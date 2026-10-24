@@ -1,6 +1,6 @@
 {
   "name": "FLASK, THE MAKE RESPONSE TYRANT",
-  "epithet": "Its 5 limbs feed the sleepless heart of src/flask/__init__.py.",
+  "epithet": "A long-necked, whip-tailed kaiju; 5 code-limbs guard the chest reactor.",
   "body": "serpent",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "notebook",
   "intro": [
     "$ git clone pallets/flask",
-    "[##########] architecture awakened",
-    "FATAL: src/flask/__init__.py",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: src/flask/__init__.py",
     "class ProxyMixin(t.Protocol[T]):"
   ],
   "taunts": [
@@ -31,18 +31,18 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "app() ring",
-    "0-slam-1": "app() slam",
-    "1-summon-0": "app() summon",
-    "2-ring-0": "app() ring",
-    "3-spiral-0": "github_link() spiral",
-    "4-ring-0": "Exception Orbit"
+    "0-ring-0": "app() while(true) Loop",
+    "0-slam-1": "get() Stack Overflow",
+    "1-summon-0": "index() npm install Swarm",
+    "2-ring-0": "client() while(true) Loop",
+    "3-spiral-0": "github_link() Recursion",
+    "4-ring-0": "create_app() while(true) Loop"
   },
   "limbNames": {
-    "limb-0": "app Claw",
-    "limb-1": "get Tendril",
-    "limb-2": "client Mandible",
-    "limb-3": "setup Coil",
-    "limb-4": ".devcontainer Claw"
+    "limb-0": "b() Claw",
+    "limb-1": "response() Lens",
+    "limb-2": "cli() Mandible",
+    "limb-3": "setup() Tendril",
+    "limb-4": "Module() Coil"
   }
 }

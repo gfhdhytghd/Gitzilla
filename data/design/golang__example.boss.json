@@ -1,6 +1,6 @@
 {
   "name": "EXAMPLE, THE UNFINISHED REVERSE",
-  "epithet": "Its 8 limbs feed the sleepless heart of hello/reverse/reverse.go.",
+  "epithet": "A parasite-crowned, ember-shedding kaiju; 8 code-limbs guard the chest reactor.",
   "body": "swarm",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "legacy",
   "intro": [
     "$ git clone golang/example",
-    "[##########] architecture awakened",
-    "FATAL: hello/reverse/reverse.go",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: hello/reverse/reverse.go",
     "func usage() {"
   ],
   "taunts": [
@@ -31,24 +31,24 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "appendAttr() ring",
-    "0-charge-1": "appendAttr() charge",
-    "1-spiral-0": "main() spiral",
-    "2-ring-0": "main() ring",
-    "3-spiral-0": "main() spiral",
-    "4-ring-0": "main() ring",
-    "5-spiral-0": "main() spiral",
-    "6-ring-0": "main() ring",
-    "7-spiral-0": "main() spiral"
+    "0-ring-0": "appendAttr() while(true) Loop",
+    "0-charge-1": "New() git push --force",
+    "1-spiral-0": "main() Recursion",
+    "2-ring-0": "CheckNilFuncComparison() while(true) Loop",
+    "3-spiral-0": "cleanListing() Recursion",
+    "4-ring-0": "NewServer() while(true) Loop",
+    "5-spiral-0": "usage() Recursion",
+    "6-ring-0": "String() while(true) Loop",
+    "7-spiral-0": "imageHandler() Recursion"
   },
   "limbNames": {
-    "limb-0": "parseLogEntries Mandible",
-    "limb-1": "queryHandler Coil",
-    "limb-2": "main Claw",
-    "limb-3": "cleanListing Tendril",
-    "limb-4": "ServeHTTP Mandible",
-    "limb-5": "greet Coil",
-    "limb-6": "main Claw",
-    "limb-7": "imageHandler Tendril"
+    "limb-0": "parseLogEntries() Mandible",
+    "limb-1": "readRequestJSON() Tendril",
+    "limb-2": "isValidIdentifier() Coil",
+    "limb-3": "include() Antenna",
+    "limb-4": "ServeHTTP() Plating",
+    "limb-5": "version() Root",
+    "limb-6": "document() Claw",
+    "limb-7": "indexHandler() Lens"
   }
 }

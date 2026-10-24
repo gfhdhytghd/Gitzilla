@@ -3,6 +3,7 @@ import type { InputFrame, MatchState, PlayerKit } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from './kits.ts';
 import { createMatch, type BattleState, type Match } from './match.ts';
 import { bossRegions } from './regions.ts';
+import { kaijuAnchors } from '../shared/kaiju-anatomy.ts';
 import { balanceTable, loadBalanceProfiles, runBalance, syntheticProfile } from './bots.ts';
 import { BossAi } from './bossAi.ts';
 import { ATTACK_COST, squadBudget, type HitFeedback } from './balance.ts';
@@ -125,7 +126,8 @@ describe('authoritative arena', () => {
     const b = m.snapshot().boss;
     expect(b.regions).toEqual(bossRegions(b));
     expect(b.regions.map(r => r.id)).toEqual([...b.limbs.map(l => l.id), 'heart']);
-    expect(b.regions.at(-1)).toEqual({ id: 'heart', x: b.x, y: b.y, r: 19 });
+    const { chest } = kaijuAnchors(b.kit);
+    expect(b.regions.at(-1)).toEqual({ id: 'heart', x: b.x + chest.dx, y: b.y + chest.dy, r: 19 });
   });
   it('regenerates armor after the damage delay and applies armor before health', () => {
     const m = fixture(), s = internals(m), p = s.players[0];

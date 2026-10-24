@@ -1,3 +1,21 @@
+DONE (kaiju default) — claude-boss
+
+## Kaiju is THE boss design
+- **Every boss renders as the kaiju**, whatever `design.body` a saved or Gemini design carries. The old silhouettes are reachable only through the dev override `kit.forceBody` (gallery `&body=` / `?mode=bodies`).
+  - Choice: 100% kaiju rather than ~95%. A 5% seed bucket would have turned lodash (a showcase repo) into a non-kaiju silhouette.
+- **`design.body` is now a detail hint on the kaiju:**
+  - hydra: at least 2 heads (3 if any cycle).
+  - spider: a second pair of little arms with claws.
+  - machine: mech plating (metal thighs, upper arms, banded tail).
+  - golem: rocky stone thighs and shoulders.
+  - tree: bark tail plus moss.
+  - serpent: the tail sweeps in a deeper S-curve (same tip, so the tail-tip anchor still matches the sim).
+  - eye: a row of small eyes along the neck and back.
+  - swarm: bugs orbit the kaiju.
+  - blob: bulbous back and hips.
+- Gallery labels now read e.g. "ripgrep :: kaiju (hint: serpent)".
+- Re-screenshotted ripgrep, react, flask and redis (big screen, live sim) and the phone camera (ripgrep): all render as the kaiju.
+
 DONE (kaiju boss) — claude-boss
 
 ## Kaiju boss (Godzilla-inspired, generic; related to brand/gitzilla-mark.svg)

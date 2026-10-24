@@ -8,26 +8,38 @@ export type BossCode = NonNullable<BossKit['code']> & {
 };
 export const signature = (symbol: string) => symbol ? `${symbol.replace(/\(.*$/, '').slice(0, 40)}()` : '';
 
-/** Repair a later display-design override that reused one source identifier everywhere. */
-export function reconcileCodeNames(kit: BossKit): BossKit {
-  const copy = structuredClone(kit), code = copy.code as Partial<BossCode> | undefined;
-  const prefixes = copy.attacks.map(a => a.name.match(/^(.+?\(\))/)?.[1]?.toLowerCase());
-  const repeated = new Set(prefixes.filter((s, i) => s && prefixes.indexOf(s) !== i));
-  copy.attacks.forEach((a, i) => {
+/** Preserve each attack's assigned real identifier through later display-design overrides. */
+export function reconcileCodeNames(kit: BossKit, hints?: Pick<BossCode, 'attackSymbols' | 'limbNames'>): BossKit {
+  const copy = structuredClone(kit), code = hints ?? copy.code as Partial<BossCode> | undefined;
+  copy.attacks.forEach(a => {
     const symbol = code?.attackSymbols?.[a.id];
-    if (symbol && repeated.has(prefixes[i])) {
-      a.name = `${symbol} ${ATTACK_FLAVOR[a.kind]}`;
+    if (symbol && !a.name.startsWith(symbol)) {
+      const suffix = a.name.replace(/^.+?\(\)\s*/, '').trim();
+      const flavor = suffix && symbol.length + suffix.length + 1 <= 64 ? suffix : ATTACK_FLAVOR[a.kind];
+      a.name = `${symbol} ${flavor}`;
       if (copy.design) copy.design.attackNames[a.id] = a.name;
     }
   });
   if (copy.design && code?.limbNames) {
-    const parts = Object.values(copy.design.limbNames).map(n => n.split(' ').at(-1));
-    if (new Set(parts).size < parts.length) copy.design.limbNames = { ...copy.design.limbNames, ...code.limbNames };
+    const available = Object.values(code.limbNames).map(n => n.split(' ').at(-1)!);
+    const used = new Set<string>();
+    for (const limb of copy.limbs) {
+      const current = copy.design.limbNames[limb.id] ?? code.limbNames[limb.id];
+      if (!current) continue;
+      let suffix = current.split(' ').at(-1)!;
+      if (used.has(suffix)) {
+        const canonical = code.limbNames[limb.id] ?? current;
+        suffix = available.find(part => !used.has(part)) ?? `${suffix}${used.size + 1}`;
+        const label = canonical.slice(0, canonical.lastIndexOf(' '));
+        copy.design.limbNames[limb.id] = `${label.slice(0, 31 - suffix.length)} ${suffix}`;
+      }
+      used.add(suffix);
+    }
   }
   return copy;
 }
 
-export function symbolAllocator(p: RepoProfile, reserved: string[] = []) {
+export function symbolAllocator(p: { dna?: Pick<NonNullable<RepoProfile['dna']>, 'identifiers' | 'componentSymbols'> }, reserved: string[] = []) {
   const used = new Set(reserved.map(s => s.toLowerCase()));
   return (component: string) => {
     for (const raw of [...(p.dna?.componentSymbols[component] ?? []), ...(p.dna?.identifiers ?? [])]) {
