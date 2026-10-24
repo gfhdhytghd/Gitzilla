@@ -277,7 +277,8 @@ export type GameEvent =
   | { type: "phase"; phase: 1 | 2 | 3 }
   | { type: "pickup"; player: string; kind: Pickup["kind"]; x: number; y: number }
   | { type: "obstacleBroken"; id: number; label: string; x: number; y: number }
-  | { type: "perk"; player: string; perk: string }
+  | { type: "perk"; player: string; perk: string; correct?: boolean }
+  | { type: "lesson"; concept: Concept; ref?: string; facts?: Record<string, string | number> } // edu: real data for the card
   | { type: "victory" } | { type: "defeat" };
 
 // Cover: destructible blocks named after real files of the boss repo. Block bullets (both sides).
@@ -285,8 +286,20 @@ export interface Obstacle { id: number; x: number; y: number; w: number; h: numb
 // Soul Knight drops from broken limbs, minions and blocks.
 export interface Pickup { id: number; kind: "energy" | "heart" | "armor"; x: number; y: number }
 // "Code review" at a phase change: sim pauses boss ~5s, 3 pads appear; each player picks by walking onto one.
-export interface PerkPad { id: string; name: string; desc: string; x: number; y: number; r: number }
-export interface PerkOffer { endsAt: number; pads: PerkPad[]; picked: Record<string, string> } // playerId -> pad id
+export interface PerkPad { id: string; name: string; desc: string; x: number; y: number; r: number;
+  answer?: string;           // edu quiz: the answer text on this pad (a real component/file/name)
+  correct?: boolean;         // edu quiz: revealed after the offer ends (sim may omit until then)
+}
+export interface PerkOffer { endsAt: number; pads: PerkPad[]; picked: Record<string, string>; // playerId -> pad id
+  quiz?: { question: string; explain: string; concept: string }; // edu mode: pads are answers; explain shown after
+}
+
+// ---------- Education mode ----------
+export type GameMode = "battle" | "edu";
+// Concepts the lesson engine knows; sim/server tag events with them so the client can teach in context.
+export type Concept = "dependency-graph" | "fan-in" | "fan-out" | "heart-module" | "circular-dependency" | "coupling"
+  | "component" | "cascade" | "dead-code" | "tech-debt" | "test-coverage" | "recursion" | "stack-overflow" | "race-condition"
+  | "memory-leak" | "merge-conflict" | "force-push" | "dependency-hell" | "null-pointer" | "infinite-loop" | "refactor";
 
 export interface MatchState {
   t: number;                 // seconds since fight start
@@ -358,6 +371,7 @@ export interface LobbyState {
   boss: { repo: string | null; status: "empty" | "analyzing" | "ready" | "error"; error?: string; kit: BossKit | null;
           progress?: GenesisProgress; genesis?: Genesis };
   phase: "lobby" | "match" | "autopsy";
+  mode: GameMode;            // owner toggles; default "battle"
 }
 
 export type ClientMsg =
@@ -365,6 +379,7 @@ export type ClientMsg =
   | { t: "setRepo"; repo: string }
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
+  | { t: "setMode"; mode: GameMode }        // owner only, lobby only
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
   | { t: "rematch" };                       // owner only
