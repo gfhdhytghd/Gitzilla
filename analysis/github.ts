@@ -3,6 +3,7 @@ import { profileFromFiles, type RepoMetadata } from './graph.ts';
 import { extractTarGz, ARCHIVE_LIMITS } from './tar.ts';
 
 export interface GitHubOptions {
+  token?: string;
   timeoutMs?: number;
   fetcher?: typeof fetch;
   metadataFallback?: RepoMetadata;
@@ -19,7 +20,8 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
   const timer = setTimeout(() => controller.abort(new Error('GitHub analysis timed out')), options.timeoutMs ?? 12_000);
   const fetcher = options.fetcher ?? fetch;
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'Repo-Kaiju-HackPSU' };
-  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  const token = (options.token ?? process.env.GITHUB_TOKEN)?.trim() || undefined;
+  if (token) headers.Authorization = `Bearer ${token}`;
   async function api(endpoint: string): Promise<{ data: unknown; link: string | null }> {
     const response = await fetcher(`https://api.github.com/repos/${slug}${endpoint}`, {
       headers,
@@ -35,14 +37,19 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
     } catch { return undefined; }
   }
   try {
-    // Metadata can be rate limited while public codeload still works: keep the real source graph.
+    // Metadata can fail while an archive succeeds: keep the real source graph.
     const metaPromise = api('').catch(() => null);
     const languagesPromise = api('/languages').catch(() => null);
     const commitsPromise = count('/commits?per_page=1');
     const contributorsPromise = count('/contributors?per_page=1&anon=true');
     const archivePromise = (async () => {
-      const response = await fetcher(`https://codeload.github.com/${slug}/tar.gz/HEAD`, {
-        signal: controller.signal, headers: { 'User-Agent': 'Repo-Kaiju-HackPSU' },
+      // GitHub's API issues an authorized archive redirect for private repositories.
+      const archiveUrl = token
+        ? `https://api.github.com/repos/${slug}/tarball`
+        : `https://codeload.github.com/${slug}/tar.gz/HEAD`;
+      const response = await fetcher(archiveUrl, {
+        signal: controller.signal,
+        headers: token ? headers : { 'User-Agent': 'Repo-Kaiju-HackPSU' },
       });
       if (!response.ok || !response.body) { await response.body?.cancel(); throw new Error(`GitHub archive ${response.status}`); }
       const body = response.body;

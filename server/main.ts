@@ -5,8 +5,11 @@ import { stat } from 'node:fs/promises';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { analyzeRepo, listFallbackRepos } from '../analysis/index.ts';
+import { analyzeRepo, listFallbackRepos, offlineProfile } from '../analysis/index.ts';
 import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim/index.ts';
+import { designHero, designBoss, fallbackHero, fallbackBoss, applyHeroDesign, applyBossDesign } from '../design/index.ts';
+import { recordMatch, top } from '../hall/index.ts';
+import { createBot } from '../sim/bots.ts';
 import { RoomServer } from './rooms.ts';
 import { qrSvg, qrTerminal } from './qr.ts';
 import { lanAddresses, loadTls, urlHost } from './tls.ts';
@@ -32,7 +35,19 @@ server.on('upgrade', (request, socket, head) => {
     wss.handleUpgrade(request, socket, head, ws => wss.emit('connection', ws, request));
   } else if (production) socket.destroy();
 });
-const rooms = new RoomServer(wss, { analyzeRepo, listFallbackRepos, playerKitFromProfile, bossKitFromProfile, createMatch });
+const rooms = new RoomServer(wss, {
+  analyzeRepo, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch,
+  playerKitFromProfile(profile) {
+    const kit = playerKitFromProfile(profile);
+    return applyHeroDesign(kit, fallbackHero(profile, kit));
+  },
+  bossKitFromProfile(profile, count, design) {
+    const kit = bossKitFromProfile(profile, count);
+    return applyBossDesign(kit, design ?? fallbackBoss(profile, kit));
+  },
+  async enhanceHeroKit(profile, kit) { return applyHeroDesign(kit, await designHero(profile, kit)); },
+  async enhanceBossKit(profile, kit) { return applyBossDesign(kit, await designBoss(profile, kit)); },
+});
 const vite = production ? null : await (await import('vite')).createServer({
   root,
   server: { middlewareMode: true, hmr: { server } },
@@ -77,6 +92,7 @@ server.on('request', (req, res) => {
       const svg = qrSvg(text);
       res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }); res.end(svg); return;
     }
+    if (url.pathname === '/api/hall' && req.method === 'GET') { json(res, 200, top()); return; }
     if (url.pathname.startsWith('/api/')) { json(res, 404, { error: 'API route not found' }); return; }
     if (vite) vite.middlewares(req, res, () => { res.writeHead(404); res.end('Not found'); });
     else await serveDist(url.pathname, req, res);
@@ -94,7 +110,10 @@ server.listen(port, '0.0.0.0', () => {
   console.log(`\nRepo Kaiju ${production ? 'production' : 'development'} server`);
   console.log(`  Local: ${protocol}://localhost:${actualPort}`);
   for (const address of addresses) console.log(`  LAN:   ${protocol}://${urlHost(address)}:${actualPort}`);
-  publicBase = `${protocol}://${urlHost(addresses[0] || 'localhost')}:${actualPort}`;
+  publicBase = process.env.PUBLIC_URL
+    ? new URL(process.env.PUBLIC_URL).origin
+    : `${protocol}://${urlHost(addresses[0] || 'localhost')}:${actualPort}`;
+  if (process.env.PUBLIC_URL) console.log(`  Public: ${publicBase}`);
   console.log(`  WebSocket: ${tls ? 'wss' : 'ws'}://<host>:${actualPort}/ws`);
   if (certificate?.generated) console.log(`  Phone certificate: ${certificate.certPath} (install and trust on iOS for motion permissions)`);
   printRoomQr(rooms.createRoom());

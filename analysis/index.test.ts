@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { profileFromFiles } from './graph.ts';
 
 const mocks = vi.hoisted(() => ({
@@ -9,11 +9,14 @@ vi.mock('node:fs/promises', () => ({ readFile: mocks.readFile, stat: mocks.stat,
 const profile = profileFromFiles('demo/project', [{ path: 'src/main.ts', text: 'export const main = 1;' }]);
 
 beforeEach(() => {
+  vi.stubEnv('GITHUB_TOKEN', '');
   vi.resetModules(); vi.resetAllMocks();
   mocks.readFile.mockRejectedValue(new Error('ENOENT'));
   mocks.stat.mockRejectedValue(new Error('ENOENT'));
   mocks.github.mockResolvedValue(profile);
 });
+
+afterEach(() => { vi.unstubAllEnvs(); });
 
 describe('public repo analysis API', () => {
   it('normalizes owner/repo and GitHub URLs, including clone URLs and tree links', async () => {
