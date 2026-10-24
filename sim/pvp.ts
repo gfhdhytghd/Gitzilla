@@ -6,6 +6,7 @@ import { asClassroomKit, qualityValue, type ClassroomKit } from './quality.ts';
 import { LessonQueue } from './lessons.ts';
 import { classroomQuiz, type ClassroomQuiz } from './quiz.ts';
 import { WEAPONS } from './weapons.ts';
+import { forgetPlayer } from './departure.ts';
 
 export interface ClassroomPvpState extends PvpState {
   arenaW: number; arenaH: number;
@@ -14,6 +15,8 @@ export interface ClassroomPvpState extends PvpState {
   quizScores: Record<string, number>;
 }
 export type ClassroomState = MatchState & { mode: 'edu'; boss: null; heroScale: 2; pvp: ClassroomPvpState };
+export type ClassroomRankingRow = NonNullable<Autopsy['ranking']>[number] & { left?: boolean };
+export type ClassroomAutopsy = Omit<Autopsy, 'ranking'> & { ranking: ClassroomRankingRow[] };
 type Student = { id: string; name: string; kit: PlayerKit };
 interface Runtime {
   shot: number; lastHit: number; armor: number; dash: number; direction: [number, number];
@@ -46,6 +49,7 @@ export class ClassroomMatch implements Match {
   private shots = new Map<number, Shot>();
   private roundScores = new Map<string, { kos: number; damage: number }>();
   private nextBuff = new Set<string>();
+  private departed = new Map<string, ClassroomRankingRow>();
   private lessons = new LessonQueue();
   private quiz: ClassroomQuiz | null = null;
   private holds = new Map<string, { pad: string; t: number }>();
@@ -81,6 +85,28 @@ export class ClassroomMatch implements Match {
   }
 
   get over() { return this.state.pvp.phase === 'finished'; }
+  removePlayer(id: string): void {
+    const s = this.state, p = this.byId.get(id);
+    if (!p) return;
+    const score = s.pvp.scores[id];
+    this.departed.set(id, { id, name: p.name, repo: p.kit.repo, kos: score.kos, damage: score.damage,
+      roundWins: score.roundWins, quality: structuredClone(p.kit.quality ?? []), left: true });
+    s.players = s.players.filter(other => other.id !== id);
+    this.byId.delete(id); this.runtime.delete(id); this.roundScores.delete(id); this.holds.delete(id); this.nextBuff.delete(id);
+    delete s.pvp.scores[id]; delete s.pvp.quizScores[id];
+    for (const bullet of forgetPlayer(s, id)) this.shots.delete(bullet);
+    this.lessons.removePlayer(id);
+    this.updateLeader();
+    if (!s.players.length) { this.finish(true); return; }
+    if (!this.over && this.quiz?.subject === id) {
+      // The question's subject left. Reopen only this quiz, giving the remaining
+      // students a fair answer window; combat time, HP and round scores stay intact.
+      for (const student of this.nextBuff) s.pvp.quizScores[student] = Math.max(0, s.pvp.quizScores[student] - 1);
+      this.nextBuff.clear(); this.holds.clear();
+      this.quiz = classroomQuiz(s.players, s.pvp.round, this.seed, s.t, this.width, this.height);
+      s.perkOffer = this.quiz.offer; s.pvp.phase = 'quiz'; s.pvp.quizEndsAt = this.quiz.endsAt;
+    }
+  }
   step(dt: number, inputs: Map<string, InputFrame>) {
     let left = clamp(dt, 0, 0.25);
     let safe = new Map([...inputs].map(([id, frame]) => [id, safeInput(frame)]));
@@ -251,10 +277,13 @@ export class ClassroomMatch implements Match {
     });
   }
   private updateLeader() {
-    const leader = this.ranked()[0], score = this.state.pvp.scores[leader.id];
+    const leader = this.ranked()[0];
+    if (!leader) { this.state.pvp.leader = null; return; }
+    const score = this.state.pvp.scores[leader.id];
     this.state.pvp.leader = score.kos > 0 || score.damage > 0 || score.roundWins > 0 ? leader.id : null;
   }
   private endRound() {
+    if (!this.state.players.length) { this.finish(true); return; }
     const sorted = [...this.state.players].sort((a, b) => {
       const x = this.roundScores.get(a.id)!, y = this.roundScores.get(b.id)!; return y.kos - x.kos || y.damage - x.damage || a.id.localeCompare(b.id);
     });
@@ -295,14 +324,22 @@ export class ClassroomMatch implements Match {
       });
     }
   }
-  private finish() { this.updateLeader(); this.state.pvp.phase = 'finished'; this.state.status = 'victory'; this.emit({ type: 'victory' }); }
+  private finish(abandoned = false) {
+    if (this.over) return;
+    this.updateLeader(); this.state.pvp.phase = 'finished'; this.state.status = abandoned ? 'defeat' : 'victory';
+    this.state.perkOffer = null; this.state.pvp.quizEndsAt = null; this.quiz = null; this.holds.clear(); this.nextBuff.clear();
+    this.emit({ type: abandoned ? 'defeat' : 'victory' });
+  }
   private emit(event: GameEvent) { this.state.events.push(event); }
   snapshot(): ClassroomState { const copy = structuredClone(this.state); this.state.events = []; return copy; }
-  autopsy(): Autopsy {
+  autopsy(): ClassroomAutopsy {
     this.updateLeader();
+    const ranking: ClassroomRankingRow[] = this.ranked().map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: this.state.pvp.scores[p.id].kos,
+      damage: this.state.pvp.scores[p.id].damage, roundWins: this.state.pvp.scores[p.id].roundWins, quality: structuredClone(p.kit.quality ?? []) }));
+    ranking.push(...structuredClone([...this.departed.values()]));
+    ranking.sort((a, b) => b.roundWins - a.roundWins || b.kos - a.kos || b.damage - a.damage || a.id.localeCompare(b.id));
     return { mode: 'edu', victory: false, boss: null, duration: Math.max(0, this.state.t - 2), mvp: this.state.pvp.leader,
       players: this.state.players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { ...p.stats } })),
-      ranking: this.ranked().map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: this.state.pvp.scores[p.id].kos,
-        damage: this.state.pvp.scores[p.id].damage, roundWins: this.state.pvp.scores[p.id].roundWins, quality: structuredClone(p.kit.quality ?? []) })) };
+      ranking };
   }
 }

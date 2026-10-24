@@ -9,6 +9,6 @@ export { weaponCode, SKILL_FLAVOR, ATTACK_FLAVOR } from './flavor.ts';
 export type { CodeWeapon } from './flavor.ts';
 export type { BossCode } from './code.ts';
 export { pvpArenaSize } from './pvp.ts';
-export type { ClassroomState, ClassroomPvpState } from './pvp.ts';
+export type { ClassroomState, ClassroomPvpState, ClassroomAutopsy, ClassroomRankingRow } from './pvp.ts';
 export type { ClassroomFacts, ClassroomKit } from './quality.ts';
 export type { SocialBossKit } from './social.ts';
