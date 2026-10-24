@@ -6,6 +6,8 @@ import type { GameEvent, MatchState, PlayerState, ServerMsg } from "../../shared
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import { type AppCtx, type Screen } from "./app";
 import { createHud, rankPvp } from "./hud";
+import { markCanvas } from "./mark";
+import { type GenesisHandle, playGenesis } from "../genesis";
 import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay } from "../edu";
 import { audio, muteBtn } from "./sound";
 import { bossPortraitCanvas } from "./lobby";
@@ -43,9 +45,29 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const deckMid = h("div.deck-mid");
   const deck = h("div.deck", null, sensorRow, deckMid);
   const lateQr = spectator
-    ? h("div.late-qr", null, h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
+    ? h("div.late-qr", null, h("div.lq-brand", null, markCanvas(2), h("span", null, h("b.g", null, "GIT"), h("b.z", null, "ZILLA"))), h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
     : null;
-  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr);
+  // ☰ menu: leave the fight (with a confirm), resume
+  const menuSheet = h(
+    "div.game-menu",
+    { hidden: true, "data-testid": "game-menu" },
+    h(
+      "div.term-window",
+      null,
+      h("div.term-title", null, h("span.dots", null, "● ● ●"), " menu"),
+      h(
+        "div.term-body",
+        null,
+        h("div", null, spectator ? "end the class / leave this screen?" : "leave the fight?"),
+        h("div.dim", null, spectator ? "the match keeps running for everyone else." : "your hero drops out; the squad keeps fighting."),
+        h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? "⏏ end class" : "⏏ leave the fight"),
+        spectator ? h("button.btn", { "data-testid": "game-new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
+        h("button.btn.btn-primary", { onclick: () => (menuSheet.hidden = true) }, "▶ resume"),
+      ),
+    ),
+  );
+  const menuBtn = h("button.btn.btn-tiny.menu-btn", { "data-testid": "game-menu-open", "aria-label": "menu", onclick: (e: Event) => (e.stopPropagation(), (menuSheet.hidden = false)) }, "☰ menu");
+  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr, menuSheet);
 
   // ---------------- layout ----------------
   let cssScale = 1;
@@ -61,10 +83,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       deckMid.replaceChildren(P.team, P.combo);
       deck.append(P.review, P.log, P.toasts);
       stage.append(P.timer);
-      sensorRow.append(muteBtn);
+      sensorRow.append(muteBtn, menuBtn);
     } else {
       hud.el.append(P.self, P.team, P.combo, P.log, P.review, P.toasts, P.timer);
       document.body.append(muteBtn);
+      overlay.append(menuBtn);
     }
   };
   const layout = () => {
@@ -209,6 +232,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       try {
         feed = createLessonFeed({ variant: eduVariant(), ctx: { mode: s.mode, you: app.you, spectator, players: students, boss: null } });
         quiz = createQuizOverlay({ variant: eduVariant(), engine: feed.engine });
+        app.eduEngine = feed.engine;
         feed.el.classList.add("edu-mount");
         quiz.el.classList.add("edu-mount");
         if (portrait) sensorRow.after(feed.el); // phone: lesson cards replace the event log in the deck
@@ -222,12 +246,20 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     lastStudentCount = students.length;
     try {
       feed.update(s);
-      quiz?.update(s, app.you);
+      quiz?.update(s, spectator ? null : app.you);
+      if (feedVariant !== eduVariant()) {
+        feedVariant = eduVariant();
+        feed.setVariant(feedVariant as "phone" | "desktop" | "screen");
+        if (portrait) sensorRow.after(feed.el);
+        else overlay.append(feed.el);
+        (portrait ? deck : overlay).append(quiz!.el);
+      }
     } catch (e) {
       console.warn("[kaiju] edu update failed", e);
     }
   };
   let lastStudentCount = 0;
+  let feedVariant = "";
 
   // ---------------- juice state ----------------
   let trauma = 0;
@@ -379,16 +411,23 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const name = h("div.in-name");
     const epithet = h("div.in-line.in-epithet");
     const meta = h("div.in-line.dim");
-    let portrait: HTMLCanvasElement | null = null;
-    try {
-      portrait = bossPortraitCanvas(kit, 96);
-    } catch {
-      /* placeholder */
+    let portrait: HTMLElement | null = null;
+    // condensed (~4s) claude-genesis compile of the boss; falls back to the static portrait
+    const gHost = mountIntroGenesis("boss", kit, app.lobby?.boss.genesis, s.mode);
+    if (gHost) {
+      portrait = gHost;
+      introEnd = Math.max(introEnd, t0 + 4300);
+    } else {
+      try {
+        portrait = h("div.in-portrait", null, bossPortraitCanvas(kit, 96));
+      } catch {
+        /* placeholder */
+      }
     }
     intro.replaceChildren(
       h("div.lb.top"),
       h("div.lb.bot"),
-      h("div.in-card", null, portrait ? h("div.in-portrait", null, portrait) : null, h("div.in-text", null, clone, bar, warn, name, epithet, meta)),
+      h("div.in-card", null, portrait, h("div.in-text", null, clone, bar, warn, name, epithet, meta)),
     );
     intro.classList.remove("out");
     overlay.append(intro);
@@ -415,20 +454,43 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         const go = h("div.fight-flash", null, "$ ./fight --now");
         overlay.append(go);
         setTimeout(() => go.remove(), 1100);
-        setTimeout(() => intro.remove(), 500);
+        setTimeout(() => (intro.remove(), disposeIntroGenesis()), 500);
       }
     }, 50);
+  };
+
+  let introGenesis: GenesisHandle | null = null;
+  const disposeIntroGenesis = () => {
+    introGenesis?.dispose();
+    introGenesis = null;
+  };
+  const mountIntroGenesis = (kind: "hero" | "boss", kit: MatchState["players"][number]["kit"] | NonNullable<MatchState["boss"]>["kit"] | undefined, genesis: Parameters<typeof playGenesis>[1]["genesis"], mode: "battle" | "edu"): HTMLElement | null => {
+    if (!kit) return null;
+    const host = h(`div.in-genesis.${kind}`, { "data-testid": "intro-genesis" });
+    try {
+      disposeIntroGenesis();
+      introGenesis = playGenesis(host, { kind, kit, genesis, slug: kit.repo, condensed: true, interactive: false, mode, compact: portrait });
+      return host;
+    } catch (e) {
+      console.warn("[kaiju] intro genesis failed", e);
+      return null;
+    }
   };
 
   const startPvpIntro = (s: MatchState) => {
     const t0 = performance.now();
     introEnd = t0 + 2600;
+    const meP = s.players.find((p) => p.id === app.you);
+    const meLobby = app.lobby?.players.find((p) => p.id === app.you);
+    const gHost = meP ? mountIntroGenesis("hero", meP.kit, meLobby?.genesis, s.mode) : null;
+    if (gHost) introEnd = t0 + 4300;
     intro.replaceChildren(
       h("div.lb.top"),
       h("div.lb.bot"),
       h(
         "div.in-card",
         null,
+        gHost,
         h(
           "div.in-text",
           null,
@@ -450,7 +512,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         const go = h("div.fight-flash", null, "$ ./fight --pvp");
         overlay.append(go);
         setTimeout(() => go.remove(), 1100);
-        setTimeout(() => intro.remove(), 500);
+        setTimeout(() => (intro.remove(), disposeIntroGenesis()), 500);
       }
     }, 50);
   };
@@ -549,6 +611,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     setTimeout(() => hint?.classList.add("fade"), 9000);
   };
   const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") menuSheet.hidden = !menuSheet.hidden;
     if (e.key.toLowerCase() === "h" && hint) hint.classList.toggle("fade");
     if (outro && performance.now() - outro.at > 1200) finishOutro();
   };
@@ -997,6 +1060,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (sendIv) clearInterval(sendIv);
       input?.dispose();
       feed?.dispose();
+      disposeIntroGenesis();
       quiz?.dispose();
       el.remove();
     },

@@ -467,96 +467,168 @@
       "id": "GHSA-68rp-wp8r-4726",
       "pkg": "flask",
       "ecosystem": "PyPI",
+      "version": "2.3.2",
+      "source": "examples/celery/requirements.txt",
       "summary": "Flask session does not add `Vary: Cookie` header when accessed in some ways",
       "fixed": "3.1.3",
-      "component": "examples"
-    },
-    {
-      "id": "PYSEC-2026-2151",
-      "pkg": "flask",
-      "ecosystem": "PyPI",
-      "summary": "Flask is a web server gateway interface (WSGI) web application framework. In versions 3.1.2 and below, when the session object is accessed, Flask should set the Vary: Cookie header",
-      "fixed": "3.1.3",
+      "aliases": [
+        "CVE-2026-27205",
+        "PYSEC-2026-2151"
+      ],
       "component": "examples"
     },
     {
       "id": "GHSA-cpwx-vrp4-4pq7",
       "pkg": "jinja2",
       "ecosystem": "PyPI",
+      "version": "3.1.2",
+      "source": "examples/celery/requirements.txt",
       "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting format method",
       "fixed": "3.1.6",
+      "aliases": [
+        "CVE-2025-27516",
+        "PYSEC-2026-1471"
+      ],
       "component": "examples"
     },
     {
       "id": "GHSA-gmj6-6f8f-6699",
       "pkg": "jinja2",
       "ecosystem": "PyPI",
+      "version": "3.1.2",
+      "source": "examples/celery/requirements.txt",
       "summary": "Jinja has a sandbox breakout through malicious filenames",
       "fixed": "3.1.5",
+      "aliases": [
+        "CVE-2024-56201",
+        "PYSEC-2026-1472"
+      ],
       "component": "examples"
     },
     {
       "id": "GHSA-h5c8-rqwp-cp95",
       "pkg": "jinja2",
       "ecosystem": "PyPI",
+      "version": "3.1.2",
+      "source": "examples/celery/requirements.txt",
       "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
       "fixed": "3.1.3",
+      "aliases": [
+        "CVE-2024-22195",
+        "PYSEC-2026-1473"
+      ],
       "component": "examples"
     },
     {
       "id": "GHSA-h75v-3vvj-5mfj",
       "pkg": "jinja2",
       "ecosystem": "PyPI",
+      "version": "3.1.2",
+      "source": "examples/celery/requirements.txt",
       "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
       "fixed": "3.1.4",
+      "aliases": [
+        "CVE-2024-34064",
+        "PYSEC-2026-1474"
+      ],
       "component": "examples"
     },
     {
       "id": "GHSA-q2x7-8rv6-6q7h",
       "pkg": "jinja2",
       "ecosystem": "PyPI",
+      "version": "3.1.2",
+      "source": "examples/celery/requirements.txt",
       "summary": "Jinja has a sandbox breakout through indirect reference to format method",
       "fixed": "3.1.5",
+      "aliases": [
+        "CVE-2024-56326",
+        "PYSEC-2026-1475"
+      ],
       "component": "examples"
     },
     {
-      "id": "PYSEC-2026-1471",
-      "pkg": "jinja2",
+      "id": "GHSA-29vq-49wr-vm6x",
+      "pkg": "werkzeug",
       "ecosystem": "PyPI",
-      "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting format method",
+      "version": "2.3.3",
+      "source": "examples/celery/requirements.txt",
+      "summary": "Werkzeug safe_join() allows Windows special device names",
       "fixed": "3.1.6",
+      "aliases": [
+        "CVE-2026-27199",
+        "PYSEC-2026-2320"
+      ],
       "component": "examples"
     },
     {
-      "id": "PYSEC-2026-1472",
-      "pkg": "jinja2",
+      "id": "GHSA-2g68-c3qc-8985",
+      "pkg": "werkzeug",
       "ecosystem": "PyPI",
-      "summary": "Jinja has a sandbox breakout through malicious filenames",
+      "version": "2.3.3",
+      "source": "examples/celery/requirements.txt",
+      "summary": "Werkzeug debugger vulnerable to remote execution when interacting with attacker controlled domain",
+      "fixed": "3.0.3",
+      "aliases": [
+        "CVE-2024-34069",
+        "PYSEC-2026-2043"
+      ],
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-87hc-h4r5-73f7",
+      "pkg": "werkzeug",
+      "ecosystem": "PyPI",
+      "version": "2.3.3",
+      "source": "examples/celery/requirements.txt",
+      "summary": "Werkzeug safe_join() allows Windows special device names with compound extensions",
       "fixed": "3.1.5",
+      "aliases": [
+        "CVE-2026-21860",
+        "PYSEC-2026-2044"
+      ],
       "component": "examples"
     },
     {
-      "id": "PYSEC-2026-1473",
-      "pkg": "jinja2",
+      "id": "GHSA-f9vj-2wh5-fj8j",
+      "pkg": "werkzeug",
       "ecosystem": "PyPI",
-      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
-      "fixed": "3.1.3",
+      "version": "2.3.3",
+      "source": "examples/celery/requirements.txt",
+      "summary": "Werkzeug safe_join not safe on Windows",
+      "fixed": "3.0.6",
+      "aliases": [
+        "CVE-2024-49766",
+        "PYSEC-2026-2045"
+      ],
       "component": "examples"
     },
     {
-      "id": "PYSEC-2026-1474",
-      "pkg": "jinja2",
+      "id": "GHSA-g6x2-hccm-hh4m",
+      "pkg": "werkzeug",
       "ecosystem": "PyPI",
-      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "version": "2.3.3",
+      "source": "examples/celery/requirements.txt",
+      "summary": "Werkzeug safe_join() allows Windows special device names",
+      "fixed": "3.1.9",
+      "aliases": [
+        "CVE-2026-102598",
+        "PYSEC-2026-4312"
+      ],
+      "component": "examples"
+    },
+    {
+      "id": "GHSA-hgf8-39gv-g3f2",
+      "pkg": "werkzeug",
+      "ecosystem": "PyPI",
+      "version": "2.3.3",
+      "source": "examples/celery/requirements.txt",
+      "summary": "Werkzeug safe_join() allows Windows special device names",
       "fixed": "3.1.4",
-      "component": "examples"
-    },
-    {
-      "id": "PYSEC-2026-1475",
-      "pkg": "jinja2",
-      "ecosystem": "PyPI",
-      "summary": "Jinja has a sandbox breakout through indirect reference to format method",
-      "fixed": "3.1.5",
+      "aliases": [
+        "CVE-2025-66221",
+        "PYSEC-2026-2046"
+      ],
       "component": "examples"
     }
   ],

@@ -15,6 +15,16 @@ function exactVersion(value: string): string | undefined {
   if (/SNAPSHOT|[\s^~*><|,]/i.test(version)) return undefined;
   return /^v?\d+(?:\.\d+)*(?:(?:a|b|rc|post|dev)\d+)?(?:[-+._][a-z\d.+_-]+)?$/i.test(version) ? version : undefined;
 }
+function uncommentToml(line: string): string {
+  let quote = '';
+  for (let i = 0; i < line.length; i++) {
+    if (quote === '"' && line[i] === '\\') { i++; continue; }
+    if (quote) { if (line[i] === quote) quote = ''; }
+    else if (line[i] === '"' || line[i] === "'") quote = line[i];
+    else if (line[i] === '#') return line.slice(0, i);
+  }
+  return line;
+}
 const assignment = (body: string, field: string) => body.match(new RegExp(`^\\s*${field}\\s*=\\s*["']([^"']+)["']`, 'm'))?.[1];
 
 /** Only exact/pinned declarations are queried: ranges are not evidence of an installed vulnerable version. */
@@ -28,10 +38,11 @@ export function declaredDependencies(files: SourceFile[], profile: RepoProfile, 
     if (['npm', 'crates.io', 'Go'].includes(ecosystem) && !/^v?\d+\.\d+\.\d+(?:[-+].*)?$/.test(version)) return;
     const component = componentForManifest(profile, file);
     const dependency = { name, ecosystem, version, file, ...(component ? { component } : {}) };
-    found.set([ecosystem, name, version, component ?? ''].join('\0'), dependency);
+    const key = [ecosystem, name, version, component ?? ''].join('\0');
+    if (!found.has(key)) found.set(key, dependency);
   };
   const pythonRequirement = (file: string, value: string) => {
-    const match = value.match(/^\s*([\w.-]+)(?:\[[^\]]+\])?\s*==\s*([^\s;#]+)/);
+    const match = value.match(/^\s*([\w.-]+)(?:\[[^\]]+\])?\s*==(?!=)\s*([^\s;#]+)\s*(?:;[^#]*)?(?:#.*)?$/);
     if (match) add(file, 'PyPI', match[1], match[2]);
   };
   // Lockfile transitive versions fill remaining slots after direct manifest declarations.
@@ -49,7 +60,8 @@ export function declaredDependencies(files: SourceFile[], profile: RepoProfile, 
       file.text.split(/\r?\n/).forEach(line => pythonRequirement(file.path, line));
     } else if (base === 'pyproject.toml') {
       let section = '', dependencyArray = false;
-      for (const line of file.text.split(/\r?\n/)) {
+      for (const rawLine of file.text.split(/\r?\n/)) {
+        const line = uncommentToml(rawLine);
         const heading = line.match(/^\s*\[([^\]]+)\]/);
         if (heading) { section = heading[1]; dependencyArray = false; }
         if (section === 'project' && /^\s*dependencies\s*=/.test(line)) dependencyArray = true;
@@ -62,7 +74,7 @@ export function declaredDependencies(files: SourceFile[], profile: RepoProfile, 
         }
       }
     } else if (base === 'Cargo.lock') {
-      for (const block of file.text.split(/\[\[package\]\]/).slice(1)) {
+      for (const block of file.text.split(/\r?\n/).map(uncommentToml).join('\n').split(/\[\[package\]\]/).slice(1)) {
         const source = assignment(block, 'source');
         if (!source || !/registry\+.*(?:crates\.io-index|index\.crates\.io)/.test(source)) continue;
         const name = assignment(block, 'name'), version = assignment(block, 'version');
@@ -70,7 +82,8 @@ export function declaredDependencies(files: SourceFile[], profile: RepoProfile, 
       }
     } else if (base === 'Cargo.toml') {
       let section = '';
-      for (const line of file.text.split(/\r?\n/)) {
+      for (const rawLine of file.text.split(/\r?\n/)) {
+        const line = uncommentToml(rawLine);
         const heading = line.match(/^\s*\[([^\]]+)\]/); if (heading) section = heading[1];
         if (!/^(?:(?:target\..+\.)?)(?:dependencies|dev-dependencies|build-dependencies)$/.test(section) || /\b(?:git|path|registry)\s*=/.test(line)) continue;
         const dependency = line.match(/^\s*["']?([\w-]+)["']?\s*=\s*(?:["'](=[^"']+)["']|\{[^}]*version\s*=\s*["'](=[^"']+)["'])/);
@@ -81,8 +94,13 @@ export function declaredDependencies(files: SourceFile[], profile: RepoProfile, 
       }
     } else if (base === 'go.mod') {
       const replaced = new Set(Array.from(file.text.matchAll(/^\s*(?:replace\s+)?([\w./-]+)(?:\s+v[^\s]+)?\s+=>/gm), match => match[1]));
-      for (const match of file.text.matchAll(/^\s*(?:require\s+)?([\w./-]+)\s+(v\d[^\s]+)\s*(?:\/\/[^\n]*)?$/gm)) {
-        if (!replaced.has(match[1])) add(file.path, 'Go', match[1], match[2]);
+      let requireBlock = false;
+      for (const rawLine of file.text.split(/\r?\n/)) {
+        const line = rawLine.replace(/\/\/.*$/, '').trim();
+        if (/^require\s*\($/.test(line)) { requireBlock = true; continue; }
+        if (line === ')') { requireBlock = false; continue; }
+        const match = (requireBlock ? line : /^require\s/.test(line) ? line.replace(/^require\s+/, '') : '').match(/^([\w./-]+)\s+(v\d[^\s]+)$/);
+        if (match && !replaced.has(match[1])) add(file.path, 'Go', match[1], match[2]);
       }
     } else if (base === 'pom.xml') {
       const properties = new Map<string, string>();

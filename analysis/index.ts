@@ -7,6 +7,7 @@ import type { GenesisProgress, RepoProfile } from '../shared/types.ts';
 import { analyzeGitHubRepo } from './github.ts';
 import { componentTopology, fnv1a } from './graph.ts';
 import { selectPrimaryLanguage } from './files.ts';
+import { isVerifiedVuln } from './vulns.ts';
 import { emptyDNA } from './dna.ts';
 import { notifyProgress, replayProfileProgress, type ProgressCallback } from './progress.ts';
 
@@ -38,7 +39,7 @@ export function normalizeSlug(input: string): string {
 }
 
 function refreshLanguage(profile: RepoProfile): RepoProfile {
-  return { ...profile, primaryLanguage: selectPrimaryLanguage(profile.languages, profile.primaryLanguage), readme: profile.readme ?? '', tree: profile.tree ?? [profile.heart], dna: profile.dna ?? emptyDNA() };
+  return { ...profile, ...(profile.vulns ? { vulns: profile.vulns.filter(isVerifiedVuln) } : {}), primaryLanguage: selectPrimaryLanguage(profile.languages, profile.primaryLanguage), readme: profile.readme ?? '', tree: profile.tree ?? [profile.heart], dna: profile.dna ?? emptyDNA() };
 }
 
 function fallbackProfiles(): RepoProfile[] {
@@ -92,7 +93,7 @@ async function loadCache(slug: string): Promise<{ profile: RepoProfile; fresh: b
     const [contents, info] = await Promise.all([readFile(file, 'utf8'), stat(file)]);
     const profile = JSON.parse(contents) as RepoProfile;
     if (profile.slug !== slug || !Array.isArray(profile.components) || !profile.totalFiles) return null;
-    return { profile: refreshLanguage(profile), fresh: Date.now() - info.mtimeMs < CACHE_TTL && typeof profile.readme === 'string' && Array.isArray(profile.tree) && profile.dna !== undefined && 'avgFunctionLength' in profile.dna && 'hasTestDir' in profile.dna };
+    return { profile: refreshLanguage(profile), fresh: (profile.vulns ?? []).every(isVerifiedVuln) && Date.now() - info.mtimeMs < CACHE_TTL && typeof profile.readme === 'string' && Array.isArray(profile.tree) && profile.dna !== undefined && 'avgFunctionLength' in profile.dna && 'hasTestDir' in profile.dna };
   } catch { return null; }
 }
 

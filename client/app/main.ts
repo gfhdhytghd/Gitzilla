@@ -95,6 +95,33 @@ function startRoom(room: string, role: Role, name: string) {
     room, role, name, you: null, lobby: null, autopsy: null, mock, status: "connecting",
     conn: mk({ room, role, name }),
     refresh,
+    leave(o = {}) {
+      // remember the repo so the next room can offer it again
+      const me = app.lobby?.players.find((p) => p.id === app.you);
+      if (me?.repo) store.set("kaiju.lastRepo", me.repo);
+      const mode = app.lobby?.mode ?? "battle";
+      try {
+        app.conn.send({ t: "leave" });
+      } catch {
+        /* socket already gone */
+      }
+      store.del(`kaiju.token.${room}`);
+      store.del(`kaiju.screenToken.${room}`);
+      document.body.classList.add("leaving");
+      const go = async () => {
+        app.conn.close();
+        if (!o.newRoom) return location.assign(mock ? "/?mock=1" : "/");
+        if (mock) return location.assign(`/r/${Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("")}?mock=1`);
+        try {
+          const r = await fetch(mode === "edu" && role === "screen" ? "/api/room?mode=edu" : "/api/room", { method: "POST" });
+          const j = (await r.json()) as { room: string };
+          location.assign(`/r/${j.room}${role === "screen" ? "?screen=1" : ""}`);
+        } catch {
+          location.assign("/");
+        }
+      };
+      setTimeout(go, 150); // let the leave message flush before closing the socket
+    },
     rename(n) {
       app.name = n;
       store.set("kaiju.name", n);

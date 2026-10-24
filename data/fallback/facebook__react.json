@@ -116,13 +116,13 @@
       "loc": 17626,
       "fanIn": 1,
       "fanOut": 2,
-      "issues": [],
       "maintainers": 26,
       "topMaintainers": [
         "poteto",
         "eps1lon",
         "josephsavona"
-      ]
+      ],
+      "issues": []
     }
   ],
   "heart": "compiler/packages/snap/src/sprout/shared-runtime.ts",
@@ -652,6 +652,8 @@
       "id": "GHSA-2464-fhr4-w9xw",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js: Unauthenticated Remote Code Execution in Image Optimization API when SVG files are used",
       "fixed": "15.5.28",
       "component": "compiler"
@@ -660,22 +662,34 @@
       "id": "GHSA-267c-6grr-h53f",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js has a Middleware / Proxy bypass in App Router applications via segment-prefetch routes",
       "fixed": "15.5.16",
+      "aliases": [
+        "CVE-2026-44575"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-26hh-7cqf-hhc6",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js has a Middleware / Proxy bypass in App Router applications via segment-prefetch routes - Incomplete Fix Follow-Up",
       "fixed": "15.5.18",
+      "aliases": [
+        "CVE-2026-45109"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-2xp9-vwfh-vxw4",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js: Unauthenticated Remote Code Execution in Image Optimization API when AVIF files are used",
       "fixed": "15.5.24",
       "component": "compiler"
@@ -684,64 +698,104 @@
       "id": "GHSA-36qx-fr4f-26g5",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js has a Middleware / Proxy bypass in Pages Router applications using i18n",
       "fixed": "15.5.16",
+      "aliases": [
+        "CVE-2026-44573"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-3g8h-86w9-wvmq",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js's Middleware / Proxy redirects can be cache-poisoned",
       "fixed": "15.5.16",
+      "aliases": [
+        "CVE-2026-44572"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-3x4c-7xq6-9pq8",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js: Unbounded next/image disk cache growth can exhaust storage",
       "fixed": "15.5.14",
+      "aliases": [
+        "CVE-2026-27980"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-4633-3j49-mh5q",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js: Cache confusion of response bodies for requests with bodies containing invalid UTF-8 byte sequences",
       "fixed": "15.5.21",
+      "aliases": [
+        "CVE-2026-64647"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-492v-c6pp-mqqv",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js has a Middleware / Proxy bypass through dynamic route parameter injection",
       "fixed": "15.5.16",
+      "aliases": [
+        "CVE-2026-44574"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-4c39-4ccg-62r3",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js: Unbounded Server Action payload in Edge runtime",
       "fixed": "15.5.21",
+      "aliases": [
+        "CVE-2026-64646"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-4jqv-mc3x-m676",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js has cache poisoning of SSG and ISR pages in self-hosted applications",
       "fixed": "15.5.27",
+      "aliases": [
+        "CVE-2026-94543"
+      ],
       "component": "compiler"
     },
     {
       "id": "GHSA-68g3-v927-f742",
       "pkg": "next",
       "ecosystem": "npm",
+      "version": "15.5.9",
+      "source": "compiler/apps/playground/package.json",
       "summary": "Next.js: Cache confusion of response bodies for requests with bodies",
       "fixed": "15.5.21",
+      "aliases": [
+        "CVE-2026-64648"
+      ],
       "component": "compiler"
     }
   ],

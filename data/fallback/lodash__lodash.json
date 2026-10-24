@@ -424,40 +424,65 @@
       "id": "GHSA-29mw-wpgm-hmr9",
       "pkg": "lodash",
       "ecosystem": "npm",
+      "version": "4.17.20",
+      "source": "package.json",
       "summary": "Regular Expression Denial of Service (ReDoS) in lodash",
       "fixed": "4.17.21",
+      "aliases": [
+        "CVE-2020-28500"
+      ],
       "component": "root"
     },
     {
       "id": "GHSA-35jh-r3h4-6jhm",
       "pkg": "lodash",
       "ecosystem": "npm",
+      "version": "4.17.20",
+      "source": "package.json",
       "summary": "Command Injection in lodash",
       "fixed": "4.17.21",
+      "aliases": [
+        "CVE-2021-23337"
+      ],
       "component": "root"
     },
     {
       "id": "GHSA-f23m-r3pf-42rh",
       "pkg": "lodash",
       "ecosystem": "npm",
+      "version": "4.17.20",
+      "source": "package.json",
       "summary": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
       "fixed": "4.18.0",
+      "aliases": [
+        "CVE-2026-2950"
+      ],
       "component": "root"
     },
     {
       "id": "GHSA-r5fr-rjxr-66jc",
       "pkg": "lodash",
       "ecosystem": "npm",
+      "version": "4.17.20",
+      "source": "package.json",
       "summary": "lodash vulnerable to Code Injection via `_.template` imports key names",
       "fixed": "4.18.0",
+      "aliases": [
+        "CVE-2026-4800"
+      ],
       "component": "root"
     },
     {
       "id": "GHSA-xxjr-mmjv-4gpg",
       "pkg": "lodash",
       "ecosystem": "npm",
+      "version": "4.17.20",
+      "source": "package.json",
       "summary": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
       "fixed": "4.17.23",
+      "aliases": [
+        "CVE-2025-13465"
+      ],
       "component": "root"
     }
   ],

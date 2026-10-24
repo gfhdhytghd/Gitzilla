@@ -13,10 +13,14 @@ export interface AppCtx {
   conn: Conn;
   status: ConnStatus;
   mock: boolean;
+  /** claude-edu LessonEngine from the last edu match (glossary ✓ + quiz scores for the class report). */
+  eduEngine?: unknown;
   /** Re-run the router after a state change. */
   refresh(): void;
   /** Rename and reconnect (hello carries the name). */
   rename(name: string): void;
+  /** Leave the room for good (frees the slot / passes ownership) and go home, or straight into a fresh room. */
+  leave(opts?: { newRoom?: boolean }): void;
 }
 
 export interface Screen {

@@ -570,7 +570,7 @@
     "avgFunctionLength": 9.2,
     "hasTestDir": true
   },
-  "vulns": [],
   "repoIssues": [],
+  "vulns": [],
   "busFactor": 2
 }

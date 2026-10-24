@@ -2,17 +2,17 @@
 import type { GameEvent, PlayerState, SkillKind } from "../../../shared/types.ts";
 import { drawGlow, hash2, TAU } from "./pix.ts";
 import { drawText, textWidth } from "./font.ts";
-import { addShake, burst, drawParticles, emit, every, fx, playerColor, setView, stepParticles, type Particle, type View } from "./fx.ts";
+import { addShake, burst, drawParticles, emit, every, fx, setView, stepParticles, type Particle, type View } from "./fx.ts";
 import { telegraphInfo } from "./hazards.ts";
 import { drawPerkCards } from "./props.ts";
-import { playerGlyphs, playerWeapons, registerPlayerGlyphs, registerPlayerWeapon } from "./bullets.ts";
+import { heroColor, playerGlyphs, playerWeapons, registerHeroColor, registerPlayerGlyphs, registerPlayerWeapon } from "./bullets.ts";
+import { playerColor as heroRingColor } from "../player/index.ts";
 
 type HitExtra = { source?: string; direction?: [number, number]; crit?: boolean; impact?: number; hitStop?: number };
 
 const seen = new WeakSet<object>();
 const players = new Map<string, { x: number; y: number; name: string }>();
 const glyphKeys = new Map<string, string>();
-const IMPACT_COLOR: Record<string, string> = { blaster: "#fff27a", smg: "#9ffcff", shotgun: "#ffd08a", cannon: "#ffb36b", staff: "#f0c8ff", laser: "#c8ffd0", blade: "#ffffff" };
 const numbers = new Map<string, { p: Particle; sum: number; at: number; crit: boolean }>();
 const MAX_NUMBERS = 7;
 const numberTimes: number[] = [];
@@ -35,7 +35,10 @@ export function trackPlayers(ps: PlayerState[]) {
     const toks = p.kit.code?.tokens ?? [];
     const w = p.kit.code?.weapon;
     const key = toks.join("\u0000") + "|" + p.kit.weapon + "|" + (w ? w.projectiles.join("\u0000") + w.impact : "");
-    if (glyphKeys.get(p.id) !== key) registerPlayerWeapon(p.id, p.kit.weapon, w);
+    if (glyphKeys.get(p.id) !== key) {
+      registerPlayerWeapon(p.id, p.kit.weapon, w);
+      try { registerHeroColor(p.id, heroRingColor(p.kit)); } catch { /* fall back to per-id colors */ }
+    }
     if (glyphKeys.get(p.id) !== key) {
       glyphKeys.set(p.id, key);
       if (toks.length) registerPlayerGlyphs(p.id, toks);
@@ -90,16 +93,16 @@ function ingest(e: GameEvent, time: number) {
       }
       if (toPlayer) {
         const atk = x.source && x.source !== "boss" ? playerWeapons.get(x.source) : undefined;
-        if (atk && !fx.pvp && every("imp" + x.source, 0.14, time)) emit({ kind: "glyph", x: e.x + (Math.random() - 0.5) * 10, y: e.y - 6, vy: -22, max: 0.35, text: atk.impact.slice(0, 8), color: IMPACT_COLOR[atk.kind] ?? "#ffe14a" });
+        if (atk && !fx.pvp && every("imp" + x.source, 0.14, time)) emit({ kind: "bold", x: e.x + (Math.random() - 0.5) * 10, y: e.y - 6, vy: -22, max: 0.4, text: atk.impact.slice(0, 8), color: heroColor(x.source!) });
         players.set(e.target, { ...(players.get(e.target) ?? { name: "" }), x: e.x, y: e.y });
         const pvpHit = fx.pvp && !!x.source && x.source !== "boss";
         // PvP: the number wears the attacker's color so the class can see who hit whom (one number per target per 0.2 s)
         if (!pvpHit || (every("pvpnum" + e.target, 0.25, time) && liveNumbers() < MAX_NUMBERS)) {
-          const np = emit({ kind: "glyph", x: e.x, y: e.y - 14, vx: (Math.random() - 0.5) * 20, vy: -30, grav: 40, max: 0.9, text: "-" + Math.round(e.amount) + " ERR", color: pvpHit ? playerColor(x.source!) : "#ff3a5c" });
+          const np = emit({ kind: "glyph", x: e.x, y: e.y - 14, vx: (Math.random() - 0.5) * 20, vy: -30, grav: 40, max: 0.9, text: "-" + Math.round(e.amount) + " ERR", color: pvpHit ? heroColor(x.source!) : "#ff3a5c" });
           if (np) noteNumber();
         }
         emit({ kind: "glitch", x: e.x, y: e.y - 4, max: 0.2, size: 10 });
-        burst(e.x, e.y, 8, { kind: "px", speed: 50, max: 0.4, colors: [pvpHit ? playerColor(x.source!) : "#ff3a5c", "#ffffff"], drag: 3 });
+        burst(e.x, e.y, 8, { kind: "px", speed: 50, max: 0.4, colors: [pvpHit ? heroColor(x.source!) : "#ff3a5c", "#ffffff"], drag: 3 });
         // with up to 30 students on a projector, only heavy PvP hits shake the screen and nobody gets the red vignette
         if (!pvpHit) { addShake(3 + (x.impact ?? 0.3) * 4); fx.danger = Math.max(fx.danger, 0.8); }
         else if ((x.impact ?? 0) >= 0.6) addShake(2);
@@ -116,7 +119,7 @@ function ingest(e: GameEvent, time: number) {
       // impact text of the attacker's code weapon (e.g. "FREE()", "BREAK;", "$1")
       const wpn = x.source ? playerWeapons.get(x.source) : undefined;
       if (wpn && every("imp" + x.source, 0.14, time)) {
-        emit({ kind: "glyph", x: e.x + (Math.random() - 0.5) * 10, y: e.y + (Math.random() - 0.5) * 6, vx: (Math.random() - 0.5) * 30, vy: -22, max: 0.35, text: wpn.impact.slice(0, 8), color: IMPACT_COLOR[wpn.kind] ?? "#ffe14a" });
+        emit({ kind: "bold", x: e.x + (Math.random() - 0.5) * 10, y: e.y + (Math.random() - 0.5) * 6, vx: (Math.random() - 0.5) * 30, vy: -22, max: 0.4, text: wpn.impact.slice(0, 8), color: heroColor(x.source!) });
       }
       const crit = x.crit ?? e.amount > avgHit * 2.4;
       const dir = x.direction ?? [0, -1];

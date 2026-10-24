@@ -67,3 +67,33 @@ export function drawText(ctx: CanvasRenderingContext2D, str: string, x: number, 
   ctx.drawImage(s, Math.round(dx), Math.round(y));
   return s.width;
 }
+
+const boldCache = new Map<string, HTMLCanvasElement>();
+
+/** Bold 4x5 glyphs with a 1px outline (projectile text): the 3x5 glyph's middle column is doubled, so stems get
+ *  heavier while 1px gaps (Y, H, U, V, W, M, N) stay open; 5px advance. */
+export function boldSprite(str: string, color: string, outline = "#07040c"): HTMLCanvasElement {
+  const key = str + "\u0000" + color + "\u0000" + outline;
+  let c = boldCache.get(key);
+  if (c) return c;
+  if (boldCache.size > 400) boldCache.clear();
+  const w = Math.max(1, str.length * 5 - 1);
+  const [cv, ctx] = makeCanvas(w + 2, FONT_H + 2);
+  const paint = (ox: number, oy: number) => {
+    for (let i = 0; i < str.length; i++) {
+      const rows = glyphRows(str[i]);
+      for (let r = 0; r < 5; r++) {
+        const b = rows[r];
+        if (b & 4) ctx.fillRect(1 + ox + i * 5, 1 + oy + r, 1, 1);
+        if (b & 2) ctx.fillRect(1 + ox + i * 5 + 1, 1 + oy + r, 2, 1);
+        if (b & 1) ctx.fillRect(1 + ox + i * 5 + 3, 1 + oy + r, 1, 1);
+      }
+    }
+  };
+  ctx.fillStyle = outline;
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) paint(dx, dy);
+  ctx.fillStyle = color;
+  paint(0, 0);
+  boldCache.set(key, cv);
+  return cv;
+}

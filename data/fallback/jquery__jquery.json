@@ -22,6 +22,12 @@
       "loc": 37470,
       "fanIn": 0,
       "fanOut": 1,
+      "maintainers": 12,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "gibson042"
+      ],
       "issues": [
         {
           "number": 4968,
@@ -49,12 +55,6 @@
             "help wanted"
           ]
         }
-      ],
-      "maintainers": 12,
-      "topMaintainers": [
-        "mgol",
-        "timmywil",
-        "gibson042"
       ]
     },
     {
@@ -63,6 +63,12 @@
       "loc": 5749,
       "fanIn": 6,
       "fanOut": 5,
+      "maintainers": 15,
+      "topMaintainers": [
+        "mgol",
+        "timmywil",
+        "gibson042"
+      ],
       "issues": [
         {
           "number": 4317,
@@ -82,12 +88,6 @@
             "help wanted"
           ]
         }
-      ],
-      "maintainers": 15,
-      "topMaintainers": [
-        "mgol",
-        "timmywil",
-        "gibson042"
       ]
     },
     {
@@ -104,13 +104,13 @@
       "loc": 451,
       "fanIn": 1,
       "fanOut": 3,
-      "issues": [],
       "maintainers": 17,
       "topMaintainers": [
         "mgol",
         "timmywil",
         "markelog"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "src/core",
@@ -118,13 +118,13 @@
       "loc": 422,
       "fanIn": 4,
       "fanOut": 2,
-      "issues": [],
       "maintainers": 19,
       "topMaintainers": [
         "mgol",
         "timmywil",
         "dmethvin"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "root",
@@ -132,13 +132,13 @@
       "loc": 401,
       "fanIn": 0,
       "fanOut": 0,
-      "issues": [],
       "maintainers": 11,
       "topMaintainers": [
         "mgol",
         "timmywil",
         "apoorvdarshan"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "src/selector",
@@ -146,13 +146,13 @@
       "loc": 391,
       "fanIn": 1,
       "fanOut": 2,
-      "issues": [],
       "maintainers": 10,
       "topMaintainers": [
         "jeresig",
         "mgol",
         "brandonaaron"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "src/css",
@@ -160,6 +160,12 @@
       "loc": 387,
       "fanIn": 2,
       "fanOut": 3,
+      "maintainers": 16,
+      "topMaintainers": [
+        "mgol",
+        "gibson042",
+        "markelog"
+      ],
       "issues": [
         {
           "number": 2700,
@@ -171,12 +177,6 @@
             "help wanted"
           ]
         }
-      ],
-      "maintainers": 16,
-      "topMaintainers": [
-        "mgol",
-        "gibson042",
-        "markelog"
       ]
     }
   ],

@@ -1,7 +1,7 @@
 // Shared FX state between drawBoss / drawEvents / drawPostFx + a pooled particle system.
 import type { BossState } from "../../../shared/types.ts";
 import { disc, drawGlow, hslToRgb, rgbToHex, TAU } from "./pix.ts";
-import { textSprite } from "./font.ts";
+import { boldSprite, textSprite } from "./font.ts";
 
 export const fx = {
   now: 0,
@@ -44,7 +44,7 @@ export function setView(ctx: CanvasRenderingContext2D, view?: View) {
 export function addShake(px: number) { fx.shake = Math.min(10, Math.max(fx.shake, px)); }
 
 // ---------- particles ----------
-export type PKind = "px" | "spark" | "smoke" | "glyph" | "ring" | "shard" | "glitch" | "boom";
+export type PKind = "px" | "spark" | "smoke" | "glyph" | "ring" | "shard" | "glitch" | "boom" | "bold";
 
 export interface Particle {
   kind: PKind;
@@ -135,6 +135,14 @@ export function drawParticles(ctx: CanvasRenderingContext2D) {
         const s = textSprite(p.text, t < 0.15 ? "#ffffff" : p.color, "#07040c", Math.min(3, p.size + fx.textScale - 1));
         if (t > 0.75 && Math.floor(p.life * 30) % 2) break; // flicker out
         ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
+        break;
+      }
+      case "bold": {
+        // bold code text spark (weapon impact): pops white for a frame, then the hero's color
+        const s = boldSprite(p.text, t < 0.12 ? "#ffffff" : p.color);
+        ctx.globalAlpha = t > 0.7 ? (1 - t) / 0.3 : 1;
+        ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
+        ctx.globalAlpha = 1;
         break;
       }
       case "shard": {

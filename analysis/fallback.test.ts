@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { listFallbackRepos, offlineProfile } from './index.ts';
 import { componentTopology, fnv1a } from './graph.ts';
@@ -5,6 +6,19 @@ import { safeCodeText } from './dna.ts';
 import { qualitySignalsFromProfile } from './quality.ts';
 
 describe('checked-in famous repository snapshots', () => {
+  it('stores literal pin and source provenance in every raw advisory artifact', () => {
+    for (const slug of listFallbackRepos()) {
+      const data = JSON.parse(readFileSync(new URL('../data/fallback/' + slug.replace('/', '__') + '.json', import.meta.url), 'utf8'));
+      for (const vuln of data.vulns ?? []) {
+        expect(vuln.version).toMatch(/^v?\d[^\s^~*><|,]*$/);
+        expect(vuln.source).toMatch(/(?:package\.json|requirements[^/]*\.txt|pyproject\.toml|Cargo\.(?:lock|toml)|go\.mod|pom\.xml)$/);
+        expect(vuln.source).not.toContain('..');
+        if (vuln.fixed !== undefined) { expect(vuln.fixed).not.toBe(vuln.version); expect(vuln.fixed).toMatch(/^v?\d/); }
+        if (slug === 'pallets/flask') expect(vuln.source).toBe('examples/celery/requirements.txt');
+        if (slug === 'facebook/react') { expect(vuln.source).toBe('compiler/apps/playground/package.json'); expect(vuln.version).toBe('15.5.9'); }
+      }
+    }
+  });
   it('covers all fifteen requested repos with actual, consistent analyzed source profiles', () => {
     const repos = listFallbackRepos();
     expect(repos).toHaveLength(15);

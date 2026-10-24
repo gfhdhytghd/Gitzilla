@@ -49,7 +49,11 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
     boss: demoBossKit("lodash/lodash"),
     heroes: ["facebook/react", "torvalds/linux", "pallets/flask", "rust-lang/rust"].map(demoPlayerKit),
   });
-  const logo = createLogo(isTouchDevice() && innerHeight < 500 ? 4 : innerWidth < 760 ? 4 : innerHeight < 800 ? 8 : 10);
+  // row lockup (188x28 low-res) on wide screens, stacked (140x54) on phones
+  const stack = innerWidth < 700;
+  const logo = stack
+    ? createLogo(Math.max(1, Math.min(3, Math.floor((innerWidth * 0.86) / 140))), "stack")
+    : createLogo(Math.max(2, Math.min(5, Math.floor(Math.min(innerWidth * 0.8, innerHeight < 800 ? 760 : 940) / 188))), "row");
   const tag = h("span.typed");
   let tagIdx = 0;
   let cancelType = () => {};
@@ -133,7 +137,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
         ),
         joinMsg,
         h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
-        h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 classroom: teacher on projector ]"),
+        h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 teaching a class? classroom mode ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),
       h(

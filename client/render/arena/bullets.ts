@@ -2,7 +2,7 @@
 // Player bullets: bright cool/yellow glyphs with trails (read as "ours").
 import type { Bullet } from "../../../shared/types.ts";
 import { disc, drawGlow, makeCanvas } from "./pix.ts";
-import { textSprite } from "./font.ts";
+import { boldSprite, textSprite } from "./font.ts";
 import { emit, every, fx, playerColor } from "./fx.ts";
 
 const PLAYER: Record<string, { glyph: string; color: string; glow: string; scale?: number }> = {
@@ -70,6 +70,12 @@ export const WEAPON_CODE: Record<string, { name: string; projectiles: string[]; 
 
 /** Weapon construct for a player (kit.code.weapon or the per-kind default). */
 export const playerWeapons = new Map<string, { projectiles: string[]; impact: string; kind: string }>();
+
+/** Hero identity colors (claude-player's playerColor(kit) when known, i.e. the hero's ring color). */
+const heroColors = new Map<string, string>();
+export function registerHeroColor(playerId: string, color: string) { heroColors.set(playerId, color); }
+export function heroColor(playerId: string): string { return heroColors.get(playerId) ?? playerColor(playerId); }
+
 export function registerPlayerWeapon(playerId: string, kind: string, w?: { projectiles: string[]; impact: string }) {
   const base = WEAPON_CODE[kind] ?? WEAPON_CODE.blaster;
   const proj = (w?.projectiles ?? []).map((t) => t.trim().toUpperCase()).filter((t) => t && /^[ -~λ✓→←·]+$/.test(t));
@@ -90,7 +96,7 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
   // pass 1: additive glows (lights the floor around projectiles)
   for (const b of bullets) {
     if (b.owner === "boss") drawGlow(ctx, b.x, b.y, b.kind === "bug" ? "#9dff3a" : danger, 9, 0.55);
-    else { const s = PLAYER[b.kind] ?? PLAYER.blaster; drawGlow(ctx, b.x, b.y, fx.pvp ? playerColor(b.owner) : s.glow, b.kind === "cannon" ? 11 : 7, 0.5); }
+    else drawGlow(ctx, b.x, b.y, heroColor(b.owner), b.kind === "cannon" ? 11 : 7, 0.5);
   }
   // infinite-loop rings: the loop's source text circles along each expanding ring of bullets
   drawLoopRings(ctx, bullets, time, danger);
@@ -119,39 +125,40 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
       ctx.drawImage(s, x - (s.width >> 1), y - (s.height >> 1));
     } else {
       const base = PLAYER[b.kind] ?? PLAYER.blaster;
-      // PvP: every hero's shots wear that hero's color so you can tell whose bullet is coming at you
-      const st = fx.pvp ? { ...base, color: playerColor(b.owner), glow: playerColor(b.owner) } : base;
-      // trail
-      ctx.fillStyle = st.glow;
-      const tl = b.kind === "laser" ? 9 : b.kind === "cannon" ? 6 : 4;
-      for (let k = 1; k <= tl; k++) {
-        ctx.globalAlpha = 1 - k / (tl + 1);
-        ctx.fillRect(Math.round(x - ux * k * 1.5), Math.round(y - uy * k * 1.5), 1, 1);
-      }
-      ctx.globalAlpha = 1;
+      // every hero's shots are bold code glyphs in that hero's identity color (same as their ring)
+      const col = heroColor(b.owner);
+      const st = { ...base, color: col, glow: col };
       const wpn = playerWeapons.get(b.owner);
       const projs = wpn?.projectiles ?? WEAPON_CODE[b.kind]?.projectiles ?? ["*"];
       if (b.kind === "laser") {
-        // the beam is the regex itself, crawling along the shot
+        // the beam is the regex itself: bold letters crawling behind a white head
         const text = projs[b.id % projs.length].slice(0, 6);
         ctx.fillStyle = "#ffffff";
         for (let k = -2; k <= 2; k++) ctx.fillRect(Math.round(x + ux * k), Math.round(y + uy * k), 1, 1);
-        for (let i = 0; i < text.length; i++) {
-          const g = textSprite(text[i], i === 0 ? "#ffffff" : st.color, "#0a0618");
-          ctx.drawImage(g, Math.round(x - ux * (i * 5 + 4)) - 2, Math.round(y - uy * (i * 5 + 4)) - 3);
+        // last char at the head so the regex reads left-to-right as it flies
+        const n = text.length;
+        for (let i = 0; i < n; i++) {
+          if (text[i] === " ") continue;
+          const back = n - 1 - i;
+          const g = boldSprite(text[i], back === 0 ? "#ffffff" : col);
+          ctx.globalAlpha = 1 - back * 0.1;
+          ctx.drawImage(g, Math.round(x - ux * (back * 6 + 5)) - 3, Math.round(y - uy * (back * 6 + 5)) - 3);
         }
+        ctx.globalAlpha = 1;
         continue;
       }
       if (b.kind === "blade") {
-        // crescent slash of // comment marks
+        // a crescent slash in the hero's color, with the comment marks riding it
         const px = -uy, py = ux;
         for (let k = -6; k <= 6; k++) {
           const bend = (1 - (k * k) / 36) * 3;
-          ctx.fillStyle = Math.abs(k) < 4 ? "#ffffff" : st.glow;
+          ctx.fillStyle = Math.abs(k) < 3 ? "#ffffff" : col;
           ctx.fillRect(Math.round(x + px * k + ux * bend), Math.round(y + py * k + uy * bend), 1, 1);
+          ctx.fillStyle = "#07040c";
+          ctx.fillRect(Math.round(x + px * k + ux * (bend - 1)), Math.round(y + py * k + uy * (bend - 1)), 1, 1);
         }
-        const g = textSprite(projs[b.id % projs.length].slice(0, 3), st.color, "#0a0618");
-        for (const k of [-4, 4]) ctx.drawImage(g, Math.round(x + px * k + ux * 1) - (g.width >> 1), Math.round(y + py * k + uy * 1) - 3);
+        const g = boldSprite(projs[b.id % projs.length].slice(0, 3), col);
+        ctx.drawImage(g, Math.round(x + ux * 2) - (g.width >> 1), Math.round(y + uy * 2) - 3);
         continue;
       }
       const own = playerGlyphs.get(b.owner);
@@ -159,16 +166,26 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
       if (wpn || !own) glyph = projs[b.id % projs.length];
       else glyph = own[b.id % own.length];
       glyph = glyph.slice(0, b.kind === "cannon" ? 6 : 5);
-      if (b.kind === "staff") { ctx.fillStyle = "#07040c"; disc(ctx, x, y, 4.5); ctx.fillStyle = "#5a2a9a"; disc(ctx, x, y, 3.5); ctx.fillStyle = st.glow; disc(ctx, x - 0.5, y - 0.5, 2.5); }
-      if (b.kind === "cannon") {
-        const s2 = bossPlate(glyph, 3, "#8a3a10", fx.pvp ? st.glow : "#ffb36b");
-        ctx.drawImage(s2, x - (s2.width >> 1), y - (s2.height >> 1));
+      const g = boldSprite(glyph, col);
+      // short glyph trail: fading echoes of the same text behind short glyphs; long words get a streak instead
+      if (glyph.length <= 3) {
+        const gap = Math.max(7, g.width + 1);
+        for (let k = 2; k >= 1; k--) {
+          ctx.globalAlpha = k === 1 ? 0.38 : 0.16;
+          ctx.drawImage(g, Math.round(x - ux * gap * k) - (g.width >> 1), Math.round(y - uy * gap * k) - (g.height >> 1));
+        }
       } else {
-        const s = textSprite(glyph, b.kind === "staff" ? "#ffffff" : st.color, "#0a0618", st.scale ?? 1);
-        ctx.drawImage(s, x - (s.width >> 1), y - (s.height >> 1));
+        ctx.fillStyle = col;
+        const back = g.width / 2 + 1;
+        for (let k = 0; k < 8; k++) {
+          ctx.globalAlpha = 0.5 * (1 - k / 8);
+          ctx.fillRect(Math.round(x - ux * (back + k * 1.5)), Math.round(y - uy * (back + k * 1.5)), 1, 1);
+        }
       }
-      if (b.kind === "cannon" && every("cs" + b.id, 0.05, time)) emit({ kind: "smoke", x: b.x - ux * 4, y: b.y - uy * 4, vx: -ux * 6, vy: -uy * 6 - 4, max: 0.5, size: 2, color: "#8a7a70", color2: "#3a3438" });
-      if (b.kind === "staff" && every("ss" + b.id, 0.06, time)) emit({ kind: "px", x: b.x + (Math.random() - 0.5) * 4, y: b.y + (Math.random() - 0.5) * 4, vy: -8, max: 0.4, color: "#ffffff", color2: st.glow });
+      ctx.globalAlpha = 1;
+      if (b.kind === "staff") { ctx.fillStyle = "#07040c"; disc(ctx, x, y, 5); ctx.fillStyle = "#1a1030"; disc(ctx, x, y, 4); }
+      ctx.drawImage(g, x - (g.width >> 1), y - (g.height >> 1));
+      if (b.kind === "cannon" && every("cs" + b.id, 0.05, time)) emit({ kind: "smoke", x: b.x - ux * 6, y: b.y - uy * 6, vx: -ux * 6, vy: -uy * 6 - 4, max: 0.5, size: 2, color: "#8a7a70", color2: "#3a3438" });
     }
   }
 }

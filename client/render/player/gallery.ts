@@ -396,6 +396,36 @@ function benchScene(n: number) {
   requestAnimationFrame(loop);
 }
 
+// ---------------------------------------------------------------- ?weapons=1 : every weapon x aim angles (1x and edu 2x)
+function weaponsScene() {
+  document.querySelectorAll("h2, #portraits, #terminals").forEach((e) => ((e as HTMLElement).style.display = "none"));
+  const kinds: [WeaponKind, number][] = [["blade", 7], ["blaster", 1], ["smg", 2], ["shotgun", 3], ["cannon", 4], ["staff", 5], ["laser", 6]];
+  const angles = [0, -0.6, 0.6, Math.PI, Math.PI - 0.6];
+  const CWw = 56, CHw = 46;
+  stage.width = (angles.length + 2) * CWw * SCALE; stage.height = kinds.length * CHw * SCALE;
+  const loop = () => {
+    const t = performance.now() / 1000;
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "#17121f"; ctx.fillRect(0, 0, stage.width, stage.height);
+    kinds.forEach(([kind, ki], row) => {
+      const all = [...angles.map((a) => ({ a, s: 1 })), { a: 0, s: 2 }, { a: Math.PI, s: 2 }];
+      all.forEach(({ a, s }, col) => {
+        const kit = { ...kitFor(24 + ((ki + row) % 8)), weapon: kind };
+        const p: PlayerState = {
+          id: `w${row}_${col}`, name: kind, x: col * CWw + (s > 1 ? 0 : 0) + CWw / 2 + (col >= angles.length ? (col - angles.length) * 50 : 0), y: row * CHw + 26,
+          vx: 0, vy: 0, facing: [Math.cos(a), Math.sin(a)], hp: 7, armor: 5, energy: 200, alive: true, downedFor: 0, reviveProgress: 0,
+          skillCd: 5, dashCd: 0, invuln: 0, buffs: [], kit, perks: [], stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+        };
+        if (col >= angles.length) p.x = angles.length * CWw + (col - angles.length) * 60 + 30;
+        drawPlayer(ctx, p, t, false, s > 1 ? { scale: 2 } : undefined);
+      });
+    });
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
 function benchSync(n: number) {
   // synchronous: 200 frames of N edu heroes, wall-clock timed (works in headless without rAF)
   const ps: PlayerState[] = Array.from({ length: n }, (_, j) => ({
@@ -415,7 +445,8 @@ function benchSync(n: number) {
   document.title = `BENCHSYNC ${n}: ${ms.toFixed(2)}ms`;
 }
 
-if (params.get("benchsync")) benchSync(Number(params.get("benchsync")));
+if (params.get("weapons")) weaponsScene();
+else if (params.get("benchsync")) benchSync(Number(params.get("benchsync")));
 else if (params.get("bench")) benchScene(Number(params.get("bench")));
 else if (params.get("compare")) compareScene();
 else if (params.get("arena")) arenaScene();

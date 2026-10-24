@@ -1,3 +1,7 @@
+DONE (osv fix)
+
+OSV credibility fix complete: concrete pins only, exact-version API match plus affected-version advisory evidence, version/source provenance, branch-correct published fixes, and advisory alias consolidation. All 15 famous snapshots regenerated with authenticated public-only precompute. Owned tests 120/120 PASS; workspace typecheck PASS; workspace suite 466 PASS / 7 skipped. No commits/shared edits/live-server actions.
+
 DONE (edu pvp)
 
 Edu PvP analysis/Hall summary: actual quality measurements, real maintenance/adoption metadata and public advisory lookups are implemented; all 15 snapshots are refreshed. Hall excludes edu/null-boss results. Focused tests 106/106 PASS; workspace typecheck PASS; workspace tests 448 PASS / 7 skipped. The two optional DNA field declarations remain a coordinator contract request; typed producer/helper and current sim consumption work.
@@ -406,3 +410,24 @@ const signals = qualitySignalsFromProfile(profile);
 - Only coordination item: coordinator-owned optional CodeDNA.avgFunctionLength/hasTestDir declarations requested above; typed analysis production/helper and sim structural consumption already work and typecheck. All codex-repo owner implementation work is complete.
 
 DONE (edu pvp)
+
+## OSV fix contract request / handoff
+
+Coordinator: please add optional `version?: string; source?: string; aliases?: string[]` to `KnownVuln` in shared/types.ts. Analysis now emits typed `VerifiedVuln extends KnownVuln` with required version (the literal concrete version checked), source (the manifest/lockfile path), and optional aliases (duplicate advisory IDs merged). `fixed` remains the published fixed endpoint of the affected interval containing that version, omitted when no supported fix can be established. No shared edits by codex-repo. UI should label these as pinned-dependency advisory matches, show version and source, and avoid describing nested example dependencies as runtime vulnerabilities of the parent library.
+
+## OSV credibility fix delivered
+
+- Exact-version OSV batch queries are retained; unpinned/range-only declarations never become query inputs. Added regression coverage for Flask's `Werkzeug>=3.1`, Python wildcards/compound constraints, npm carets/tilde/aliases/tags, Cargo implicit ranges, commented TOML pins, and Go exclude/replace entries. Go parsing now reads require entries only.
+- A batch ID alone is insufficient: details must be present, ID/package/ecosystem must match, advisory must not be withdrawn, and the checked version must be explicitly listed or inside a conservatively comparable SEMVER/ECOSYSTEM affected interval. Unsupported qualifiers/types and failed detail fetches suppress records. No guessed metadata-only records.
+- Typed `VerifiedVuln` output records `version` and `source`. `fixed` is the published fixed event of the interval containing that version; other branches/packages and last_affected/limit values are never shown as fixes. Advisory aliases are consolidated per package/version/organ and retained for traceability; display cap remains 12.
+- Pre-fix disk caches with missing version/source trigger refresh; offline/stale recovery strips their unverified advisory claims. This prevents the old projector data from reappearing on a network failure.
+- Regenerated all 15 snapshots using `GITHUB_TOKEN` captured from the authorized gh CLI directly into process environment; token never printed/persisted, never sent to OSV, and authenticated archives required verified public metadata. All 15 retain nonzero commit counts. Final raw advisory artifacts total **49 verified records** (React 12, Flask 12, golang/example 12, Gin 6, Lodash 5, Redis 2; seven checked profiles empty, two with no concrete declarations leave vulns absent). Every retained record has checked version, manifest source and published fixed endpoint.
+- **Credibility finding:** the three 12s are the display cap, not inferred matches from root ranges. Flask's actual pins are `flask==2.3.2`, `jinja2==3.1.2`, and `werkzeug==2.3.3` in **examples/celery/requirements.txt**. Root `Werkzeug>=3.1` is ignored. React's retained matches are **next@15.5.9** in **compiler/apps/playground/package.json**, not a runtime dependency claim about React itself. golang/example has actual versioned requirements in root and ragserver Go modules. Do not erase genuine pinned example matches just to force a smaller count; UI should display source + version and call them pinned-dependency advisories.
+- Live public API proof (source never executed): lodash **4.17.15 → six verified advisories with published fixes**, lodash **4.18.1 → []**. Tests cover patched/before-introduced versions, absent/mismatched/withdrawn details, package isolation, exact batch alignment, failure handling, aliases, inclusive/exclusive interval endings and no-fix behavior.
+- Validation: owned `analysis/` + `hall/` **120/120 PASS**; owned strict TypeScript PASS; workspace `npm run typecheck` PASS; workspace `npm test` **466 PASS / 7 skipped**. `git diff --check` PASS. No port 5173/5175 actions or deployment were needed.
+
+### Handoff to codex-gemini (OSV fix)
+
+**data/fallback changed again**: all 15 were regenerated; 13 have byte changes. Advisory records now carry version/source/aliases and conservative matching/fixes. Any design cache fingerprinting the whole profile needs its usual refresh; source DNA/quality/real metadata remain present. No design files edited.
+
+DONE (osv fix)

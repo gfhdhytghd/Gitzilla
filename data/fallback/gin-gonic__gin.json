@@ -526,54 +526,86 @@
     "hasTestDir": false
   },
   "repoIssues": [],
-  "busFactor": 4,
   "vulns": [
     {
       "id": "GO-2026-6603",
       "pkg": "golang.org/x/net",
       "ecosystem": "Go",
+      "version": "v0.57.0",
+      "source": "go.mod",
       "summary": "HTTP/2 server memory exhaustion due to Trailer headers in net/http",
       "fixed": "0.60.0",
+      "aliases": [
+        "BIT-golang-2026-78659",
+        "CVE-2026-78659"
+      ],
       "component": "root"
     },
     {
       "id": "GO-2026-6610",
       "pkg": "golang.org/x/net",
       "ecosystem": "Go",
+      "version": "v0.57.0",
+      "source": "go.mod",
       "summary": "HTTP/2 transport accepts malformed framing-related headers in net/http",
       "fixed": "0.60.0",
+      "aliases": [
+        "BIT-golang-2026-78660",
+        "CVE-2026-78660"
+      ],
       "component": "root"
     },
     {
       "id": "GO-2026-6611",
       "pkg": "golang.org/x/net",
       "ecosystem": "Go",
+      "version": "v0.57.0",
+      "source": "go.mod",
       "summary": "Excessive CPU consumption from repeated initial window changes in net/http",
       "fixed": "0.60.0",
+      "aliases": [
+        "BIT-golang-2026-78669",
+        "CVE-2026-78669"
+      ],
       "component": "root"
     },
     {
       "id": "GO-2026-6612",
       "pkg": "golang.org/x/net",
       "ecosystem": "Go",
+      "version": "v0.57.0",
+      "source": "go.mod",
       "summary": "Double flow control refund on HTTP/2 server streams in net/http",
       "fixed": "0.60.0",
+      "aliases": [
+        "BIT-golang-2026-78663",
+        "CVE-2026-78663"
+      ],
       "component": "root"
     },
     {
       "id": "GO-2026-6617",
       "pkg": "golang.org/x/net",
       "ecosystem": "Go",
+      "version": "v0.57.0",
+      "source": "go.mod",
       "summary": "HTTP/2 server crash due to HPACK encoder race in net/http",
       "fixed": "0.60.0",
+      "aliases": [
+        "BIT-golang-2026-97032",
+        "CVE-2026-97032"
+      ],
       "component": "root"
     },
     {
       "id": "GO-2026-5932",
       "pkg": "golang.org/x/crypto",
       "ecosystem": "Go",
+      "version": "v0.56.0",
+      "source": "go.mod",
       "summary": "The golang.org/x/crypto/openpgp package is unmaintained, unsafe by design, and has known security issues",
       "component": "root"
     }
-  ]
+  ],
+  "busFactor": 4
 }

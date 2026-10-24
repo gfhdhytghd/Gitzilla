@@ -4,14 +4,16 @@ import type { BossKit, LobbyPlayer, LobbyState, PlayerKit } from "../../shared/t
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
+import { createGenesisMount } from "./genesisMount";
 import { loadMotionProfile, saveMotionProfile } from "../input";
 import type { MotionProfile } from "../../shared/types";
 import { createLogo } from "./logo";
+import { markCanvas } from "./mark";
 import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
 import { createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
-import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo } from "./util";
+import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo, store } from "./util";
 
 const WEAPON_ICON: Record<string, string> = { blaster: "⌐╦", smg: "≡╤", shotgun: "═╦═", cannon: "▄█▀", staff: "─o", laser: "═══►", blade: "─┼══" };
 const SKILL_DESC: Record<string, string> = {
@@ -304,6 +306,14 @@ export function createLobby(app: AppCtx): Screen {
     },
   }, "edit");
 
+  // claude-genesis: your repo visibly compiling into your hero (live while analyzing, tap to replay)
+  const heroGenesis = createGenesisMount("hero", { compact: isPhone() });
+  // claude-genesis: boss compile in the boss panel; the projector also gets it full screen (the money shot)
+  const bossGenesis = createGenesisMount("boss", { compact: isPhone() });
+  let bossFull: ReturnType<typeof createGenesisMount> | null = null;
+  let bossFullEl: HTMLElement | null = null;
+  let bossFullCloseAt = 0;
+
   // repo picker; collapses to one line once your hero is summoned (tap "change" to reopen)
   let changingRepo = false;
   const summonBtn = h("button.btn.btn-primary", { "data-testid": "player-repo-submit", onclick: submitRepo }, "▶ summon hero");
@@ -336,6 +346,8 @@ export function createLobby(app: AppCtx): Screen {
     pickerBox,
     youStatus,
     ...(isPhone() ? [createControlsCard()] : []),
+    heroGenesis.host,
+    h("div.genesis-hint", null, "▶ watch your repo compile into your hero · tap to replay"),
     youCard,
   );
 
@@ -389,9 +401,10 @@ export function createLobby(app: AppCtx): Screen {
   const bossInfo = h("div.boss-info");
   const bossStatus = h("div.boss-status");
   let startArmedAt = 0;
+  const startArmed = () => startArmedAt > 0 && performance.now() - startArmedAt < 4000;
   const tryStart = () => {
     const cloning = app.lobby?.players.filter((p) => p.status === "analyzing") ?? [];
-    if (cloning.length && performance.now() - startArmedAt > 4000) {
+    if (cloning.length && !startArmed()) {
       startArmedAt = performance.now();
       startHint.textContent = `${cloning.map((p) => p.name).join(", ")} still cloning… press again to start anyway`;
       startHint.classList.add("warn");
@@ -452,7 +465,40 @@ export function createLobby(app: AppCtx): Screen {
   // game mode: owner toggles boss raid ⇄ classroom PvP (lobby only); others see a badge
   const modeBtn = (m: "battle" | "edu", label: string) =>
     h("button.mode-btn", { "data-testid": `mode-${m}`, "data-mode": m, onclick: () => app.conn.send({ t: "setMode", mode: m }) }, label);
-  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode" }, modeBtn("battle", "⚔ boss raid"), modeBtn("edu", "🎓 classroom"));
+  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: PvP where your code quality sets your stats" }, modeBtn("battle", "⚔ boss raid"), modeBtn("edu", "🎓 classroom"));
+  // ⏏ leave room (owner: one extra tap that says who inherits the room); projector: end class / new room
+  let leaveArmedAt = 0;
+  const leaveMsg = h("span.leave-msg", { role: "status" });
+  const leaveBtn = h("button.btn.btn-tiny.btn-leave", {
+    "data-testid": "leave-room",
+    onclick: () => {
+      const lobby = app.lobby;
+      const others = lobby?.players.filter((p) => p.id !== app.you && !p.bot) ?? [];
+      const owner = isOwner(app);
+      const armed = leaveArmedAt > 0 && performance.now() - leaveArmedAt < 4000;
+      if (owner && !screen && others.length && !armed) {
+        leaveArmedAt = performance.now();
+        leaveMsg.textContent = `you own this room — ownership passes to ${others[0].name}. tap again to leave`;
+        leaveBtn.textContent = "⏏ confirm leave";
+        setTimeout(() => {
+          if (leaveArmedAt > 0 && performance.now() - leaveArmedAt >= 4000) {
+            leaveArmedAt = 0;
+            leaveMsg.textContent = "";
+            leaveBtn.textContent = screen ? "⏏ end class" : "⏏ leave room";
+          }
+        }, 4100);
+        return;
+      }
+      app.leave();
+    },
+  }, screen ? "⏏ end class" : "⏏ leave room");
+  const leaveCtl = h(
+    "div.leave-ctl",
+    null,
+    leaveBtn,
+    screen ? h("button.btn.btn-tiny", { "data-testid": "new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
+    leaveMsg,
+  );
   const header = h(
     "header.lobby-head",
     null,
@@ -460,11 +506,12 @@ export function createLobby(app: AppCtx): Screen {
     ownerBadge,
     modeCtl,
     screen ? null : copyBtn,
+    leaveCtl,
   );
 
   let body: HTMLElement;
   if (screen) {
-    const logo = createLogo(4);
+    const logo = createLogo(3, "stack");
     body = h(
       "div.lobby-big",
       null,
@@ -475,6 +522,7 @@ export function createLobby(app: AppCtx): Screen {
         h("img.qr", { src: `/api/qr?text=${encodeURIComponent(url)}`, alt: "join QR code" }),
         h("div.qr-url", null, url.replace(/^https?:\/\//, "")),
         h("div.qr-code-big", null, app.room),
+        h("div.qr-corner-mark", null, markCanvas(2)),
         h("div.qr-help", null, "scan with your phone (hold it upright)"),
         h("div.qr-help.yellow", null, "★ the first phone to join is the host"),
       ),
@@ -494,7 +542,11 @@ export function createLobby(app: AppCtx): Screen {
   fallbacks(app.mock).then((list) => {
     const mk = (target: HTMLInputElement, submit: () => void, cls: string) => (slug: string) =>
       h(`button.chip${cls}`, { onclick: () => { target.value = slug; submit(); } }, slug);
-    youChips.replaceChildren(...list.slice(0, 10).map(mk(repoInput, submitRepo, "")));
+    const last = store.get("kaiju.lastRepo");
+    youChips.replaceChildren(
+      ...(last ? [h("button.chip.chip-last", { "data-testid": "reuse-repo", onclick: () => ((repoInput.value = last), submitRepo()) }, `↻ ${last} again`)] : []),
+      ...list.slice(0, 10).filter((x) => x !== last).map(mk(repoInput, submitRepo, "")),
+    );
     bossChips.replaceChildren(...list.slice(0, 10).map(mk(bossInput, submitBoss, ".chip-red")));
   });
 
@@ -583,6 +635,8 @@ export function createLobby(app: AppCtx): Screen {
   function renderYou(lobby: LobbyState) {
     nameEl.textContent = app.name;
     const me = lobby.players.find((p) => p.id === app.you);
+    const live = !!me && heroGenesis.sync({ repo: me.repo, status: me.status, progress: me.progress, genesis: me.genesis, kit: me.kit }, lobby.mode);
+    youPanel.classList.toggle("has-genesis", live);
     const collapse = !!me && me.status === "ready" && !changingRepo;
     pickerBox.hidden = collapse;
     pickerDone.hidden = !collapse;
@@ -670,7 +724,7 @@ export function createLobby(app: AppCtx): Screen {
         // arriving) swap the art in place so the boss is never left looking like a dark silhouette
         const firstReveal = revealedRepo !== b.repo;
         revealedRepo = b.repo;
-        bossStage.replaceChildren(h(`div.boss-frame${firstReveal ? ".revealing" : ".redesign"}`, null, sil, full, h("div.boss-flash")));
+        if (!bossStage.contains(bossGenesis.host)) bossStage.replaceChildren(h(`div.boss-frame${firstReveal ? ".revealing" : ".redesign"}`, null, sil, full, h("div.boss-flash")));
         if (firstReveal) bossRevealAt = performance.now();
         const nameEl = h("div.boss-name");
         bossInfo.replaceChildren(
@@ -703,21 +757,24 @@ export function createLobby(app: AppCtx): Screen {
       } else if (b.status === "analyzing") {
         const c = noiseCanvas(48);
         noiseEls.add({ c, hue: "#ff3355" });
-        bossStage.replaceChildren(h("div.boss-frame.analyzing", null, c, h("pre.clone-log.red", { "data-clone": "__boss" })));
+        if (!bossStage.contains(bossGenesis.host)) bossStage.replaceChildren(h("div.boss-frame.analyzing", null, c, h("pre.clone-log.red", { "data-clone": "__boss" })));
         bossInfo.replaceChildren(h("div.boss-name.dim", null, `??? (${esc(b.repo ?? "")})`));
       } else if (b.status === "error") {
+        bossGenesis.dispose();
         bossStage.replaceChildren(h("div.boss-frame.err", null, h("div.portrait-err", null, "✗")));
         bossInfo.replaceChildren(h("div.pcard-err", null, `fatal: ${b.error ?? "could not summon"}`));
       } else {
+        bossGenesis.dispose();
         bossStage.replaceChildren(h("div.boss-frame.empty", null, h("div.boss-q", null, "?")));
         bossInfo.replaceChildren(h("div.dim", null, "the arena is quiet… for now"));
       }
     }
+    syncBossGenesis(lobby);
     const readyPlayers = lobby.players.filter((p) => p.status === "ready").length;
     const canStart = owner && readyPlayers >= 1 && b.status === "ready";
     startBtn.style.display = owner ? "" : "none";
     startBtn.disabled = !canStart;
-    if (performance.now() - startArmedAt < 4000) return; // keep the "still cloning… press again" warning visible
+    if (startArmed()) return; // keep the "still cloning… press again" warning visible
     startHint.classList.remove("warn");
     startHint.textContent = owner
       ? !readyPlayers
@@ -730,6 +787,34 @@ export function createLobby(app: AppCtx): Screen {
       : `waiting for ${lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "owner"} to start…`;
   }
 
+  function syncBossGenesis(lobby: LobbyState) {
+    const b = lobby.boss;
+    const src = { repo: b.repo, status: b.status, progress: b.progress, genesis: b.genesis, kit: b.kit };
+    if (!screen) {
+      // panel: the cinematic replaces the static silhouette while compiling and stays as the live idle boss after
+      if ((b.status === "analyzing" || b.status === "ready") && !bossStage.contains(bossGenesis.host)) bossStage.replaceChildren(bossGenesis.host);
+      if (!bossGenesis.sync(src, lobby.mode) && bossStage.contains(bossGenesis.host)) bossSig = ""; // fall back to the static reveal
+      return;
+    }
+    // projector: full-screen compile while the boss is analyzed, held a few seconds after the reveal, then the panel
+    if (b.status === "analyzing" && !bossFull) {
+      bossFull = createGenesisMount("boss", { className: "full", onDone: () => (bossFullCloseAt = performance.now() + 5000) });
+      bossFullEl = h("div.genesis-full", { "data-testid": "boss-genesis-full" }, bossFull.host, h("button.btn.btn-tiny.gf-close", { onclick: () => closeBossFull() }, "✕ close"));
+      el.append(bossFullEl);
+      bossFullCloseAt = 0;
+    }
+    if (bossFull) {
+      if (b.status !== "analyzing" && b.status !== "ready") closeBossFull();
+      else bossFull.sync(src, lobby.mode);
+    }
+  }
+  function closeBossFull() {
+    bossFull?.dispose();
+    bossFull = null;
+    bossFullEl?.remove();
+    bossFullEl = null;
+  }
+
   function renderClassroom(lobby: LobbyState, owner: boolean) {
     eduInfo.hidden = false;
     for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = true;
@@ -739,7 +824,7 @@ export function createLobby(app: AppCtx): Screen {
     startBtn.style.display = owner ? "" : "none";
     startBtn.disabled = !(owner && ready >= 2);
     startBtn.textContent = "$ make brawl";
-    if (performance.now() - startArmedAt < 4000) return;
+    if (startArmed()) return;
     startHint.classList.remove("warn");
     startHint.textContent = owner
       ? ready < 2 ? `need ≥2 ready students (${ready} now) — or add AI teammates` : `${ready} students ready. go.`
@@ -824,6 +909,7 @@ export function createLobby(app: AppCtx): Screen {
       const shown = paths.length ? [paths[k % paths.length], paths[(k + 1) % paths.length]].map((x) => `  ${x}`) : [];
       pre.textContent = [...lines, ...shown].join("\n") + "\n" + asciiBar(frac, 14) + ` ${Math.floor(frac * 100)}%`;
     });
+    if (bossFull && bossFullCloseAt && performance.now() > bossFullCloseAt) closeBossFull();
     if (bossRevealAt && performance.now() - bossRevealAt > 1500) {
       bossStage.querySelector(".boss-frame")?.classList.remove("revealing");
       bossRevealAt = 0;
@@ -837,6 +923,9 @@ export function createLobby(app: AppCtx): Screen {
     update: render,
     destroy() {
       clearInterval(iv);
+      heroGenesis.dispose();
+      bossGenesis.dispose();
+      closeBossFull();
       backdrop.destroy();
       el.remove();
     },
