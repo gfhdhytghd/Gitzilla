@@ -420,6 +420,7 @@ export type ClientMsg =
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
   | { t: "setMode"; mode: GameMode }        // owner only, lobby only
+  | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
   | { t: "rematch" };                       // owner only
