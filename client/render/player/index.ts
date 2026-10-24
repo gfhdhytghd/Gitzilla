@@ -4,7 +4,7 @@ import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../sha
 import { lookFor, type HeroLook } from "./look.ts";
 import { heroFrame, heroRim, tinted, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle } from "./weapons.ts";
-import { drawText } from "./font.ts";
+import { drawText, glyphBits } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
 
 export { lookFor } from "./look.ts";
@@ -34,11 +34,11 @@ interface Mem {
   phase: number;
   duckX: number; duckY: number; duckFlip: number;
   kbT: number; kbX: number; kbY: number; kbAmp: number; crit: boolean;
+  perks: Set<string>; perkT: Record<string, number>;
 }
 
 const mems = new Map<string, Mem>();
-/** Last known position of the local player (for proximity-revealed teammate tags). */
-let youPos: { x: number; y: number; t: number } | null = null;
+
 const externalShots = new Map<string, number>();
 const externalHits = new Map<string, { dir: [number, number]; impact: number; crit: boolean }>();
 
@@ -82,6 +82,7 @@ function memFor(p: PlayerState, t: number): Mem {
       ghosts: [], parts: [], hist: [], forkX: p.x, forkY: p.y, rollX: p.x, rollY: p.y,
       lastGhost: 0, lastDust: 0, lastFlame: 0, lastPlus: 0, swingDir: 1, duckX: p.x - 12, duckY: p.y - 10, duckFlip: 1,
       kbT: -99, kbX: 0, kbY: 0, kbAmp: 0, crit: false,
+      perks: new Set(p.perks ?? []), perkT: {},
       phase: (hashStr(p.id) % 1000) / 1000,
     };
     if (mems.size > 48) for (const [k, v] of mems) if (t - v.t > 5) mems.delete(k);
@@ -170,12 +171,26 @@ function observe(p: PlayerState, m: Mem, L: HeroLook, t: number, dt: number) {
       const col = SKILL_COLOR[b] ?? L.c.accent;
       if (b === "fork") { m.forkX = p.x; m.forkY = p.y; }
       if (b === "rollback") { m.rollX = m.x; m.rollY = m.y; }
-      spawn(m, 16, (i) => {
+      if (b === p.kit.skill) spawn(m, 16, (i) => {
         const a = (i / 16) * Math.PI * 2;
         return { x: p.x, y: p.y, vx: Math.cos(a) * 80, vy: Math.sin(a) * 50, g: 0, life: 0.5, max: 0.5, col, sz: 1, add: true, front: true };
       });
     }
   }
+  // perks picked at code review
+  for (const k of p.perks ?? []) {
+    if (!m.perks.has(k)) {
+      m.perks.add(k);
+      m.perkT[k] = t;
+      const st = perkStyle(k);
+      spawn(m, 14, (i) => {
+        const a = (i / 14) * Math.PI * 2;
+        return { x: p.x, y: p.y, vx: Math.cos(a) * 60, vy: Math.sin(a) * 40 - 20, g: 30, life: 0.7, max: 0.7, col: st.color, sz: i % 3 ? 1 : 2, add: true, front: true };
+      });
+    }
+  }
+  if ((p.perks?.length ?? 0) < m.perks.size) m.perks = new Set(p.perks ?? []);
+
   // history for rollback ghost
   m.hist.push({ t, x: p.x, y: p.y });
   while (m.hist.length && t - m.hist[0].t > 2.2) m.hist.shift();
@@ -375,7 +390,6 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   const L = lookFor(p.kit);
   const m = memFor(p, t);
   const dt = Math.max(0, Math.min(0.1, t - m.t));
-  if (isYou) youPos = { x: p.x, y: p.y, t };
   observe(p, m, L, t, dt);
 
   const x = Math.round(p.x), y = Math.round(p.y);
@@ -490,6 +504,9 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     }
   }
 
+  // --- perk badges orbiting the waist (back half drawn behind the hero)
+  if (p.alive && p.perks?.length) drawPerkBadges(ctx, p.perks, x, y, t, m.phase, false);
+
   // --- downed
   if (!p.alive) {
     drawDowned(ctx, L, p, m, t, x, y, feet, flip, fr);
@@ -576,6 +593,8 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     drawDuck(ctx, m.duckX, m.duckY, m.duckFlip, t, m.phase);
   }
 
+  if (p.perks?.length) drawPerkBadges(ctx, p.perks, x, y, t, m.phase, true);
+
   // --- front auras
   if (p.buffs.includes("firewall")) drawFirewall(ctx, x, y, t, t - (m.skillT.firewall ?? -9));
   if (overclock) {
@@ -590,13 +609,28 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   updateDrawParticles(ctx, m, dt, true);
 
   // --- skill cast callout & revive pop
+  // Signature move: the repo's real identifier, e.g. "$ parse_args()" (own skill only, so teammates
+  // standing in someone else's firewall don't spam callouts).
   for (const b of p.buffs) {
     const age = t - (m.skillT[b] ?? -9);
-    if (age < 1.1 && b in SKILL_TEXT) {
-      const k = age / 1.1;
+    if (age < 1.3 && b === p.kit.skill) {
+      const k = age / 1.3;
+      const sig = signatureLabel(p.kit.code?.signature);
+      const text = sig ? "$ " + sig : SKILL_TEXT[b] ?? "$ " + b;
       ctx.save();
       ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2;
-      drawText(ctx, SKILL_TEXT[b], x, y - 40 - Math.round(k * 8), SKILL_COLOR[b] ?? "#ffffff");
+      drawText(ctx, text, x, y - 40 - Math.round(k * 8), SKILL_COLOR[b] ?? "#ffffff");
+      ctx.restore();
+    }
+  }
+  // newly picked perk callout
+  for (const k0 of m.perks) {
+    const age = t - (m.perkT[k0] ?? -9);
+    if (age < 1.6) {
+      const k = age / 1.6;
+      ctx.save();
+      ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2;
+      drawText(ctx, "+ " + k0, x, y - 48 - Math.round(k * 8), perkStyle(k0).color);
       ctx.restore();
     }
   }
@@ -789,32 +823,53 @@ function updateDrawParticles(ctx: CanvasRenderingContext2D, m: Mem, dt: number, 
   }
 }
 
-function shortRepo(slug: string): string {
-  const name = (slug || "").split("/").pop() || slug || "";
-  return name.length > 10 ? name.slice(0, 9) + "~" : name;
+const pipCache = new Map<string, HTMLCanvasElement>();
+
+/** Tiny 7x7 pip in the hero's color with their initial: identifies teammates without text clutter. */
+function pipCanvas(L: HeroLook, ch: string): HTMLCanvasElement {
+  const k = L.key + "|" + ch;
+  let c = pipCache.get(k);
+  if (c) return c;
+  c = document.createElement("canvas");
+  c.width = 9; c.height = 9;
+  const g = c.getContext("2d")!;
+  g.fillStyle = L.c.outline;
+  g.fillRect(1, 0, 7, 9); g.fillRect(0, 1, 9, 7);
+  const [h, sat, l] = hexToHsl(L.c.primary);
+  g.fillStyle = hslToHex(h, Math.max(0.55, sat), Math.min(0.62, Math.max(0.45, l)));
+  g.fillRect(2, 1, 5, 7); g.fillRect(1, 2, 7, 5);
+  g.fillStyle = hslToHex(h, Math.max(0.55, sat), Math.min(0.8, Math.max(0.62, l + 0.15)));
+  g.fillRect(2, 1, 5, 1);
+  const bits = glyphBits(ch);
+  if (bits) {
+    g.fillStyle = "#ffffff";
+    for (let i = 0; i < 15; i++) if (bits[i] === "1") g.fillRect(3 + (i % 3), 2 + ((i / 3) | 0), 1, 1);
+  }
+  pipCache.set(k, c);
+  return c;
 }
 
-function shortName(n: string): string {
-  const s = (n || "anon").trim();
-  return s.length > 7 ? s.slice(0, 6) + "~" : s;
-}
-
-function repoColor(L: HeroLook): string {
-  const [h, sat, l] = hexToHsl(L.c.primaryL);
-  return hslToHex(h, Math.min(sat, 0.85), Math.max(l, 0.68));
+function initialOf(name: string): string {
+  const m = (name || "").match(/[a-z0-9]/i);
+  return m ? m[0].toUpperCase() : "?";
 }
 
 /**
- * Tags: you = arrow + name + repo (2 lines). Teammates = 1-line short name; their repo slides in
- * when you're close (or when they're downed) to keep 8-player fights readable.
+ * Tags, kept minimal for 8-player fights:
+ * - you: bouncing arrow + full name (one line)
+ * - downed (anyone): full name only (one line, blinking red)
+ * - alive teammates: a tiny colored pip with their initial
  */
 function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isYou: boolean, x: number, y: number, t: number, downed = false) {
   const top = y - 25;
-  const repo = shortRepo(p.kit.repo);
+  const name = (p.name || "anon").trim() || "anon";
+  if (downed) {
+    drawText(ctx, name, x, top, Math.floor(t * 3) % 2 ? "#ff4a5a" : isYou ? "#ffe45c" : "#f4f1ff");
+    return;
+  }
   if (isYou) {
-    const name = (p.name || "anon").slice(0, 10);
     const b = Math.round(Math.sin(t * 6) * 1.5);
-    const ay = top - 14 + b;
+    const ay = top - 8 + b;
     ctx.fillStyle = "#120b18";
     ctx.fillRect(x - 4, ay - 1, 9, 1);
     for (let i = 0; i < 4; i++) ctx.fillRect(x - 4 + i, ay + i, 9 - i * 2, 1);
@@ -822,26 +877,76 @@ function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isY
     ctx.fillStyle = "#ffe45c";
     for (let i = 0; i < 3; i++) ctx.fillRect(x - 3 + i, ay + i, 7 - i * 2, 1);
     ctx.fillRect(x, ay + 3, 1, 1);
-    drawText(ctx, downed ? name + " 404" : name, x, top - 6, downed && Math.floor(t * 3) % 2 ? "#ff4a5a" : "#ffe45c");
-    drawText(ctx, repo, x, top, "#d8c25a");
+    drawText(ctx, name, x, top, "#ffe45c");
     return;
   }
-  let near = 0;
-  if (youPos && t - youPos.t < 0.5) {
-    const d = Math.hypot(p.x - youPos.x, p.y - youPos.y);
-    near = Math.max(0, Math.min(1, (64 - d) / 16));
+  const pip = pipCanvas(L, initialOf(name));
+  ctx.drawImage(pip, x - 4, y - 27);
+}
+
+/** Real signature identifier, shortened only at a member boundary ("SpringApplication.run()" -> "run()"). */
+function signatureLabel(raw: string | undefined): string {
+  let sig = (raw ?? "").trim();
+  if (sig.length > 16) {
+    const parts = sig.split(/\.|::|->|#/);
+    sig = parts[parts.length - 1] ?? sig;
+    if (!/\)$/.test(sig) && /\(/.test(raw ?? "")) sig += "()";
   }
-  if (downed) near = 1;
-  const nameY = top - Math.round(6 * near);
-  const label = downed ? shortName(p.name) + " 404" : shortName(p.name);
-  ctx.save();
-  ctx.globalAlpha *= downed ? 1 : 0.92;
-  drawText(ctx, label, x, nameY, downed && Math.floor(t * 3) % 2 ? "#ff4a5a" : "#f4f1ff");
-  if (near > 0) {
-    ctx.globalAlpha *= near;
-    drawText(ctx, repo, x, top, repoColor(L));
+  return sig.length <= 16 ? sig : "";
+}
+
+// ---------------------------------------------------------------- perk badges
+interface PerkStyle { bits: string; color: string }
+const PERK_STYLES: [RegExp, PerkStyle][] = [
+  [/force|dmg|damage|power/i, { bits: "0010001110101010010000100", color: "#ff6a3a" }],       // up arrow
+  [/verify|dash|speed|fast/i, { bits: "0011001100111110011001100", color: "#ffe45c" }],       // bolt
+  [/pair|revive|buddy|team/i, { bits: "0101011111111110111000100", color: "#ff7eb6" }],       // heart
+  [/lint|armor|shield|guard/i, { bits: "1111111111111110111000100", color: "#58e6ff" }],      // shield
+  [/cache|energy|mana|cost/i, { bits: "0010001110111110111000100", color: "#6aa8ff" }],       // gem
+  [/hotfix|skill|cooldown|cd/i, { bits: "0010000100111110010000100", color: "#5dff8a" }],     // plus
+];
+const perkStyleCache = new Map<string, PerkStyle>();
+function perkStyle(id: string): PerkStyle {
+  let st = perkStyleCache.get(id);
+  if (st) return st;
+  st = PERK_STYLES.find(([re]) => re.test(id))?.[1] ?? {
+    bits: "0111010001101011000101110",
+    color: ["#ffd23f", "#b98bff", "#7dff6a", "#ff9a3c"][hashStr(id) % 4],
+  };
+  perkStyleCache.set(id, st);
+  return st;
+}
+
+const badgeCache = new Map<string, HTMLCanvasElement>();
+function perkBadge(id: string): HTMLCanvasElement {
+  let c = badgeCache.get(id);
+  if (c) return c;
+  const st = perkStyle(id);
+  c = document.createElement("canvas");
+  c.width = 7; c.height = 7;
+  const g = c.getContext("2d")!;
+  const on = (x: number, y: number) => x >= 0 && y >= 0 && x < 5 && y < 5 && st.bits[y * 5 + x] === "1";
+  for (let y = -1; y <= 5; y++) for (let x = -1; x <= 5; x++) {
+    if (on(x, y)) { g.fillStyle = y === 0 || !on(x, y - 1) ? "#ffffff" : st.color; g.fillRect(x + 1, y + 1, 1, 1); }
+    else if (on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1)) { g.fillStyle = "#120b18"; g.fillRect(x + 1, y + 1, 1, 1); }
   }
-  ctx.restore();
+  badgeCache.set(id, c);
+  return c;
+}
+
+/** Perk badges orbit the hero's waist on a flat ellipse; `front` selects the near half. */
+function drawPerkBadges(ctx: CanvasRenderingContext2D, perks: string[], x: number, y: number, t: number, phase: number, front: boolean) {
+  const n = Math.min(perks.length, 6);
+  for (let i = 0; i < n; i++) {
+    const a = t * 1.4 + phase * 6 + (i / n) * Math.PI * 2;
+    const isFront = Math.sin(a) >= 0;
+    if (isFront !== front) continue;
+    const bx = Math.round(x + Math.cos(a) * 12) - 3, by = Math.round(y + 3 + Math.sin(a) * 4) - 3;
+    ctx.save();
+    if (!front) ctx.globalAlpha = 0.7;
+    ctx.drawImage(perkBadge(perks[i]), bx, by);
+    ctx.restore();
+  }
 }
 
 // ---------------------------------------------------------------- portraits

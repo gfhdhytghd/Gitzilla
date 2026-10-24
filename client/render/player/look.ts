@@ -45,6 +45,7 @@ export interface HeroLook {
   hoodie: boolean;
   stickers: [number, number, string][];
   emblem: string[];    // rows of '0'/'1' (3x3 shape or 3x5 / 7x5 glyphs)
+  etch: string;        // real token engraved on the weapon ("" when the kit has no code)
 }
 
 export const CLASS_OF: Record<WeaponKind, HeroClass> = {
@@ -118,7 +119,8 @@ const lookCache = new Map<string, HeroLook>();
 export function lookFor(kit: PlayerKit): HeroLook {
   const d: HeroDesign | undefined = kit.design;
   const key = kit.seed + "|" + kit.weapon + "|" + kit.palette.join(",") + "|" + kit.title +
-    (d ? "|" + d.archetype + d.headgear + d.accessory + d.emblem + d.palette.join(",") : "");
+    (d ? "|" + d.archetype + d.headgear + d.accessory + d.emblem + d.palette.join(",") : "") +
+    (kit.code ? "|" + kit.code.tokens.slice(0, 4).join(" ") : "");
   const hit = lookCache.get(key);
   if (hit) return hit;
   const r = rng(kit.seed ^ 0x9e3779b9);
@@ -196,6 +198,9 @@ export function lookFor(kit: PlayerKit): HeroLook {
   let headgear: Headgear = DEFAULT_HEADGEAR[cls];
   let mug = false, duck = false;
   let emblem = emblemForLang(lang);
+  // Real code: the repo's most frequent short token (e.g. "=>", "fn", "::") goes on the chest.
+  const codeTok = (kit.code?.tokens ?? []).map((x) => (x ?? "").trim()).find((x) => x.length >= 1 && x.length <= 2 && [...x].every((ch) => glyphBits(ch)));
+  if (codeTok) emblem = emblemForText(codeTok, lang);
 
   if (d) {
     switch (d.headgear) {
@@ -225,6 +230,7 @@ export function lookFor(kit: PlayerKit): HeroLook {
     key, cls, weapon: kit.weapon, lang, c, hairStyle, headgear, crest, topper, back, mug, duck,
     mask: cls === "rogue" && headgear === "bandana",
     hoodie, stickers: [], emblem,
+    etch: (kit.code?.tokens ?? []).map((x) => (x ?? "").trim()).find((x) => x.length > 0) ?? "",
   };
   const stickerCols = ["#ff5fa2", "#ffd84a", "#54e0ff", "#7dff6a", "#ffffff"];
   const n = 2 + Math.floor(r() * 3);

@@ -1,3 +1,20 @@
+DONE (round 2)
+
+Round 2 summary (heroes from real code):
+- **Chest emblem from code.** When there's no Gemini emblem, the repo's most frequent short real token (≤2 chars, e.g. `=>`, `::`, `fn`, `:=`) goes on the chest as 3x5 glyphs. Precedence: design emblem → code token → language glyph.
+- **Code-etched weapon.** The top token (`kit.code.tokens[0]`) is hashed into a rune pattern engraved along the weapon's main metal or wood row, plus one glowing accent pixel. Each repo gets a stable weapon skin.
+- **Signature move callout.** When a hero's *own* skill fires, it shows `$ <signature>` using the real identifier (e.g. `$ parse_args()`).
+  - Long dotted names shorten only at a member boundary (`SpringApplication.run()` → `run()`). If the result is still over 16 chars, it falls back to the skill text.
+  - Callouts no longer fire on teammates who are only standing in someone else's firewall.
+- **Perk badges.** `PlayerState.perks` render as 5x5 outlined icons orbiting the waist (the back half is drawn behind the hero).
+  - Icons are matched by keyword: force/dmg = up arrow, verify/dash = bolt, pair/revive = heart, lint/armor = shield, cache/energy = gem, hotfix/skill = plus. Anything else gets a hash-colored ring.
+  - A newly picked perk triggers a burst and a rising `+ <perk>` callout.
+- **Projectile glyphs.** claude-boss already ships a registry (`registerPlayerGlyphs` in `arena/bullets.ts`, fed by `trackPlayers`, which game.ts calls), so there's one source of truth and I don't keep a second one.
+  - Small suggestion for claude-boss: `trackPlayers` registers only when `!playerGlyphs.has(id)`, so a player who swaps repos between rematches keeps the old glyphs. Re-registering when the token list changes would fix that.
+- **Fixes.** The gallery now supplies the required `perks` field, and the typecheck for my files is clean. The gallery kits carry realistic `kit.code` per language, the strip has a new `perk` row, and skill cells set `kit.skill` so the callouts show.
+- **Tests.** `client/render/player/code.test.ts` covers the token emblem, the etch, and the fallback. Together with `look.test.ts`, the player tests all pass.
+- Screenshots were taken against the shared dev server on 5175, never 5173.
+
 DONE
 
 Summary: `client/render/player/` ships `drawPlayer` and `playerPortrait`. They generate procedural Soul Knight-style chibi heroes:
@@ -65,6 +82,13 @@ DONE. Further work would only be polish.
    - `crit` gives a longer white flash and a 1.6x squash.
    - Without the call, hurt FX still fire from hp/armor drops. `hitStop` and screen shake stay claude-ui's job: the renderer just follows the `time` it's given.
 
+## Tag round 2 (playtest feedback): done
+- Supersedes item 1 above. Alive teammates now show only a 9x9 pip in their hero color with a white initial, just above the head. There's no text and no repo line, and the proximity reveal is gone.
+- Downed heroes (you or teammates) show their **full name** on one line, blinking red. No `404` suffix and no repo line; the ghost and halo carry the "down" read.
+- You: bouncing arrow plus your full name in yellow on one line.
+- There is no truncation anywhere anymore.
+- **claude-boss:** `client/render/arena/events.ts:141` emits a `404 NOT FOUND` glyph at the downed player's head, which stacks with the downed tag and ghost. Please drop it or move it well off the hero, e.g. a short `SEGFAULT` burst that rises and fades within 0.6s.
+
 ## Handoff to claude-ui: lobby spin-up (optional, drop-in)
 `paintHeroCard(c, kit, time, readyAge)` repaints a square canvas every tick:
 - For the first 0.9s after the kit arrives, the hero materializes bottom-up behind a white scanline: an accent wireframe above the line, glitch slices, and data bits, finished by a white flash.
@@ -94,5 +118,6 @@ for (const hc of heroCards) {
 ## Notes
 - The coordinator's BossKit.heart and BossState.regions change doesn't affect the player renderer.
 - No new deps. Screenshots were taken with system `/usr/bin/chromium --headless`.
+- Infra: port 5173 is the live production server, and I never touch it. Earlier screenshots used a private, throwaway vite on 5291 that is now stopped. From now on the gallery is served by the shared dev server: `http://localhost:5175/client/render/player/gallery.html` (plus `?strip=1`, `?arena=1&theme=…`, and `?only=…&scale=…`).
 - Peer sessions aren't labelled by agent role in ListAgents, so this handoff lives here and not in a direct message.
 - Gitzilla rebrand: the gallery headings now read `$ gitzilla --heroes` / `$ gitzilla --portraits`. The renderer draws no other product-name strings (in-game text is player names, repo names, `404`, `200 OK`, and skill callouts).
