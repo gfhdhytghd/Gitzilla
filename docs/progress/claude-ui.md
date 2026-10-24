@@ -1,5 +1,16 @@
-DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
-IN PROGRESS: ux P1s → qa fixes (net + portrait done, see below) → edu PvP
+DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## Edu = classroom PvP (claude-ui part) — done (real PvP sim pending codex-sim; verified with ?mock=edu|edu-match|edu-autopsy)
+- Null boss everywhere (game/hud/autopsy/mock); arena theme falls back to "notebook" with a room-seeded layout.
+- Landing: `[ 🎓 classroom: teacher on projector ]` → POST /api/room?mode=edu → /r/ROOM?screen=1. net.ts stores the teacher screen's resume token separately (`kaiju.screenToken.<room>`) and sends it on reconnect.
+- Lobby: owner mode toggle `⚔ boss raid | 🎓 classroom` (setMode; others see a badge). Classroom: boss panel → "CLASSROOM BRAWL" rules + `$ make brawl` (needs ≥2 ready), next-step bar adapted ("waiting for classmates", "▶ START BRAWL"), squad cards show `code grade B · GPA 2.5`, your card shows claude-edu's report card (signal → stat → grade + tips). Projector roster compacts for up to 30 students.
+- Game: PvP scoreboard replaces the boss bar (`$ ./brawl round 2/3 · 0:41 left`, leader, your rank/KOs/dmg); team list = live leaderboard (top 6 on phones / 12 on the projector, `N KO`); YOU ring after respawns; PvP intro ("CLASSROOM BRAWL · best of 3") and outro ("CLASS DISMISSED · ★ winner"). claude-edu LessonFeed (phone: in the deck replacing the log; desktop: left gutter; projector: lower third) + QuizOverlay (deck / arena top / projector) mounted on edu snapshots; my CODE REVIEW strip yields to the quiz overlay.
+- Autopsy: `CLASS RESULTS` header + `$ make rematch` + your report card + claude-edu createClassReport (ranking, report cards, improvement tips, highlights, glossary).
+
+## UX P1s (+ some P2s) — done
+- P1-1 relative stat pips on the hero card (health/armor/energy/damage/speed) instead of ×1.00/85px/s; P1-2 min 10px pixel text, phone limb segments text-free; P1-3 compact deck; P1-4 pulsing ring + YOU under your hero (first 10s, after revive/respawn); P1-6 prefers-reduced-motion / `?calm=1`: ¼ shake, no full-screen glitch, faint tints, ≤3 flashes/s; P1-7 big-screen copy ("scan with your phone (hold it upright) · ★ first phone to join is the host"), bigger cards, late-join QR in the corner during matches; P1-8 inline repo/boss errors, inline rename (no prompt()), "X still cloning… press again to start anyway"; P1-9 taunt bubble min width + 2-line clamp.
+- P2: touch targets ≥36–44px on coarse pointers, `join` labelled, footer/host-big hidden on phones, ✗/✓ on phone autopsy, `share ↗` (navigator.share with PNG, download fallback), padding under fixed pills, hall rows `5522 dmg · alice vs flask`.
+- Not done: P1-5 (needs a fallback/stand-in flag on LobbyPlayer — contract request below), P2-4 phone landing hero/boss art, P2-5 title de-dup (design/sim owners).
 
 ## QA fixes (codex-qa) + coordinator portrait review — done
 - QA-UI-01: net.ts keeps/cancels one retry timer; open() refuses while a socket is CONNECTING/OPEN. `QA_REPRO=1 npx vitest run qa/reconnect.test.ts` → 2/2 pass.
@@ -86,5 +97,6 @@ DONE (see summary). Remaining ideas only: phone-portrait lobby layout, QR corner
 - The HUD intentionally duplicates some in-world text (telegraph banner/stack trace + target name, combo counter in a fixed HUD slot).
 
 ## Contract requests
+- UX P1-5: `LobbyPlayer.standIn?: boolean` (or `kit.fallback`) when the analyzer served a synthetic/offline profile, so the lobby can show "⚠ couldn't read that repo — using a stand-in hero · [try again]" instead of a green ✓.
 - **Round 2:** `LobbyPlayer.progress?: { stage: string; paths: string[] }` and the same on `LobbyState.boss` — server streams the analyzer's current stage and recently read file paths while `status === "analyzing"` so the lobby can show real paths like `git clone` output. UI already consumes it (lobby.ts `Progress`).
 - `ClientMsg {t:"setName"; name}` would let lobby rename without reconnecting (currently rename = reconnect with resume token).
