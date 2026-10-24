@@ -49,3 +49,18 @@ describe("code flavor look", () => {
     expect(colors.has(L.syn.fn)).toBe(true);   // ListenAndServe()
   });
 });
+
+describe("weapon v2 plate word", () => {
+  const kit = (tokens: string[] | null, seed = 900): PlayerKit => ({
+    repo: "a/b", title: "Rust Paladin", weapon: "cannon", skill: "hotfix", maxHp: 7, maxArmor: 5, maxEnergy: 200,
+    speed: 90, damageMul: 1, palette: ["#172131", "#dea584", "#ffe2ac", "#f4faf7"], seed,
+    ...(tokens ? { code: { tokens, signature: "run()", snippet: "fn main() {}", identifiers: [] } } : {}),
+  });
+  it("prefers a real word token, then operators, then the per-kind default", async () => {
+    const { weaponWord } = await import("./weapons.ts");
+    expect(weaponWord(lookFor(kit(["..", "*", "&mut", "fn"])), "cannon", 4)).toBe("&MUT");
+    expect(weaponWord(lookFor(kit(["*", "=>"], 901)), "blaster", 2)).toBe("=>");
+    expect(weaponWord(lookFor(kit(null, 902)), "shotgun", 4)).toBe("CASE");
+    expect(weaponWord(lookFor(kit(["impl"], 903)), "blaster", 2)).toBe("IO"); // too long for the pistol plate
+  });
+});
