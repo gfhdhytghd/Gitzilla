@@ -17,6 +17,28 @@ Weapon SPRITES: build them out of code shapes: a pistol whose barrel is `{ }`, a
 cannon with keycap texture, a USB-stick staff topped with a glowing `λ`, a mechanical-switch shotgun, a regex-ring laser
 emitter, a cursor-bar katana `|`. Firing pops the muzzle text; hits spark the impact text (small, fast, pooled).
 
+## Heroes made of code (user: "for the hero, I want more code elements too") — claude-player
+Still cute Soul Knight chibis first; the code is the material and the details:
+- **Face:** the visor/eyes are a blinking text cursor `_` / `>_` prompt (blinks on idle, becomes `x_x` when downed,
+  `^_^` on victory). Mages get glowing `{}` eyes.
+- **Hair/helmet crests made of syntax:** bracket crests `{`, angle-bracket horns `</>`, a `#` hashtag mohawk, a `~`
+  tilde curl, `*` pointer spikes, chosen from the hero's language tokens.
+- **Cape = scrolling source:** the cape/hoodie back shows the hero's real `kit.code.snippet` as tiny syntax-colored
+  pixel text that scrolls slowly (and flutters when running). Hoodie front: language emblem (exists) + a pocket
+  "sticker" of the repo's top token.
+- **Syntax-highlighted armor:** armor plates tinted in the language's syntax palette (keyword/string/comment colors)
+  as 1px stripes, like highlighted code lines.
+- **Footsteps:** running leaves fading `;` / `.` prints and a faint git-branch line behind the hero (the trail of
+  commits); dash leaves a `--force` afterimage streak.
+- **Orbiting tokens:** 2–3 of the hero's real tokens orbit slowly at low alpha (brighten while the skill is ready).
+- **Idle:** after 3s idle, a tiny floating keyboard appears and the hero types (clack particles); `zzz` → `sleep(1)`.
+- **Version tag:** each picked perk bumps a small `v1.0 → v1.1 …` tag next to the name; MVP gets `v2.0 LTS`.
+- **Hurt/downed/revive:** hurt flashes into red diff lines `-`; downed body dissolves into a vertical stack trace
+  (real identifiers as frames) with `segfault`; revive re-materializes it line by line like `git checkout`, green `+`.
+- **Portrait card (lobby):** the hero stands on a mini terminal window whose title bar is `~/repo (main)` and whose body
+  shows their real snippet with line numbers.
+Keep sprites ≤ ~20px tall in-game; readability over detail; cache everything per seed.
+
 ## Skills / stats / items as code
 - Skills: firewall = `try { } catch` bubble with braces around allies; fork = `git fork` clone with a commit-hash tag;
   hotfix = floating `+patch` diff lines in green; overclock = `sudo` aura + `!!` afterimages; rollback = `git revert`
