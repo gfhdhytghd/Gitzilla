@@ -1,4 +1,4 @@
-# Repo Kaiju — build brief (read fully before coding)
+# Gitzilla — build brief (read fully before coding)
 
 **Context:** HackPSU, a 24-hour hackathon. Ship a fun, working demo fast. Skip defensive hardening, auth, rate limits, exhaustive validation, and rare edge cases. A crash in a weird case is fine, but the happy path must be solid. No over-engineering.
 
