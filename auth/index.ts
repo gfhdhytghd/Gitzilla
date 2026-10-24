@@ -170,7 +170,8 @@ export async function listGithubRepos(token: string): Promise<MyRepo[]> {
     for (const x of batch) repos.push({ name: x.name, full_name: x.full_name, private: x.private, language: x.language, stars: x.stargazers_count, pushed_at: x.pushed_at ?? '' });
     if (batch.length < 100) break;
   }
-  return repos.sort((a, b) => b.pushed_at.localeCompare(a.pushed_at));
+  // Most-starred first (ties: most recently pushed).
+  return repos.sort((a, b) => b.stars - a.stars || b.pushed_at.localeCompare(a.pushed_at));
 }
 
 // ---------- routes ----------

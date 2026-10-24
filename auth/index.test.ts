@@ -102,7 +102,9 @@ describe('auth routes', () => {
     expect(await (await fetch(`${base}/token`, { headers: { cookie } })).text()).toBe('gho_secret');
     const repos = await (await fetch(`${base}/api/me/repos`, { headers: { cookie } })).json();
     expect(repos.map((r: { full_name: string }) => r.full_name)).toEqual(['acme/new', 'octocat/old']);
-    expect(repos[0]).toEqual({ name: 'new', full_name: 'acme/new', private: true, language: null, stars: 0, pushed_at: '2026-01-01T00:00:00Z' });
+    // Sorted by stars: the 3-star repo comes before the newer 0-star one.
+    expect(repos.map((r: { full_name: string }) => r.full_name)).toEqual(['octocat/old', 'acme/new']);
+    expect(repos[1]).toEqual({ name: 'new', full_name: 'acme/new', private: true, language: null, stars: 0, pushed_at: '2026-01-01T00:00:00Z' });
     expect(JSON.stringify(me) + JSON.stringify(repos)).not.toContain('gho_secret');
 
     const logout = await fetch(`${base}/auth/logout?returnTo=/r/ABCD`, { redirect: 'manual', headers: { cookie } });
