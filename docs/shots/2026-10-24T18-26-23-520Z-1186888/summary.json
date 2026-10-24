@@ -1,0 +1,94 @@
+{
+  "options": {
+    "players": 4,
+    "boss": "pallets/flask",
+    "seconds": 10,
+    "headed": false
+  },
+  "baseURL": "http://127.0.0.1:5173",
+  "outcome": "incomplete-or-failed",
+  "exitCode": 2,
+  "phase": "landing",
+  "failure": "Playtester 1: missing visible [data-testid=\"create-room\"] during landing (http://127.0.0.1:5173/)",
+  "elapsedFightSeconds": 0,
+  "errors": {
+    "page": 0,
+    "console": 21,
+    "websocket": 0,
+    "failedRequests": 21
+  },
+  "missing": [
+    "Playtester 1: missing visible [data-testid=\"create-room\"] during landing (http://127.0.0.1:5173/)"
+  ],
+  "notes": [
+    "Fallback repos: burntsushi/ripgrep, django/django, expressjs/express, facebook/react, fastapi/fastapi, gin-gonic/gin, golang/example, jquery/jquery, karpathy/nanogpt, lodash/lodash, pallets/flask, redis/redis, rust-lang/rustlings, spring-projects/spring-petclinic, vuejs/core",
+    "Could not capture failure-desktop.png: TimeoutError: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n",
+    "Could not capture failure-phone.png: TimeoutError: page.screenshot: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n"
+  ],
+  "screenshots": [
+    "landing-phone.png",
+    "landing-desktop.png"
+  ],
+  "clients": [
+    {
+      "name": "Playtester 1",
+      "phone": false,
+      "spectator": false,
+      "url": "http://127.0.0.1:5173/",
+      "snapshots": 0,
+      "inputs": 0,
+      "moving": 0,
+      "firing": 0,
+      "dashes": 0,
+      "skills": 0,
+      "ack": -1,
+      "sources": {},
+      "autopsy": false
+    },
+    {
+      "name": "Playtester 2",
+      "phone": false,
+      "spectator": false,
+      "url": "http://127.0.0.1:5173/",
+      "snapshots": 0,
+      "inputs": 0,
+      "moving": 0,
+      "firing": 0,
+      "dashes": 0,
+      "skills": 0,
+      "ack": -1,
+      "sources": {},
+      "autopsy": false
+    },
+    {
+      "name": "Playtester 3",
+      "phone": false,
+      "spectator": false,
+      "url": "http://127.0.0.1:5173/",
+      "snapshots": 0,
+      "inputs": 0,
+      "moving": 0,
+      "firing": 0,
+      "dashes": 0,
+      "skills": 0,
+      "ack": -1,
+      "sources": {},
+      "autopsy": false
+    },
+    {
+      "name": "Playtester 4",
+      "phone": true,
+      "spectator": false,
+      "url": "http://127.0.0.1:5173/",
+      "snapshots": 0,
+      "inputs": 0,
+      "moving": 0,
+      "firing": 0,
+      "dashes": 0,
+      "skills": 0,
+      "ack": -1,
+      "sources": {},
+      "autopsy": false
+    }
+  ]
+}

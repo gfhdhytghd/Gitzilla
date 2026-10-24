@@ -1,0 +1,46 @@
+{
+  "slug": "spring-projects/spring-petclinic",
+  "description": "A sample Spring-based application",
+  "stars": 9598,
+  "primaryLanguage": "CSS",
+  "languages": {
+    "CSS": 278931,
+    "Java": 141217,
+    "HTML": 19176,
+    "SCSS": 7939,
+    "Dockerfile": 643
+  },
+  "totalFiles": 74,
+  "totalLoc": 13268,
+  "commits": 1047,
+  "contributors": 158,
+  "ageDays": 5036,
+  "components": [
+    {
+      "name": "src/main",
+      "files": 54,
+      "loc": 11245,
+      "fanIn": 1,
+      "fanOut": 0
+    },
+    {
+      "name": "src/test",
+      "files": 20,
+      "loc": 2023,
+      "fanIn": 0,
+      "fanOut": 1
+    }
+  ],
+  "heart": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+  "heartFanIn": 4,
+  "edges": [
+    [
+      1,
+      0
+    ]
+  ],
+  "cycles": [],
+  "maxDepth": 1,
+  "testRatio": 0.2702702702702703,
+  "seed": 1701789151
+}

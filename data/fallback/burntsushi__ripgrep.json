@@ -1,0 +1,117 @@
+{
+  "slug": "burntsushi/ripgrep",
+  "description": "ripgrep recursively searches directories for a regex pattern while respecting your gitignore",
+  "stars": 69398,
+  "primaryLanguage": "Rust",
+  "languages": {
+    "Rust": 1874012,
+    "Python": 47804,
+    "Shell": 37190,
+    "Roff": 13861,
+    "Ruby": 804,
+    "Lua": 192
+  },
+  "totalFiles": 107,
+  "totalLoc": 50796,
+  "commits": 2298,
+  "contributors": 483,
+  "ageDays": 3879,
+  "components": [
+    {
+      "name": "crates/core",
+      "files": 22,
+      "loc": 12485,
+      "fanIn": 0,
+      "fanOut": 2
+    },
+    {
+      "name": "crates/ignore",
+      "files": 13,
+      "loc": 8837,
+      "fanIn": 1,
+      "fanOut": 0
+    },
+    {
+      "name": "crates/printer",
+      "files": 13,
+      "loc": 8601,
+      "fanIn": 0,
+      "fanOut": 3
+    },
+    {
+      "name": "crates/searcher",
+      "files": 11,
+      "loc": 5904,
+      "fanIn": 1,
+      "fanOut": 2
+    },
+    {
+      "name": "tests",
+      "files": 10,
+      "loc": 4974,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "misc",
+      "files": 23,
+      "loc": 4340,
+      "fanIn": 3,
+      "fanOut": 1
+    },
+    {
+      "name": "crates/globset",
+      "files": 6,
+      "loc": 3118,
+      "fanIn": 1,
+      "fanOut": 0
+    },
+    {
+      "name": "crates/regex",
+      "files": 9,
+      "loc": 2537,
+      "fanIn": 2,
+      "fanOut": 0
+    }
+  ],
+  "heart": "crates/ignore/src/gitignore.rs",
+  "heartFanIn": 7,
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      5
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      3,
+      7
+    ],
+    [
+      5,
+      6
+    ]
+  ],
+  "cycles": [],
+  "maxDepth": 3,
+  "testRatio": 0.14018691588785046,
+  "seed": 3221300618
+}

@@ -1,0 +1,70 @@
+{
+  "slug": "pallets/flask",
+  "description": "The Python micro framework for building web applications.",
+  "stars": 75027,
+  "primaryLanguage": "Python",
+  "languages": {
+    "Python": 565106,
+    "HTML": 405,
+    "Shell": 193,
+    "CSS": 18
+  },
+  "totalFiles": 108,
+  "totalLoc": 14541,
+  "commits": 5562,
+  "contributors": 864,
+  "ageDays": 6045,
+  "components": [
+    {
+      "name": "src/flask",
+      "files": 24,
+      "loc": 7563,
+      "fanIn": 2,
+      "fanOut": 0
+    },
+    {
+      "name": "tests",
+      "files": 51,
+      "loc": 5868,
+      "fanIn": 0,
+      "fanOut": 1
+    },
+    {
+      "name": "examples",
+      "files": 31,
+      "loc": 1019,
+      "fanIn": 0,
+      "fanOut": 1
+    },
+    {
+      "name": "docs",
+      "files": 1,
+      "loc": 84,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": ".devcontainer",
+      "files": 1,
+      "loc": 7,
+      "fanIn": 0,
+      "fanOut": 0
+    }
+  ],
+  "heart": "src/flask/__init__.py",
+  "heartFanIn": 53,
+  "edges": [
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ]
+  ],
+  "cycles": [],
+  "maxDepth": 1,
+  "testRatio": 0.5462962962962963,
+  "seed": 3030858016
+}

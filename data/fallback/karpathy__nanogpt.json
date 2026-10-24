@@ -1,0 +1,44 @@
+{
+  "slug": "karpathy/nanogpt",
+  "description": "",
+  "stars": 0,
+  "primaryLanguage": "Python",
+  "languages": {
+    "Python": 51670
+  },
+  "totalFiles": 15,
+  "totalLoc": 1085,
+  "commits": 0,
+  "contributors": 0,
+  "ageDays": 0,
+  "components": [
+    {
+      "name": "root",
+      "files": 5,
+      "loc": 829,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "data",
+      "files": 3,
+      "loc": 155,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "config",
+      "files": 7,
+      "loc": 101,
+      "fanIn": 0,
+      "fanOut": 0
+    }
+  ],
+  "heart": "model.py",
+  "heartFanIn": 3,
+  "edges": [],
+  "cycles": [],
+  "maxDepth": 0,
+  "testRatio": 0,
+  "seed": 593896085
+}

@@ -1,0 +1,84 @@
+{
+  "slug": "golang/example",
+  "description": "Go example projects",
+  "stars": 2981,
+  "primaryLanguage": "Go",
+  "languages": {
+    "Go": 85068,
+    "Shell": 1481,
+    "Makefile": 692,
+    "HTML": 495,
+    "JavaScript": 378,
+    "CSS": 185
+  },
+  "totalFiles": 44,
+  "totalLoc": 3207,
+  "commits": 76,
+  "contributors": 20,
+  "ageDays": 4471,
+  "components": [
+    {
+      "name": "slog-handler-guide",
+      "files": 9,
+      "loc": 1011,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "ragserver",
+      "files": 11,
+      "loc": 727,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "gotypes",
+      "files": 11,
+      "loc": 723,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "internal",
+      "files": 1,
+      "loc": 262,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "outyet",
+      "files": 2,
+      "loc": 184,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "misc",
+      "files": 5,
+      "loc": 119,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "hello",
+      "files": 4,
+      "loc": 107,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "template",
+      "files": 1,
+      "loc": 74,
+      "fanIn": 0,
+      "fanOut": 0
+    }
+  ],
+  "heart": "hello/reverse/reverse.go",
+  "heartFanIn": 2,
+  "edges": [],
+  "cycles": [],
+  "maxDepth": 0,
+  "testRatio": 0.2727272727272727,
+  "seed": 810435114
+}

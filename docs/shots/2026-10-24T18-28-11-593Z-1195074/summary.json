@@ -1,0 +1,76 @@
+{
+  "options": {
+    "players": 2,
+    "boss": "pallets/flask",
+    "seconds": 3,
+    "headed": false
+  },
+  "baseURL": "http://127.0.0.1:42429",
+  "room": "FIXT",
+  "outcome": "incomplete-or-failed",
+  "exitCode": 1,
+  "phase": "autopsy",
+  "elapsedFightSeconds": 1.55,
+  "errors": {
+    "page": 2,
+    "console": 2,
+    "websocket": 2,
+    "failedRequests": 0
+  },
+  "missing": [],
+  "notes": [
+    "Fallback repos: pallets/flask, lodash/lodash"
+  ],
+  "screenshots": [
+    "landing-desktop.png",
+    "landing-phone.png",
+    "lobby-desktop.png",
+    "lobby-phone.png",
+    "boss-intro-phone.png",
+    "boss-intro-desktop.png",
+    "autopsy-phone.png",
+    "autopsy-desktop.png"
+  ],
+  "clients": [
+    {
+      "name": "Playtester 1",
+      "phone": false,
+      "spectator": false,
+      "url": "http://127.0.0.1:42429/r/FIXT",
+      "playerId": "fixture-1",
+      "snapshots": 29,
+      "inputs": 29,
+      "moving": 28,
+      "firing": 28,
+      "dashes": 1,
+      "skills": 1,
+      "ack": 28,
+      "sources": {
+        "keyboard": 29
+      },
+      "autopsy": true,
+      "lastMatchStatus": "fighting",
+      "serverTime": 1.463
+    },
+    {
+      "name": "Playtester 2",
+      "phone": true,
+      "spectator": false,
+      "url": "http://127.0.0.1:42429/r/FIXT",
+      "playerId": "fixture-2",
+      "snapshots": 29,
+      "inputs": 29,
+      "moving": 28,
+      "firing": 28,
+      "dashes": 1,
+      "skills": 1,
+      "ack": 28,
+      "sources": {
+        "keyboard": 29
+      },
+      "autopsy": true,
+      "lastMatchStatus": "fighting",
+      "serverTime": 1.463
+    }
+  ]
+}

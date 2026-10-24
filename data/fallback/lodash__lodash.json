@@ -1,0 +1,77 @@
+{
+  "slug": "lodash/lodash",
+  "description": "A modern JavaScript utility library delivering modularity, performance, & extras.",
+  "stars": 61279,
+  "primaryLanguage": "JavaScript",
+  "languages": {
+    "JavaScript": 1543734,
+    "HTML": 35861,
+    "EJS": 8545
+  },
+  "totalFiles": 32,
+  "totalLoc": 42959,
+  "commits": 7710,
+  "contributors": 268,
+  "ageDays": 5313,
+  "components": [
+    {
+      "name": "test",
+      "files": 10,
+      "loc": 23161,
+      "fanIn": 0,
+      "fanOut": 2
+    },
+    {
+      "name": "root",
+      "files": 3,
+      "loc": 16235,
+      "fanIn": 2,
+      "fanOut": 0
+    },
+    {
+      "name": "perf",
+      "files": 3,
+      "loc": 1943,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "fp",
+      "files": 4,
+      "loc": 881,
+      "fanIn": 2,
+      "fanOut": 0
+    },
+    {
+      "name": "lib",
+      "files": 12,
+      "loc": 739,
+      "fanIn": 0,
+      "fanOut": 2
+    }
+  ],
+  "heart": "lodash.js",
+  "heartFanIn": 12,
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      3
+    ]
+  ],
+  "cycles": [],
+  "maxDepth": 1,
+  "testRatio": 0.3125,
+  "seed": 416011368
+}

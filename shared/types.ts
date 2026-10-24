@@ -102,6 +102,7 @@ export interface BossKit {
   speed: number;
   palette: string[];     // 5 hex colors
   theme: ArenaTheme;     // arena look follows the boss
+  heart: string;         // analyzed heart file path (flavor, autopsy)
   seed: number;
 }
 
@@ -159,6 +160,9 @@ export interface BossState {
   casting: { attackId: string; t: number; total: number; target: [number, number] | null } | null;
   targetPlayer: string | null;
   enraged: boolean;
+  // Hit regions in absolute arena px, owned by sim. Renderer anchors limb art here.
+  // id = limb id, or "heart" for the core.
+  regions: { id: string; x: number; y: number; r: number }[];
   kit: BossKit;
 }
 
