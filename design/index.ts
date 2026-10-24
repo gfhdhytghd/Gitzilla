@@ -9,6 +9,7 @@ import { artDNA, designFingerprint } from './code.ts';
 import { applicableWeaponName, weaponIdentifiers, type HeroDesignWithWeapon } from './weapon.ts';
 import { reconcileCodeNames } from '../sim/code.ts';
 import { bossBodyDirection } from './archetypes.ts';
+import { DEEPSEEK_MODEL, deepseekJson, readProviderSetting } from './provider.ts';
 
 export { fallbackBoss, fallbackHero } from './fallback.ts';
 export { validateBoss, validateHero } from './validate.ts';
@@ -19,7 +20,7 @@ type Design = HeroDesignWithWeapon | BossDesign;
 export interface DesignResult {
   slug: string;
   kind: Kind;
-  source: 'gemini' | 'cache' | 'precomputed' | 'fallback';
+  source: 'gemini' | 'deepseek' | 'cache' | 'precomputed' | 'fallback';
   model?: string;
 }
 export interface DesignOptions {
@@ -29,6 +30,8 @@ export interface DesignOptions {
   readCache?: boolean;
   apiKey?: string;
   model?: string;
+  deepseekApiKey?: string;
+  deepseekModel?: string;
   timeoutMs?: number;
   fetch?: typeof globalThis.fetch;
   onResult?: (result: DesignResult) => void;
@@ -96,6 +99,7 @@ export function createDesignService(options: DesignOptions = {}) {
   const pending = new Map<string, Promise<Design>>();
   const memory = new Map<string, Design>();
   const fetcher = options.fetch ?? globalThis.fetch;
+  let geminiUnavailableUntil = 0;
   const report = (profile: RepoProfile, kind: Kind, source: DesignResult['source'], model?: string) => {
     try { options.onResult?.({ slug: profile.slug, kind, source, ...(model ? { model } : {}) }); }
     catch { /* Telemetry must never fail art generation or trigger an extra paid request. */ }
@@ -127,36 +131,46 @@ export function createDesignService(options: DesignOptions = {}) {
       } catch { /* User-provided repos need not have bundled assets. */ }
     }
     const apiKey = options.apiKey ?? await readApiKey(rootDir);
-    if (!apiKey) { report(profile, kind, 'fallback'); return fallback(); }
+    const keep = async (parsed: unknown, source: 'gemini' | 'deepseek', model: string): Promise<Design | undefined> => {
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
+      const label = (parsed as Record<string, unknown>)[kind === 'hero' ? 'title' : 'name'];
+      if (typeof label !== 'string' || !label.replace(/[\x00-\x1f\x7f]/g, '').trim()) return;
+      const design = validate(parsed); memory.set(key, design);
+      if (cacheDir) {
+        try { await mkdir(cacheDir, { recursive: true }); await writeFile(join(cacheDir, filename), JSON.stringify({ key, source, model, design }, null, 2) + '\n'); }
+        catch { /* Read-only disk still permits live designs. */ }
+      }
+      report(profile, kind, source, model); return design;
+    };
     const models = [options.model || process.env.GEMINI_MODEL || 'gemini-3.8-flash', 'gemini-3.1-flash-lite'];
-    for (const model of models) {
+    for (const model of apiKey && Date.now() >= geminiUnavailableUntil ? [...new Set(models)] : []) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 8000);
       try {
         const response = await fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, signal: controller.signal,
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey! }, signal: controller.signal,
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt(profile, kind, kit) }] }],
             generationConfig: { responseMimeType: 'application/json', responseJsonSchema: kind === 'hero' ? heroSchema : bossSchema(kit as BossKit) },
           }),
         });
+        if ([401, 402, 403, 429].includes(response.status)) { geminiUnavailableUntil = Date.now() + 120000; break; }
         if (!response.ok) continue;
         const payload = await response.json();
         const content = payload.candidates?.[0]?.content?.parts?.filter((part: { text?: string; thought?: boolean }) => typeof part.text === 'string' && !part.thought).map((part: { text: string }) => part.text).join('');
         const parsed: unknown = JSON.parse(content || '');
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue;
-        const label = (parsed as Record<string, unknown>)[kind === 'hero' ? 'title' : 'name'];
-        if (typeof label !== 'string' || !label.replace(/[\x00-\x1f\x7f]/g, '').trim()) continue;
-        const design = validate(parsed);
-        memory.set(key, design);
-        if (cacheDir) {
-          try { await mkdir(cacheDir, { recursive: true }); await writeFile(join(cacheDir, filename), JSON.stringify({ key, model, design }, null, 2) + '\n'); }
-          catch { /* Read-only disk still permits live designs. */ }
-        }
-        report(profile, kind, 'gemini', model);
-        return design;
+        const design = await keep(parsed, 'gemini', model); if (design) return design;
       } catch { /* One lite retry, then deterministic art, without exposing response/key. */ }
       finally { clearTimeout(timer); }
+    }
+    const deepseekKey = options.deepseekApiKey ?? await readProviderSetting(rootDir, 'DEEPSEEK_API_KEY', 'DEEPSEEK-API-KEY');
+    if (deepseekKey) {
+      const model = options.deepseekModel ?? await readProviderSetting(rootDir, 'DEEPSEEK_MODEL') ?? DEEPSEEK_MODEL;
+      try {
+        const parsed = await deepseekJson(prompt(profile, kind, kit) + '\nJSON schema: ' + JSON.stringify(kind === 'hero' ? heroSchema : bossSchema(kit as BossKit)),
+          { apiKey: deepseekKey, model, fetch: fetcher, timeoutMs: options.timeoutMs });
+        const design = await keep(parsed, 'deepseek', model); if (design) return design;
+      } catch { /* Both providers unavailable: keep the deterministic game playable. */ }
     }
     report(profile, kind, 'fallback');
     return fallback();

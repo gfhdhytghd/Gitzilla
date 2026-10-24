@@ -10,6 +10,7 @@ import { bodies, bossSchema, heroSchema } from './schema.ts';
 import { cleanWeaponName, validWeaponName } from './weapon.ts';
 import { dnaFingerprint } from './code.ts';
 import { bossArt, chooseBossBody } from './archetypes.ts';
+import { readProviderSetting } from './provider.ts';
 
 // JSON imports infer tuples/union-valued fields as broad arrays/strings; use the producer's contract.
 const profile = JSON.parse(JSON.stringify(rawProfile)) as RepoProfile;
@@ -20,7 +21,7 @@ const boss = fallbackBoss(profile, bossKit);
 const roots: string[] = [];
 const root = async () => { const dir = await mkdtemp(join(tmpdir(), 'kaiju-design-')); roots.push(dir); return dir; };
 const response = (value: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(value) }] } }] }), { status: 200 });
-const service = (fetcher = vi.fn().mockResolvedValue(response(hero)), options = {}) => createDesignService({ apiKey: 'test-secret', cacheDir: false, assetDir: false, fetch: fetcher, ...options });
+const service = (fetcher = vi.fn().mockResolvedValue(response(hero)), options = {}) => createDesignService({ apiKey: 'test-secret', deepseekApiKey: '', cacheDir: false, assetDir: false, fetch: fetcher, ...options });
 
 afterEach(async () => { vi.unstubAllEnvs(); vi.restoreAllMocks(); await Promise.all(roots.splice(0).map(dir => rm(dir, { recursive: true, force: true }))); });
 
@@ -164,6 +165,68 @@ describe('Gemini REST', () => {
 });
 
 describe('cache and offline assets', () => {
+  it('loads the DeepSeek key from the parent dotenv with project and environment overrides', async () => {
+    const parent = await root(), project = join(parent, 'project'); await mkdir(project);
+    vi.stubEnv('DEEPSEEK_API_KEY', '');
+    await writeFile(join(parent, '.env'), 'export DEEPSEEK_API_KEY="parent-test" # comment');
+    expect(await readProviderSetting(project, 'DEEPSEEK_API_KEY')).toBe('parent-test');
+    await writeFile(join(project, '.env'), "DEEPSEEK_API_KEY='project-test'");
+    expect(await readProviderSetting(project, 'DEEPSEEK_API_KEY')).toBe('project-test');
+    vi.stubEnv('DEEPSEEK_API_KEY', 'environment-test');
+    expect(await readProviderSetting(project, 'DEEPSEEK_API_KEY')).toBe('environment-test');
+  });
+  it('times out DeepSeek and returns deterministic art without writing cache', async () => {
+    const fetcher = vi.fn().mockImplementation((_url, options) => new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted')))));
+    const cacheDir = await root();
+    expect(await service(fetcher, { apiKey: '', deepseekApiKey: 'test', timeoutMs: 5, cacheDir }).designHero(profile, heroKit)).toEqual(hero);
+    expect(fetcher).toHaveBeenCalledTimes(1); expect(await readdir(cacheDir)).toEqual([]);
+  });
+  it('falls through quota failures to DeepSeek, then reuses its validated cache', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response('', { status: 402 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(hero) } }] })));
+    const onResult = vi.fn(), cacheDir = await root();
+    const api = service(fetcher, { deepseekApiKey: 'deepseek-test-secret', cacheDir, onResult });
+    expect(await api.designHero(profile, heroKit)).toEqual(hero);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const [url, request] = fetcher.mock.calls[1];
+    expect(url).toBe('https://api.deepseek.com/chat/completions');
+    expect(request.headers.Authorization).toBe('Bearer deepseek-test-secret');
+    expect(request.body).not.toContain('deepseek-test-secret');
+    expect(JSON.parse(request.body)).toMatchObject({ model: 'deepseek-flash', thinking: { type: 'disabled' }, response_format: { type: 'json_object' } });
+    expect(onResult).toHaveBeenCalledWith({ slug: profile.slug, kind: 'hero', source: 'deepseek', model: 'deepseek-flash' });
+    expect(await service(vi.fn(), { apiKey: '', cacheDir }).designHero(profile, heroKit)).toEqual(hero);
+  });
+  it('uses DeepSeek without a Gemini key and keeps invalid or truncated output out of cache', async () => {
+    for (const choice of [
+      { finish_reason: 'length', message: { content: JSON.stringify(hero) } },
+      { finish_reason: 'stop', message: { content: '{}' } },
+      { finish_reason: 'stop', message: { content: 'not json' } },
+    ]) {
+      const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [choice] })));
+      const cacheDir = await root();
+      expect(await service(fetcher, { apiKey: '', deepseekApiKey: 'test', cacheDir }).designHero(profile, heroKit)).toEqual(hero);
+      expect(fetcher).toHaveBeenCalledTimes(1); expect(await readdir(cacheDir)).toEqual([]);
+    }
+  });
+  it('never calls either provider for private code, and never calls DeepSeek on Gemini success', async () => {
+    const fetcher = vi.fn().mockImplementation(async () => response(hero));
+    const api = service(fetcher, { deepseekApiKey: 'test' });
+    expect(await api.designHero(profile, heroKit, { private: true })).toEqual(hero);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(await api.designHero(profile, heroKit)).toEqual(hero);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][0]).toContain('generativelanguage.googleapis.com');
+  });
+  it('backs off a quota-blocked Gemini for subsequent different requests', async () => {
+    const fetcher = vi.fn().mockImplementation(async (url: string) => url.includes('googleapis')
+      ? new Response('', { status: 429 })
+      : new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(hero) } }] })));
+    const api = service(fetcher, { deepseekApiKey: 'test' });
+    await api.designHero(profile, heroKit); await api.designHero({ ...profile, seed: profile.seed + 1 }, heroKit);
+    expect(fetcher.mock.calls.filter(c => c[0].includes('googleapis'))).toHaveLength(1);
+    expect(fetcher.mock.calls.filter(c => c[0].includes('deepseek.com'))).toHaveLength(2);
+  });
   it('versions archetype art separately from the DNA name seed and hero artwork', () => {
     expect(designCacheKey(profile, 'hero', heroKit).endsWith(dnaFingerprint(profile, heroKit))).toBe(true);
     expect(designCacheKey(profile, 'boss', bossKit).endsWith(dnaFingerprint(profile, bossKit))).toBe(false);
