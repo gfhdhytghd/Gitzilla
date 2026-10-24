@@ -227,7 +227,8 @@ export interface Hazard {
 export interface Minion { id: number; x: number; y: number; hp: number; kind: string }
 
 export type GameEvent =
-  | { type: "hit"; target: "boss" | string; limb?: string; amount: number; x: number; y: number; combo?: number }
+  | { type: "hit"; target: "boss" | string; limb?: string; amount: number; x: number; y: number; combo?: number;
+      crit?: boolean; direction?: [number, number]; impact?: number; hitStop?: number; source?: string }
   | { type: "telegraph"; attackId: string; name: string; targetPlayer: string | null }
   | { type: "limbBroken"; limb: string; by: string }
   | { type: "downed"; player: string }
