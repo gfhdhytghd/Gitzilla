@@ -1,27 +1,25 @@
 DONE (attack flavor)
 
-## Attack flavor polish — complete
-- Added `ATTACK_FLAVOR_POOLS` + deterministic `attackFlavorPicker(seed,existing?)`. Each kind cycles through its seeded pool before repeating; heart attacks continue from existing kind counts. First laser is always the kaiju signature `</> Breath`; mouth origin/.95s plate-charge telegraph remain unchanged.
-- Real source identifiers remain distinct; full names never repeat across each fallback boss's initial + heart deck. A pool repeats only after exhaustion (React's7 cascades use the2 requested phrases in a4/3 split). No added attacks or changes to HP, hitboxes, damage, cooldowns, casting cadence, attack shares or gameplay RNG. Existing300-match balance evidence remains valid.
-- Previously authorized design integration extended for this same naming polish: fallback uses the same seeded picker; cached/model/direct-apply reconciliation replaces uniform legacy disaster strings with balanced pool choices. Custom art suffixes remain source-correct and repeated custom suffix tags are idempotent across repeated validation. Updated only attackNames in15 existing public boss assets, preserving all art and stats.
-- Tests cover pool completeness, seeded replay,3 full balanced cycles, first/next laser, seed variation, every15 fallback boss's kind membership/maximum available variety/distinct identifiers/full-name uniqueness, heart names, legacy-cache repair and repeated custom-art idempotency. Cosmetic equality checks preserve all non-name attack fields.
-- **Final full workspace suite590 PASS /8 optional skips; full tsc PASS; diff check PASS.** Focused flavor28 PASS. No commits, provider calls or live5173 interactions.
-- **Actual DEV5175 decorated-lobby WS checks PASS** for React and ripgrep after async design refinement; both test rooms were explicitly left/deleted. Exact examples below.
+## Expanded attack flavor pools — complete
+- Expanded every kind to6 distinct phrases; cascades have8, covering the analyzer's full8-component cap. The deterministic picker uses every phrase before reuse, then repeats a balanced cycle. Heart attacks continue the same kind count, and first laser remains `</> Breath` from the mouth.
+- React's7 cascades now have7 different disaster suffixes. Source identifiers/full names remain distinct, and numeric combat fields/gameplay RNG are unchanged. Existing balance evidence remains valid; no tuning or resimulation needed for label-only changes.
+- Updated only attackNames in15 existing public boss assets, preserving other fields and the design owner's concurrent kaiju work. No shared/server/client edits, provider calls, commits/pushes or live5173 activity.
+- **118 sim tests PASS; full workspace tsc PASS; diff check PASS.** Flavor29 PASS. Tests require≥6 distinct entries per kind, uniqueness within each of3 complete cycles, balanced reuse,7 distinct React cascades, all fallback/heart identifiers and full names, cache repair and idempotence.
+- **Actual DEV5175 decorated React lobby PASS:** after design refinement all7 cascade phrases are distinct (list below). The test room was explicitly left/deleted.
+- Focused design suite currently has2 unrelated failures from codex-gemini's active kaiju-prompts card: changed body selection vs old seed fixture and body/lore asset regeneration. Its progress log explicitly preserves these concurrent attack-pool changes; sim did not edit/revert those fields. All sim tests and typecheck pass independently.
 
-| Kind | Phrase pool |
+| Kind | Expanded phrase pool |
 | --- | --- |
-| ring | while(true) Loop · Infinite Scroll · Busy Wait |
-| spiral | Recursion · Callback Hell · Deep Clone |
-| fan | throw · Exception Spray · Panic! |
-| laser | </> Breath · Race Condition · grep Beam |
-| slam | Stack Overflow · Segfault · Kernel Panic |
-| charge | git push --force · rm -rf · Hard Reset |
-| summon | npm install Swarm · Dependency Hell |
-| cascade | Merge Conflict · Memory Leak |
+| ring | while(true) Loop · Infinite Scroll · Busy Wait · Event Loop · Spin Lock · Retry Storm |
+| spiral | Recursion · Callback Hell · Deep Clone · Stack Trace · Recursive Descent · Nested Promises |
+| fan | throw · Exception Spray · Panic! · Unhandled Error · Throw Storm · Null Pointer |
+| laser | </> Breath · Race Condition · grep Beam · Atomic Fault · Hot Path · Null Ray |
+| slam | Stack Overflow · Segfault · Kernel Panic · Core Dump · Stack Smash · OOM Crash |
+| charge | git push --force · rm -rf · Hard Reset · Force Push · Branch Crash · History Rewrite |
+| summon | npm install Swarm · Dependency Hell · Package Flood · Transitive Swarm · Lockfile Storm · Version Drift |
+| cascade | Merge Conflict · Memory Leak · Rebase Hell · Circular Import · Cache Stampede · Dangling Pointer · Deadlock · Split Brain |
 
-React: `render() npm install Swarm`, `Component() Kernel Panic`, `App() Memory Leak`, `fn() Merge Conflict`, `Foo() Memory Leak`, `Child() Merge Conflict`, `get() Memory Leak`, `callback() Merge Conflict`, `create() Memory Leak`.
-
-Ripgrep: `new() while(true) Loop`, `path() git push --force`, `build() Recursion`, `matched() Infinite Scroll`, `matcher() Callback Hell`, `args() Busy Wait`, `len() Deep Clone`, `is_empty() while(true) Loop`, `Error() Recursion`.
+Verified React lobby cascades: `App() Dangling Pointer`, `fn() Deadlock`, `Foo() Split Brain`, `Child() Merge Conflict`, `get() Memory Leak`, `callback() Rebase Hell`, `create() Circular Import`.
 
 DONE (code weapon names)
 DONE (anatomy wiring + mouth laser)

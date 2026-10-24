@@ -1,4 +1,4 @@
-DONE
+DONE (godzilla refs)
 
 Completed `docs/tasks/codex-ideas.md` as ideation/specification work only.
 
@@ -52,3 +52,15 @@ Recommended cut: implement #01 and #02 independently; add #03 only if four imple
 ## Scope and remaining work
 
 Only `docs/ideas/fun-and-codebase.md` and this progress file were authored in the repository. Preserved other agents' pre-existing/parallel changes. **No product code, shared types, commits, pushes or memory changes.** No remaining work on this ideation card; implementation and physical/human acceptance belong to the coordinator and module owners.
+
+
+## Follow-up completed: Godzilla / kaiju references
+
+- Read and used `/home/wilf/.agents/skills/lark-shared/SKILL.md` and `/home/wilf/.agents/skills/lark-im/SKILL.md`, plus list/download-enrichment references. Used `lark-cli` with both notifier environment variables disabled and explicit **`--as bot`**. No user login/authentication flow was needed.
+- Read `docs/design-refs/README.md`; used exact p2p chat `oc_e0decba894219dffa8d4868c05aad646` and sender `ou_3db23cf05c03b4942c355797cc88e8f9`.
+- Listed the entire New York day `2026-10-24T00:00:00-04:00` through `2026-10-25T00:00:00-04:00` with ascending order, automatic pagination and `--download-resources`. CLI confirmed **bot**, **complete pagination**, **one page / 15 messages**. Found and visually inspected **all seven user image messages**: five kaiju images at positions **362–366**, and the existing hero sheets at **372–373**.
+- Saved original, unchanged PNGs as `docs/design-refs/boss-1.png` through `boss-5.png`, in ascending message order. Verified valid PNG data, dimensions/byte counts and matching SHA-256 hashes. Re-downloaded hero image hashes match `hero-1.png`/`hero-2.png`; neither file nor the existing reference README was changed.
+- Wrote [BOSS-README.md](../design-refs/BOSS-README.md) for claude-boss: full seven-image provenance inventory, exact message links and read-only reproduction route; per-image silhouette, proportions, dorsal plates, pose, palette, lighting and details to copy; proposed renderer brief and original-file hashes.
+- Direction: compact boss-4 Godzilla blockout + boss-1 charged dorsal ridge; optional boss-2 multi-head/wing, boss-3 mechanical and boss-5 segmented-dragon variants. Clearly distinguishes screenshot/UI artifacts and observed still-image details from proposed animations.
+- Temporary downloads and image-only manifests: `/tmp/gitzilla-boss-refs-codex-ideas/`; no raw chat history or unrelated attachments added to the repo.
+- Follow-up scope: five reference assets, `BOSS-README.md`, and this progress update only. **No messages/reactions sent, no external writes, no product code changes, no commits.** Final checks passed for all seven source/file mappings, image integrity, each requested visual attribute, local links, formatting and the DONE marker. No remaining work on this follow-up.

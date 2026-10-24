@@ -129,9 +129,11 @@ describe('code weapon flavor', () => {
   it('cycles each seeded kind pool evenly before reusing a phrase and reserves the first laser for breath', () => {
     for (const kind of Object.keys(ATTACK_FLAVOR_POOLS) as (keyof typeof ATTACK_FLAVOR_POOLS)[]) {
       const pool = ATTACK_FLAVOR_POOLS[kind], a = attackFlavorPicker(123), b = attackFlavorPicker(123);
+      expect(pool.length).toBeGreaterThanOrEqual(6); expect(new Set(pool).size).toBe(pool.length);
       const phrases = Array.from({ length: pool.length * 3 }, () => a(kind));
       expect(phrases).toEqual(Array.from({ length: pool.length * 3 }, () => b(kind)));
       expect(new Set(phrases.slice(0, pool.length)).size).toBe(pool.length);
+      for (let cycle = 0; cycle < 3; cycle++) expect(new Set(phrases.slice(cycle * pool.length, (cycle + 1) * pool.length)).size).toBe(pool.length);
       for (const phrase of pool) expect(phrases.filter(s => s === phrase)).toHaveLength(3);
     }
     expect(attackFlavorPicker(999)('laser')).toBe('</> Breath');
@@ -166,5 +168,12 @@ describe('code weapon flavor', () => {
     expect(reconcileCodeNames(repaired)).toEqual(repaired);
     expect(repaired.attacks.every(a => a.name.includes('Actual Attack') && a.name.length <= 64)).toBe(true);
     expect(new Set(repaired.attacks.map(a => a.name)).size).toBe(kit.attacks.length);
+  });
+  it('gives all seven React cascades distinct disaster phrases before any reuse', () => {
+    const p = loadBalanceProfiles().find(p => p.slug === 'facebook/react')!, kit = bossKitFromProfile(p, 4);
+    const symbols = (kit.code as BossCode).attackSymbols;
+    const phrases = kit.attacks.filter(a => a.kind === 'cascade').map(a => a.name.slice(symbols[a.id].length + 1));
+    expect(phrases).toHaveLength(7); expect(new Set(phrases).size).toBe(7);
+    expect(phrases.every(phrase => ATTACK_FLAVOR_POOLS.cascade.includes(phrase))).toBe(true);
   });
 });
