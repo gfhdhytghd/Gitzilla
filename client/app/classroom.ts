@@ -1,5 +1,6 @@
 import type { ClassroomPlan, ClassroomState, ClassroomStep, ClassroomReport, ClassroomCommand, ClassroomCheck } from '../../shared/classroom';
 import { defaultClassroomPlan } from '../../shared/classroom-defaults';
+import { pythonClassroomPresets, pythonClassroomPlan, pythonStarter, pythonTeacherGuide } from '../../shared/classroom-presets';
 import { type AppCtx, type Screen, isOwner, toast } from './app';
 import { h, store } from './util';
 import { createGithubPicker } from './github';
@@ -32,6 +33,7 @@ export function createClassroom(app: AppCtx): Screen {
   let lastServerTime = state?.serverTime;
   let draft: ClassroomPlan = structuredClone(state?.plan ?? defaultClassroomPlan());
   let selected: string | null = null;
+  let selectedPreset = pythonClassroomPresets[0].id;
   let rowsSig = '', detailsSig = '', phaseSig = '', planSig = '';
   let raidKey = '', expectationsSig = '';
   const rawChecks = new Map<string, string>();
@@ -88,6 +90,33 @@ export function createClassroom(app: AppCtx): Screen {
   const command = (action: ClassroomCommand) => app.conn.send({ t: 'classroomControl', action });
   const buildPlanEditor = () => {
     for (const dispose of disposables.splice(0)) dispose();
+    const presets = h('select', { 'data-testid': 'classroom-preset-select', 'aria-label': 'Python 预设课程' },
+      ...pythonClassroomPresets.map(p => h('option', { value: p.id }, p.title))) as HTMLSelectElement;
+    presets.value = selectedPreset;
+    const presetSummary = h('p'), presetPrerequisite = h('p.cr-preset-meta'), presetFile = h('p.cr-preset-meta');
+    const guide = h('pre.cr-teacher-guide', { 'data-testid': 'classroom-preset-guide' });
+    const previewPreset = () => {
+      selectedPreset = presets.value;
+      const preset = pythonClassroomPresets.find(p => p.id === selectedPreset)!;
+      presetSummary.textContent = preset.summary;
+      presetPrerequisite.textContent = `前置知识：${preset.prerequisite}`;
+      presetFile.textContent = `3 个步骤 · 约 ${preset.minutes} 分钟 · 学生文件：${preset.file}`;
+      guide.textContent = pythonTeacherGuide(selectedPreset);
+    };
+    presets.onchange = previewPreset; previewPreset();
+    const starterDownload = () => {
+      const starter = pythonStarter(selectedPreset), url = URL.createObjectURL(new Blob([starter.content], { type: 'text/x-python;charset=utf-8' }));
+      const link = h('a', { href: url, download: starter.filename.split('/').at(-1)! }); link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    const library = h('section.cr-preset-library', { 'data-testid': 'classroom-preset-library' },
+      h('h3', null, 'Python 预设课程 · 从零到 dict'),
+      field('按顺序选择一课', presets), presetSummary, presetPrerequisite, presetFile,
+      h('div.cr-plan-buttons', null,
+        button('载入这节课', 'classroom-preset-load', () => { draft = pythonClassroomPlan(selectedPreset); rawChecks.clear(); buildPlanEditor(); }, 'btn-primary'),
+        button('下载学生起始文件', 'classroom-preset-download', starterDownload)),
+      h('small', null, '载入只替换下面的草稿；发布后学生才会收到。下载的 .py 文件需放入所示的 python/ 目录。所有题目可编辑。'),
+      h('details', null, h('summary', null, '教师备课与复核说明'), guide));
     const lessonTitle = h('input', { value: draft.title, maxlength: 120, 'data-testid': 'lesson-title' }) as HTMLInputElement;
     lessonTitle.oninput = () => { draft.title = lessonTitle.value; };
     const target = h('input', { value: draft.bossName, maxlength: 80, 'data-testid': 'lesson-boss-name' }) as HTMLInputElement;
@@ -123,7 +152,7 @@ export function createClassroom(app: AppCtx): Screen {
         rubricDetails, h('div.cr-step-buttons', null, button('Move up', `step-up-${index}`, () => move(-1)), button('Move down', `step-down-${index}`, () => move(1)), button('Remove', `step-remove-${index}`, () => { if (draft.steps.length > 1) { draft.steps.splice(index, 1); buildPlanEditor(); } }))));
     }
     editor.replaceChildren(h('div.cr-editor-intro', null, h('h2', null, 'Build the lesson'), h('p', null, 'Give the class a sequence of code challenges. Each task ends with one shared attack.')),
-      h('div.cr-editor-numbers', null, field('Lesson title', lessonTitle), field('Boss name', target)), steps,
+      library, h('div.cr-editor-numbers', null, field('Lesson title', lessonTitle), field('Boss name', target)), steps,
       h('div.cr-plan-buttons', null, button('+ Add step', 'classroom-add-step', () => { if (draft.steps.length < 12) { const step = structuredClone(defaultClassroomPlan().steps[0]); step.id = `step-${crypto.randomUUID()}`; step.title = 'New challenge'; draft.steps.push(step); buildPlanEditor(); } }),
         button('Publish lesson', 'classroom-save-plan', () => {
           if (editor.querySelector('.cr-form-error:not(:empty)')) return toast('Fix the evidence-check format before publishing.', 'err');

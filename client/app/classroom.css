@@ -67,3 +67,9 @@ body.classroom-active .rotate-guard, body.classroom-active .mute-btn { display:n
 .cr-dense .cr-person small { display:none; }
 .cr-dense .cr-rank,.cr-dense .cr-contribution { font-size:16px; }
 .cr-dense .cr-roster-list { max-height:calc(100dvh - 400px); min-height:0; }
+.cr-preset-library { display:grid; gap:12px; padding:20px; margin:20px 0; border:1px solid var(--cr-cyan); border-left-width:4px; background:#0b1727; }
+.cr-preset-library h3 { color:var(--cr-cyan); }
+.cr-preset-meta { color:var(--cr-muted); font-size:17px; }
+.cr-preset-library summary { cursor:pointer; color:var(--cr-cyan); padding:5px 0; }
+.cr-teacher-guide { white-space:pre-wrap; overflow-wrap:anywhere; font:17px/1.6 monospace; color:var(--cr-text); margin:10px 0 0; }
+.cr-preset-library select { font-family:monospace; }
