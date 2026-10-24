@@ -440,6 +440,7 @@ export function createInput(opts: InputOptions): InputController {
   if (trace.active) trace.add({ type: 'gesture', at: performance.now(), kind: 'settings', profile: motionProfile, sensitivity: tiltSensitivity, fullSpeed: TILT_FULL_SPEED[tiltSensitivity], movement: 'horizontal-gravity-linear' });
   on(window, 'gitzilla:settings', e => { settingsOpen = !!(e as CustomEvent).detail?.open; reset(); });
   on(window, 'kaiju:motion-profile', () => { const next = loadMotionProfile(); if (next !== motionProfile) controller.setMotionProfile(next); });
+  on(window, 'kaiju:gesture-trained', () => { controller.setProfile(loadThresholds(motionProfile)); });
   on(window, 'kaiju:tilt-sensitivity', () => { tiltSensitivity = loadTiltSensitivity(); });
   const debugPanel = window.location && new URLSearchParams(window.location.search).get('debug') === 'input'
     ? createInputDebugPanel() : null;

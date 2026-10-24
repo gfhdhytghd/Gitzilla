@@ -298,6 +298,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
       } catch (e) {
         console.warn("[kaiju] could not save input thresholds", e);
       }
+      window.dispatchEvent(new Event("kaiju:gesture-trained"));
     }
     removeEventListener("deviceorientation", onOri);
     removeEventListener("devicemotion", onMotion);

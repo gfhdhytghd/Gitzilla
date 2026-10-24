@@ -1524,3 +1524,5 @@ body.settings-open .kj-touch-overlay { display:none; }
 .settings-dialog .cc-train .btn-link { white-space:normal; text-align:left; overflow-wrap:anywhere; }
 .settings-dialog .cc-legend { white-space:normal; overflow-wrap:anywhere; }
 .settings-button.settings-inline { position:static; flex:none; }
+.settings-dialog .btn, .settings-button { font-family:var(--term); font-size:16px; }
+.settings-dialog .controls-card { box-shadow:none; }

@@ -133,6 +133,12 @@ describe('desktop input', () => {
     localStorage.setItem('kaiju.motionProfile','standard'); emit(win,'kaiju:motion-profile');
     expect(input.motionProfile).toBe('standard'); expect(input.mode).toBe('motion');
   });
+  it('applies completed settings training to an already running controller', () => {
+    const input = start('standard');
+    localStorage.setItem('kaiju.motionCalibration.v3', JSON.stringify({version:3,profile:'standard',thresholds:{swingThreshold:6,twistThreshold:150}}));
+    emit(win,'kaiju:gesture-trained');
+    expect(input.profile.swingThreshold).toBe(6); expect(input.profile.twistThreshold).toBe(150);
+  });
   it('maps all dash/skill aliases and ignores editable elements', () => {
     const input = start();
     for (const code of ['KeyK', 'ShiftLeft', 'ShiftRight']) {
