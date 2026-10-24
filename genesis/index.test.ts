@@ -38,7 +38,9 @@ describe('Genesis fallback stories', () => {
       expect(g.trace.at(-1)?.part).toBe('name');
     }
     expect(h.trace.slice(0, 4).map(t => t.part)).toEqual(['weapon', 'skill', 'glyphs', 'name']);
-    expect(b.trace.slice(0, 4).map(t => t.part)).toEqual(['limb', 'heart', boss.limbs.some(l => l.weakPoint) ? 'weakpoint' : 'eyes', 'attack']);
+    const bossOpening = ['limb', 'heart', 'class', boss.limbs.some(l => l.weakPoint) ? 'weakpoint' : 'eyes', 'attack'];
+    expect(b.trace.slice(0, bossOpening.length).map(t => t.part)).toEqual(bossOpening);
+    expect(b.trace[2]).toMatchObject({ ref: 'archetype', to: expect.stringMatching(new RegExp(boss.archetype, 'i')) });
     expect(h.trace.find(t => t.part === 'weapon')?.to).toBe(hero.code?.weapon?.name ?? hero.weapon);
     expect(h.trace.find(t => t.part === 'skill')?.to).toBe(`skill: ${hero.skill}`);
     expect(h.budget.reduce((s, b) => s + b.value, 0)).toBeCloseTo(5);
@@ -85,7 +87,8 @@ describe('Genesis fallback stories', () => {
     expect(`${hero.trace[0].from} → ${hero.trace[0].to}`.length).toBeLessThanOrEqual(40);
     expect(boss.trace[0]).toMatchObject({ from: `${p.components[0].name} · 12,485 LOC`, to: 'Core Claw · 1,703 HP' });
     expect(boss.trace[1]).toMatchObject({ from: '0 cycles · heart fan-in 41', to: 'heart: gitignore.rs' });
-    expect(boss.trace.slice(0, 4).map(t => t.part)).toEqual(['limb', 'heart', 'eyes', 'attack']);
+    const bossOpening = ['limb', 'heart', 'class', 'eyes', 'attack'];
+    expect(boss.trace.slice(0, bossOpening.length).map(t => t.part)).toEqual(bossOpening);
     for (const profile of profiles) {
       const base = bossKitFromProfile(profile, 4);
       const g = buildGenesis(profile, applyBossDesign(base, fallbackBoss(profile, base)), 'boss');

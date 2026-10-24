@@ -1,9 +1,22 @@
-DONE (edu pvp) — codex-genesis
+DONE (archetypes) — codex-genesis
 
 Implemented the server-side pure TypeScript code → character story builder in `genesis/`.
 No commits, new dependencies, shared-contract edits, or other owners' implementation edits.
 
-## Code-expression weapon caption correction (latest)
+## Boss archetype trace (latest)
+- Read `docs/tasks/boss-archetypes.md`, required `BossKit.archetype`, `BossState.pose` / `airborne`, and the reference brief. Genesis constructs no BossKit/BossState literals and reads no live boss pose; no local required-field fixes were needed.
+- Added exported pure `bossArchetypeTrace(profile, kit)`. It consumes `sim/archetypes.ts` / `bossArchetypeFromProfile`'s exact winning reason. No copied thresholds or competing selector. Shortens wording, retains real human numbers, and stays ≤40 chars per side.
+- The authoritative final `kit.archetype` controls the destination: `Kaiju · crystal-backed titan`, `Hydra · many-headed terror`, `Mecha · armored machine`, `Abyssal · crystalline serpent`. An explicitly overridden kit uses truthful repo context instead of claiming a different helper result selected it. No invented head count, pose, airborne window or animation behavior.
+- Boss opening is now largest limb → heart → **why this archetype** → cycle weak point (or eyes) → attack. The archetype step is third, `part: 'class'`, `ref: 'archetype'`, so phones showing only ~8 steps include it. All other limb/attack traces remain; final name stays last. Edu hero report cards are unchanged.
+- **Handoff to codex-net / claude-genesis / claude-ui:** no API/wiring change. Existing `buildGenesis(profile, finalBossKit, 'boss')` emits the new step automatically. Consumers may identify it by `ref === 'archetype'`; `bossArchetypeTrace` is available separately if needed. Keep `kit.archetype` through design decoration and squad rescaling. Rendering live poses and preset behaviors stays sim/renderer-owned.
+- Initial request for sim's exact reason is **resolved**: the sim helper landed during this task and is now directly imported. Initial external missing-`archetype` kit error is also resolved by that owner; no sim edits from Genesis.
+- All 15 fallback bosses audited: **Kaiju 4, Hydra 3, Mecha 3, Abyssal 5**. Example sources: ripgrep `Rust · import depth 3 · 50,796 LOC`; React `2 import cycles`; rustlings `150 debt marks`. Maximum audited base-boss Genesis JSON **7,285 bytes**.
+- `npx vitest run genesis`: **56/56 PASS**, 4 files. Covers all silhouettes, every selector branch (cycles/fan-out/systems/LOC/age/debt/default), final-kit identity, caption limits, privacy, unchanged budgets, and no archetype row in edu hero traces.
+- `npx tsc -p genesis/tsconfig.json --noEmit`: **PASS**. `git diff --check -- genesis docs/progress/codex-genesis.md`: **PASS**.
+- Full `npm test`: **600 PASS, 8 SKIP**, 50 files passed / 3 skipped.
+- Full `npm run typecheck`: **2 external diagnostics, zero Genesis diagnostics**: `client/render/boss/anatomy.ts:19` BossSlot/KaijuSlot mismatch; `server/rooms.test.ts:47` stub kit missing required archetype. Ownership preserved; no unrelated edits, dependencies, server activity or commits.
+
+## Code-expression weapon caption correction
 - Reproduced two stale assertions after code-expression weapon names landed: the phone-number test expected `unsafe{} Cannon`, and the design override used now-invalid prose `Actual Weapon`.
 - Weapon targets preserve the complete expression. The source language caption shortens first, retaining the percentage and keeping `from → to` within 40 characters. Payload compaction also preserves complete weapon expressions.
 - Updated the design fixture to valid `unsafe { blast() }`; the human-number test reads the actual final kit expression. Added explicit 24-character Go/Rust expression cases and a long-language case, asserting exact expression preservation and the whole-row limit.
