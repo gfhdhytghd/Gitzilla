@@ -1,44 +1,45 @@
 {
-  "name": "RIPGREP, THE DIRS COLOSSUS",
-  "epithet": "A long-necked, whip-tailed kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "serpent",
+  "name": "RIPGREP, THE DIRS OVERCLOCK",
+  "epithet": "A silver-armored mecha; new() fuels the red-visor reactor.",
+  "body": "machine",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
-    "moss",
-    "gears"
+    "gears",
+    "pipes",
+    "servers"
   ],
   "palette": [
-    "#211329",
-    "#5a4145",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#202936",
+    "#a3b3c2",
+    "#ff5368",
+    "#5ce5ef",
+    "#ffaf8a"
   ],
   "theme": "legacy",
   "intro": [
     "$ git clone burntsushi/ripgrep",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: crates/ignore/src/gitignore.rs",
+    "[##########] red visor online; jet vents armed",
+    "FATAL: missile barrage :: crates/ignore/src/gitignore.rs",
     "fn strip<'a, P: 'a + AsRef<Path> + ?Size"
   ],
   "taunts": [
-    "Known bug: TODO: In the next semver breaking release, we should",
-    "Recent sin: cargo: remove the `homepage` field",
-    "Your new() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Rocket-fist fault: TODO: In the next semver breaking release, we",
+    "Panel scars: cargo: remove the `homepage` field",
+    "Target lock: new(); rocket fist armed.",
+    "Eye laser compiling new().",
+    "Missile barrage seeks new().",
+    "Vents open. Cooling with git reset --hard."
   ],
   "attackNames": {
     "0-ring-0": "new() while(true) Loop",
     "0-charge-1": "path() git push --force",
-    "1-spiral-0": "build() Recursion",
-    "2-ring-0": "matched() while(true) Loop",
-    "3-spiral-0": "matcher() Recursion",
-    "4-ring-0": "args() while(true) Loop",
-    "5-spiral-0": "len() Recursion",
-    "6-ring-0": "is_empty() while(true) Loop",
+    "1-spiral-0": "build() Stack Trace",
+    "2-ring-0": "matched() Infinite Scroll",
+    "3-spiral-0": "matcher() Recursive Descent",
+    "4-ring-0": "args() Busy Wait",
+    "5-spiral-0": "len() Nested Promises",
+    "6-ring-0": "is_empty() Event Loop",
     "7-spiral-0": "Error() Recursion"
   },
   "limbNames": {

@@ -1,5 +1,30 @@
+DONE (archetypes)
+
+## Four boss archetypes — complete
+- Read docs/tasks/boss-archetypes.md and the committed BossKit.archetype / BossState.pose+airborne contract. No owned required-field errors. Simulation owns selection, movement, attacks and pose; designs follow BossKit.archetype without changing it or combat fields. Earlier always-upright/any-cycle guidance below is superseded.
+- Viewed all five original boss references. Added design/archetypes.ts in place of old design/kaiju.ts: four original material/silhouette/preset directions,12 source-noun title templates per form, distinct palettes/growths, core lore and actual TODO/commit taunts. Kaiju: teal/cyan saurian, bracket fins, stomp/roar/breath. Hydra: golden wings, branching necks, alternating head beams/dive. Mecha: silver panels, red visor, rocket fists/missiles/vents. Abyssal: black crystal coils, red/cyan veins, burrow/eruption/shatter.
+- Gemini receives explicit archetype identity, selected preset animation vocabulary and shared phase3 corruption direction. It must follow sim pose/head/airborne state and preserve supplied attack kinds; no copied film character names/sprites. Names/epithets/intros/taunts match the chosen form and retain exact code evidence.
+- Schema and runtime validation constrain body hints: hydra→hydra, mecha→machine, abyssal→serpent; kaiju has local armor variants. Source/cycle traits cannot override the sim's selection. Boss-only cache recipe now includes archetype, so former upright-only designs and other presets cannot collide. Hero fingerprints/code weapon names remain unchanged.
+- Regenerated30 public designs against current fallback profiles/kits using `npx tsx design/precompute.ts --force --offline --require-dna`: **4 kaiju /3 hydra /3 mecha /5 abyssal**. All15 boss names/epithets remain distinct; repo names never repeat in the title suffix. Actual examples: `LODASH, DORSAL KING OF RUN IN CONTEXT`; `REACT, MANY MAWS OF SHARED RUNTIME`; `RIPGREP, THE DIRS OVERCLOCK`; `FLASK, BURROWER OF MAKE RESPONSE`. Hero JSONs unchanged. Manifest truthfully records fallback provenance; no provider calls.
+- Preserved codex-sim's attackFlavorPicker, canonical source symbol allocation and reconcileCodeNames paths. Tests check source identifiers, all four body/prompt/schema/lore directions, authority over conflicting source traits, immutable combat fields, per-archetype memory/disk cache separation, unique names and offline bundled loading at every squad size.
+- **70/70 design tests PASS; focused design tsc PASS; full npm test611 PASS /8 optional skips** (50 passed files /3 skipped); owned git diff --check PASS. Workspace `npm run typecheck` has one remaining error outside this ownership: **server/rooms.test.ts:47** fake makeBoss return is missing required BossKit.archetype. That file was left to its owner. No design errors remain.
+- Only design/, data/design/ and this required progress log changed for this card. No shared/sim/render/server edits, commits/pushes, messages, dependencies, server start/stop or live5173 access. Actual behavior/pose implementation and visual acceptance belong to sim/renderer owners; this card supplies art/flavor and does not claim runtime animation proof.
+- Handoff: if subsequent sim work changes preset attack kinds/decks, rerun the offline precompute command with the final kits before deployment; bundled acceptance tests cover the saved name maps and identities. The current kit inputs and full suite are green.
+
+DONE (kaiju prompts)
+
+## Kaiju prompts follow-up
+- Completed the remaining fallback gap: body selection is now repo-driven, and taunts use kaiju actions grounded in real source evidence. The renderer retains its common upright Godzilla-inspired silhouette for every body enum.
+- Any real dependency cycle, including a single cycle, yields hydra extra-head flavor. Real root/tree symbols yield rooted bark/spines; systems languages, allocator/compiler symbols or kernel/enterprise themes yield mech plating; remaining old/legacy code yields mossy tree variants. Neutral repos choose another kaiju variant by seed. Matching moss/spikes or cable/gear growths reinforce those hints.
+- Prompt explicitly asks for stomping, roaring, charging dorsal plates and `</>` breath tied to exact identifiers/TODOs/commit subjects. Offline taunts now include `Tail stomp: <real TODO>`, `Dorsal scars: <real commit>`, `ROAR! <symbol>() shakes beneath my feet.`, `Dorsal plates charging: <symbol>()`, and `</> breath burns <symbol>().` Epithets name the real symbol fueling the chest reactor; intros retain the actual heart file and code line.
+- Boss-only art cache recipe bumped and includes language/theme variant inputs. DNA-derived unique boss names and hero code names are stable; no gameplay stats, attacks, cooldowns, HP, hitboxes or budgets changed.
+- Preserved codex-sim's `attackFlavorPicker`, canonical symbol allocation and reconcileCodeNames paths during its concurrent expanded-pool work. Its progress now says DONE (attack flavor), and all source-prefix/name-repair tests remain green.
+- Regenerated **30 bundles /15 repos** offline against the current inputs. Actual variant distribution: **6 hydra /5 machine /3 tree /1 golem**. All remain kaiju hints. Saved example: Flask is `tree`, lore `A bark-armored, root-spined kaiju; app() fuels the chest reactor.`, with `ROAR! app()...` and `</> breath burns app().`; Redis is mech-plated with `sdslen()`; Django is a many-headed hydra with `__init__()`.
+- **Final checks at16:47 local: 59/59 design tests PASS; full npm test592 PASS /8 skipped** (49 passed files /3 skipped); **npm run typecheck PASS; git diff --check PASS**. Coverage includes all9 supported variant hints, single-cycle priority, actual root/allocator symbols, systems/age selection, kaiju taunts in every saved bundle, cache inputs, immutable kits, unique names and existing code-weapon/source-name constraints.
+- Feishu references/brief are complete and unchanged. Only design/, data/design/, and this required progress log changed. No commits/pushes, shared/render/sim/server edits, external messages/provider calls, server start/stop or live5173 access.
+
 DONE (feishu refs)
-DONE (kaiju flavor)
+DONE (earlier kaiju flavor)
 
 ## Feishu hero-reference retrieval
 - Read lark-shared and lark-im skills. Use ~/.local/bin/lark-cli with both notifier-suppression env flags.

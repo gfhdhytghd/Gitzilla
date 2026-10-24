@@ -1,11 +1,11 @@
 import type { BossDesign, BossKit, HeroArchetype, PlayerKit, RepoProfile } from '../shared/types.ts';
 import { signature, symbolAllocator, type BossCode } from '../sim/code.ts';
-import { ATTACK_FLAVOR } from '../sim/flavor.ts';
-import { accessories, bodies, headgear, mouths } from './schema.ts';
+import { attackFlavorPicker } from '../sim/flavor.ts';
+import { accessories, headgear, mouths } from './schema.ts';
 import { artDNA, dnaEmblem } from './code.ts';
 import { bossEpithet } from './names.ts';
 import { fallbackWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
-import { kaijuVariants } from './kaiju.ts';
+import { bossArt, chooseBossBody } from './archetypes.ts';
 
 const choose = <T>(values: readonly T[], seed: number, shift = 0): T => values[((seed >>> shift) >>> 0) % values.length];
 const short = (value: string, length: number) => value.slice(0, length).trimEnd();
@@ -38,30 +38,32 @@ export function fallbackHero(profile: RepoProfile, kit: PlayerKit): HeroDesignWi
 export function fallbackBoss(profile: RepoProfile, kit: BossKit): BossDesign {
   const seed = profile.seed >>> 0;
   const repo = (profile.slug.split('/').pop() || 'repo').toUpperCase();
-  const body = profile.cycles.length > 1 ? 'hydra' : choose(bodies, seed, 4);
-  const old = profile.ageDays > 3650;
+  const body = chooseBossBody(profile, kit);
+  const art = bossArt[kit.archetype];
   const suffix = bossEpithet(profile, kit);
   const dna = artDNA(profile, kit);
   const pickAttack = symbolAllocator({ dna });
+  const pickFlavor = attackFlavorPicker(profile.seed);
   const canonicalAttacks = Object.fromEntries(kit.attacks.map(a => {
-    const symbol = pickAttack(a.source);
-    return [a.id, symbol ? `${symbol} ${ATTACK_FLAVOR[a.kind]}` : `${ATTACK_FLAVOR[a.kind]} :: ${a.source}`];
+    const symbol = pickAttack(a.source), flavor = pickFlavor(a.kind);
+    return [a.id, symbol ? `${symbol} ${flavor}` : `${flavor} :: ${a.source}`];
   }));
   const limbParts = ['Claw', 'Lens', 'Mandible', 'Tendril', 'Coil', 'Antenna', 'Plating', 'Root'];
+  const symbol = dna.identifiers.find(id => id.length <= 24);
+  const target = symbol ? `${symbol}()` : 'your stack';
   const taunts = [
-    ...(dna.todos.length ? [short(`Known bug: ${choose(dna.todos, seed)}`, 64)] : []),
-    ...(dna.commits.length ? [short(`Recent sin: ${choose(dna.commits, seed, 4)}`, 64)] : []),
-    ...(dna.identifiers.length ? [short(`Your ${dna.identifiers[0]}() cannot save you.`, 64)] : []),
-    'Your PR has conflicts.', 'There is no base case.', 'Works on my machine.',
-  ].slice(0, 6);
+    ...(dna.todos.length ? [short(`${art.todo}: ${choose(dna.todos, seed)}`, 64)] : []),
+    ...(dna.commits.length ? [short(`${art.commit}: ${choose(dna.commits, seed, 4)}`, 64)] : []),
+    ...art.taunts(target).map(line => short(line, 64)),
+  ];
   return {
     name: short(`${repo}, ${suffix}`, 64),
-    epithet: short(`A ${kaijuVariants[body]} kaiju; ${profile.components.length} code-limbs guard the chest reactor.`, 120),
+    epithet: short(`${art.creature}; ${symbol ? `${symbol}() fuels` : `${profile.components.length} code-limbs guard`} the ${art.core}.`, 120),
     body, eyes: Math.max(1, Math.min(12, profile.contributors || 1)), mouth: choose(mouths, seed, 12),
-    growths: [old ? 'moss' : 'cables', profile.cycles.length ? 'tentacles' : 'gears'],
-    palette: ['#211329', choose(['#683b65', '#465b72', '#5a4145'], seed), '#ff547b', '#bb83ef', '#fff4bd'],
+    growths: body === 'tree' ? ['moss', 'crystals', 'spikes'] : [...art.growths],
+    palette: [...art.palette],
     theme: kit.theme,
-    intro: [`$ git clone ${profile.slug}`.slice(0, 80), '[##########] dorsal plates charged; kaiju rising', `FATAL: atomic code breath :: ${profile.heart}`.slice(0, 80), ...dna.heartLines.slice(0, 1)],
+    intro: [`$ git clone ${profile.slug}`.slice(0, 80), art.intro, `FATAL: ${art.fatal} :: ${profile.heart}`.slice(0, 80), ...dna.heartLines.slice(0, 1)],
     taunts,
     attackNames: canonicalAttacks,
     limbNames: Object.fromEntries(kit.limbs.map((limb, i) => {

@@ -1,40 +1,40 @@
 {
-  "name": "NANOGPT, KEEPER OF FROM PRETRAINED",
-  "epithet": "A many-headed, branching-necked kaiju; 3 code-limbs guard the chest reactor.",
-  "body": "hydra",
+  "name": "NANOGPT, THE FROM PRETRAINED STACK CRUSHER",
+  "epithet": "A dorsal-crowned kaiju; __init__() fuels the chest reactor.",
+  "body": "spider",
   "eyes": 12,
   "mouth": "none",
   "growths": [
-    "cables",
-    "gears"
+    "crystals",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#5a4145",
-    "#ff547b",
-    "#bb83ef",
+    "#09292c",
+    "#346769",
+    "#51f5df",
+    "#207eac",
     "#fff4bd"
   ],
   "theme": "notebook",
   "intro": [
     "$ git clone karpathy/nanogpt",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: model.py",
+    "[##########] dorsal fins charged; kaiju rising",
+    "FATAL: </> breath :: model.py",
     "class LayerNorm(nn.Module):"
   ],
   "taunts": [
-    "Known bug: note: this is a CPU-GPU sync point",
-    "Recent sin: Merge branch 'master' into test1",
-    "Your __init__() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Tail stomp: note: this is a CPU-GPU sync point",
+    "Dorsal scars: Merge branch 'master' into test1",
+    "ROAR! __init__() shakes beneath my feet.",
+    "Dorsal fins charging: __init__()",
+    "</> breath burns __init__().",
+    "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-ring-0": "__init__() while(true) Loop",
-    "0-charge-1": "get_batch() git push --force",
+    "0-ring-0": "__init__() Infinite Scroll",
+    "0-charge-1": "get_batch() Force Push",
     "1-spiral-0": "encode() Recursion",
-    "2-ring-0": "GPT() while(true) Loop"
+    "2-ring-0": "GPT() Busy Wait"
   },
   "limbNames": {
     "limb-0": "LayerNorm() Antenna",

@@ -1,45 +1,46 @@
 {
-  "name": "EXAMPLE, THE UNFINISHED REVERSE",
-  "epithet": "A parasite-crowned, ember-shedding kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "swarm",
+  "name": "EXAMPLE, TAILBREAKER OF REVERSE",
+  "epithet": "A dorsal-crowned kaiju; main() fuels the chest reactor.",
+  "body": "tree",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
     "moss",
-    "gears"
+    "crystals",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#683b65",
-    "#ff547b",
-    "#bb83ef",
+    "#09292c",
+    "#346769",
+    "#51f5df",
+    "#207eac",
     "#fff4bd"
   ],
   "theme": "legacy",
   "intro": [
     "$ git clone golang/example",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: hello/reverse/reverse.go",
+    "[##########] dorsal fins charged; kaiju rising",
+    "FATAL: </> breath :: hello/reverse/reverse.go",
     "func usage() {"
   ],
   "taunts": [
-    "Known bug: TODO(adonovan): escape /^```/ in s",
-    "Recent sin: go.mod: update golang.org/x dependencies",
-    "Your main() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Tail stomp: TODO(adonovan): escape /^```/ in s",
+    "Dorsal scars: go.mod: update golang.org/x dependencies",
+    "ROAR! main() shakes beneath my feet.",
+    "Dorsal fins charging: main()",
+    "</> breath burns main().",
+    "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-ring-0": "appendAttr() while(true) Loop",
-    "0-charge-1": "New() git push --force",
-    "1-spiral-0": "main() Recursion",
-    "2-ring-0": "CheckNilFuncComparison() while(true) Loop",
-    "3-spiral-0": "cleanListing() Recursion",
-    "4-ring-0": "NewServer() while(true) Loop",
-    "5-spiral-0": "usage() Recursion",
-    "6-ring-0": "String() while(true) Loop",
-    "7-spiral-0": "imageHandler() Recursion"
+    "0-ring-0": "appendAttr() Busy Wait",
+    "0-charge-1": "New() Hard Reset",
+    "1-spiral-0": "main() Callback Hell",
+    "2-ring-0": "CheckNilFuncComparison() Event Loop",
+    "3-spiral-0": "cleanListing() Deep Clone",
+    "4-ring-0": "NewServer() Spin Lock",
+    "5-spiral-0": "usage() Stack Trace",
+    "6-ring-0": "String() Retry Storm",
+    "7-spiral-0": "imageHandler() Recursive Descent"
   },
   "limbNames": {
     "limb-0": "parseLogEntries() Mandible",

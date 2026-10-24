@@ -1,6 +1,7 @@
 import type { BossDesign, BossKit, PlayerKit, RepoProfile } from '../shared/types.ts';
 import { fallbackBoss, fallbackHero } from './fallback.ts';
-import { accessories, archetypes, bodies, growths, headgear, mouths, themes } from './schema.ts';
+import { accessories, archetypes, growths, headgear, mouths, themes } from './schema.ts';
+import { bossArt } from './archetypes.ts';
 import { validWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
 import { reconcileCodeNames } from '../sim/code.ts';
 
@@ -41,7 +42,7 @@ export function validateBoss(value: unknown, profile: RepoProfile, kit: BossKit)
   const selectedGrowths = Array.isArray(source.growths) ? [...new Set(source.growths.filter((g): g is typeof growths[number] => growths.includes(g)))].slice(0, 3) : [];
   const design: BossDesign = {
     name: text(source.name, fallback.name, 64), epithet: text(source.epithet, fallback.epithet, 120),
-    body: enumeration(source.body, bodies, fallback.body),
+    body: enumeration(source.body, bossArt[kit.archetype].bodies, fallback.body),
     eyes: typeof source.eyes === 'number' && Number.isFinite(source.eyes) ? Math.max(1, Math.min(12, Math.round(source.eyes))) : fallback.eyes,
     mouth: enumeration(source.mouth, mouths, fallback.mouth), growths: selectedGrowths.length ? selectedGrowths : fallback.growths,
     palette: palette(source.palette, fallback.palette), theme: enumeration(source.theme, themes, fallback.theme),

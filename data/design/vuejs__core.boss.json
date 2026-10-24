@@ -1,45 +1,46 @@
 {
-  "name": "CORE, THE BASE CREATE RENDERER PARADOX",
-  "epithet": "A parasite-crowned, ember-shedding kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "swarm",
+  "name": "CORE, THE BASE CREATE RENDERER UNDERCURRENT",
+  "epithet": "A black-crystalline abyssal serpent; render() fuels the veined coil core.",
+  "body": "serpent",
   "eyes": 12,
   "mouth": "zipper",
   "growths": [
-    "cables",
-    "tentacles"
+    "crystals",
+    "tentacles",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#100f1d",
+    "#363349",
+    "#ef426b",
+    "#38dfef",
+    "#aefaff"
   ],
   "theme": "web",
   "intro": [
     "$ git clone vuejs/core",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: packages/shared/index.js",
+    "[##########] crystal coils stir beneath the floor",
+    "FATAL: crystal eruption :: packages/shared/index.js",
     "export interface ComponentCustomProps {}"
   ],
   "taunts": [
-    "Known bug: TODO: check for cases where using innerHTML will resu",
-    "Recent sin: chore(deps): update playground (#15685)",
-    "Your render() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Buried debt: TODO: check for cases where using innerHTML will re",
+    "Vein scars: chore(deps): update playground (#15685)",
+    "I coil around render() beneath the floor.",
+    "Crystal eruption breaches render().",
+    "Red veins pulse through render().",
+    "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
     "0-cascade-0": "render() Merge Conflict",
     "0-charge-1": "h() git push --force",
-    "1-cascade-0": "foo() Merge Conflict",
-    "2-cascade-0": "test() Merge Conflict",
-    "3-cascade-0": "resolve() Merge Conflict",
-    "4-cascade-0": "ref() Merge Conflict",
-    "5-cascade-0": "Child() Merge Conflict",
-    "6-cascade-0": "nextTick() Merge Conflict",
-    "7-fan-0": "Comp() throw Spray"
+    "1-cascade-0": "foo() Memory Leak",
+    "2-cascade-0": "test() Rebase Hell",
+    "3-cascade-0": "resolve() Circular Import",
+    "4-cascade-0": "ref() Cache Stampede",
+    "5-cascade-0": "Child() Dangling Pointer",
+    "6-cascade-0": "nextTick() Deadlock",
+    "7-fan-0": "Comp() Null Pointer"
   },
   "limbNames": {
     "limb-0": "content() Plating",

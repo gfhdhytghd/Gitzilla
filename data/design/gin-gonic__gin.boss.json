@@ -1,43 +1,44 @@
 {
-  "name": "GIN, ANCIENT BYTESCONV REVENANT",
-  "epithet": "A many-eyed, reactor-gazing kaiju; 6 code-limbs guard the chest reactor.",
-  "body": "eye",
+  "name": "GIN, THE BYTESCONV OVERCLOCK",
+  "epithet": "A silver-armored mecha; Render() fuels the red-visor reactor.",
+  "body": "machine",
   "eyes": 12,
   "mouth": "maw",
   "growths": [
-    "moss",
-    "gears"
+    "gears",
+    "pipes",
+    "servers"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#202936",
+    "#a3b3c2",
+    "#ff5368",
+    "#5ce5ef",
+    "#ffaf8a"
   ],
   "theme": "legacy",
   "intro": [
     "$ git clone gin-gonic/gin",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: internal/bytesconv/bytesconv.go",
+    "[##########] red visor online; jet vents armed",
+    "FATAL: missile barrage :: internal/bytesconv/bytesconv.go",
     "type Core interface {"
   ],
   "taunts": [
-    "Known bug: TODO",
-    "Recent sin: docs: include HTTP QUERY method in RouterGroup.Any (",
-    "Your Render() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Rocket-fist fault: TODO",
+    "Panel scars: docs: include HTTP QUERY method in RouterGroup.Any",
+    "Target lock: Render(); rocket fist armed.",
+    "Eye laser compiling Render().",
+    "Missile barrage seeks Render().",
+    "Vents open. Cooling with git reset --hard."
   ],
   "attackNames": {
-    "0-fan-0": "Render() throw Spray",
-    "0-charge-1": "Bind() git push --force",
-    "1-laser-0": "Name() grep Trace",
-    "2-ring-0": "String() while(true) Loop",
-    "3-spiral-0": "GET() Recursion",
-    "4-ring-0": "Open() while(true) Loop",
-    "5-spiral-0": "Marshal() Recursion"
+    "0-fan-0": "Render() Throw Storm",
+    "0-charge-1": "Bind() History Rewrite",
+    "1-laser-0": "Name() </> Breath",
+    "2-ring-0": "String() Infinite Scroll",
+    "3-spiral-0": "GET() Recursive Descent",
+    "4-ring-0": "Open() Busy Wait",
+    "5-spiral-0": "Marshal() Nested Promises"
   },
   "limbNames": {
     "limb-0": "Header() Antenna",

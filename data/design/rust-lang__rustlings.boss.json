@@ -1,45 +1,46 @@
 {
-  "name": "RUSTLINGS, THE OVERCLOCKED DIRS",
-  "epithet": "A parasite-crowned, ember-shedding kaiju; 8 code-limbs guard the chest reactor.",
-  "body": "swarm",
+  "name": "RUSTLINGS, DEEP VEINS OF DIRS",
+  "epithet": "A black-crystalline abyssal serpent; new() fuels the veined coil core.",
+  "body": "serpent",
   "eyes": 12,
   "mouth": "brackets",
   "growths": [
-    "moss",
-    "tentacles"
+    "crystals",
+    "tentacles",
+    "spikes"
   ],
   "palette": [
-    "#211329",
-    "#465b72",
-    "#ff547b",
-    "#bb83ef",
-    "#fff4bd"
+    "#100f1d",
+    "#363349",
+    "#ef426b",
+    "#38dfef",
+    "#aefaff"
   ],
   "theme": "legacy",
   "intro": [
     "$ git clone rust-lang/rustlings",
-    "[##########] dorsal plates charged; kaiju rising",
-    "FATAL: atomic code breath :: src/exercise.rs",
+    "[##########] crystal coils stir beneath the floor",
+    "FATAL: crystal eruption :: src/exercise.rs",
     "fn name(&self) -> &str;"
   ],
   "taunts": [
-    "Known bug: TODO: Fix the function call.",
-    "Recent sin: write input files to disk before running exercise",
-    "Your new() cannot save you.",
-    "Your PR has conflicts.",
-    "There is no base case.",
-    "Works on my machine."
+    "Buried debt: TODO: Fix the function call.",
+    "Vein scars: write input files to disk before running exercise",
+    "I coil around new() beneath the floor.",
+    "Crystal eruption breaches new().",
+    "Red veins pulse through new().",
+    "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-summon-0": "new() npm install Swarm",
-    "0-charge-1": "Command() git push --force",
+    "0-summon-0": "new() Version Drift",
+    "0-charge-1": "Command() Hard Reset",
     "1-summon-0": "parse() npm install Swarm",
     "2-cascade-0": "path() Merge Conflict",
-    "3-cascade-0": "check() Merge Conflict",
-    "4-cascade-0": "selected() Merge Conflict",
-    "5-cascade-0": "done() Merge Conflict",
-    "6-cascade-0": "args() Merge Conflict",
-    "7-spiral-0": "test() Recursion"
+    "3-cascade-0": "check() Memory Leak",
+    "4-cascade-0": "selected() Rebase Hell",
+    "5-cascade-0": "done() Circular Import",
+    "6-cascade-0": "args() Cache Stampede",
+    "7-spiral-0": "test() Nested Promises"
   },
   "limbNames": {
     "limb-0": "transformer() Plating",
