@@ -1,7 +1,7 @@
 import type { BossAttack, BossState, PlayerState } from '../shared/types.ts';
 import { distance, random } from './math.ts';
 import { ATTACK_COST, squadBudget } from './balance.ts';
-import { ATTACK_FLAVOR } from './flavor.ts';
+import { attackFlavorPicker } from './flavor.ts';
 import type { BossCode } from './code.ts';
 
 export interface AiDecision { started?: BossAttack; fired?: BossAttack; target?: [number, number] }
@@ -46,10 +46,12 @@ export class BossAi {
         this.credit.clear();
         this.rng = random(this.seed ^ 0x48454152);
       }
+      const pickFlavor = attackFlavorPicker(boss.kit.seed, boss.kit.attacks);
       for (const kind of ['ring', 'spiral', 'laser', 'slam'] as const) {
         if (boss.kit.attacks.some(a => a.id === `heart-${kind}`)) continue;
         const symbol = (boss.kit.code as Partial<BossCode> | undefined)?.attackSymbols?.[`heart-${kind}`];
-        boss.kit.attacks.push({ id: `heart-${kind}`, source: 'heart', kind, name: symbol ? `${symbol} ${ATTACK_FLAVOR[kind]}` : `FATAL: Heartbeat ${kind.toUpperCase()}`,
+        const flavor = pickFlavor(kind);
+        boss.kit.attacks.push({ id: `heart-${kind}`, source: 'heart', kind, name: symbol ? `${symbol} ${flavor}` : `FATAL: Heartbeat ${flavor}`,
           damage: squadBudget(this.playerCount).hitDamage, cooldown: 7 * squadBudget(this.playerCount).recoveryScale, telegraph: 0.95,
           params: { count: kind === 'spiral' ? 32 : 19, speed: 59, radius: 36, threatShare: 0.25, threatCost: ATTACK_COST[kind] } });
       }

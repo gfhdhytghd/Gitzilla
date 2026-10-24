@@ -1,5 +1,5 @@
 import type { BossKit, PlayerKit, RepoProfile } from '../shared/types.ts';
-import { ATTACK_FLAVOR } from './flavor.ts';
+import { ATTACK_FLAVOR_POOLS, attackFlavorPicker } from './flavor.ts';
 
 export type BossCode = NonNullable<BossKit['code']> & {
   bigFiles: { path: string; loc: number }[];
@@ -11,11 +11,20 @@ export const signature = (symbol: string) => symbol ? `${symbol.replace(/\(.*$/,
 /** Preserve each attack's assigned real identifier through later display-design overrides. */
 export function reconcileCodeNames(kit: BossKit, hints?: Pick<BossCode, 'attackSymbols' | 'limbNames'>): BossKit {
   const copy = structuredClone(kit), code = hints ?? copy.code as Partial<BossCode> | undefined;
+  const pickFlavor = attackFlavorPicker(copy.seed), used = new Map<string, Set<string>>();
   copy.attacks.forEach(a => {
     const symbol = code?.attackSymbols?.[a.id];
-    if (symbol && !a.name.startsWith(symbol)) {
-      const suffix = a.name.replace(/^.+?\(\)\s*/, '').trim();
-      const flavor = suffix && symbol.length + suffix.length + 1 <= 64 ? suffix : ATTACK_FLAVOR[a.kind];
+    const pooled = pickFlavor(a.kind), rawSuffix = a.name.replace(/^.+?\(\)\s*/, '').trim();
+    const previousTag = ATTACK_FLAVOR_POOLS[a.kind].find(phrase => rawSuffix.endsWith(` · ${phrase}`));
+    const suffix = previousTag ? rawSuffix.slice(0, -previousTag.length - 3) : rawSuffix;
+    const seen = used.get(a.kind) ?? new Set<string>(); used.set(a.kind, seen);
+    const legacy = ['throw Spray', 'grep Trace', a.kind].includes(suffix);
+    const fromPool = ATTACK_FLAVOR_POOLS[a.kind].includes(suffix) || legacy || !suffix;
+    let flavor = fromPool ? pooled : suffix;
+    if (!fromPool && seen.has(suffix)) flavor = `${suffix} · ${pooled}`;
+    seen.add(suffix);
+    if (symbol) {
+      if (symbol.length + flavor.length + 1 > 64) flavor = pooled;
       a.name = `${symbol} ${flavor}`;
       if (copy.design) copy.design.attackNames[a.id] = a.name;
     }

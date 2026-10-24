@@ -1,7 +1,7 @@
 import type { ArenaTheme, BossAttack, BossAttackKind, BossKit, GameMode, PlayerKit, RepoProfile, WeaponKind } from '../shared/types.ts';
 import { ATTACK_COST, squadBudget } from './balance.ts';
 import { bossCode, heroCode, symbolAllocator } from './code.ts';
-import { ATTACK_FLAVOR, weaponCode } from './flavor.ts';
+import { attackFlavorPicker, weaponCode } from './flavor.ts';
 import { asClassroomKit, classroomFacts, type ClassroomKit } from './quality.ts';
 import { bossSocial, fragileComponents, type SocialBossKit } from './social.ts';
 
@@ -47,6 +47,7 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
   const maxHp = squadBudget(playerCount).hp;
   const attacks: BossAttack[] = [];
   const pickSymbol = symbolAllocator(p), attackSymbols: Record<string, string> = {};
+  const pickFlavor = attackFlavorPicker(p.seed);
   const limbs = components.map((c, i) => {
     const kinds: BossAttackKind[] = [];
     if (cycles.has(c.name)) kinds.push('cascade');
@@ -57,12 +58,11 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
     if (i === 0) kinds.push(p.heart.includes(c.name) ? 'slam' : 'charge');
     else if (i === 1 && p.maxDepth >= 4 && !kinds.includes('laser')) kinds.push('laser');
     kinds.forEach((kind, j) => {
-      const id = `${i}-${kind}-${j}`, symbol = pickSymbol(c.name);
+      const id = `${i}-${kind}-${j}`, symbol = pickSymbol(c.name), flavor = pickFlavor(kind);
       if (symbol) attackSymbols[id] = symbol;
       attacks.push({
         id, kind, source: c.name,
-        name: symbol ? `${symbol} ${ATTACK_FLAVOR[kind]}` :
-          kind === 'summon' && p.dna?.todos.length ? `${p.dna.todos[j % p.dna.todos.length].text.slice(0, 32)} Swarm` : `${ATTACK_FLAVOR[kind]} :: ${c.name}`,
+        name: symbol ? `${symbol} ${flavor}` : `${flavor} :: ${c.name}`,
         damage: squadBudget(playerCount).hitDamage * (kind === 'charge' ? 0.65 : 1),
         cooldown: 0.3 * ATTACK_COST[kind] * squadBudget(playerCount).recoveryScale,
         telegraph: 0.95,
