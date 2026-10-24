@@ -19,7 +19,7 @@ export function syntheticProfile(seed = 1, slug = `demo/repo-${seed}`): RepoProf
 export function loadBalanceProfiles(): RepoProfile[] {
   const directory = new URL('../data/fallback/', import.meta.url);
   if (existsSync(directory)) {
-    const files = readdirSync(directory).filter(f => f.endsWith('.json'));
+    const files = readdirSync(directory).filter(f => f.endsWith('.json')).sort();
     const profiles = files.flatMap(file => {
       const data: unknown = JSON.parse(readFileSync(new URL(file, directory), 'utf8'));
       if (Array.isArray(data)) return data as RepoProfile[];
@@ -88,14 +88,15 @@ export function createBot(seed: number, skill = 0.72) {
 }
 
 export interface BalanceRow { boss: string; players: number; runs: number; wins: number; winRate: number; duration: number; winDuration: number }
-export function runBalance(profiles = loadBalanceProfiles(), trials = 3, counts = [1, 4, 8]): BalanceRow[] {
+export function runBalance(profiles = loadBalanceProfiles(), trials = 5, counts = [1, 4, 6, 8], onRow?: (row: BalanceRow) => void): BalanceRow[] {
   const rows: BalanceRow[] = [];
   for (const profile of profiles) for (const count of counts) {
     let wins = 0, duration = 0, winDuration = 0;
     for (let trial = 0; trial < trials; trial++) {
       const players = Array.from({ length: count }, (_, i) => ({ id: `p${i}`, name: `Bot ${i + 1}`, kit: playerKitFromProfile(syntheticProfile(i + trial * 3 + 1)) }));
       const match = createMatch(players, bossKitFromProfile(profile, count));
-      const bots = players.map((_, i) => createBot(profile.seed + trial * 401 + i * 37, 0.55 + (trial % 3) * 0.12));
+      // Paired trials: same squad/reaction RNG faces every boss, isolating repo style.
+      const bots = players.map((_, i) => createBot(1009 + trial * 401 + i * 37, 0.55 + (trial % 3) * 0.12));
       let state = match.snapshot();
       while (!match.over) {
         const inputs = new Map(state.players.map((p, i) => [p.id, bots[i](state, p)]));
@@ -105,7 +106,8 @@ export function runBalance(profiles = loadBalanceProfiles(), trials = 3, counts 
       duration += result.duration;
       if (result.victory) { wins++; winDuration += result.duration; }
     }
-    rows.push({ boss: profile.slug, players: count, runs: trials, wins, winRate: wins / trials, duration: duration / trials, winDuration: wins ? winDuration / wins : 0 });
+    const row = { boss: profile.slug, players: count, runs: trials, wins, winRate: wins / trials, duration: duration / trials, winDuration: wins ? winDuration / wins : 0 };
+    rows.push(row); onRow?.(row);
   }
   return rows;
 }
@@ -116,6 +118,7 @@ export function balanceTable(rows: BalanceRow[]): string {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const trials = Number(process.argv[2] ?? 3);
-  console.log(balanceTable(runBalance(loadBalanceProfiles(), trials)));
+  const trials = Number(process.argv[2] ?? 5);
+  const counts = process.argv[3]?.split(',').map(Number) ?? [1, 4, 6, 8];
+  console.log(balanceTable(runBalance(loadBalanceProfiles(), trials, counts)));
 }

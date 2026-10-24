@@ -1,5 +1,7 @@
 DONE
 
+Current public origin: `https://gitzilla.wilflin.me`. Package default and active server docs migrated; new-domain public smoke is pending tunnel TLS hostname correction. Local 2-human + 2-bot smoke passes.
+
 # codex-net — server
 
 Implemented the complete server task card in `server/`. No shared files, package manifest, other implementation directories, or git commits changed. No npm dependencies added. Real analysis/ and sim/ imports are wired; no stubs remain.
@@ -90,3 +92,25 @@ None. Real autopsy heart is populated in server/ without a shared contract chang
 - AI stepper sends `{t:'setBots', count}`; derive count from `lobby.players.filter(p=>p.bot).length`; `bot:true` is authoritative. Bot names already carry `[BOT]`.
 - Hall uses GET `/api/hall`; no client match-result POST, because server records the authoritative autopsy once.
 - No outstanding server contract requests or implementation tasks.
+
+## Gitzilla rebrand (14:42 local) — DONE
+- Updated server startup banner to Gitzilla, newly generated TLS certificate CN to `Gitzilla Local Development`, and server documentation/exported certificate filename to `gitzilla.cer`.
+- Existing tunnel hostname and internal HTTPS environment flag remain operational identifiers. The only remaining `repo-kaiju` text under server/ is a test-only temporary-directory prefix.
+- TLS certificate test PASS; owned diff whitespace check PASS. No secrets added and no commits/pushes performed.
+
+## Public tunnel migration
+- Updated package dev-script PUBLIC_URL default and all active server README examples to `https://gitzilla.wilflin.me`.
+- Vite allowedHosts remains `.wilflin.me`; no Vite configuration edits.
+- Earlier tunnel smoke records above are historical results from the former domain, not evidence of the new domain working.
+- Initial new-domain probe resolves but TLS hostname verification fails: presented certificate does not cover `gitzilla.wilflin.me`. Keeping verification enabled; testing actual public smoke and local fallback next.
+- Other-owner handoff: `docs/tasks/claude-auth.md` still mentions the old domain for OAuth callback/origins; auth owner/coordinator should update that configuration. Vite's comment also still names the old host, but its wildcard rule already permits the new one.
+
+### Domain migration final validation
+- Actual public command attempted: `SMOKE_URL=https://gitzilla.wilflin.me SMOKE_PLAYERS=2 SMOKE_BOTS=2 npx tsx server/smoke.ts`.
+- Public result: **PENDING tunnel TLS**, `ERR_TLS_CERT_ALTNAME_INVALID`; new host resolves but peer certificate SAN is only `DNS:ai.wilflin.com`. The smoke cannot reach HTTPS/WSS with valid hostname verification yet. Did not bypass TLS verification.
+- Local fallback command: `SMOKE_URL=http://localhost:5173 SMOKE_PLAYERS=2 SMOKE_BOTS=2 npx tsx server/smoke.ts`: **PASS**, room KXJE, 100 snapshots/client over five seconds, bot movement + designs/heart/regions/acks + QR/fallback/Hall checks.
+- No old tunnel references remain in package scripts or server docs/tests. Historical evidence above retains its former-domain URLs intentionally; it is not a new-domain verification claim.
+- Vite allowedHosts remains `.wilflin.me`, unchanged. Existing npm watcher must be restarted to inherit the new package-script PUBLIC_URL default (or launched with PUBLIC_URL explicitly).
+- Owned diff whitespace check PASS. No secrets added, commits/pushes, or server restarts by codex-net.
+
+DONE

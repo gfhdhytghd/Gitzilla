@@ -3,8 +3,9 @@ import type { InputFrame, MatchState, PlayerKit } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from './kits.ts';
 import { createMatch, type Match } from './match.ts';
 import { bossRegions } from './regions.ts';
-import { balanceTable, runBalance, syntheticProfile } from './bots.ts';
+import { balanceTable, loadBalanceProfiles, runBalance, syntheticProfile } from './bots.ts';
 import { BossAi } from './bossAi.ts';
+import { ATTACK_COST, squadBudget, type HitFeedback } from './balance.ts';
 
 const frame = (patch: Partial<InputFrame> = {}): InputFrame => ({ seq: 1, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard', ...patch });
 const internals = (match: Match) => (match as unknown as { state: MatchState }).state;
@@ -39,6 +40,39 @@ describe('repository kits', () => {
     const variants = Array.from({ length: 10 }, (_, i) => { const profile = syntheticProfile(i + 1); if (i % 2) profile.heart = 'external/main'; return profile; });
     expect(new Set(variants.flatMap(profile => bossKitFromProfile(profile, 4).attacks.map(a => a.kind))).size).toBe(8);
   });
+  it('keeps total effective limb HP and attack share constant across repo shapes', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const profile = syntheticProfile(seed);
+      const kit = bossKitFromProfile(profile, 6);
+      const effectiveLimbHp = kit.limbs.reduce((sum, l) => sum + l.maxHp / (l.weakPoint ? 1.5 : 1), 0);
+      expect(effectiveLimbHp / kit.maxHp).toBeCloseTo(0.36, 3);
+      expect(kit.attacks.reduce((sum, a) => sum + a.params.threatShare, 0)).toBeCloseTo(1);
+      expect(kit.maxHp).toBe(squadBudget(6).hp);
+    }
+    expect(squadBudget(8).hp / 8).toBeGreaterThan(squadBudget(4).hp / 4);
+  });
+  it('ignores readme/tree art-direction context when calculating stats and attack budgets', () => {
+    const profile = syntheticProfile(8);
+    const withArtContext = { ...profile, readme: 'A terrifying monster with infinite power', tree: ['src/giant.ts', 'art/hero.svg'] };
+    expect(playerKitFromProfile(withArtContext)).toEqual(playerKitFromProfile(profile));
+    expect(bossKitFromProfile(withArtContext, 8)).toEqual(bossKitFromProfile(profile, 8));
+  });
+  it('spends the same scheduled threat per second across all repo styles and squad sizes', () => {
+    for (const count of [4, 6, 8]) {
+      const rates = loadBalanceProfiles().map(profile => {
+        const match = createMatch([{ id: 'p', name: 'p', kit: playerKitFromProfile(syntheticProfile()) }], bossKitFromProfile(profile, count));
+        const s = match.snapshot(), ai = new BossAi(123, count);
+        let spent = 0;
+        for (let i = 0; i < 3600; i++) {
+          const decision = ai.step(1 / 30, s.boss, s.players);
+          if (decision.fired) spent += ATTACK_COST[decision.fired.kind];
+        }
+        return spent / 120;
+      });
+      // Finite-deck / 30Hz rounding only; component count never adds a second budget.
+      expect(Math.max(...rates) / Math.min(...rates)).toBeLessThan(1.08);
+    }
+  });
 });
 
 describe('authoritative arena', () => {
@@ -62,6 +96,27 @@ describe('authoritative arena', () => {
     const profile = syntheticProfile(4);
     const match = createMatch([], bossKitFromProfile(profile, 1));
     expect(match.autopsy().boss.heart).toBe(profile.heart);
+  });
+  it('emits directional deterministic hit feedback and marks weak-point/heart crits', () => {
+    const m = fixture(2, { weapon: 'cannon' }), s = internals(m);
+    s.boss.limbs.forEach(l => { l.broken = true; l.hp = 0; });
+    s.players[0].x = s.boss.x - 45; s.players[0].y = s.boss.y;
+    advance(m, 0.3, new Map([['p0', frame({ fire: true, aim: [1, 0] })]]));
+    const event = m.snapshot().events.find(e => e.type === 'hit' && e.target === 'boss') as (Extract<MatchState['events'][number], { type: 'hit' }> & HitFeedback);
+    expect(event).toBeDefined(); expect(event.crit).toBe(true); expect(event.source).toBe('p0');
+    expect(Math.hypot(...event.direction)).toBeCloseTo(1); expect(event.direction[0]).toBeGreaterThan(0);
+    expect(event.impact).toBeGreaterThan(0.6); expect(event.hitStop).toBe(50);
+  });
+  it('adds independently telegraphed pressure lanes aimed at distinct players as squads grow', () => {
+    for (const count of [4, 6, 8]) {
+      const m = fixture(count), s = internals(m);
+      s.boss.casting = { attackId: s.boss.kit.attacks[0].id, t: 0, total: 99, target: [100, 100] };
+      advance(m, 3);
+      const lanes = m.snapshot().events.filter(e => e.type === 'telegraph' && e.attackId.startsWith('pressure-'));
+      expect(lanes).toHaveLength(squadBudget(count).pressureLanes);
+      expect(new Set(lanes.map(e => e.type === 'telegraph' ? e.targetPlayer : null)).size).toBe(lanes.length);
+      expect(s.hazards.filter(h => h.kind === 'laser').every(h => !h.armed)).toBe(true);
+    }
   });
   it('publishes every limb and heart region in absolute arena pixels, including broken limbs', () => {
     const m = fixture(), s = internals(m);
@@ -190,6 +245,6 @@ describe('authoritative arena', () => {
 it('headless bots complete solo, squad and large-team runs', () => {
   const rows = runBalance([syntheticProfile(1)], 1);
   console.log(balanceTable(rows));
-  expect(rows.map(r => r.players)).toEqual([1, 4, 8]);
+  expect(rows.map(r => r.players)).toEqual([1, 4, 6, 8]);
   for (const r of rows) { expect(r.duration).toBeGreaterThan(0); expect(r.duration).toBeLessThanOrEqual(359); }
 }, 30000);

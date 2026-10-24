@@ -107,7 +107,7 @@ const port = Number(process.env.PORT || 5173);
 server.listen(port, '0.0.0.0', () => {
   const actualPort = (server.address() as { port: number }).port;
   const protocol = tls ? 'https' : 'http';
-  console.log(`\nRepo Kaiju ${production ? 'production' : 'development'} server`);
+  console.log(`\nGitzilla ${production ? 'production' : 'development'} server`);
   console.log(`  Local: ${protocol}://localhost:${actualPort}`);
   for (const address of addresses) console.log(`  LAN:   ${protocol}://${urlHost(address)}:${actualPort}`);
   publicBase = process.env.PUBLIC_URL

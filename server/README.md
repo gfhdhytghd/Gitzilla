@@ -1,4 +1,4 @@
-# Server
+# Gitzilla server
 
 From the repository root:
 
@@ -45,7 +45,7 @@ At boot, the server creates a room and prints its LAN join URL, big-screen URL a
 
 When HTTPS is active, an optional HTTP listener on 5180 sends 308 redirects to the HTTPS port, preserving the hostname, path and query. Use `HTTP_REDIRECT_PORT=0` to disable it, or another port to override; a busy redirect port does not stop the game server. `PORT` still overrides the main server port.
 
-For iOS, install the public `.cache/tls/cert.pem` certificate on the phone and enable its SSL trust under **Settings → General → About → Certificate Trust Settings**. If necessary, copy it as `repo-kaiju.cer` for transfer; transfer only the public certificate. Apple documents this manual trust step at https://support.apple.com/en-us/102390. Then scan the HTTPS room QR and tap the game's motion-permission control. The generated certificate provides local TLS; actual iOS motion permission and sensor delivery need a real-phone check.
+For iOS, install the public `.cache/tls/cert.pem` certificate on the phone and enable its SSL trust under **Settings → General → About → Certificate Trust Settings**. If necessary, copy it as `gitzilla.cer` for transfer; transfer only the public certificate. Apple documents this manual trust step at https://support.apple.com/en-us/102390. Then scan the HTTPS room QR and tap the game's motion-permission control. The generated certificate provides local TLS; actual iOS motion permission and sensor delivery need a real-phone check.
 
 To smoke-test while keeping certificate verification enabled:
 
@@ -55,7 +55,7 @@ NODE_EXTRA_CA_CERTS="$PWD/.cache/tls/cert.pem" SMOKE_URL=https://localhost:5173 
 
 ## Public HTTPS tunnel (primary phone workflow)
 
-`npm run dev` defaults `PUBLIC_URL` to `https://repokaiju.wilflin.me`. The server continues to serve HTTP locally on 5173; the public tunnel provides HTTPS/WSS to phones. Printed room links, big-screen links and terminal QRs use `PUBLIC_URL` when present. Override it with your own tunnel URL, for example `PUBLIC_URL=https://my-tunnel.example npm run dev`. To force LAN links for a normal HTTP dev run, bypass the npm default with `npx tsx watch server/main.ts` and leave `PUBLIC_URL` unset.
+`npm run dev` defaults `PUBLIC_URL` to `https://gitzilla.wilflin.me`. The server continues to serve HTTP locally on 5173; the public tunnel provides HTTPS/WSS to phones. Printed room links, big-screen links and terminal QRs use `PUBLIC_URL` when present. Override it with your own tunnel URL, for example `PUBLIC_URL=https://my-tunnel.example npm run dev`. To force LAN links for a normal HTTP dev run, bypass the npm default with `npx tsx watch server/main.ts` and leave `PUBLIC_URL` unset.
 
 The UI's big-screen QR should build the room URL from `location.origin`, so a big screen opened through the tunnel invites phones through that same HTTPS origin. `dev:https` remains available for direct LAN access and defaults to LAN URLs unless `PUBLIC_URL` is explicitly supplied. Restart an existing npm dev process to pick up the changed script default.
 
@@ -70,7 +70,7 @@ The room owner can send `{t:'setBots',count:2}` in the lobby to add two AI teamm
 To test a two-judge squad through the public tunnel:
 
 ```sh
-SMOKE_URL=https://repokaiju.wilflin.me SMOKE_PLAYERS=2 SMOKE_BOTS=2 npx tsx server/smoke.ts
+SMOKE_URL=https://gitzilla.wilflin.me SMOKE_PLAYERS=2 SMOKE_BOTS=2 npx tsx server/smoke.ts
 ```
 
 Defaults remain four human clients and zero bots. Smoke checks also cover attached designs, authoritative heart/regions, bot movement when enabled, and the Hall endpoint shape.

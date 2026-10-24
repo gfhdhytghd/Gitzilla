@@ -1,0 +1,796 @@
+{
+  "game": "Gitzilla",
+  "trialsPerCell": 5,
+  "counts": [
+    1,
+    4,
+    6,
+    8
+  ],
+  "pairedBotSeedBase": 1009,
+  "summary": [
+    {
+      "players": 1,
+      "wins": 53,
+      "runs": 75,
+      "winRate": 0.7066666666666667,
+      "meanDuration": 261.91111111111735,
+      "meanWin": 265.1679245283051
+    },
+    {
+      "players": 4,
+      "wins": 46,
+      "runs": 75,
+      "winRate": 0.6133333333333333,
+      "meanDuration": 173.93644444443703,
+      "meanWin": 186.64999999999188
+    },
+    {
+      "players": 6,
+      "wins": 48,
+      "runs": 75,
+      "winRate": 0.64,
+      "meanDuration": 168.40888888888182,
+      "meanWin": 183.60277777776977
+    },
+    {
+      "players": 8,
+      "wins": 44,
+      "runs": 75,
+      "winRate": 0.5866666666666667,
+      "meanDuration": 174.26399999999254,
+      "meanWin": 190.29469696968863
+    }
+  ],
+  "rows": [
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 238.47999999999223,
+      "winDuration": 257.49999999999335
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 4,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 124.02666666666207,
+      "winDuration": 168.86666666665954
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 6,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 156.32666666666026,
+      "winDuration": 180.9833333333255
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 8,
+      "runs": 5,
+      "wins": 1,
+      "winRate": 0.2,
+      "duration": 167.04666666665963,
+      "winDuration": 190.36666666665832
+    },
+    {
+      "boss": "django/django",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 241.31999999999252,
+      "winDuration": 245.76666666666142
+    },
+    {
+      "boss": "django/django",
+      "players": 4,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 186.5999999999919,
+      "winDuration": 187.65555555554738
+    },
+    {
+      "boss": "django/django",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 178.96666666665897,
+      "winDuration": 179.05833333332563
+    },
+    {
+      "boss": "django/django",
+      "players": 8,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 151.8466666666605,
+      "winDuration": 186.6444444444363
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 1,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 297.6133333333561,
+      "winDuration": 299.75000000002444
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 194.43999999999141,
+      "winDuration": 192.8749999999915
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 187.6999999999918,
+      "winDuration": 183.69166666665868
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 192.75999999999152,
+      "winDuration": 197.79999999999123
+    },
+    {
+      "boss": "facebook/react",
+      "players": 1,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 246.62666666667542,
+      "winDuration": 283.82500000001176
+    },
+    {
+      "boss": "facebook/react",
+      "players": 4,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 158.2333333333268,
+      "winDuration": 178.316666666659
+    },
+    {
+      "boss": "facebook/react",
+      "players": 6,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 173.7999999999926,
+      "winDuration": 183.65555555554758
+    },
+    {
+      "boss": "facebook/react",
+      "players": 8,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 161.05333333332663,
+      "winDuration": 197.14999999999128
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 1,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 253.0466666666617,
+      "winDuration": 253.0466666666617
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 4,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 175.88666666665918,
+      "winDuration": 182.5777777777699
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 6,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 174.67333333332587,
+      "winDuration": 184.46666666665865
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 8,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 186.26666666665855,
+      "winDuration": 189.63333333332503
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 218.6066666666612,
+      "winDuration": 248.0666666666625
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 183.02666666665874,
+      "winDuration": 183.02666666665874
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 174.65999999999255,
+      "winDuration": 176.22499999999246
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 8,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 164.39999999999313,
+      "winDuration": 184.66666666665864
+    },
+    {
+      "boss": "golang/example",
+      "players": 1,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 244.84666666665862,
+      "winDuration": 244.84666666665862
+    },
+    {
+      "boss": "golang/example",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 163.93999999999318,
+      "winDuration": 179.39166666665895
+    },
+    {
+      "boss": "golang/example",
+      "players": 6,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 107.57333333332967,
+      "winDuration": 178.566666666659
+    },
+    {
+      "boss": "golang/example",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 184.099999999992,
+      "winDuration": 187.1666666666585
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 303.0600000000289,
+      "winDuration": 282.93333333334743
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 198.46666666665786,
+      "winDuration": 209.9166666666572
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 192.22666666665822,
+      "winDuration": 192.6916666666582
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 8,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 194.04666666665815,
+      "winDuration": 194.3777777777692
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 1,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 235.4199999999938,
+      "winDuration": 249.27499999999415
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 4,
+      "runs": 5,
+      "wins": 1,
+      "winRate": 0.2,
+      "duration": 147.11999999999412,
+      "winDuration": 173.4999999999926
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 166.399999999993,
+      "winDuration": 174.29166666665924
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 178.566666666659,
+      "winDuration": 183.40833333332537
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 1,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 234.8266666666597,
+      "winDuration": 247.39166666665994
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 4,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 158.60666666666012,
+      "winDuration": 175.86666666665914
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 6,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 156.9266666666602,
+      "winDuration": 172.19999999999268
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 8,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 174.32666666665924,
+      "winDuration": 179.39999999999227
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 1,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 265.15333333333336,
+      "winDuration": 266.9166666666689
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 185.13999999999194,
+      "winDuration": 185.65833333332526
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 175.09999999999252,
+      "winDuration": 184.9583333333253
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 186.11999999999188,
+      "winDuration": 186.36666666665855
+    },
+    {
+      "boss": "redis/redis",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 313.6533333333688,
+      "winDuration": 315.77777777781495
+    },
+    {
+      "boss": "redis/redis",
+      "players": 4,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 186.13999999999191,
+      "winDuration": 213.33333333332368
+    },
+    {
+      "boss": "redis/redis",
+      "players": 6,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 169.53333333332617,
+      "winDuration": 191.3999999999916
+    },
+    {
+      "boss": "redis/redis",
+      "players": 8,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 189.90666666665834,
+      "winDuration": 192.23333333332485
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 1,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 285.7066666666831,
+      "winDuration": 267.28333333333467
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 4,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 184.7733333333253,
+      "winDuration": 178.616666666659
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 6,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 170.63999999999277,
+      "winDuration": 199.4666666666578
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 8,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 163.96666666665982,
+      "winDuration": 193.76666666665812
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 314.1933333333692,
+      "winDuration": 284.98888888890156
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 191.3799999999916,
+      "winDuration": 190.08333333332502
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 6,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 178.0733333333257,
+      "winDuration": 189.09999999999172
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 184.62666666665865,
+      "winDuration": 195.99999999999136
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 1,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 236.11333333332612,
+      "winDuration": 245.3777777777726
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 171.26666666665943,
+      "winDuration": 181.21666666665885
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 6,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 163.53333333332654,
+      "winDuration": 181.49166666665883
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 8,
+      "runs": 5,
+      "wins": 2,
+      "winRate": 0.4,
+      "duration": 134.92666666666145,
+      "winDuration": 200.79999999999106
+    }
+  ],
+  "scheduledThreatAudit": [
+    {
+      "players": 4,
+      "seconds": 120,
+      "min": 0.3600000000000005,
+      "max": 0.37333333333333324,
+      "spread": 0.037037037037035425,
+      "values": [
+        {
+          "boss": "burntsushi/ripgrep",
+          "rate": 0.3708333333333334
+        },
+        {
+          "boss": "django/django",
+          "rate": 0.3650000000000002
+        },
+        {
+          "boss": "expressjs/express",
+          "rate": 0.3641666666666667
+        },
+        {
+          "boss": "facebook/react",
+          "rate": 0.3600000000000005
+        },
+        {
+          "boss": "fastapi/fastapi",
+          "rate": 0.3658333333333334
+        },
+        {
+          "boss": "gin-gonic/gin",
+          "rate": 0.37333333333333324
+        },
+        {
+          "boss": "golang/example",
+          "rate": 0.3708333333333334
+        },
+        {
+          "boss": "jquery/jquery",
+          "rate": 0.36250000000000016
+        },
+        {
+          "boss": "karpathy/nanogpt",
+          "rate": 0.3675
+        },
+        {
+          "boss": "lodash/lodash",
+          "rate": 0.3675
+        },
+        {
+          "boss": "pallets/flask",
+          "rate": 0.3716666666666669
+        },
+        {
+          "boss": "redis/redis",
+          "rate": 0.36333333333333356
+        },
+        {
+          "boss": "rust-lang/rustlings",
+          "rate": 0.36500000000000027
+        },
+        {
+          "boss": "spring-projects/spring-petclinic",
+          "rate": 0.3650000000000002
+        },
+        {
+          "boss": "vuejs/core",
+          "rate": 0.36333333333333356
+        }
+      ]
+    },
+    {
+      "players": 6,
+      "seconds": 120,
+      "min": 0.41000000000000025,
+      "max": 0.4225000000000001,
+      "spread": 0.030487804878048363,
+      "values": [
+        {
+          "boss": "burntsushi/ripgrep",
+          "rate": 0.4225000000000001
+        },
+        {
+          "boss": "django/django",
+          "rate": 0.41500000000000026
+        },
+        {
+          "boss": "expressjs/express",
+          "rate": 0.42250000000000004
+        },
+        {
+          "boss": "facebook/react",
+          "rate": 0.41000000000000064
+        },
+        {
+          "boss": "fastapi/fastapi",
+          "rate": 0.41416666666666674
+        },
+        {
+          "boss": "gin-gonic/gin",
+          "rate": 0.4183333333333332
+        },
+        {
+          "boss": "golang/example",
+          "rate": 0.42166666666666675
+        },
+        {
+          "boss": "jquery/jquery",
+          "rate": 0.4133333333333335
+        },
+        {
+          "boss": "karpathy/nanogpt",
+          "rate": 0.41833333333333333
+        },
+        {
+          "boss": "lodash/lodash",
+          "rate": 0.4191666666666667
+        },
+        {
+          "boss": "pallets/flask",
+          "rate": 0.4125000000000003
+        },
+        {
+          "boss": "redis/redis",
+          "rate": 0.411666666666667
+        },
+        {
+          "boss": "rust-lang/rustlings",
+          "rate": 0.41416666666666696
+        },
+        {
+          "boss": "spring-projects/spring-petclinic",
+          "rate": 0.41000000000000025
+        },
+        {
+          "boss": "vuejs/core",
+          "rate": 0.41833333333333367
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "seconds": 120,
+      "min": 0.45500000000000024,
+      "max": 0.4691666666666667,
+      "spread": 0.03113553113553058,
+      "values": [
+        {
+          "boss": "burntsushi/ripgrep",
+          "rate": 0.4591666666666667
+        },
+        {
+          "boss": "django/django",
+          "rate": 0.4550000000000003
+        },
+        {
+          "boss": "expressjs/express",
+          "rate": 0.4616666666666667
+        },
+        {
+          "boss": "facebook/react",
+          "rate": 0.45500000000000074
+        },
+        {
+          "boss": "fastapi/fastapi",
+          "rate": 0.4600000000000001
+        },
+        {
+          "boss": "gin-gonic/gin",
+          "rate": 0.4599999999999999
+        },
+        {
+          "boss": "golang/example",
+          "rate": 0.4600000000000001
+        },
+        {
+          "boss": "jquery/jquery",
+          "rate": 0.45500000000000024
+        },
+        {
+          "boss": "karpathy/nanogpt",
+          "rate": 0.4691666666666667
+        },
+        {
+          "boss": "lodash/lodash",
+          "rate": 0.4691666666666667
+        },
+        {
+          "boss": "pallets/flask",
+          "rate": 0.46250000000000036
+        },
+        {
+          "boss": "redis/redis",
+          "rate": 0.45500000000000035
+        },
+        {
+          "boss": "rust-lang/rustlings",
+          "rate": 0.4558333333333337
+        },
+        {
+          "boss": "spring-projects/spring-petclinic",
+          "rate": 0.4550000000000003
+        },
+        {
+          "boss": "vuejs/core",
+          "rate": 0.45500000000000035
+        }
+      ]
+    }
+  ]
+}

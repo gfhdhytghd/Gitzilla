@@ -1,5 +1,5 @@
 import type { ArenaTheme, BossAttack, BossAttackKind, BossKit, PlayerKit, RepoProfile, WeaponKind } from '../shared/types.ts';
-import { clamp } from './math.ts';
+import { ATTACK_COST, squadBudget } from './balance.ts';
 
 const languages: Record<string, [WeaponKind, string, string, ArenaTheme]> = {
   rust: ['cannon', 'Paladin', '#e69b64', 'kernel'], c: ['shotgun', 'Vanguard', '#b8c4d8', 'kernel'],
@@ -37,8 +37,9 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
   const components = p.components.length ? p.components.slice(0, 8) : [{ name: 'core', loc: 100, files: 5, fanIn: 1, fanOut: 1 }];
   const cycles = new Set(p.cycles.flat());
   const total = components.reduce((s, c) => s + c.loc, 0) || 1;
-  const scale = 0.6 + 0.4 * clamp(playerCount, 1, 8);
-  const maxHp = Math.round(13200 * scale);
+  const limbWeight = (loc: number) => 0.5 / components.length + 0.5 * loc / total;
+  const vulnerability = components.reduce((sum, c) => sum + limbWeight(c.loc) / (cycles.has(c.name) ? 1.5 : 1), 0);
+  const maxHp = squadBudget(playerCount).hp;
   const attacks: BossAttack[] = [];
   const limbs = components.map((c, i) => {
     const kinds: BossAttackKind[] = [];
@@ -51,13 +52,16 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
     else if (i === 1 && p.maxDepth >= 4 && !kinds.includes('laser')) kinds.push('laser');
     kinds.forEach((kind, j) => attacks.push({
       id: `${i}-${kind}-${j}`, kind, source: c.name, name: `${names[kind]} :: ${c.name}`,
-      damage: playerCount === 1 ? 2 : 5,
-      cooldown: (6.8 + i * 0.55 + j) / (1 + (playerCount - 1) * 0.025),
-      telegraph: kind === 'charge' || kind === 'laser' ? 1.05 : 0.85,
+      damage: squadBudget(playerCount).hitDamage * (kind === 'charge' ? 0.65 : 1),
+      cooldown: 0.3 * ATTACK_COST[kind] * squadBudget(playerCount).recoveryScale,
+      telegraph: 0.95,
       params: { count: kind === 'ring' ? 17 : kind === 'spiral' ? 28 : kind === 'summon' ? 3 : 7,
-        speed: 54 + (i % 3) * 5, spread: 1.15, radius: kind === 'slam' ? 34 : 27 },
+        speed: 58, spread: 1.15, radius: kind === 'slam' ? 34 : 27,
+        threatShare: (0.5 / components.length + 0.5 * c.loc / total) / kinds.length, threatCost: ATTACK_COST[kind] },
     }));
-    return { id: `limb-${i}`, component: c.name, maxHp: Math.round(maxHp * (0.035 + 0.13 * c.loc / total)), weakPoint: cycles.has(c.name) };
+    const weakPoint = cycles.has(c.name);
+    return { id: `limb-${i}`, component: c.name,
+      maxHp: Math.round(maxHp * 0.36 * limbWeight(c.loc) / vulnerability), weakPoint };
   });
   const [, , color, baseTheme] = language(p);
   const name = (p.slug.split('/').pop() || 'REPO').toUpperCase();

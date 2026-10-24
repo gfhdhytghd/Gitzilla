@@ -47,7 +47,7 @@ export function loadTls(root: string, auto: boolean, addresses = lanAddresses())
     console.log('Generating local HTTPS certificate with openssl...');
     execFileSync('openssl', [
       'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256', '-days', '30',
-      '-keyout', keyPath, '-out', certPath, '-subj', '/CN=Repo Kaiju Local Development',
+      '-keyout', keyPath, '-out', certPath, '-subj', '/CN=Gitzilla Local Development',
       '-addext', `subjectAltName=${san}`,
       '-addext', 'basicConstraints=critical,CA:TRUE',
     ], { stdio: ['ignore', 'ignore', 'pipe'] });
