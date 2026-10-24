@@ -11,8 +11,10 @@ import { WEAPONS, SOLO_DAMAGE_MUL } from './weapons.ts';
 import { ClassroomMatch } from './pvp.ts';
 import type { SocialBossKit } from './social.ts';
 import { reconcileCodeNames } from './code.ts';
+import { forgetPlayer } from './departure.ts';
 
 export interface Match {
+  removePlayer(id: string): void;
   step(dt: number, inputs: Map<string, InputFrame>): void;
   snapshot(): MatchState;
   autopsy(): Autopsy;
@@ -29,7 +31,7 @@ interface PlayerRuntime {
   buff: number; history: { t: number; x: number; y: number }[];
 }
 interface ShotRuntime { damage: number; life: number }
-interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string }
+interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string; targetPlayer?: string }
 
 class ArenaMatch implements BattleMatch {
   private state: BattleState;
@@ -46,13 +48,14 @@ class ArenaMatch implements BattleMatch {
   private decoys = new Map<string, { x: number; y: number; until: number }>();
   private pressureCd = 3;
   private pressureRound = 0;
-  private pressure: { t: number; x: number; y: number; angle: number }[] = [];
+  private pressure: { t: number; x: number; y: number; angle: number; targetPlayer: string; hazardId: number }[] = [];
   private dropExpiry = new Map<number, number>();
   private lootRng = random(ENCOUNTER_SEED ^ 0x4c4f4f54);
   private armorDropsLeft = 0;
   private reviewQueued = false;
   private reviewProgress = new Map<string, { pad: string; t: number }>();
   private reviewSeed = ENCOUNTER_SEED;
+  private reviveBy = new Map<string, string>();
 
   constructor(players: { id: string; name: string; kit: PlayerKit }[], kit: BossKit) {
     this.ai = new BossAi(ENCOUNTER_SEED ^ players.length, players.length);
@@ -76,6 +79,44 @@ class ArenaMatch implements BattleMatch {
   }
 
   get over() { return this.state.status === 'victory' || this.state.status === 'defeat'; }
+
+  removePlayer(id: string): void {
+    const s = this.state;
+    if (!s.players.some(p => p.id === id)) return;
+    s.players = s.players.filter(p => p.id !== id);
+    this.players.delete(id); this.decoys.delete(id); this.reviewProgress.delete(id);
+    for (const bullet of forgetPlayer(s, id)) this.shots.delete(bullet);
+    for (const hits of this.recent.values()) hits.delete(id);
+    this.reviveBy.delete(id);
+    for (const [downed, helper] of this.reviveBy) if (helper === id) {
+      const p = s.players.find(p => p.id === downed); if (p) p.reviveProgress = 0;
+      this.reviveBy.delete(downed);
+    }
+    const cancelled = new Set<number>();
+    for (const stream of this.pressure) if (stream.targetPlayer === id) cancelled.add(stream.hazardId);
+    this.pressure = this.pressure.filter(stream => stream.targetPlayer !== id);
+    const castId = s.boss.targetPlayer === id ? s.boss.casting?.attackId : undefined;
+    if (s.boss.targetPlayer === id) {
+      s.boss.targetPlayer = null; s.boss.casting = null; this.charge = null; this.pending = [];
+    }
+    s.hazards = s.hazards.filter(h => {
+      const meta = this.hazardData.get(h.id);
+      if (cancelled.has(h.id) || meta?.targetPlayer === id || (castId && meta?.attackId === castId) || (h.kind === 'firewall' && meta?.attackId === id)) {
+        this.hazardData.delete(h.id); return false;
+      }
+      meta?.victims.delete(id); return true;
+    });
+    for (const p of s.players) {
+      p.buffs = p.buffs.filter(b => b !== 'firewall');
+      if (s.hazards.some(h => h.kind === 'firewall' && distance(p, h) < h.r)) p.buffs.push('firewall');
+    }
+    if (!s.players.length) {
+      s.perkOffer = null; s.boss.casting = null; s.boss.targetPlayer = null;
+      s.bullets = []; this.shots.clear(); s.hazards = []; this.hazardData.clear();
+      this.pressure = []; this.pending = []; this.charge = null;
+      this.finish(false);
+    }
+  }
 
   step(dt: number, inputs: Map<string, InputFrame>) {
     inputs = new Map([...inputs].map(([id, frame]) => [id, safeInput(frame)]));
@@ -216,10 +257,12 @@ class ArenaMatch implements BattleMatch {
     for (const p of this.state.players.filter(p => !p.alive)) {
       const helper = this.state.players.filter(a => a.alive && distance(a, p) <= (hasPerk(a, 'pair-programming') ? 40 : 24))
         .sort((a, b) => Number(hasPerk(b, 'pair-programming')) - Number(hasPerk(a, 'pair-programming')))[0];
+      if (helper) this.reviveBy.set(p.id, helper.id); else this.reviveBy.delete(p.id);
       p.reviveProgress = helper ? Math.min(1, p.reviveProgress + dt / (hasPerk(helper, 'pair-programming') ? 1 : 2)) : Math.max(0, p.reviveProgress - dt / 2);
       if (helper && p.reviveProgress >= 0.99999) {
         p.alive = true; p.hp = Math.ceil(p.kit.maxHp / 2); p.armor = 0; p.invuln = 2; p.downedFor = 0; p.reviveProgress = 0;
         helper.stats.revives++; this.emit({ type: 'revived', player: p.id, by: helper.id });
+        this.reviveBy.delete(p.id);
       }
     }
   }
@@ -227,15 +270,15 @@ class ArenaMatch implements BattleMatch {
   private telegraph(a: BossAttack, target: [number, number]) {
     this.emit({ type: 'telegraph', attackId: a.id, name: a.name, targetPlayer: this.state.boss.targetPlayer });
     if (a.kind === 'slam' || a.kind === 'cascade') {
-      this.hazard(a.kind, target[0], target[1], a.params.radius ?? 30, 0, a.telegraph + 0.45, a.telegraph, a.damage, a.id);
+      this.hazard(a.kind, target[0], target[1], a.params.radius ?? 30, 0, a.telegraph + 0.45, a.telegraph, a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
       if (a.kind === 'cascade') {
         for (const p of this.state.players.filter(p => p.alive && distance(p, { x: target[0], y: target[1] }) > 35).slice(0, 3))
-          this.hazard('cascade', p.x, p.y, 23, 0, a.telegraph + 0.75, a.telegraph + 0.3, a.damage, a.id);
+          this.hazard('cascade', p.x, p.y, 23, 0, a.telegraph + 0.75, a.telegraph + 0.3, a.damage, a.id, p.id);
       }
     }
     if (a.kind === 'laser' || a.kind === 'charge') {
       const b = this.state.boss;
-      this.hazard('laser', b.x, b.y, a.kind === 'charge' ? 18 : 7, Math.atan2(target[1] - b.y, target[0] - b.x), a.telegraph + (a.kind === 'charge' ? 0.1 : 0.75), a.telegraph, a.kind === 'charge' ? 0 : a.damage, a.id);
+      this.hazard('laser', b.x, b.y, a.kind === 'charge' ? 18 : 7, Math.atan2(target[1] - b.y, target[0] - b.x), a.telegraph + (a.kind === 'charge' ? 0.1 : 0.75), a.telegraph, a.kind === 'charge' ? 0 : a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
     }
   }
 
@@ -300,9 +343,9 @@ class ArenaMatch implements BattleMatch {
       const target = targets[(this.pressureRound + Math.floor(lane * targets.length / lanes)) % targets.length];
       const angle = Math.atan2(target.y - b.y, target.x - b.x);
       const id = `pressure-${this.pressureRound}-${lane}`;
-      this.hazard('laser', b.x, b.y, 3, angle, 1, 0.95, 0, id);
+      const hazardId = this.hazard('laser', b.x, b.y, 3, angle, 1, 0.95, 0, id, target.id);
       this.emit({ type: 'telegraph', attackId: id, name: `WARN: parallel worker ${lane + 1}`, targetPlayer: target.id });
-      this.pressure.push({ t: 0.95, x: b.x, y: b.y, angle });
+      this.pressure.push({ t: 0.95, x: b.x, y: b.y, angle, targetPlayer: target.id, hazardId });
     }
     this.pressureRound++;
   }
@@ -416,9 +459,10 @@ class ArenaMatch implements BattleMatch {
     if (p.hp <= 0) { p.alive = false; p.downedFor = 0; p.reviveProgress = 0; this.emit({ type: 'downed', player: p.id }); }
   }
 
-  private hazard(kind: Hazard['kind'], x: number, y: number, r: number, angle: number, total: number, telegraph: number, damage: number, attackId: string) {
+  private hazard(kind: Hazard['kind'], x: number, y: number, r: number, angle: number, total: number, telegraph: number, damage: number, attackId: string, targetPlayer?: string) {
     const h: Hazard = { id: this.id++, kind, x, y, r, angle, total, t: 0, armed: telegraph <= 0 };
-    this.state.hazards.push(h); this.hazardData.set(h.id, { damage, telegraph, victims: new Set(), attackId });
+    this.state.hazards.push(h); this.hazardData.set(h.id, { damage, telegraph, victims: new Set(), attackId, targetPlayer });
+    return h.id;
   }
 
   private updateHazards(dt: number) {

@@ -9,6 +9,9 @@ export class LessonQueue {
   offer(concept: Concept, ref: string, facts: Record<string, string | number>) {
     this.pending.set(concept, { type: 'lesson', concept, ref, facts });
   }
+  removePlayer(id: string) {
+    for (const [concept, lesson] of this.pending) if (lesson.ref === id) this.pending.delete(concept);
+  }
   step(now: number, emit: (event: GameEvent) => void) {
     if (now - this.last < 8 || !this.pending.size) return;
     const lessons = [...this.pending.values()];
