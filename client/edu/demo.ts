@@ -15,11 +15,9 @@ import { EDU_STAGE_ORDER, eduGenesisNotes } from "./genesis.ts";
 import { createQuizOverlay, padLetters } from "./quiz.ts";
 import { createArchitectureReport, createClassReport, createReportCard } from "./report.ts";
 import type { Rubric, StudentFeedback } from "../../shared/types.ts";
-import { plainRow } from "./explain.ts";
 import { createClassFeedback, createFeedbackView } from "./feedback-view.ts";
-import { type ParseFn, createJudgedCard, createRubricEditor, guessSignal } from "./rubric.ts";
-import { estimateFromQuality, weightedScore } from "./rubric-data.ts";
-import { sortStats, weakest } from "./quality.ts";
+import { type ParseFn, createJudgedCard, createRubricEditor } from "./rubric.ts";
+import { parseRubric, scoreRepo, buildFeedback } from "../../rubric/index.ts";
 
 const files = import.meta.glob("../../data/fallback/*.json", { eager: true, import: "default" }) as Record<string, RepoProfile>;
 const profiles = new Map(Object.values(files).map((p) => [p.slug, p]));
@@ -244,7 +242,7 @@ function viewGallery() {
   );
 }
 
-// ---------- rubric + feedback (DEMO stand-ins until rubric/ by codex-rubric lands) ----------
+// ---------- real rubric engine + real source evidence; combat numbers are scripted demo data ----------
 const SAMPLE_DOC = `# CS 101 Final Project Rubric
 ## Testing (30%)
 Unit tests for the main modules; at least 20% of files are tests.
@@ -257,30 +255,10 @@ Functions short and focused.
 ## No circular imports / leftover TODOs (10%)
 - Submit on time and present in class`;
 
-/** Demo-only parser: "Heading (NN%)" + following lines. The real one is rubric/parseRubric on the server. */
-const demoParse: ParseFn = async (input) => {
-  const text = "file" in input ? await input.file.text() : input.text;
-  const crit: Rubric["criteria"] = [];
-  const unparsed: string[] = [];
-  let cur: Rubric["criteria"][number] | null = null;
-  for (const raw of text.split("\n")) {
-    const line = raw.trim();
-    if (!line || /^# /.test(line)) continue;
-    const m = line.match(/^#+\s*(.+?)\s*\((\d+)\s*%\)/);
-    if (m) {
-      cur = { id: `c${crit.length}`, name: m[1], weight: Number(m[2]), signal: guessSignal(m[1]), description: "" };
-      if (cur.signal === "tech-debt" || /circular/i.test(m[1])) cur.signal = "tech-debt";
-      if (/organi[sz]ation|modular/i.test(m[1])) cur.signal = "modularity";
-      if (/^functions?$/i.test(m[1])) cur.signal = "function-length";
-      crit.push(cur);
-    } else if (cur && !/^[-*]/.test(line)) {
-      cur.description += (cur.description ? " " : "") + line;
-      const t = line.match(/(\d+)%\s+of files are tests/);
-      if (t) cur.target = Number(t[1]) / 100;
-    } else unparsed.push(line.replace(/^[-*]\s*/, ""));
-  }
-  await new Promise((r) => setTimeout(r, 300));
-  return { title: text.match(/^# (.+)/m)?.[1] ?? "Rubric", criteria: crit, source: "doc", unparsed };
+/** The demo uses the same parser as server preview; PDF needs the room server. */
+const demoParse: ParseFn = async input => {
+  if ('file' in input && /pdf/i.test(input.file.type + input.file.name)) throw new Error('Use the room server for PDF preview, or paste text here.');
+  return parseRubric('file' in input ? await input.file.text() : input.text, 'file' in input ? input.file.name : input.filename);
 };
 
 let demoRubric: Rubric | null = null;
@@ -288,38 +266,24 @@ async function sampleRubric() {
   return (demoRubric ??= await demoParse({ text: SAMPLE_DOC }));
 }
 
-/** Demo-only feedback built from the real report cards (the real one is rubric/buildFeedback on the server). */
+/** Real deterministic feedback; match stats below are explicitly scripted for this demo. */
 function demoFeedback(rubric: Rubric): StudentFeedback[] {
   const rank = ["p3", "p1", "p5", "p2", "p8", "p6", "p7", "p4"];
-  return students.map((s) => {
-    const est = estimateFromQuality(rubric, s.quality);
-    const results = rubric.criteria.map((c) => {
-      const e = est.find((x) => x.criterionId === c.id)!;
-      const q = s.quality.find((x) => x.stat === ({ tests: "armor", modularity: "speed", "function-length": "damage", cohesion: "damage", documentation: "energy", readme: "energy", "tech-debt": "weakness", cycles: "weakness", size: "hp" } as Record<string, string>)[c.signal]);
-      const r = q ? plainRow(q) : null;
-      return { criterionId: c.id, score: e.score ?? 0.5, evidence: r?.measure ?? "checked by the teacher", ...(r?.tip ? { tip: r.tip } : {}) };
+  return students.map(s => {
+    const place = rank.indexOf(s.id);
+    return buildFeedback(s.profile, rubric, scoreRepo(s.profile, rubric), {
+      playerId: s.id, name: s.name, rank: place + 1, kos: 9 - place, damage: 1400 - place * 130,
+      roundWins: place === 0 ? 2 : 0, quiz: s.id === YOU ? '1/1 (scripted demo)' : undefined,
     });
-    const shown = sortStats(s.quality);
-    const strengths = shown.filter((q) => q.grade === "A").slice(0, 2).map((q) => { const r = plainRow(q); return `Strong ${r.word}: ${r.measure}.`; });
-    const w = weakest(s.quality);
-    const wr = w && w.grade !== "A" ? plainRow(w) : null;
-    const file = wr?.tip?.match(/`([^`]+\.[a-z]+)`/)?.[1];
-    const score = weightedScore(rubric, results) ?? 0;
-    return {
-      playerId: s.id, name: s.name, repo: s.repo, rubricScore: score, results,
-      strengths: strengths.length ? strengths : ["You shipped a working project. That's the hardest step."],
-      improvements: wr?.tip ? [{ text: wr.tip.replace(/`/g, ""), ...(file ? { file } : {}) }] : [],
-      match: { rank: rank.indexOf(s.id) + 1, kos: 9 - rank.indexOf(s.id), damage: 1400 - rank.indexOf(s.id) * 130, roundWins: rank.indexOf(s.id) === 0 ? 2 : 0, quiz: s.id === YOU ? "1/1" : undefined },
-      summary: `@${s.name}, your project scores ${score}/100 on this rubric. ${strengths.length ? "Your strongest area really shows in the code. " : ""}${wr ? `The fastest way up: ${wr.word}.` : "Keep it up!"}`,
-    };
   });
 }
 
 async function viewRubric() {
-  const ed = createRubricEditor({ parse: demoParse, onUse: (r) => { demoRubric = r; judged.replaceChildren(createJudgedCard({ rubric: r, quality: students[1].quality })); } });
+  const ed = createRubricEditor({ parse: demoParse, onUse: (r) => { demoRubric = r; ed.setCurrent(r); judged.replaceChildren(createJudgedCard({ rubric: r, preview: scoreRepo(students[1].profile, r) })); } });
   const judged = h("div");
   app.append(h("div.demo-rubric", null, h("div", null, h("h3.demo-h", null, "teacher (lobby, edu)"), ed.el), h("div", null, h("h3.demo-h", null, "student: @ben's lobby card"), judged)));
-  judged.append(createJudgedCard({ rubric: await sampleRubric(), quality: students[1].quality }));
+  const initial = await sampleRubric();
+  judged.append(createJudgedCard({ rubric: initial, preview: scoreRepo(students[1].profile, initial) }));
   if (params.has("parsed")) {
     const ta = ed.el.querySelector("textarea")!;
     ta.value = SAMPLE_DOC;
@@ -330,6 +294,7 @@ async function viewRubric() {
 async function viewFeedback(kind: "student" | "class" | "screen") {
   const r = await sampleRubric();
   const items = demoFeedback(r);
+  app.append(h("p.demo-evidence", null, "Repo evidence and rubric scores use the real engine. Fight and quiz numbers are scripted demo data."));
   if (kind === "student") app.append(h("div.demo-report", null, createFeedbackView(items.find((f) => f.playerId === YOU)!, r, { variant: innerWidth < 600 ? "phone" : "desktop", you: true })));
   else app.append(h(`div.demo-report${kind === "screen" ? ".v-screen" : ""}`, null, createClassFeedback({ items, rubric: r, variant: kind === "screen" ? "screen" : innerWidth < 600 ? "phone" : "desktop", title: "class feedback · CS 101" })));
   if (params.has("open")) (document.querySelectorAll(".fb-tr:not(.fb-thead)")[Number(params.get("open"))] as HTMLElement | undefined)?.click();

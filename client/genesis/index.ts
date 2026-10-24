@@ -88,11 +88,12 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
     t = startAt;
     done = false;
     doneAt = -1;
+    endFor = 0;
   };
 
   if (opts.genesis) makeScene(opts.genesis);
   else if (opts.progress || !kit) live = new Live(opts.slug ?? kit?.repo ?? "", opts.kind, reduced);
-  else makeScene(genesisFromKit(kit));
+  else makeScene(genesisFromKit(kit, opts.mode));
   if (live && opts.progress) live.push(opts.progress);
 
   const relayout = () => {
@@ -182,7 +183,20 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
         scene?.setKit(kit);
       }
       if (next.genesis && (!scene || scene.g !== next.genesis)) {
-        if (scene && scene.g.slug === next.genesis.slug) return; // same repo, keep playing
+        if (scene && scene.g.slug === next.genesis.slug) {
+          if (JSON.stringify(scene.g) === JSON.stringify(next.genesis)) return;
+          // A rubric/design/source update can change the same repo. Refresh its
+          // facts without restarting clone or losing the current stage.
+          const oldStage = scene.stageAt(t), oldRange = scene.T.at[oldStage];
+          const fraction = clamp01((t - oldRange[0]) / (oldRange[1] - oldRange[0]));
+          const wasDone = done, previousDoneAt = doneAt;
+          makeScene(next.genesis);
+          const range = scene!.T.at[oldStage];
+          t = wasDone ? scene!.T.total : range[0] + fraction * (range[1] - range[0]);
+          pauseIdx = pauses.filter(p => p <= t).length;
+          done = wasDone; doneAt = previousDoneAt;
+          return;
+        }
         // live -> replay: the clone already played for real, so continue from `parse`
         const fromLive = !!live && live.age() > 0.8;
         live = null;
@@ -191,11 +205,11 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
         return;
       }
       if (next.progress && live) live.push(next.progress);
-      if (!scene && !live && kit) makeScene(genesisFromKit(kit));
+      if (!scene && !live && kit) makeScene(genesisFromKit(kit, opts.mode));
       if (!scene && live && kit && next.progress?.stage === "ready") {
         // ready without genesis (server has none): fall back to the kit-only story
         live = null;
-        makeScene(genesisFromKit(kit), 0);
+        makeScene(genesisFromKit(kit, opts.mode), 0);
       }
     },
     skip,

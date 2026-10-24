@@ -39,6 +39,7 @@ describe('repository kits', () => {
     expect(four.limbs.some(l => l.weakPoint)).toBe(true);
     expect(four.attacks.every(a => a.telegraph >= 0.6)).toBe(true);
     const variants = Array.from({ length: 10 }, (_, i) => { const profile = syntheticProfile(i + 1); if (i % 2) profile.heart = 'external/main'; return profile; });
+    variants.push({ ...syntheticProfile(7), ageDays: 6500, maxDepth: 1, cycles: [], components: [{ name: 'legacy', files: 10, loc: 1000, fanIn: 0, fanOut: 0 }] });
     expect(new Set(variants.flatMap(profile => bossKitFromProfile(profile, 4).attacks.map(a => a.kind))).size).toBe(8);
   });
   it('keeps total effective limb HP and attack share constant across repo shapes', () => {
@@ -182,6 +183,7 @@ describe('authoritative arena', () => {
     s.boss.hp = s.boss.maxHp * 0.14;
     advance(m, 0.3, inputs); expect(s.boss.phase).toBe(3);
     s.boss.hp = 1; advance(m, 0.3, inputs);
+    expect(s.boss.pose.name).toBe('death'); advance(m, 2.1);
     expect(m.over).toBe(true); expect(m.autopsy().victory).toBe(true);
     expect(m.autopsy().players.filter(p => p.stats.killingBlow)).toHaveLength(1);
   });
@@ -220,7 +222,7 @@ describe('authoritative arena', () => {
   });
   it('resolves all eight boss attacks into visible bullets, hazards, charges or minions', () => {
     for (const kind of ['ring', 'spiral', 'fan', 'laser', 'slam', 'charge', 'summon', 'cascade'] as const) {
-      const m = fixture(2), s = internals(m);
+      const m = fixture(2), s = internals(m); s.boss.kit.archetype = 'kaiju';
       const attack = { ...s.boss.kit.attacks[0], kind, params: { count: 8, speed: 50, radius: 30 } };
       s.boss.kit.attacks = [attack];
       const runtime = m as unknown as { telegraph: (a: typeof attack, target: [number, number]) => void; attack: (a: typeof attack, target: [number, number]) => void; charge: unknown };

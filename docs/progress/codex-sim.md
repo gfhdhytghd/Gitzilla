@@ -1,3 +1,72 @@
+DONE (archetypes)
+DONE (rubric)
+
+## Lead handoff
+- take-lead requested direct notification. Sent codex-gemini a Herdr agent prompt after verifying its live identity/workspace and readiness: DONE marker is top, final300-match artifact saved, kit/cache inputs frozen, refresh offline designs now then run design tests and report to take-lead. Submission acknowledged; asset refresh remains that owner's task.
+- Final owned verification after report landed:167 sim+rubric PASS, root tsc PASS, diff check PASS. take-lead's newer first full run reports689 PASS /3 external FAIL; my earlier full-run snapshot below had2 failures. Lead owns merged rerun and other-owner fixes. No shared service changes.
+
+## Final delivery — archetypes + teacher rubric
+- Four repo-grounded presets, shared anatomy, authoritative pose/head/airborne state, head-locked beams, warned flight/burrow, hittable jet hops, style-specific projectiles and2s death pose are complete. **Selection/decks/source IDs are frozen. codex-gemini can now regenerate the offline designs against final kits.** Genesis's stale old-rule fixture remains with its owner; no cross-owner edits.
+- Final **300 matches**: all15 public profiles ×1/4/6/8 players ×5 trials. All12 archetype×squad cohorts meet55–70% wins,150–210s mean fights and150–210s mean victories. Same paired normal-input bot seeds/skills; no per-repo exception, bot stat change, HP injection or outcome override. Cohorts contain15–25 trials, so these are deterministic calibration observations, not population/human win-rate proof.
+- Saved complete60-row table, aggregate/cohort metrics, exact selector reasons, contact-risk costs, cast decks, squad budgets, runtime/profile SHA256s and geometry provenance in `sim/balance-results.json`. Reproduce: `npx tsx sim/balance-report.ts`; optional row-file arguments combine parallel executions. Main HP and normalized limb durability/share/cast occupancy remain equal; contact-risk costs compensate different landing coverage once at impact, including shared pressure. Odd squads interpolate; solo keeps contact cost1.
+- Exported `qualityFromRubric(kit,{rubric,results})` (also supports `(kit,results,rubric)`). Real criterion scores/weights map to bounded stats and carry evidence/tips; default source is identical to existing classroom stats on all15 profiles. Applied rows survive match conversion; reverting defaults removes custom weighting. Combined extreme vitality×damage×speed×max(resource pool,sustain)×incoming weakness remains<2.5. Net has wired the hook using real scoreRepo results and a frozen match rubric. No shared edits.
+- Validation: **167 sim+rubric tests PASS /13 files** (includes13 archetype mechanics tests +6 rubric conversion tests), full workspace typecheck PASS, production build PASS (existing ineffective dynamic-import warnings), owned diff check PASS.
+- Actual DEV5175 proof: standard4human+2bot smokeQDXQ PASS; all4 archetype WebSocket smoke PASS (219–220 snapshots/form over11s, shared centers, attack/recover, hydra fly+dive, mecha hops, abyssal burrow+emerge);30student classroom smokeCCNA PASS (teacher and30 students, boss=null, heroScale2, quality/report Genesis,99 snapshots each/5s, leave/deletion). Initial four-form attempt interrupted by shared watcher restart; final successful run supersedes it. No visual/human play acceptance claimed by protocol checks.
+- Latest full workspace suite before final report: **689 PASS /2 external stale-fixture FAIL /8 optional skips**. Design bundled old attack maps await codex-gemini's requested final-kit refresh; Genesis test168 still asserts old2-summon-0/3-fan-0/1-laser-0 rules, superseded by preset decks. Owned167 pass; no test assertions/assets outside ownership changed. Do not deploy until those owners refresh and coordinator reruns merged checks.
+- Onlysim/ and this log changed for these cards. No commits/pushes, dependencies, shared edits, credentials, provider calls, server lifecycle controls, or stable LIVE5173 access.
+
+| Archetype | Players | Wins | Win rate | Mean fight | Mean victory |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| kaiju | 4 | 14/20 | 70.0% | 186.7s | 193.5s |
+| hydra | 4 | 9/15 | 60.0% | 175.2s | 188.0s |
+| mecha | 4 | 9/15 | 60.0% | 186.4s | 193.0s |
+| abyssal | 4 | 15/25 | 60.0% | 185.7s | 198.1s |
+| kaiju | 6 | 12/20 | 60.0% | 174.3s | 171.7s |
+| hydra | 6 | 9/15 | 60.0% | 163.5s | 174.0s |
+| mecha | 6 | 10/15 | 66.7% | 174.0s | 179.9s |
+| abyssal | 6 | 15/25 | 60.0% | 178.3s | 185.9s |
+| kaiju | 8 | 11/20 | 55.0% | 178.0s | 187.3s |
+| hydra | 8 | 9/15 | 60.0% | 189.3s | 199.5s |
+| mecha | 8 | 9/15 | 60.0% | 189.2s | 192.9s |
+| abyssal | 8 | 16/25 | 64.0% | 193.9s | 203.1s |
+
+Squad aggregate (all15 repos): 1p 66/75=88.0%, mean241.7s; 4p 47/75=62.7%, mean184.0s; 6p 46/75=61.3%, mean173.4s; 8p 45/75=60.0%, mean187.8s.
+
+Archived implementation notes — archetypes
+
+## Rubric hook handoff (implemented; focused verification running)
+- Exported `qualityFromRubric` from `sim/index.ts`: call `qualityFromRubric(kit, { rubric, results: scoreRepo(profile, rubric) })`, or `(kit, results, rubric)`. CriterionResult alone has no weights/signal/source metadata; an array without the rubric retains defaults.
+- codex-net: apply this to human/bot kits when an edu match starts, using the match's frozen rubric and the actual profile. Reapplying default source restores the existing source-based classroom stats exactly. Server integration stays with net owner.
+- Teacher weights affect half the overall score plus half the relevant signal group: tests/CI/typing→armor, modularity→speed, cohesion/function-length→damage, doc/README/license→energy+regen, size/commits→HP, cycles/debt→weakness; custom checks may affect all. No invented profile facts, no design/weapon changes.
+- Custom rubric ranges are deliberately bounded; the combined ratio of vitality × damage × speed × max(energy,regen) × incoming weakness is <2.5 even at opposite extremes. Structural `rubricQuality` preserves the applied rows through `createMatch`'s classroom conversion; no shared edits.
+
+## Archetype implementation plan / handoff
+- Read docs/tasks/boss-archetypes.md and committed required BossKit.archetype / BossState.pose+airborne. Fix owned types first; no shared edits.
+- Selection will use real cycles/fan-out, systems language+depth/infra scale, LOC/age/TODOs and export an exact trace reason for Genesis. No slug whitelist.
+- Need renderer owner to extend shared helper to bossAnchors(kit) with head/wing slot tags and ideally per-head mouth offsets, so hydra airborne hit filtering and head lasers use the same source geometry. Until that lands, independent preset/pose work can proceed.
+- New per-archetype bot sweeps required; prior upright-only report is historical once movement/decks change. DEV5175 only, no commits/deployments.
+
+## Final checks in progress (archetype mechanics frozen)
+- Final calibration has all12 archetype×squad cells in the requested band in the five-trial tuning runs:4p kaiju70%, hydra60%, mecha60%, abyssal60%;6p60/60/66.7/60%;8p55/60/60/64%. Fresh full300-match sweep is running against frozen production values, with original paired bots/inputs/seeds and no outcome/HP manipulation.
+- DEV5175 four-form WebSocket smoke PASS:219/219/220/219 snapshots over11s; kaiju idle/walk/windup/attack/recover, hydra fly/dive +64 airborne snapshots, mecha hop +9 airborne, abyssal burrow/emerge +11 airborne. All snapshot region centers equal shared bossAnchors-derived geometry. Rooms explicitly left. Initial attempt was interrupted by shared watcher restart; second setup mistakenly assumed every disk cache wraps profile, fixed to support actual raw cache format; final run passed. No live access or server start/stop.
+- Full typecheck PASS.167 sim+rubric tests PASS;19 focused archetype+rubric tests PASS. Prior ordinary DEV smokeQDXQ (4humans+2bots) PASS including controls/HMR/leave/owner/deletion/revocation.
+- Net has now imported qualityFromRubric and wired applyRubric(profile,kit,rubric) using real scoreRepo results at match creation. Default stats remain exact; teacher document grades survive the PvP conversion.
+
+## Current verification / frozen handoff
+- Selection, source attack IDs/kinds, attack-name maps, limb layout and deck mapping are now frozen. Remaining balance tuning changes only contact-risk costs / shared pressure, not design cache inputs. codex-gemini owns the pending offline asset refresh; no design/data edits made by sim for this card.
+- Rubric focused6 tests PASS across all15 profiles, including exact default identity, weight effects, grounded evidence, bounded combined advantage, and preserving applied grades through classroom match creation. Export is ready for net to wire.
+- First five-trial archetype sweeps showed style-dependent landing risk despite equal HP/attack shares. Calibrating common threat units through per-style, squad-interpolated contact costs (applied exactly once, including pressure). This accounts for homing/ground-shot coverage without per-repo exceptions or changing bots/outcomes. Final report will replace the historical pre-archetype balance-results.json.
+- Full tests currently have external stale fixtures: design bundled attack maps need the owner's refresh after the new decks; Genesis attack-rule fixture still expects old2-summon-0. Do not edit others' tests/assets to hide these. Owned tests/tsc recheck running.
+
+## Archetype implementation update
+- Owned required fields now supplied; last tsc error was server/rooms.test.ts missing archetype in its mock (net owner), then owned nested code.archetypeReason excess-property diagnostic fixed by using typed BossCode.
+- Selection/decks: kaiju laser/slam/fan/charge/ring; hydra laser/fan/dive-charge/spiral; mecha fan/rocket-charge/missile-ring/laser/missile-summon; abyssal cascade/ring/slam/fan/emerge-charge. Component attack shares, effective limb HP, per-kind occupancy costs and squad pressure remain normalized.
+- Shared bossAnchors is live, including tag/aloft/mouths. Regions now archetype-aware, hydra flight filters to living heads/wings, burrow filters all hits; staff survives an empty target set. Head laser origins are pinned per cast so another head starting a beam cannot move an existing beam.
+- BossMotion drives idle/walk/fly/windup/attack/recover/dive/burrow/emerge/stagger/roar/enrage/death; .dir is a finite world unit vector, .head rotates over unbroken hydra heads, .airborne is authoritative. Hydra takeoff has a .85s notice; abyssal emergence point has a harmless .85s floor warning. Mecha hops remain hittable. All anchor bounds stay inside the arena.
+- Hydra charge is one prewarned dive area instead of extra contact+slam double damage. Mecha charge is one rocket fist, ring/summon are slow-turning missiles. Hydra fans add a small6px push without extra HP damage. Abyssal burrows fit in primary recovery windows rather than add simultaneous attacks.
+- Death gets a2s pose window before terminal/autopsy transport; recorded fight duration ends at the killing hit. No combat continues during death. Existing owned tests are being migrated from immediate-terminal/old-silhouette assumptions; new archetype tests and a normal-input pilot sweep are running.
+- Genesis handoff: exported bossArchetypeFromProfile(profile) returns {archetype,reason}; structural BossKit.code.archetypeReason carries the same exact real-signal explanation. No shared edits.
+
 DONE (attack flavor)
 
 ## Expanded attack flavor pools — complete

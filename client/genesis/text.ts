@@ -70,6 +70,19 @@ export class TextLayer {
     return lo > 0 ? str.slice(0, lo) + ".." : "";
   }
 
+  /** Wrap at whitespace so code identifiers and closing delimiters stay whole. */
+  wrap(str: string, maxW: number, size = 8, font: Font = "term", min = 10): string[] {
+    const rows: string[] = [];
+    let row = "";
+    for (const word of str.trim().split(/\s+/)) {
+      const next = row ? `${row} ${word}` : word;
+      if (row && this.measure(next, size, font, min) > maxW) { rows.push(row); row = word; }
+      else row = next;
+    }
+    if (row) rows.push(row);
+    return rows;
+  }
+
   text(str: string, x: number, y: number, o: TextOpts = {}): number {
     if (!str) return 0;
     const c = this.ctx;

@@ -139,3 +139,21 @@ Opt-in training/`?trace=1` clients can `POST /api/trace` with `Content-Type: app
 Files are stored as `.cache/traces/<milliseconds>-<random>.json`, mode 0600; the newest 200 are retained. Only the submitted JSON is saved: no cookies, auth/session tokens, or client IP metadata are attached. `GET /api/trace/list` returns `{traces:[{id,bytes,createdAt}]}` newest first, with no caching. Listing requires a direct localhost/loopback request and rejects forwarded/public tunnel requests. Trace contents remain inaccessible through HTTP; the coordinator can inspect files locally. `TRACES_DIR` optionally isolates the directory for tests.
 
 Vite’s configured server port follows `PORT` (DEV 5175), including its direct HMR fallback target. The HMR browser port and protocol stay inferred from `/@vite/client`, so a localhost page uses ws:5175 and an HTTPS tunnel page uses its own public WSS address. The DEV battle smoke verifies the injected target and an actual HMR handshake without contacting stable live.
+
+## Controls readiness per page
+
+Players report `{t:'controls',ready:boolean,mode:'standard'|'seated'|'tap-only'}` after **every welcome** and whenever sensor/permission readiness changes. Lobby cards expose `controlsReady` separately from repo status. Bots are always ready; desktop keyboard connections default ready. Mobile User-Agent / client-hint connections start false on every hello, even with a resume token and ready repo. UA is only an initial hint: clients must explicitly report missing sensor readiness on iPad desktop-style UAs too.
+
+Sensor readiness and profile reports are memory-only. A new connection/page cannot restore readiness from room persistence. A same-page network resume can immediately report true again if the current page's permission and live-sensor checks still pass. START rejects participating ready-repo players whose controlsReady is false with a count and names; spectators and unconfigured repo slots do not block. Reports during combat update the lobby without pausing teammates; the permission prompt/recovery overlay belongs to the client.
+
+## Teacher rubric and student feedback
+
+New edu rooms expose a default `lobby.rubric`. Preview a teacher document with `POST /api/rubric/parse?room=ABCD&filename=assignment.md`: send raw text/Markdown/PDF, or JSON `{text,filename?}`, capped at 1 MiB. PDF extraction uses the rubric module's async `pdftotext` adapter; unreadable/scanned PDFs return a helpful text-upload error. Preview preserves `unparsed` lines without applying the rubric.
+
+Uploads and `GET /api/room/ABCD/feedback.csv|.md` require the **current owner's room welcome.token** in `X-Room-Token` or `Authorization: Bearer`. This is the player/projector resume token, not a GitHub token. Use fetch plus a download blob; tokens never belong in URLs. Missing credentials return 401, other/old owner tokens 403, non-edu rooms 409, and exports before feedback is ready 404. Downloads use `Cache-Control: no-store`.
+
+Owner-only lobby `{t:'setRubric',rubric}` validates criteria and normalizes relative weights, broadcasts and persists the selected rubric. Ready edu lobby entries get exact `rubricPreview: CriterionResult[]` from their actual profile and current rubric. Previews invalidate on repo/rubric/mode changes, are cached only in memory, and never serialize the raw profile or enter `rooms.json`. Private evidence remains within its room.
+
+At start, the server freezes the rubric and applies the sim's bounded `qualityFromRubric` hook to humans and bots. The same rubric drives post-fight scoring. `{t:'feedback',items}` sends each human student only their own feedback; the current owner and projector screens receive the class list. Combat/quiz context comes from the real PvP state/autopsy. Feedback replays on same-server reconnect, clears on rematch/permanent leave, and is never persisted or published to Hall. Restored classrooms rehydrate real repository evidence before starting; private repos need their current authenticated session.
+
+Focused coverage includes real HTTP/WS authorization, raw and PDF uploads, exact/over-limit bodies, rubric restoration, preview cache invalidation/private isolation, student recipient boundaries, current-owner CSV/Markdown exports, and an accelerated actual classroom match through natural rounds and feedback generation.

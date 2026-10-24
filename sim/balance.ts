@@ -1,11 +1,11 @@
-import type { BossAttackKind } from '../shared/types.ts';
+import type { BossArchetype, BossAttackKind } from '../shared/types.ts';
 import { clamp } from './math.ts';
 
 /** Central playtest knobs. Odd-sized squads interpolate neighboring budgets. */
 export const SQUAD_TUNING = {
-  4: { pressurePeriod: 3.3, hitDamage: 5 },
-  6: { pressurePeriod: 3.1, hitDamage: 4.3 },
-  8: { pressurePeriod: 3, hitDamage: 4 },
+  4: { pressurePeriod: 3.6, hitDamage: 5 },
+  6: { pressurePeriod: 3.4, hitDamage: 4.3 },
+  8: { pressurePeriod: 3.2, hitDamage: 4 },
 };
 export const MATCH_TUNING = { bossBaseHp: 11600 };
 
@@ -26,6 +26,21 @@ export function squadBudget(playerCount: number) {
 
 // Repo seed directs art/anatomy, not an accidentally easier/harder AI random stream.
 export const ENCOUNTER_SEED = 0x4b41494a;
+
+/** Contact risk per threat unit: homing/low ground shots land more often than head beams.
+ * Apply once at impact, including shared pressure, rather than awarding a style extra HP/casts.
+ */
+export const ARCHETYPE_CONTACT_COST: Record<4 | 6 | 8, Record<BossArchetype, number>> = {
+  4: { kaiju: 1.2, hydra: 0.95, mecha: 1.14, abyssal: 1.1 },
+  6: { kaiju: 1.1, hydra: 1.02, mecha: 1.1, abyssal: 1.2 },
+  8: { kaiju: 1, hydra: 0.84, mecha: 1, abyssal: 1 },
+};
+export function archetypeContactCost(archetype: BossArchetype, count: number) {
+  const n = clamp(count, 1, 8);
+  const lo = n < 4 ? 1 : n < 6 ? 4 : 6, hi = n < 4 ? 4 : n < 6 ? 6 : 8;
+  const a = lo === 1 ? 1 : ARCHETYPE_CONTACT_COST[lo][archetype], b = ARCHETYPE_CONTACT_COST[hi][archetype];
+  return a + (b - a) * (n - lo) / (hi - lo);
+}
 
 /** Relative occupancy/contact risk. Expensive shapes spend longer recovering. */
 export const ATTACK_COST: Record<BossAttackKind, number> = {

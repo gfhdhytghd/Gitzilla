@@ -98,6 +98,14 @@ it.skipIf(process.env.ROOM_RESTART_TEST !== '1')('recovers real main.ts processe
     expect(stale.welcome.lobby.room).toBe('HEAL');
     const { room: classroom } = await (await fetch(third.base + '/api/room?mode=edu', { method: 'POST' })).json() as { room: string };
     const teacher = await joinRoom(third.base, classroom, undefined, 'screen');
+    const preview = await fetch(third.base + '/api/rubric/parse?room=' + classroom + '&filename=class.md', {
+      method: 'POST', headers: { Authorization: `Bearer ${teacher.welcome.token}`, 'Content-Type': 'text/markdown' },
+      body: '# Restored classroom rubric\nTesting (70%): tests target 20%\nDocumentation (30%): README',
+    });
+    expect(preview.status).toBe(200);
+    const rubric = await preview.json() as import('../shared/types.ts').Rubric;
+    teacher.send({ t: 'setRubric', rubric });
+    await until(() => teacher.lobby()?.rubric?.title === 'Restored classroom rubric');
     const studentA = await joinRoom(third.base, classroom);
     const studentB = await joinRoom(third.base, classroom);
     studentA.send({ t: 'setRepo', repo: repos[0] }); studentB.send({ t: 'setRepo', repo: repos[1] });
@@ -108,9 +116,11 @@ it.skipIf(process.env.ROOM_RESTART_TEST !== '1')('recovers real main.ts processe
     expect(restoredTeacher.welcome.you).toBe(teacher.welcome.you);
     expect(restoredTeacher.welcome.lobby.ownerId).toBe(teacher.welcome.you);
     expect(restoredTeacher.welcome.lobby.mode).toBe('edu');
+    expect(restoredTeacher.welcome.lobby.rubric?.title).toBe('Restored classroom rubric');
     const restoredA = await joinRoom(fourth.base, classroom, studentA.welcome.token);
     const restoredB = await joinRoom(fourth.base, classroom, studentB.welcome.token);
     expect(restoredA.welcome.lobby.players.find(p => p.id === studentA.welcome.you)?.kit?.quality?.length).toBeGreaterThan(0);
+    await until(() => restoredTeacher.lobby()?.players.length === 2 && restoredTeacher.lobby()?.players.every(p => p.status === 'ready'));
     restoredTeacher.send({ t: 'start' });
     const pvp = await until(() => restoredTeacher.messages.find(m => m.t === 'snapshot'));
     expect(pvp.state.mode).toBe('edu'); expect(pvp.state.boss).toBeNull(); expect(pvp.state.heroScale).toBe(2);

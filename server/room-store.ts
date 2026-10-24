@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { GameMode, LobbyPlayer, LobbyState, RepoProfile, Role } from '../shared/types.ts';
+import type { GameMode, LobbyPlayer, LobbyState, RepoProfile, Role, Rubric } from '../shared/types.ts';
 
 export interface SavedPlayer {
   id: string;
@@ -18,6 +18,7 @@ export interface SavedRoom {
   ownerId: string;
   mode?: GameMode;
   teacherId?: string;
+  rubric?: Rubric;
   players: SavedPlayer[];
   boss: LobbyState['boss'];
   bossProfile?: RepoProfile; // Public-only. Credentialed boss source/kit is memory-only.

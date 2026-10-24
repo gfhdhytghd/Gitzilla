@@ -34,11 +34,11 @@
   "attackNames": {
     "0-fan-0": "Render() Throw Storm",
     "0-charge-1": "Bind() History Rewrite",
-    "1-laser-0": "Name() </> Breath",
-    "2-ring-0": "String() Infinite Scroll",
-    "3-spiral-0": "GET() Recursive Descent",
-    "4-ring-0": "Open() Busy Wait",
-    "5-spiral-0": "Marshal() Nested Promises"
+    "1-ring-0": "Name() Infinite Scroll",
+    "2-laser-0": "String() </> Breath",
+    "3-summon-0": "GET() Lockfile Storm",
+    "4-fan-0": "Open() Null Pointer",
+    "5-charge-0": "Marshal() git push --force"
   },
   "limbNames": {
     "limb-0": "Header() Antenna",

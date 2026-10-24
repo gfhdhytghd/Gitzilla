@@ -45,6 +45,7 @@ describe('battle explicit player departure', () => {
   });
   it('cancels aggro, a targeted cast and queued charge/spiral effects', () => {
     const m = battle(), raw = m as unknown as BattleRaw, s = raw.state;
+    s.boss.kit.archetype = 'kaiju';
     const attack = { ...s.boss.kit.attacks[0], kind: 'slam' as const };
     s.boss.targetPlayer = 'p0'; s.boss.casting = { attackId: attack.id, t: 0, total: 1, target: [90, 90] };
     raw.telegraph(attack, [90, 90]); raw.attack({ ...attack, kind: 'charge' }, [90, 90]); raw.attack({ ...attack, kind: 'spiral' }, [90, 90]);

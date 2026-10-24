@@ -1,5 +1,5 @@
 /* Edu rubric: teacher editor, student "how you'll be judged" card, post-match feedback (student + class). */
-.rb-editor, .rb-judged, .fb-view, .fb-class { --edu-bg: rgba(5, 10, 14, .94); --edu-line: #1d3b2b; font-family: var(--term, "VT323", monospace); color: var(--text, #d9ffe9); }
+.rb-editor, .rb-judged, .fb-view, .fb-class { --edu-bg: rgba(5, 10, 14, .94); --edu-line: #1d3b2b; min-width: 0; max-width: 100%; overflow-wrap: anywhere; font-family: var(--term, "VT323", monospace); color: var(--text, #d9ffe9); }
 .rb-editor code, .rb-judged code, .fb-view code, .fb-class code { font-family: inherit; color: var(--cyan, #3de8ff); background: rgba(61, 232, 255, .1); padding: 0 3px; }
 .rb-kicker { font: 10px/1.4 var(--pix, monospace); color: var(--yellow, #ffd23d); letter-spacing: 1px; }
 .rb-link { font: inherit; background: none; border: 0; padding: 0 2px; color: var(--cyan, #3de8ff); text-decoration: underline; cursor: pointer; }
@@ -8,7 +8,8 @@
 /* ---------- editor ---------- */
 .rb-editor { display: flex; flex-direction: column; gap: 10px; background: var(--edu-bg); border: 2px solid var(--edu-line); padding: 12px; }
 .rb-head { display: flex; align-items: flex-end; gap: 10px; justify-content: space-between; }
-.rb-title { font: 12px/1.5 var(--pix, monospace); color: #fff; background: transparent; border: 0; border-bottom: 1px dashed var(--edu-line); padding: 2px 0; width: min(520px, 60vw); }
+.rb-head > div { min-width: 0; flex: 1; }
+.rb-title { font: 12px/1.5 var(--pix, monospace); color: #fff; background: transparent; border: 0; border-bottom: 1px dashed var(--edu-line); padding: 2px 0; width: 100%; max-width: 520px; }
 .rb-title:focus { outline: none; border-bottom-color: var(--green, #39ff88); }
 .rb-source { font: 9px var(--small, monospace); color: var(--dim, #6f9b85); text-transform: uppercase; white-space: nowrap; }
 .rb-drop { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; padding: 10px; border: 2px dashed #2e5a47; background: rgba(57,255,136,.03); }
@@ -32,7 +33,7 @@
 .rb-del:hover { color: var(--red, #ff3355); border-color: var(--red, #ff3355); }
 .rb-row-mid { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 4px 0; }
 .rb-weight { flex: 1 1 140px; accent-color: var(--yellow, #ffd23d); }
-.rb-signal { font: 18px var(--term, monospace); color: var(--cyan, #3de8ff); background: #05070a; border: 1px solid var(--edu-line); padding: 2px 4px; }
+.rb-signal { max-width: 100%; font: 18px var(--term, monospace); color: var(--cyan, #3de8ff); background: #05070a; border: 1px solid var(--edu-line); padding: 2px 4px; }
 .rb-target { font-size: 18px; color: var(--dim, #6f9b85); white-space: nowrap; }
 .rb-target input { width: 5em; font: 18px var(--term, monospace); color: #fff; background: #05070a; border: 1px solid var(--edu-line); padding: 1px 4px; }
 .rb-check { font-size: 18px; color: var(--amber, #ffb000); }
@@ -75,7 +76,7 @@
 .fb-summary b { color: var(--amber, #ffb000); font-weight: normal; }
 .fb-ring { position: relative; width: var(--s); height: var(--s); flex: none; }
 .fb-ring-svg svg { display: block; }
-.fb-ring-num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font: calc(var(--s) * .24)/1 var(--pix, monospace); color: var(--c); text-shadow: 2px 2px 0 #000; }
+.fb-ring-num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font: calc(var(--s) * .52 / var(--digits, 2))/1 var(--pix, monospace); color: var(--c); text-shadow: 2px 2px 0 #000; }
 .fb-ring-num small { font: 10px var(--small, monospace); color: var(--dim, #6f9b85); margin-top: 4px; text-shadow: none; }
 .fb-good ul, .fb-next ol { margin: 0; padding-left: 1.3em; font-size: 19px; line-height: 1.1; }
 .fb-good li, .fb-next li { margin: 2px 0; }
@@ -92,13 +93,15 @@
 .fb-stats b { font: 14px var(--pix, monospace); color: #fff; font-weight: normal; }
 .fb-stats small { font: 10px var(--small, monospace); color: var(--dim, #6f9b85); text-transform: uppercase; }
 .fb-export { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.fb-export-status { flex-basis: 100%; font-size: 18px; color: var(--amber, #ffb000); }
+.fb-scroll-hint { display: none; font-size: 16px; color: var(--dim, #6f9b85); margin: 4px 0 8px; }
 .fb-title { margin: 0; font: 12px var(--pix, monospace); color: var(--green, #39ff88); text-transform: uppercase; }
 .fb-table { overflow-x: auto; }
-.fb-tr { display: grid; grid-template-columns: var(--cols); gap: 6px; align-items: center; padding: 3px 4px; border-bottom: 1px dotted var(--edu-line); font-size: 19px; cursor: pointer; min-width: max-content; }
+.fb-tr { display: grid; grid-template-columns: var(--cols); gap: 6px; align-items: center; padding: 3px 4px; border-bottom: 1px dotted var(--edu-line); font-size: 19px; cursor: pointer; min-width: 0; width: max(100%, var(--table-min)); }
 .fb-tr:hover, .fb-tr.open { background: rgba(61,232,255,.06); }
 .fb-thead { cursor: default; align-items: end; }
 .fb-thead:hover { background: none; }
-.fb-th { font: 10px/1.25 var(--small, monospace); color: var(--dim, #6f9b85); background: none; border: 0; padding: 0; text-align: left; text-transform: uppercase; cursor: pointer; }
+.fb-th { min-width: 0; overflow-wrap: anywhere; white-space: normal; font: 10px/1.25 var(--small, monospace); color: var(--dim, #6f9b85); background: none; border: 0; padding: 0; text-align: left; text-transform: uppercase; cursor: pointer; }
 .fb-th.num { text-align: right; }
 .fb-th.on { color: var(--yellow, #ffd23d); }
 .fb-td.num { text-align: right; }
@@ -110,9 +113,14 @@
 .fb-class.v-screen { zoom: 1.25; }
 @media (min-width: 2200px) { .fb-class.v-screen { zoom: 1.7; } }
 @media (max-width: 560px) {
+  .rb-head { flex-wrap: wrap; }
+  .rb-head > div { flex-basis: 100%; }
+  .rb-source { margin-left: auto; }
+  .rb-paste { min-width: 0; width: 100%; }
   .rb-drop { grid-template-columns: 1fr; }
   .rb-drop-sub { text-align: left; }
   .rb-parse { grid-column: 1; }
   .fb-top { align-items: flex-start; }
   .fb-summary { font-size: 18px; }
+  .fb-scroll-hint { display: block; }
 }

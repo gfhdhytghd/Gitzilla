@@ -3,7 +3,8 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import { RoomStore, type SavedRoom } from './room-store.ts';
 import { sanitizeInputFrame } from './input.ts';
-import type { Autopsy, BossDesign, BossKit, ClientMsg, GameEvent, GameMode, Genesis, GenesisProgress, InputFrame, LobbyPlayer, LobbyState, MatchState, PlayerKit, PlayerState, RepoProfile, Role, ServerMsg } from '../shared/types.ts';
+import { feedbackCsv, feedbackMarkdown, normalizeRubric } from './rubrics.ts';
+import type { Autopsy, BossDesign, BossKit, ClientMsg, CriterionResult, GameEvent, GameMode, Genesis, GenesisProgress, InputFrame, LobbyPlayer, LobbyState, MatchState, MotionProfile, PlayerKit, PlayerState, RepoProfile, Role, Rubric, ServerMsg, StudentFeedback } from '../shared/types.ts';
 
 export interface Match {
   removePlayer?(id: string): void;
@@ -13,6 +14,11 @@ export interface Match {
   readonly over: boolean;
 }
 export interface GameServices {
+  defaultRubric?(): Rubric;
+  parseRubric?(text: string, filename?: string): Rubric;
+  scoreRepo?(profile: RepoProfile, rubric: Rubric): CriterionResult[];
+  feedbackForPlayer?(profile: RepoProfile, rubric: Rubric, stats: StudentFeedback['match'] & { playerId: string; name: string }): StudentFeedback;
+  applyRubric?(profile: RepoProfile, kit: PlayerKit, rubric: Rubric): PlayerKit;
   analyzeRepo(repo: string, options?: { token?: string; onProgress?: (progress: GenesisProgress) => void }): Promise<RepoProfile>;
   getSession?(request: IncomingMessage): Promise<{ login: string } | null>;
   getGithubToken?(request: IncomingMessage): Promise<string | null>;
@@ -47,12 +53,19 @@ interface Member {
   botInput?: (state: MatchState, player: PlayerState) => InputFrame;
   input?: InputFrame;
   inputAt: number;
+  controlsReady: boolean;
+  controlsMode?: MotionProfile;
+  preview?: { profile: RepoProfile; rubric: Rubric; results: CriterionResult[] };
 }
 interface Room {
   code: string;
   ownerId: string;
   mode: GameMode;
   teacherId?: string;
+  rubric?: Rubric;
+  matchRubric?: Rubric;
+  feedback?: StudentFeedback[];
+  feedbackProfiles?: Map<string, RepoProfile>;
   members: Map<string, Member>;
   boss: LobbyState['boss'];
   bossProfile?: RepoProfile;
@@ -80,6 +93,8 @@ const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => 
 const capacity = (room: Room) => room.mode === 'edu' ? 30 : 8;
 const bots = (room: Room) => [...room.members.values()].filter(m => m.lobby.bot);
 const squad = (room: Room) => [...connectedPlayers(room), ...bots(room)];
+const phoneRequest = (request?: IncomingMessage) => request?.headers['sec-ch-ua-mobile'] === '?1' ||
+  /Android|iPhone|iPad|iPod|Mobile/i.test(request?.headers['user-agent'] ?? '');
 const send = (ws: WebSocket | null, message: ServerMsg) => {
   if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(message));
 };
@@ -119,11 +134,16 @@ export class RoomServer {
       const members = new Map<string, Member>();
       for (const player of saved.players) {
         const lobby = { ...player.lobby };
+        delete lobby.rubricPreview;
         if (lobby.status === 'analyzing') {
           lobby.status = 'error'; lobby.error = 'Server restarted during analysis. Choose this repo again.';
         }
-        members.set(player.id, { ...player, lobby, role: player.role ?? 'player', socket: null, revision: 0, inputAt: 0,
-          botInput: lobby.bot ? this.services.createBot?.(player.botSeed ?? lobby.kit?.seed ?? 1) : undefined });
+        const member: Member = { ...player, lobby, role: player.role ?? 'player', socket: null, revision: 0, inputAt: 0, controlsReady: !!lobby.bot,
+          botInput: lobby.bot ? this.services.createBot?.(player.botSeed ?? lobby.kit?.seed ?? 1) : undefined };
+        if (lobby.bot && lobby.repo) {
+          try { member.profile = this.services.botProfile?.(lobby.repo); } catch { /* Retry from the fallback picker when starting. */ }
+        }
+        members.set(player.id, member);
       }
       const boss: LobbyState['boss'] = saved.privateBoss
         ? { repo: saved.boss.repo, status: 'error', kit: null, error: 'Reconnect GitHub and reselect the private boss repo.' }
@@ -135,13 +155,15 @@ export class RoomServer {
         restartNotice: saved.phase === 'match'
           ? 'Server restarted. Your fight was reset to the lobby; repos and kits were restored.'
           : saved.restartNotice ?? 'Server restarted. Your lobby has been restored.' };
+      try { room.rubric = saved.rubric ? normalizeRubric(saved.rubric) : room.mode === 'edu' ? this.services.defaultRubric?.() : undefined; }
+      catch { room.rubric = this.services.defaultRubric?.(); }
       this.rooms.set(room.code, room);
       this.scheduleCleanup(room);
     }
   }
 
   private savedRooms(): SavedRoom[] {
-    return [...this.rooms.values()].map(room => ({ code: room.code, ownerId: room.ownerId, mode: room.mode, teacherId: room.teacherId,
+    return [...this.rooms.values()].map(room => ({ code: room.code, ownerId: room.ownerId, mode: room.mode, teacherId: room.teacherId, rubric: room.rubric,
       players: [...room.members.values()].filter(m => m.role === 'player' || m.id === room.ownerId || m.id === room.teacherId).map(m => ({
         id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed,
         lobby: this.persistedLobby(m),
@@ -155,7 +177,7 @@ export class RoomServer {
   }
 
   private persistedLobby(member: Member): LobbyPlayer {
-    if (!member.privateRepo) return member.lobby;
+    if (!member.privateRepo) { const { controlsReady: _controlsReady, rubricPreview: _preview, ...lobby } = member.lobby; return lobby; }
     const kit = member.lobby.kit;
     // Whitelist gameplay fields: sim may attach classroom source facts outside PlayerKit.
     const safeKit: PlayerKit | null = kit ? {
@@ -188,7 +210,8 @@ export class RoomServer {
     if (code && !/^[A-Z]{4}$/.test(code)) throw new Error('Use a four-letter room code (A–Z only; no digits).');
     if (code && this.rooms.has(code)) return code;
     if (!code) do { code = Array.from(randomBytes(4), byte => String.fromCharCode(65 + byte % 26)).join(''); } while (this.rooms.has(code));
-    const room: Room = { code, ownerId: '', mode, members: new Map(), boss: { repo: null, status: 'empty', kit: null }, bossRevision: 0, phase: 'lobby', events: [] };
+    const room: Room = { code, ownerId: '', mode, rubric: mode === 'edu' ? this.services.defaultRubric?.() : undefined,
+      members: new Map(), boss: { repo: null, status: 'empty', kit: null }, bossRevision: 0, phase: 'lobby', events: [] };
     this.rooms.set(code, room);
     this.scheduleCleanup(room);
     this.persist();
@@ -200,8 +223,43 @@ export class RoomServer {
     return room ? { exists: true, players: squad(room).length, phase: room.phase } : { exists: false, players: 0, phase: null };
   }
 
+  eduOwnerError(code: string, token: string | undefined, lobbyOnly = false): { status: number; error: string } | undefined {
+    if (!/^[A-Z]{4}$/.test(code)) return { status: 400, error: 'Use a four-letter room code (A–Z only; no digits).' };
+    const room = this.rooms.get(code);
+    if (!room) return { status: 404, error: 'Room not found' };
+    if (!token) return { status: 401, error: 'Provide the owner room token in X-Room-Token or Authorization: Bearer' };
+    const owner = room.members.get(room.ownerId);
+    if (!owner || owner.lobby.bot || owner.token !== token) return { status: 403, error: 'Only the current room owner can do that' };
+    if (room.mode !== 'edu') return { status: 409, error: 'Rubrics and feedback require classroom mode' };
+    if (lobbyOnly && room.phase !== 'lobby') return { status: 409, error: 'Return to the lobby to upload a rubric' };
+  }
+
+  previewRubric(text: string, filename?: string): Rubric | undefined {
+    return this.services.parseRubric?.(text, filename);
+  }
+
+  exportFeedback(code: string, format: 'csv' | 'md'): string | undefined {
+    const room = this.rooms.get(code);
+    if (!room || room.phase !== 'autopsy' || !room.feedback || !room.matchRubric) return;
+    return format === 'csv' ? feedbackCsv(room.matchRubric, room.feedback) : feedbackMarkdown(room.matchRubric, room.feedback);
+  }
+
   lobby(room: Room): LobbyState {
-    return { room: room.code, ownerId: room.ownerId, mode: room.mode, players: squad(room).map(m => ({ ...m.lobby })), boss: { ...room.boss }, phase: room.phase };
+    return { room: room.code, ownerId: room.ownerId, mode: room.mode,
+      players: squad(room).map(m => ({ ...m.lobby, controlsReady: !!m.lobby.bot || m.controlsReady, rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
+      ...(room.mode === 'edu' && room.rubric ? { rubric: room.rubric } : {}) };
+  }
+
+  private rubricPreview(room: Room, member: Member): CriterionResult[] | undefined {
+    if (room.mode !== 'edu' || room.phase !== 'lobby' || member.lobby.status !== 'ready' || !member.profile || !this.services.scoreRepo) {
+      member.preview = undefined; return;
+    }
+    const rubric = room.rubric ?? this.services.defaultRubric?.();
+    if (!rubric) { member.preview = undefined; return; }
+    if (member.preview?.profile === member.profile && member.preview.rubric === rubric) return member.preview.results;
+    const results = this.services.scoreRepo(member.profile, rubric).map(r => ({ criterionId: r.criterionId, score: r.score, evidence: r.evidence, ...(r.tip ? { tip: r.tip } : {}) }));
+    member.preview = { profile: member.profile, rubric, results };
+    return results;
   }
 
   private broadcast(room: Room, message: ServerMsg) {
@@ -269,6 +327,14 @@ export class RoomServer {
     if (!session || session.member.socket !== socket) throw new Error('Send hello first');
     const { room, member } = session;
     if (msg.t === 'leave') { this.leave(socket, room, member); return; }
+    if (msg.t === 'controls') {
+      if (member.role !== 'player') return;
+      if (typeof msg.ready !== 'boolean' || !['standard', 'seated', 'tap-only'].includes(msg.mode)) throw new Error('Invalid controls readiness');
+      if (member.controlsReady === msg.ready && member.controlsMode === msg.mode) return;
+      member.controlsReady = msg.ready; member.controlsMode = msg.mode;
+      this.broadcastLobby(room, false); // Per-page sensor state must never be restored from disk.
+      return;
+    }
     if (msg.t === 'input') {
       if (member.role !== 'player' || room.phase !== 'match') return;
       const f = sanitizeInputFrame(msg.frame);
@@ -279,7 +345,7 @@ export class RoomServer {
       member.inputAt = Date.now();
       return;
     }
-    const ownerAction = msg.t === 'setBoss' || msg.t === 'setBots' || msg.t === 'setMode' || msg.t === 'start' || msg.t === 'rematch';
+    const ownerAction = msg.t === 'setBoss' || msg.t === 'setBots' || msg.t === 'setMode' || msg.t === 'setRubric' || msg.t === 'start' || msg.t === 'rematch';
     if (ownerAction) {
       if (room.ownerId !== member.id) throw new Error('Only the room owner can do that');
     } else if (member.role !== 'player') throw new Error('Spectators cannot change the room');
@@ -287,12 +353,17 @@ export class RoomServer {
       if (room.phase !== 'autopsy') throw new Error('Wait for the match to finish');
       room.restartNotice = undefined;
       room.phase = 'lobby'; room.match = undefined; room.departed = undefined; room.state = undefined; room.result = undefined; room.events = [];
+      room.feedback = undefined; room.feedbackProfiles = undefined; room.matchRubric = undefined;
       for (const m of room.members.values()) m.input = undefined;
       this.broadcastLobby(room);
       return;
     }
     if (room.phase !== 'lobby') throw new Error('Wait until the lobby to change repos or start');
-    if (msg.t === 'setMode') {
+    if (msg.t === 'setRubric') {
+      if (room.mode !== 'edu') throw new Error('Rubrics require classroom mode');
+      room.rubric = normalizeRubric(msg.rubric);
+      this.broadcastLobby(room);
+    } else if (msg.t === 'setMode') {
       await this.setMode(room, msg.mode);
     } else if (msg.t === 'setBots') {
       await this.setBots(room, msg.count);
@@ -455,6 +526,7 @@ export class RoomServer {
     if (room.mode === mode) return;
     if (mode === 'battle' && connectedPlayers(room).length > 8) throw new Error('Battle supports 8 players. Keep this class in edu mode or ask students to leave first.');
     room.mode = mode;
+    if (mode === 'edu' && !room.rubric) room.rubric = this.services.defaultRubric?.();
     const keepBots = Math.max(0, capacity(room) - connectedPlayers(room).length);
     for (const bot of bots(room).slice(keepBots)) { bot.revision++; room.members.delete(bot.id); }
     const jobs = squad(room).filter(m => m.lobby.repo && (m.lobby.status === 'ready' || m.lobby.status === 'analyzing')).map(m => this.rebuildHero(room, m, false));
@@ -476,7 +548,7 @@ export class RoomServer {
       const repo = repos[seed % repos.length];
       const id = `bot-${randomUUID()}`;
       const name = `[BOT] ${repo.split('/').pop()}`.slice(0, 32);
-      const member: Member = { id, name, token: '', role: 'player', socket: null, revision: 1, inputAt: 0, botSeed: seed,
+      const member: Member = { id, name, token: '', role: 'player', socket: null, revision: 1, inputAt: 0, controlsReady: true, botSeed: seed,
         lobby: { id, name, repo, bot: true, status: 'analyzing', kit: null } };
       room.members.set(id, member);
       pending.push((async () => {
@@ -526,7 +598,7 @@ export class RoomServer {
       if (msg.role === 'player') this.makeRoomForHuman(room);
       const id = randomUUID();
       const name = suppliedName || githubName?.slice(0, 32) || (msg.role === 'screen' ? 'Big screen' : 'Player');
-      member = { id, name, namedByUser: !!suppliedName, token: randomBytes(24).toString('hex'), role: msg.role, socket: null, revision: 0, inputAt: 0, lobby: { id, name, repo: null, status: 'empty', kit: null } };
+      member = { id, name, namedByUser: !!suppliedName, token: randomBytes(24).toString('hex'), role: msg.role, socket: null, revision: 0, inputAt: 0, controlsReady: false, lobby: { id, name, repo: null, status: 'empty', kit: null } };
       room.members.set(id, member);
     } else if (!member.socket && member.role === 'player' && connectedPlayers(room).length >= capacity(room)) {
       throw new Error(`Room is full (${capacity(room)} players)`);
@@ -540,6 +612,9 @@ export class RoomServer {
     if (suppliedName) member.namedByUser = true;
     member.lobby.name = member.name;
     member.socket = socket; member.input = undefined;
+    // Every new WS hello may be a fresh iOS page. Desktop keyboard is immediately
+    // usable; phone clients must report live sensors or an explicit touch choice.
+    member.controlsReady = !phoneRequest(request); member.controlsMode = undefined;
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
     if ((member.role === 'player' || room.mode === 'edu') && (!room.ownerId || !room.members.get(room.ownerId)?.socket)) room.ownerId = member.id;
@@ -547,7 +622,8 @@ export class RoomServer {
       room.teacherId = member.id; room.ownerId = member.id;
     }
     if (member.role === 'player' && member.lobby.repo && (member.lobby.status === 'analyzing' ||
-        (member.lobby.status === 'ready' && ((room.mode === 'edu') !== !!member.lobby.kit?.quality?.length || (!!this.services.buildGenesis && !member.lobby.genesis))))) {
+        (member.lobby.status === 'ready' && ((room.mode === 'edu') !== !!member.lobby.kit?.quality?.length || (!!this.services.buildGenesis && !member.lobby.genesis) ||
+          (room.mode === 'edu' && !!this.services.feedbackForPlayer && !member.profile))))) {
       void this.rebuildHero(room, member);
     }
     send(socket, { t: 'welcome', you: member.id, token: member.token, lobby: this.lobby(room) });
@@ -558,6 +634,7 @@ export class RoomServer {
     }
     if (room.state) send(socket, { t: 'snapshot', state: { ...room.state, events: [] }, ack: -1 });
     if (room.result) send(socket, { t: 'autopsy', result: room.result });
+    this.sendFeedback(room, member);
   }
 
   private disconnect(socket: WebSocket) {
@@ -566,17 +643,20 @@ export class RoomServer {
     if (!session || session.member.socket !== socket) return;
     this.sessions.delete(socket);
     const { room, member } = session;
-    member.socket = null; member.input = undefined;
+    member.socket = null; member.input = undefined; member.controlsReady = false;
     if (room.ownerId === member.id) room.ownerId = connectedPlayers(room)[0]?.id ?? '';
     this.broadcastLobby(room);
+    if (room.feedback) { const owner = room.members.get(room.ownerId); if (owner) this.sendFeedback(room, owner); }
     if (![...room.members.values()].some(m => m.socket)) this.scheduleCleanup(room);
   }
 
   private leave(socket: WebSocket, room: Room, member: Member) {
     this.revokedTokens.add(tokenHash(member.token));
     ++member.revision;
-    member.input = undefined; member.profile = undefined; member.socket = null;
+    member.input = undefined; member.profile = undefined; member.preview = undefined; member.socket = null;
     room.members.delete(member.id); room.pendingProgress?.delete(member.id);
+    room.feedbackProfiles?.delete(member.id);
+    if (room.feedback) room.feedback = room.feedback.filter(item => item.playerId !== member.id);
     this.sessions.delete(socket); this.requests.delete(socket);
     if (room.teacherId === member.id) room.teacherId = undefined;
     const humans = [...room.members.values()].filter(m => !m.lobby.bot && m.socket);
@@ -593,6 +673,7 @@ export class RoomServer {
       if (room.match && room.phase === 'match') { this.capture(room); this.publishSnapshot(room); }
       if (room.result) { room.result = this.activeResult(room, room.result); this.broadcast(room, { t: 'autopsy', result: room.result }); }
       this.broadcastLobby(room);
+      this.publishFeedback(room);
     }
     this.flushPersistence(); // Durable leave/revocation before acknowledging by closing.
     socket.close(4002, 'left');
@@ -625,6 +706,11 @@ export class RoomServer {
     if (room.mode === 'edu') {
       if (players.length < 2) throw new Error('Classroom PvP needs at least 2 ready students or bots');
       if (players.some(p => !p.lobby.kit?.quality?.length)) throw new Error('Classroom quality stats are still loading. Reselect repos after the update.');
+      const missing = this.services.feedbackForPlayer || this.services.applyRubric ? players.filter(p => !p.profile) : [];
+      if (missing.length) {
+        for (const member of missing) void this.rebuildHero(room, member);
+        throw new Error('Wait for repository evidence to refresh before starting the classroom');
+      }
     } else {
       if (!humans.length) throw new Error('At least one player must choose a repo and finish analysis');
       if (room.boss.status !== 'ready' || !room.bossProfile) throw new Error('Choose a boss repo and wait for analysis');
@@ -632,11 +718,21 @@ export class RoomServer {
       room.boss.genesis = this.services.buildGenesis?.(room.bossProfile, boss, 'boss');
       room.boss.progress = { stage: 'ready', pct: 1 };
     }
+    const waiting = humans.filter(p => !p.controlsReady);
+    if (waiting.length) throw new Error(`${waiting.length} phone${waiting.length === 1 ? ' needs' : 's need'} to tap enable motion: ${waiting.map(p => p.name).join(', ')}`);
+    const matchRubric = room.mode === 'edu' && (room.rubric || this.services.defaultRubric) ? structuredClone(room.rubric ?? this.services.defaultRubric!()) : undefined;
+    if (matchRubric && this.services.applyRubric) for (const member of players) {
+      member.lobby.kit = this.services.applyRubric(member.profile!, member.lobby.kit!, matchRubric);
+      member.lobby.genesis = this.services.buildGenesis?.(member.profile!, member.lobby.kit, 'hero');
+    }
     const match = this.services.createMatch(players.map(p => ({ id: p.id, name: p.name, kit: p.lobby.kit! })), boss, { mode: room.mode });
     room.restartNotice = undefined;
     room.privateMatch = !!room.privateBoss || players.some(p => p.privateRepo);
     if (boss) room.boss.kit = boss;
     room.match = match; room.departed = new Set(); room.phase = 'match'; room.events = [];
+    room.feedback = undefined;
+    room.matchRubric = matchRubric;
+    room.feedbackProfiles = room.mode === 'edu' ? new Map(humans.flatMap(p => p.profile ? [[p.id, p.profile] as const] : [])) : undefined;
     for (const member of room.members.values()) member.input = undefined;
     this.capture(room);
     this.broadcastLobby(room);
@@ -679,6 +775,7 @@ export class RoomServer {
           room.phase = 'autopsy';
           this.broadcastLobby(room);
           this.broadcast(room, { t: 'autopsy', result: room.result });
+          this.finishFeedback(room);
         }
       } catch (error) {
         this.stopMatch(room); room.phase = 'lobby'; room.match = undefined;
@@ -703,6 +800,37 @@ export class RoomServer {
       if (state.perkOffer) state.perkOffer.picked = Object.fromEntries(Object.entries(state.perkOffer.picked).filter(([id]) => active(id)));
     }
     room.events.push(...room.state.events);
+  }
+
+  private finishFeedback(room: Room) {
+    if (room.mode !== 'edu' || !room.result || !room.matchRubric || !this.services.feedbackForPlayer) return;
+    room.feedback = [];
+    const quizScores = (room.state?.pvp as (NonNullable<MatchState['pvp']> & { quizScores?: Record<string, number> }) | null)?.quizScores;
+    for (const [index, rank] of (room.result.ranking ?? []).entries()) {
+      const member = room.members.get(rank.id), profile = room.feedbackProfiles?.get(rank.id);
+      if (!member || member.lobby.bot || !profile) continue;
+      try {
+        const quiz = quizScores?.[member.id];
+        const feedback = this.services.feedbackForPlayer(profile, room.matchRubric, { playerId: member.id, name: member.name,
+          rank: index + 1, kos: rank.kos, damage: rank.damage, roundWins: rank.roundWins,
+          ...(typeof quiz === 'number' && Number.isFinite(quiz) ? { quiz: `${quiz} correct quiz answer${quiz === 1 ? '' : 's'}` } : {}) });
+        room.feedback.push({ ...feedback, playerId: member.id, name: member.name, repo: profile.slug });
+      } catch {
+        console.warn('Classroom feedback unavailable for one participant.');
+        send(member.socket, { t: 'error', message: 'Your feedback could not be generated. Ask the teacher to retry with your repository.' });
+      }
+    }
+    this.publishFeedback(room);
+  }
+
+  private sendFeedback(room: Room, member: Member) {
+    if (!room.feedback) return;
+    const items = member.role === 'screen' || room.ownerId === member.id ? room.feedback : room.feedback.filter(f => f.playerId === member.id);
+    send(member.socket, { t: 'feedback', items });
+  }
+
+  private publishFeedback(room: Room) {
+    for (const member of room.members.values()) this.sendFeedback(room, member);
   }
 
   private publishSnapshot(room: Room) {

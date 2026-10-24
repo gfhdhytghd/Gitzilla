@@ -1,4 +1,15 @@
 DONE (archetypes)
+DONE (offline bundle refresh)
+
+## Final archetype bundle refresh — complete
+- Waited for codex-sim's literal DONE (archetypes) marker, polling at20:56 /20:59 /21:02 /21:05 /21:08 /21:11 UTC on2026-10-24. Take-lead and codex-sim then confirmed the final300-match sweep and frozen selection/decks/source IDs. Read progress again: first line DONE (archetypes), second DONE (rubric).
+- Executed `npx tsx design/precompute.ts --force --offline --require-dna` against those final kits. Regenerated30 public bundles for15 repos with truthful fallback provenance and no provider/network calls. Structural diff audit: exactly15 boss JSONs changed, **attackNames is the only changed field**. Hero designs, names, body/lore/palettes, limb names and manifest remain unchanged. No design implementation or test assertions changed for this refresh.
+- Fixed the reproduced stale-asset failure at design/index.test.ts:225: e.g. Ripgrep now carries its final mecha fan/ring/laser/summon/charge attack IDs and current source-derived names rather than old ring/spiral mappings.
+- **Entire design suite70/70 PASS** at17:12 local, including bundled offline loading for all fallback repos/squad sizes. **Focused design tsc PASS; owned diff check PASS.**
+- Extra merged checks at17:12 local: root npm test **691 PASS /8 skipped /1 FAIL**, solely genesis/index.test.ts:168 hardcodes obsolete2-summon-0 (new decks have different IDs). Root npm run typecheck has one external diagnostic at client/edu/feedback-view.ts:134: `(event: KeyboardEvent) => void` is not assignable to EventListener. Neither file was edited; hand these to the Genesis/edu owners. Design checks are green; no claim of global green until those separate issues are fixed.
+- Preserved all other shared-workspace edits. Changed only data/design/ and this required progress log; no shared/sim/server/client edits, commits/pushes, messages, service actions, new dependencies or live5173 access. Ready for take-lead review/commit.
+
+DONE (archetypes)
 
 ## Four boss archetypes — complete
 - Read docs/tasks/boss-archetypes.md and the committed BossKit.archetype / BossState.pose+airborne contract. No owned required-field errors. Simulation owns selection, movement, attacks and pose; designs follow BossKit.archetype without changing it or combat fields. Earlier always-upright/any-cycle guidance below is superseded.

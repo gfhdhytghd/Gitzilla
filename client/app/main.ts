@@ -9,6 +9,7 @@ import { createLobby } from "./lobby";
 import { createMockConn } from "./mock";
 import { connect } from "./net";
 import { loadModules } from "./renderers";
+import { getMotionPermissionState, subscribeMotionPermission } from "../input";
 import { h, store } from "./util";
 
 const root = document.getElementById("app")!;
@@ -91,11 +92,13 @@ function startRoom(room: string, role: Role, name: string) {
   const link = h("div.link-status.connecting", null, "LINK…");
   document.body.append(link);
 
+  let stopControls = () => {};
   const app: AppCtx = {
     room, role, name, you: null, lobby: null, autopsy: null, mock, status: "connecting",
     conn: mk({ room, role, name }),
     refresh,
     leave(o = {}) {
+      stopControls();
       // remember the repo so the next room can offer it again
       const me = app.lobby?.players.find((p) => p.id === app.you);
       if (me?.repo) store.set("kaiju.lastRepo", me.repo);
@@ -135,6 +138,13 @@ function startRoom(room: string, role: Role, name: string) {
     },
   };
 
+  const reportControls = () => {
+    if (role === "screen" || !app.you || app.status !== "open") return;
+    const state = getMotionPermissionState();
+    app.conn.send({ t: "controls", ready: state.ready, mode: state.profile });
+  };
+  stopControls = subscribeMotionPermission(reportControls);
+
   const show = (kind: typeof screenKind) => {
     if (kind === screenKind) return;
     screen?.destroy();
@@ -148,6 +158,7 @@ function startRoom(room: string, role: Role, name: string) {
     const ph = app.lobby.phase;
     if (ph === "lobby") {
       app.autopsy = null;
+      app.feedback = [];
       show("lobby");
     } else if (ph === "match") show("game");
     else if (ph === "autopsy") {
@@ -220,8 +231,10 @@ function startRoom(room: string, role: Role, name: string) {
       switch (m.t) {
         case "welcome":
           app.you = m.you;
+          app.token = m.token;
           noticeLobbyChange(app.lobby, m.lobby);
           app.lobby = m.lobby;
+          reportControls();
           break;
         case "lobby":
           noticeLobbyChange(app.lobby, m.lobby);
@@ -236,6 +249,9 @@ function startRoom(room: string, role: Role, name: string) {
         case "autopsy":
           app.autopsy = m.result;
           if (app.lobby) app.lobby.phase = "autopsy";
+          break;
+        case "feedback":
+          app.feedback = m.items;
           break;
         case "error":
           // before we ever got a welcome, an error is fatal for this page: show a card with a way back

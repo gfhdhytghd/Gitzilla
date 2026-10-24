@@ -16,7 +16,7 @@ export class BossAi {
   private heartAwake = false;
   constructor(private seed: number, private playerCount = 4) { this.rng = random(seed); }
 
-  step(dt: number, boss: BossState, players: PlayerState[]): AiDecision {
+  step(dt: number, boss: BossState, players: PlayerState[], allowStart = true): AiDecision {
     this.recovery -= dt;
     this.think -= dt;
     for (const [id, t] of this.cooldowns) this.cooldowns.set(id, t - dt);
@@ -36,7 +36,7 @@ export class BossAi {
       }
       return {};
     }
-    if (this.think > 0 || this.recovery > 0 || !players.length) return {};
+    if (!allowStart || this.think > 0 || this.recovery > 0 || !players.length) return {};
     this.think = 0.2;
     const target = [...players].sort((a, b) => this.threat(b, players) - this.threat(a, players))[0];
     boss.targetPlayer = target.id;

@@ -2,9 +2,8 @@
 // plus everything the cinematic needs to take them apart: per-pixel/block code-rain cells, part anchors,
 // a weapon mask for heroes and the limb/heart/eye skeleton for bosses. Built once per kit and cached.
 import type { BossKit, PlayerKit } from "../../shared/types.ts";
-import { bossLayout, bossPortrait } from "../render/boss/index.ts";
-import { lookFor, playerPortrait } from "../render/player/index.ts";
-import { weaponSprite } from "../render/player/weapons.ts";
+import { bossLayout, bossPortrait, portraitFrame } from "../render/boss/index.ts";
+import { lookFor, playerPortrait, portraitWeaponLayer } from "../render/player/index.ts";
 import type { Pt } from "./graph.ts";
 
 export interface Cell { x: number; y: number; size: number; color: string; row: number }
@@ -29,7 +28,7 @@ export interface CharSprite {
   bossXf?: { s: number; off: number; bx: number; by: number };
 }
 
-const HERO_SIZE = 32;
+const HERO_SIZE = 64;
 const BOSS_SIZE = 176;
 const cache = new Map<string, CharSprite>();
 
@@ -91,23 +90,17 @@ function scan(src: HTMLCanvasElement, block: number) {
 
 /** hires: edu heroes (heroScale 2) use the 2x high-detail sprite, one detail pixel per sprite px. */
 export function heroSprite(kit: PlayerKit, hires = false): CharSprite {
-  const key = (hires ? "H|" : "h|") + kit.repo + "|" + kit.seed + "|" + (kit.design?.title ?? "") + "|" + kit.palette.join("");
+  const key = (hires ? "H|" : "h|") + kit.repo + "|" + lookFor(kit).key;
   const hit = cache.get(key);
   if (hit) return hit;
   const size = hires ? HERO_SIZE * 2 : HERO_SIZE;
   const frames = [0, 1, 2].map((f) => playerPortrait(kit, size, f, hires));
   const base = frames[0];
   const { bbox, cells } = scan(base, 1);
-  // weapon-only layer: same transform as playerPortrait (size 32 -> scale 1, feet at (16, 28); hires: 64 -> 2)
-  const L = lookFor(kit);
-  const res = hires ? 2 : 1, sc = hires ? 2 : 1;
-  const ws = weaponSprite(L, kit.weapon, res);
-  const [wc, wg] = mk(size, size);
-  wg.translate(Math.floor(size / 2), Math.floor(size / 2 + 12.5 * sc));
-  wg.scale(sc, sc);
-  wg.translate(2, -6);
-  wg.rotate(kit.weapon === "blade" ? -0.9 : kit.weapon === "staff" ? -1.2 : -0.25);
-  wg.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / res, ws.canvas.height / res);
+  // Use the renderer's exact hand/pose/scale so weapon color and assembly agree.
+  const wc = portraitWeaponLayer(kit, size, hires).canvas;
+  const wg = wc.getContext("2d", { willReadFrequently: true })!;
+  const sc = hires ? 2 : 1;
   const wd = wg.getImageData(0, 0, size, size).data;
   let wx = 0, wy = 0, wn = 0;
   for (let i = 0; i < size * size; i++) if (wd[i * 4 + 3] > 40) { wx += i % size; wy += (i / size) | 0; wn++; }
@@ -135,18 +128,15 @@ export function heroSprite(kit: PlayerKit, hires = false): CharSprite {
 }
 
 export function bossSprite(kit: BossKit): CharSprite {
-  const key = "b|" + kit.repo + "|" + kit.seed + "|" + kit.name + "|" + kit.palette.join("") + "|" + (kit.design?.body ?? "") + "|" + kit.archetype;
+  const key = "b|" + JSON.stringify(kit);
   const hit = cache.get(key);
   if (hit) return hit;
   const portrait = bossPortrait(kit, BOSS_SIZE);
   const { bbox, cells } = scan(portrait, 4);
   const L = bossLayout(kit);
-  // mirrors bossPortrait (render/boss): kaiju-family bodies draw on a 196 px logical canvas centered at (76,104),
-  // the older bodies on 176 px at (88,80); the portrait scales that canvas to BOSS_SIZE
-  const kaiju = L.body === "kaiju";
-  const LOGICAL = kaiju ? 196 : 176;
+  const { logical: LOGICAL, bx, by } = portraitFrame(kit);
   const s0 = BOSS_SIZE / LOGICAL >= 1 ? Math.floor(BOSS_SIZE / LOGICAL) : BOSS_SIZE / LOGICAL;
-  const xf = { s: s0, off: Math.round((BOSS_SIZE - LOGICAL * s0) / 2), bx: kaiju ? 76 : LOGICAL / 2, by: kaiju ? 104 : LOGICAL / 2 - 8 };
+  const xf = { s: s0, off: Math.round((BOSS_SIZE - LOGICAL * s0) / 2), bx, by };
   const at = (x: number, y: number): Pt => ({ x: xf.off + (xf.bx + x) * xf.s, y: xf.off + (xf.by + y) * xf.s });
   const c0 = at(0, 0);
   const cx = c0.x, cy = c0.y;

@@ -32,15 +32,15 @@
     "One head returns. Two more recurse."
   ],
   "attackNames": {
-    "0-fan-0": "app() Unhandled Error",
-    "0-charge-1": "Item() git push --force",
-    "1-cascade-0": "get() Deadlock",
-    "2-fan-0": "User() Throw Storm",
-    "3-summon-0": "__init__() Version Drift",
-    "4-cascade-0": "lifespan() Split Brain",
-    "5-cascade-0": "Header() Merge Conflict",
-    "6-cascade-0": "__call__() Memory Leak",
-    "7-spiral-0": "main() Nested Promises"
+    "0-laser-0": "app() </> Breath",
+    "0-fan-1": "Item() Unhandled Error",
+    "1-charge-0": "get() git push --force",
+    "2-spiral-0": "User() Nested Promises",
+    "3-laser-0": "__init__() Race Condition",
+    "4-fan-0": "lifespan() Throw Storm",
+    "5-charge-0": "Header() rm -rf",
+    "6-spiral-0": "__call__() Recursion",
+    "7-laser-0": "main() grep Beam"
   },
   "limbNames": {
     "limb-0": "get_client() Coil",

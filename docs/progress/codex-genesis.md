@@ -1,5 +1,9 @@
 DONE (archetypes) — codex-genesis
 
+## Takeover integration (latest)
+- Server attack explanations now use the real source + archetype preset/kind after the deck remap; fixed four-deck/source-slot/ID assertions cover all eight attack kinds without claiming fan-out/file-count causality.
+- Also completed the authorized `client/genesis/` takeover. Full local repair, final screenshot and frame-bound evidence: `docs/progress/codex-takeover-genesis.md` (**DONE**). Final focused client/server Genesis tests 59 PASS, workspace typecheck/build PASS. No commits or renderer edits by this agent.
+
 Implemented the server-side pure TypeScript code → character story builder in `genesis/`.
 No commits, new dependencies, shared-contract edits, or other owners' implementation edits.
 

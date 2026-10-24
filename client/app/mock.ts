@@ -65,7 +65,7 @@ function fakeBossKit(p: RepoProfile, n: number): BossKit {
   const limbs = p.components.slice(0, 6).map((c, i) => ({ id: `limb${i}`, component: c.name, maxHp: 300 + Math.round(c.loc / 50), weakPoint: cyc.has(c.name) }));
   const name = p.slug.split("/")[1].toUpperCase();
   return {
-    repo: p.slug, name: `${name}, THE ${["MONOLITH", "MICRO-HORROR", "TANGLE", "UNDYING"][p.seed % 4]}`, maxHp: 3000 * (0.6 + 0.4 * n), limbs,
+    repo: p.slug, archetype: (["kaiju", "hydra", "mecha", "abyssal"] as const)[p.seed % 4], name: `${name}, THE ${["MONOLITH", "MICRO-HORROR", "TANGLE", "UNDYING"][p.seed % 4]}`, maxHp: 3000 * (0.6 + 0.4 * n), limbs,
     attacks: limbs.map((l, i) => ({ id: `${l.id}-${i}`, kind: ATK_KINDS[(p.seed + i) % ATK_KINDS.length], name: ATK_NAMES[(p.seed + i * 3) % ATK_NAMES.length], source: l.component, damage: 1, cooldown: 3, telegraph: 0.9, params: {} })),
     enrageAt: 0.5, speed: 20, heart: p.heart, palette: ["#2a0f2e", "#7b2fbe", "#c13cff", "#ff3d7f", "#ffd23d"], theme: (["terminal", "kernel", "web", "notebook", "enterprise", "legacy"] as const)[p.seed % 6], seed: p.seed,
   };
@@ -373,7 +373,7 @@ function fakeMatch(plist: { id: string; name: string; kit: PlayerKit }[], kit: B
     alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], perks: [], kit: p.kit,
     stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
   }));
-  const boss: BossState = { x: 360, y: 140, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1, limbs: kit.limbs.map((l) => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })), casting: null, targetPlayer: null, enraged: false, kit,
+  const boss: BossState = { x: 360, y: 140, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1, limbs: kit.limbs.map((l) => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })), casting: null, targetPlayer: null, enraged: false, kit, pose: { name: "idle", t: 0, total: 1, dir: [-1, 0] }, airborne: false,
     regions: [{ id: "heart", x: 360, y: 140, r: 14 }, ...kit.limbs.map((l, i) => ({ id: l.id, x: 360 + Math.cos(i * 1.3) * 40, y: 140 + Math.sin(i * 1.3) * 34, r: 12 }))] };
   let bullets: Bullet[] = [];
   let hazards: Hazard[] = [];
@@ -392,6 +392,12 @@ function fakeMatch(plist: { id: string; name: string; kit: PlayerKit }[], kit: B
       t += dt;
       if (status === "countdown") { if (t >= 0) status = "fighting"; else return; }
       if (status !== "fighting") return;
+      const cyc = t % 12;
+      const special = kit.archetype === "hydra" || kit.archetype === "abyssal";
+      boss.airborne = special && cyc > 8 && cyc < 11;
+      const pn = boss.casting ? (boss.casting.t < boss.casting.total * 0.8 ? "windup" : "attack") : boss.airborne ? (kit.archetype === "hydra" ? "fly" : "burrow") : "walk";
+      if (boss.pose.name !== pn) boss.pose = { name: pn, t: 0, total: pn === "walk" ? 1.2 : 1, dir: [-1, 0] };
+      else boss.pose.t = (boss.pose.t + dt) % boss.pose.total;
       const ox = boss.x, oy = boss.y;
       boss.x = 360 + Math.sin(t * 0.4) * 30;
       boss.y = 144 + Math.sin(t * 0.7) * 20;

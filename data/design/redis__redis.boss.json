@@ -32,13 +32,13 @@
     "Vents open. Cooling with git reset --hard."
   ],
   "attackNames": {
-    "0-summon-0": "main() Version Drift",
-    "0-slam-1": "crc64() Segfault",
-    "1-summon-0": "strlen() npm install Swarm",
-    "2-summon-0": "test() Dependency Hell",
-    "3-spiral-0": "fullname() Stack Trace",
-    "4-ring-0": "manifest_modules() Spin Lock",
-    "5-spiral-0": "RedisModule_OnLoad() Recursive Descent",
+    "0-fan-0": "main() Unhandled Error",
+    "0-charge-1": "crc64() Hard Reset",
+    "1-ring-0": "strlen() Spin Lock",
+    "2-laser-0": "test() </> Breath",
+    "3-summon-0": "fullname() Version Drift",
+    "4-fan-0": "manifest_modules() Throw Storm",
+    "5-charge-0": "RedisModule_OnLoad() Force Push",
     "6-ring-0": "resp() Retry Storm"
   },
   "limbNames": {

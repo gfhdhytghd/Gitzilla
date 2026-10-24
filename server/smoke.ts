@@ -10,6 +10,7 @@ const humanCount = Number(process.env.SMOKE_PLAYERS || 4);
 const botCount = Number(process.env.SMOKE_BOTS || 0);
 assert.ok(humanCount >= 1 && humanCount <= 8 && botCount >= 0 && humanCount + botCount <= 8);
 const sockets: WebSocket[] = [];
+const leaving = new Set<WebSocket>();
 const messages: ServerMsg[][] = [];
 const snapshots = Array.from({ length: humanCount }, () => 0);
 let sequence = 0;
@@ -18,6 +19,9 @@ const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function waitFor<T>(get: () => T | undefined | false, label: string, timeout = 30_000): Promise<T> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
+    if (sockets.some(socket => socket.readyState >= WebSocket.CLOSING && !leaving.has(socket))) {
+      throw new Error(`DEV socket closed while waiting for ${label} (server restart or connection failure)`);
+    }
     const value = get(); if (value) return value;
     await pause(25);
   }
@@ -87,7 +91,7 @@ try {
   for (let i = 0; i < humanCount; i++) {
     messages[i] = [];
     const url = new URL('/ws', base); url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(url); sockets.push(socket);
+    const socket = new WebSocket(url, { headers: { 'User-Agent': i === 0 ? 'Gitzilla synthetic iPhone protocol smoke' : 'Gitzilla desktop protocol smoke' } }); sockets.push(socket);
     socket.on('message', raw => {
       const msg = JSON.parse(raw.toString()) as ServerMsg;
       messages[i].push(msg);
@@ -111,6 +115,11 @@ try {
   assert.equal(ready.boss.genesis?.slug, ready.boss.repo, 'Boss Genesis is attached');
   assert.ok(ready.players.every(p => p.genesis!.trace.length > 0), 'Genesis maps real repo features to the hero');
   assert.ok(ready.boss.genesis!.trace.length > 0, 'Genesis maps boss anatomy and attacks');
+  const you = messages[0].find(m => m.t === 'welcome')!.you;
+  assert.equal(ready.players.find(p => p.id === you)?.controlsReady, false, 'A new synthetic phone page has no remembered sensor permission');
+  assert.ok(ready.players.filter(p => p.id !== you).every(p => p.controlsReady), 'Desktop and bot teammates start ready');
+  send(0, { t: 'controls', ready: true, mode: 'tap-only' });
+  await waitFor(() => messages[0].filter(m => m.t === 'lobby').at(-1)?.lobby.players.find(p => p.id === you)?.controlsReady, 'explicit per-page touch readiness');
   send(0, { t: 'start' });
   await waitFor(() => snapshots.every(count => count > 0), 'initial snapshots');
   const before = [...snapshots];
@@ -124,6 +133,7 @@ try {
   }, 1000 / 30);
   await pause(5000);
   clearInterval(timer);
+  assert.ok(sockets.every(socket => socket.readyState === WebSocket.OPEN), 'DEV socket closed during input window (server restart or connection failure)');
   for (let i = 0; i < humanCount; i++) {
     assert.ok(snapshots[i] - before[i] >= 50, `Client ${i} should receive ~100 snapshots in 5s, got ${snapshots[i] - before[i]}`);
     assert.equal(messages[i].filter(m => m.t === 'error').length, 0, `Client ${i} protocol errors`);
@@ -148,6 +158,7 @@ try {
   const throughput = snapshots.map((n, i) => n - before[i]);
   const owner = messages[0].find(m => m.t === 'welcome')!;
   async function leave(index: number) {
+    leaving.add(sockets[index]);
     const closed = new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Explicit leave did not close the socket')), 3000);
       sockets[index].once('close', (code, reason) => { clearTimeout(timeout);
@@ -173,7 +184,7 @@ try {
   const denied = new Promise<number>(resolve => stale.once('close', resolve));
   stale.send(JSON.stringify({ t: 'hello', room, role: 'player', resume: owner.token }));
   assert.equal(await denied, 4002, 'A left tab cannot recreate the deleted room');
-  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${throughput.join(', ')}; HMR/Genesis/auth/QR/fallback/Hall + leave/owner/deletion/revocation OK`);
+  console.log(`PASS room=${room}; ${humanCount} humans + ${botCount} bots; five-second snapshots=${throughput.join(', ')}; controls/HMR/Genesis/auth/QR/fallback/Hall + leave/owner/deletion/revocation OK`);
 } finally {
   clearInterval(timer);
   for (const socket of sockets) socket.close();

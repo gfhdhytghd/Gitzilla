@@ -32,12 +32,12 @@
     "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-ring-0": "app() Spin Lock",
-    "0-slam-1": "get() OOM Crash",
-    "1-summon-0": "index() Version Drift",
-    "2-ring-0": "client() Retry Storm",
-    "3-spiral-0": "github_link() Stack Trace",
-    "4-ring-0": "create_app() while(true) Loop"
+    "0-cascade-0": "app() Rebase Hell",
+    "0-ring-1": "get() Spin Lock",
+    "1-slam-0": "index() OOM Crash",
+    "2-fan-0": "client() Exception Spray",
+    "3-charge-0": "github_link() git push --force",
+    "4-cascade-0": "create_app() Circular Import"
   },
   "limbNames": {
     "limb-0": "b() Claw",

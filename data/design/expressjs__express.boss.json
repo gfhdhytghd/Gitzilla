@@ -32,11 +32,11 @@
     "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-summon-0": "createApp() npm install Swarm",
-    "0-charge-1": "send() rm -rf",
-    "1-spiral-0": "app() Recursive Descent",
-    "2-summon-0": "get() Dependency Hell",
-    "3-spiral-0": "use() Nested Promises"
+    "0-cascade-0": "createApp() Circular Import",
+    "0-ring-1": "send() Event Loop",
+    "1-slam-0": "app() Stack Smash",
+    "2-fan-0": "get() Throw Storm",
+    "3-charge-0": "use() rm -rf"
   },
   "limbNames": {
     "limb-0": "render() Tendril",

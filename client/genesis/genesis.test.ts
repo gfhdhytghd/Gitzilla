@@ -4,6 +4,7 @@ import type { RepoProfile } from "../../shared/types.ts";
 import { bossKitFromProfile, playerKitFromProfile } from "../../sim/kits.ts";
 import { componentOf, cycleEdges, forceLayout, longestChain } from "./graph.ts";
 import { archetypeStep, buildGenesisLocal, genesisFromKit, heroBudget, isFormStep } from "./local.ts";
+import { TextLayer } from "./text.ts";
 
 const dir = new URL("../../data/fallback/", import.meta.url);
 const profiles = readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(readFileSync(new URL(f, dir), "utf8")) as RepoProfile);
@@ -30,6 +31,15 @@ describe("genesis graph helpers", () => {
 });
 
 describe("local genesis", () => {
+  it("wraps reveal captions without cutting a code identifier or closing delimiter", () => {
+    const measure = { measure: (s: string) => s.length } as unknown as TextLayer;
+    const text = "weapon for { go serveLonger() }";
+    const rows = TextLayer.prototype.wrap.call(measure, text, 25);
+    expect(rows.join(" ")).toBe(text);
+    expect(rows.every(row => row.length <= 25)).toBe(true);
+    expect(rows.some(row => row.includes("serveLonger()"))).toBe(true);
+    expect(rows.at(-1)?.endsWith("}")).toBe(true);
+  });
   it("builds a compact, real-data genesis for every fallback hero and boss", () => {
     for (const p of profiles) {
       const hero = playerKitFromProfile(p);
@@ -40,7 +50,7 @@ describe("local genesis", () => {
       for (const f of gh.sampleFiles) expect(typeof f).toBe("string");
       const boss = bossKitFromProfile(p, 4);
       const gb = buildGenesisLocal(p, boss);
-      expect(gb.trace.filter((s) => s.part === "limb")).toHaveLength(boss.limbs.length);
+      expect(gb.trace.filter((s) => s.part === "limb" && s.ref !== "dependencies")).toHaveLength(boss.limbs.length);
       expect(gb.trace.some((s) => s.part === "heart")).toBe(true);
       if (p.cycles.length) expect(gb.trace.some((s) => s.part === "weakpoint")).toBe(true);
     }
@@ -50,8 +60,8 @@ describe("local genesis", () => {
     const kit = playerKitFromProfile(p, { mode: "edu" });
     const g = buildGenesisLocal(p, kit);
     if (kit.quality?.length) {
-      expect(g.trace.filter((s) => s.ref && kit.quality!.some((q) => q.stat === s.ref))).toHaveLength(kit.quality.length);
-      expect(g.budget.map((b) => b.label)).toEqual(kit.quality.map((q) => q.stat));
+      expect(g.trace.filter((s) => s.ref && kit.quality!.some((q) => `quality:${q.stat}` === s.ref))).toHaveLength(kit.quality.length);
+      expect(g.budget).toEqual([]);
     }
   });
   it("kit-only fallback still tells a story", () => {
@@ -65,7 +75,7 @@ describe("local genesis", () => {
       const boss = bossKitFromProfile(p, 4);
       const g = buildGenesisLocal(p, boss);
       expect(isFormStep(g.trace[0])).toBe(true);
-      expect(g.trace[0].ref).toBe(boss.archetype ?? "kaiju");
+      expect(g.trace[0].ref).toBe("archetype");
       expect(g.trace.filter(isFormStep)).toHaveLength(1);
       expect(isFormStep(genesisFromKit(boss).trace[0])).toBe(true);
     }
@@ -75,5 +85,21 @@ describe("local genesis", () => {
     // limb / name steps never count as the form step, even when a limb is named after the archetype
     expect(isFormStep({ from: "src", to: "limb: hydra", part: "limb", ref: "hydra" })).toBe(false);
     expect(isFormStep({ from: "5 modules · 0 cycles", to: "Kaiju · crystal-backed titan", part: "class", ref: "archetype" })).toBe(true);
+  });
+
+  it("kit-only edu stories never claim equal budgets or invent source metrics", () => {
+    const p = profiles[0];
+    const kit = playerKitFromProfile(p, { mode: "edu" });
+    const g = genesisFromKit(kit);
+    expect(g.trace).toContainEqual({ from: "code quality", to: "stats: see your report card", part: "stats" });
+    expect(g.trace.filter(s => s.ref?.startsWith("quality:"))).toHaveLength(kit.quality!.length);
+    expect(JSON.stringify(g)).not.toMatch(/5-pt|same 5|equal for all/);
+    expect(g.budget).toEqual([]);
+    const waiting = genesisFromKit(playerKitFromProfile(p), "edu");
+    expect(waiting.budget).toEqual([]);
+    expect(JSON.stringify(waiting)).not.toContain("5-pt");
+    const boss = genesisFromKit(bossKitFromProfile(p, 4));
+    expect(boss.components.every(c => c.loc === 0 && c.files === 0)).toBe(true);
+    expect(boss.budget.reduce((s, b) => s + b.value, 0)).toBeCloseTo(100);
   });
 });

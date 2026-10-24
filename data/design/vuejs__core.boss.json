@@ -33,14 +33,14 @@
   ],
   "attackNames": {
     "0-cascade-0": "render() Merge Conflict",
-    "0-charge-1": "h() git push --force",
-    "1-cascade-0": "foo() Memory Leak",
-    "2-cascade-0": "test() Rebase Hell",
-    "3-cascade-0": "resolve() Circular Import",
-    "4-cascade-0": "ref() Cache Stampede",
-    "5-cascade-0": "Child() Dangling Pointer",
-    "6-cascade-0": "nextTick() Deadlock",
-    "7-fan-0": "Comp() Null Pointer"
+    "0-ring-1": "h() while(true) Loop",
+    "1-slam-0": "foo() OOM Crash",
+    "2-fan-0": "test() Null Pointer",
+    "3-charge-0": "resolve() git push --force",
+    "4-cascade-0": "ref() Memory Leak",
+    "5-ring-0": "Child() Infinite Scroll",
+    "6-slam-0": "nextTick() Stack Overflow",
+    "7-fan-0": "Comp() throw"
   },
   "limbNames": {
     "limb-0": "content() Plating",

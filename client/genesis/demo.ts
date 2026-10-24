@@ -25,7 +25,8 @@ function heroKit(p: RepoProfile): PlayerKit {
   if (!d || q.get("design") === "0") return kit;
   return {
     ...kit, design: d, title: d.title, palette: [...d.palette],
-    ...(d.weaponName && kit.code?.weapon ? { code: { ...kit.code, weapon: { ...kit.code.weapon, name: d.weaponName.slice(0, 20) } } } : {}),
+    // Bundled art can predate the code-expression contract. Keep the complete
+    // sim-generated weapon instead of an old truncated art-asset label.
   };
 }
 function bossKit(p: RepoProfile): BossKit {

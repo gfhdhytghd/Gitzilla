@@ -58,6 +58,7 @@ try {
   }
   const teacher = await connect('screen', 'DEV classroom teacher');
   assert.equal(teacher.welcome!.lobby.mode, 'edu');
+  assert.equal(teacher.welcome!.lobby.rubric?.source, 'default', 'New classroom has a default rubric');
   assert.equal(teacher.welcome!.lobby.ownerId, teacher.welcome!.you);
   assert.equal(teacher.welcome!.lobby.players.length, 0, 'Teacher consumes no student slot');
   const peers: Awaited<ReturnType<typeof connect>>[] = [];
@@ -75,6 +76,13 @@ try {
   assert.ok(teacher.lobby!.players.every(p => p.kit?.quality?.length), 'Every classroom kit has code-quality grades');
   assert.ok(teacher.lobby!.players.every(p => p.genesis?.trace.length), 'Every classroom kit has a report-card Genesis');
   assert.equal(teacher.lobby!.boss.status, 'empty', 'No boss was selected');
+  const preview = await fetch(base + '/api/rubric/parse?room=' + room + '&filename=smoke.md', { method: 'POST',
+    headers: { Authorization: `Bearer ${teacher.welcome!.token}`, 'Content-Type': 'text/markdown' },
+    body: '# DEV smoke classroom rubric\nTesting (60%): tests target 20%\nDocumentation (40%): README' });
+  assert.equal(preview.status, 200);
+  const rubric = await preview.json() as import('../shared/types.ts').Rubric;
+  teacher.send({ t: 'setRubric', rubric });
+  await until(() => teacher.lobby?.rubric?.title === rubric.title && peers.every(p => p.lobby?.rubric?.title === rubric.title), 'teacher rubric broadcast');
   teacher.send({ t: 'start' });
   await until(() => {
     if (teacher.closed) throw new Error('DEV teacher connection closed (server restart or connection failure)');
@@ -98,6 +106,7 @@ try {
   assert.equal(state.players.length, students + botCount);
   assert.ok(state.players.every(p => p.id !== teacher.welcome!.you), 'Teacher remains a spectator');
   assert.ok(state.players.every(p => p.kit.quality?.length));
+  assert.ok(state.players.every(p => p.kit.quality?.every(q => q.signal.includes(rubric.title))), 'The frozen teacher rubric drives every fighter kit');
   for (let i = 0; i < peers.length; i++) {
     assert.equal(peers[i].errors.length, 0); assert.ok(peers[i].snapshots - before[i] >= 50); assert.ok(peers[i].ack > 0);
   }
@@ -113,7 +122,7 @@ try {
   }
   await teacher.leave();
   assert.deepEqual(await (await fetch(base + '/api/room/' + room)).json(), { exists: false, players: 0, phase: null });
-  console.log(`PASS classroom DEV 5175 room=${room}; teacher + ${students} students + ${botCount} bots; boss=null; heroScale=2; quality/report Genesis; teacher snapshots=${teacherThroughput}; 5s student snapshots=${throughput.join(',')}; student/teacher leave + deletion OK`);
+  console.log(`PASS classroom DEV 5175 room=${room}; teacher + ${students} students + ${botCount} bots; boss=null; heroScale=2; teacher rubric/upload/quality/report Genesis; teacher snapshots=${teacherThroughput}; 5s student snapshots=${throughput.join(',')}; student/teacher leave + deletion OK`);
 } finally {
   clearInterval(inputTimer);
   for (const socket of sockets) socket.terminate();

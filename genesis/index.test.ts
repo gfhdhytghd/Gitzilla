@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { RepoProfile } from '../shared/types.ts';
+import type { BossArchetype, BossAttackKind, RepoProfile } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from '../sim/kits.ts';
 import { applyBossDesign, applyHeroDesign } from '../design/index.ts';
 import { fallbackBoss, fallbackHero } from '../design/fallback.ts';
@@ -152,22 +152,44 @@ describe('Genesis fallback stories', () => {
     expect(allocations.size).toBe(5);
   });
 
-  it('explains all attack kinds using the actual source rules', () => {
-    const p = structuredClone(profiles[0]); p.maxDepth = 5; p.heart = 'src/0/heart.ts';
+  it('explains all four preset decks with exact source slots, IDs and all eight kinds', () => {
+    const p = structuredClone(profiles[0]);
+    p.primaryLanguage = 'TypeScript'; p.totalLoc = 10000; p.ageDays = 1000;
+    p.maxDepth = 5; p.heart = 'src/0/heart.ts';
     p.components = Array.from({ length: 8 }, (_, i) => ({ name: `src/${i}`, loc: 100, files: i === 2 ? 40 : 5, fanIn: 1, fanOut: i === 3 ? 5 : 0 }));
     p.cycles = [['src/4', 'src/5']];
+    Object.assign(p.dna!.counts, { todo: 0, fixme: 0, hack: 0 });
+    // This anatomy allocates two slots to component 0, then one to each other
+    // component. Kinds follow the preset deck in order, regardless of fan-out.
+    const slots = [[0, 0], [0, 1], ...Array.from({ length: 7 }, (_, i) => [i + 1, 0])];
+    const cases: [BossArchetype, Partial<RepoProfile>, BossAttackKind[]][] = [
+      ['kaiju', {}, ['laser', 'slam', 'fan', 'charge', 'ring']],
+      ['hydra', { cycles: [...p.cycles, ['src/6', 'src/7']] }, ['laser', 'fan', 'charge', 'spiral']],
+      ['mecha', { primaryLanguage: 'Rust' }, ['fan', 'charge', 'ring', 'laser', 'summon']],
+      ['abyssal', { totalLoc: 150000 }, ['cascade', 'ring', 'slam', 'fan', 'charge']],
+    ];
     const kinds = new Set<string>();
-    for (const heart of ['src/0/heart.ts', 'elsewhere.ts']) {
-      p.heart = heart;
-      const kit = bossKitFromProfile(p, 4), g = buildGenesis(p, kit, 'boss');
-      for (const a of kit.attacks) {
-        kinds.add(a.kind);
-        const text = g.trace.find(t => t.ref === a.id)?.to;
-        expect(a.name.startsWith(text!.replace(/…$/, ''))).toBe(true);
+    for (const [archetype, overrides, deck] of cases) {
+      for (const heart of ['src/0/heart.ts', 'elsewhere.ts']) {
+        const source = { ...p, ...overrides, heart };
+        const kit = bossKitFromProfile(source, 4), g = buildGenesis(source, kit, 'boss');
+        expect(kit.archetype).toBe(archetype);
+        const expected = slots.map(([component, slot], i) => ({
+          id: `${component}-${deck[i % deck.length]}-${slot}`,
+          kind: deck[i % deck.length], source: `src/${component}`,
+        }));
+        expect(kit.attacks.map(({ id, kind, source }) => ({ id, kind, source }))).toEqual(expected);
+        const trace = g.trace.filter(t => t.part === 'attack');
+        expect(trace.map(t => t.ref)).toEqual(expected.map(a => a.id));
+        for (const [i, attack] of kit.attacks.entries()) {
+          kinds.add(attack.kind);
+          expect(trace[i].from).toBe(`${attack.source} · ${archetype[0].toUpperCase() + archetype.slice(1)} ${attack.kind}`);
+          expect(attack.name.startsWith(trace[i].to.replace(/…$/, ''))).toBe(true);
+          expect(trace[i].from).not.toMatch(/files|imports out|layers deep|dependency loop/);
+          expect(attack.params.count).toBe(attack.kind === 'ring' ? 17 : attack.kind === 'spiral' ? 28 : attack.kind === 'summon' ? 3 : 7);
+        }
+        expect(kit.attacks.reduce((sum, a) => sum + a.params.threatShare, 0)).toBeCloseTo(1);
       }
-      expect(g.trace.find(t => t.ref === '2-summon-0')?.from).toContain('40 files');
-      expect(g.trace.find(t => t.ref === '3-fan-0')?.from).toContain('5 imports out');
-      expect(g.trace.find(t => t.ref === '1-laser-0')?.from).toContain('5 layers deep');
     }
     expect([...kinds].sort()).toEqual(['cascade', 'charge', 'fan', 'laser', 'ring', 'slam', 'spiral', 'summon']);
   });

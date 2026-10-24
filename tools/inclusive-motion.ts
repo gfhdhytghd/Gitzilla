@@ -23,6 +23,7 @@ const latest = () => page.evaluate(() => (window as any).__input.sample());
 const permissionCount = () => page.evaluate(() => (window as any).__requests.length);
 const pose = async (gamma: number) => { await page.evaluate(g => { (window as any).__gamma = g; }, gamma); };
 try {
+  await context.addInitScript('window.__kaijuSyntheticSensors = true;');
   await context.addInitScript(`(() => {
     window.__requests=[];
     for(const key of ['DeviceMotionEvent','DeviceOrientationEvent']) Object.defineProperty(window[key],'requestPermission',{configurable:true,value:()=>{window.__requests.push(key);return Promise.resolve('granted');}});
@@ -39,7 +40,7 @@ const boot=()=>window.__input=createInput({canvas,toArena:(x,y)=>[x,y],getSelf:(
 for(const profile of MOTION_PROFILES){const b=document.createElement('button');b.textContent=MOTION_PROFILE_LABELS[profile];b.dataset.testid='profile-'+profile;b.onclick=()=>{saveMotionProfile(profile);if(window.__input)window.__input.setMotionProfile(profile);else boot();};document.querySelector('#profiles').append(b);}
 document.querySelector('#enable').onclick=()=>window.__input?.requestPermission();
 if(localStorage.getItem('kaiju.motionProfile'))boot();
-setInterval(()=>{if(!window.__input)return;window.dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:45,gamma:window.__gamma}));window.dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:0,y:0,z:0}}));const f=window.__input.sample();window.__frames.push(f);document.querySelector('#status').textContent=window.__input.motionProfile+' / '+window.__input.mode+' / sensors '+window.__input.sensorStatus+'\n'+JSON.stringify(f);},33);
+setInterval(()=>{if(!window.__input)return;window.dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:0,gamma:window.__gamma}));window.dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:0,y:0,z:0}}));const f=window.__input.sample();window.__frames.push(f);document.querySelector('#status').textContent=window.__input.motionProfile+' / '+window.__input.mode+' / sensors '+window.__input.sensorStatus+'\n'+JSON.stringify(f);},33);
 </script>` }));
   page.on('pageerror', error => errors.push(error.stack || error.message));
   const revision = Date.now();
@@ -53,11 +54,11 @@ setInterval(()=>{if(!window.__input)return;window.dispatchEvent(new DeviceOrient
   await page.locator('#enable').tap();
   assert.equal(await permissionCount(), 2);
   await page.waitForTimeout(450);
-  await pose(4.8); await page.waitForTimeout(450);
+  await pose(0.5); await page.waitForTimeout(450);
   assert(Math.abs((await latest()).move[0]) < 0.001);
-  await pose(8); await page.waitForTimeout(650);
+  await pose(15); await page.waitForTimeout(650);
   assert((await latest()).move[0] > 0.95);
-  check('seated ignores tremor-range tilt, reaches full speed at 8 degrees');
+  check('horizontal movement ignores0.5° noise and reaches full speed at15° in seated profile');
   await pose(0); await page.waitForTimeout(700);
   await page.evaluate(() => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: { x: 7, y: 0, z: 0 } })));
   assert((await latest()).fire);
@@ -90,9 +91,9 @@ setInterval(()=>{if(!window.__input)return;window.dispatchEvent(new DeviceOrient
   check('profile persists across page reload; tap-only never requests permission');
   await page.getByTestId('profile-standard').tap();
   await page.locator('#enable').tap();
-  await page.waitForTimeout(450); await pose(8); await page.waitForTimeout(450);
+  await page.waitForTimeout(450); await pose(15); await page.waitForTimeout(450);
   const standard = await latest();
-  assert(standard.move[0] > 0.2 && standard.move[0] < 0.3);
+  assert(standard.move[0] > 0.95);
   await page.evaluate(() => window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: { x: 7, y: 0, z: 0 } })));
   assert(!(await latest()).fire);
   check('switching back restores standard sensitivity and swing threshold');

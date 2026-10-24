@@ -451,6 +451,7 @@ export interface LobbyPlayer {
   controlsReady?: boolean;     // false = a phone that still has to tap "enable motion" this session
   progress?: GenesisProgress;  // while status === "analyzing"
   genesis?: Genesis;           // once ready
+  rubricPreview?: CriterionResult[]; // edu: measured pre-fight scores for the current teacher rubric
   status: "empty" | "analyzing" | "ready" | "error";
   error?: string;
   kit: PlayerKit | null;

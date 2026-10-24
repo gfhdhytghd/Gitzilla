@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { once } from 'node:events';
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -11,12 +12,14 @@ import { qrSvg } from './qr.ts';
 import { buildGenesis } from '../genesis/index.ts';
 import { offlineProfile } from '../analysis/index.ts';
 import { replayProfileProgress } from '../analysis/progress.ts';
-import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim/index.ts';
+import { handleEduRoute, MAX_RUBRIC_BYTES } from './edu-http.ts';
+import { buildFeedback, defaultRubric, parseRubric, scoreRepo } from '../rubric/index.ts';
+import { playerKitFromProfile, bossKitFromProfile, createMatch, qualityFromRubric } from '../sim/index.ts';
 import { createBot } from '../sim/bots.ts';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-async function until<T>(fn: () => T | undefined | false): Promise<T> {
-  for (let i = 0; i < 150; i++) { const value = fn(); if (value) return value; await wait(10); }
+async function until<T>(fn: () => T | undefined | false, attempts = 150): Promise<T> {
+  for (let i = 0; i < attempts; i++) { const value = fn(); if (value) return value; await wait(10); }
   throw new Error('Timed out waiting for network message');
 }
 const cleanup: (() => Promise<void>)[] = [];
@@ -29,6 +32,17 @@ function persistenceFile() {
   const directory = mkdtempSync(join(tmpdir(), 'gitzilla-rooms-'));
   directories.push(directory);
   return join(directory, 'rooms.json');
+}
+function rubricPdf() {
+  const content = 'BT /F1 12 Tf 40 200 Td (Testing: unit tests target 20%) Tj ET';
+  const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 300] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>', `<< /Length ${content.length} >>\nstream\n${content}\nendstream`];
+  let pdf = '%PDF-1.4\n'; const offsets: number[] = [];
+  for (const [i, object] of objects.entries()) { offsets.push(Buffer.byteLength(pdf)); pdf += `${i + 1} 0 obj\n${object}\nendobj\n`; }
+  const xref = Buffer.byteLength(pdf);
+  pdf += `xref\n0 6\n0000000000 65535 f \n` + offsets.map(n => String(n).padStart(10, '0') + ' 00000 n \n').join('');
+  return Buffer.from(pdf + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
 }
 
 async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options: RoomServerOptions = {}, existingRoom?: string, initialMode: GameMode = 'battle') {
@@ -44,7 +58,7 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     },
     listFallbackRepos: () => ['test/repo'],
     playerKitFromProfile: p => ({ repo: p.slug, title: 'Seed hero', maxHp: 7, maxArmor: 4, maxEnergy: 180, speed: 70, damageMul: 1, seed: 12, weapon: 'blaster', skill: 'hotfix', palette: ['#111111', '#222222', '#333333', '#444444'] }),
-    bossKitFromProfile: (p, count, design) => { counts.push(count); return { repo: p.slug, heart: p.heart, name: design?.name ?? 'Seed boss', maxHp: count * 100, design, attacks: [], limbs: [], theme: 'terminal', palette: [], speed: 10, enrageAt: 0.5, seed: 20 }; },
+    bossKitFromProfile: (p, count, design) => { counts.push(count); return { repo: p.slug, heart: p.heart, archetype: 'kaiju', name: design?.name ?? 'Seed boss', maxHp: count * 100, design, attacks: [], limbs: [], theme: 'terminal', palette: [], speed: 10, enrageAt: 0.5, seed: 20 }; },
     recordMatch: result => { recorded.push(result); },
     createMatch: (players, boss, options) => {
       const mode = options?.mode ?? 'battle';
@@ -53,7 +67,7 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
       return {
         removePlayer: id => { const index = players.findIndex(p => p.id === id); if (index >= 0) players.splice(index, 1); },
         step: (dt, inputs) => { t += dt; observed.push(...inputs.values()); events.push({ type: 'hit', target: 'boss', amount: 1, x: 0, y: 0 }); },
-        snapshot: () => ({ t, mode, heroScale: mode === 'edu' ? 2 : 1, pvp: mode === 'edu' ? { round: 1, rounds: 3, roundEndsAt: 75, scores: {}, leader: null } : null, status: t >= endAt ? 'victory' : 'fighting', players: players.map(p => ({ ...p, x: 1, y: 1 })), boss: boss ? { kit: boss, regions: [{ id: 'heart', x: 335, y: 144, r: 15 }] } : null, bullets: [], hazards: [], minions: [], events: events.splice(0) }) as unknown as MatchState,
+        snapshot: () => ({ t, mode, heroScale: mode === 'edu' ? 2 : 1, pvp: mode === 'edu' ? { round: 1, rounds: 3, roundEndsAt: 75, scores: {}, quizScores: Object.fromEntries(players.map((p, i) => [p.id, i + 1])), leader: null } : null, status: t >= endAt ? 'victory' : 'fighting', players: players.map(p => ({ ...p, x: 1, y: 1 })), boss: boss ? { kit: boss, regions: [{ id: 'heart', x: 335, y: 144, r: 15 }] } : null, bullets: [], hazards: [], minions: [], events: events.splice(0) }) as unknown as MatchState,
         get over() { return t >= endAt; },
         autopsy: () => ({ mode, victory: mode === 'battle', duration: t, boss: boss ? { repo: boss.repo, limbs: [], heart: 'core' } : null,
           ranking: mode === 'edu' ? players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: 1, damage: 42, roundWins: 1, quality: p.kit.quality ?? [] })) : undefined, players: players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { damage: 42, bestCombo: 1, limbsBroken: 0, revives: 0, killingBlow: false } })), mvp: players[0]?.id ?? null }) as Autopsy,
@@ -61,7 +75,11 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     },
     ...overrides,
   };
-  const server = http.createServer();
+  const server = http.createServer((req, res) => {
+    void handleEduRoute(req, res, new URL(req.url!, 'http://localhost'), rooms).then(handled => {
+      if (!handled) { res.writeHead(404); res.end(); }
+    });
+  });
   const wss = new WebSocketServer({ server, path: '/ws' });
   const rooms = new RoomServer(wss, services, options);
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
@@ -75,8 +93,8 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
   };
   cleanup.push(close);
   const room = existingRoom ?? rooms.createRoom(undefined, initialMode);
-  async function connect(role: 'player' | 'screen' = 'player', resume?: string, name = 'Test', cookie?: string, beforeWelcome?: ClientMsg) {
-    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: cookie ? { Cookie: cookie } : undefined });
+  async function connect(role: 'player' | 'screen' = 'player', resume?: string, name = 'Test', cookie?: string, beforeWelcome?: ClientMsg, userAgent?: string) {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { ...(cookie ? { Cookie: cookie } : {}), ...(userAgent ? { 'User-Agent': userAgent } : {}) } });
     const messages: ServerMsg[] = [];
     socket.on('message', raw => messages.push(JSON.parse(raw.toString())));
     await once(socket, 'open');
@@ -86,7 +104,7 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     const welcome = await until(() => messages.find(m => m.t === 'welcome'));
     return { socket, messages, welcome, send, lobby: () => messages.filter(m => m.t === 'lobby').at(-1)?.lobby };
   }
-  return { connect, observed, counts, recorded, close, room, services, rooms, wsUrl: `ws://127.0.0.1:${port}/ws` };
+  return { connect, observed, counts, recorded, close, room, services, rooms, wsUrl: `ws://127.0.0.1:${port}/ws`, base: `http://127.0.0.1:${port}` };
 }
 
 const genesisServices: Partial<GameServices> = {
@@ -94,8 +112,294 @@ const genesisServices: Partial<GameServices> = {
   listFallbackRepos: () => ['pallets/flask'], botProfile: offlineProfile,
   playerKitFromProfile, bossKitFromProfile, buildGenesis,
 };
+const rubricServices: Partial<GameServices> = { ...genesisServices, defaultRubric, parseRubric, scoreRepo,
+  feedbackForPlayer: (profile, rubric, stats) => buildFeedback(profile, rubric, scoreRepo(profile, rubric), stats, stats.quiz),
+  applyRubric: (profile, kit, rubric) => qualityFromRubric(kit, { rubric, results: scoreRepo(profile, rubric) }) };
 
 describe('room protocol over real WebSockets', () => {
+  it('previews exact current scores, reuses unchanged evidence and invalidates on rubric/repo/mode changes', async () => {
+    const score = vi.fn(scoreRepo);
+    const test = await setup(999, { ...rubricServices, scoreRepo: score,
+      analyzeRepo: async slug => { if (slug === 'fastapi/fastapi') await wait(80); return offlineProfile(slug); },
+    }, {}, undefined, 'edu');
+    const teacher = await test.connect('screen'), student = await test.connect();
+    expect(student.welcome.lobby.players[0].rubricPreview).toBeUndefined();
+    student.send({ t: 'setRepo', repo: 'pallets/flask' }); teacher.send({ t: 'setBots', count: 1 });
+    await until(() => teacher.lobby()?.players.length === 2 && teacher.lobby()?.players.every(p => p.status === 'ready' && p.rubricPreview));
+    for (const card of teacher.lobby()!.players) expect(card.rubricPreview).toEqual(scoreRepo(offlineProfile(card.repo!), teacher.lobby()!.rubric!));
+    const calls = score.mock.calls.length;
+    student.send({ t: 'controls', ready: true, mode: 'tap-only' }); await wait(30);
+    expect(score).toHaveBeenCalledTimes(calls);
+    const custom = parseRubric('# New class targets\nTesting (60%): tests target 60%\nCI (40%): CI pipeline');
+    teacher.send({ t: 'setRubric', rubric: custom });
+    await until(() => teacher.lobby()?.rubric?.title === custom.title);
+    expect(score).toHaveBeenCalledTimes(calls + 2);
+    expect(teacher.lobby()?.players[0].rubricPreview).toEqual(scoreRepo(offlineProfile('pallets/flask'), teacher.lobby()!.rubric!));
+    student.send({ t: 'setRepo', repo: 'fastapi/fastapi' });
+    await until(() => student.lobby()?.players.find(p => p.id === student.welcome.you)?.status === 'analyzing');
+    expect(student.lobby()?.players.find(p => p.id === student.welcome.you)?.rubricPreview).toBeUndefined();
+    await until(() => student.lobby()?.players.find(p => p.id === student.welcome.you)?.status === 'ready');
+    expect(score).toHaveBeenCalledTimes(calls + 3);
+    expect(student.lobby()?.players.find(p => p.id === student.welcome.you)?.rubricPreview).toEqual(scoreRepo(offlineProfile('fastapi/fastapi'), student.lobby()!.rubric!));
+    teacher.send({ t: 'setMode', mode: 'battle' }); await until(() => teacher.lobby()?.mode === 'battle');
+    expect(teacher.lobby()?.players.every(p => p.rubricPreview === undefined)).toBe(true);
+    teacher.send({ t: 'setMode', mode: 'edu' }); await until(() => teacher.lobby()?.mode === 'edu' && teacher.lobby()?.players.every(p => p.status === 'ready'));
+    expect(teacher.lobby()?.players[0].rubricPreview).toEqual(scoreRepo(offlineProfile('fastapi/fastapi'), teacher.lobby()!.rubric!));
+  });
+
+  it('keeps private preview evidence in its room, never broadcasts a raw profile, and rehydrates after restart', async () => {
+    const file = persistenceFile(), privatePath = 'PRIVATE-PREVIEW-EVIDENCE/internal.py', raw = 'RAW-PROFILE-MUST-NEVER-REACH-THE-WIRE';
+    const privateProfile = { ...offlineProfile('pallets/flask'), slug: 'alice/private', heart: privatePath, rawPrivateBody: raw };
+    const services = { ...rubricServices, analyzeRepo: async () => structuredClone(privateProfile), getGithubToken: async () => 'mock-private-preview-token' };
+    const first = await setup(999, services, { persistenceFile: file }, undefined, 'edu');
+    const teacher = await first.connect('screen'), student = await first.connect();
+    student.send({ t: 'setRepo', repo: privateProfile.slug });
+    await until(() => student.lobby()?.players[0].rubricPreview);
+    expect(student.lobby()?.players[0].rubricPreview).toEqual(scoreRepo(privateProfile, student.lobby()!.rubric!));
+    expect(JSON.stringify(teacher.lobby()?.players[0].rubricPreview)).toContain(privatePath);
+    expect(JSON.stringify([...teacher.messages, ...student.messages])).not.toContain(raw);
+    expect(JSON.stringify([...teacher.messages, ...student.messages])).not.toContain('mock-private-preview-token');
+    const other = await setup(999, rubricServices, {}, undefined, 'edu'), outsider = await other.connect();
+    outsider.send({ t: 'setRepo', repo: 'pallets/flask' }); await until(() => outsider.lobby()?.players[0].rubricPreview);
+    expect(JSON.stringify(outsider.messages)).not.toContain(privatePath); expect(JSON.stringify(outsider.messages)).not.toContain(raw);
+    await first.close(); const saved = readFileSync(file, 'utf8');
+    expect(saved).not.toContain('rubricPreview'); expect(saved).not.toContain(privatePath); expect(saved).not.toContain(raw);
+    const restarted = await setup(999, services, { persistenceFile: file }, first.room);
+    await restarted.connect('screen', teacher.welcome.token);
+    const resumed = await restarted.connect('player', student.welcome.token);
+    expect(resumed.welcome.lobby.players[0].rubricPreview).toBeUndefined();
+    await until(() => resumed.lobby()?.players[0].rubricPreview);
+    expect(resumed.lobby()?.players[0].rubricPreview).toEqual(scoreRepo(privateProfile, resumed.lobby()!.rubric!));
+  });
+
+  it('finishes an accelerated real classroom match with the teacher rubric and private feedback delivery', async () => {
+    const factory = vi.fn<GameServices['createMatch']>((players, boss, options) => {
+      const real = createMatch(players, boss, options);
+      return { removePlayer: id => real.removePlayer(id), snapshot: () => real.snapshot(), autopsy: () => real.autopsy(), get over() { return real.over; },
+        step: (dt, inputs) => {
+          const held = new Map([...inputs].map(([id, input]) => [id, { ...input, dash: false, skill: false }]));
+          for (let i = 0; i < 90 && !real.over; i++) real.step(dt, i ? held : inputs);
+        } };
+    });
+    const test = await setup(999, { ...rubricServices, createBot, createMatch: factory }, {}, undefined, 'edu');
+    const teacher = await test.connect('screen'), alice = await test.connect('player', undefined, 'Alice'), bob = await test.connect('player', undefined, 'Bob');
+    const rubric = parseRubric('# CS project\nTesting (70%): tests target 20%\nDocumentation (30%): README');
+    teacher.send({ t: 'setRubric', rubric });
+    alice.send({ t: 'setRepo', repo: 'pallets/flask' }); bob.send({ t: 'setRepo', repo: 'fastapi/fastapi' }); teacher.send({ t: 'setBots', count: 1 });
+    await until(() => teacher.lobby()?.players.length === 3 && teacher.lobby()?.players.every(p => p.status === 'ready'));
+    const before = alice.lobby()!.players.find(p => p.id === alice.welcome.you)!.kit!;
+    const expected = qualityFromRubric(before, { rubric, results: scoreRepo(offlineProfile('pallets/flask'), rubric) });
+    teacher.send({ t: 'start' }); await until(() => factory.mock.calls.length === 1);
+    expect(factory.mock.calls[0][0].find(p => p.id === alice.welcome.you)?.kit.quality).toEqual(expected.quality);
+    const messages = await until(() => teacher.messages.find(m => m.t === 'feedback'), 1500);
+    expect(messages.items).toHaveLength(2);
+    const ending = teacher.messages.find(m => m.t === 'autopsy')!;
+    expect(ending.result.mode).toBe('edu'); expect(ending.result.boss).toBeNull(); expect(ending.result.duration).toBeGreaterThan(75);
+    const personal = await until(() => alice.messages.find(m => m.t === 'feedback'));
+    expect(personal.items.map(f => f.playerId)).toEqual([alice.welcome.you]);
+    const rank = ending.result.ranking!.findIndex(p => p.id === alice.welcome.you);
+    expect(personal.items[0].match).toMatchObject({ rank: rank + 1, kos: ending.result.ranking![rank].kos, damage: ending.result.ranking![rank].damage, roundWins: ending.result.ranking![rank].roundWins });
+    expect(personal.items[0].results).toEqual(scoreRepo(offlineProfile('pallets/flask'), rubric));
+    const download = await fetch(test.base + '/api/room/' + test.room + '/feedback.md', { headers: { Authorization: `Bearer ${teacher.welcome.token}` } });
+    expect(download.status).toBe(200); expect(await download.text()).toContain('CS project'); expect(test.recorded).toHaveLength(0);
+  }, 20_000);
+
+  it('previews teacher uploads, applies normalized criteria, and persists the rubric across restart', async () => {
+    const file = persistenceFile();
+    const first = await setup(999, rubricServices, { persistenceFile: file }, undefined, 'edu');
+    const teacher = await first.connect('screen'), student = await first.connect();
+    expect(teacher.welcome.lobby.rubric?.source).toBe('default');
+    const url = first.base + '/api/rubric/parse?room=' + first.room;
+    const text = '# Intro class\n- Testing (70%): tests target 20%\n- Documentation (30%): README\n';
+    expect((await fetch(url, { method: 'POST', body: text })).status).toBe(401);
+    expect((await fetch(url, { method: 'POST', body: text, headers: { 'X-Room-Token': student.welcome.token } })).status).toBe(403);
+    const headers = { 'X-Room-Token': teacher.welcome.token, 'Content-Type': 'text/markdown' };
+    const preview = await fetch(url + '&filename=class.md', { method: 'POST', headers, body: text });
+    expect(preview.status).toBe(200);
+    const rubric = await preview.json() as ReturnType<typeof defaultRubric>;
+    expect((await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${teacher.welcome.token}` }, body: text })).status).toBe(200);
+    expect(rubric.title).toBe('Intro class'); expect(rubric.criteria).toHaveLength(2);
+    expect(teacher.lobby()?.rubric?.source).toBe('default'); // Preview has not applied anything.
+    student.send({ t: 'setRubric', rubric }); await until(() => student.messages.find(m => m.t === 'error'));
+    teacher.send({ t: 'setRubric', rubric: { ...rubric, criteria: rubric.criteria.map((c, i) => ({ ...c, weight: i ? 30 : 70 })) } });
+    await until(() => student.lobby()?.rubric?.title === 'Intro class');
+    expect(student.lobby()?.rubric?.criteria.map(c => c.weight)).toEqual([0.7, 0.3]);
+    teacher.send({ t: 'setRubric', rubric: { ...rubric, criteria: rubric.criteria.map(c => ({ ...c, weight: 0 })) } });
+    await until(() => teacher.messages.find(m => m.t === 'error'));
+    expect(teacher.lobby()?.rubric?.criteria.map(c => c.weight)).toEqual([0.7, 0.3]);
+    await first.close();
+    const second = await setup(999, rubricServices, { persistenceFile: file }, first.room);
+    const resumed = await second.connect('screen', teacher.welcome.token);
+    expect(resumed.welcome.lobby.rubric).toEqual(student.lobby()?.rubric);
+    expect(second.rooms.eduOwnerError(first.room, teacher.welcome.token, true)).toBeUndefined();
+  });
+
+  it('caps rubric uploads by actual bytes and retains unparsed previews without leaking documents publicly', async () => {
+    const test = await setup(999, rubricServices, {}, undefined, 'edu'), teacher = await test.connect('screen');
+    const url = test.base + '/api/rubric/parse?room=' + test.room;
+    const headers = { 'X-Room-Token': teacher.welcome.token, 'Content-Type': 'application/json' };
+    const json = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ text: '# Unknown checks\nMake it delightful and poetic', filename: 'class.md' }) });
+    expect(json.status).toBe(200); expect((await json.json() as { unparsed: string[] }).unparsed.length).toBeGreaterThan(0);
+    const exact = 'Testing: unit tests\n' + ' '.repeat(MAX_RUBRIC_BYTES - Buffer.byteLength('Testing: unit tests\n'));
+    expect((await fetch(url, { method: 'POST', headers: { ...headers, 'Content-Type': 'text/plain' }, body: exact })).status).toBe(200);
+    expect((await fetch(url, { method: 'POST', headers, body: 'x'.repeat(MAX_RUBRIC_BYTES + 1) })).status).toBe(413);
+    const chunked = await new Promise<number>(resolve => {
+      const req = http.request(url, { method: 'POST', headers: { ...headers, 'Content-Type': 'text/plain' } }, res => { res.resume(); resolve(res.statusCode!); });
+      for (let i = 0; i < 20; i++) req.write('⚡'.repeat(20_000)); req.end();
+    });
+    expect(chunked).toBe(413);
+    expect((await fetch(url, { method: 'POST', headers, body: '{broken' })).status).toBe(400);
+    expect((await fetch(url, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/zip' }, body: 'not a doc' })).status).toBe(415);
+    expect((await fetch(url + '&filename=bad.pdf', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/pdf' }, body: '%PDF-invalid' })).status).toBe(422);
+    const pdf = await fetch(url + '&filename=assignment.pdf', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/pdf' }, body: rubricPdf() });
+    if (!spawnSync('pdftotext', ['-v']).error) {
+      expect(pdf.status).toBe(200); expect((await pdf.json() as ReturnType<typeof defaultRubric>).criteria[0]).toMatchObject({ signal: 'tests', target: 0.2 });
+    } else expect(pdf.status).toBe(422);
+    expect((await fetch(test.base + '/api/room/' + test.room + '/feedback.csv', { headers })).status).toBe(404);
+    teacher.send({ t: 'setMode', mode: 'battle' }); await until(() => teacher.lobby()?.mode === 'battle');
+    expect((await fetch(url, { method: 'POST', headers, body: '{"text":"tests"}' })).status).toBe(409);
+    teacher.send({ t: 'setRubric', rubric: defaultRubric() }); await until(() => teacher.messages.find(m => m.t === 'error'));
+  });
+
+  it('delivers real feedback only to each student and all to teacher/screens; exports require the current owner', async () => {
+    const file = persistenceFile();
+    const test = await setup(0.2, rubricServices, { persistenceFile: file }, undefined, 'edu');
+    const teacher = await test.connect('screen'), alice = await test.connect('player', undefined, '=Alice'), bob = await test.connect('player', undefined, 'Bob');
+    alice.send({ t: 'setRepo', repo: 'pallets/flask' }); bob.send({ t: 'setRepo', repo: 'fastapi/fastapi' }); teacher.send({ t: 'setBots', count: 1 });
+    await until(() => teacher.lobby()?.players.length === 3 && teacher.lobby()?.players.every(p => p.status === 'ready'));
+    teacher.send({ t: 'start' });
+    teacher.send({ t: 'setRubric', rubric: defaultRubric() }); await until(() => teacher.messages.find(m => m.t === 'error'));
+    const all = await until(() => teacher.messages.find(m => m.t === 'feedback'));
+    const mine = await until(() => alice.messages.find(m => m.t === 'feedback'));
+    const theirs = await until(() => bob.messages.find(m => m.t === 'feedback'));
+    expect(all.items).toHaveLength(2); expect(mine.items.map(f => f.playerId)).toEqual([alice.welcome.you]);
+    expect(theirs.items.map(f => f.playerId)).toEqual([bob.welcome.you]); expect(all.items.some(f => f.playerId.startsWith('bot-'))).toBe(false);
+    const row = mine.items[0];
+    expect(row.results).toEqual(scoreRepo(offlineProfile('pallets/flask'), defaultRubric()));
+    expect(row.match).toMatchObject({ rank: 1, kos: 1, damage: 42, roundWins: 1, quiz: '1 correct quiz answer' });
+    expect(row.strengths.length).toBeGreaterThan(0); expect(row.improvements.length).toBeGreaterThan(0);
+    const projector = await test.connect('screen'); expect((await until(() => projector.messages.find(m => m.t === 'feedback'))).items).toHaveLength(2);
+    alice.socket.close(); await once(alice.socket, 'close');
+    const resumed = await test.connect('player', alice.welcome.token);
+    expect((await until(() => resumed.messages.find(m => m.t === 'feedback'))).items.map(f => f.playerId)).toEqual([alice.welcome.you]);
+    const csv = test.base + '/api/room/' + test.room + '/feedback.csv';
+    expect((await fetch(csv)).status).toBe(401);
+    expect((await fetch(csv, { headers: { 'X-Room-Token': bob.welcome.token } })).status).toBe(403);
+    const exported = await fetch(csv, { headers: { 'X-Room-Token': teacher.welcome.token } });
+    expect(exported.status).toBe(200); expect(exported.headers.get('cache-control')).toBe('no-store');
+    expect(await exported.text()).toContain('"\'=Alice"');
+    const markdown = await fetch(csv.replace('.csv', '.md'), { headers: { 'X-Room-Token': teacher.welcome.token } });
+    expect(markdown.status).toBe(200); expect(await markdown.text()).toContain('Next steps:');
+    expect(test.recorded).toHaveLength(0);
+    const closed = once(teacher.socket, 'close'); teacher.send({ t: 'leave' }); await closed;
+    await until(() => resumed.lobby()?.ownerId === resumed.welcome.you);
+    expect((await fetch(csv, { headers: { 'X-Room-Token': teacher.welcome.token } })).status).toBe(403);
+    expect((await fetch(csv, { headers: { 'X-Room-Token': resumed.welcome.token } })).status).toBe(200);
+    await test.close(); expect(readFileSync(file, 'utf8')).not.toContain('"rubricScore"'); expect(readFileSync(file, 'utf8')).not.toContain('"strengths"');
+  });
+
+  it('keeps credentialed student feedback room-only and removes it on permanent leave', async () => {
+    const file = persistenceFile(), secret = 'PRIVATE-FEEDBACK-ONLY-FOR-ALICE';
+    const test = await setup(0.1, { ...rubricServices,
+      getGithubToken: async req => req.headers.cookie === 'session=alice' ? 'mock-private-rubric-token' : null,
+      analyzeRepo: async slug => { const profile = offlineProfile('pallets/flask'); profile.slug = slug; return profile; },
+      feedbackForPlayer: (profile, rubric, stats) => ({ ...buildFeedback(profile, rubric, scoreRepo(profile, rubric), stats),
+        summary: profile.slug === 'alice/private' ? secret : 'Public Bob feedback' }),
+    }, { persistenceFile: file }, undefined, 'edu');
+    const teacher = await test.connect('screen'), alice = await test.connect('player', undefined, 'Alice', 'session=alice'), bob = await test.connect('player', undefined, 'Bob');
+    alice.send({ t: 'setRepo', repo: 'alice/private' }); bob.send({ t: 'setRepo', repo: 'bob/public' });
+    await until(() => teacher.lobby()?.players.every(p => p.status === 'ready'));
+    teacher.send({ t: 'start' });
+    const personal = await until(() => alice.messages.find(m => m.t === 'feedback'));
+    const other = await until(() => bob.messages.find(m => m.t === 'feedback'));
+    expect(personal.items[0].summary).toBe(secret); expect(JSON.stringify(other)).not.toContain(secret);
+    expect((await until(() => teacher.messages.find(m => m.t === 'feedback'))).items).toHaveLength(2);
+    expect(JSON.stringify([...teacher.messages, ...alice.messages, ...bob.messages])).not.toContain('mock-private-rubric-token');
+    const closed = once(alice.socket, 'close'); alice.send({ t: 'leave' }); await closed;
+    await until(() => teacher.messages.filter(m => m.t === 'feedback').at(-1)?.items.length === 1);
+    const exported = await fetch(test.base + '/api/room/' + test.room + '/feedback.md', { headers: { Authorization: `Bearer ${teacher.welcome.token}` } });
+    expect(exported.status).toBe(200); expect(await exported.text()).not.toContain(secret);
+    await test.close(); const saved = readFileSync(file, 'utf8');
+    expect(saved).not.toContain(secret); expect(saved).not.toContain('mock-private-rubric-token'); expect(saved).not.toContain('"rubricScore"');
+    expect(test.recorded).toHaveLength(0);
+  });
+
+  it('broadcasts phone readiness and blocks START with names until both phones enable controls', async () => {
+    const { connect } = await setup();
+    const owner = await connect('player', undefined, 'Host', undefined, undefined, 'Mozilla/5.0 (X11; Linux x86_64)');
+    const alice = await connect('player', undefined, 'Alice', undefined, undefined, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)');
+    const bob = await connect('player', undefined, 'Bob', undefined, undefined, 'Mozilla/5.0 (Linux; Android 14) Mobile');
+    owner.send({ t: 'setBots', count: 1 }); owner.send({ t: 'setBoss', repo: 'public/boss' });
+    for (const client of [owner, alice, bob]) client.send({ t: 'setRepo', repo: 'public/hero' });
+    await until(() => owner.lobby()?.players.length === 4 && owner.lobby()?.players.every(p => p.status === 'ready') && owner.lobby()?.boss.status === 'ready');
+    expect(owner.lobby()?.players.find(p => p.id === owner.welcome.you)?.controlsReady).toBe(true);
+    expect(owner.lobby()?.players.find(p => p.bot)?.controlsReady).toBe(true);
+    expect(alice.welcome.lobby.players.find(p => p.id === alice.welcome.you)?.controlsReady).toBe(false);
+    expect(bob.welcome.lobby.players.find(p => p.id === bob.welcome.you)?.controlsReady).toBe(false);
+    owner.send({ t: 'start' });
+    const blocked = await until(() => owner.messages.find(m => m.t === 'error'));
+    expect(blocked.message).toContain('2 phones need to tap enable motion: Alice, Bob');
+    expect(owner.lobby()?.phase).toBe('lobby');
+    alice.send({ t: 'controls', ready: true, mode: 'standard' });
+    await until(() => owner.lobby()?.players.find(p => p.id === alice.welcome.you)?.controlsReady === true);
+    owner.send({ t: 'start' });
+    await until(() => owner.messages.filter(m => m.t === 'error').length === 2);
+    expect(owner.messages.filter(m => m.t === 'error').at(-1)?.message).toContain('1 phone needs to tap enable motion: Bob');
+    bob.send({ t: 'controls', ready: true, mode: 'seated' });
+    await until(() => owner.lobby()?.players.every(p => p.controlsReady));
+    owner.send({ t: 'start' }); await until(() => owner.messages.find(m => m.t === 'snapshot'));
+    expect(owner.lobby()?.phase).toBe('match');
+    alice.send({ t: 'controls', ready: false, mode: 'standard' });
+    await until(() => owner.lobby()?.players.find(p => p.id === alice.welcome.you)?.controlsReady === false);
+    expect(owner.lobby()?.phase).toBe('match'); // UI owns the recovery overlay; teammates continue.
+    alice.send({ t: 'controls', ready: true, mode: 'tap-only' });
+    await until(() => owner.lobby()?.players.find(p => p.id === alice.welcome.you)?.controlsReady === true);
+  });
+
+  it('resets a resumed phone page to unready despite saved repo/choice and never persists readiness', async () => {
+    const file = persistenceFile();
+    const first = await setup(999, {}, { persistenceFile: file });
+    const owner = await first.connect();
+    const ua = 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) Mobile';
+    const phone = await first.connect('player', undefined, 'Phone', undefined, undefined, ua);
+    phone.send({ t: 'setRepo', repo: 'public/hero' }); phone.send({ t: 'controls', ready: true, mode: 'seated' });
+    await until(() => owner.lobby()?.players.find(p => p.id === phone.welcome.you)?.status === 'ready' && owner.lobby()?.players.find(p => p.id === phone.welcome.you)?.controlsReady === true);
+    phone.socket.close(); await once(phone.socket, 'close');
+    const secondPage = await first.connect('player', phone.welcome.token, '', undefined, undefined, ua);
+    const card = secondPage.welcome.lobby.players.find(p => p.id === phone.welcome.you)!;
+    expect(secondPage.welcome.you).toBe(phone.welcome.you); expect(card.status).toBe('ready'); expect(card.kit).not.toBeNull();
+    expect(card.controlsReady).toBe(false);
+    secondPage.send({ t: 'controls', ready: true, mode: 'tap-only' });
+    await until(() => owner.lobby()?.players.find(p => p.id === phone.welcome.you)?.controlsReady === true);
+    await first.close();
+    expect(readFileSync(file, 'utf8')).not.toContain('controlsReady'); expect(readFileSync(file, 'utf8')).not.toContain('controlsMode');
+    const restarted = await setup(999, {}, { persistenceFile: file }, first.room);
+    await restarted.connect('player', owner.welcome.token);
+    const thirdPage = await restarted.connect('player', phone.welcome.token, '', undefined, undefined, ua);
+    expect(thirdPage.welcome.lobby.players.find(p => p.id === phone.welcome.you)?.controlsReady).toBe(false);
+    thirdPage.send({ t: 'controls', ready: true, mode: 'standard' });
+    await until(() => thirdPage.lobby()?.players.find(p => p.id === phone.welcome.you)?.controlsReady === true);
+  });
+
+  it('rejects malformed readiness, allows touch choice, and ignores spectator controls reports', async () => {
+    const { connect } = await setup(); const owner = await connect(); const screen = await connect('screen');
+    owner.send({ t: 'controls', ready: false, mode: 'standard' });
+    await until(() => owner.lobby()?.players[0].controlsReady === false);
+    owner.socket.send(JSON.stringify({ t: 'controls', ready: 'true', mode: 'standard' }));
+    await until(() => owner.messages.find(m => m.t === 'error'));
+    expect(owner.lobby()?.players[0].controlsReady).toBe(false);
+    owner.socket.send(JSON.stringify({ t: 'controls', ready: true, mode: 'unknown' }));
+    await until(() => owner.messages.filter(m => m.t === 'error').length === 2);
+    expect(owner.lobby()?.players[0].controlsReady).toBe(false);
+    owner.send({ t: 'controls', ready: true, mode: 'tap-only' });
+    await until(() => owner.lobby()?.players[0].controlsReady === true);
+    const broadcasts = owner.messages.filter(m => m.t === 'lobby').length;
+    owner.send({ t: 'controls', ready: true, mode: 'tap-only' }); screen.send({ t: 'controls', ready: false, mode: 'standard' });
+    await wait(30);
+    expect(owner.messages.filter(m => m.t === 'lobby')).toHaveLength(broadcasts);
+    expect(screen.messages.filter(m => m.t === 'error')).toHaveLength(0);
+  });
+
   it.each(['battle', 'edu'] as const)('removes a departing fighter from the real %s sim without resetting teammates', async mode => {
     const factory = vi.fn<GameServices['createMatch']>((players, boss, options) => createMatch(players, boss, options));
     const { connect } = await setup(999, { ...genesisServices, createBot, createMatch: factory }, {}, undefined, mode);

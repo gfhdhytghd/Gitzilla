@@ -1,4 +1,4 @@
-import type { KnownVuln, PlayerKit, QualityStat, RepoProfile } from '../shared/types.ts';
+import type { CriterionResult, KnownVuln, PlayerKit, QualityStat, RepoProfile, Rubric, RubricSignal } from '../shared/types.ts';
 import { clamp } from './math.ts';
 
 export interface ClassroomFacts {
@@ -9,7 +9,8 @@ export interface ClassroomFacts {
   functionLengthApproximate: boolean; longestFunction: number; commentRatio: number | null;
   todoCount: number; todoDensity: number; vulns: Pick<KnownVuln, 'id' | 'pkg' | 'fixed'>[];
 }
-export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts };
+export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] } };
+export interface ScoredRubric { rubric: Rubric; results: CriterionResult[] }
 type ExtraSignals = { commentRatio?: number; readmeLength?: number; avgFunctionLength?: number; functionsPerFile?: number; hasTestDir?: boolean };
 const grade = (score: number): QualityStat['grade'] => score >= 0.82 ? 'A' : score >= 0.64 ? 'B' : score >= 0.43 ? 'C' : score >= 0.23 ? 'D' : 'F';
 const percent = (n: number) => `${(n * 100).toFixed(1)}%`;
@@ -64,6 +65,7 @@ export function qualityRows(f: ClassroomFacts): QualityStat[] {
 
 export function asClassroomKit(kit: PlayerKit): ClassroomKit {
   const source = kit as ClassroomKit;
+  if (source.rubricQuality) return withQuality(source, source.rubricQuality.rows);
   if (!source.classroom) {
     // Custom/mocked callers can still play, but never get fabricated source-based grades.
     return { ...structuredClone(kit), maxHp: 12, maxArmor: 5, maxEnergy: 180, speed: 102, damageMul: 1.05,
@@ -71,8 +73,53 @@ export function asClassroomKit(kit: PlayerKit): ClassroomKit {
         value: ({ hp: 12, armor: 5, speed: 102, damage: 1.05, energy: 180, regen: 6, weakness: 0 }[stat]), grade: 'C',
         signal: 'Source analysis unavailable; neutral classroom value', tip: 'Analyze this repository again to get a source-based report card.' })) };
   }
-  const quality = qualityRows(source.classroom), value = (stat: QualityStat['stat']) => quality.find(q => q.stat === stat)!.value;
+  return withQuality(source, qualityRows(source.classroom));
+}
+
+function withQuality(source: ClassroomKit, rows: QualityStat[]): ClassroomKit {
+  const quality = structuredClone(rows), value = (stat: QualityStat['stat']) => quality.find(q => q.stat === stat)!.value;
   return { ...structuredClone(source), quality, maxHp: value('hp'), maxArmor: value('armor'), maxEnergy: value('energy'), speed: value('speed'), damageMul: value('damage') };
+}
+
+const RUBRIC_SIGNALS: Record<QualityStat['stat'], RubricSignal[]> = {
+  hp: ['size', 'commits', 'check'], armor: ['tests', 'ci', 'typing', 'check'], speed: ['modularity', 'check'],
+  damage: ['cohesion', 'function-length', 'check'], energy: ['documentation', 'readme', 'license', 'check'],
+  regen: ['documentation', 'readme', 'license', 'check'], weakness: ['cycles', 'tech-debt', 'check'],
+};
+
+/** Real scores only; parsing/scoring belong to rubric/. The default source preserves existing stats exactly.
+ * Use (kit, {rubric, results}) or (kit, results, rubric). Arrays without criterion metadata keep defaults.
+ */
+export function qualityFromRubric(kit: PlayerKit, input: ScoredRubric | CriterionResult[], rubric?: Rubric): ClassroomKit {
+  const { rubricQuality: _previous, ...original } = kit as ClassroomKit;
+  const base = asClassroomKit(original);
+  const scoring = Array.isArray(input) ? { rubric, results: input } : input;
+  if (!scoring.rubric || scoring.rubric.source === 'default') return base;
+  const seen = new Set<string>();
+  const measured = scoring.rubric.criteria.flatMap(criterion => {
+    const result = scoring.results.find(r => r.criterionId === criterion.id);
+    if (seen.has(criterion.id) || !Number.isFinite(criterion.weight) || criterion.weight <= 0 || !result || !Number.isFinite(result.score)) return [];
+    seen.add(criterion.id);
+    return [{ criterion, result, score: clamp(result.score, 0, 1) }];
+  });
+  if (!measured.length) return base;
+  const average = (rows: typeof measured) => rows.reduce((sum, r) => sum + r.score * r.criterion.weight, 0) /
+    rows.reduce((sum, r) => sum + r.criterion.weight, 0);
+  const overall = average(measured);
+  const rows = base.quality!.map(row => {
+    const relevant = measured.filter(r => RUBRIC_SIGNALS[row.stat].includes(r.criterion.signal));
+    // Half overall grade makes teacher weights matter even when a stat has just one mapped criterion.
+    const score = relevant.length ? (overall + average(relevant)) / 2 : overall;
+    // Narrower than default ranges: even the product of vitality, damage, speed, recovery and weakness
+    // at opposite extremes is <2.5x. A rubric cannot turn the classroom into an unwinnable stat gap.
+    const value = ({ hp: 11 + Math.round(score * 2), armor: 4 + Math.round(score * 2), speed: 98 + score * 10,
+      damage: 0.98 + score * 0.14, energy: 160 + Math.round(score * 40), regen: 5 + score * 2,
+      weakness: (1 - score) * 0.1 })[row.stat];
+    const evidence = (relevant.length ? relevant : measured).map(r => `${r.criterion.name} (${(r.criterion.weight / measured.reduce((s, r) => s + r.criterion.weight, 0) * 100).toFixed(0)}%): ${r.result.evidence}`).join('; ');
+    return { ...row, value, grade: grade(score), signal: `${scoring.rubric!.title}: weighted grade ${(overall * 100).toFixed(0)}%; ${evidence}`,
+      tip: (relevant.length ? relevant : measured).find(r => r.result.tip)?.result.tip ?? row.tip };
+  });
+  return withQuality({ ...base, rubricQuality: { title: scoring.rubric.title, rows } }, rows);
 }
 
 export const qualityValue = (p: PlayerKit, stat: QualityStat['stat'], fallback: number) => p.quality?.find(q => q.stat === stat)?.value ?? fallback;

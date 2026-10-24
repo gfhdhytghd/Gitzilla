@@ -32,15 +32,15 @@
     "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-summon-0": "new() Version Drift",
-    "0-charge-1": "Command() Hard Reset",
-    "1-summon-0": "parse() npm install Swarm",
-    "2-cascade-0": "path() Merge Conflict",
-    "3-cascade-0": "check() Memory Leak",
-    "4-cascade-0": "selected() Rebase Hell",
-    "5-cascade-0": "done() Circular Import",
-    "6-cascade-0": "args() Cache Stampede",
-    "7-spiral-0": "test() Nested Promises"
+    "0-cascade-0": "new() Merge Conflict",
+    "0-ring-1": "Command() Busy Wait",
+    "1-slam-0": "parse() OOM Crash",
+    "2-fan-0": "path() Unhandled Error",
+    "3-charge-0": "check() Hard Reset",
+    "4-cascade-0": "selected() Memory Leak",
+    "5-ring-0": "done() Event Loop",
+    "6-slam-0": "args() Stack Overflow",
+    "7-fan-0": "test() Throw Storm"
   },
   "limbNames": {
     "limb-0": "transformer() Plating",

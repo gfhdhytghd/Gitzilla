@@ -5,8 +5,9 @@ import { createBackdrop } from "./backdrop";
 import { createHallBoard } from "./hall";
 import { markCanvas } from "./mark";
 import { codeSpan, drawCode } from "./codefmt";
+import { ARCH } from "./archetype";
 import { reportCard } from "./report";
-import { createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
+import { createFeedbackView, createClassFeedback, localDefaultRubric, createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
 import { fmtTime, fontsReady, h, isPhone, shortRepo } from "./util";
 
@@ -288,7 +289,7 @@ export function createAutopsy(app: AppCtx): Screen {
         h(
           "section.panel.ap-boss",
           null,
-          h("h2.panel-title.red", null, "BOSS DISSECTION"),
+          h("h2.panel-title.red", null, "BOSS DISSECTION", bossKit?.archetype && ARCH[bossKit.archetype] ? h("span.ap-arch", null, ` · ${ARCH[bossKit.archetype].icon} ${ARCH[bossKit.archetype].label} — ${a.victory ? ARCH[bossKit.archetype].death : "still standing"}`) : null),
           h("div.ap-boss-row", null, bossKit ? h("div.ap-boss-port" + (a.victory ? ".dead" : ""), null, bossPortraitCanvas(bossKit, 128)) : null, diff),
         ),
         h(
@@ -359,6 +360,23 @@ function createPvpAutopsy(app: AppCtx): Screen {
     h("div.rp-card", null, h("div.rp-who", null, `${r.name} `, h("small.dim", null, r.repo)), reportCard(r.quality, { tips: r.id === app.you || app.role === "screen" })),
   );
   const owner = isOwner(app);
+  const feedbackHost = h("section.panel.ap-feedback", { "data-testid": "autopsy-feedback" });
+  let feedbackSig = "";
+  const renderFeedback = () => {
+    const items = app.feedback ?? [];
+    const rubric = app.lobby?.rubric ?? localDefaultRubric();
+    const sig = JSON.stringify([items, rubric, app.token, isOwner(app), app.role]);
+    if (sig === feedbackSig) return;
+    feedbackSig = sig;
+    const variant = app.role === "screen" ? "screen" as const : isPhone() ? "phone" as const : "desktop" as const;
+    const mine = items.find(f => f.playerId === app.you);
+    const opts = { items, rubric, variant, room: app.mock ? undefined : app.room, token: app.token, canExport: isOwner(app) };
+    feedbackHost.replaceChildren(items.length && (isOwner(app) || app.role === "screen")
+      ? createClassFeedback(opts)
+      : mine ? createFeedbackView(mine, rubric, { variant, you: true })
+      : h("div.dim", { role: "status" }, "waiting for your teacher's feedback…"));
+  };
+  renderFeedback();
   const el = h(
     "div.screen.autopsy.edu",
     { "data-testid": "autopsy" },
@@ -380,6 +398,7 @@ function createPvpAutopsy(app: AppCtx): Screen {
       h(
         "div.ap-grid",
         null,
+        feedbackHost,
         // claude-edu's class report: highlights, improvement tips, quiz results, glossary (+ every report card)
         (() => {
           try {
@@ -395,6 +414,7 @@ function createPvpAutopsy(app: AppCtx): Screen {
   );
   return {
     el,
+    update: renderFeedback,
     destroy() {
       backdrop.destroy();
       el.remove();

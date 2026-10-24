@@ -302,6 +302,13 @@ export async function playtest(options: Options): Promise<number> {
       await field.fill(repos![index % repos!.length]);
       await click(client, 'player-repo-submit');
       await waitForReady(client, 'player-ready');
+      if (client.phone) {
+        const touch = client.page.getByTestId('controls-touch');
+        if (await touch.isVisible()) {
+          await touch.click();
+          note(`${client.name}: explicitly selected touch fallback; no motion-sensor acceptance is claimed`);
+        }
+      }
     }));
     if (options.mode === 'battle') {
       await (await required(owner, 'boss-repo-input')).fill(options.boss);

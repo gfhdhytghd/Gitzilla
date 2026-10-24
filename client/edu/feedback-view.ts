@@ -10,6 +10,7 @@ import {
 } from "./rubric-data.ts";
 import "./edu.css";
 import "./rubric.css";
+import { fetchFeedbackExport } from "./transport.ts";
 
 /** Segmented pixel ring (20 blocks) with the score in the middle. */
 export function scoreRing(score: number, size = 96, label = "/100"): HTMLElement {
@@ -19,7 +20,7 @@ export function scoreRing(score: number, size = 96, label = "/100"): HTMLElement
     ${Array.from({ length: segs }, (_, i) => `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${i < on ? col : "#1a2a26"}" stroke-width="12"
       stroke-dasharray="${c / segs - 2.2} ${c - c / segs + 2.2}" stroke-dashoffset="${-(i * c) / segs}" transform="rotate(-90 50 50)"/>`).join("")}
   </svg>`;
-  return h("div.fb-ring", { style: `--c:${col};--s:${size}px`, role: "img", "aria-label": `score ${score} out of 100` }, h("div.fb-ring-svg", { html: svg }), h("div.fb-ring-num", null, String(score), h("small", null, label)));
+  return h("div.fb-ring", { style: `--c:${col};--s:${size}px;--digits:${Math.max(2, String(score).length)}`, role: "img", "aria-label": `score ${score} out of 100` }, h("div.fb-ring-svg", { html: svg }), h("div.fb-ring-num", null, String(score), h("small", null, label)));
 }
 
 const fileLink = (repo: string, file: string | undefined, text?: string) => {
@@ -75,26 +76,38 @@ function download(name: string, text: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Teacher / projector: everyone's feedback. Export uses the server's owner-only files when `room` is given,
- *  else builds the same CSV/Markdown in the browser. */
-export function createClassFeedback(opts: { items: StudentFeedback[]; rubric: Rubric; variant: EduVariant; room?: string; title?: string }): HTMLElement {
+/** Teacher / projector: only pass the class list received from the room server.
+ * canExport is the caller's current-owner UI permission; the server still authorizes every download.
+ * Omission keeps the roomless demo/projector behavior (screen hidden, other layouts visible).
+ */
+export function createClassFeedback(opts: { items: StudentFeedback[]; rubric: Rubric; variant: EduVariant; room?: string; token?: string; title?: string; canExport?: boolean }): HTMLElement {
   const { rubric, variant } = opts;
+  const showExports = opts.canExport ?? (variant !== 'screen');
   const pct = weightPercents(rubric.criteria);
   const sum = classSummary(opts.items, rubric);
   let key: SortKey = "score", desc = true, open: string | null = null;
   const el = h(`div.fb-class.v-${variant}`);
   const title = opts.title ?? `class feedback${opts.room ? ` · ${opts.room}` : ""}`;
   const fileBase = `gitzilla-feedback${opts.room ? `-${opts.room}` : ""}`;
+  const exportStatus = h('div.fb-export-status', { role: 'status', 'aria-live': 'polite' });
 
   const exportBtn = (ext: "csv" | "md") =>
     h("button.btn", {
       type: "button",
-      onclick: async () => {
-        if (opts.room) {
-          const res = await fetch(`/api/room/${encodeURIComponent(opts.room)}/feedback.${ext}`).catch(() => null);
-          if (res?.ok) return download(`${fileBase}.${ext}`, await res.text(), ext === "csv" ? "text/csv" : "text/markdown");
+      onclick: async (event: Event) => {
+        const button = event.currentTarget as HTMLButtonElement;
+        button.disabled = true;
+        exportStatus.textContent = 'Preparing download…';
+        try {
+          const text = opts.room ? await fetchFeedbackExport(opts.room, opts.token, ext)
+            : ext === 'csv' ? feedbackCsv(opts.items, rubric) : feedbackMarkdown(opts.items, rubric, title);
+          download(`${fileBase}.${ext}`, text, ext === "csv" ? "text/csv" : "text/markdown");
+          exportStatus.textContent = 'Download ready.';
+        } catch (error) {
+          exportStatus.textContent = `Export failed: ${(error as Error).message}`;
+        } finally {
+          button.disabled = false;
         }
-        download(`${fileBase}.${ext}`, ext === "csv" ? feedbackCsv(opts.items, rubric) : feedbackMarkdown(opts.items, rubric, title), ext === "csv" ? "text/csv" : "text/markdown");
       },
     }, ext === "csv" ? "⇩ CSV (spreadsheet)" : "⇩ Markdown (notes)");
 
@@ -109,18 +122,22 @@ export function createClassFeedback(opts: { items: StudentFeedback[]; rubric: Ru
             sum.commonGap ? h("span", null, ` · most common gap: `, h("b", null, sum.commonGap.name), ` (${sum.commonGap.count} of ${sum.students} below 60)`) : null))),
       h("div.fb-crit", null, ...sum.perCriterion.map((c, i) => h("div.fb-crow", { style: `--c:${scoreColor(c.average)};--p:${c.average}%` },
         h("div.fb-ctop", null, h("span.fb-cname", null, c.name), h("span.fb-cw", null, `weight ${pct[i]}%`), h("span.fb-csc", null, `${c.average}`)), h("div.rb-jbar")))),
-      variant === "screen" ? null : h("div.fb-export", null, exportBtn("csv"), exportBtn("md")));
+      showExports ? h("div.fb-export", null, exportBtn("csv"), exportBtn("md"), exportStatus) : null);
 
   const table = () => {
     const sorted = sortFeedback(opts.items, key, desc);
     const th = (k: SortKey, label: string, cls = "") =>
       h(`button.fb-th${cls}${key === k ? ".on" : ""}`, { type: "button", onclick: () => { desc = key === k ? !desc : k !== "name"; key = k; render(); }, title: `sort by ${label}` }, label, key === k ? (desc ? " ▾" : " ▴") : "");
     const cols = `minmax(9em, 1.4fr) 4em repeat(${rubric.criteria.length}, minmax(3.2em, 1fr)) 3.5em`;
-    return h("section.fb-sec.fb-table", { style: `--cols:${cols}` },
+    const minWidth = (16.5 + 3.2 * rubric.criteria.length) * 19 + (rubric.criteria.length + 2) * 6 + 8;
+    return h("section.fb-sec.fb-table", { style: `--cols:${cols};--table-min:${minWidth}px` },
       h("h4", null, variant === "screen" ? "every student" : "every student · tap a row for details"),
+      h('p.fb-scroll-hint', null, 'Swipe the table to see all criterion scores. Tap a heading to sort.'),
       h("div.fb-tr.fb-thead", null, th("name", "student"), th("score", "score", ".num"), ...rubric.criteria.map((c) => th(`c:${c.id}`, c.name, ".num")), th("rank", "rank", ".num")),
       ...sorted.flatMap((f) => {
-        const row = h(`div.fb-tr${open === f.playerId ? ".open" : ""}`, { role: "button", tabindex: 0, onclick: () => { open = open === f.playerId ? null : f.playerId; render(); } },
+        const toggle = () => { open = open === f.playerId ? null : f.playerId; render(); };
+        const row = h(`div.fb-tr${open === f.playerId ? ".open" : ""}`, { role: "button", tabindex: 0, 'aria-expanded': open === f.playerId, onclick: toggle,
+          onkeydown: (event: Event) => { const key = (event as KeyboardEvent).key; if (key === 'Enter' || key === ' ') { event.preventDefault(); toggle(); } } },
           h("span.fb-td.fb-who", null, h("b", null, `@${f.name}`), h("small", null, f.repo.split("/").pop())),
           h("span.fb-td.num", { style: `color:${scoreColor(f.rubricScore)}` }, String(f.rubricScore)),
           ...rubric.criteria.map((c) => {

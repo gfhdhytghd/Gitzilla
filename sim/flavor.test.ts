@@ -169,9 +169,11 @@ describe('code weapon flavor', () => {
     expect(repaired.attacks.every(a => a.name.includes('Actual Attack') && a.name.length <= 64)).toBe(true);
     expect(new Set(repaired.attacks.map(a => a.name)).size).toBe(kit.attacks.length);
   });
-  it('gives all seven React cascades distinct disaster phrases before any reuse', () => {
+  it('gives a legacy seven-cascade React deck distinct phrases before any reuse', () => {
     const p = loadBalanceProfiles().find(p => p.slug === 'facebook/react')!, kit = bossKitFromProfile(p, 4);
     const symbols = (kit.code as BossCode).attackSymbols;
+    kit.attacks = kit.attacks.slice(0, 7).map(a => ({ ...a, kind: 'cascade', name: `${symbols[a.id]} Merge Conflict` }));
+    kit.attacks = reconcileCodeNames(kit).attacks;
     const phrases = kit.attacks.filter(a => a.kind === 'cascade').map(a => a.name.slice(symbols[a.id].length + 1));
     expect(phrases).toHaveLength(7); expect(new Set(phrases).size).toBe(7);
     expect(phrases.every(phrase => ATTACK_FLAVOR_POOLS.cascade.includes(phrase))).toBe(true);

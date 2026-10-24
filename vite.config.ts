@@ -1,4 +1,10 @@
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
+
+// Anchor ignores to this checkout: **/data/** also matches /home/wilf/data/,
+// which otherwise prevents every application module from being invalidated.
+const ignored = ["data", ".cache", "docs", "qa", "dist"].map(dir =>
+  fileURLToPath(new URL(`./${dir}/`, import.meta.url)).replaceAll("\\", "/") + "**");
 
 export default defineConfig({
   root: ".",
@@ -6,7 +12,7 @@ export default defineConfig({
     // Public tunnel (gitzilla.wilflin.me) and LAN IPs; IPs/localhost are always allowed.
     allowedHosts: [".wilflin.me"],
     // Agents rewrite data/docs/qa artifacts constantly; don't full-reload every client for them.
-    watch: { ignored: ["**/data/**", "**/.cache/**", "**/docs/**", "**/qa/**", "**/dist/**"] },
+    watch: { ignored },
   },
   build: { outDir: "dist", target: "es2022" },
 });

@@ -5,6 +5,7 @@
 import type { CriterionResult, QualityStat, Rubric, RubricCriterion, RubricSignal, StudentFeedback } from "../../shared/types.ts";
 import { plainRow } from "./explain.ts";
 import { GRADE_POINTS } from "./quality.ts";
+import { defaultRubric as engineDefaultRubric } from "../../rubric/index.ts";
 
 export interface SignalInfo {
   label: string;           // plain name in the dropdown
@@ -36,7 +37,7 @@ export const SIGNAL_ORDER = Object.keys(SIGNALS) as RubricSignal[];
 /** Weights as whole percentages that sum to 100 (largest remainder), zero weights stay 0. */
 export function weightPercents(criteria: Pick<RubricCriterion, "weight">[]): number[] {
   const total = criteria.reduce((s, c) => s + Math.max(0, c.weight), 0);
-  if (!total) return criteria.map(() => (criteria.length ? Math.round(100 / criteria.length) : 0));
+  if (!total) return criteria.map((_, i) => Math.floor(100 / criteria.length) + (i < 100 % criteria.length ? 1 : 0));
   const raw = criteria.map((c) => (Math.max(0, c.weight) / total) * 100);
   const out = raw.map(Math.floor);
   let left = 100 - out.reduce((s, v) => s + v, 0);
@@ -102,20 +103,9 @@ export function githubFileUrl(repo: string, file: string): string | null {
   return `https://github.com/${repo}/blob/HEAD/${file.replace(/^\.?\//, "").split("/").map(encodeURIComponent).join("/")}`;
 }
 
-/** Built-in default (used for the preview until the server's defaultRubric arrives); mirrors the report card. */
+/** Use the server engine's exact default; a second rubric would change student scores. */
 export function localDefaultRubric(): Rubric {
-  const c = (id: string, name: string, signal: RubricSignal, weight: number, description: string): RubricCriterion => ({ id, name, signal, weight, description });
-  return {
-    title: "Default: code quality",
-    source: "default",
-    criteria: [
-      c("tests", "Tests", "tests", 25, "The project has automated tests for its important parts."),
-      c("modularity", "Modular design", "modularity", 20, "Parts of the code have clear jobs and don't depend on everything else."),
-      c("functions", "Focused functions", "cohesion", 20, "Functions are short and do one thing."),
-      c("docs", "Documentation", "documentation", 20, "A README explains the project; tricky code has comments."),
-      c("debt", "No import loops or stale TODOs", "tech-debt", 15, "No circular imports; TODO/FIXME notes get resolved."),
-    ],
-  };
+  return engineDefaultRubric();
 }
 
 // ---------- class view ----------

@@ -3,7 +3,8 @@
 // stores per-player thresholds in localStorage (`kaiju.gestureProfile`), which game.ts hands to
 // input.setProfile(...) when the input module supports it (codex-input motion v3).
 import { defaultThresholds, sanitizeThresholds, saveThresholds } from "../input/thresholds";
-import { loadMotionProfile } from "../input";
+import { orientationGravity, gravityMove } from "../input/gestures";
+import { loadTiltSensitivity, TILT_FULL_SPEED, loadMotionProfile } from "../input";
 import { h, store, vibrate } from "./util";
 
 export interface GestureProfile {
@@ -29,7 +30,7 @@ export const isTrained = () => !!loadGestureProfile();
 
 /** Map the trainer's result onto codex-input's GestureThresholds (partial; the rest keeps its defaults). */
 export function toThresholds(p: GestureProfile) {
-  return { swingThreshold: p.swing, twistThreshold: p.twist, spinAngle: p.spin, neutral: p.neutral };
+  return { swingThreshold: p.swing, twistThreshold: p.twist, spinAngle: p.spin };
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -37,8 +38,8 @@ const median = (xs: number[]) => (xs.length ? [...xs].sort((a, b) => a - b)[Math
 
 type StepId = "hold" | "tilt" | "swing" | "twist" | "spin";
 const STEPS: { id: StepId; title: string; sub: string; anim: string; need: number }[] = [
-  { id: "hold", title: "hold it how you'll play", sub: "upright, tilted back a little. keep still for a second.", anim: "a-hold", need: 1 },
-  { id: "tilt", title: "tilt to move", sub: "lean the phone left, right, forward and back.", anim: "a-tilt", need: 4 },
+  { id: "hold", title: "hold the screen flat", sub: "screen facing up, parallel to the floor. flat means still.", anim: "a-hold", need: 1 },
+  { id: "tilt", title: "tilt to move", sub: "from flat, tilt toward each edge. normal: 15° = full speed.", anim: "a-tilt", need: 4 },
   { id: "swing", title: "swing to attack", sub: "flick the phone like a punch. ×3 (or just tap the screen)", anim: "a-swing", need: 3 },
   { id: "twist", title: "twist to dash", sub: "a quick wrist twist that snaps back. ×3 (or double-tap)", anim: "a-twist", need: 3 },
   { id: "spin", title: "spin for your skill", sub: "turn the phone all the way around. ×2 — or long-press the screen", anim: "a-spin", need: 2 },
@@ -138,7 +139,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     const s = STEPS[stepIdx];
     if (s.id === "hold") {
       const moved = prev ? Math.hypot(ori[0] - prev[0], ori[1] - prev[1]) : 99;
-      if (moved > 1.5) {
+      if (moved > 1.5 || Math.hypot(...ori) > 5) {
         stableSince = now;
         holdSamples.length = 0;
       }
@@ -152,19 +153,23 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
         setTimeout(advance, 600);
       }
     } else if (s.id === "tilt" && neutral) {
-      const dx = ori[1] - neutral[1], dy = ori[0] - neutral[0];
+      const full = TILT_FULL_SPEED[loadTiltSensitivity()];
+      const angle = window.innerWidth < 600 && window.innerHeight > window.innerWidth ? 0
+        : window.screen.orientation?.angle ?? (window as Window & { orientation?: number }).orientation ?? 0;
+      const move = gravityMove(orientationGravity(...ori), angle, 1, full);
+      const dx = move[0] * full, dy = move[1] * full;
       if (dx < 0) tiltMax.left = Math.max(tiltMax.left, -dx);
       else tiltMax.right = Math.max(tiltMax.right, dx);
       if (dy < 0) tiltMax.up = Math.max(tiltMax.up, -dy);
       else tiltMax.down = Math.max(tiltMax.down, dy);
       const before = got.size;
-      if (-dx > 12) got.add("left");
-      if (dx > 12) got.add("right");
-      if (-dy > 12) got.add("up");
-      if (dy > 12) got.add("down");
+      if (-dx > full * .8) got.add("left");
+      if (dx > full * .8) got.add("right");
+      if (-dy > full * .8) got.add("up");
+      if (dy > full * .8) got.add("down");
       const dot = pad.firstElementChild as HTMLElement;
-      dot.style.transform = `translate(${clamp(dx / 25, -1, 1) * 40}px, ${clamp(dy / 25, -1, 1) * 40}px)`;
-      meterVal = Math.min(1, Math.hypot(dx, dy) / 25);
+      dot.style.transform = `translate(${clamp(dx / full, -1, 1) * 40}px, ${clamp(dy / full, -1, 1) * 40}px)`;
+      meterVal = Math.min(1, Math.hypot(...move));
       if (got.size !== before) {
         vibrate(20);
         render();

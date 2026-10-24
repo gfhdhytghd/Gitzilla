@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import type { InputFrame, MatchState, ServerMsg } from '../shared/types';
+import type { InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 import { playtestBaseURL } from './playtest';
 
 const base = playtestBaseURL(process.env.MOTION_URL || process.env.PLAYTEST_URL);
@@ -18,6 +18,9 @@ const page = await context.newPage();
 page.setDefaultTimeout(20_000);
 let selfId = '';
 let state: MatchState | undefined;
+let lobby: LobbyState | undefined;
+const starts: { at: number }[] = [];
+const controls: { at: number; ready: boolean; mode: string }[] = [];
 let ack = -1;
 let snapshots = 0;
 const inputs: { at: number; frame: InputFrame }[] = [];
@@ -25,7 +28,7 @@ const bullets = new Set<number>();
 const checks: { check: string; evidence: unknown }[] = [];
 const errors: string[] = [];
 const consoleLog: string[] = [];
-const traceUploads: { status: number; response: unknown; samples: number; gyro: boolean; gestures: string[] }[] = [];
+const traceUploads: { source?: string; status: number; response: unknown; samples: number; gyro: boolean; gestures: string[] }[] = [];
 let pass = false;
 let failure: string | undefined;
 const sleep = (ms: number) => new Promise<void>(done => setTimeout(done, ms));
@@ -57,18 +60,22 @@ try {
   // Keep this tab on the tested client revision while parallel UI edits trigger Vite
   // reloads. Only HMR is held inert; the authoritative game /ws is never intercepted.
   // DEV watcher currently ignores the checkout's /data/ ancestor. Fetch current owned
-  // source by revision query; no input/state behavior is mocked or replaced.
+  // app/input/style source by revision query; only native permission responses and
+  // sensor signals are mocked. App readiness/state and game /ws remain real.
   const revision = Date.now();
-  await page.route('**/client/input/**', route => {
+  await page.route(url => /^\/client\/(?:app\/|input\/|style\.css$)/.test(url.pathname), route => {
     const url = new URL(route.request().url()); url.searchParams.set('input-revision', String(revision));
     return route.continue({ url: url.toString() });
   });
   await page.routeWebSocket(url => url.pathname !== '/ws', socket => {
     socket.send(JSON.stringify({ type: 'connected' }));
   });
+  await context.addInitScript('window.__kaijuSyntheticSensors = true;');
   await context.addInitScript(`(() => {
     if (location.protocol.startsWith('http')) localStorage.setItem('kaiju.name', 'motion-v3');
     const w = window;
+    w.__permissionStates = [];
+    window.addEventListener('kaiju:motion-permission', event => w.__permissionStates.push(event.detail));
     w.__permissionCalls = []; w.__permissionDecision = 'denied'; w.__holdPermission = false; w.__permissionResolvers = [];
     for (const key of ['DeviceMotionEvent', 'DeviceOrientationEvent']) {
       Object.defineProperty(w[key], 'requestPermission', { configurable: true, value: () => {
@@ -82,21 +89,21 @@ try {
       } });
     }
     Object.defineProperty(screen.orientation, 'angle', { configurable: true, get: () => 0 });
-    w.__motion = { enabled: false, beta: 45, gamma: 0, absolute: false, rate: { alpha: 0, beta: 0, gamma: 0 }, nullAcceleration: false, gravityZ: 6.9 };
+    w.__motion = { enabled: false, beta: 0, gamma: 0, absolute: false, rate: { alpha: 0, beta: 0, gamma: 0 }, nullAcceleration: false, gravityZ: 9.81 };
     window.setInterval(() => {
       const m = w.__motion;
       if (!m.enabled) return;
       window.dispatchEvent(new DeviceOrientationEvent(m.absolute ? 'deviceorientationabsolute' : 'deviceorientation', { beta: m.beta, gamma: m.gamma, alpha: 0, absolute: m.absolute }));
-      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: m.nullAcceleration ? null : { x: 0, y: 0, z: 0 }, accelerationIncludingGravity: { x: 0, y: 6.9, z: m.gravityZ }, rotationRate: m.rate, interval: 30 }));
+      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: m.nullAcceleration ? null : { x: 0, y: 0, z: 0 }, accelerationIncludingGravity: { x: 0, y: 0, z: m.gravityZ }, rotationRate: m.rate, interval: 30 }));
     }, 30);
   })();`);
   page.on('pageerror', error => errors.push(error.stack || error.message));
   page.on('response', async response => {
     if (new URL(response.url()).pathname !== '/api/trace' || response.request().method() !== 'POST') return;
     const body = response.request().postDataJSON();
-    traceUploads.push({ status: response.status(), response: '201 confirms server stored payload; body inspected via trace listing separately', samples: body.samples?.length ?? 0,
+    traceUploads.push({ source: body.source, status: response.status(), response: '201 confirms server stored payload; body inspected via trace listing separately', samples: body.samples?.length ?? 0,
       gyro: body.samples?.some((s: any) => s.rotationRate && Object.values(s.rotationRate).some(v => typeof v === 'number' && Math.abs(v) > 0)),
-      gestures: body.samples?.filter((s: any) => s.type === 'gesture').map((s: any) => `${s.via}:${s.kind}`) ?? [] });
+      gestures: body.samples?.filter((s: any) => s.type === 'gesture' && s.via).map((s: any) => `${s.via}:${s.kind}`) ?? [] });
   });
   page.on('console', message => {
     consoleLog.push(`${message.type()}: ${message.text()}`);
@@ -107,11 +114,14 @@ try {
     socket.on('socketerror', error => errors.push(`WS: ${error}`));
     socket.on('framesent', frame => {
       const msg = JSON.parse(frame.payload.toString());
+      if (msg.t === 'start') starts.push({ at: Date.now() });
+      if (msg.t === 'controls') controls.push({ at: Date.now(), ready: msg.ready, mode: msg.mode });
       if (msg.t === 'input') inputs.push({ at: Date.now(), frame: msg.frame });
     });
     socket.on('framereceived', frame => {
       const msg = JSON.parse(frame.payload.toString()) as ServerMsg;
-      if (msg.t === 'welcome') selfId = msg.you;
+      if (msg.t === 'welcome') { selfId = msg.you; lobby = msg.lobby; }
+      if (msg.t === 'lobby') lobby = msg.lobby;
       if (msg.t === 'snapshot') {
         state = msg.state; ack = msg.ack; snapshots++;
         for (const bullet of state.bullets) if (bullet.owner === selfId) bullets.add(bullet.id);
@@ -119,8 +129,9 @@ try {
       if (msg.t === 'error') errors.push(`protocol: ${msg.message}`);
     });
   });
-  await page.goto(`${base}/?debug=input&trace=1`, { waitUntil: 'domcontentloaded' });
-  await page.getByTestId('create-room').tap();
+  await page.goto(`${base}/?debug=input`, { waitUntil: 'domcontentloaded' });
+  await page.getByTestId('create-room').click();
+  await page.waitForURL(/\/r\/[A-Z]{4}/);
   await page.getByTestId('player-repo-input').fill('lodash/lodash');
   await page.getByTestId('player-repo-submit').tap();
   await page.locator('[data-testid="player-ready"][data-status="ready"]').waitFor({ timeout: 45_000 });
@@ -129,56 +140,93 @@ try {
   await page.locator('[data-testid="boss-ready"][data-status="ready"]').waitFor({ timeout: 45_000 });
   // Three normal AI teammates draw aggro so this control test can run without a human dodging.
   for (let i = 0; i < 3; i++) { await page.getByTestId('bots-plus').tap(); await sleep(120); }
-  await page.getByTestId('start-match').tap();
-  await page.getByTestId('game-canvas').waitFor();
-  // Tap the actual attack area: permission must also work without a modal/enable button.
-  // The compact pill is intentionally hidden during the cinematic in the current UI.
-  await page.touchscreen.tap(120, 350);
+  const start = page.locator('[data-testid="start-match"]:visible');
+  const enable = page.getByTestId('controls-motion');
+  const mine = () => lobby?.players.find(player => player.id === selfId);
+  const assertLobbyBlocked = async (label: string) => {
+    await until(() => mine()?.controlsReady === false, `${label}: server controlsReady=false`);
+    await start.waitFor({ state: 'visible' });
+    assert(await start.isDisabled(), `${label}: real START must be disabled`);
+    assert.equal(lobby?.phase, 'lobby');
+    assert.equal(starts.length, 0, 'no start message may precede actual readiness');
+    assert.equal(snapshots, 0, 'permission cases must run before the match/countdown');
+    check(label, { phase: lobby?.phase, controlsReady: mine()?.controlsReady, startDisabled: true, startMessages: starts.length });
+  };
+  await enable.waitFor({ state: 'visible' });
+  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), 0);
+  await assertLobbyBlocked('lobby initially blocks START until motion is enabled');
+
+  // Consent denial is tested in the real pre-fight controls card, never in-game.
+  await enable.click();
   let permissions = await page.evaluate(() => (window as any).__permissionCalls);
   assert.equal(permissions.length, 2);
-  assert(permissions.every((p: any) => p.active && p.trusted && p.accepted && (p.event === 'touchend' || p.event === 'click')));
-  check('both iOS permissions in trusted touchend/click activation', permissions);
-  await page.locator('[data-testid="input-sensors"][data-mode="touch"]').waitFor();
-  await page.getByTestId('motion-enable').waitFor({ state: 'visible' });
-  assert.equal(await page.getByTestId('input-sensors').innerText(), 'tap to enable tilt');
-  check('denied permission stays off and offers a real retry button', { label: await page.getByTestId('input-sensors').innerText() });
-  await page.evaluate(() => {
-    const w = window as any; w.__permissionDecision = 'granted'; w.__holdPermission = true;
-  });
-  await page.getByTestId('motion-enable').tap();
+  assert(permissions.every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted && p.decision === 'denied'));
+  await until(() => controls.some(control => !control.ready), 'unready controls report');
+  await assertLobbyBlocked('denied lobby permission keeps native controls unready and START blocked');
+  check('both lobby native permission APIs run synchronously in trusted active click', permissions);
+
+  await page.evaluate(() => { const w = window as any; w.__permissionDecision = 'granted'; w.__holdPermission = true; });
+  await enable.click();
   permissions = await page.evaluate(() => (window as any).__permissionCalls);
-  assert.equal(permissions.length, 4, 'denied native attempt must not remain cached');
-  assert(permissions.slice(2).every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted));
-  // Finite readings arriving while the native prompt is still unresolved must be ignored.
-  await page.evaluate(() => { (window as any).__motion.enabled = true; }); await sleep(120);
-  assert.notEqual(await page.getByTestId('input-sensors').getAttribute('data-status'), 'on');
-  assert.equal(await page.getByTestId('input-sensors').innerText(), 'tap to enable tilt');
-  check('pending native prompt + sensor samples cannot claim motion on', permissions.slice(2));
+  assert.equal(permissions.length, 4, 'real retry must call both APIs again');
+  assert(permissions.slice(2).every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted && p.decision === 'pending'));
+  await page.evaluate(() => { (window as any).__motion.enabled = true; }); await sleep(150);
+  assert(!(await page.evaluate(() => (window as any).__permissionStates.some((snapshot: any) => snapshot.ready))), 'pre-grant readings must not ready the phone');
+  await assertLobbyBlocked('pending native prompt ignores sensor samples and keeps START blocked');
+
   await page.evaluate(() => {
     const w = window as any; w.__motion.enabled = false; w.__holdPermission = false;
     for (const resolve of w.__permissionResolvers.splice(0)) resolve('granted');
   });
-  await sleep(100);
-  assert.notEqual(await page.getByTestId('input-sensors').getAttribute('data-status'), 'on');
-  await page.getByTestId('motion-enable').waitFor({ state: 'visible' });
-  await page.screenshot({ path: join(output, 'permission-granted-awaiting-sensors.png') });
-  check('native granted without subsequent sensor data still asks to enable tilt', { label: await page.getByTestId('input-sensors').innerText() });
+  await sleep(150);
+  // Skipping training is a normal UI action. It must not bypass permission/readiness.
+  if (await page.getByTestId('training-skip').isVisible()) await page.getByTestId('training-skip').click();
+  await assertLobbyBlocked('native granted without fresh readings still blocks START');
+  await page.screenshot({ path: join(output, 'lobby-granted-awaiting-sensors.png') });
+  await sleep(1600);
+  await assertLobbyBlocked('no sensor events after grant remain unready in the lobby');
+
+  await page.evaluate(() => { (window as any).__motion.enabled = true; });
+  await until(() => mine()?.controlsReady === true, 'fresh sensor readings -> real server controlsReady');
+  const readyDeadline = Date.now() + 5000;
+  while (!await start.isEnabled() && Date.now() < readyDeadline) await sleep(40);
+  assert(await start.isEnabled(), 'START enabled only after native grant AND fresh sensor readings');
+  assert(controls.some(control => control.ready && control.mode === 'standard'), 'real controls ready message must reach server');
+  check('fresh lobby readings set controlsReady and enable real START', { controlsReady: mine()?.controlsReady, reports: controls, nativeCalls: permissions.length });
+  await page.screenshot({ path: join(output, 'lobby-ready.png') });
+  await start.click();
+  await page.getByTestId('game-canvas').waitFor();
+  await page.locator('[data-testid="input-sensors"][data-status="on"]').waitFor();
+  await until(() => state?.status === 'fighting', 'real fighting snapshots');
+  assert.equal(starts.length, 1);
+  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), 4, 'lobby grant must carry into game without a new native request');
+  assert(!(await page.getByTestId('motion-gate').isVisible()), 'ready lobby entry must not show countdown permission overlay');
+  check('only ready lobby entry starts match and carries native grant into game', { starts: starts.length, source: inputs.at(-1)?.frame.source, nativeCalls: 4 });
+
+  // Preserve in-game loss/recovery coverage after the legitimate pre-fight gate.
+  const lostSeq = lastSeq();
+  await page.evaluate(() => { (window as any).__motion.enabled = false; });
   await page.locator('[data-testid="input-sensors"][data-mode="touch"]').waitFor();
+  const fallbackPacket = await until(() => inputs.find(input => input.frame.seq > lostSeq && input.frame.source === 'touch')?.frame, 'in-game sensor loss fallback frame');
+  await until(() => ack >= fallbackPacket.seq, 'server ack for sensor-loss fallback');
   assert.equal(await page.locator('.kj-touch-button,.kj-touch-joystick-zone,[data-testid=input-dash],[data-testid=input-skill]').count(), 0);
-  check('no events -> touch fallback after 1.5s', { mode: await page.getByTestId('input-sensors').getAttribute('data-mode') });
+  check('in-game lost sensors fall back to touch without virtual controls', { seq: fallbackPacket.seq, ack, mode: 'touch' });
+  await page.screenshot({ path: join(output, 'game-sensors-lost.png') });
   await page.evaluate(() => { (window as any).__motion.enabled = true; });
   await page.locator('[data-testid="input-sensors"][data-status="on"]').waitFor();
-  await sleep(450);
-  assert.equal(await page.locator('.kj-touch-button,.kj-touch-joystick-zone,[data-testid=input-dash],[data-testid=input-skill]').count(), 0);
-  await until(() => state?.status === 'fighting', 'real fighting snapshots');
-  check('late sensors recover motion with zero control widgets', { source: inputs.at(-1)?.frame.source, uprightNeutral: [45, 0] });
+  await page.getByTestId('motion-gate').waitFor({ state: 'hidden' });
+  const recovered = await until(() => inputs.find(input => input.frame.seq > fallbackPacket.seq && input.frame.source === 'motion')?.frame, 'recovered motion input');
+  await until(() => ack >= recovered.seq, 'server ack for recovered motion');
+  await sleep(250);
+  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), 4);
+  check('fresh in-game readings recover motion and dismiss gate without re-request', { seq: recovered.seq, ack, horizontalReference: [0, 0] });
   for (const direction of [
-    { name: 'right roll', beta: 45, gamma: 20, axis: 'x', sign: 1 },
-    { name: 'left roll', beta: 45, gamma: -20, axis: 'x', sign: -1 },
-    { name: 'down pitch', beta: 65, gamma: 0, axis: 'y', sign: 1 },
-    { name: 'up pitch', beta: 25, gamma: 0, axis: 'y', sign: -1 },
+    { name: 'right roll', beta: 0, gamma: 15, axis: 'x', sign: 1 },
+    { name: 'left roll', beta: 0, gamma: -15, axis: 'x', sign: -1 },
+    { name: 'down pitch', beta: 15, gamma: 0, axis: 'y', sign: 1 },
+    { name: 'up pitch', beta: -15, gamma: 0, axis: 'y', sign: -1 },
   ] as const) {
-    await pose(45, 0); await sleep(200);
+    await pose(0, 0); await sleep(200);
     const before = { x: me()!.x, y: me()!.y };
     const seq = lastSeq();
     await pose(direction.beta, direction.gamma); await sleep(550);
@@ -188,7 +236,7 @@ try {
     assert(inputs.some(i => i.frame.seq > seq && i.frame.move[direction.axis === 'x' ? 0 : 1] * direction.sign > 0.5));
     check(`snapshot movement: ${direction.name}`, { before, after, delta });
   }
-  await pose(45, 0); await sleep(250);
+  await pose(0, 0); await sleep(250);
   await attackEvidence('short tap reaches server + shoots', () => page.touchscreen.tap(120, 350));
   const cdp = await context.newCDPSession(page);
   async function actionEvidence(action: 'dash' | 'skill', label: string, trigger: () => Promise<unknown>) {
@@ -241,24 +289,24 @@ try {
     await sleep(100);
     await page.evaluate(() => {
       window.dispatchEvent(new DeviceMotionEvent('devicemotion', {
-        accelerationIncludingGravity: { x: 0, y: 6.9, z: 28 }, rotationRate: { alpha: 0, beta: 0, gamma: 0 }, interval: 30 }));
+        accelerationIncludingGravity: { x: 0, y: 0, z: 28 }, rotationRate: { alpha: 0, beta: 0, gamma: 0 }, interval: 30 }));
     });
     await page.evaluate(() => { (window as any).__motion.nullAcceleration = false; });
   });
   await page.evaluate(() => { (window as any).__motion.absolute = true; });
   if (await page.getByTestId('motion-recalibrate').isVisible()) await page.getByTestId('motion-recalibrate').tap();
   await sleep(450);
-  await pose(45, 20); await sleep(300);
+  await pose(0, 15); await sleep(300);
   assert(inputs.at(-1)!.frame.move[0] > 0.5);
   check('deviceorientationabsolute + recalibrate', { move: inputs.at(-1)!.frame.move });
-  await pose(45, 0);
+  await pose(0, 0);
   await page.getByTestId('input-debug').waitFor();
   assert((await page.getByTestId('input-debug').innerText()).includes('|a|'));
   await page.screenshot({ path: join(output, 'portrait-motion.png') });
-  const uploaded = await until(() => traceUploads[0], '20s sensor trace uploaded to real DEV endpoint');
+  const uploaded = await until(() => traceUploads.find(trace => trace.source === 'fight'), '20s sensor trace uploaded to real DEV endpoint');
   assert.equal(uploaded.status, 201); assert(uploaded.samples > 100 && uploaded.gyro);
   for (const gesture of ['tap:attack', 'long-press:skill', 'double-tap:dash', 'twist:dash', 'spin:skill']) assert(uploaded.gestures.includes(gesture), gesture);
-  check('20s raw sensor + gesture trace stored by server', uploaded);
+  check('automatic20s phone trace without trace flag stored by server', uploaded);
   assert.equal(errors.length, 0, errors.join('\n'));
   pass = true;
 } catch (error) {
@@ -266,8 +314,8 @@ try {
   await page.screenshot({ path: join(output, 'failure.png'), timeout: 4000 }).catch(() => {});
 } finally {
   const result = { pass, failure, base, viewport: { width: 390, height: 844, dpr: 3 },
-    proof: 'real app input -> WebSocket -> authoritative simulation snapshots; strict trusted touchend/click permission mocks + synthetic sensors, no physical phone; Vite HMR held inert in this tab only',
-    checks, errors, snapshots, inputs: inputs.length, ack, player: me(), consoleLog, traceUploads };
+    proof: 'real lobby native permission -> controlsReady -> enabled START -> game input -> WebSocket -> authoritative simulation snapshots; no ready bypass; strict trusted touchend/click permission mocks + synthetic sensors, no physical phone; Vite HMR held inert in this tab only',
+    checks, errors, snapshots, inputs: inputs.length, ack, lobby, starts, controls, player: me(), consoleLog, traceUploads };
   writeFileSync(join(output, 'summary.json'), `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(join(output, 'inputs.json'), `${JSON.stringify(inputs, null, 2)}\n`);
   console.log(JSON.stringify({ output, pass, failure, checks: checks.length, snapshots, inputs: inputs.length, errors }, null, 2));

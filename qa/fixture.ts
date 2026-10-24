@@ -8,7 +8,7 @@ import { join, type Peer } from './common.ts';
 
 // Local ephemeral WebSocket fixture: real RoomServer + real sim, offline profiles,
 // no auth credentials, enrichment providers, disk Hall writes or DEV mutations.
-export async function fixture(options: { accelerated?: boolean; services?: Partial<GameServices> } = {}) {
+export async function fixture(options: { accelerated?: boolean; services?: Partial<GameServices>; trace?: (stage: string) => void } = {}) {
   const httpServer = http.createServer();
   const wss = new WebSocketServer({ server: httpServer });
   const completed: unknown[] = [];
@@ -40,15 +40,26 @@ export async function fixture(options: { accelerated?: boolean; services?: Parti
   const peers: Peer[] = [];
   return {
     room, url: `ws://127.0.0.1:${port}`, completed, created: () => created,
+    status: () => ({ listening: httpServer.listening, webSockets: wss.clients.size }),
     async connect(resume?: string) {
       const client = await join(`ws://127.0.0.1:${port}`, room, resume);
       peers.push(client.peer); return client;
     },
     async close() {
+      options.trace?.('closing peers');
       for (const peer of peers) await peer.close();
+      options.trace?.('peers closed');
       rooms.close();
+      options.trace?.('room server closed');
       await new Promise<void>(resolve => wss.close(() => resolve()));
-      await new Promise<void>(resolve => httpServer.close(() => resolve()));
+      options.trace?.('websocket server closed');
+      await new Promise<void>(resolve => {
+        httpServer.close(() => resolve());
+        // ws has already drained. Destroy any HTTP handshake/keep-alive sockets
+        // still owned by this isolated fixture instead of awaiting their timeout.
+        httpServer.closeAllConnections();
+      });
+      options.trace?.('http server closed');
     },
   };
 }

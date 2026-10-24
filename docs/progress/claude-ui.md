@@ -1,4 +1,14 @@
-DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+DONE (safari autopsy) · DONE (archetypes) · DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## Safari autopsy — done (mock verified in real WebKit); real-match WebKit run still flaky
+- Reproduced in Playwright WebKit (iPhone SE 320px overflowed horizontally: squad-stats grid + long contribute URL). Fix in style.css "Safari/WebKit autopsy" block: scroller absolutely positioned (no 100% height chain), overflow-x hidden, min-width:0 on all autopsy grid/flex children, overflow-wrap:anywhere for links/text, max-width:100% for img/canvas/QR/share card, ≤380px compact grids.
+- `tools/safari-autopsy.ts` (WebKit regression): iPhone 15 / iPhone SE / desktop Safari 1440 × mock battle + edu autopsy → all pass (no horizontal overflow; new room / leave / rematch / adopt-organ / share reachable). `--real` plays a real room on DEV; its start step was just hardened (retry START) but not re-verified.
+- WebKit on this Arch host: Ubuntu libs (icu74, flite, libbacktrace; libjxl 0.8 → system 0.12 symlink) linked into ~/.cache/ms-playwright/webkit-2370/minibrowser-wpe/sys/lib; run with PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1.
+
+## Archetypes (claude-ui part) — done, not yet marked in header by request order
+- client/app/archetype.ts (labels, blurbs, "why this repo", airborne/burrowed hint). Lobby boss panel badge + why + blurb (verified with real sim kits: linux→KAIJU, django→HYDRA "7 components in import cycles → 3 heads", redis→MECHA), intro meta line, HUD boss name icon + "✈ airborne / ⇣ burrowed" hint, edge arrow suffix, autopsy dissection title with archetype death line, pose.t extrapolated in interpolation, mock kits/states carry archetype/pose/airborne.
+
+## NEXT (not started): permission gate UI (lobby "📱 tap to enable motion" per page load, send {t:'controls'}, cards/START list players[].controlsReady, pre-countdown overlay; WebKit stubbed-permission test), then rubric (docs/tasks/edu-rubric.md).
 
 ## Boss from your own GitHub repos — done
 - Boss panel (owner only, inside the owner controls) mounts the same `createGithubPicker(…, {kind:"boss"})`: stars-first, filter, 🔒, language, pushed-ago; picking fills the boss input and sends `setBoss` with `full_name`. Paste-link + famous-repo chips kept. Test ids `boss-github-connect` / `boss-github-repos` (hero picker keeps `github-*`).

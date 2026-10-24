@@ -1,5 +1,5 @@
 // Shared app context passed to every screen.
-import type { Autopsy, LobbyState, Role, ServerMsg } from "../../shared/types";
+import type { Autopsy, LobbyState, Role, ServerMsg, StudentFeedback } from "../../shared/types";
 import type { Conn, ConnStatus } from "./net";
 import { h } from "./util";
 
@@ -10,6 +10,8 @@ export interface AppCtx {
   you: string | null;
   lobby: LobbyState | null;
   autopsy: Autopsy | null;
+  feedback?: StudentFeedback[];
+  token?: string;
   conn: Conn;
   status: ConnStatus;
   mock: boolean;

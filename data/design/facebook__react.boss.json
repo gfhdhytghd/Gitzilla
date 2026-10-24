@@ -32,15 +32,15 @@
     "One head returns. Two more recurse."
   ],
   "attackNames": {
-    "0-summon-0": "render() Lockfile Storm",
-    "0-slam-1": "Component() Kernel Panic",
-    "1-cascade-0": "App() Dangling Pointer",
-    "2-cascade-0": "fn() Deadlock",
-    "3-cascade-0": "Foo() Split Brain",
-    "4-cascade-0": "Child() Merge Conflict",
-    "5-cascade-0": "get() Memory Leak",
-    "6-cascade-0": "callback() Rebase Hell",
-    "7-cascade-0": "create() Circular Import"
+    "0-laser-0": "render() </> Breath",
+    "0-fan-1": "Component() Panic!",
+    "1-charge-0": "App() History Rewrite",
+    "2-spiral-0": "fn() Recursion",
+    "3-laser-0": "Foo() Race Condition",
+    "4-fan-0": "Child() Unhandled Error",
+    "5-charge-0": "get() git push --force",
+    "6-spiral-0": "callback() Callback Hell",
+    "7-laser-0": "create() grep Beam"
   },
   "limbNames": {
     "limb-0": "x() Antenna",

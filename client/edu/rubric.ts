@@ -2,49 +2,18 @@
 // lobby card "how you'll be judged" (criteria + a pre-fight estimate from their real report card).
 // Parsing happens server-side (rubric/ by codex-rubric via POST /api/rubric/parse); this file only edits the result.
 import type { CriterionResult, QualityStat, Rubric, RubricCriterion, RubricSignal } from "../../shared/types.ts";
+import { weightedScore as exactWeightedScore } from "../../rubric/index.ts";
 import { h } from "../app/util.ts";
 import { richText } from "./feed.ts";
 import { SIGNALS, SIGNAL_ORDER, estimateFromQuality, localDefaultRubric, scoreColor, targetText, weightPercents, weightedScore } from "./rubric-data.ts";
 import "./edu.css";
 import "./rubric.css";
+import { serverParse, type ParseFn, type ParseInput } from "./transport.ts";
+export { serverParse, type ParseFn, type ParseInput } from "./transport.ts";
 
-export type ParseInput = { text: string; filename?: string } | { file: File };
-export type ParseFn = (input: ParseInput) => Promise<Rubric>;
-
-// rubric/ (codex-rubric) is pure TS; when it exists the client can parse locally if the server endpoint is missing.
-const localRubric = import.meta.glob("../../rubric/index.ts") as Record<string, () => Promise<{ parseRubric?: (text: string, filename?: string) => Rubric; defaultRubric?: () => Rubric }>>;
-const loadLocal = async () => (Object.values(localRubric)[0] ? await Object.values(localRubric)[0]() : null);
-
-/** Default parser: POST the doc to the server (codex-net), falling back to rubric/ in the browser for text. */
-export function serverParse(opts: { room?: string; token?: string } = {}): ParseFn {
-  return async (input) => {
-    const isFile = "file" in input;
-    const name = isFile ? input.file.name : input.filename ?? "rubric.md";
-    const type = isFile ? input.file.type || (/\.pdf$/i.test(name) ? "application/pdf" : "text/markdown") : "text/markdown";
-    const qs = new URLSearchParams({ filename: name, ...(opts.room ? { room: opts.room } : {}) });
-    let res: Response | null = null;
-    try {
-      res = await fetch(`/api/rubric/parse?${qs}`, {
-        method: "POST",
-        headers: { "content-type": type, ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}) },
-        body: isFile ? input.file : input.text,
-      });
-    } catch {
-      res = null;
-    }
-    if (res?.ok) return (await res.json()) as Rubric;
-    if (!res || res.status === 404) {
-      const local = await loadLocal();
-      if (local?.parseRubric && (!isFile || !/pdf/.test(type))) return local.parseRubric(isFile ? await input.file.text() : input.text, name);
-    }
-    throw new Error(res ? (await res.text().catch(() => "")) || `parse failed (${res.status})` : "can't reach the server");
-  };
-}
-
-/** The server's default rubric when rubric/ is available in the bundle, else the built-in mirror. */
+/** The exact same default used by server scoring. */
 export async function defaultRubric(): Promise<Rubric> {
-  const local = await loadLocal().catch(() => null);
-  return local?.defaultRubric?.() ?? localDefaultRubric();
+  return localDefaultRubric();
 }
 
 const KEYWORDS: [RegExp, RubricSignal][] = [
@@ -64,6 +33,30 @@ const KEYWORDS: [RegExp, RubricSignal][] = [
 export const guessSignal = (line: string): RubricSignal => KEYWORDS.find(([re]) => re.test(line))?.[1] ?? "check";
 
 const clone = (r: Rubric): Rubric => JSON.parse(JSON.stringify(r));
+// Sliders use relative points on a 0..100 scale, including after server fraction normalization.
+export function editableRubric(r: Rubric): Rubric {
+  const copy = clone(r), total = copy.criteria.reduce((sum, c) => sum + Math.max(0, c.weight), 0);
+  if (total) copy.criteria.forEach(c => { c.weight = Math.round(c.weight / total * 1e8) / 1e6; });
+  return copy;
+}
+// Compare contract values, independent of object insertion order or relative weight units.
+// Criterion and unparsed-line order remain meaningful; only server-trimmed labels are trimmed.
+export function rubricsEqual(a: Rubric, b: Rubric): boolean {
+  const canonical = (r: Rubric) => {
+    const total = r.criteria.reduce((sum, c) => sum + Math.max(0, c.weight), 0);
+    return {
+      title: r.title.trim(), source: r.source,
+      criteria: r.criteria.map(c => ({
+        id: c.id, name: c.name.trim(), description: c.description, signal: c.signal,
+        weight: total ? Math.round(Math.max(0, c.weight) / total * 1e8) / 1e8 : 0,
+        check: c.check ? { kind: c.check.kind, value: c.check.value } : null,
+        target: c.target ?? null,
+      })),
+      unparsed: r.unparsed ?? [],
+    };
+  };
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+}
 const uid = () => `c${Math.random().toString(36).slice(2, 8)}`;
 
 export interface RubricEditor {
@@ -77,12 +70,17 @@ export interface RubricEditor {
 export function createRubricEditor(opts: { current?: Rubric | null; parse?: ParseFn; onUse(r: Rubric): void; room?: string; token?: string }): RubricEditor {
   const parse = opts.parse ?? serverParse({ room: opts.room, token: opts.token });
   let current: Rubric | null = opts.current ?? null;
-  let draft: Rubric = clone(current ?? localDefaultRubric());
+  let draft: Rubric = editableRubric(current ?? localDefaultRubric());
   let touched = false;
-  if (!current) defaultRubric().then((d) => { if (!touched) { draft = clone(d); render(); } });
   let status: { text: string; kind: "" | "busy" | "err" | "ok" } = { text: "", kind: "" };
 
   const el = h("div.rb-editor");
+  const markEdited = () => {
+    touched = true;
+    draft.source = 'doc';
+    const label = el.querySelector('.rb-source');
+    if (label) label.textContent = 'custom rubric';
+  };
   const fileInput = h("input", { type: "file", accept: ".md,.markdown,.txt,.pdf,text/markdown,text/plain,application/pdf", hidden: true }) as HTMLInputElement;
   const paste = h("textarea.rb-paste", { rows: 4, placeholder: "…or paste the grading criteria here, e.g.\nTesting (30%): unit tests for the main modules\nDocumentation — 20 pts: README with setup steps\nNo file over 300 lines" }) as HTMLTextAreaElement;
 
@@ -91,13 +89,13 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
     render();
     try {
       const r = await parse(input);
-      draft = clone(r);
+      draft = editableRubric(r);
       draft.criteria.forEach((c) => (c.id ||= uid()));
       touched = true;
       const n = draft.criteria.length, u = draft.unparsed?.length ?? 0;
       status = { text: `✓ found ${n} criteri${n === 1 ? "on" : "a"}${u ? ` · ${u} line${u === 1 ? "" : "s"} to check below` : ""}`, kind: "ok" };
     } catch (e) {
-      status = { text: `✗ ${(e as Error).message}. Try a .md/.txt file or paste the text.`, kind: "err" };
+      status = { text: `✗ ${(e as Error).message}`, kind: "err" };
     }
     render();
   };
@@ -126,25 +124,25 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
     h("button.btn.rb-parse", { type: "button", onclick: () => paste.value.trim() && run({ text: paste.value, filename: "pasted.md" }, "pasted text") }, "$ parse text"),
   );
 
-  const same = () => !!current && JSON.stringify(current) === JSON.stringify(draft);
+  const same = () => !!current && rubricsEqual(current, draft);
 
   function render() {
     const pct = weightPercents(draft.criteria);
     const rows = draft.criteria.map((c, i) => criterionRow(c, pct[i], i));
     el.replaceChildren(...([
       h("div.rb-head", null,
-        h("div", null, h("div.rb-kicker", null, "HOW REPOS ARE JUDGED"), h("input.rb-title", { value: draft.title, "aria-label": "rubric title", oninput: (e: Event) => { draft.title = (e.target as HTMLInputElement).value; touched = true; foot(); } })),
-        h("span.rb-source", null, draft.source === "doc" ? "from your document" : "default rubric")),
+        h("div", null, h("div.rb-kicker", null, "HOW REPOS ARE JUDGED"), h("input.rb-title", { value: draft.title, "aria-label": "rubric title", oninput: (e: Event) => { draft.title = (e.target as HTMLInputElement).value; markEdited(); foot(); } })),
+        h("span.rb-source", null, draft.source === "doc" ? "custom rubric" : "default rubric")),
       drop,
       status.text ? h(`div.rb-status.${status.kind || "info"}`, null, status.text) : null,
       h("div.rb-criteria", null, ...rows),
-      h("button.rb-add", { type: "button", onclick: () => { draft.criteria.push({ id: uid(), name: "New criterion", weight: 10, signal: "check", description: "" }); touched = true; render(); } }, "+ add criterion"),
+      h("button.rb-add", { type: "button", onclick: () => { draft.criteria.push({ id: uid(), name: "New criterion", weight: 10, signal: "check", description: "" }); markEdited(); render(); } }, "+ add criterion"),
       draft.unparsed?.length
         ? h("div.rb-unparsed", null,
             h("div.rb-unparsed-title", null, `Lines I couldn't map to a measurement (${draft.unparsed.length}). Add them as criteria or ignore them:`),
             ...draft.unparsed.map((line, i) => h("div.rb-uline", null,
               h("span", null, line),
-              h("button.rb-link", { type: "button", onclick: () => { draft.criteria.push({ id: uid(), name: line.replace(/^[-*#\d.)\s]+/, "").slice(0, 60), weight: 10, signal: guessSignal(line), description: line }); draft.unparsed!.splice(i, 1); touched = true; render(); } }, "+ add"),
+              h("button.rb-link", { type: "button", onclick: () => { draft.criteria.push({ id: uid(), name: line.replace(/^[-*#\d.)\s]+/, "").slice(0, 60), weight: 10, signal: guessSignal(line), description: line }); draft.unparsed!.splice(i, 1); markEdited(); render(); } }, "+ add"),
               h("button.rb-link.dim", { type: "button", onclick: () => { draft.unparsed!.splice(i, 1); touched = true; render(); } }, "ignore"))))
         : null,
       footer,
@@ -156,22 +154,22 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
   function foot() {
     const ok = draft.criteria.length > 0 && draft.criteria.some((c) => c.weight > 0);
     footer.replaceChildren(
-      h("button.btn.btn-primary", { type: "button", disabled: !ok || same(), onclick: () => { const r = clone(draft); opts.onUse(r); current = r; foot(); } }, same() ? "✓ in use" : "$ use this rubric"),
-      h("button.btn.btn-ghost", { type: "button", onclick: async () => { draft = clone(await defaultRubric()); touched = false; status = { text: "", kind: "" }; render(); } }, "reset to default"),
+      h("button.btn.btn-primary", { type: "button", disabled: !ok || same(), onclick: () => { opts.onUse(clone(draft)); } }, same() ? "✓ in use" : "$ use this rubric"),
+      h("button.btn.btn-ghost", { type: "button", onclick: () => { draft = editableRubric(localDefaultRubric()); touched = true; status = { text: "", kind: "" }; render(); } }, "reset to default"),
       h("span.rb-foot-note", null, ok ? "Students see this on their lobby card as “how you'll be judged”." : "Add at least one criterion with weight > 0."),
     );
   }
 
   function criterionRow(c: RubricCriterion, pct: number, i: number): HTMLElement {
     const info = SIGNALS[c.signal];
-    const changed = () => { touched = true; render(); };
+    const changed = () => { markEdited(); render(); };
     const unit = info.unit;
     const shownTarget = c.target === undefined ? "" : unit === "%" ? String(Math.round((c.target <= 1 ? c.target * 100 : c.target) * 10) / 10) : String(c.target);
     return h(
       "div.rb-row",
       null,
       h("div.rb-row-top", null,
-        h("input.rb-name", { value: c.name, "aria-label": "criterion name", oninput: (e: Event) => { c.name = (e.target as HTMLInputElement).value; touched = true; foot(); } }),
+        h("input.rb-name", { value: c.name, "aria-label": "criterion name", oninput: (e: Event) => { c.name = (e.target as HTMLInputElement).value; markEdited(); foot(); } }),
         h("span.rb-pct", null, `${pct}%`),
         h("button.rb-del", { type: "button", title: "remove", onclick: () => { draft.criteria.splice(i, 1); changed(); } }, "×")),
       h("div.rb-row-mid", null,
@@ -202,7 +200,7 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
     el,
     setCurrent(r) {
       current = r ?? null;
-      if (current && !touched) draft = clone(current);
+      if (current && (!touched || same())) { draft = editableRubric(current); touched = false; }
       render();
     },
     draft: () => clone(draft),
@@ -215,14 +213,14 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
 export function createJudgedCard(opts: { rubric: Rubric; quality?: QualityStat[]; preview?: CriterionResult[] | null; compact?: boolean }): HTMLElement {
   const { rubric } = opts;
   const pct = weightPercents(rubric.criteria);
-  const est = opts.preview?.length
+  const exact = opts.preview !== undefined && opts.preview !== null;
+  const est = exact
     ? rubric.criteria.map((c) => {
         const r = opts.preview!.find((x) => x.criterionId === c.id);
         return { criterionId: c.id, score: r ? r.score : null, evidence: r?.evidence ?? "measured after the fight" };
       })
     : estimateFromQuality(rubric, opts.quality);
-  const total = weightedScore(rubric, est);
-  const exact = !!opts.preview?.length;
+  const total = exact ? exactWeightedScore(rubric, opts.preview!) : weightedScore(rubric, est);
   return h(
     `div.rb-judged${opts.compact ? ".compact" : ""}`,
     null,

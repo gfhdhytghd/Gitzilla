@@ -32,15 +32,15 @@
     "One head returns. Two more recurse."
   ],
   "attackNames": {
-    "0-fan-0": "__init__() Null Pointer",
-    "0-charge-1": "get() Branch Crash",
-    "1-cascade-0": "name() Deadlock",
-    "2-cascade-0": "clean() Split Brain",
-    "3-cascade-0": "value() Merge Conflict",
-    "4-cascade-0": "path() Memory Leak",
-    "5-cascade-0": "create() Rebase Hell",
-    "6-cascade-0": "request() Circular Import",
-    "7-cascade-0": "render() Cache Stampede"
+    "0-laser-0": "__init__() </> Breath",
+    "0-fan-1": "get() Null Pointer",
+    "1-charge-0": "name() Branch Crash",
+    "2-spiral-0": "clean() Stack Trace",
+    "3-laser-0": "value() Race Condition",
+    "4-fan-0": "path() throw",
+    "5-charge-0": "create() History Rewrite",
+    "6-spiral-0": "request() Recursive Descent",
+    "7-laser-0": "render() grep Beam"
   },
   "limbNames": {
     "limb-0": "deconstruct() Coil",

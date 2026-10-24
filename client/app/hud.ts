@@ -2,6 +2,7 @@
 import type { BossKit, GameEvent, MatchState, PlayerState } from "../../shared/types";
 import { fmtTime, h, shortRepo } from "./util";
 import { codeSpan } from "./codefmt";
+import { ARCH, bossStateHint } from "./archetype";
 
 const setText = (el: HTMLElement, s: string) => {
   if (el.textContent !== s) el.textContent = s;
@@ -112,6 +113,7 @@ export function createHud(spectator: boolean): Hud {
   const tgMain = h("div.tg-main");
   const tgTrace = h("div.tg-trace");
   const tgTarget = h("div.tg-target");
+  const bossHint = h("div.boss-hint", { "data-testid": "boss-state-hint" });
   const telegraph = h("div.hud-telegraph", null, tgMain, tgTrace, tgTarget);
 
   // --- misc ---
@@ -150,7 +152,7 @@ export function createHud(spectator: boolean): Hud {
   );
   const dnBar = downed.querySelector(".dn-bar") as HTMLElement;
 
-  const el = h("div.hud" + (spectator ? ".spectator" : ""), null, bossPanel, pvpPanel, telegraph, review, timer, spectator ? null : selfPanel, team, spectator ? null : skillBox, combo, log, spectator ? null : downed, toasts);
+  const el = h("div.hud" + (spectator ? ".spectator" : ""), null, bossPanel, pvpPanel, bossHint, telegraph, review, timer, spectator ? null : selfPanel, team, spectator ? null : skillBox, combo, log, spectator ? null : downed, toasts);
 
   let skillMax = new Map<string, number>();
   let lastTelegraphName = "";
@@ -236,7 +238,11 @@ export function createHud(spectator: boolean): Hud {
       // boss
       if (boss) {
       const kit = boss.kit;
-      setText(bossName, kit.name);
+      setText(bossName, kit.archetype && ARCH[kit.archetype] ? `${ARCH[kit.archetype].icon} ${kit.name}` : kit.name);
+      const hint = bossStateHint(boss);
+      setText(bossHint, hint?.text ?? "");
+      toggle(bossHint, "show", !!hint && s.status === "fighting");
+      if (hint) bossHint.dataset.kind = hint.kind;
       const pct = Math.max(0, boss.hp / boss.maxHp);
       bossHpLag = Math.max(pct, bossHpLag - 0.004);
       if (bossHpLag < pct) bossHpLag = pct;

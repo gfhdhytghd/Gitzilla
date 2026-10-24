@@ -31,10 +31,10 @@
     "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-ring-0": "__init__() Infinite Scroll",
-    "0-charge-1": "get_batch() Force Push",
-    "1-spiral-0": "encode() Recursion",
-    "2-ring-0": "GPT() Busy Wait"
+    "0-laser-0": "__init__() </> Breath",
+    "0-slam-1": "get_batch() Stack Overflow",
+    "1-fan-0": "encode() Throw Storm",
+    "2-charge-0": "GPT() Force Push"
   },
   "limbNames": {
     "limb-0": "LayerNorm() Antenna",

@@ -5,6 +5,7 @@ export type BossCode = NonNullable<BossKit['code']> & {
   bigFiles: { path: string; loc: number }[];
   attackSymbols: Record<string, string>;
   limbNames: Record<string, string>;
+  archetypeReason?: string;
 };
 export const signature = (symbol: string) => symbol ? `${symbol.replace(/\(.*$/, '').slice(0, 40)}()` : '';
 

@@ -3,7 +3,7 @@ import type { Autopsy, BossAttack, BossKit, BossState, Bullet, GameEvent, GameMo
 import { BossAi } from './bossAi.ts';
 import { clamp, distance, random, unit } from './math.ts';
 import { activeBossRegions, bossMouth, bossRegions } from './regions.ts';
-import { ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
+import { archetypeContactCost, ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
 import { createObstacles, segmentRect } from './arena.ts';
 import { createPerkOffer, hasPerk } from './perks.ts';
 import { safeInput } from './input.ts';
@@ -12,6 +12,8 @@ import { ClassroomMatch } from './pvp.ts';
 import type { SocialBossKit } from './social.ts';
 import { reconcileCodeNames } from './code.ts';
 import { forgetPlayer } from './departure.ts';
+import { BossMotion } from './bossMotion.ts';
+import { bossAnchors } from '../shared/kaiju-anatomy.ts';
 
 export interface Match {
   removePlayer(id: string): void;
@@ -30,8 +32,8 @@ interface PlayerRuntime {
   shot: number; lastDamage: number; armorTick: number; dash: number; dashDir: [number, number];
   buff: number; history: { t: number; x: number; y: number }[];
 }
-interface ShotRuntime { damage: number; life: number }
-interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string; targetPlayer?: string; mouth?: boolean }
+interface ShotRuntime { damage: number; life: number; push: number }
+interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string; targetPlayer?: string; mouth?: boolean; head?: number }
 
 class ArenaMatch implements BattleMatch {
   private state: BattleState;
@@ -56,6 +58,8 @@ class ArenaMatch implements BattleMatch {
   private reviewProgress = new Map<string, { pad: string; t: number }>();
   private reviewSeed = ENCOUNTER_SEED;
   private reviveBy = new Map<string, string>();
+  private motion: BossMotion;
+  private ending: { t: number; at: number } | null = null;
 
   constructor(players: { id: string; name: string; kit: PlayerKit }[], kit: BossKit) {
     this.ai = new BossAi(ENCOUNTER_SEED ^ players.length, players.length);
@@ -71,8 +75,9 @@ class ArenaMatch implements BattleMatch {
       })),
       boss: { x: 335, y: 144, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1, regions: [],
         limbs: kit.limbs.map(l => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })),
-        casting: null, targetPlayer: null, enraged: false, kit: reconcileCodeNames(kit) },
+        casting: null, targetPlayer: null, enraged: false, pose: { name: 'idle', t: 0, total: 1, dir: [-1, 0] }, airborne: false, kit: reconcileCodeNames(kit) },
     };
+    this.motion = new BossMotion(this.state.boss, players.length);
     this.state.boss.regions = bossRegions(this.state.boss);
     this.state.obstacles = createObstacles(kit, () => this.id++);
     for (const p of this.state.players) this.players.set(p.id, { shot: 0, lastDamage: -10, armorTick: 0, dash: 0, dashDir: [1, 0], buff: 0, history: [] });
@@ -85,6 +90,7 @@ class ArenaMatch implements BattleMatch {
     if (!s.players.some(p => p.id === id)) return;
     s.players = s.players.filter(p => p.id !== id);
     this.players.delete(id); this.decoys.delete(id); this.reviewProgress.delete(id);
+    this.motion.removePlayer(id);
     for (const bullet of forgetPlayer(s, id)) this.shots.delete(bullet);
     for (const hits of this.recent.values()) hits.delete(id);
     this.reviveBy.delete(id);
@@ -134,8 +140,13 @@ class ArenaMatch implements BattleMatch {
   private tick(dt: number, inputs: Map<string, InputFrame>) {
     const s = this.state;
     s.t += dt;
+    if (this.ending) {
+      this.ending.t += dt; this.motion.step(dt, [], true, false);
+      if (this.ending.t >= 2 - 1e-6) { s.status = 'victory'; this.emit({ type: 'victory' }); }
+      return;
+    }
     if (s.status === 'countdown') {
-      if (s.t < 2) return;
+      if (s.t < 2) { this.motion.step(dt, [], true, false); return; }
       s.status = 'fighting';
     }
     if (this.reviewQueued && s.boss.hp > 0) this.beginReview();
@@ -145,6 +156,7 @@ class ArenaMatch implements BattleMatch {
     if (!living.length) { this.finish(false); return; }
     this.updatePickups();
     if (s.perkOffer) {
+      this.motion.step(dt, living, true, false);
       this.updateReview(dt);
       if (s.t >= 360) this.finish(false);
       return;
@@ -154,9 +166,9 @@ class ArenaMatch implements BattleMatch {
       if (decoy && decoy.until > s.t) return { ...p, x: decoy.x, y: decoy.y, hp: 1, buffs: [], stats: { ...p.stats, damage: p.stats.damage * 3 + 1000 } };
       return p;
     });
-    const decision = this.ai.step(dt, s.boss, targets);
-    if (decision.started) this.telegraph(decision.started, decision.target!);
-    if (decision.fired) this.attack(decision.fired, decision.target!);
+    const decision = this.ai.step(dt, s.boss, targets, !this.motion.blocked);
+    if (decision.started) { this.motion.castStarted(decision.started); this.telegraph(decision.started, decision.target!); }
+    if (decision.fired) { this.motion.castFired(decision.fired, living); this.attack(decision.fired, decision.target!); }
     this.updatePressure(dt, targets);
     this.moveBoss(dt);
     s.boss.regions = bossRegions(s.boss);
@@ -168,6 +180,7 @@ class ArenaMatch implements BattleMatch {
       return false;
     });
     this.updateBullets(dt);
+    if (s.boss.hp <= 0) { this.finish(true); return; }
     if (this.reviewQueued && s.boss.hp > 0) { this.beginReview(); return; }
     this.updateHazards(dt);
     this.updateMinions(dt);
@@ -269,24 +282,29 @@ class ArenaMatch implements BattleMatch {
 
   private telegraph(a: BossAttack, target: [number, number]) {
     this.emit({ type: 'telegraph', attackId: a.id, name: a.name, targetPlayer: this.state.boss.targetPlayer });
-    if (a.kind === 'slam' || a.kind === 'cascade') {
-      this.hazard(a.kind, target[0], target[1], a.params.radius ?? 30, 0, a.telegraph + 0.45, a.telegraph, a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
+    const dive = a.kind === 'charge' && ['hydra', 'abyssal'].includes(this.state.boss.kit.archetype);
+    if (a.kind === 'slam' || a.kind === 'cascade' || dive) {
+      this.hazard(dive ? 'slam' : a.kind as 'slam' | 'cascade', target[0], target[1], a.params.radius ?? 30, 0, a.telegraph + 0.45, a.telegraph, a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
       if (a.kind === 'cascade') {
         for (const p of this.state.players.filter(p => p.alive && distance(p, { x: target[0], y: target[1] }) > 35).slice(0, 3))
           this.hazard('cascade', p.x, p.y, 23, 0, a.telegraph + 0.75, a.telegraph + 0.3, a.damage, a.id, p.id);
       }
     }
-    if (a.kind === 'laser' || a.kind === 'charge') {
+    if (a.kind === 'laser' || a.kind === 'charge' && !dive) {
       const b = this.state.boss;
       const origin = a.kind === 'laser' ? bossMouth(b) : b;
       const id = this.hazard('laser', origin.x, origin.y, a.kind === 'charge' ? 18 : 7, Math.atan2(target[1] - origin.y, target[0] - origin.x), a.telegraph + (a.kind === 'charge' ? 0.1 : 0.75), a.telegraph, a.kind === 'charge' ? 0 : a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
-      if (a.kind === 'laser') this.hazardData.get(id)!.mouth = true;
+      if (a.kind === 'laser') { this.hazardData.get(id)!.mouth = true; this.hazardData.get(id)!.head = b.pose.head; }
     }
   }
 
   private attack(a: BossAttack, target: [number, number]) {
     const b = this.state.boss;
-    const angle = Math.atan2(target[1] - b.y, target[0] - b.x);
+    const part = b.kit.archetype === 'mecha' && (a.kind === 'fan' || a.kind === 'charge')
+      ? bossAnchors(b.kit).limbs.find(l => l.tag === (a.kind === 'charge' ? 'arm' : 'jet'))
+      : b.kit.archetype === 'hydra' && a.kind === 'fan' ? bossAnchors(b.kit).limbs.find(l => l.tag === 'wing') : undefined;
+    const origin = part ? { x: b.x + part.dx, y: b.y + part.dy } : b;
+    const angle = Math.atan2(target[1] - origin.y, target[0] - origin.x);
     const speed = (a.params.speed ?? 50) * (b.phase === 3 ? 1.1 : 1);
     const count = a.params.count ?? 12;
     if (['ring', 'spiral', 'fan'].includes(a.kind)) {
@@ -295,12 +313,20 @@ class ArenaMatch implements BattleMatch {
         if (a.kind === 'spiral') {
           this.pending.push({ t: i * 0.085, angle: angle + i * 0.48, speed, damage: a.damage, x: b.x, y: b.y, kind: a.kind });
         } else {
-          this.bullet('boss', a.kind, b.x + Math.cos(theta) * 24, b.y + Math.sin(theta) * 24, Math.cos(theta) * speed, Math.sin(theta) * speed, 3, a.damage, 8);
+          this.bullet('boss', b.kit.archetype === 'mecha' && a.kind === 'ring' ? 'missile' : a.kind, origin.x + Math.cos(theta) * 24, origin.y + Math.sin(theta) * 24, Math.cos(theta) * speed, Math.sin(theta) * speed, 3, a.damage, 8, b.kit.archetype === 'hydra' && a.kind === 'fan' ? 6 : 0);
         }
       }
     } else if (a.kind === 'charge') {
-      this.charge = { vx: Math.cos(angle) * 190, vy: Math.sin(angle) * 190, t: Math.min(0.8, Math.hypot(target[0] - b.x, target[1] - b.y) / 190), damage: a.damage };
+      if (b.kit.archetype === 'mecha') this.bullet('boss', 'rocket-fist', origin.x, origin.y, Math.cos(angle) * 130, Math.sin(angle) * 130, 6, a.damage, 2.6);
+      else if (b.kit.archetype === 'hydra' || b.kit.archetype === 'abyssal') {
+        b.x = target[0]; b.y = target[1]; this.motion.constrain(b);
+      } else this.charge = { vx: Math.cos(angle) * 190, vy: Math.sin(angle) * 190, t: Math.min(0.8, Math.hypot(target[0] - b.x, target[1] - b.y) / 190), damage: a.damage };
     } else if (a.kind === 'summon') {
+      if (b.kit.archetype === 'mecha') {
+        for (let i = 0; i < Math.min(4, count); i++) this.pending.push({ t: i * 0.18, x: b.x, y: b.y,
+          angle: angle + (i - 1) * 0.22, speed, damage: a.damage, kind: 'missile' });
+        return;
+      }
       for (let i = 0; i < Math.min(4, count); i++) {
         const theta = i * Math.PI * 2 / count;
         if (this.state.minions.length < 12) this.state.minions.push({ id: this.id++, x: clamp(b.x + Math.cos(theta) * 55, 24, 456), y: clamp(b.y + Math.sin(theta) * 55, 24, 264), hp: 12, kind: b.kit.code?.todos[i % (b.kit.code.todos.length || 1)] ?? 'bug' });
@@ -310,16 +336,16 @@ class ArenaMatch implements BattleMatch {
 
   private moveBoss(dt: number) {
     const b = this.state.boss;
+    this.motion.step(dt, this.state.players.filter(p => p.alive), false, !!this.charge);
+    if (this.motion.takeFlightNotice()) this.emit({ type: 'telegraph', attackId: 'hydra-takeoff', name: 'Wings rising: heads + wings exposed', targetPlayer: null });
+    const emerge = this.motion.takeEmergePoint();
+    if (emerge) this.hazard('slam', emerge.x, emerge.y, 22, 0, 0.85, 0.85, 0, 'burrow-travel', emerge.targetPlayer);
     if (this.charge) {
       const c = this.charge;
       b.x = clamp(b.x + c.vx * dt, 70, ARENA_W - 70); b.y = clamp(b.y + c.vy * dt, 65, ARENA_H - 65);
+      this.motion.constrain(b);
       for (const p of this.state.players) if (distance(p, b) < 33) this.hurtPlayer(p, c.damage);
       c.t -= dt; if (c.t <= 0) this.charge = null;
-    } else if (!b.casting) {
-      // Slow orbit is readable on tilt controls, and returns the boss to a useful part of the arena.
-      const tx = 300 + Math.cos(this.state.t * 0.13) * 42, ty = 144 + Math.sin(this.state.t * 0.19) * 38;
-      const [x, y] = unit(tx - b.x, ty - b.y);
-      if (Math.hypot(tx - b.x, ty - b.y) > 2) { b.x += x * b.kit.speed * dt; b.y += y * b.kit.speed * dt; }
     }
   }
 
@@ -352,9 +378,9 @@ class ArenaMatch implements BattleMatch {
     this.pressureRound++;
   }
 
-  private bullet(owner: string, kind: string, x: number, y: number, vx: number, vy: number, r: number, damage: number, life: number) {
+  private bullet(owner: string, kind: string, x: number, y: number, vx: number, vy: number, r: number, damage: number, life: number, push = 0) {
     const bullet = { id: this.id++, owner, kind, x, y, vx, vy, r };
-    this.state.bullets.push(bullet); this.shots.set(bullet.id, { damage, life });
+    this.state.bullets.push(bullet); this.shots.set(bullet.id, { damage, life, push });
   }
 
   private updateBullets(dt: number) {
@@ -365,8 +391,14 @@ class ArenaMatch implements BattleMatch {
       meta.life -= dt;
       if (b.kind === 'staff' && b.owner !== 'boss') {
         const target = activeBossRegions(this.state.boss).sort((a, c) => distance(b, a) - distance(b, c))[0];
-        const [ux, uy] = unit(target.x - b.x, target.y - b.y);
-        b.vx += (ux * 160 - b.vx) * dt * 4; b.vy += (uy * 160 - b.vy) * dt * 4;
+        if (target) { const [ux, uy] = unit(target.x - b.x, target.y - b.y);
+          b.vx += (ux * 160 - b.vx) * dt * 4; b.vy += (uy * 160 - b.vy) * dt * 4; }
+      }
+      if (b.owner === 'boss' && b.kind === 'missile') {
+        const target = this.state.players.filter(p => p.alive).sort((a, c) => distance(b, a) - distance(b, c))[0];
+        if (target) { const angle = Math.atan2(b.vy, b.vx), desired = Math.atan2(target.y - b.y, target.x - b.x);
+          const turn = clamp(Math.atan2(Math.sin(desired - angle), Math.cos(desired - angle)), -dt * 0.23, dt * 0.23);
+          const speed = Math.hypot(b.vx, b.vy); b.vx = Math.cos(angle + turn) * speed; b.vy = Math.sin(angle + turn) * speed; }
       }
       const oldX = b.x, oldY = b.y;
       b.x += b.vx * dt; b.y += b.vy * dt;
@@ -386,7 +418,12 @@ class ArenaMatch implements BattleMatch {
       } else if (b.owner === 'boss') {
         const blocked = this.state.hazards.some(h => h.kind === 'firewall' && distance(h, b) <= h.r);
         if (blocked) hit = true;
-        else for (const p of this.state.players) if (p.alive && p.invuln <= 0 && distance(p, b) < 6 + b.r) { this.hurtPlayer(p, meta.damage, unit(b.vx, b.vy)); hit = true; break; }
+        else for (const p of this.state.players) if (p.alive && p.invuln <= 0 && distance(p, b) < 6 + b.r) {
+          const direction = unit(b.vx, b.vy); this.hurtPlayer(p, meta.damage, direction);
+          if (meta.push) { const x = clamp(p.x + direction[0] * meta.push, 23, ARENA_W - 23), y = clamp(p.y + direction[1] * meta.push, 23, ARENA_H - 23);
+            if (!this.state.obstacles.some(o => Math.abs(x - o.x) < o.w / 2 + 6 && Math.abs(y - o.y) < o.h / 2 + 6)) { p.x = x; p.y = y; } }
+          hit = true; break;
+        }
       } else {
         const player = this.state.players.find(p => p.id === b.owner)!;
         const minion = this.state.minions.find(m => m.hp > 0 && distance(m, b) <= 7 + b.r);
@@ -411,7 +448,7 @@ class ArenaMatch implements BattleMatch {
 
   private hurtBoss(p: PlayerState, id: string, base: number, x: number, y: number, direction = unit(x - p.x, y - p.y)) {
     const b = this.state.boss;
-    if (b.hp <= 0) return;
+    if (b.hp <= 0 || !activeBossRegions(b).some(region => region.id === id)) return;
     const limb = b.limbs.find(l => l.id === id);
     const kit = b.kit.limbs.find(l => l.id === id);
     const hits = this.recent.get(id) ?? new Map<string, number>();
@@ -429,6 +466,7 @@ class ArenaMatch implements BattleMatch {
       this.limbDamage.set(id, (this.limbDamage.get(id) ?? 0) + limbHit);
       limb.hp = Math.max(0, limb.hp - damage);
       if (limb.hp <= 0) {
+        this.motion.pose('stagger', 0.25);
         limb.broken = true; p.stats.limbsBroken++;
         this.emit({ type: 'limbBroken', limb: id, by: p.id });
         this.drop('heart', x - 5, y); this.drop('energy', x + 5, y);
@@ -445,13 +483,14 @@ class ArenaMatch implements BattleMatch {
     }
     this.hit({ type: 'hit', target: 'boss', ...(limb ? { limb: id } : {}), amount: dealt, x, y, combo }, p.id, direction, id === 'heart' || critical || combo >= 3);
     const ratio = b.hp / b.maxHp;
-    if (ratio <= b.kit.enrageAt && b.phase === 1) { b.phase = 2; b.enraged = true; this.emit({ type: 'phase', phase: 2 }); this.reviewQueued = true; }
-    if (ratio <= 0.15 && b.phase < 3) { b.phase = 3; b.enraged = true; this.emit({ type: 'phase', phase: 3 }); }
+    if (ratio <= b.kit.enrageAt && b.phase === 1) { b.phase = 2; b.enraged = true; this.motion.pose('roar', 0.9); this.emit({ type: 'phase', phase: 2 }); this.reviewQueued = true; }
+    if (ratio <= 0.15 && b.phase < 3) { b.phase = 3; b.enraged = true; this.motion.pose('enrage', 0.7); this.emit({ type: 'phase', phase: 3 }); }
     if (b.hp <= 0) p.stats.killingBlow = true;
   }
 
   private hurtPlayer(p: PlayerState, damage: number, direction = unit(p.x - this.state.boss.x, p.y - this.state.boss.y)) {
     if (!p.alive || p.invuln > 0 || damage <= 0) return;
+    damage /= archetypeContactCost(this.state.boss.kit.archetype, this.state.players.length);
     if (hasPerk(p, 'safe-mode')) damage *= 0.8;
     if (p.buffs.includes('fork')) damage *= 0.5;
     const armor = Math.min(p.armor, damage); p.armor -= armor; p.hp = Math.max(0, p.hp - (damage - armor));
@@ -471,7 +510,7 @@ class ArenaMatch implements BattleMatch {
     for (const p of this.state.players) p.buffs = p.buffs.filter(b => b !== 'firewall');
     this.state.hazards = this.state.hazards.filter(h => {
       const meta = this.hazardData.get(h.id)!; h.t += dt; h.armed = h.t >= meta.telegraph;
-      if (meta.mouth) { const origin = bossMouth(this.state.boss); h.x = origin.x; h.y = origin.y; }
+      if (meta.mouth) { const origin = bossMouth(this.state.boss, meta.head); h.x = origin.x; h.y = origin.y; }
       if (h.kind === 'laser' && h.armed && meta.damage > 0) h.angle += dt * 0.35 * (h.id % 2 ? 1 : -1);
       if (h.kind === 'firewall') {
         for (const p of this.state.players) if (p.alive && distance(p, h) < h.r) p.buffs.push('firewall');
@@ -545,6 +584,7 @@ class ArenaMatch implements BattleMatch {
 
   private beginReview() {
     this.reviewQueued = false;
+    this.motion.cancelTravel();
     this.cleanupMinions();
     this.state.perkOffer = createPerkOffer(this.reviewSeed, this.state.t);
     this.state.boss.casting = null;
@@ -590,6 +630,16 @@ class ArenaMatch implements BattleMatch {
   }
   private finish(victory: boolean) {
     if (this.over) return;
+    if (victory) {
+      if (!this.ending) {
+        this.ending = { t: 0, at: this.state.t };
+        this.motion.cancelTravel(); this.motion.pose('death', 2);
+        this.state.bullets = []; this.shots.clear(); this.state.hazards = []; this.hazardData.clear(); this.state.minions = [];
+        this.state.boss.casting = null; this.state.perkOffer = null; this.pending = []; this.pressure = []; this.charge = null;
+      }
+      return;
+    }
+    this.ending = null;
     this.state.status = victory ? 'victory' : 'defeat';
     this.emit({ type: victory ? 'victory' : 'defeat' });
   }
@@ -607,7 +657,7 @@ class ArenaMatch implements BattleMatch {
   autopsy(): BattleAutopsy {
     const s = this.state;
     return {
-      mode: 'battle', victory: s.status === 'victory', duration: Math.max(0, s.t - 2),
+      mode: 'battle', victory: s.status === 'victory' || !!this.ending, duration: Math.max(0, (this.ending?.at ?? s.t) - 2),
       boss: { repo: s.boss.kit.repo, heart: s.boss.kit.heart,
         ...structuredClone((s.boss.kit as SocialBossKit).social ?? {}),
         limbs: s.boss.kit.limbs.map(l => ({ component: l.component, broken: s.boss.limbs.find(other => other.id === l.id)!.broken, damageTaken: this.limbDamage.get(l.id) ?? 0,

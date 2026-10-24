@@ -5,15 +5,16 @@ import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
 import { codeSpan } from "./codefmt";
+import { ARCH, archetypeWhy } from "./archetype";
 import { createGenesisMount } from "./genesisMount";
 import { isTrained, openTraining } from "./training";
-import { loadMotionProfile, saveMotionProfile } from "../input";
+import { loadMotionProfile, saveMotionProfile, getMotionPermissionState, requestMotionPermission, subscribeMotionPermission, loadTiltSensitivity, saveTiltSensitivity, TILT_SENSITIVITIES, TILT_FULL_SPEED } from "../input";
 import type { MotionProfile } from "../../shared/types";
 import { createLogo } from "./logo";
 import { markCanvas } from "./mark";
 import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
-import { createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
+import { createRubricEditor, createJudgedCard, localDefaultRubric, type RubricEditor, createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
 import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo, store } from "./util";
 
@@ -69,7 +70,7 @@ function bossCode(k: BossKit): HTMLElement[] {
  * Phones: pick controls in the lobby (a real user gesture, so iOS permission prompts work) instead of
  * mid-intro. The choice is a client-local motion profile read by client/input at match start.
  */
-function createControlsCard(): HTMLElement {
+function createControlsCard(): { el: HTMLElement; dispose(): void } {
   const el = h("div.controls-card", { "data-testid": "controls-card" });
   const hasSensors = typeof (window as { DeviceMotionEvent?: unknown }).DeviceMotionEvent !== "undefined";
   const render = () => {
@@ -91,41 +92,44 @@ function createControlsCard(): HTMLElement {
       render();
     };
     const enableMotion = (p: MotionProfile) => {
-      // iOS: both permission APIs must be called synchronously inside this tap
-      type Perm = { requestPermission?: () => Promise<string> };
-      const w = window as unknown as { DeviceMotionEvent?: Perm; DeviceOrientationEvent?: Perm };
-      const reqs = [w.DeviceMotionEvent?.requestPermission?.(), w.DeviceOrientationEvent?.requestPermission?.()].filter(Boolean) as Promise<string>[];
       pick(p);
-      Promise.all(reqs).then(
-        (r) => {
-          if (r.some((x) => x !== "granted")) {
-            pick("tap-only");
-            toast("motion permission denied — using touch controls", "info");
-          } else if (!isTrained()) openTraining({ onDone: () => render() }); // ~20s tutorial + per-player thresholds
-        },
-        () => pick("tap-only"),
-      );
+      void requestMotionPermission(p).then((granted) => {
+        if (!granted) toast("motion permission denied — choose touch only to continue", "info");
+        else if (!isTrained()) openTraining({ onDone: render });
+        render();
+      });
     };
+    const state = getMotionPermissionState();
     const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : prof === "seated" ? "motion (seated, small tilts)" : "motion: tilt · swing · twist · spin";
     el.replaceChildren(
-      h("div.cc-title", null, "🎮 controls ", chosen ? h("span.cc-chosen", null, `✓ ${label}`) : h("span.dim", null, "— choose before the fight")),
+      h("div.cc-title", null, "🎮 controls ", state.ready ? h("span.cc-chosen", null, `✓ ${label}`) : h("span.dim", null, "— choose before the fight")),
+      ...(!state.ready ? [h("div.cc-permission", { role: "status" }, state.needsPermission ? "📱 tap to enable motion · required on each page load" : state.permission === "denied" ? "permission denied — retry or choose touch only" : "waiting for sensor readings — move your phone or choose touch only")] : []),
       h(
         "div.cc-btns",
         null,
         hasSensors
-          ? h(`button.btn${prof === "standard" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-motion", onclick: () => enableMotion("standard") }, "tilt phone")
+          ? h(`button.btn${prof === "standard" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-motion", onclick: () => enableMotion("standard") }, state.ready ? "tilt phone" : "📱 tap to enable motion")
           : null,
         hasSensors ? h(`button.btn${prof === "seated" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-seated", onclick: () => enableMotion("seated") }, "seated / small moves") : null,
         h(`button.btn${prof === "tap-only" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-touch", onclick: () => pick("tap-only") }, "touch only"),
       ),
+      ...(prof !== "tap-only" ? [h("div.cc-sensitivity", null,
+        h("div", null, "tilt sensitivity · flat = still"),
+        h("div.cc-btns", { role: "group", "aria-label": "tilt sensitivity" }, ...TILT_SENSITIVITIES.map(value =>
+          h(`button.btn${loadTiltSensitivity() === value ? ".btn-primary" : ""}`, {
+            "data-testid": `tilt-${value}`, "aria-pressed": loadTiltSensitivity() === value,
+            onclick: () => { saveTiltSensitivity(value); render(); }
+          }, `${value} · ${TILT_FULL_SPEED[value]}°`))),
+        h("div.dim", null, "tilt toward an edge to move · normal reaches full speed at 15°"))] : []),
       ...(chosen && prof !== "tap-only" ? [h("div.cc-train", null,
             isTrained() ? h("span.ok", null, "✓ gestures trained ") : h("span.dim", null, "not trained yet "),
             h("button.btn-link", { "data-testid": "controls-retrain", onclick: () => openTraining({ onDone: () => render() }) }, isTrained() ? "↻ re-train gestures" : "▶ train gestures (20s)")),
         h("div.cc-legend", null, "tilt = move · swing / tap = attack · twist / double-tap = dash · spin / long-press = skill")] : []),
     );
   };
+  const dispose = subscribeMotionPermission(render);
   render();
-  return el;
+  return { el, dispose };
 }
 
 let fallbackCache: Promise<string[]> | null = null;
@@ -344,6 +348,7 @@ export function createLobby(app: AppCtx): Screen {
     " ",
     h("button.btn-link", { "data-testid": "player-repo-change", onclick: () => ((changingRepo = true), render(), repoInput.focus()) }, "change"),
   );
+  const controls = !screen && isPhone() ? createControlsCard() : null;
   const youPanel = h(
     "section.panel.you-panel",
     null,
@@ -351,11 +356,39 @@ export function createLobby(app: AppCtx): Screen {
     pickerDone,
     pickerBox,
     youStatus,
-    ...(isPhone() ? [createControlsCard()] : []),
+    ...(controls ? [controls.el] : []),
     heroGenesis.host,
     h("div.genesis-hint", null, "▶ watch your repo compile into your hero · tap to replay"),
     youCard,
   );
+
+  const rubricHost = h("section.panel.lobby-rubric", { "data-testid": "lobby-rubric", hidden: true });
+  let rubricEditor: RubricEditor | null = null;
+  let rubricOwner = false;
+  let rubricSig = "";
+  function renderRubric(lobby: LobbyState) {
+    rubricHost.hidden = lobby.mode !== "edu";
+    const owner = isOwner(app);
+    if (lobby.mode !== "edu") return;
+    const me = lobby.players.find(p => p.id === app.you);
+    const preview = me?.rubricPreview;
+    const sig = JSON.stringify([owner, lobby.rubric, me?.kit?.quality, preview, app.token]);
+    if (sig === rubricSig) return;
+    rubricSig = sig;
+    if (owner) {
+      if (!rubricEditor || !rubricOwner) {
+        rubricEditor?.dispose();
+        rubricEditor = createRubricEditor({ current: lobby.rubric, room: app.room, token: app.token,
+          onUse: rubric => app.conn.send({ t: "setRubric", rubric }) });
+        rubricHost.replaceChildren(rubricEditor.el);
+      }
+      rubricEditor.setCurrent(lobby.rubric);
+    } else {
+      rubricEditor?.dispose(); rubricEditor = null;
+      rubricHost.replaceChildren(createJudgedCard({ rubric: lobby.rubric ?? localDefaultRubric(), quality: me?.kit?.quality, preview }));
+    }
+    rubricOwner = owner;
+  }
 
   // ----- boss panel -----
   const bossInput = h("input.term-input", {
@@ -413,7 +446,9 @@ export function createLobby(app: AppCtx): Screen {
   const bossStatus = h("div.boss-status");
   let startArmedAt = 0;
   const startArmed = () => startArmedAt > 0 && performance.now() - startArmedAt < 4000;
+  const pendingControls = () => app.lobby?.players.filter(p => !p.bot && p.status === "ready" && !!p.kit && p.controlsReady === false) ?? [];
   const tryStart = () => {
+    if (pendingControls().length || (!screen && !getMotionPermissionState().ready)) return;
     const cloning = app.lobby?.players.filter((p) => p.status === "analyzing") ?? [];
     if (cloning.length && !startArmed()) {
       startArmedAt = performance.now();
@@ -542,10 +577,10 @@ export function createLobby(app: AppCtx): Screen {
         qrHelp2,
         classCounter,
       ),
-      h("div.big-right", null, squad, bossPanel),
+      h("div.big-right", null, squad, bossPanel, rubricHost),
     );
   } else {
-    body = h("div.lobby-grid", null, youPanel, squad, bossPanel);
+    body = h("div.lobby-grid", null, youPanel, squad, bossPanel, rubricHost);
   }
 
   // phones: a sticky "what do I do next" bar at the bottom of the lobby
@@ -591,6 +626,7 @@ export function createLobby(app: AppCtx): Screen {
     const name = h("div.pcard-name", null, p.name, owner ? h("span.badge.owner", null, "★ OWNER") : null, you ? h("span.badge.you", null, "YOU") : null, p.bot ? h("span.badge.bot", null, "BOT") : null);
     const repo = h("div.pcard-repo", null, p.repo ? `⎇ ${p.repo}` : "awaiting repo…");
     info.append(name, repo);
+    if (!p.bot) info.append(h("div.controls-state", { "data-testid": "player-controls", "data-ready": p.controlsReady !== false }, p.controlsReady === false ? "📱 waiting for controls" : "✓ controls ready"));
     if (p.status === "ready" && p.kit) {
       portrait.append(heroPortrait(p.kit, 64));
       info.append(
@@ -630,7 +666,7 @@ export function createLobby(app: AppCtx): Screen {
     const seen = new Set<string>();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
+      const sig = [p.name, p.repo, p.status, p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
@@ -754,6 +790,12 @@ export function createLobby(app: AppCtx): Screen {
         bossInfo.replaceChildren(
           nameEl,
           ...(k.design?.epithet ? [h("div.boss-epithet", null, k.design.epithet)] : []),
+          ...(k.archetype && ARCH[k.archetype]
+            ? [h("div.boss-arch", { "data-testid": "boss-archetype", "data-arch": k.archetype },
+                h("span.arch-badge", null, `${ARCH[k.archetype].icon} ${ARCH[k.archetype].label}`),
+                h("span.arch-why", null, archetypeWhy(k)),
+                h("div.arch-blurb", null, ARCH[k.archetype].blurb))]
+            : []),
           h("div.boss-meta", null, h("span.tag.tag-red", null, `theme: ${k.theme}`), h("span.tag", null, `HP ${Math.round(k.maxHp)}`), h("span.tag", null, `${k.attacks.length} attacks`)),
           h("div.boss-heart", null, "♥ heart: ", h("code", null, k.heart || "?")),
           ...bossCode(k),
@@ -868,9 +910,16 @@ export function createLobby(app: AppCtx): Screen {
     ownerBadge.textContent = isOwner(app) ? "★ you own this room" : "";
     botCtl.style.display = isOwner(app) ? "" : "none";
     botCount.textContent = String(lobby.players.filter((p) => p.bot).length);
+    renderRubric(lobby);
     renderSquad(lobby);
     if (!screen) renderYou(lobby);
     renderBoss(lobby);
+    const pending = pendingControls();
+    const localPending = !screen && !getMotionPermissionState().ready;
+    if (pending.length || localPending) {
+      startBtn.disabled = true;
+      startHint.textContent = localPending ? "📱 tap to enable motion or choose touch only" : `waiting for controls: ${pending.map(p => p.name).join(", ")}`;
+    }
     if (!screen) renderNext(lobby);
   }
 
@@ -889,6 +938,12 @@ export function createLobby(app: AppCtx): Screen {
       act = toTop;
     } else if (me.status === "analyzing") {
       text = `⟳ cloning ${me.repo ?? "your repo"}…`;
+      cls = "busy";
+    } else if (!getMotionPermissionState().ready) {
+      text = "📱 enable motion above or choose touch only";
+      act = () => controls?.el.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else if (owner && pendingControls().length) {
+      text = `waiting for controls: ${pendingControls().map(p => p.name).join(", ")}`;
       cls = "busy";
     } else if (!owner) {
       text = `✓ ready as ${me.kit?.design?.title ?? me.kit?.title ?? "your hero"} · waiting for ${ownerName} to start (${ready} in)`;
@@ -910,7 +965,8 @@ export function createLobby(app: AppCtx): Screen {
     nextAction = act;
     // data-testid="start-match" always belongs to the VISIBLE start control: the sticky bar on phone-portrait
     // (where the panel button is hidden by CSS), the panel button everywhere else
-    const barIsStart = phoneLobby() && cls === "go";
+    const barIsStart = phoneLobby() && owner && me?.status === "ready" && bossOk && (!edu || ready >= 2);
+    nextBar.disabled = !!barIsStart && cls !== "go";
     nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
     startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
   }
@@ -950,11 +1006,15 @@ export function createLobby(app: AppCtx): Screen {
   // the start control's test id follows the layout (phone bar vs panel button)
   const onResize = () => render();
   addEventListener("resize", onResize);
+  const stopPermission = subscribeMotionPermission(() => render());
   render();
   return {
     el,
     update: render,
     destroy() {
+      stopPermission();
+      controls?.dispose();
+      rubricEditor?.dispose();
       clearInterval(iv);
       removeEventListener("resize", onResize);
       heroGenesis.dispose();

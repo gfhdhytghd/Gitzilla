@@ -6,10 +6,12 @@ import type { GameEvent, MatchState, PlayerState, ServerMsg } from "../../shared
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import { type AppCtx, type Screen } from "./app";
 import { createHud, rankPvp } from "./hud";
+import { ARCH, archetypeWhy } from "./archetype";
 import { markCanvas } from "./mark";
 import { loadGestureProfile, openTraining, toThresholds } from "./training";
 import { type GenesisHandle, playGenesis } from "../genesis";
 import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay } from "../edu";
+import { requestMotionPermission, saveMotionProfile, subscribeMotionPermission } from "../input";
 import { audio, muteBtn } from "./sound";
 import { bossPortraitCanvas } from "./lobby";
 import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
@@ -466,7 +468,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (kn > 0.6) {
         const knots = kit.limbs.filter((l) => l.weakPoint).length;
         const hl = kit.code?.heartLines?.find((l) => l.trim().length > 6)?.trim();
-        meta.textContent = `♥ ${kit.heart || "heart"} · ${kit.limbs.length} limbs · ${knots} knots · ${kit.theme}${hl ? `\n  > ${hl}` : ""}`;
+        const arch = kit.archetype && ARCH[kit.archetype] ? `${ARCH[kit.archetype].icon} ${ARCH[kit.archetype].label} — ${archetypeWhy(kit)}\n` : "";
+        meta.textContent = `${arch}♥ ${kit.heart || "heart"} · ${kit.limbs.length} limbs · ${knots} knots · ${kit.theme}${hl ? `\n  > ${hl}` : ""}`;
       }
       if (performance.now() > introEnd && latest?.status !== "countdown") {
         clearInterval(iv);
@@ -768,6 +771,20 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // Portrait works too: removed the old rotate-only blocker and forced landscape lock.
 
   setupInput();
+  // Rejoined phones can arrive directly in countdown; gate them before the first snapshot.
+  const stopPermission = subscribeMotionPermission(state => {
+    if (spectator) return;
+    if (state.ready) { motionOverlay?.remove(); motionOverlay = null; return; }
+    if (!motionOverlay) {
+      motionOverlay = h("div.motion-gate", { "data-testid": "motion-gate", role: "dialog", "aria-label": "enable controls" },
+        h("div.term-window", null, h("h2", null, "📱 enable your controls"),
+          h("p", null, "Enable motion for this page before the countdown ends, or choose touch only."),
+          h("button.btn.btn-primary", { "data-testid": "countdown-motion-enable", onclick: () => { void requestMotionPermission(); } }, "📱 tap to enable motion"),
+          h("button.btn", { onclick: () => { saveMotionProfile("tap-only"); input?.setMotionProfile?.("tap-only"); } }, "touch only")));
+      el.append(motionOverlay);
+    }
+    motionOverlay.dataset.state = state.permission;
+  });
   // Bubble after the touchend capture / target onclick permission handlers. A touch
   // pointerdown is not activation, and fullscreen must not run ahead of a button's request.
   addEventListener("click", lockPortrait, { once: true });
@@ -852,7 +869,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       } else {
         arrow(dir < 0 ? ex + 6 : ex, ey, dir, "#ff3355");
         pixHeart(dir < 0 ? ex + 9 : ex - 15, ey - 2, pulse > 0.3 ? "#ff3355" : "#ff8fa0");
-        edgeLabel(dir < 0 ? ex + 10 : ex - 4, ey, dir, "BOSS", "#ffd0d8");
+        edgeLabel(dir < 0 ? ex + 10 : ex - 4, ey, dir, b.airborne ? (b.kit.archetype === "abyssal" ? "BOSS ⇣" : "BOSS ✈") : "BOSS", "#ffd0d8");
       }
     }
     // downed teammates
@@ -959,7 +976,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         return q ? { ...r, x: lerp(q.x, r.x, f), y: lerp(q.y, r.y, f) } : r;
       });
       const casting = SB.casting ? { ...SB.casting, t: clamp(SB.casting.t + dtB, 0, SB.casting.total) } : null;
-      boss = { ...SB, x: lerp(AB.x, SB.x, f), y: lerp(AB.y, SB.y, f), regions, casting };
+      // poses are sim-driven; extrapolate their clock like casting so animations don't step at 20 Hz
+      const pose = SB.pose ? { ...SB.pose, t: clamp(SB.pose.t + dtB, 0, Math.max(SB.pose.total, SB.pose.t)) } : SB.pose;
+      boss = { ...SB, x: lerp(AB.x, SB.x, f), y: lerp(AB.y, SB.y, f), regions, casting, pose };
     }
     return { ...S, t: lerp(A.t, S.t, f), players, bullets, minions, hazards, boss };
   };
@@ -1120,10 +1139,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       bubble.style.left = `${stage.offsetLeft + clamp(b.x - view.x, 30, view.w - 30) * cssScale}px`;
       bubble.style.top = `${stage.offsetTop + Math.max(20, top) * cssScale}px`;
     }
-    if (motionOverlay && input && (!input.needsPermission || input.mode !== "motion")) {
-      motionOverlay.remove();
-      motionOverlay = null;
-    }
+
   };
 
   const drawWaiting = (now: number) => {
@@ -1146,6 +1162,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     },
     destroy() {
       destroyed = true;
+      stopPermission();
       cancelAnimationFrame(raf);
       removeEventListener("resize", layout);
       safeProbe.remove();

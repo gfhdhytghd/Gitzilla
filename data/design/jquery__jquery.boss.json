@@ -32,15 +32,15 @@
     "Burrow. Emerge. Shatter the call stack."
   ],
   "attackNames": {
-    "0-summon-0": "nodeName() Version Drift",
-    "0-charge-1": "Deferred() Branch Crash",
-    "1-cascade-0": "jQueryFactory() Merge Conflict",
-    "2-cascade-0": "dir() Memory Leak",
-    "3-cascade-0": "get() Rebase Hell",
-    "4-cascade-0": "camelCase() Circular Import",
-    "5-spiral-0": "assert() Nested Promises",
-    "6-cascade-0": "tokenize() Cache Stampede",
-    "7-cascade-0": "showHide() Dangling Pointer"
+    "0-cascade-0": "nodeName() Merge Conflict",
+    "0-ring-1": "Deferred() while(true) Loop",
+    "1-slam-0": "jQueryFactory() Core Dump",
+    "2-fan-0": "dir() Null Pointer",
+    "3-charge-0": "get() Branch Crash",
+    "4-cascade-0": "camelCase() Memory Leak",
+    "5-ring-0": "assert() Infinite Scroll",
+    "6-slam-0": "tokenize() Stack Smash",
+    "7-fan-0": "showHide() throw"
   },
   "limbNames": {
     "limb-0": "trigger() Plating",

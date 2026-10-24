@@ -31,9 +31,9 @@
     "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-summon-0": "Owner() Package Flood",
+    "0-laser-0": "Owner() </> Breath",
     "0-slam-1": "Pet() Stack Smash",
-    "1-spiral-0": "validate() Recursion"
+    "1-fan-0": "validate() Panic!"
   },
   "limbNames": {
     "limb-0": "Visit() Root",

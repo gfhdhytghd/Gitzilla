@@ -20,14 +20,16 @@ IN PROGRESS: the tenant is configured and the code is tested. Waiting on (1) one
 - [x] `.env` (repo root, gitignored, mode 600): `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_MGMT_CLIENT_ID`, `AUTH0_MGMT_CLIENT_SECRET`, `AUTH0_COOKIE_SECRET`. The auth module reads them itself (root `.env`, then `../.env`; `process.env` wins), so no dotenv dependency is needed.
 - [x] Live checks: the M2M client-credentials token works against the Management API (unknown user → 404 as expected). `/auth/login` → Auth0 `/authorize` → 302 to `github.com/login/oauth/authorize` with `scope=read:user,repo`, for both `http://localhost:5173` and `https://gitzilla.wilflin.me` origins. The session cookie gets `Secure` on https / `X-Forwarded-Proto: https`.
 - [ ] Real browser login confirming the IdP token (USER ACTION 1)
-- [ ] codex-net wiring into server/main.ts (handoff below), then a check through the tunnel
+- [ ] codex-net wiring into server/main.ts (handoff below), then a check on the dev server http://localhost:5175 (never 5173). The coordinator deploys to live.
 
 ## Tenant config (Free-plan check)
 Checked against the skill's `feature-audit-pricing`. Free includes unlimited social connections and 1,000 M2M tokens/month. Token Vault on Free has a count limit of 2 and needs refresh tokens, the token-exchange grant and Connected Accounts, so I skipped it. No custom domain, no add-ons, no extra tenant.
 - App **Gitzilla** (regular_web) `9S1HfsyFTCXD9X3J87YzTUlDhoFhhVu6`: grant `authorization_code` only, `client_secret_post`.
-  - Callbacks: `http://localhost:5173/auth/callback`, `https://gitzilla.wilflin.me/auth/callback`, `http://localhost:5174/auth/callback` (demo harness).
+  - Callbacks: `http://localhost:5173/auth/callback`, `https://gitzilla.wilflin.me/auth/callback`, `http://localhost:5174/auth/callback` (demo harness), `http://localhost:5175/auth/callback` (shared dev server).
   - Logout URLs: the same three origins, each + `/auth/logged-out`.
-  - Web origins: `http://localhost:5173`, `https://gitzilla.wilflin.me`.
+  - Web origins: `http://localhost:5173`, `https://gitzilla.wilflin.me`, `http://localhost:5175`.
+  - Ports: 5173 = stable live server (coordinator only; never test against it), 5175 = shared dev server (use this for playtests), 5174 = `auth/demo.ts`.
+  - The live worktree `../gitzilla-live/.env` is a symlink to `repo-kaiju/.env`. The auth module reads `<root>/.env`, so the live server gets the AUTH0_* config once it's wired.
 - App **Gitzilla Server (M2M)** `TV7RPaUbC6Xec2P396z95n6kE9r7YPuW`: client grant `cgr_JDX3kWLwVtL2TdFA` on the Management API with `read:users read:user_idp_tokens` only.
 - Connection **github** `con_eH7WbBKkVA3S6KxO`: strategy github, `read_user` + `repo` (scope `read:user,repo`), enabled only for Gitzilla. It's on Auth0 dev keys for now (see USER ACTION 2). I disabled `google-oauth2` and `Username-Password-Authentication` for both Gitzilla apps, so the login is GitHub-only. The Default App is untouched.
 - **M2M quota:** one Management token is cached in memory until 5 min before it expires (24h), and concurrent requests share one in-flight fetch. Each user's GitHub token is fetched once per sign-in and kept in server memory, so it's roughly 1 M2M token per server start or day.
@@ -36,7 +38,7 @@ Checked against the skill's `feature-audit-pricing`. Free includes unlimited soc
 - **No `@auth0/auth0-server-js`.** The skill's server-js reference fits plain `node:http`, but it's a building block that still needs a hand-written cookie adapter, and the brief prefers zero new deps. The OIDC code flow + PKCE is ~60 lines with `fetch` + `node:crypto`, so I hand-rolled it in the same shape (transaction cookie + stateless encrypted session cookie, like its `CookieTransactionStore` + `StatelessStateStore`).
 - **GitHub token via Management API, not Token Vault.** Token Vault needs refresh tokens, the token-exchange grant, connected accounts, and a plan that has it. The Management API "IdP access token" path (`GET /api/v2/users/{id}` → `identities[].access_token`, scope `read:user_idp_tokens`) works on every tenant, including Free, with only a client grant on a separate M2M app, so it's the fastest. The token is cached in server memory per user (GitHub OAuth-app tokens don't expire) and never leaves the server.
 - **Session** = AES-256-GCM sealed cookie `rk_session` (`{userId, login, avatar}`, 7 days), `HttpOnly; SameSite=Lax`, plus `Secure` when the request is https (TLS socket or `X-Forwarded-Proto: https` from the tunnel). Stateless, so it survives `tsx watch` restarts. The key comes from `AUTH0_COOKIE_SECRET`.
-- **Callback origin** is the origin the browser used (tunnel-aware). Registered callbacks: `http://localhost:5173` and `https://gitzilla.wilflin.me` (+ `:5174` for the demo). A login started from a LAN IP is bounced to `PUBLIC_URL` first.
+- **Callback origin** is the origin the browser used (tunnel-aware). Registered callbacks: `http://localhost:5173` and `https://gitzilla.wilflin.me` (+ `localhost:5174` demo, `localhost:5175` dev). A login started from a LAN IP is bounced to `PUBLIC_URL` first.
 - With no AUTH0_* env configured: `/api/me` → `{enabled:false,user:null}`, `/auth/*` → 503, and `getSession`/`getGithubToken` → null. Pasting a link still works.
 
 ## Handoff → codex-net (server/main.ts)

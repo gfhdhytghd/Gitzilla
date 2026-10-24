@@ -32,15 +32,15 @@
     "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-ring-0": "appendAttr() Busy Wait",
-    "0-charge-1": "New() Hard Reset",
-    "1-spiral-0": "main() Callback Hell",
-    "2-ring-0": "CheckNilFuncComparison() Event Loop",
-    "3-spiral-0": "cleanListing() Deep Clone",
-    "4-ring-0": "NewServer() Spin Lock",
-    "5-spiral-0": "usage() Stack Trace",
-    "6-ring-0": "String() Retry Storm",
-    "7-spiral-0": "imageHandler() Recursive Descent"
+    "0-laser-0": "appendAttr() </> Breath",
+    "0-slam-1": "New() Core Dump",
+    "1-fan-0": "main() Unhandled Error",
+    "2-charge-0": "CheckNilFuncComparison() Hard Reset",
+    "3-ring-0": "cleanListing() Busy Wait",
+    "4-laser-0": "NewServer() Race Condition",
+    "5-slam-0": "usage() Stack Smash",
+    "6-fan-0": "String() Throw Storm",
+    "7-charge-0": "imageHandler() Force Push"
   },
   "limbNames": {
     "limb-0": "parseLogEntries() Mandible",

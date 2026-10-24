@@ -69,17 +69,28 @@ describe('real RoomServer and simulation lifecycle (offline fixture)', () => {
   });
 
   it('nonnumeric aim arrays retain finite facing coordinates', async () => {
-    const server = await fixture();
+    const startedAt = performance.now();
+    const trace = (stage: string) => {
+      if (process.env.QA_TRACE_FIXTURE === '1') console.info(JSON.stringify({ qa: 'nonnumeric-aim', stage, elapsedMs: Math.round(performance.now() - startedAt) }));
+    };
+    const server = await fixture({ trace });
+    trace('listening');
     try {
       const { peer } = await server.connect();
+      trace('joined');
       peer.send({ t: 'setRepo', repo: 'pallets/flask' }); peer.send({ t: 'setBoss', repo: 'pallets/flask' });
       await until(() => peer.lobby()?.boss.status === 'ready' && peer.lobby()?.players[0]?.status === 'ready', 'ready');
+      trace('ready');
       peer.send({ t: 'start' });
       await until(() => peer.snapshot()?.state.status === 'fighting', 'fighting');
+      trace('fighting');
       peer.raw({ t: 'input', frame: { seq: 2, move: [0, 0], aim: ['oops', 0], fire: true, dash: false, skill: false, source: 'keyboard' } });
       await until(() => peer.snapshot()?.ack === 2, 'malformed frame processed');
+      trace('acknowledged');
       await sleep(100); // Ack can be published before the next simulation tick.
       expect(peer.snapshot()!.state.players.every(p => p.facing.every(Number.isFinite))).toBe(true);
-    } finally { await server.close(); }
+      trace('asserted');
+    } finally { await server.close(); trace('closed'); }
+    expect(server.status()).toEqual({ listening: false, webSockets: 0 });
   });
 });

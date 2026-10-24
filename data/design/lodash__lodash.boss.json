@@ -32,12 +32,12 @@
     "STOMP! My tail will git push --force."
   ],
   "attackNames": {
-    "0-ring-0": "iteratee() while(true) Loop",
-    "0-charge-1": "message() Branch Crash",
-    "1-spiral-0": "apply() Stack Trace",
-    "2-ring-0": "log() Infinite Scroll",
-    "3-spiral-0": "wrap() Recursive Descent",
-    "4-ring-0": "build() Busy Wait"
+    "0-laser-0": "iteratee() </> Breath",
+    "0-slam-1": "message() OOM Crash",
+    "1-fan-0": "apply() Exception Spray",
+    "2-charge-0": "log() Branch Crash",
+    "3-ring-0": "wrap() while(true) Loop",
+    "4-laser-0": "build() Race Condition"
   },
   "limbNames": {
     "limb-0": "object() Claw",

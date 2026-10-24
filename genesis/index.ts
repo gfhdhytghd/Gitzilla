@@ -97,18 +97,11 @@ function skillReason(p: RepoProfile): string {
   return `tests ${pct(p.testRatio)} · ${human(p.components.length)} modules`;
 }
 
-function attackReason(p: RepoProfile, kit: BossKit, attack: BossAttack): string {
-  const i = kit.limbs.findIndex(l => l.component === attack.source);
-  const c = p.components.find(c => c.name === attack.source);
-  switch (attack.kind) {
-    case 'cascade': return withMetric(attack.source, 'dependency loop');
-    case 'fan': return withMetric(attack.source, `${human(c?.fanOut ?? 0)} imports out`);
-    case 'laser': return withMetric(attack.source, `${human(p.maxDepth)} layers deep`);
-    case 'summon': return withMetric(attack.source, `${human(c?.files ?? 5)} files`);
-    case 'ring': case 'spiral': return withMetric(attack.source, `formation ${i + 1}`);
-    case 'slam': return withMetric(attack.source, 'heart-bearing module');
-    case 'charge': return withMetric(attack.source, 'largest module');
-  }
+function attackReason(kit: BossKit, attack: BossAttack): string {
+  // Repo shape allocates slots to real source components. The archetype deck,
+  // rather than each source's file count/fan-out, now chooses each slot's kind.
+  const archetype = kit.archetype[0].toUpperCase() + kit.archetype.slice(1);
+  return withMetric(attack.source, `${archetype} ${attack.kind}`);
 }
 
 /** Pure, synchronous and room-only. Call AFTER design decoration so names/colors
@@ -172,7 +165,7 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
     const todos = p.dna?.counts.todo ?? 0;
     add('minions', `${human(todos)} TODOs · unfinished business`, boss.code?.todos.length ? 'Your TODOs name the bug swarm' : 'A bug swarm awaits');
     for (const attack of boss.attacks) {
-      add('attack', attackReason(p, boss, attack), attack.name, attack.id);
+      add('attack', attackReason(boss, attack), attack.name, attack.id);
     }
     budget = bossBudget(boss);
     add('stats', 'One squad · one shared challenge', `${human(boss.maxHp)} HP · equal threat`);

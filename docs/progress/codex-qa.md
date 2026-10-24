@@ -1,4 +1,72 @@
-DONE — Round 2 + portrait robustness QA (`codex-qa`)
+DONE — custom-rubric natural classroom + final direct exports + phone driver probe
+
+**Final result:** StageA real custom-rubric upload/apply → exact previews → **165.1s natural classroom end** → personal-feedback privacy and complete teacher class view PASS. StageB final frontend, **ordinary direct 45093 browser/context, no routes**, restores the same natural KXEN result and both real-button CSV/MD downloads PASS (200, owner header, no token query, exact student/repository/score bindings). Original failed records remain unchanged. No second 165s classroom was played.
+
+| Evidence | Result / artifact |
+| --- | --- |
+| Original natural StageA room KXEN | `qa/artifacts/rubric-flow-2026-10-24T21-21-50-317Z/summary.json`: custom 60/25/15 rubric; exact previews **86.2 / 90.8**; natural duration **165.0999999999931s**; each student only own feedback, teacher both; per-criterion results and weighted scores identical before/after |
+| Final **direct**, non-composed teacher recovery/exports | `qa/artifacts/rubric-stage-b-2026-10-24T21-30-46-030Z/summary.json`: **4 PASS**, `assetComposition=false`; real welcome/current owner, same natural duration/roster/scores, CSV + MD both HTTP **200**, `X-Room-Token` present, no token query, actual browser downloads; no JS/protocol errors |
+| Real CSV / MD files | Same StageB directory: `teacher-feedback.csv` **2245 bytes**, `teacher-feedback.md` **2909 bytes**; both contain the exact original students, repositories and their bound **86.2 / 90.8** scores |
+| Short phone driver comparison | `qa/artifacts/rubric-phone-probe-2026-10-24T21-31-31-141Z/summary.json`: **PASS**, old drag **17 moving / 0 fire**; native tap **54 fire frames / 4 authoritative own bullets**, movement **41.07px**, ack advances, no errors. This was a short real battle/input probe, not another classroom/end-result run |
+| Export semantic regression checks | `qa/artifacts/rubric-export-check-tests.log`: **6 PASS**; CSV and Markdown positive bindings, rejection of swapped student scores and substituted repositories |
+
+### Failures retained and resolved without rewriting history
+
+- StageA's frozen teacher screen had no CSV/MD buttons; those two original FAIL entries remain. Local product condition was `variant === 'screen' ? null : ...exports`. Original edu/ui owner fixed explicit owner `canExport`; coordinator changed **only isolated 45093 generated dist** to the final 46099 build, preserving old dist, backend process and KXEN memory. QA did not edit runtime or restart either server; no live deployment is claimed.
+- StageA's known JSON-property-order/in-use label bug remains a separate KNOWN_FAIL, despite authoritative applied-rubric ACK and correct student previews. It was not mistaken for a failed upload or score.
+- StageA's final input-coverage assertion failed because its first driver **dragged on every phone step**: phone had **1505 movement frames / 0 fire**, desktop **5004 fire frames**. This is retained as a QA-driver coverage failure, **not** passed or attributed to the application. `qa/rubric-flow.ts` now alternates real CDP drags with `page.touchscreen.tap()` plus ≥330ms classification space; the fire assertion remains strict. Production gesture thresholds are unchanged. The independent short probe uses 700ms between native taps and proves actual authoritative bullets. Root generic harness phone fire/dash/skill evidence was supplied by lead separately and is not relabelled as this run's result.
+- Old asset-composition attempts (`rubric-stage-b-2026-10-24T21-27-15-739Z`, `21-28-41-381Z`) remain **inconclusive / superseded test compositions**, not product failures. No completed composition acceptance is claimed. A later experimental composition downloaded CSV/MD but hit the harness's literal-name MD assertion (`21-29-19-466Z`); those files and failed status remain. Final ordinary direct validation supersedes these attempts.
+- The MD name failure was test expectation: the real Markdown correctly contains `QA\\_Student\\_One`. `qa/rubric-export-check.ts` now unescapes only Markdown ASCII punctuation in headings, then binds each exact student + repository to the single rubric-score field in that student's section. CSV is parsed as quoted records and also binds exact name/repository/score. This does not alter server escaping or merely search for both scores somewhere in the file; negative swapped-score tests pass.
+
+### Visual inspection, reproduction and cleanup
+
+- Actually viewed teacher applied-rubric, teacher/phone mid-classroom, both personal-feedback screenshots, initial teacher class view, and final teacher feedback-with-export-buttons screenshot. Phone personal feedback visibly shows **90.8**, correct own repo/evidence/next steps; teacher table visibly shows **90.8 and 86.2**. Final `final-class-feedback-teacher.png` shows both real export buttons and the same two-student class.
+- Scripts: `npx tsx qa/rubric-flow.ts` is the explicit long StageA flow; **do not rerun just for export**. `npx tsx qa/rubric-stage-b.ts` defaults to a new ordinary direct context, restores the existing natural room, clicks real buttons, validates/downloads, then closes. `RUBRIC_STAGE_A_SUMMARY` (and optional `RUBRIC_FLOW_ROOM`) select another naturally completed StageA artifact; `RUBRIC_TEACHER_STATE` optionally loads a privately saved **new QA teacher** session without printing it. `RUBRIC_STAGE_B_HOLD=1` explicitly opts into keep-alive until `release.json`. No old StageA teacher token was read.
+- `npx tsx qa/rubric-phone-probe.ts` is the short native-input driver comparison. `npx vitest run qa/rubric-export-check.test.ts` checks strict format semantics without a browser/server. **Lead reports final root QA TypeScript PASS on all new files.** No additional tests or diagnosis launched after the final stop instruction.
+- All HOLD contexts have been released via their ignored `release.json` controls, and the short probe closes itself. No QA rubric-flow/stage-b/phone-probe Node process remains. New teacher storage states remain mode **0600** inside ignored artifact directories; no token values were printed. No 5173/5175 requests, source/runtime edits, commits or service restarts by QA.
+
+---
+
+Historical run notes below; the final acceptance and retained-failure interpretation above supersede pending wording.
+
+IN PROGRESS (historical) — isolated production custom-rubric UI acceptance (45093)
+
+New explicit integration scope: actual teacher screen + two real UI students, teacher file upload/apply/start, exact student preview, natural classroom completion, personal/class feedback privacy and real-button CSV/MD exports. Only `qa/` and this progress file; no frozen runtime changes, service restart or commit. Requests are restricted to the authorized isolated production `http://localhost:45093`; no 5173/5175 requests in this run.
+
+- Added `qa/rubric-flow.ts`, started immediately as a long-running browser test. All gameplay actions use real UI / native keyboard or touch; WS observation is read-only. No artificial ending or direct API export/upload bypass.
+- Custom document: `QA custom rubric 60-25-15`, with tests 60%, README 25%, function length 15%. Teacher upload goes through the actual file input and apply button; authoritative ACK requires `lobby.rubric.title`, `source=doc`, normalized criteria and exact own-student previews. Known editor.same property-order/in-use label issue is recorded separately and does not substitute for ACK.
+- Student 1 is desktop (WASD/J); student 2 is portrait phone (390x844/DPR3, explicitly selected touch-only, ordinary native touch drag/tap). No bots: complements lead's default four-player classroom coverage.
+- Feedback checks inspect every actual `feedback` message: each student only their own item, teacher the full class; compare pre-fight measured weighted score/results to final feedback and the visible score ring. Export attempts must use real teacher buttons, assert 200, owner header and no token query, and save real browser downloads.
+- **Running room KXEN**, artifact directory `qa/artifacts/rubric-flow-2026-10-24T21-21-50-317Z/`, launcher log `qa/artifacts/rubric-flow-run.log`. Match started 21:21:53 UTC. Upload returned **200**, owner header present, no token query; authoritative rubric title/source/three normalized weights confirmed. Exact pre-fight UI/WS weighted scores: **QA Student One 86.2**, **QA Student Two 90.8**. Actual known in-use label failure recorded separately as KNOWN_FAIL.
+- Visually inspected teacher applied-rubric screen, phone lobby/preview capture and both mid-classroom phone/teacher screenshots. The phone preview viewport capture is scrolled to controls/source evidence, so the exact score itself is established by DOM read + observed WS rows; final personal feedback screenshots are still pending. Teacher remained a screen with zero inputs and no fighter slot; both students send acknowledged ordinary input.
+- Potential export issue identified in local source (`createClassFeedback` hides export buttons for `variant=screen`); not yet promoted to a confirmed failure until the actual production end screen is examined. No direct endpoint fallback will be used.
+- QA TypeScript check for the new script PASS after correcting a diagnostic-only optional PvP phase type; no runtime files changed. Natural end, feedback privacy, final visual inspection and export acceptance remain pending.
+
+Previous follow-up: DONE — nonnumeric-aim fixture timeout diagnosed and fixed
+
+Take-lead assigned the intermittent default-5000ms timeout at `qa/robustness.test.ts:71`. Only `qa/fixture.ts`, `qa/robustness.test.ts`, and this progress file changed in this follow-up; no shared-service restart or commit.
+
+### Diagnosis
+
+- Initial isolated suite: 3 PASS / 1 opt-in SKIP; target took 2241ms. The 20-match fixture also completed and released its match intervals.
+- Added opt-in `QA_TRACE_FIXTURE=1` stage timing. Before the fix, both 5-execution and 8-execution independent repeat runs reproduced the default 5000ms timeout.
+- The decisive 8-execution trace shows the failing iteration reached **fighting at 2077ms**, **ack at 2118ms**, and **the original finite-facing assertion passed at 2218ms**. Peers, RoomServer and WebSocket server closed by **2239ms**; the **HTTP server close callback did not return until 8363ms** (6124ms later). Evidence: `qa/artifacts/fixture-timeout-2026-10-24/fixture-diagnosis-close-trace.log`.
+- Therefore the captured reproduction stalls in HTTP teardown, after the gameplay assertion; it is not a demonstrated CPU-delayed countdown or malformed-aim simulation failure. The exact origin/type of the lingering HTTP connection was not captured, so no claim is made about a particular external probe or keep-alive peer.
+
+### Fix and validation
+
+- After draining the fixture's WebSockets, initiate `httpServer.close()` and call `httpServer.closeAllConnections()` to close remaining HTTP connections owned by that isolated ephemeral fixture instead of waiting for their timeout. Shared DEV/live services are never involved.
+- Preserve the **original finite-facing assertion**, bad-aim packet, real 60-tick countdown, ack wait, 100ms post-ack observation and **default 5000ms test timeout**. No retries were added to the test. Add an explicit final assertion that the fixture HTTP listener is stopped and its WebSocket client set is empty.
+- Already-in-flight post-fix independent repeats: **20/20 executions PASS**, max total **2270ms**, HTTP teardown **0–1ms**. Logs and parsed timing summary: `qa/artifacts/fixture-timeout-2026-10-24/fixture-diagnosis-close-after.log` and `summary.json`.
+- QA's already-in-flight full run at 17:15:59: **703 PASS / 8 SKIP**, and QA TypeScript check PASS (`fixture-diagnosis-full-after.log`, `fixture-diagnosis-typecheck.log` in the same artifact directory). No further full runs started after lead requested avoiding duplicate load.
+- Lead's `ROOM_RESTART_TEST=1 npm test` at 17:16:17: **704 PASS / 7 SKIP**, verified by reading `/tmp/gitzilla-takeover-full.log`. Lead also reports build / QA tsc PASS. These are identified as coordinator validation, not newly launched QA runs.
+- All new `fixture-diagnosis-*.log` files were moved into **gitignored** `qa/artifacts/fixture-timeout-2026-10-24/`; `git check-ignore` confirms the evidence is retained without adding large logs to the review diff.
+
+Focused future diagnosis command (no shared service required): `QA_TRACE_FIXTURE=1 npx vitest run qa/robustness.test.ts -t 'nonnumeric aim' --reporter=verbose`. The trace is silent by default.
+
+Previous handoff: DONE — Round 2 + portrait robustness QA (`codex-qa`)
+
+The following is the historical Round 2 handoff, not a fresh audit of the takeover workspace's overall open-defect list.
 
 QA work is complete; product fixes are routed below. **Open: 4 robustness bugs + 1 design integration gate.** Added reproducible scripts/tests and screenshots under `qa/`; no product source fixes, commits, dependency installs, server restarts or live-demo requests by QA.
 

@@ -4,6 +4,7 @@ import { bossCode, heroCode, symbolAllocator } from './code.ts';
 import { attackFlavorPicker, weaponCode } from './flavor.ts';
 import { asClassroomKit, classroomFacts, type ClassroomKit } from './quality.ts';
 import { bossSocial, fragileComponents, type SocialBossKit } from './social.ts';
+import { ARCHETYPE_DECKS, bossArchetypeFromProfile } from './archetypes.ts';
 
 const languages: Record<string, [WeaponKind, string, string, ArenaTheme]> = {
   rust: ['cannon', 'Paladin', '#e69b64', 'kernel'], c: ['shotgun', 'Vanguard', '#b8c4d8', 'kernel'],
@@ -45,6 +46,7 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
   const limbWeight = (loc: number) => 0.5 / components.length + 0.5 * loc / total;
   const vulnerability = components.reduce((sum, c) => sum + limbWeight(c.loc) / (cycles.has(c.name) || fragile.has(c.name) ? 1.5 : 1), 0);
   const maxHp = squadBudget(playerCount).hp;
+  const selection = bossArchetypeFromProfile(p), deck = ARCHETYPE_DECKS[selection.archetype];
   const attacks: BossAttack[] = [];
   const pickSymbol = symbolAllocator(p), attackSymbols: Record<string, string> = {};
   const pickFlavor = attackFlavorPicker(p.seed);
@@ -57,7 +59,8 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
     else kinds.push(i % 2 ? 'spiral' : 'ring');
     if (i === 0) kinds.push(p.heart.includes(c.name) ? 'slam' : 'charge');
     else if (i === 1 && p.maxDepth >= 4 && !kinds.includes('laser')) kinds.push('laser');
-    kinds.forEach((kind, j) => {
+    kinds.forEach((_, j) => {
+      const kind = deck[attacks.length % deck.length];
       const id = `${i}-${kind}-${j}`, symbol = pickSymbol(c.name), flavor = pickFlavor(kind);
       if (symbol) attackSymbols[id] = symbol;
       attacks.push({
@@ -83,11 +86,12 @@ export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit
   const [, , color, baseTheme] = language(p);
   const name = (p.slug.split('/').pop() || 'REPO').toUpperCase();
   const epithet = cycles.size ? 'THE TANGLED HORROR' : components.length <= 2 ? 'THE MONOLITH' : p.totalLoc < 15000 ? 'THE MICRO-HORROR' : 'THE DEPENDENCY DEVOURER';
+  const code = bossCode(p, limbs, attackSymbols); code.archetypeReason = selection.reason;
   const kit: SocialBossKit = {
-    repo: p.slug, name: `${name}, ${epithet}`, heart: p.heart, maxHp, limbs, attacks, enrageAt: 0.5, speed: 10,
+    repo: p.slug, archetype: selection.archetype, name: `${name}, ${epithet}`, heart: p.heart, maxHp, limbs, attacks, enrageAt: 0.5, speed: 10,
     palette: ['#160f25', '#59365e', color, '#ff527d', '#fff4c4'],
     theme: p.ageDays > 3650 && !['web', 'notebook'].includes(baseTheme) ? 'legacy' : baseTheme, seed: p.seed,
-    code: bossCode(p, limbs, attackSymbols),
+    code,
     social: bossSocial(p),
   };
   return kit;

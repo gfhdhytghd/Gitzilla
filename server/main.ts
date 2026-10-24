@@ -6,7 +6,7 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { analyzeRepo, listFallbackRepos, offlineProfile } from '../analysis/index.ts';
-import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim/index.ts';
+import { playerKitFromProfile, bossKitFromProfile, createMatch, qualityFromRubric } from '../sim/index.ts';
 import { designHero, designBoss, fallbackHero, fallbackBoss, applyHeroDesign, applyBossDesign } from '../design/index.ts';
 import { recordMatch, top } from '../hall/index.ts';
 import { handleAuthRoute, getSession, getGithubToken } from '../auth/index.ts';
@@ -16,6 +16,8 @@ import { RoomServer } from './rooms.ts';
 import { qrSvg, qrTerminal } from './qr.ts';
 import { lanAddresses, loadTls, urlHost } from './tls.ts';
 import { handleTraceRoute, TraceStore } from './traces.ts';
+import { handleEduRoute } from './edu-http.ts';
+import { defaultRubric, parseRubric, scoreRepo, buildFeedback } from '../rubric/index.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
@@ -44,6 +46,11 @@ const rooms = new RoomServer(wss, {
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
   analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
   buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
+  defaultRubric, parseRubric, scoreRepo,
+  feedbackForPlayer(profile, rubric, context) {
+    return buildFeedback(profile, rubric, scoreRepo(profile, rubric), context, context.quiz);
+  },
+  applyRubric: (profile, kit, rubric) => qualityFromRubric(kit, { rubric, results: scoreRepo(profile, rubric) }),
   playerKitFromProfile(profile, options) {
     const kit = playerKitFromProfile(profile, options);
     return applyHeroDesign(kit, fallbackHero(profile, kit));
@@ -101,6 +108,7 @@ server.on('request', (req, res) => {
       json(res, 404, { error: 'Not found' }); return;
     }
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
+    if (await handleEduRoute(req, res, url, rooms)) return;
     if (url.pathname === '/api/room' && req.method === 'POST') {
       req.resume();
       const mode = url.searchParams.get('mode');

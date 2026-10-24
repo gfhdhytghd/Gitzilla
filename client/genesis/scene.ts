@@ -301,7 +301,9 @@ export class Scene {
     const box = this.kind === "boss" ? this.L.graph : this.L.charBox;
     const bw = sp.bbox.x1 - sp.bbox.x0 + 1, bh = sp.bbox.y1 - sp.bbox.y0 + 1;
     let k = sp.kind === "hero" ? Math.min((box.w * 0.8) / bw, (box.h * 0.66) / bh) : Math.min((box.w - 8) / bw, (box.h - 6) / bh);
-    k = sp.kind === "hero" ? Math.max(sp.size > 40 ? 1 : 2, Math.min(8, Math.floor(k))) : k >= 1 ? Math.min(3, Math.floor(k)) : k;
+    // Large-detail portraits must still fit phone cards; use integer scale when
+    // possible and nearest-neighbor reduction when the host is smaller.
+    k = k >= 1 ? Math.min(sp.kind === "hero" ? 8 : 3, Math.floor(k)) : k;
     const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
     const ox = Math.round(cx - ((sp.bbox.x0 + sp.bbox.x1 + 1) / 2) * k);
     let oy = Math.round(cy - ((sp.bbox.y0 + sp.bbox.y1 + 1) / 2) * k);
@@ -1400,6 +1402,7 @@ export class Scene {
     const big = L.compact ? 9 : 11;
     const align: CanvasTextAlign = boss ? "center" : "left";
     const ax = boss ? box.x + box.w / 2 : box.x;
+    const details = lines.flatMap(([s, c]) => tx.wrap(s, box.w, 6.5, "term", 10).map(row => [row, c] as [string, string]));
     let y = box.y;
     let titleSize = big * (L.compact ? 0.62 : 0.72);
     const tw = tx.measure(title + "_", titleSize, "pix", 11);
@@ -1407,7 +1410,7 @@ export class Scene {
     const cursor = Math.floor(now * 3) % 2 && typed.length < title.length + 1 ? "_" : "";
     if (!boss || true) {
       ctx.fillStyle = "rgba(3,6,10,0.78)";
-      const bh = tx.lineH(titleSize, "pix", 11) + (sub ? tx.lineH(6.5, "term", 10) : 0) + lines.length * tx.lineH(6.5, "term", 10) + 4;
+      const bh = tx.lineH(titleSize, "pix", 11) + (sub ? tx.lineH(6.5, "term", 10) : 0) + details.length * tx.lineH(6.5, "term", 10) + 4;
       ctx.fillRect(Math.round(boss ? box.x : box.x - 2), Math.round(box.y - 1), Math.round(box.w + (boss ? 0 : 4)), Math.round(bh + 2));
     }
     y += 1;
@@ -1417,7 +1420,7 @@ export class Scene {
       tx.text(sub.slice(0, Math.max(0, Math.floor((rk - 0.3) * 60))), ax, y, { size: 6.5, min: 10, color: UI.text, align, maxW: box.w });
       y += tx.lineH(6.5, "term", 10);
     }
-    lines.forEach(([s, c], i) => {
+    details.forEach(([s, c], i) => {
       tx.text(s, ax, y, { size: 6.5, min: 10, color: c, align, alpha: clamp01((rk - 0.2 - i * 0.12) * 4), maxW: box.w });
       y += tx.lineH(6.5, "term", 10);
     });
@@ -1433,16 +1436,29 @@ export class Scene {
     const g = gpa(q);
     tx.text(`report card  GPA ${g.toFixed(1)} (${gpaGrade(g)})`, r.x, r.y, { size: 5.5, min: 9, color: GRADE_COLOR[gpaGrade(g)], maxW: r.w });
     const lh = Math.max(7, tx.lineH(5.5, "term", 9));
-    const labW = tx.measure("weakness", 5.5, "term", 9) + 3;
+    const rows = sortStats(q);
+    const labels = rows.map(s => s.stat === "weakness" ? "tech debt" : STAT_LABEL[s.stat].plain);
+    const labW = Math.max(...labels.map(s => tx.measure(s, 5.5, "term", 9))) + 3;
     const gw = tx.measure("A", 6.5, "pix", 9) + 4;
-    sortStats(q).forEach((s, i) => {
+    rows.forEach((s, i) => {
       const y = r.y + lh * (i + 1) + 1;
       if (y + lh > r.y + r.h + 6) return;
       const a = clamp01(rk * q.length - i);
       if (a <= 0) return;
-      tx.text(STAT_LABEL[s.stat].plain, r.x, y - 1, { size: 5.5, min: 9, color: UI.text, alpha: a });
+      tx.text(labels[i], r.x, y - 1, { size: 5.5, min: 9, color: UI.text, alpha: a });
       tx.text(s.grade, r.x + labW, y - 1, { size: 5.5, min: 9, font: "pix", color: GRADE_COLOR[s.grade], glow: GRADE_COLOR[s.grade], alpha: a });
-      tx.text(s.signal, r.x + labW + gw, y - 1, { size: 5.5, min: 9, color: UI.dim, alpha: a, maxW: r.w - labW - gw });
+      // Keep the real measurement first on narrow phones; don't lose the number
+      // behind a long technical prefix. Unknown signal wording stays untouched.
+      const metric = s.stat === "armor" ? s.signal.match(/Tests:\s*([\d.]+%)/i)
+        : s.stat === "speed" ? s.signal.match(/fan-out\s+([\d.]+)/i)
+        : s.stat === "damage" ? s.signal.match(/([\d.]+) definitions\/file/i)
+        : s.stat === "energy" ? s.signal.match(/Comment ratio\s+([\d.]+%)/i)
+        : s.stat === "hp" ? s.signal.match(/([\d,]+) analyzed LOC/i)
+        : s.signal.match(/(\d+) dependency cycles?/i) ?? s.signal.match(/Dependency cycles:\s*(\d+)/i);
+      const unit = s.stat === "armor" ? "test files" : s.stat === "speed" ? "imports/module"
+        : s.stat === "damage" ? "definitions/file" : s.stat === "energy" ? "comments" : s.stat === "hp" ? "LOC" : "import cycles";
+      const signal = metric ? `${metric[1]} ${unit}` : s.signal;
+      tx.text(signal, r.x + labW + gw, y - 1, { size: 5.5, min: 9, color: UI.dim, alpha: a, maxW: r.w - labW - gw });
     });
     void ctx;
   }

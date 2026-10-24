@@ -26,6 +26,7 @@ try {
     save.onclick=()=>{__input.setProfile(__input.calibration.result());__input.calibration.stop();};
     setInterval(()=>{meter.textContent=JSON.stringify(__input.calibration.meter(),null,2);__input.sample();},30);
   </script>` }));
+  await context.addInitScript('window.__kaijuSyntheticSensors = true;');
   await context.addInitScript(String.raw`(()=>{
     for(const key of ['DeviceMotionEvent','DeviceOrientationEvent']) Object.defineProperty(window[key],'requestPermission',{configurable:true,value:()=>Promise.resolve('granted')});
     window.__motion={beta:45,gamma:0,x:0,y:0,z:0,rate:{alpha:0,beta:0,gamma:0}};
@@ -67,12 +68,13 @@ try {
   assert(payload.samples.some((s: any) => s.type === 'motion' && s.rotationRate));
   assert(payload.samples.some((s: any) => s.type === 'gesture' && s.via === 'spin'));
   profile = await page.evaluate(() => (window as any).__input.profile);
-  assert.deepEqual((profile as any).neutral.map((n: number) => Math.round(n)), [0, 45]);
+  assert.equal((profile as any).neutral, null);
+  assert.equal((profile as any).fullSpeed, 15);
   assert.equal((profile as any).swingThreshold, 6); assert.equal((profile as any).twistThreshold, 180);
   await page.screenshot({ path: `${output}/trained.png` });
   await page.reload();
   assert.deepEqual(await page.evaluate(() => (window as any).__input.profile), profile);
-  check('saved thresholds + transformed neutral survive reload, raw trace stored by server');
+  check('saved gesture thresholds survive reload; movement stays horizontal, raw trace stored by server');
   assert.equal(errors.length, 0, errors.join('\n')); pass = true;
 } catch (e) { failure = String(e); process.exitCode = 1; await page.screenshot({ path: `${output}/failure.png` }).catch(() => {}); }
 finally {

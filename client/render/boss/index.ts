@@ -1166,13 +1166,21 @@ function drawVisor(ctx: CanvasRenderingContext2D, x: number, y: number, time: nu
 
 // ---------- portrait ----------
 
+export function portraitFrame(kit: BossKit): { logical: number; bx: number; by: number } {
+  const layout = bossLayout(kit);
+  // The four presets share a 128px buffer extent. Leave room above the hydra's
+  // wings and to the right of the longest tail, including their entrance poses.
+  // World-target attack lines and the death topple are not portrait geometry.
+  if (layout.kaiju) return { logical: layout.extent * 2, bx: layout.extent - 32, by: layout.extent - 16 };
+  return { logical: 176, bx: 88, by: 80 };
+}
+
 export function bossPortrait(kit: BossKit, size: number): HTMLCanvasElement {
-  const kaiju = bossLayout(kit).body === "kaiju";
-  const LOGICAL = kaiju ? 196 : 176;
+  const { logical: LOGICAL, bx, by } = portraitFrame(kit);
   const [c, ctx] = makeCanvas(size, size);
   const [l, lctx] = makeCanvas(LOGICAL, LOGICAL);
   const state: BossState = {
-    x: kaiju ? 76 : LOGICAL / 2, y: kaiju ? 104 : LOGICAL / 2 - 8, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1,
+    x: bx, y: by, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1,
     limbs: kit.limbs.map((m) => ({ id: m.id, hp: m.maxHp, maxHp: m.maxHp, broken: false })),
     casting: null, targetPlayer: null, enraged: false, regions: [], kit,
     pose: { name: "idle", t: 0, total: 1, dir: [-1, 0] }, airborne: false,
