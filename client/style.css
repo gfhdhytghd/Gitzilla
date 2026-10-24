@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Unifont";
+  src: url("/fonts/unifont-18.0.01.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 /* GITZILLA — terminal / pixel-art app shell */
 :root {
   --bg: #05070a;
@@ -14,9 +21,9 @@
   --magenta: #ff3d7f;
   --text: #d9ffe9;
   --dim: #6f9b85;
-  --pix: "Press Start 2P", ui-monospace, monospace;
-  --term: "VT323", ui-monospace, monospace;
-  --small: "Silkscreen", "Press Start 2P", monospace;
+  --pix: "Press Start 2P", "Unifont", ui-monospace, monospace;
+  --term: "Unifont", "VT323", ui-monospace, monospace;
+  --small: "Silkscreen", "Unifont", "Press Start 2P", monospace;
   --px: 3px;
 }
 
@@ -1493,12 +1500,27 @@ body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .hud-log { display: none;
 .lobby-rubric, .ap-feedback { min-width: 0; grid-column: 1 / -1; overflow-wrap: anywhere; }
 .lobby-rubric > *, .ap-feedback > * { min-width: 0; max-width: 100%; }
 /* Locale controls use native selects for keyboard and mobile accessibility. */
-.language-switch { position:fixed; z-index:900; top:12px; right:12px; display:flex; align-items:center; gap:7px; padding:5px 8px; background:#101a2b; border:1px solid #53647d; color:#e8edf7; font:16px/1.2 monospace; }
-.language-switch select,.cr-language select { background:#101a2b; color:#e8edf7; border:1px solid #53647d; padding:6px; font:inherit; }
-body.classroom-active>.language-switch { display:none; }
-.cr-language { display:flex; flex-direction:column; gap:4px; font-size:16px; }
-.cr-language select { width:auto; min-width:110px; }
 /* Translated labels may be longer than the English defaults. */
 .classroom-screen .btn { white-space:normal; overflow-wrap:anywhere; max-width:100%; }
-.classroom-screen .cr-language { flex:none; }
-@media(max-width:800px) { .cr-header .cr-language { margin-left:auto; }.language-switch { top:8px; right:8px; } }
+
+
+/* Settings are a secondary surface; first-run setup uses the same controls. */
+.settings-button { position:fixed; z-index:900; top:calc(env(safe-area-inset-top,0px) + 10px); right:12px; margin:0; min-height:40px; background:#101a2b; color:#e8edf7; border:1px solid #53647d; }
+.settings-dialog { width:min(540px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); box-sizing:border-box; overflow:auto; padding:24px; border:2px solid #68d8ff; color:#e8edf7; background:#080d18; font:18px/1.5 var(--term); }
+.settings-dialog::backdrop { background:#02060ddb; }
+.settings-dialog h2 { font-size:28px; margin:0 0 12px; color:#68d8ff; }
+.settings-intro,.settings-status { color:#a8b7ca; font-size:15px; }
+.settings-section { padding:16px 0; border-top:1px solid #263b52; }
+.settings-section h3 { margin:0 0 10px; font-size:18px; }
+.settings-section select { width:100%; min-height:44px; padding:8px; color:#e8edf7; background:#101a2b; border:1px solid #53647d; font:inherit; }
+.settings-dialog .controls-card { margin:0; padding:0; border:0; background:none; }
+.settings-dialog .cc-title { display:none; }
+.settings-dialog .btn { white-space:normal; min-height:44px; }
+.settings-actions { display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid #263b52; }
+body.settings-open .kj-touch-overlay { display:none; }
+.touch-practice { width:min(100%,420px); min-height:240px; flex:1; max-height:400px; display:grid; place-items:center; border:2px dashed #68d8ff; background:#101a2b; touch-action:none; user-select:none; font-size:54px; color:#68d8ff; }
+@media(max-width:600px) { .settings-dialog { padding:18px; font-size:16px; }.settings-button { font-size:14px; right:8px; }.settings-dialog .cc-btns { flex-wrap:wrap; }.settings-dialog .cc-btns .btn { flex:1 1 130px; } }
+.settings-dialog .cc-train { display:grid; gap:8px; padding:8px 0; border:0; }
+.settings-dialog .cc-train .btn-link { white-space:normal; text-align:left; overflow-wrap:anywhere; }
+.settings-dialog .cc-legend { white-space:normal; overflow-wrap:anywhere; }
+.settings-button.settings-inline { position:static; flex:none; }

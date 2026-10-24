@@ -9,6 +9,8 @@ import { parseGeneratedJSON } from './i18n-json';
 const folders=['client/app','client/edu','client/input','client/genesis','client/render/arena','genesis','rubric','server','auth','sim','analysis'];
 const sources=new Map<string,Set<string>>();
 function add(source:string,file:string,visible=false){
+ // Font declarations and stored control IDs are implementation values, not interface copy.
+ if (/^(?:\d+(?:\.\d+)?px\s|"[^"\n]+".*(?:monospace|sans-serif))/.test(source) || source === 'tap-only') return;
  if(source.length<2||source.length>8000||!/[A-Za-z\u3400-\u9fff]/.test(source))return;
  if(/^(?:https?:|\/|\.\.\/|\.\/|[a-z]+\/[^ ]|#[0-9a-f]{3,8}$)/i.test(source)||/[<>][a-z]+[ >]/i.test(source))return;
  if(/^(?:div|span|button|input|p|a|h[1-6]|label|section|select|option|small|strong|details|pre|canvas|textarea)[.#]/.test(source))return;

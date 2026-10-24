@@ -115,6 +115,24 @@ describe('desktop input', () => {
     emit(win, 'keydown', { code: 'Space' });
     expect(input.sample().dash).toBe(true);
   });
+  it('clears held gameplay input while settings are open and resumes cleanly', () => {
+    const input = start();
+    emit(win, 'keydown', {code:'KeyD'}); emit(win, 'keydown', {code:'KeyJ'});
+    expect(input.sample().fire).toBe(true);
+    emit(win, 'gitzilla:settings', {detail:{open:true}});
+    emit(win, 'keydown', {code:'KeyE'});
+    expect(input.sample()).toMatchObject({move:[0,0],fire:false,dash:false,skill:false});
+    emit(win, 'gitzilla:settings', {detail:{open:false}});
+    expect(input.sample()).toMatchObject({move:[0,0],fire:false,skill:false});
+    emit(win, 'keydown', {code:'KeyD'}); expect(input.sample().move).toEqual([1,0]);
+  });
+  it('applies profile changes from settings without recursive preference events', () => {
+    mobile(); const input = start('standard');
+    localStorage.setItem('kaiju.motionProfile','tap-only'); emit(win,'kaiju:motion-profile');
+    expect(input.motionProfile).toBe('tap-only'); expect(input.mode).toBe('touch');
+    localStorage.setItem('kaiju.motionProfile','standard'); emit(win,'kaiju:motion-profile');
+    expect(input.motionProfile).toBe('standard'); expect(input.mode).toBe('motion');
+  });
   it('maps all dash/skill aliases and ignores editable elements', () => {
     const input = start();
     for (const code of ['KeyK', 'ShiftLeft', 'ShiftRight']) {

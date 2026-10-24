@@ -17359,5 +17359,212 @@
     "fr": "consulter l'avis de sécurité public pour obtenir une version corrigée",
     "provider": "Gemini via AGY",
     "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c6b519b201495758",
+    "en": "game-settings",
+    "zh": "game-settings",
+    "es": "game-settings",
+    "fr": "game-settings",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "74a883a037bc227f",
+    "en": "Settings",
+    "zh": "设置",
+    "es": "Ajustes",
+    "fr": "Paramètres",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "54ad77a69ea95c9c",
+    "en": "📱 open settings to enable motion or choose touch only",
+    "zh": "📱 打开设置以启用动作感应或选择仅触控",
+    "es": "📱 abre los ajustes para activar el movimiento o elegir solo táctil",
+    "fr": "📱 ouvrez les paramètres pour activer les mouvements ou choisir le tactile uniquement",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2764b4c1b7b57015",
+    "en": "Before you play",
+    "zh": "开始游戏前",
+    "es": "Antes de jugar",
+    "fr": "Avant de jouer",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6e4ce16df1850dae",
+    "en": "Choose your language before joining the class.",
+    "zh": "加入班级前选择你的语言。",
+    "es": "Elige tu idioma antes de unirte a la clase.",
+    "fr": "Choisissez votre langue avant de rejoindre la classe.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f5c588657f26247d",
+    "en": "Choose your language and controls, then try them before the fight.",
+    "zh": "选择你的语言和操作方式，并在战斗前进行试用。",
+    "es": "Elige tu idioma y controles, luego pruébalos antes del combate.",
+    "fr": "Choisissez votre langue et vos commandes, puis essayez-les avant le combat.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "799c269135742a36",
+    "en": "Controls",
+    "zh": "操作",
+    "es": "Controles",
+    "fr": "Commandes",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "40cb821c332a276f",
+    "en": "✓ controls practiced",
+    "zh": "✓ 已练习操作",
+    "es": "✓ controles practicados",
+    "fr": "✓ commandes entraînées",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b55be6043997a98b",
+    "en": "Practice your controls before the fight. You can retry in Settings.",
+    "zh": "在战斗前练习你的操作。你可以在设置中重试。",
+    "es": "Practica tus controles antes del combate. Puedes volver a intentarlo en Ajustes.",
+    "fr": "Entraînez-vous aux commandes avant le combat. Vous pouvez réessayer dans les Paramètres.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5083f751b01dddb5",
+    "en": "WASD / arrows: move · mouse: aim · J / click: attack · Space: dash · E: skill",
+    "zh": "WASD / 方向键：移动 · 鼠标：瞄准 · J / 点击：攻击 · Space：冲刺 · E：技能",
+    "es": "WASD / flechas: mover · ratón: apuntar · J / clic: atacar · Espacio: impulso · E: habilidad",
+    "fr": "WASD / flèches : se déplacer · souris : viser · J / clic : attaquer · Espace : ruée · E : compétence",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ab28e5d2f8eafcdb",
+    "en": "settings-close",
+    "zh": "settings-close",
+    "es": "settings-close",
+    "fr": "settings-close",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6e0039887ecb5ab0",
+    "en": "Continue without practice",
+    "zh": "不练习直接继续",
+    "es": "Continuar sin practicar",
+    "fr": "Continuer sans s'entraîner",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f9408bf8e7a86e7d",
+    "en": "Drag to move",
+    "zh": "拖动以移动",
+    "es": "Arrastra para moverte",
+    "fr": "Glissez pour vous déplacer",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "53a1c20d4711e091",
+    "en": "Drag across the practice area.",
+    "zh": "在练习区域内拖动。",
+    "es": "Arrastra por la zona de práctica.",
+    "fr": "Glissez sur la zone d'entraînement.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "061a2f9cac0f5ea0",
+    "en": "Tap to attack",
+    "zh": "点击以攻击",
+    "es": "Toca para atacar",
+    "fr": "Appuyez pour attaquer",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c543a8ec7fb30dcf",
+    "en": "Tap three times, with a short pause between taps.",
+    "zh": "点击三次，每次点击之间稍作停顿。",
+    "es": "Toca tres veces, con una breve pausa entre cada toque.",
+    "fr": "Appuyez trois fois, avec une courte pause entre chaque appui.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0a8ee00a7849ec35",
+    "en": "Double-tap to dash",
+    "zh": "双击以冲刺",
+    "es": "Toca dos veces para impulsarte",
+    "fr": "Appuyez deux fois pour foncer",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0641e81353cd714f",
+    "en": "Quickly tap twice. Try it two times.",
+    "zh": "快速点击两次。尝试两次。",
+    "es": "Toca dos veces rápidamente. Pruébalo dos veces.",
+    "fr": "Appuyez rapidement deux fois. Essayez deux fois.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f42b23c32a0e8c2c",
+    "en": "Hold for your skill",
+    "zh": "按住以使用技能",
+    "es": "Mantén presionado para tu habilidad",
+    "fr": "Maintenez appuyé pour votre compétence",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e13b6d2d5c6a3816",
+    "en": "Hold your finger down until the skill activates.",
+    "zh": "按住手指，直到技能激活。",
+    "es": "Mantén el dedo presionado hasta que se active la habilidad.",
+    "fr": "Maintenez le doigt appuyé jusqu'à ce que la compétence s'active.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6d2232429a77d5d7",
+    "en": "Touch practice",
+    "zh": "触控练习",
+    "es": "Práctica táctil",
+    "fr": "Entraînement tactile",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3497c59e857c6d51",
+    "en": "training-skip",
+    "zh": "training-skip",
+    "es": "training-skip",
+    "fr": "training-skip",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3bd93a7c8e178947",
+    "en": "button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]",
+    "zh": "button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]",
+    "es": "button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]",
+    "fr": "button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
   }
 ]

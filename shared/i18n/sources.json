@@ -125,11 +125,6 @@
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "6181e328735ec9b2",
-    "source": "28px \"Press Start 2P\", monospace",
-    "context": "client/app/autopsy.ts"
-  },
-  {
     "id": "873a54f972283888",
     "source": "BOSS DELETED",
     "context": "client/app/autopsy.ts"
@@ -137,11 +132,6 @@
   {
     "id": "df4d4599bdb60e71",
     "source": "SQUAD WIPED",
-    "context": "client/app/autopsy.ts"
-  },
-  {
-    "id": "b55eef0437af0b0d",
-    "source": "40px \"VT323\", monospace",
     "context": "client/app/autopsy.ts"
   },
   {
@@ -160,33 +150,13 @@
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "44c8d2a3cf11c708",
-    "source": "34px \"VT323\", monospace",
-    "context": "client/app/autopsy.ts"
-  },
-  {
-    "id": "6f1a82405f9c170f",
-    "source": "32px \"VT323\", monospace",
-    "context": "client/app/autopsy.ts"
-  },
-  {
     "id": "d9495ab8f99d5113",
     "source": "dmg {0}  combo x{1}  limbs {2}  revives {3}",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "786905536cf8dbd2",
-    "source": "20px \"Press Start 2P\", monospace",
-    "context": "client/app/autopsy.ts"
-  },
-  {
     "id": "a4eb57570bb64227",
     "source": "★ MVP",
-    "context": "client/app/autopsy.ts"
-  },
-  {
-    "id": "9e11fec658adff63",
-    "source": "22px \"Press Start 2P\", monospace",
     "context": "client/app/autopsy.ts"
   },
   {
@@ -198,11 +168,6 @@
     "id": "c2c0e7a82a255ab4",
     "source": "ZILLA",
     "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts"
-  },
-  {
-    "id": "cd60bc7526a1e1d4",
-    "source": "26px \"VT323\", monospace",
-    "context": "client/app/autopsy.ts"
   },
   {
     "id": "789a22f8b25fb061",
@@ -297,7 +262,7 @@
   {
     "id": "cd35a2426062b7d5",
     "source": "div",
-    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts, client/app/lobby.ts, client/app/main.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts"
+    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/controls.ts, client/app/game.ts, client/app/main.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts"
   },
   {
     "id": "f34b912f381f54d6",
@@ -590,11 +555,6 @@
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "86d11ee694bb9121",
-    "source": "8px \"Press Start 2P\", monospace",
-    "context": "client/app/backdrop.ts, client/app/game.ts"
-  },
-  {
     "id": "89623a27300554ad",
     "source": "Prepare the lesson",
     "context": "client/app/classroom.ts"
@@ -627,7 +587,7 @@
   {
     "id": "37a0025aa1f2e29f",
     "source": "span",
-    "context": "client/app/classroom.ts, client/app/game.ts, client/app/github.ts, client/app/hud.ts, client/app/lobby.ts, client/app/training.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts"
+    "context": "client/app/classroom.ts, client/app/game.ts, client/app/github.ts, client/app/hud.ts, client/app/lobby.ts, client/app/settings.ts, client/app/training.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts"
   },
   {
     "id": "29cbc8ebd3f8ae78",
@@ -658,16 +618,6 @@
     "id": "9d8c82049faec822",
     "source": "Build. Review. Improve.",
     "context": "client/app/classroom.ts, shared/classroom-defaults.ts"
-  },
-  {
-    "id": "b2a9fdfbdf75de4f",
-    "source": "Classroom language",
-    "context": "client/app/classroom.ts, i18n-explicit"
-  },
-  {
-    "id": "a11a75e0feeecc1a",
-    "source": "option",
-    "context": "client/app/classroom.ts, client/edu/rubric.ts"
   },
   {
     "id": "83d82a74a67aebde",
@@ -790,6 +740,11 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "a11a75e0feeecc1a",
+    "source": "option",
+    "context": "client/app/classroom.ts, client/app/settings.ts, client/edu/rubric.ts"
+  },
+  {
     "id": "670d82a199f695e5",
     "source": "前置知识：{0}",
     "context": "client/app/classroom.ts, shared/classroom-presets.ts, i18n-explicit"
@@ -802,7 +757,7 @@
   {
     "id": "97fb5f8538b89f6c",
     "source": "h3",
-    "context": "client/app/classroom.ts, client/edu/report.ts"
+    "context": "client/app/classroom.ts, client/app/settings.ts, client/edu/report.ts"
   },
   {
     "id": "5604fe7299c038af",
@@ -1360,14 +1315,139 @@
     "context": "client/app/codefmt.ts"
   },
   {
-    "id": "b3ae8e9b20ae4282",
-    "source": "\"VT323\", monospace",
-    "context": "client/app/codefmt.ts"
-  },
-  {
     "id": "c8dd1b08043f7638",
     "source": "{0}px {1}",
     "context": "client/app/codefmt.ts, client/genesis/text.ts"
+  },
+  {
+    "id": "e31da2c4aaa28800",
+    "source": "motion permission denied — choose touch only to continue",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "756b676b30f9b0d9",
+    "source": "touch: drag to move · tap to attack",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "39a6ebc40da19439",
+    "source": "motion: tilt · swing · twist · spin",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "25130fc402d9d8c9",
+    "source": "🎮 controls ",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "fde4bebbf22bdc6e",
+    "source": "— choose before the fight",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "62d6c2330036f64b",
+    "source": "denied",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "4f5c78e34b3d1a08",
+    "source": "permission denied — retry or choose touch only",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "d70f43b2216b54a8",
+    "source": "📱 tap to enable motion · required on each page load",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "80e33a2f16d6cf78",
+    "source": "waiting for sensor readings — move your phone or choose touch only",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "abcf91d9eecaec13",
+    "source": "controls-motion",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "6cd6254addba15fa",
+    "source": "tilt phone",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "7a0279d4355c22e6",
+    "source": "📱 tap to enable motion",
+    "context": "client/app/controls.ts, client/app/game.ts"
+  },
+  {
+    "id": "c9f6cef4657f40b9",
+    "source": ".btn-primary",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "ec8d441a1bfbd40a",
+    "source": "controls-touch",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "a89571ae3569de7a",
+    "source": "touch only",
+    "context": "client/app/controls.ts, client/app/game.ts"
+  },
+  {
+    "id": "860247783855f560",
+    "source": "tilt sensitivity · flat = still",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "ad936fcbed631fa6",
+    "source": "group",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "6a2326230895135d",
+    "source": "tilt sensitivity",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "5eb7a5747229df31",
+    "source": "tilt toward an edge to move · normal reaches full speed at 15°",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "daf8edbef5321678",
+    "source": "✓ gestures trained ",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "9a58c507fe47c7ff",
+    "source": "not trained yet ",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "27b0983dd4251e25",
+    "source": "controls-retrain",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "bf88691009a02817",
+    "source": "↻ re-train gestures",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "6c033f92fcd5e3e3",
+    "source": "▶ train gestures (20s)",
+    "context": "client/app/controls.ts"
+  },
+  {
+    "id": "5403573cb280b1bb",
+    "source": "drag to move · tap = attack · double-tap = dash · hold = skill",
+    "context": "client/app/controls.ts, client/app/game.ts"
+  },
+  {
+    "id": "c91c473a20710785",
+    "source": "tilt = move · swing / tap = attack · twist / double-tap = dash · spin / long-press = skill",
+    "context": "client/app/controls.ts"
   },
   {
     "id": "b0b4c036fc0c63c0",
@@ -1465,14 +1545,14 @@
     "context": "client/app/game.ts, client/app/lobby.ts"
   },
   {
-    "id": "73d6c7e5e1c0243a",
-    "source": "game-retrain",
+    "id": "c6b519b201495758",
+    "source": "game-settings",
     "context": "client/app/game.ts"
   },
   {
-    "id": "bf88691009a02817",
-    "source": "↻ re-train gestures",
-    "context": "client/app/game.ts, client/app/lobby.ts"
+    "id": "74a883a037bc227f",
+    "source": "Settings",
+    "context": "client/app/game.ts, client/app/settings.ts"
   },
   {
     "id": "561957396b20efa5",
@@ -1785,11 +1865,6 @@
     "context": "client/app/game.ts"
   },
   {
-    "id": "5403573cb280b1bb",
-    "source": "drag to move · tap = attack · double-tap = dash · hold = skill",
-    "context": "client/app/game.ts"
-  },
-  {
     "id": "c5e4be855af02286",
     "source": "tilt = move · swing/tap = attack · twist = dash · spin/hold = skill",
     "context": "client/app/game.ts"
@@ -1833,16 +1908,6 @@
     "id": "db613c2cf9b52598",
     "source": "countdown-motion-enable",
     "context": "client/app/game.ts"
-  },
-  {
-    "id": "7a0279d4355c22e6",
-    "source": "📱 tap to enable motion",
-    "context": "client/app/game.ts, client/app/lobby.ts"
-  },
-  {
-    "id": "a89571ae3569de7a",
-    "source": "touch only",
-    "context": "client/app/game.ts, client/app/lobby.ts"
   },
   {
     "id": "a0d4a6737a54383f",
@@ -2655,131 +2720,6 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "e31da2c4aaa28800",
-    "source": "motion permission denied — choose touch only to continue",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "756b676b30f9b0d9",
-    "source": "touch: drag to move · tap to attack",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "f516a5cd184f2366",
-    "source": "motion (seated, small tilts)",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "39a6ebc40da19439",
-    "source": "motion: tilt · swing · twist · spin",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "25130fc402d9d8c9",
-    "source": "🎮 controls ",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "fde4bebbf22bdc6e",
-    "source": "— choose before the fight",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "d70f43b2216b54a8",
-    "source": "📱 tap to enable motion · required on each page load",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "62d6c2330036f64b",
-    "source": "denied",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "4f5c78e34b3d1a08",
-    "source": "permission denied — retry or choose touch only",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "80e33a2f16d6cf78",
-    "source": "waiting for sensor readings — move your phone or choose touch only",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "abcf91d9eecaec13",
-    "source": "controls-motion",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "6cd6254addba15fa",
-    "source": "tilt phone",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "7277e28eae17cc4b",
-    "source": "controls-seated",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "a99b364fc3731808",
-    "source": "seated / small moves",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "c9f6cef4657f40b9",
-    "source": ".btn-primary",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "ec8d441a1bfbd40a",
-    "source": "controls-touch",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "860247783855f560",
-    "source": "tilt sensitivity · flat = still",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "ad936fcbed631fa6",
-    "source": "group",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "6a2326230895135d",
-    "source": "tilt sensitivity",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "5eb7a5747229df31",
-    "source": "tilt toward an edge to move · normal reaches full speed at 15°",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "daf8edbef5321678",
-    "source": "✓ gestures trained ",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "9a58c507fe47c7ff",
-    "source": "not trained yet ",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "27b0983dd4251e25",
-    "source": "controls-retrain",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "6c033f92fcd5e3e3",
-    "source": "▶ train gestures (20s)",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "c91c473a20710785",
-    "source": "tilt = move · swing / tap = attack · twist / double-tap = dash · spin / long-press = skill",
-    "context": "client/app/lobby.ts"
-  },
-  {
     "id": "c5ffdb878c092d71",
     "source": "portrait noise",
     "context": "client/app/lobby.ts"
@@ -3395,8 +3335,8 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "8edf5410b8ce3006",
-    "source": "📱 enable motion above or choose touch only",
+    "id": "54ad77a69ea95c9c",
+    "source": "📱 open settings to enable motion or choose touch only",
     "context": "client/app/lobby.ts"
   },
   {
@@ -3630,6 +3570,76 @@
     "context": "client/app/report.ts"
   },
   {
+    "id": "2764b4c1b7b57015",
+    "source": "Before you play",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "6e4ce16df1850dae",
+    "source": "Choose your language before joining the class.",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "f5c588657f26247d",
+    "source": "Choose your language and controls, then try them before the fight.",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "a4fe65264ef7dbb3",
+    "source": "Language",
+    "context": "client/app/settings.ts, i18n-explicit"
+  },
+  {
+    "id": "7d693afc16f2fb04",
+    "source": "Only the host can change the classroom language",
+    "context": "client/app/settings.ts, i18n-explicit"
+  },
+  {
+    "id": "b2a9fdfbdf75de4f",
+    "source": "Classroom language",
+    "context": "client/app/settings.ts, i18n-explicit"
+  },
+  {
+    "id": "799c269135742a36",
+    "source": "Controls",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "40cb821c332a276f",
+    "source": "✓ controls practiced",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "b55be6043997a98b",
+    "source": "Practice your controls before the fight. You can retry in Settings.",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "5083f751b01dddb5",
+    "source": "WASD / arrows: move · mouse: aim · J / click: attack · Space: dash · E: skill",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "ab28e5d2f8eafcdb",
+    "source": "settings-close",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "6e0039887ecb5ab0",
+    "source": "Continue without practice",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "31fbef162594de01",
+    "source": "Continue",
+    "context": "client/app/settings.ts, i18n-explicit"
+  },
+  {
+    "id": "7d9eb7acb13e2462",
+    "source": "Close",
+    "context": "client/app/settings.ts, i18n-explicit"
+  },
+  {
     "id": "728dbd5001b172d8",
     "source": "toggle sound",
     "context": "client/app/sound.ts"
@@ -3775,24 +3785,59 @@
     "context": "client/app/training.ts"
   },
   {
+    "id": "f9408bf8e7a86e7d",
+    "source": "Drag to move",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "53a1c20d4711e091",
+    "source": "Drag across the practice area.",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "061a2f9cac0f5ea0",
+    "source": "Tap to attack",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "c543a8ec7fb30dcf",
+    "source": "Tap three times, with a short pause between taps.",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "0a8ee00a7849ec35",
+    "source": "Double-tap to dash",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "0641e81353cd714f",
+    "source": "Quickly tap twice. Try it two times.",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "f42b23c32a0e8c2c",
+    "source": "Hold for your skill",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "e13b6d2d5c6a3816",
+    "source": "Hold your finger down until the skill activates.",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "6d2232429a77d5d7",
+    "source": "Touch practice",
+    "context": "client/app/training.ts"
+  },
+  {
+    "id": "3497c59e857c6d51",
+    "source": "training-skip",
+    "context": "client/app/training.ts"
+  },
+  {
     "id": "9e132cb0a3ece12d",
     "source": "(pointer: coarse)",
     "context": "client/app/util.ts, client/input/index.ts, client/input/permission.ts, client/input/training-trace.ts"
-  },
-  {
-    "id": "ea764ba428d1cdda",
-    "source": "16px \"Press Start 2P\"",
-    "context": "client/app/util.ts"
-  },
-  {
-    "id": "2897d2904bb7eb6e",
-    "source": "16px \"VT323\"",
-    "context": "client/app/util.ts, client/genesis/index.ts"
-  },
-  {
-    "id": "2cc33e065c5715b6",
-    "source": "16px \"Silkscreen\"",
-    "context": "client/app/util.ts"
   },
   {
     "id": "ca9a9cd253c42f6d",
@@ -5945,8 +5990,8 @@
     "context": "client/input/index.ts"
   },
   {
-    "id": "2ab8fca8bff00b44",
-    "source": "button, input, textarea, select, a, [data-motion-profile]",
+    "id": "3bd93a7c8e178947",
+    "source": "button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]",
     "context": "client/input/index.ts"
   },
   {
@@ -6408,21 +6453,6 @@
     "id": "5d45a6a2f71c7a29",
     "source": "git revert rollback",
     "context": "client/genesis/scene.ts"
-  },
-  {
-    "id": "f2d5dd2b39721062",
-    "source": "\"VT323\", ui-monospace, monospace",
-    "context": "client/genesis/text.ts"
-  },
-  {
-    "id": "cb8a70a083d96883",
-    "source": "\"Press Start 2P\", ui-monospace, monospace",
-    "context": "client/genesis/text.ts"
-  },
-  {
-    "id": "88b7ed3f0539e2f5",
-    "source": "\"Silkscreen\", \"Press Start 2P\", monospace",
-    "context": "client/genesis/text.ts"
   },
   {
     "id": "efa4202bfc60d8ba",
@@ -10215,16 +10245,6 @@
     "context": "shared/classroom-defaults.ts"
   },
   {
-    "id": "a4fe65264ef7dbb3",
-    "source": "Language",
-    "context": "i18n-explicit"
-  },
-  {
-    "id": "7d693afc16f2fb04",
-    "source": "Only the host can change the classroom language",
-    "context": "i18n-explicit"
-  },
-  {
     "id": "ba118bf7fc9c1aed",
     "source": "English",
     "context": "i18n-explicit"
@@ -10252,16 +10272,6 @@
   {
     "id": "19766ed6ccb2f4a3",
     "source": "Cancel",
-    "context": "i18n-explicit"
-  },
-  {
-    "id": "7d9eb7acb13e2462",
-    "source": "Close",
-    "context": "i18n-explicit"
-  },
-  {
-    "id": "31fbef162594de01",
-    "source": "Continue",
     "context": "i18n-explicit"
   },
   {

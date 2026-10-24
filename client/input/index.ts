@@ -160,6 +160,7 @@ export function createInput(opts: InputOptions): InputController {
       y: moveGravity.y + (next.y - moveGravity.y) * alpha, z: moveGravity.z + (next.z - moveGravity.z) * alpha } : next;
     lastGravityAt = now;
   };
+  let settingsOpen = document.body?.classList?.contains('settings-open') ?? false;
   const reset = () => {
     keys.clear();
     mouseFire = false;
@@ -176,7 +177,7 @@ export function createInput(opts: InputOptions): InputController {
     'KeyJ', ...dashKeys, ...skillKeys]);
   on(window, 'keydown', (event => {
     const e = event as KeyboardEvent;
-    if (editable(e.target) || !gameKeys.has(e.code)) return;
+    if (settingsOpen || editable(e.target) || !gameKeys.has(e.code)) return;
     e.preventDefault();
     if (!keys.has(e.code) && !e.repeat) {
       if (dashKeys.has(e.code)) dash = true;
@@ -221,7 +222,7 @@ export function createInput(opts: InputOptions): InputController {
     const target = event.target as Element | null;
     // Choosing tap-only or opening settings must not accidentally request sensors.
     // Buttons (including the enable pill) have their own synchronous onclick requests.
-    if (target?.closest?.('button, input, textarea, select, a, [data-motion-profile]')) return;
+    if (settingsOpen || target?.closest?.('button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]')) return;
     const now = performance.now();
     // One touch produces touchend followed by click. A denied end must not immediately
     // prompt again on that same tap, while a later tap must remain retryable.
@@ -339,9 +340,9 @@ export function createInput(opts: InputOptions): InputController {
     },
     setMotionProfile(profile) {
       if (disposed || !isMotionProfile(profile)) return;
-      saveMotionProfile(profile);
       if (profile === motionProfile) return;
       motionProfile = profile;
+      saveMotionProfile(profile);
       thresholds = loadThresholds(profile);
       permissionVersion++;
       reset(); resetCalibration(); moveGravity = null;
@@ -377,6 +378,7 @@ export function createInput(opts: InputOptions): InputController {
     },
     sample() {
       const now = performance.now();
+      if (settingsOpen) { reset(); return { seq: ++seq, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: mode }; }
       let move: [number, number] = [0, 0];
       let aim: [number, number] | null = null;
       let fire = false;
@@ -436,6 +438,8 @@ export function createInput(opts: InputOptions): InputController {
   if (mobile) startAutomaticTrace(trace, 'fight');
   else if (new URLSearchParams(window.location?.search).get('trace') === '1') trace.start();
   if (trace.active) trace.add({ type: 'gesture', at: performance.now(), kind: 'settings', profile: motionProfile, sensitivity: tiltSensitivity, fullSpeed: TILT_FULL_SPEED[tiltSensitivity], movement: 'horizontal-gravity-linear' });
+  on(window, 'gitzilla:settings', e => { settingsOpen = !!(e as CustomEvent).detail?.open; reset(); });
+  on(window, 'kaiju:motion-profile', () => { const next = loadMotionProfile(); if (next !== motionProfile) controller.setMotionProfile(next); });
   on(window, 'kaiju:tilt-sensitivity', () => { tiltSensitivity = loadTiltSensitivity(); });
   const debugPanel = window.location && new URLSearchParams(window.location.search).get('debug') === 'input'
     ? createInputDebugPanel() : null;

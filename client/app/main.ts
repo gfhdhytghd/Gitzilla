@@ -1,3 +1,4 @@
+import { configureSettings, installSettings } from './settings';
 import { installLanguageUi, setClassroomLanguage } from '../i18n';
 import { createClassroom } from './classroom';
 // Entry: path router (/ landing, /r/<ROOM> room) + room controller that swaps lobby/game/autopsy screens.
@@ -15,11 +16,12 @@ import { getMotionPermissionState, subscribeMotionPermission } from "../input";
 import { h, store } from "./util";
 
 installLanguageUi();
+installSettings();
 const root = document.getElementById("app")!;
 const params = new URLSearchParams(location.search);
 const mock = params.has("mock");
 // renderer chunks are lazy; screens wait briefly so portraits/backdrops use the real art, not placeholders
-const modulesReady = Promise.race([loadModules(), new Promise((r) => setTimeout(r, 2000))]);
+const modulesReady = Promise.all([Promise.race([loadModules(), new Promise((r) => setTimeout(r, 2000))]), document.fonts.load('16px "Unifont"').catch(() => [])]);
 
 /** Full-screen terminal error with a way back to the landing page. */
 function fatalScreen(title: string, detail: string): HTMLElement {
@@ -61,6 +63,7 @@ function route() {
 }
 
 function showLanding() {
+  configureSettings({});
   const landing = createLanding({
     go(room) {
       landing.destroy();
@@ -160,6 +163,7 @@ function startRoom(room: string, role: Role, name: string) {
   function refresh() {
     if (!app.lobby) return;
     setClassroomLanguage(app.lobby.mode === "edu" ? app.lobby.locale ?? "en" : null);
+    configureSettings({ classroom: app.lobby.mode === "edu", host: app.role === "screen" && app.lobby.ownerId === app.you, connected: app.status === "open", spectator: app.role === "screen", changeLanguage: lang => app.conn.send({ t: "classroomLanguage", locale: lang }) });
     if (app.lobby.mode === "edu") {
       show("classroom"); screen?.update?.(app); return;
     }

@@ -36,7 +36,7 @@ try {
   const desktop=await browser.newContext({viewport:{width:1440,height:900}});
   for(const c of [host,phone,desktop]){
     await c.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/,route=>route.abort());
-    await c.addInitScript(()=>{try{localStorage.setItem('kaiju.name','Ada');}catch{}(window as any).traffic={sent:[],received:[]};const Original=window.WebSocket;window.WebSocket=class extends Original{constructor(url:string,protocols?:string|string[]){super(url,protocols);this.addEventListener('message',e=>{try{(window as any).traffic.received.push(JSON.parse(e.data));}catch{}});}send(data:any){try{(window as any).traffic.sent.push(JSON.parse(data));}catch{}super.send(data);}} as any;});
+    await c.addInitScript(()=>{try{localStorage.setItem('gitzilla.onboarding.v1','1');localStorage.setItem('kaiju.name','Ada');}catch{}(window as any).traffic={sent:[],received:[]};const Original=window.WebSocket;window.WebSocket=class extends Original{constructor(url:string,protocols?:string|string[]){super(url,protocols);this.addEventListener('message',e=>{try{(window as any).traffic.received.push(JSON.parse(e.data));}catch{}});}send(data:any){try{(window as any).traffic.sent.push(JSON.parse(data));}catch{}super.send(data);}} as any;});
     c.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
   }
   const teacher=await host.newPage(), a=await phone.newPage(), b=await desktop.newPage();
@@ -89,12 +89,16 @@ try {
   await migration.getByTestId('step-title-0').fill('My dictionary challenge');
   await migration.getByTestId('step-checks-0').fill('file: README.md\ncontains: python/09_dict.py :: inventory');
   await migration.getByTestId('step-checks-0').evaluate(el => el.setAttribute('data-editor-identity', 'preserved'));
+  await migration.getByTestId('settings-open').click();
   await migration.getByTestId('classroom-language').selectOption('fr');
+  await migration.getByTestId('settings-close').click();
   await migration.waitForFunction(()=>document.documentElement.lang==='fr');
   if(await migration.getByTestId('step-title-0').inputValue()!=='My dictionary challenge')throw new Error('Language switch lost unpublished title');
   if(await migration.getByTestId('step-checks-0').inputValue()!=='file: README.md\ncontains: python/09_dict.py :: inventory')throw new Error('Language switch lost unpublished checks');
   if(await migration.getByTestId('step-checks-0').getAttribute('data-editor-identity')!=='preserved')throw new Error('Language switch rebuilt the active editor');
+  await migration.getByTestId('settings-open').click();
   await migration.getByTestId('classroom-language').selectOption('en');
+  await migration.getByTestId('settings-close').click();
   await migration.getByTestId('classroom-preset-select').selectOption('01-hello');
   if(await migration.getByTestId('step-title-0').inputValue()!=='My dictionary challenge')throw new Error('Previewing a preset overwrote the draft');
   await migration.getByTestId('classroom-save-plan').click();
@@ -104,7 +108,9 @@ try {
   if(await courseStudent.getByTestId('classroom-language').count()!==0 && await courseStudent.getByTestId('classroom-language').isVisible())throw new Error('Student has a classroom language control');
   const instructionLanguages = new Set<string>();
   for(const lang of ['en','zh','es','fr']) {
+    await migration.getByTestId('settings-open').click();
     await migration.getByTestId('classroom-language').selectOption(lang);
+    await migration.getByTestId('settings-close').click();
     await courseStudent.waitForFunction(l=>document.documentElement.lang===l,lang);
     if((await courseStudent.locator('.cr-task h2').innerText()).indexOf('My dictionary challenge')<0)throw new Error('Language switch overwrote teacher-authored text');
     instructionLanguages.add(await courseStudent.locator('.cr-instructions').innerText());
@@ -114,8 +120,9 @@ try {
   if(instructionLanguages.size!==4)throw new Error('Preset instructions did not change across all four languages');
   await courseStudent.evaluate(()=>localStorage.setItem('gitzilla.locale','zh'));
   await courseStudent.reload();await courseStudent.waitForFunction(()=>document.documentElement.lang==='fr');
-  await migration.reload();await migration.getByTestId('classroom-language').waitFor();
+  await migration.reload();await migration.getByTestId('settings-open').click();await migration.getByTestId('classroom-language').waitFor();
   if(await migration.getByTestId('classroom-language').inputValue()!=='fr')throw new Error('Host language did not survive reload');
+  await migration.getByTestId('settings-close').click();
   await migration.setViewportSize({width:390,height:844});
   await migration.getByTestId('classroom-preset-library').screenshot({path:`${out}/python-presets-phone.png`});
   if(await migration.evaluate(()=>document.querySelector('.classroom-screen')!.scrollWidth>innerWidth))throw new Error('Preset form overflows phone');

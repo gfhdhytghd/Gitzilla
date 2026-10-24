@@ -37,7 +37,7 @@ try {
   for (const context of [aCtx, bCtx]) {
     await context.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/, r => r.abort());
     await context.addInitScript(() => {
-      try { localStorage.setItem('kaiju.name', 'Duelist'); } catch { /* Blank frames have no storage. */ }
+      try { localStorage.setItem('gitzilla.onboarding.v1','1');localStorage.setItem('kaiju.name', 'Duelist'); } catch { /* Blank frames have no storage. */ }
       (window as any).states = [];
       const Native = window.WebSocket;
       window.WebSocket = class extends Native { constructor(url: string | URL, protocols?: string | string[]) { super(url, protocols); this.addEventListener('message', e => { const msg = JSON.parse(e.data); if (msg.t === 'welcome') (window as any).playerId = msg.you; if (msg.t === 'snapshot') (window as any).states.push(msg.state); }); } };

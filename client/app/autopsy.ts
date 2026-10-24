@@ -65,16 +65,16 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
   }
   g.textBaseline = "top";
   g.fillStyle = accent;
-  g.font = '28px "Press Start 2P", monospace';
+  g.font = '28px "Press Start 2P", "Unifont", monospace';
   g.fillText(t(a.victory ? "BOSS DELETED" : "SQUAD WIPED"), 56, 56);
   g.fillStyle = "#e8fff2";
-  g.font = '40px "VT323", monospace';
+  g.font = '40px "Unifont", "VT323", monospace';
   g.fillText(t(`GITZILLA · ${a.boss ? shortRepo(a.boss.repo) : "classroom brawl"} · ${fmtTime(a.duration)}`), 58, 110);
   g.fillStyle = "#ffd23d";
   const text = t(brag(a, pid, a.boss?.repo ?? "the class"));
   const words = text.match(/[\p{Script=Han}]|[^\p{Script=Han}\s]+/gu) ?? [];
   let line = "", y = 160;
-  g.font = '34px "VT323", monospace';
+  g.font = '34px "Unifont", "VT323", monospace';
   for (const w of words) {
     const join = line && !/[\p{Script=Han}]$/u.test(line) && !/^[\p{Script=Han}]/u.test(w) ? ' ' : '';
     if (line && g.measureText(line + join + w).width > 640) {
@@ -89,23 +89,23 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
   if (heroKit) drawCode(g, `⌐ ${heroKit.code?.weapon?.name ?? heroKit.weapon}`, 330, 400, 34, 560);
   if (p) {
     g.fillStyle = "#3de8ff";
-    g.font = '32px "VT323", monospace';
+    g.font = '32px "Unifont", "VT323", monospace';
     g.fillText(t(`dmg ${Math.round(p.stats.damage)}  combo x${p.stats.bestCombo}  limbs ${p.stats.limbsBroken}  revives ${p.stats.revives}`), 330, 500);
     if (a.mvp === pid) {
       g.fillStyle = "#ffd23d";
-      g.font = '20px "Press Start 2P", monospace';
+      g.font = '20px "Press Start 2P", "Unifont", monospace';
       g.fillText(t("★ MVP"), 330, 440);
     }
   }
   // brand mark + wordmark in the corner
   g.drawImage(markCanvas(3), 52, H - 112);
-  g.font = '22px "Press Start 2P", monospace';
+  g.font = '22px "Press Start 2P", "Unifont", monospace';
   g.fillStyle = "#2fe39a";
   g.fillText(t("GIT"), 196, H - 84);
   g.fillStyle = "#ff3e9a";
   g.fillText(t("ZILLA"), 196 + g.measureText(t("GIT")).width, H - 84);
   g.fillStyle = "rgba(255,255,255,.4)";
-  g.font = '26px "VT323", monospace';
+  g.font = '26px "Unifont", "VT323", monospace';
   g.fillText(t("$ play at HackPSU · your repo is a kaiju"), 196, H - 52);
   g.fillStyle = "rgba(0,0,0,.18)";
   for (let yy = 0; yy < H; yy += 3) g.fillRect(0, yy, W, 1);

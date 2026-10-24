@@ -8,9 +8,8 @@ import { createGithubPicker } from "./github";
 import { codeSpan } from "./codefmt";
 import { ARCH, archetypeWhy } from "./archetype";
 import { createGenesisMount } from "./genesisMount";
-import { isTrained, openTraining } from "./training";
-import { loadMotionProfile, saveMotionProfile, getMotionPermissionState, requestMotionPermission, subscribeMotionPermission, loadTiltSensitivity, saveTiltSensitivity, TILT_SENSITIVITIES, TILT_FULL_SPEED } from "../input";
-import type { MotionProfile } from "../../shared/types";
+import { openSettings } from "./settings";
+import { getMotionPermissionState, subscribeMotionPermission } from "../input";
 import { createLogo } from "./logo";
 import { markCanvas } from "./mark";
 import { MOCK_REPOS } from "./mock";
@@ -67,71 +66,6 @@ function bossCode(k: BossKit): HTMLElement[] {
   return out;
 }
 
-/**
- * Phones: pick controls in the lobby (a real user gesture, so iOS permission prompts work) instead of
- * mid-intro. The choice is a client-local motion profile read by client/input at match start.
- */
-function createControlsCard(): { el: HTMLElement; dispose(): void } {
-  const el = h("div.controls-card", { "data-testid": "controls-card" });
-  const hasSensors = typeof (window as { DeviceMotionEvent?: unknown }).DeviceMotionEvent !== "undefined";
-  const render = () => {
-    const prof = loadMotionProfile();
-    const chosen = (() => {
-      try {
-        return localStorage.getItem("kaiju.controlsChosen") === "1";
-      } catch {
-        return false;
-      }
-    })();
-    const pick = (p: MotionProfile) => {
-      saveMotionProfile(p);
-      try {
-        localStorage.setItem("kaiju.controlsChosen", "1");
-      } catch {
-        /* private mode */
-      }
-      render();
-    };
-    const enableMotion = (p: MotionProfile) => {
-      pick(p);
-      void requestMotionPermission(p).then((granted) => {
-        if (!granted) toast("motion permission denied — choose touch only to continue", "info");
-        else if (!isTrained()) openTraining({ onDone: render });
-        render();
-      });
-    };
-    const state = getMotionPermissionState();
-    const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : prof === "seated" ? "motion (seated, small tilts)" : "motion: tilt · swing · twist · spin";
-    el.replaceChildren(
-      h("div.cc-title", null, "🎮 controls ", state.ready ? h("span.cc-chosen", null, `✓ ${label}`) : h("span.dim", null, "— choose before the fight")),
-      ...(!state.ready ? [h("div.cc-permission", { role: "status" }, state.needsPermission ? "📱 tap to enable motion · required on each page load" : state.permission === "denied" ? "permission denied — retry or choose touch only" : "waiting for sensor readings — move your phone or choose touch only")] : []),
-      h(
-        "div.cc-btns",
-        null,
-        hasSensors
-          ? h(`button.btn${prof === "standard" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-motion", onclick: () => enableMotion("standard") }, state.ready ? "tilt phone" : "📱 tap to enable motion")
-          : null,
-        hasSensors ? h(`button.btn${prof === "seated" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-seated", onclick: () => enableMotion("seated") }, "seated / small moves") : null,
-        h(`button.btn${prof === "tap-only" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-touch", onclick: () => pick("tap-only") }, "touch only"),
-      ),
-      ...(prof !== "tap-only" ? [h("div.cc-sensitivity", null,
-        h("div", null, "tilt sensitivity · flat = still"),
-        h("div.cc-btns", { role: "group", "aria-label": "tilt sensitivity" }, ...TILT_SENSITIVITIES.map(value =>
-          h(`button.btn${loadTiltSensitivity() === value ? ".btn-primary" : ""}`, {
-            "data-testid": `tilt-${value}`, "aria-pressed": loadTiltSensitivity() === value,
-            onclick: () => { saveTiltSensitivity(value); render(); }
-          }, `${value} · ${TILT_FULL_SPEED[value]}°`))),
-        h("div.dim", null, "tilt toward an edge to move · normal reaches full speed at 15°"))] : []),
-      ...(chosen && prof !== "tap-only" ? [h("div.cc-train", null,
-            isTrained() ? h("span.ok", null, "✓ gestures trained ") : h("span.dim", null, "not trained yet "),
-            h("button.btn-link", { "data-testid": "controls-retrain", onclick: () => openTraining({ onDone: () => render() }) }, isTrained() ? "↻ re-train gestures" : "▶ train gestures (20s)")),
-        h("div.cc-legend", null, "tilt = move · swing / tap = attack · twist / double-tap = dash · spin / long-press = skill")] : []),
-    );
-  };
-  const dispose = subscribeMotionPermission(render);
-  render();
-  return { el, dispose };
-}
 
 let fallbackCache: Promise<string[]> | null = null;
 function fallbacks(mock: boolean): Promise<string[]> {
@@ -349,7 +283,6 @@ export function createLobby(app: AppCtx): Screen {
     " ",
     h("button.btn-link", { "data-testid": "player-repo-change", onclick: () => ((changingRepo = true), render(), repoInput.focus()) }, "change"),
   );
-  const controls = !screen && isPhone() ? createControlsCard() : null;
   const youPanel = h(
     "section.panel.you-panel",
     null,
@@ -357,7 +290,6 @@ export function createLobby(app: AppCtx): Screen {
     pickerDone,
     pickerBox,
     youStatus,
-    ...(controls ? [controls.el] : []),
     heroGenesis.host,
     h("div.genesis-hint", null, "▶ watch your repo compile into your hero · tap to replay"),
     youCard,
@@ -961,8 +893,8 @@ export function createLobby(app: AppCtx): Screen {
       text = `⟳ cloning ${me.repo ?? "your repo"}…`;
       cls = "busy";
     } else if (!getMotionPermissionState().ready) {
-      text = "📱 enable motion above or choose touch only";
-      act = () => controls?.el.scrollIntoView({ behavior: "smooth", block: "center" });
+      text = "📱 open settings to enable motion or choose touch only";
+      act = openSettings;
     } else if (owner && pendingControls().length) {
       text = `waiting for controls: ${pendingControls().map(p => p.name).join(", ")}`;
       cls = "busy";
@@ -1036,7 +968,6 @@ export function createLobby(app: AppCtx): Screen {
     update: render,
     destroy() {
       stopPermission();
-      controls?.dispose();
       rubricEditor?.dispose();
       clearInterval(iv);
       removeEventListener("resize", onResize);

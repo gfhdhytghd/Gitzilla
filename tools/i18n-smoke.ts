@@ -16,7 +16,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await context.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/, route => route.abort());
   await context.route('**/auth/me', route => route.fulfill({ json: { authenticated: false } }));
-  await context.addInitScript(() => { localStorage.setItem('kaiju.name', 'Ready'); localStorage.setItem('gitzilla.locale', 'en'); });
+  await context.addInitScript(() => { localStorage.setItem('gitzilla.onboarding.v1','1'); localStorage.setItem('kaiju.motionProfile','tap-only'); localStorage.setItem('kaiju.touchTrained.v1','1'); localStorage.setItem('kaiju.name', 'Ready'); localStorage.setItem('gitzilla.locale', 'en'); });
   const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
   const cases = [
     { name: 'landing', path: '/?mock=1', control: 'join-submit', source: 'join' },
@@ -26,7 +26,9 @@ try {
   for (const view of cases) {
     await page.goto(base + view.path); await page.getByTestId(view.control).waitFor();
     for (const lang of LOCALES) {
+      await page.getByTestId('settings-open').click();
       await page.getByTestId('language-select').selectOption(lang);
+      await page.getByTestId('settings-close').click();
       const expected = translate(view.source, lang);
       if (lang !== 'en' && expected === view.source) throw new Error(`Missing translation: ${view.source}/${lang}`);
       await page.waitForFunction(({ id, expected }) => document.querySelector(`[data-testid="${id}"]`)?.textContent === expected, { id: view.control, expected });

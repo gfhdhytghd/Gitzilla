@@ -4,9 +4,9 @@
 export type Font = "term" | "pix" | "small";
 import { t } from '../i18n';
 const FAMILY: Record<Font, string> = {
-  term: '"VT323", ui-monospace, monospace',
-  pix: '"Press Start 2P", ui-monospace, monospace',
-  small: '"Silkscreen", "Press Start 2P", monospace',
+  term: '"Unifont", "VT323", ui-monospace, monospace',
+  pix: '"Press Start 2P", "Unifont", ui-monospace, monospace',
+  small: '"Silkscreen", "Unifont", "Press Start 2P", monospace',
 };
 // Visual tweak per family so equal "logical size" reads about the same height.
 const SCALE: Record<Font, number> = { term: 1.25, pix: 0.62, small: 0.8 };

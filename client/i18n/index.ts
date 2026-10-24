@@ -47,12 +47,7 @@ export function installLanguageUi() {
     if (!node.closest('[translate="no"],[data-i18n-skip],script,style,code,pre')) translateAttrs(node);
     if (node.closest(skip)) return; for (const child of node.childNodes) walk(child);
   };
-  const bar = document.createElement('label'); bar.className = 'language-switch'; bar.dataset.i18nSkip = '';
-  const label = document.createElement('span'); label.textContent = '🌐'; bar.append(label);
-  const select = document.createElement('select'); select.setAttribute('aria-label', 'Language'); select.dataset.testid = 'language-select';
-  for (const lang of LOCALES) { const option = document.createElement('option'); option.value = lang; option.textContent = languageNames[lang]; select.append(option); }
-  select.value = locale(); select.onchange = () => { if (isLocale(select.value)) setLanguage(select.value); }; bar.append(select); document.body.append(bar);
-  const refresh = () => { select.value = locale(); select.setAttribute('aria-label', t('Language')); document.documentElement.lang = locale(); walk(document.body); };
+  const refresh = () => { document.documentElement.lang = locale(); walk(document.body); };
   const observer = new MutationObserver(records => {
     for (const record of records) {
       if (record.type === 'characterData') translateText(record.target);
@@ -62,5 +57,5 @@ export function installLanguageUi() {
   });
   observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['title', 'placeholder', 'aria-label'] });
   const unsubscribe = onLocaleChange(refresh); refresh();
-  return () => { observer.disconnect(); unsubscribe(); bar.remove(); };
+  return () => { observer.disconnect(); unsubscribe(); };
 }

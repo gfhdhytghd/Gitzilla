@@ -1,3 +1,4 @@
+import { createTouchGestureState, recognizeTouch, type TouchSignal } from '../input/touch-gestures';
 // Motion v3 gesture training (lobby, phones): 5 short steps with an animated pixel phone, a live meter and a ✓ per
 // step. Doubles as the tutorial. Reads DeviceOrientation/DeviceMotion directly (no dependency on the input module) and
 // stores per-player thresholds in localStorage (`kaiju.gestureProfile`), which game.ts hands to
@@ -76,7 +77,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
   const skipBtn = h("button.btn.btn-ghost.tr-skip", { "data-testid": "training-skip" }, "skip training");
   const el = h(
     "div.training",
-    { "data-testid": "training" },
+    { "data-testid": "training", "data-input-ignore": true },
     h("div.tr-head", null, h("span.prompt", null, "$ gesture-training"), dots),
     h("div.tr-stage", null, phone, pad),
     title,
@@ -305,5 +306,72 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     el.remove();
     opts.onDone?.(trained);
   }
+  return () => finish(false);
+}
+
+export const controlsTrained = () => loadMotionProfile() === 'tap-only'
+  ? store.get('kaiju.touchTrained.v1') === '1' : isTrained();
+export function openControlTraining(opts: { onDone?(trained: boolean): void } = {}) {
+  return loadMotionProfile() === 'tap-only' ? openTouchTraining(opts) : openTraining(opts);
+}
+
+/** Practice the same tap/double-tap/hold recognizer used by the fight. */
+function openTouchTraining(opts: { onDone?(trained: boolean): void }): () => void {
+  const steps = [
+    { title: 'Drag to move', sub: 'Drag across the practice area.', goal: 1, action: 'move' },
+    { title: 'Tap to attack', sub: 'Tap three times, with a short pause between taps.', goal: 3, action: 'attack' },
+    { title: 'Double-tap to dash', sub: 'Quickly tap twice. Try it two times.', goal: 2, action: 'dash' },
+    { title: 'Hold for your skill', sub: 'Hold your finger down until the skill activates.', goal: 1, action: 'skill' },
+  ];
+  let index = 0, count = 0, disposed = false, pointer: number | null = null;
+  let origin: [number, number] = [0, 0], state = createTouchGestureState();
+  const title = h('h2.tr-title'), sub = h('p.tr-sub'), status = h('p.tr-meter-lbl');
+  const pad = h('div.touch-practice', { 'data-testid': 'touch-practice' }, h('span', null, '</>'));
+  const next = h('button.btn.btn-primary', { 'data-testid': 'training-next', hidden: true, onclick: () => {
+    if (count < steps[index].goal) return;
+    if (++index === steps.length) { finish(true); return; }
+    count = 0; pointer = null; state = createTouchGestureState(); render();
+  } }, 'next ▶');
+  const el = h('div.training', { 'data-testid': 'training', 'data-input-ignore': true },
+    h('div.tr-head', null, 'Touch practice'), title, sub, pad, status,
+    h('div.tr-actions', null, h('button.btn.btn-ghost', { 'data-testid': 'training-skip', onclick: () => finish(false) }, 'skip training'), next));
+  const render = () => {
+    title.textContent = `${index + 1}/4 · ${steps[index].title}`;
+    sub.textContent = steps[index].sub;
+    status.textContent = `${count} / ${steps[index].goal}`;
+    next.hidden = count < steps[index].goal;
+    next.textContent = index === 3 ? 'done ✓' : 'next ▶';
+  };
+  const hit = (action: string) => {
+    if (action !== steps[index].action || count >= steps[index].goal) return;
+    count++; vibrate(20); render();
+  };
+  const process = (event: TouchSignal) => {
+    const result = recognizeTouch(state, event); state = result.state;
+    if (result.action) hit(result.action);
+  };
+  pad.addEventListener('pointerdown', e => {
+    if (pointer !== null) return;
+    pointer = e.pointerId; origin = [e.clientX, e.clientY]; pad.setPointerCapture(pointer);
+    process({ type: 'down', at: performance.now(), x: e.clientX, y: e.clientY });
+  });
+  pad.addEventListener('pointermove', e => {
+    if (pointer !== e.pointerId) return;
+    process({ type: 'move', at: performance.now(), x: e.clientX, y: e.clientY });
+    if (Math.hypot(e.clientX - origin[0], e.clientY - origin[1]) >= 44) hit('move');
+  });
+  pad.addEventListener('pointerup', e => {
+    if (pointer !== e.pointerId) return;
+    process({ type: 'up', at: performance.now() }); pointer = null;
+  });
+  pad.addEventListener('pointercancel', () => { pointer = null; state = createTouchGestureState(); });
+  const timer = window.setInterval(() => process({ type: 'tick', at: performance.now() }), 16);
+  function finish(trained: boolean) {
+    if (disposed) return;
+    disposed = true; clearInterval(timer); el.remove();
+    if (trained) store.set('kaiju.touchTrained.v1', '1');
+    opts.onDone?.(trained);
+  }
+  render(); document.body.append(el);
   return () => finish(false);
 }

@@ -1,6 +1,6 @@
+import { placeSettingsButton } from './settings';
 import { localizeClassroomPlan } from '../../shared/classroom-localize';
-import { locale, onLocaleChange, languageNames, LOCALES, t, formatNumber } from '../i18n';
-import { isLocale } from '../../shared/i18n/locale';
+import { locale, onLocaleChange, t, formatNumber } from '../i18n';
 import type { ClassroomPlan, ClassroomState, ClassroomStep, ClassroomReport, ClassroomCommand, ClassroomCheck } from '../../shared/classroom';
 import { defaultClassroomPlan } from '../../shared/classroom-defaults';
 import { pythonClassroomPresets, getPythonClassroomPresets, pythonClassroomPlan, pythonStarter, pythonTeacherGuide } from '../../shared/classroom-presets';
@@ -47,15 +47,12 @@ export function createClassroom(app: AppCtx): Screen {
   const phase = h('span.cr-phase');
   const clock = h('strong.cr-clock', { 'data-testid': 'classroom-clock' });
   const progress = h('div.cr-class-progress', { 'data-testid': 'classroom-progress' });
-  const languageSelect = h('select', { 'data-testid': 'classroom-language', 'aria-label': 'Classroom language', 'data-i18n-skip': true }, ...LOCALES.map(lang => h('option', { value: lang }, languageNames[lang]))) as HTMLSelectElement;
-  languageSelect.value = locale();
-  languageSelect.onchange = () => { if (teacher() && isLocale(languageSelect.value)) app.conn.send({ t: 'classroomLanguage', locale: languageSelect.value }); };
-  const languageControl = h('label.cr-language', null, h('span', null, 'Classroom language'), languageSelect);
   const head = h('header.cr-header', null,
     h('a.cr-brand', { href: '/' }, 'GIT', h('span', null, 'ZILLA'), h('small', null, 'classroom')),
     h('div.cr-title', null, title, phase),
     h('div.cr-room', null, h('span', null, 'Join room'), h('b', { 'data-testid': 'classroom-code', translate: 'no' }, app.room)),
-    clock, languageControl, button('Leave', 'classroom-leave', () => { if (confirm(t(teacher() ? 'End this lesson and leave?' : 'Leave this classroom?'))) app.leave(); }));
+    clock, button('Leave', 'classroom-leave', () => { if (confirm(t(teacher() ? 'End this lesson and leave?' : 'Leave this classroom?'))) app.leave(); }));
+  placeSettingsButton(head);
   const taskTitle = h('h2'), taskText = h('p.cr-instructions'), stepRail = h('nav.cr-steps', { 'aria-label': 'Lesson steps' });
   const notice = h('div.cr-notice', { role: 'status' });
   const teacherEntry = h('a.btn.btn-primary', { href: `${location.pathname}?screen=1`, 'data-testid': 'classroom-open-teacher' }, 'Open teacher screen for this room');
@@ -238,7 +235,6 @@ export function createClassroom(app: AppCtx): Screen {
     const rawState = app.lobby?.classroom;
     state = rawState ? { ...rawState, plan: localizeClassroomPlan(rawState.plan, locale()) } : undefined; if (state && state.serverTime !== lastServerTime) { clockOffset = state.serverTime - Date.now(); lastServerTime = state.serverTime; }
     const owner = teacher(), screen = app.role === 'screen';
-    languageControl.hidden = !owner; languageSelect.value = app.lobby?.locale ?? 'en'; languageSelect.setAttribute('aria-label', t('Classroom language')); languageSelect.disabled = app.status !== 'open';
     el.classList.toggle('cr-projector', screen); el.classList.toggle('cr-student-view', !screen);
     teacherEntry.hidden = !(app.role === 'player' && isOwner(app) && !state);
     editor.hidden = !owner || (!!state && state.phase !== 'setup'); hostBoard.hidden = !screen; studentBoard.hidden = screen;
@@ -302,5 +298,5 @@ export function createClassroom(app: AppCtx): Screen {
   });
   if (teacher()) buildPlanEditor(); render();
   const timer = setInterval(updateClock, 1000);
-  return { el, update: render, destroy() { stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, destroy() { placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
 }
