@@ -1,5 +1,5 @@
 import { codeExpression } from './expressions.ts';
-import type { BossAttackKind, PlayerKit, SkillKind, WeaponKind } from '../shared/types.ts';
+import type { BossAttack, BossAttackKind, PlayerKit, SkillKind, WeaponKind } from '../shared/types.ts';
 
 export type CodeWeapon = NonNullable<NonNullable<PlayerKit['code']>['weapon']>;
 /** Display metadata only: never changes WeaponKind, cadence, damage, speed or energy. */
@@ -14,7 +14,29 @@ export function weaponCode(kind: WeaponKind, language: string, seed: number, rea
 export const SKILL_FLAVOR: Record<SkillKind, string> = {
   firewall: 'try { } catch', fork: 'git fork', hotfix: '+patch', overclock: 'sudo !!', rollback: 'git revert',
 };
-export const ATTACK_FLAVOR: Record<BossAttackKind, string> = {
-  ring: 'while(true) Loop', spiral: 'Recursion', fan: 'throw Spray', laser: 'grep Trace',
-  slam: 'Stack Overflow', charge: 'git push --force', summon: 'npm install Swarm', cascade: 'Merge Conflict',
+export const ATTACK_FLAVOR_POOLS: Record<BossAttackKind, readonly string[]> = {
+  ring: ['while(true) Loop', 'Infinite Scroll', 'Busy Wait'],
+  spiral: ['Recursion', 'Callback Hell', 'Deep Clone'],
+  fan: ['throw', 'Exception Spray', 'Panic!'],
+  laser: ['</> Breath', 'Race Condition', 'grep Beam'],
+  slam: ['Stack Overflow', 'Segfault', 'Kernel Panic'],
+  charge: ['git push --force', 'rm -rf', 'Hard Reset'],
+  summon: ['npm install Swarm', 'Dependency Hell'],
+  cascade: ['Merge Conflict', 'Memory Leak'],
 };
+/** First-choice aliases retained for older callers; generation uses the full pools. */
+export const ATTACK_FLAVOR = Object.fromEntries(Object.entries(ATTACK_FLAVOR_POOLS).map(([kind, pool]) => [kind, pool[0]])) as Record<BossAttackKind, string>;
+
+/** Cycle each kind's pool evenly, independent of HP, player count and gameplay RNG. */
+export function attackFlavorPicker(seed: number, existing: Pick<BossAttack, 'kind'>[] = []) {
+  const counts = new Map<BossAttackKind, number>();
+  for (const attack of existing) counts.set(attack.kind, (counts.get(attack.kind) ?? 0) + 1);
+  return (kind: BossAttackKind): string => {
+    const pool = ATTACK_FLAVOR_POOLS[kind], n = counts.get(kind) ?? 0;
+    counts.set(kind, n + 1);
+    let hash = seed >>> 0;
+    for (const ch of kind) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619) >>> 0;
+    // Every boss's first beam is its signature atomic breath; later beams still vary.
+    return pool[kind === 'laser' ? n % pool.length : (hash + n) % pool.length];
+  };
+}

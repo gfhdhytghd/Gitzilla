@@ -5,7 +5,7 @@ export { bossRegions, bossMouth, BOSS_HIT_RADII } from './regions.ts';
 export { squadBudget, ATTACK_COST, MATCH_TUNING } from './balance.ts';
 export type { HitFeedback } from './balance.ts';
 export { PERKS, createPerkOffer } from './perks.ts';
-export { weaponCode, SKILL_FLAVOR, ATTACK_FLAVOR } from './flavor.ts';
+export { weaponCode, SKILL_FLAVOR, ATTACK_FLAVOR, ATTACK_FLAVOR_POOLS, attackFlavorPicker } from './flavor.ts';
 export type { CodeWeapon } from './flavor.ts';
 export type { BossCode } from './code.ts';
 export { reconcileCodeNames } from './code.ts';

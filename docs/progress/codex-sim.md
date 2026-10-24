@@ -1,8 +1,33 @@
+DONE (attack flavor)
+
+## Attack flavor polish — complete
+- Added `ATTACK_FLAVOR_POOLS` + deterministic `attackFlavorPicker(seed,existing?)`. Each kind cycles through its seeded pool before repeating; heart attacks continue from existing kind counts. First laser is always the kaiju signature `</> Breath`; mouth origin/.95s plate-charge telegraph remain unchanged.
+- Real source identifiers remain distinct; full names never repeat across each fallback boss's initial + heart deck. A pool repeats only after exhaustion (React's7 cascades use the2 requested phrases in a4/3 split). No added attacks or changes to HP, hitboxes, damage, cooldowns, casting cadence, attack shares or gameplay RNG. Existing300-match balance evidence remains valid.
+- Previously authorized design integration extended for this same naming polish: fallback uses the same seeded picker; cached/model/direct-apply reconciliation replaces uniform legacy disaster strings with balanced pool choices. Custom art suffixes remain source-correct and repeated custom suffix tags are idempotent across repeated validation. Updated only attackNames in15 existing public boss assets, preserving all art and stats.
+- Tests cover pool completeness, seeded replay,3 full balanced cycles, first/next laser, seed variation, every15 fallback boss's kind membership/maximum available variety/distinct identifiers/full-name uniqueness, heart names, legacy-cache repair and repeated custom-art idempotency. Cosmetic equality checks preserve all non-name attack fields.
+- **Final full workspace suite590 PASS /8 optional skips; full tsc PASS; diff check PASS.** Focused flavor28 PASS. No commits, provider calls or live5173 interactions.
+- **Actual DEV5175 decorated-lobby WS checks PASS** for React and ripgrep after async design refinement; both test rooms were explicitly left/deleted. Exact examples below.
+
+| Kind | Phrase pool |
+| --- | --- |
+| ring | while(true) Loop · Infinite Scroll · Busy Wait |
+| spiral | Recursion · Callback Hell · Deep Clone |
+| fan | throw · Exception Spray · Panic! |
+| laser | </> Breath · Race Condition · grep Beam |
+| slam | Stack Overflow · Segfault · Kernel Panic |
+| charge | git push --force · rm -rf · Hard Reset |
+| summon | npm install Swarm · Dependency Hell |
+| cascade | Merge Conflict · Memory Leak |
+
+React: `render() npm install Swarm`, `Component() Kernel Panic`, `App() Memory Leak`, `fn() Merge Conflict`, `Foo() Memory Leak`, `Child() Merge Conflict`, `get() Memory Leak`, `callback() Merge Conflict`, `create() Memory Leak`.
+
+Ripgrep: `new() while(true) Loop`, `path() git push --force`, `build() Recursion`, `matched() Infinite Scroll`, `matcher() Callback Hell`, `args() Busy Wait`, `len() Deep Clone`, `is_empty() while(true) Loop`, `Error() Recursion`.
+
 DONE (code weapon names)
 DONE (anatomy wiring + mouth laser)
 DONE (boss attack identifiers — authorized design exception)
 
-## Final validation — weapon names + anatomy + authorized lobby repair
+## Previous validation — weapon names + anatomy + authorized lobby repair
 - **584 tests PASS,7 optional skips;49 passing files /3 skipped. Full tsc PASS; diff check PASS.** Includes114 sim tests and55 design tests. No required checks remain.
 - **DEV5175 Flask lobby after final design refinement:** app() while(true) Loop; get() Stack Overflow; index() npm install Swarm; client() while(true) Loop; github_link() Recursion; create_app() while(true) Loop. All6 real source identifiers are distinct. Both cache/model validation and direct apply boundaries repair stale repeated prefixes; custom art suffixes remain when bounded. The oneoff WS test left/deleted its test room afterwards.
 - DEV5175 standard smokeZSQO PASS (4 humans+2 bots,99 snapshots/client/5s, leave/owner/deletion/revocation). Live5173 untouched. No commits/pushes or provider/API generation.

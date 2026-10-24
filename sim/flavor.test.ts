@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WeaponKind } from '../shared/types.ts';
-import { ATTACK_FLAVOR, SKILL_FLAVOR, weaponCode } from './flavor.ts';
+import { ATTACK_FLAVOR, ATTACK_FLAVOR_POOLS, attackFlavorPicker, SKILL_FLAVOR, weaponCode } from './flavor.ts';
 import { bossKitFromProfile, playerKitFromProfile } from './kits.ts';
 import { reconcileCodeNames, type BossCode } from './code.ts';
 import { BossAi } from './bossAi.ts';
@@ -125,5 +125,46 @@ describe('code weapon flavor', () => {
     const repaired = reconcileCodeNames(kit), symbols = (kit.code as BossCode).attackSymbols;
     expect(repaired.attacks.every(a => a.name.startsWith(symbols[a.id]))).toBe(true);
     expect(new Set(repaired.attacks.map(a => a.name.match(/^(.+?\(\))/)![1])).size).toBe(kit.attacks.length);
+  });
+  it('cycles each seeded kind pool evenly before reusing a phrase and reserves the first laser for breath', () => {
+    for (const kind of Object.keys(ATTACK_FLAVOR_POOLS) as (keyof typeof ATTACK_FLAVOR_POOLS)[]) {
+      const pool = ATTACK_FLAVOR_POOLS[kind], a = attackFlavorPicker(123), b = attackFlavorPicker(123);
+      const phrases = Array.from({ length: pool.length * 3 }, () => a(kind));
+      expect(phrases).toEqual(Array.from({ length: pool.length * 3 }, () => b(kind)));
+      expect(new Set(phrases.slice(0, pool.length)).size).toBe(pool.length);
+      for (const phrase of pool) expect(phrases.filter(s => s === phrase)).toHaveLength(3);
+    }
+    expect(attackFlavorPicker(999)('laser')).toBe('</> Breath');
+    expect(attackFlavorPicker(999, [{ kind: 'laser' }])('laser')).toBe('Race Condition');
+    expect(new Set(Array.from({ length: 20 }, (_, seed) => attackFlavorPicker(seed)('ring'))).size).toBeGreaterThan(1);
+  });
+  it('varies React cascades and ripgrep rings/spirals while keeping identifiers, full names and combat budgets intact', () => {
+    for (const p of loadBalanceProfiles()) {
+      const kit = bossKitFromProfile(p, 4), code = kit.code as BossCode;
+      expect(new Set(kit.attacks.map(a => a.name)).size).toBe(kit.attacks.length);
+      expect(kit.attacks.every(a => a.name.startsWith(code.attackSymbols[a.id]))).toBe(true);
+      for (const kind of Object.keys(ATTACK_FLAVOR_POOLS) as (keyof typeof ATTACK_FLAVOR_POOLS)[]) {
+        const attacks = kit.attacks.filter(a => a.kind === kind), pool = ATTACK_FLAVOR_POOLS[kind];
+        const phrases = attacks.map(a => a.name.slice(code.attackSymbols[a.id].length + 1));
+        expect(phrases.every(s => pool.includes(s))).toBe(true);
+        expect(new Set(phrases).size).toBe(Math.min(attacks.length, pool.length));
+      }
+      const legacy = structuredClone(kit);
+      legacy.attacks.forEach(a => { a.name = `${code.attackSymbols[a.id]} ${ATTACK_FLAVOR[a.kind]}`; });
+      const repaired = reconcileCodeNames(legacy);
+      expect(repaired.attacks).toEqual(kit.attacks);
+      const s = createMatch([{ id: 'a', name: 'A', kit: playerKitFromProfile(p) }], kit).snapshot();
+      s.boss.limbs.forEach(l => { l.broken = true; }); new BossAi(1, 4).step(3, s.boss, s.players);
+      expect(new Set(s.boss.kit.attacks.map(a => a.name)).size).toBe(s.boss.kit.attacks.length);
+      for (const a of s.boss.kit.attacks.filter(a => a.source === 'heart')) expect(a.name.startsWith(code.attackSymbols[a.id])).toBe(true);
+    }
+  });
+  it('keeps repeated custom art suffixes bounded and stable across repeated cache/application passes', () => {
+    const p = loadBalanceProfiles().find(p => p.slug === 'facebook/react')!, kit = bossKitFromProfile(p, 4);
+    kit.attacks.forEach(a => { a.name = 'Actual Attack'; });
+    const repaired = reconcileCodeNames(kit);
+    expect(reconcileCodeNames(repaired)).toEqual(repaired);
+    expect(repaired.attacks.every(a => a.name.includes('Actual Attack') && a.name.length <= 64)).toBe(true);
+    expect(new Set(repaired.attacks.map(a => a.name)).size).toBe(kit.attacks.length);
   });
 });
