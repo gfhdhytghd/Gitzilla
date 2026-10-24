@@ -87,11 +87,11 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
     /** Pure snapshot; call input.setProfile(result()) to persist. Skipped steps preserve defaults. */
     result(): GestureThresholds {
       const base = getProfile();
-      return sanitizeThresholds({ ...base, neutral: neutral ?? base.neutral,
+      return sanitizeThresholds({ ...base, neutral: null,
         swingThreshold: samples.swing.length ? median(samples.swing) * 0.6 : base.swingThreshold,
         twistThreshold: samples.twist.length ? median(samples.twist) * 0.6 : base.twistThreshold,
         spinAngle: samples.spin.length ? median(samples.spin) * 0.6 : base.spinAngle,
-        fullSpeed: ranges.every(v => v >= 6) ? Math.min(...ranges) * 0.8 : base.fullSpeed }, base);
+        fullSpeed: base.fullSpeed }, base);
     },
     stop() { step = null; hooks.finish?.(); return api.result(); },
   };

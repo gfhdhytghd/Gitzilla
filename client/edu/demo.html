@@ -41,6 +41,9 @@
       .demo-tile p { margin: 0; font-size: 17px; line-height: 1.05; }
       .demo-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; padding: 16px; align-items: start; }
       .demo-note { font-size: 18px; margin: 6px 0; line-height: 1.05; }
+      .demo-rubric { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; padding: 16px; align-items: start; }
+      .demo-h { font: 10px var(--pix); color: var(--dim); margin: 0 0 6px; text-transform: uppercase; }
+      @media (max-width: 800px) { .demo-rubric { grid-template-columns: 1fr; } }
       .demo-note b { color: var(--yellow); font-weight: normal; }
     </style>
   </head>

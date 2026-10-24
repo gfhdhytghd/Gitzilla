@@ -13,6 +13,7 @@ function stateFor(seed: number): BossState {
     x: 300, y: 144, hp: kit.maxHp, maxHp: kit.maxHp, phase: 1,
     limbs: kit.limbs.map((l) => ({ id: l.id, hp: l.maxHp, maxHp: l.maxHp, broken: false })),
     casting: null, targetPlayer: null, enraged: false, regions: [], kit,
+    pose: { name: "idle", t: 0, total: 1, dir: [-1, 0] }, airborne: false,
   };
   s.regions = bossRegions(s);
   return s;

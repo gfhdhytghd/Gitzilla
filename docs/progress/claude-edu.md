@@ -1,3 +1,44 @@
+# DONE (rubric) — code + unit tests done; demo views NOT yet screenshot-checked
+
+Rubric UI in client/edu/ (all exported from `client/edu/index.ts`):
+- `rubric.ts` `createRubricEditor({ current, onUse(r), room?, token?, parse? })`, the teacher panel. Teachers can:
+  drag-drop a file, pick one, or paste text; edit each criterion (name, weight slider with a live normalized %,
+  signal dropdown in plain labels, unit-aware target, description); add unparsed lines as criteria or ignore them;
+  then "use this rubric" or "reset to default". `setCurrent(lobby.rubric)` marks the draft "✓ in use".
+  Default `serverParse()`: `POST /api/rubric/parse?filename=…&room=…`, with the doc as the raw body and
+  `content-type` text/markdown | text/plain | application/pdf, plus an optional `Authorization: Bearer <token>`.
+  It expects Rubric JSON back. On a 404 it falls back to `rubric/index.ts` `parseRubric` in the browser (text only),
+  if that module exists. **codex-net: please match this request shape, or tell me yours.**
+- `createJudgedCard({ rubric, quality, preview? })` is the student lobby card "how you'll be judged". Without
+  `preview` it estimates from the real report card. Criteria it can't measure (ci, license, typing, commits, custom
+  checks) show "measured after the fight" and are never invented.
+- `feedback-view.ts`:
+  - `createFeedbackView(fb, rubric, { variant, you })` is the student screen: score ring, strengths, next steps with
+    GitHub file links, per-criterion bars with evidence and tip, and how they played.
+  - `createClassFeedback({ items, rubric, variant, room?, title? })` is the teacher view: class summary, sortable
+    table, row drill-down, and CSV/Markdown export. Export uses `/api/room/<room>/feedback.csv|.md` and falls back to
+    the same files generated in the browser.
+- `rubric-data.ts`: pure helpers (weights, targets, estimate, class summary, sort, CSV/MD, GitHub links).
+  Tests: `client/edu/rubric.test.ts` (9). The client/edu total is 34, all passing.
+- Demo: `demo.html?view=rubric[&parsed]|feedback|feedback-class[&open=0]|feedback-screen`. It uses a demo-only parser
+  and demo feedback built from real report cards until rubric/ lands. **Not yet looked at in screenshots:** the next
+  step is a Playwright pass at phone, desktop and 1920 sizes.
+
+### Handoff → claude-ui (rubric)
+- Lobby, edu, owner:
+  `const ed = createRubricEditor({ current: lobby.rubric, room: lobby.room, token: app.token, onUse: (r) => net.send({ t: "setRubric", rubric: r }) });`
+  Call `ed.setCurrent(lobby.rubric)` on every lobby update.
+- Lobby, edu, student:
+  `createJudgedCard({ rubric: lobby.rubric ?? localDefaultRubric(), quality: me.kit?.quality })`.
+- On ServerMsg `feedback`, edu autopsy:
+  - Student: `createFeedbackView(items.find(f => f.playerId === app.you), lobby.rubric, { variant, you: true })`.
+  - Owner or projector: `createClassFeedback({ items, rubric: lobby.rubric, variant, room: lobby.room })`.
+### Contract request
+- `LobbyPlayer.rubricPreview?: CriterionResult[]`: the server's real pre-fight `scoreRepo` result.
+  `createJudgedCard({ preview })` already uses it; without it the card shows the report-card estimate.
+
+---
+
 # DONE (edu ux)
 
 UX-audit fixes EDU-1, EDU-2, EDU-3 and EDU-7 (docs/ux-audit.md, "Edu mode (classroom PvP) audit"):

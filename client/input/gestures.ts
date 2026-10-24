@@ -132,15 +132,30 @@ export function gravityTilt(gravity: Acceleration, angle: number, sign: number):
     Math.asin(Math.max(-1, Math.min(1, sign * gravity.y / length))) * 180 / Math.PI, angle);
 }
 
-export function tiltMove(current: [number, number], neutral: [number, number], profile: MotionProfile = 'standard', thresholds?: GestureThresholds): [number, number] {
+/** World-up projected into device coordinates (Z-X-Y device orientation); alpha
+ * rotates about world gravity and therefore does not enter this vector. */
+export function orientationGravity(beta: number, gamma: number): Acceleration {
+  const b = beta * Math.PI / 180, g = gamma * Math.PI / 180;
+  return { x: -Math.cos(b) * Math.sin(g), y: Math.sin(b), z: Math.cos(b) * Math.cos(g) };
+}
+
+/** Horizontal-plane movement: flat screen-up=0, 7.5°=.5, 15°=1.
+ * sign normalizes platform accelerationIncludingGravity polarity, not a neutral pose.
+ * Device +Y points toward its top; screen +Y points down. */
+export function gravityMove(gravity: Acceleration, angle = 0, sign = 1, fullSpeed = 15): [number, number] {
+  const x = -sign * gravity.x, y = sign * gravity.y, z = sign * gravity.z;
+  const horizontal = Math.hypot(x, y);
+  if (horizontal < 1e-8) return [0, 0];
+  const tilt = Math.atan2(horizontal, z) * 180 / Math.PI;
+  if (tilt <= 0.6) return [0, 0];
+  const strength = Math.min(1, tilt / fullSpeed);
+  return rotateScreen(x / horizontal * strength, y / horizontal * strength, angle);
+}
+
+/** Legacy helper signature. Neutral is deliberately ignored: movement is gravity-relative. */
+export function tiltMove(current: [number, number], _neutral: [number, number], profile: MotionProfile = 'standard', _thresholds?: GestureThresholds): [number, number] {
   if (profile === 'tap-only') return [0, 0];
-  const settings = thresholds ?? defaultThresholds(profile);
-  const x = current[0] - neutral[0];
-  const y = current[1] - neutral[1];
-  const magnitude = Math.hypot(x, y);
-  if (magnitude <= settings.deadzone) return [0, 0];
-  const strength = Math.min(1, (magnitude - settings.deadzone) / (settings.fullSpeed - settings.deadzone));
-  return [x / magnitude * strength, y / magnitude * strength];
+  return gravityMove(orientationGravity(current[1], current[0]), 0, 1, 15);
 }
 
 /** Low-pass gravity estimate for devices lacking acceleration without gravity. */

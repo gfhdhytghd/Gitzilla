@@ -1,67 +1,70 @@
-# Motion v3 input
+# Phone input: horizontal gravity + page-local permission
+
+Movement follows the latest user specification: screen-up horizontal = zero; tilt angle0–15° maps **linearly** to0–100% speed, clamped above15°. Top edge downhill moves up; right edge downhill moves right. A0.6° noise floor suppresses sensor noise, without rescaling the rest of the curve. Gravity is low-passed at45ms, with immediate direction reversal. Portrait-only phones use upright screen coordinates even if WebKit exposes a stale screen angle; tablets/landscape rotate the vector into screen coordinates. No calibrated movement zero, recenter or drift correction. Stored legacy neutral/full-speed values do not affect movement.
+
+The gravity vector comes from beta/gamma converted into device coordinates (avoiding scalar pitch/gimbal discontinuities), or low-passed accelerationIncludingGravity if orientation is absent. Platform gravity polarity is normalized. Gesture motion freezes movement for120ms. Motion/touch always auto-aim.
 
 ```ts
 import { createInput } from '../input';
 const input = createInput({ canvas, toArena, getSelf,
-  onGesture: ({kind, via}) => showToast(`${kind} · ${via}`) });
-// Same trusted tap, before await/fullscreen:
-void audio.unlock();
-void input.requestPermission();
-// Every network tick:
-send({ t: 'input', frame: input.sample() });
-// Route exit:
-input.dispose();
+  onGesture: ({kind,via}) => showToast(`${kind} · ${via}`) });
+send({t:'input',frame:input.sample()}); //30Hz
+input.dispose(); //route exit
 ```
 
-Portrait phones: comfortable upright pose tilted back 30–50°. Roll moves x; pitch moves y relative to measured neutral. Screen rotation supports tablet/landscape coordinates too. Default neutral averages the first 300ms; `calibrate()` redoes it. Default tilt deadzone4°, full speed20°, smoothing65ms. Motion/touch always auto-aim.
-
-| Action | Gesture |
-| --- | --- |
-| Move | Tilt; invisible full-screen drag when sensors unavailable or tap-only selected |
-| Attack | Any-axis swing/flick, or quick tap (<250ms): 600ms burst |
-| Dash | Quick wrist twist + return/settle, net excursion <120°; or double-tap (<300ms) |
-| Skill | Spin (integrated gyro ≥270° in1.2s), or long-press ≥550ms |
-
-**No phone buttons or drawn joystick.** Holding does not fire. Single taps wait300ms to rule out double-tap; long-press emits one skill and no release attack. A non-interactive ring shows hold charge. Dragging >24px cancels tap/hold recognition. Native touch cancel, blur and hidden document clear pending actions. Touch gestures exclude settings/buttons/inputs/links and `[data-input-ignore]`.
-
-Gyro is deg/s on both platforms; integration uses actual timestamps, tolerates16–60ms sampling, ignores low-rate drift/walking and resets across gaps>200ms. Dash waits for reversal + a return near the starting angle +100ms quiet, so a spin cannot dash at its start or finish. A ≥120° net excursion, a recognized spin or concurrent swing blocks the twist episode. No shake gesture. Movement freezes250ms per recognized action. Acceleration uses `acceleration` or high-pass-filtered `accelerationIncludingGravity` when null; gyro-only and orientation-only devices work. No gyro means use double-tap to dash and long-press to skill.
-
-Both iOS permission requests run synchronously in touchend/click, before fullscreen consumes activation. Touch pointerdown/start never auto-request permission; both native calls must resolve granted AND a later valid sensor event must arrive before sensorStatus becomes on. Denial/rejection/throw remains retryable on a later tap, while touchend plus its synthetic follow-up click makes only one attempt. The enable-tilt button stays visible until real data arrives and explicitly opts into pointer hit testing inside the otherwise non-interactive portrait deck. Sensor presence is determined by events, not constructors. Denial/no valid events after1.5s → invisible touch fallback; lost event delivery after1.8s → fallback; late events recover motion. `sensorStatus` is waiting/on/off. Call `requestPermission()` from the sensor-lost pill to retry. Event listeners remain active. Never suspend a separate sensor controller from the UI while this one is running.
-
-## Calibration UI contract
+## Permission gate: preference is not permission
 
 ```ts
-input.calibration.startStep('neutral'); // then tilt, swing, twist, spin
-const m = input.calibration.meter(); // poll in UI animation loop
-// m.step, elapsed, ready, count, goal; acceleration, gyro, spinDegrees, tilt,
-// ranges [left,right,up,down], peak, gyroAvailable, lastGesture
-if (m.ready) showCheckmark();
-// When all desired steps complete (skip is allowed):
-input.setProfile(input.calibration.result()); // sanitizes + saves local thresholds
-input.calibration.stop(); // uploads the training trace
+import { getMotionPermissionState, requestMotionPermission,
+  subscribeMotionPermission, saveMotionProfile } from '../input';
+const unsubscribe = subscribeMotionPermission(state => {
+  enableStep.hidden = !state.required || state.ready;
+  conn.send({t:'controls',ready:state.ready,mode:state.profile});
+});
+enableButton.onclick = () => {
+  saveMotionProfile('standard'); //or seated; touch-only bypasses motion
+  void audio.unlock();
+  void requestMotionPermission(); //BOTH native methods invoked synchronously here
+};
+//Unsubscribe when lobby unmounts; the session itself persists into game.
 ```
 
-Neutral requires≥300ms/eight samples; tilt reaches four directions; swing/twist need3 recognized gestures (tap/double-tap accepted); spin needs2 (long-press accepted). Touch alternates preserve motion thresholds. Training temporarily relaxes thresholds to sensible floors so smaller movements can be recorded. Defaults survive skipped steps. Thresholds use60% of recorded median peaks, clamped; tilt uses the smallest trained directional range. `result()` is a pure snapshot. A new neutral step resets previous samples. Use this recorder for the UI checkmarks so the tutorial and game recognize the same signals.
+Snapshot: `{mobile,profile,required,permission,needsPermission,sensorStatus,ready}`. Permission is prompt/requesting/granted/denied/not-required. `ready` requires a native grant **in this page** and a later valid sensor event. Android has no request API: actual readings make it ready. Desktop and explicitly selected tap-only bypass the gate. Window event `kaiju:motion-permission` carries the same snapshot in `detail`; subscriptions immediately receive current state and then changes only.
 
-`input.profile` is a defensive snapshot; `input.setProfile(partial)` persists under `kaiju.motionCalibration.v3`. **neutral is screen-relative `[roll,pitch]`, NOT raw `[beta,gamma]`.** The recorder transforms it already; manual raw sensor integrations must use `screenTilt(beta,gamma,screenAngle)` before saving neutral. `lastGesture` and optional `onGesture` contain `{kind:'attack'|'dash'|'skill',via,at}`; use them for400ms toasts. Calibration/trace types are exported from `client/input/index.ts`.
+No permission state is stored. `kaiju.controlsChosen` and motion profile remember only a preference. A reload starts unready even if these exist. One page session shares state between lobby/training/game, so a lobby grant does not need re-asking at match start. `InputController.needsPermission/sensorStatus/requestPermission()` use this same session. A missing stream goes off after1.5s initially/1.8s after loss; valid late events recover. Visibility return needs fresh readings. Denials/rejections remain retryable.
 
-`MotionProfile` remains separate: `loadMotionProfile()/saveMotionProfile()`, standard/seated/tap-only. Seated has8° full speed,5° deadzone,150ms smoothing,6m/s² swing threshold and350ms refractory. Tap-only never requests or processes sensors; invisible drag + tap/double-tap/hold still work. A pending native permission result cannot override a profile switch. Preferences are local and unrelated to code-quality stats or game mode.
+Native requests must run in touchend/click, never touch pointerdown/start. Invoke both before awaits, fullscreen or notifying subscribers that might consume activation. The enable pill must have pointer-events:auto inside the non-interactive portrait deck. Do not hide it just because native grant resolved: require readings too. [WebKit activation rules](https://webkit.org/blog/13862/the-user-activation-api/) and [W3C motion permissions](https://www.w3.org/TR/orientation-event/).
 
-## Traces and debug
+## Gesture vocabulary and settings
 
-`?trace=1` or training records raw orientation, acceleration, accelerationIncludingGravity, rotationRate, screen angle, timing and gesture edges for20s, ≤60Hz per stream. It uploads JSON to `/api/trace`; no names, repos, player IDs or room codes. UA/platform only. Capture cap2600records and upload cap1.9MB. `input.trace.start()`, `.upload():Promise<boolean>`, `.status/.error` support explicit retries and missing-endpoint reporting; failed upload never breaks controls. Training stop/dispose flushes the partial trace. Server storage/listing belongs to codex-net.
+| Action | Phone gesture |
+| --- | --- |
+| Move | Horizontal-plane tilt; invisible full-screen drag for fallback/tap-only |
+| Attack | Any-axis swing/flick or quick tap (<250ms),600ms burst |
+| Dash | Quick twist that returns/settles, net excursion<120°; or double-tap<300ms |
+| Skill | Integrated spin≥270°/1.2s or long-press≥550ms |
 
-`?debug=input` mounts beta/gamma, screen angle, acceleration, gyro/spin integral, move, gesture history and audio state/session/music/retry status. `createInputDebugPanel()` also supports manual mounting; `.dispose()` releases its timer. `vibrate(pattern)` is best-effort.
+No drawn phone buttons/joystick. Holding skills once, never continuous fire or a release attack. A non-interactive ring displays charge. Single taps wait300ms to rule out double-tap; movement>24px cancels touch gestures. Gyro uses deg/s, actual timestamps and low-rate filtering. Twist classification waits for reversal, return and100ms quiet: spins cannot dash. Swings block twist dashes. Blur/touch cancel clears pending actions. UI buttons/inputs/links and `[data-input-ignore]` are excluded.
 
-Desktop stays WASD/arrows, LMB/J fire, Space/K/Shift dash, E/L/RMB skill; mouse aim expires after2s. Input is eagerly loaded before optional art; native permission handler must precede fullscreen.
+Lobby-only sensitivity: `loadTiltSensitivity()`, `saveTiltSensitivity(value)`, `TILT_SENSITIVITIES` = slow/normal/fast; full speed at20°/15°/10°. Stored under kaiju.tiltSensitivity; normal is default. `input.tiltSensitivity/setTiltSensitivity()` supports live preference changes without in-game buttons. Accessibility `MotionProfile` remains standard/seated/tap-only: seated uses6m/s² swing vs standard12 and a350ms refractory; movement follows the same gravity spec. Tap-only requests/processes no sensors.
+
+Training can still drive `input.calibration.startStep('neutral'|'tilt'|'swing'|'twist'|'spin')`, poll `.meter()` and save `input.setProfile(input.calibration.result())`, then `.stop()`. Historical neutral/tilt steps provide tutorial feedback only; **result.neutral=null**, movement is never calibrated to that pose/range. Swing/twist goals3, spin2; tap/double-tap/long-press alternatives preserve motion thresholds. Gesture thresholds use clamped60% median peaks. `lastGesture`/onGesture contains `{kind,via,at}` for400ms toasts.
+
+## Automatic tuning traces
+
+Every phone fight automatically captures its first20s; no trace flag required. The standalone lobby trainer is observed by its stable `[data-testid=training]` root, covering its legacy independent sensor listeners. Capture is limited to one per source/minute/page; routing/dispose flushes partial traces. Pagehide sends a representative JSON beacon below58KB for Safari's unload queue cap. Normal POST uses application/json at same-origin `/api/trace`, bounded1.9MB, with ≤60Hz per raw stream and sampled input vectors. Server stores under.cache/traces; net owner controls retention.
+
+Payload contains raw orientation, acceleration/includingGravity, gyro, gesture edges, sensitivity/settings, sampled movement, UA/platform and source. **automated/syntheticSensors flags distinguish Playwright traces from real phone data.** No player/room/repo identifiers. `input.trace.status/error` and `?debug=input` expose upload state. Beacon accepted means queued, not physical-device acceptance. Explicit `input.trace.upload()` retries a failure. `?trace=1` remains available for desktop debugging.
+
+Desktop stays WASD/arrows, LMB/J fire, Space/K/Shift dash, E/L/RMB skill. Mouse aim expires after2s. `vibrate()` is best effort.
+
+Verification (DEV5175 or coordinator staging5176; no live5173):
 
 ```sh
 npx vitest run client/input client/audio tools/playtest.test.ts
-npx tsx tools/motion-v3.ts
-npx tsx tools/inclusive-motion.ts
-npx tsx tools/phone-audio.ts
+MOTION_URL=http://localhost:5176 npx tsx tools/motion-v3.ts
+npx tsx tools/phone-trace.ts
+npx tsx tools/permission-gate.ts
 ```
 
-DEV only localhost:5175; PLAYTEST_URL/MOTION_URL override (live targets rejected). Browser motion proof uses real UI→WebSocket→server snapshots with synthetic sensors at390×844/DPR3; it checks directions, each gesture, no drawn controls and raw trace upload. The older motion-v2 command forwards to v3. HMR is held inert in that test tab; current input modules are requested with revision queries because DEV's broad `**/data/**` ignore matches this checkout's ancestor and can serve stale cached transforms. No server is started/stopped. Real iOS permission dialogs, device feel, speakers/haptics and OS interruption behavior require physical-phone acceptance.
-
-Permission rationale: [WebKit activation events](https://webkit.org/blog/13862/the-user-activation-api/) distinguish touch release from touch pointerdown; [W3C requestPermission](https://www.w3.org/TR/orientation-event/) requires transient activation when native permission is prompt. The harness strictly rejects native permission mocks invoked outside a trusted touchend/click activation and tests denial → real button retry → pending native dialog with readings ignored → granted without readings still off → live readings on. This is automation proof; the OS prompt itself still needs the user's iPhone.
+Motion E2E uses real UI/network/simulation with synthetic sensors. Phone-trace is an explicit WebKit component fixture using the real input module and trace endpoint. Permission-gate tests real WebKit/iPhone lobby across a second page load with saved choices, strict click-origin native mocks and fresh readings. OS dialog/device feel/hardware listening require a real phone. HMR/cache bypass in tooling prevents shared DEV edits or its broad watch ignore from serving mixed revisions; only test tabs are affected.

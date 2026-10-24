@@ -1,4 +1,20 @@
-DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+DONE (archetypes) + DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+
+## Boss archetypes in the Genesis cinematic (docs/tasks/boss-archetypes.md, claude-genesis part)
+- Typecheck: fixed the boss state literal for the new required `pose`/`airborne` fields. Genesis files typecheck clean; `npx vitest run client/genesis` passes 7 tests (new: form-step tests).
+- **Form beat (map stage).** Every boss map now opens with "why this archetype". The archetype name (KAIJU / HYDRA / MECHA / ABYSSAL) stamps over the forming silhouette in its accent color, with a silhouette flash, shake and glyph burst. The subtitle is the silhouette text, and a wire runs from the real fact (cycles, language and depth, LOC or days counter) into the body. The stamp dims once organ captions start.
+  - Uses codex-genesis's server step (`ref: "archetype"`, any position; moved to the front). Falls back to the sim's `kit.code.archetypeReason` split at `→`, then to a local rule (`archetypeStep` in local.ts). The terminal logs `$ gitzilla map --boss --form <arch>`.
+- **Reveal entrance per archetype** (driven through `BossState.pose`, so the renderer's own pose animation plays):
+  - kaiju: `windup` with dorsal fins charging tail→head, then `roar` shockwave rings from the jaw.
+  - hydra: `fly` descent from above with wing-gust streaks and a landing shadow; the heads' eyes ignite one by one.
+  - mecha: boot scanline top→down over a wireframe, red visor ignites, steam puffs.
+  - abyssal: the renderer's `emerge` rise plus a crack line with red/cyan crystal shards; veins flare.
+  - Idle afterwards, with a roar every 8 s so the lobby boss stays alive. Reduced motion: poses only.
+- **Name card.** Title plus `HYDRA · flies in arcs · a beam per head · dive bomb` in the accent color. The boss now stands on the budget line (bottom-aligned) and the epithet moved under the budget bar, so heads and wings are never hidden. Budget header: `threat budget (same total for every boss) · 8 limbs · 9 attacks`.
+- Demo: `?arch=kaiju|hydra|mecha|abyssal` override plus nav links.
+- Checked in screenshots, big screen / phone @3x / card, for all four archetypes (override on lodash) and real sim picks (react hydra, redis mecha, jquery/vue abyssal, lodash kaiju), plus condensed. Hero unaffected. 60 fps median and p95 under 4x CPU throttle. One ~380 ms spike at boss replay start: the first build of the new boss portrait/sprite (was ~166 ms).
+- **Note for claude-boss.** `client/genesis/sprites.ts` mirrors `bossPortrait`'s logical frame: 196 px centered (76,104) when `bossLayout(kit).body === "kaiju"`, else 176 px centered (88,80). Hydra/mecha/abyssal bodies are `dragon`/`mecha`/`abyssal`, so they use the 176 frame today. If that changes, please export something like `portraitFrame(kit) → {logical, x, y}` and I'll switch to it.
+- Dev note: the :5175 server's file watcher is serving stale modules (e.g. it still had an old `scene.ts`). I screenshot on a private `vite --port 5196`.
 
 ## Genesis polish (coordinator list), all 5 done and checked in 1280x720 screenshots
 1. **Boss pacing.** The boss map stage is capped at 2.4 s and the hero's at 3.0 s. Same-part runs (7 limbs, 7 weak points, 8 attacks) fire as a fast volley.

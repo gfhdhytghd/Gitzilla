@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGestureState, gravityTilt, normalize, recognizeGesture, removeGravity, screenTilt, tiltMove } from './gestures';
+import { createGestureState, gravityMove, orientationGravity, gravityTilt, normalize, recognizeGesture, removeGravity, screenTilt, tiltMove } from './gestures';
 
 function trace(samples: [number, number, number, number][]) {
   let state = createGestureState();
@@ -60,11 +60,22 @@ describe('screen-relative tilt', () => {
     const after = screenTilt(-179, 10, 90);
     expect(Math.hypot(before[0] - after[0], before[1] - after[1])).toBeLessThan(3);
   });
-  it('uses a 4° deadzone and saturates at 20° relative to neutral', () => {
-    expect(tiltMove([34, 20], [30, 20])).toEqual([0, 0]);
-    expect(tiltMove([42, 20], [30, 20])).toEqual([0.5, 0]);
-    expect(tiltMove([50, 20], [30, 20])).toEqual([1, 0]);
-    expect(Math.hypot(...tiltMove([90, 90], [0, 0]))).toBeCloseTo(1);
+  it.each([[0, 0], [0.5, 0], [7.5, 0.5], [15, 1], [30, 1]])('horizontal angle %s° maps linearly to %s speed', (angle, speed) => {
+    const move = gravityMove(orientationGravity(0, angle));
+    expect(move[0]).toBeCloseTo(speed); expect(move[1]).toBeCloseTo(0);
+  });
+  it.each([[0, 15, 1, 0], [0, -15, -1, 0], [15, 0, 0, 1], [-15, 0, 0, -1]])
+    ('beta=%s gamma=%s follows downhill x=%s y=%s', (beta, gamma, x, y) => {
+      const move = gravityMove(orientationGravity(beta, gamma));
+      expect(move[0]).toBeCloseTo(x); expect(move[1]).toBeCloseTo(y);
+    });
+  it('rotates downhill into screen coordinates, supports opposite gravity polarity and vertical poses', () => {
+    const upright = orientationGravity(89.99, 45);
+    expect(Math.hypot(...gravityMove(upright))).toBeCloseTo(1);
+    expect(gravityMove(upright).every(Number.isFinite)).toBe(true);
+    const g = orientationGravity(-15, 0);
+    expect(gravityMove(g, 90)[0]).toBeCloseTo(-1);
+    expect(gravityMove({ x: -g.x, y: -g.y, z: -g.z }, 0, -1)).toEqual(gravityMove(g));
     expect(normalize(1, -1)[0]).toBeCloseTo(Math.SQRT1_2);
   });
   it('subtracts resting gravity, preserves impulses and supports opposite platform gravity signs', () => {
@@ -79,11 +90,8 @@ describe('screen-relative tilt', () => {
     expect(up[0]).toBeCloseTo(inverted[0]);
     expect(up[1]).toBeCloseTo(inverted[1]);
   });
-  it('keeps full roll and pitch sensitivity at an upright portrait neutral', () => {
-    const neutral = screenTilt(45, 0, 0);
-    expect(tiltMove(screenTilt(45, 20, 0), neutral)[0]).toBeCloseTo(1);
-    expect(tiltMove(screenTilt(45, -20, 0), neutral)[0]).toBeCloseTo(-1);
-    expect(tiltMove(screenTilt(65, 0, 0), neutral)[1]).toBeCloseTo(1);
-    expect(tiltMove(screenTilt(25, 0, 0), neutral)[1]).toBeCloseTo(-1);
+  it('never subtracts a stored upright neutral from horizontal movement', () => {
+    expect(tiltMove([0, 0], [45, 0])).toEqual([0, 0]);
+    expect(tiltMove([0, 45], [0, 45])[1]).toBeCloseTo(1);
   });
 });

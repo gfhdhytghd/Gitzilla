@@ -1,3 +1,4 @@
+import { readSensorTraceStatus } from './trace';
 import type { RotationRate } from './gestures';
 import type { MotionProfile } from '../../shared/types';
 import { readAudioDebugStatus } from '../audio/status';
@@ -38,8 +39,10 @@ export function createInputDebugPanel(): HTMLDivElement & { dispose(): void } {
     const s = debugState;
     const a = s.acceleration;
     const audio = readAudioDebugStatus();
+    const trace = readSensorTraceStatus();
     panel.textContent = `INPUT ${s.mode} | profile: ${s.profile} | sensors: ${s.sensors} | permission: ${s.permission}${s.calibrating ? ' | calibrating' : ''}\n` +
       `audio: ${audio.state} | music: ${audio.musicPlaying ? 'playing' : 'idle'} | session: ${audio.session}${audio.muted ? ' | muted' : ''}${audio.needsGesture ? ' | tap to resume' : ''}${audio.error ? ` | ${audio.error}` : ''}\n` +
+      `trace: ${trace.source} ${trace.status}${trace.error ? ' | ' + trace.error : ''}\n` +
       `beta ${s.beta.toFixed(1)} gamma ${s.gamma.toFixed(1)} screen ${s.angle}°\n` +
       `accel x ${a.x.toFixed(2)} y ${a.y.toFixed(2)} z ${a.z.toFixed(2)} |a| ${Math.hypot(a.x, a.y, a.z).toFixed(2)}\n` +
       `gyro ${s.rotationRate ? Object.values(s.rotationRate).map(v => v.toFixed(0)).join(', ') + ' deg/s' : 'unavailable (double-tap dash)'} | spin ${s.spinDegrees.toFixed(0)}°\n` +

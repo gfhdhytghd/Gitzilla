@@ -9,3 +9,7 @@ export { eduGenesisNotes, EDU_STAGE_ORDER, type EduNote, type EduStage } from ".
 export { gpa, gpaGrade, weakest, strongest, classHighlights, GRADE_COLOR, type Student } from "./quality.ts";
 export { architectureSummary, helpWanted } from "./summary.ts";
 export { diagramCanvas, drawDiagram } from "./diagrams.ts";
+export { createRubricEditor, createJudgedCard, serverParse, defaultRubric, guessSignal, type ParseFn, type RubricEditor } from "./rubric.ts";
+export { createFeedbackView, createClassFeedback, scoreRing } from "./feedback-view.ts";
+export { SIGNALS, weightPercents, weightedScore, estimateFromQuality, classSummary, feedbackCsv, feedbackMarkdown, localDefaultRubric } from "./rubric-data.ts";
+export { plainRow, nextGrade } from "./explain.ts";
