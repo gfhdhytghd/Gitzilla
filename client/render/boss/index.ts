@@ -211,8 +211,8 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   // ---- mouth ----
   if (L.mouth) drawMouth(ctx, bx + L.mouth.x, by + L.mouth.y, L.mouth.w, L.mouthKind, art, time, castP, tint);
 
-  // ---- swarm orbiters ----
-  if (L.body === "swarm") drawOrbiters(ctx, bx, by, art, time, castP);
+  // ---- swarm orbiters (also the kaiju's "swarm" design hint) ----
+  if (L.body === "swarm" || L.kaiju?.hint === "swarm") drawOrbiters(ctx, bx, by, art, time, castP);
 
   // ---- hit flash (whole body, then per region) ----
   const since = fx.now - fx.bossFlash;
@@ -871,7 +871,10 @@ function drawKaijuFront(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossA
   // claws on the little arms and the toes
   ctx.fillStyle = "#f4f1e6";
   const armSlot = K.slots.indexOf("arms");
-  if (!(armSlot >= 0 && broken[armSlot])) { ctx.fillRect(bx - 34, by - 2, 1, 2); ctx.fillRect(bx - 33, by + 1, 1, 2); }
+  if (!(armSlot >= 0 && broken[armSlot])) {
+    ctx.fillRect(bx - 34, by - 2, 1, 2); ctx.fillRect(bx - 33, by + 1, 1, 2);
+    if (K.hint === "spider") { ctx.fillRect(bx - 31, by + 13, 1, 2); ctx.fillRect(bx - 30, by + 15, 1, 2); }
+  }
   for (const fx2 of [-28, -24, -2, 2]) ctx.fillRect(bx + fx2, by + 57, 2, 1);
 }
 

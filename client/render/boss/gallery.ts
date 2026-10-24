@@ -6,7 +6,7 @@ import type { ArenaTheme, BossDesign, BossKit, BossState, Bullet, GameEvent, Haz
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bossKitFromProfile, bossRegions, createMatch, playerKitFromProfile } from "../../../sim/index.ts";
 import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
-import { drawBoss, bossLookAt, bossPortrait } from "./index.ts";
+import { drawBoss, bossLookAt, bossPortrait, bossLayout } from "./index.ts";
 import { drawArenaBackground, drawBullets, drawEvents, drawHazards, drawMinions, drawObstacles, drawPerkPads, drawPickups, drawPostFx, getFxCues, trackPlayers } from "../arena/index.ts";
 import type { Obstacle, PerkOffer, Pickup } from "../../../shared/types.ts";
 
@@ -100,7 +100,8 @@ function live() {
   const prof = pickProfile();
   let boss = kitFor(prof, n);
   if (q.get("fast")) boss = { ...boss, maxHp: Math.round(boss.maxHp / 4), limbs: boss.limbs.map((l) => ({ ...l, maxHp: Math.round(l.maxHp / 4) })) };
-  document.getElementById("title")!.textContent = `$ gitzilla --live ${prof.slug} :: ${boss.name} [${boss.design?.body ?? "seed"}] theme=${boss.theme}`;
+  const BL = bossLayout(boss);
+  document.getElementById("title")!.textContent = `$ gitzilla --live ${prof.slug} :: ${boss.name} [${BL.body}${BL.kaiju ? " hint:" + BL.kaiju.hint : ""}] theme=${boss.theme}`;
   const roster = Array.from({ length: n }, (_, i) => {
     const pp = profiles[(i * 3 + 1) % profiles.length];
     const kit: PlayerKit = playerKitFromProfile(pp);
@@ -202,7 +203,8 @@ function grid() {
   const scenes = themes.map((theme, i) => {
     const prof = q.get("boss") ? pickProfile() : profiles[(i * 2 + Number(q.get("offset") ?? 0)) % profiles.length];
     const kit = { ...kitFor(prof, 4), theme };
-    const ctx = makeStage(scale, `${theme} :: ${prof.slug} [${kit.design?.body ?? "seed"}]`);
+    const GL = bossLayout(kit);
+    const ctx = makeStage(scale, `${theme} :: ${prof.slug} [${GL.body}${GL.kaiju ? " hint:" + GL.kaiju.hint : ""}]`);
     return { ctx, kit, i };
   });
   function frame() {
@@ -304,7 +306,8 @@ function portraits() {
     const c = bossPortrait(kit, Number(q.get("size") ?? 168));
     cell.appendChild(c);
     const s = document.createElement("span");
-    s.textContent = p.slug.split("/")[1] + (useDesign ? " " + (kit.design?.body ?? "") : " seed");
+    const L = bossLayout(kit);
+    s.textContent = p.slug.split("/")[1] + " :: " + L.body + (L.kaiju ? " (hint: " + L.kaiju.hint + ")" : "") + (useDesign ? "" : " [no design]");
     cell.appendChild(s);
     wrap.appendChild(cell);
   }

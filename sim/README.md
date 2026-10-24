@@ -6,6 +6,14 @@ Call `match.step(1 / 30, inputs)` at 30 Hz. `snapshot()` returns a detached copy
 
 Snapshots publish `boss.regions` in absolute arena pixels, one per limb including broken limbs, followed by `heart`. Broken regions remain for destruction art but cannot be targeted or hit. Render anatomy at these positions. `BossKit.heart` preserves the analyzed file path. Optional Gemini designs do not enter stat or threat calculations. README/tree context is stat-neutral in battle; edu uses documentation evidence in its report cards.
 
+## Upright kaiju anatomy
+
+`sim/regions.ts` imports pure `kaijuAnchors` from `shared/kaiju-anatomy.ts`: component hitboxes sit on dorsal plates, tail, jaw, arms, legs, neck plates and tail tip; the core sits on the chest. All coordinates are absolute offsets from the live boss position, including broken organs for destruction art. `bossMouth(boss)` exports the shared mouth in arena pixels. No anatomy offsets are copied into sim.
+
+Combat radii remain13px per limb and19px for the core (`BOSS_HIT_RADII`), preserving every old hitbox size and the total per-repo hit-area budget. Shared anatomy's current radii describe smaller visual lobes; live collision overlays must use state.regions.r. The renderer should preserve supplied state anchors and use local defaults only without live state.
+
+A source attack of kindlaser begins at the mouth, follows the moving kaiju, and still charges for0.95s before its0.75s armed sweep. Width7, damage, occupancy cost, cooldown and victim-once rules are unchanged. Existing casting progress drives the dorsal-plate charge animation. Charge telegraphs and parallel worker warnings retain their existing body origins and budgets.
+
 ## Equal budgets and squad scaling
 
 - Players redistribute five normalized stat points across health, armor, energy, speed and damage.

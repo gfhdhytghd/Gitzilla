@@ -2,7 +2,7 @@ import { ARENA_H, ARENA_W } from '../shared/types.ts';
 import type { Autopsy, BossAttack, BossKit, BossState, Bullet, GameEvent, GameMode, Hazard, InputFrame, MatchState, Pickup, PlayerKit, PlayerState, WeaponKind } from '../shared/types.ts';
 import { BossAi } from './bossAi.ts';
 import { clamp, distance, random, unit } from './math.ts';
-import { activeBossRegions, bossRegions } from './regions.ts';
+import { activeBossRegions, bossMouth, bossRegions } from './regions.ts';
 import { ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
 import { createObstacles, segmentRect } from './arena.ts';
 import { createPerkOffer, hasPerk } from './perks.ts';
@@ -31,7 +31,7 @@ interface PlayerRuntime {
   buff: number; history: { t: number; x: number; y: number }[];
 }
 interface ShotRuntime { damage: number; life: number }
-interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string; targetPlayer?: string }
+interface HazardRuntime { damage: number; telegraph: number; victims: Set<string>; attackId: string; targetPlayer?: string; mouth?: boolean }
 
 class ArenaMatch implements BattleMatch {
   private state: BattleState;
@@ -278,7 +278,9 @@ class ArenaMatch implements BattleMatch {
     }
     if (a.kind === 'laser' || a.kind === 'charge') {
       const b = this.state.boss;
-      this.hazard('laser', b.x, b.y, a.kind === 'charge' ? 18 : 7, Math.atan2(target[1] - b.y, target[0] - b.x), a.telegraph + (a.kind === 'charge' ? 0.1 : 0.75), a.telegraph, a.kind === 'charge' ? 0 : a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
+      const origin = a.kind === 'laser' ? bossMouth(b) : b;
+      const id = this.hazard('laser', origin.x, origin.y, a.kind === 'charge' ? 18 : 7, Math.atan2(target[1] - origin.y, target[0] - origin.x), a.telegraph + (a.kind === 'charge' ? 0.1 : 0.75), a.telegraph, a.kind === 'charge' ? 0 : a.damage, a.id, this.state.boss.targetPlayer ?? undefined);
+      if (a.kind === 'laser') this.hazardData.get(id)!.mouth = true;
     }
   }
 
@@ -469,6 +471,7 @@ class ArenaMatch implements BattleMatch {
     for (const p of this.state.players) p.buffs = p.buffs.filter(b => b !== 'firewall');
     this.state.hazards = this.state.hazards.filter(h => {
       const meta = this.hazardData.get(h.id)!; h.t += dt; h.armed = h.t >= meta.telegraph;
+      if (meta.mouth) { const origin = bossMouth(this.state.boss); h.x = origin.x; h.y = origin.y; }
       if (h.kind === 'laser' && h.armed && meta.damage > 0) h.angle += dt * 0.35 * (h.id % 2 ? 1 : -1);
       if (h.kind === 'firewall') {
         for (const p of this.state.players) if (p.alive && distance(p, h) < h.r) p.buffs.push('firewall');

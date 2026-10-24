@@ -1,3 +1,61 @@
+DONE (code weapon names)
+DONE (anatomy wiring + mouth laser)
+DONE (boss attack identifiers — authorized design exception)
+
+## Final validation — weapon names + anatomy + authorized lobby repair
+- **584 tests PASS,7 optional skips;49 passing files /3 skipped. Full tsc PASS; diff check PASS.** Includes114 sim tests and55 design tests. No required checks remain.
+- **DEV5175 Flask lobby after final design refinement:** app() while(true) Loop; get() Stack Overflow; index() npm install Swarm; client() while(true) Loop; github_link() Recursion; create_app() while(true) Loop. All6 real source identifiers are distinct. Both cache/model validation and direct apply boundaries repair stale repeated prefixes; custom art suffixes remain when bounded. The oneoff WS test left/deleted its test room afterwards.
+- DEV5175 standard smokeZSQO PASS (4 humans+2 bots,99 snapshots/client/5s, leave/owner/deletion/revocation). Live5173 untouched. No commits/pushes or provider/API generation.
+- All15 weapon expressions and lengths are printed below; all15 saved hero names remain unique/valid and unchanged by this authorized boss-name fix. Updated only attackNames/limbNames in15 public boss assets, preserving art/title/palette and combat stats.
+- Upright anatomy uses shared offsets, chest heart and mouth laser; original13/19 combat radii and all threat knobs preserved. Full300-match report refreshed:4/6/8 wins58.7%/61.3%/61.3%; mean179.3/172.0/185.8s, mean victories198.5/184.0/200.6s. Shared-helper SHA matches the sweep input. No retuning needed.
+- Coordinator's explicit **"Authorize the design/ fix"** is the narrow ownership exception for design implementation/tests and required boss asset name-map updates. All other implementation changes remain in sim/. No shared/server/client edits by this agent.
+
+## Code-expression weapon names — implementation complete
+- `kits.ts` fills code.weapon using code.signature, actual top identifiers and component symbols. `expressions.ts` chooses complete ≤24-char language/kind templates by seed; `flavor.ts` retains glyph rotation + genuine tokens. Never clips an identifier, closing parenthesis or brace. No WeaponKind/stat/cadence/projectile-count changes.
+- 3–4 templates for main language/kind pairs and ≥3 valid-looking forms per kind across20 supported languages; JS await/then, TS casts/await, Rust unsafe/macros/alloc, Go goroutines, C preprocessor/spread, Python yield/lambda, Java streams, C# LINQ, Ruby cuts, etc. FX follows the selected construct and includes a short actual repo identifier where it fits.
+- No usable source identifier (absent DNA/only oversized symbols) uses an honest seed-literal code call; never presents an invented name as real source. All15 analyzed fallback repos use genuine whole identifiers and have unique names.
+- Final25 focused flavor tests PASS; full sim suite114 PASS after anatomy tests. Deterministic variation covers every kind across20 languages; tests assert3+ forms, ≤24 chars, whole-source symbol use, 15-way uniqueness, no English noun suffix, JS/TS parse diagnostics, reserved/oversized/missing-symbol cases. All four Python fallback labels also parse with Python ast without execution.
+- **Client handoffs:** client/genesis/demo.ts:28 still slices weapon names to20 (can cut syntax); client/render/player/index.ts:1482 uppercases the label (changes real identifier case). Preserve all≤24 chars and original code case. No client edits made.
+- Anatomy helper landed at20:21 UTC poll. Sim imports shared/kaiju-anatomy.ts kaijuAnchors for every limb/chest center and mouth laser origin. **Combat radii remain13px limbs /19px heart as explicitly requested**; shared art anchors currently provide11–15px visual radii, so sim does not let that lower hit-area budget. Live renderer should honor state.regions.r for combat overlays. No copied coordinate offsets or shared edits. Mouth laser follows shared mouth while firing, retaining0.95s warning and all original damage/width/armed duration/cost/cooldowns. Anatomy tests PASS.
+- Current design validator accepts **all15** sim expressions unchanged. Design owner completed the24-char schema/prompts/hero assets/tests. Earlier external legacy-name fixture failures are resolved; final full suite584 PASS /7 skipped and full tsc PASS. Coordinator later authorized the boss-name design exception recorded above.
+- `sim/balance-results.json` display-name coverage refreshed only; combat balance metrics remain valid because this change is cosmetic. Upright-kaiju anatomy/mouth-laser wiring and the300-match current-layout replay are complete.
+
+### Cross-owner root causes and fixes (resolved / historical handoff)
+- Coordinator explicitly answered **"Authorize the design/ fix"**. Applied the narrow exception in design/fallback.ts, validate.ts, index.ts, schema.ts and focused tests. Updated only attackNames/limbNames fields of15 existing public boss assets; no art/title/palette/stats/model/provider regeneration. No server/client/shared edits or commits.
+- **Fixed lobby repeated identifiers root cause:** design/fallback.ts:63–67 selects componentSymbols[source][0] repeatedly; design/validate.ts accepts the overwritten names and truncates to22; server/rooms.ts:396–397 copies these decorative names back over sim's unique ones. The authorized design-boundary repair now prevents that overwrite. Generated names + code.attackSymbols are already correct; exported `reconcileCodeNames(kit)` now enforces each assigned source prefix on ALL attacks (including generic names without an identifier) and is used at match start. New regressions cover repeated app() AND Exception Orbit.
+- **Applied authorized fix:** fallback attackNames should be `Object.fromEntries(kit.attacks.map(a => [a.id,a.name]))`; cached/model attack names should pass through `reconcileCodeNames({...kit, attacks:kit.attacks.map(a=>({...a,name:validatedNames[a.id]}))})`, then map repaired names back into design.attackNames. Normalized existing data/design name fields offline. Source prefixes are repaired for fallback, cached/model validation, and direct applyBossDesign (including persisted lobby designs). Custom art suffixes remain when they fit; duplicate limb suffixes are repaired individually so noncolliding custom names survive. Server untouched.
+- **Anatomy radii decision:** new shared anchors currently have chest15 and limbs11–15; prior combat is heart19 and limb13. Sim currently pins combat radii13/19 to satisfy the user's unchanged-hitbox-budget instruction while importing ALL centers. Renderer owner should set shared combat radii to13/19 (keep visual lobe radii separate) so sim can consume the entire anchor as a single source of truth. Renderer owner resolved the layout acceptance; final full suite passes. Sim combat radii remain unchanged.
+- **Historical renderer anchor issue (resolved by owner):** layout.ts kaiju switch overwrites injected state-region positions/radii with local an.limbs. Preserve provided state anchors; local anatomy defaults only apply to portraits/galleries without state. Other current renderer test expects old9 body categories but the new directive forces kaiju; owner should update that fixture. No renderer edits by sim.
+
+Actual Flask proof: generated = app()/get()/index()/client()/github_link()/create_app(); lobby design currently overwrites them with app()/app()/app()/app()/github_link()/Exception Orbit. Exported repair now restores all6 real assigned symbols, with no repeats. Now called before publishing the lobby decorated kit, in design validation and direct application. Actual DEV5175 WS lobby after final design refinement verified6 unique identifiers.
+
+### Anatomy/mouth-laser validation (current)
+- Shared centers/chest/mouth wiring complete; sim keeps13px limb /19px heart combat radii (original per-region and total-area budget). Mouth laser follows the moving kaiju; .95s warning, .75s armed interval, width7, damage, cadence and attack cost unchanged. Dorsal-plate charging is rendered from existing casting progress; no new threat/event budget.
+- 25 targeted match/anatomy tests PASS; then29 targeted flavor/anatomy tests PASS after strengthening attack-name repair. Full tsc now PASS after fixing radius-literal inference in owned regions.ts.
+- 225 current-geometry matches (15 repos ×5 ×4/6/8):44/75,46/75,46/75 wins =58.7%,61.3%,61.3%; mean179.3s,172.0s,185.8s. **No tuning changes** to preserve budgets. Solo68/75; full300-match artifact refreshed. DEV5175 smokeZSQO PASS:4 humans+2 bots,99 snapshots/client/5s plus leave/ownership/deletion/revocation checks. Live5173 untouched.
+- Latest owned validation: **114 sim tests PASS; full repository tsc PASS; diff check PASS.** All300 current-anatomy balance matches and DEV smoke complete.
+- Historical full run during shared anatomy migration:573 PASS /2 FAIL /7 skipped; both renderer layout failures are now resolved, final584 PASS /7 skipped. Sim fix to concat typing is complete. Weapon design owner has now finished its24-char schema/validation and regenerated15 unique hero assets; all15 sim expressions preserve exact names.
+
+### All15 public fallback weapon names
+
+| Repo | Language / kind | Code name | Chars |
+| --- | --- | --- | ---: |
+| burntsushi/ripgrep | Rust / cannon | `alloc(name_long())` | 18 |
+| django/django | Python / staff | `yield from value()` | 18 |
+| expressjs/express | JavaScript / blaster | `accept().then(fire)` | 19 |
+| facebook/react | JavaScript / blaster | `emit(create())` | 14 |
+| fastapi/fastapi | Python / staff | `yield from alias()` | 18 |
+| gin-gonic/gin | Go / smg | `go burst(Data)` | 14 |
+| golang/example | Go / smg | `go repeat(groupOrAttrs)` | 23 |
+| jquery/jquery | JavaScript / blaster | `await setup()` | 13 |
+| karpathy/nanogpt | Python / staff | `yield process()` | 15 |
+| lodash/lodash | JavaScript / blaster | `await fetch(add)` | 16 |
+| pallets/flask | Python / staff | `yield from create_app()` | 23 |
+| redis/redis | C / shotgun | `#define SPRAY(list)` | 19 |
+| rust-lang/rustlings | Rust / cannon | `alloc(stdout())` | 15 |
+| spring-projects/spring-petclinic | Java / laser | `addVisit.stream()` | 17 |
+| vuejs/core | TypeScript / blaster | `await fire(data)` | 16 |
+
 DONE (removePlayer)
 
 ## removePlayer implementation / handoff
@@ -24,7 +82,7 @@ DONE (round 2)
 ## Current result
 - Latest scope is **classroom PvP**, superseding earlier boss-based edu. Owned sim implementation is complete: null boss, code-quality stats/report cards, 2–30-student FFA, larger hitboxes, scaled arena, 75s rounds, respawns, quizzes, lessons, ranking.
 - Battle keeps equal-budget heroes/bosses and scaling pressure. Round 2 cover/loot/perks, source-code payloads, code weapons, unique attack names, malformed input defense, and Adopt-an-Organ metadata/fragility are complete.
-- Only sim/ and this progress file changed by this agent. No shared edits, commits, pushes, dependency installs or live deployments. **5173/live untouched; all server checks used DEV http://localhost:5175.**
+- Initial scope was sim/ and this progress file; coordinator explicitly authorized the design-boundary naming fix and required public asset name-field normalization above. No shared/server/client edits, commits, pushes, dependency installs or live deployments. **5173/live untouched; all server checks used DEV http://localhost:5175.**
 
 ## Classroom implementation
 - `playerKitFromProfile(profile,{mode:'edu'})` derives seven QualityStat rows with grade, real signal and concrete tip. Tests→armor; capped log LOC/README→HP; fan-out/depth→speed; functions/file and function length→damage; comments/README→energy/regen; cycles/TODO density→weakness and short periodic slow. Public advisory IDs/fixes appear in the report card. Missing measurements stay labelled unavailable; LOC/definition estimates are explicitly approximate.
@@ -43,15 +101,15 @@ DONE (round 2)
 - Quality sanity: `npx tsx sim/classroom-bots.ts 12` → one strong-quality vs three C-range students, same TypeScript blaster/firewall skill/controller skill, rotating strong identity. Strong hero wins **5/12 =41.7%** (equal-chance reference 25%); strong hero **115 KOs =9.58/student-match**, C-range heroes **267 KOs =7.42/student-match**. No health/outcome manipulation. Synthetic quality fixtures, not claims about actual repos.
 - Complete 30-bot class: **340 KOs, max185 projectiles, all state finite**; 255.2 simulated seconds in 5.0 wall seconds, max measured step 4.82ms on this host. Raw aggregate artifact: `sim/classroom-results.json`. Timings are host-dependent; no human/phone visual acceptance claimed.
 
-## Battle balance — FINAL current defaults
+## Battle balance — FINAL current upright-anatomy defaults
 15 actual public fallback bosses ×5 trials ×1/4/6/8 players =300 matches. Aggregate squad targets all pass (55–70% wins, 150–210s mean fight and mean victory):
 
 | Players | Wins | Win rate | Mean fight | Mean victory |
 | --- | ---: | ---: | ---: | ---: |
-| 1 | 69/75 | 92.0% | 260.1s | 261.7s |
-| 4 | 51/75 | 68.0% | 181.9s | 197.9s |
-| 6 | 44/75 | 58.7% | 173.0s | 186.0s |
-| 8 | 50/75 | 66.7% | 190.0s | 198.2s |
+| 1 | 68/75 | 90.7% | 259.9s | 265.7s |
+| 4 | 44/75 | 58.7% | 179.3s | 198.5s |
+| 6 | 46/75 | 61.3% | 172.0s | 184.0s |
+| 8 | 46/75 | 61.3% | 185.8s | 200.6s |
 
 - Base HP11600; core HP `11600*(.6+.4*n)*(1+max(0,n-4)*.085)`. 4/6/8 squads have 1/2/4 independently warned streams aimed at different players, cadence3.3/3.1/3.0s, damage5/4.3/4. Primary cooldowns also shorten with larger squads.
 - Fixed total anatomical attack shares and 36% effective core-HP limb budget after crit multipliers. Cyclic/fragile critical damage is cancelled from core-chip DPS. Repo seed directs anatomy, encounter seed directs common AI pressure. Per-kind costs price the whole cast period including wind-up.
@@ -85,69 +143,69 @@ DONE (round 2)
 - **Design owner handoff:** sim repairs repeated names at match start, but lobby/gallery designs should preserve kit.attack.name / code.attackSymbols and code.limbNames. design/fallback.ts still selectedcomponentSymbols[source][0] for each attack when last inspected. No design/ edits made.
 - No port5173/live activity, no commits/pushes. Only coordinator deploys.
 
-## Final per-boss table (5 trials per cell)
+## Final per-boss table (5 trials per cell, current upright anatomy)
 
 | Boss | Players | Wins | Win rate | Mean fight | Mean victory |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| burntsushi/ripgrep | 1 | 3/5 | 60% | 152.9s | 223.8s |
-| burntsushi/ripgrep | 4 | 2/5 | 40% | 168.2s | 196.7s |
-| burntsushi/ripgrep | 6 | 2/5 | 40% | 159.5s | 194.4s |
-| burntsushi/ripgrep | 8 | 3/5 | 60% | 148.1s | 202.3s |
-| django/django | 1 | 5/5 | 100% | 245.9s | 245.9s |
-| django/django | 4 | 4/5 | 80% | 179.6s | 185.0s |
-| django/django | 6 | 3/5 | 60% | 171.7s | 176.6s |
-| django/django | 8 | 4/5 | 80% | 197.5s | 194.6s |
-| expressjs/express | 1 | 5/5 | 100% | 294.7s | 294.7s |
-| expressjs/express | 4 | 4/5 | 80% | 175.0s | 202.0s |
-| expressjs/express | 6 | 4/5 | 80% | 184.3s | 182.3s |
-| expressjs/express | 8 | 3/5 | 60% | 194.1s | 198.5s |
-| facebook/react | 1 | 5/5 | 100% | 265.5s | 265.5s |
-| facebook/react | 4 | 3/5 | 60% | 193.9s | 196.4s |
-| facebook/react | 6 | 5/5 | 100% | 181.0s | 181.0s |
-| facebook/react | 8 | 4/5 | 80% | 196.5s | 198.4s |
-| fastapi/fastapi | 1 | 5/5 | 100% | 248.1s | 248.1s |
-| fastapi/fastapi | 4 | 5/5 | 100% | 195.5s | 195.5s |
-| fastapi/fastapi | 6 | 2/5 | 40% | 183.6s | 198.5s |
-| fastapi/fastapi | 8 | 4/5 | 80% | 193.6s | 195.6s |
-| gin-gonic/gin | 1 | 5/5 | 100% | 244.7s | 244.7s |
-| gin-gonic/gin | 4 | 1/5 | 20% | 133.7s | 182.7s |
-| gin-gonic/gin | 6 | 3/5 | 60% | 139.3s | 166.8s |
-| gin-gonic/gin | 8 | 2/5 | 40% | 173.3s | 187.6s |
-| golang/example | 1 | 5/5 | 100% | 242.5s | 242.5s |
-| golang/example | 4 | 3/5 | 60% | 150.2s | 200.3s |
-| golang/example | 6 | 2/5 | 40% | 153.3s | 194.3s |
-| golang/example | 8 | 4/5 | 80% | 205.0s | 208.1s |
-| jquery/jquery | 1 | 4/5 | 80% | 299.9s | 285.4s |
-| jquery/jquery | 4 | 4/5 | 80% | 194.6s | 190.7s |
-| jquery/jquery | 6 | 3/5 | 60% | 189.7s | 195.0s |
-| jquery/jquery | 8 | 3/5 | 60% | 206.2s | 203.4s |
-| karpathy/nanogpt | 1 | 5/5 | 100% | 245.3s | 245.3s |
-| karpathy/nanogpt | 4 | 4/5 | 80% | 169.3s | 182.5s |
-| karpathy/nanogpt | 6 | 1/5 | 20% | 182.2s | 187.7s |
-| karpathy/nanogpt | 8 | 4/5 | 80% | 186.4s | 197.9s |
-| lodash/lodash | 1 | 5/5 | 100% | 241.4s | 241.4s |
-| lodash/lodash | 4 | 2/5 | 40% | 155.1s | 193.5s |
-| lodash/lodash | 6 | 3/5 | 60% | 175.9s | 181.9s |
-| lodash/lodash | 8 | 4/5 | 80% | 183.9s | 198.9s |
-| pallets/flask | 1 | 5/5 | 100% | 263.6s | 263.6s |
-| pallets/flask | 4 | 4/5 | 80% | 201.7s | 200.2s |
-| pallets/flask | 6 | 3/5 | 60% | 172.1s | 186.7s |
-| pallets/flask | 8 | 3/5 | 60% | 191.6s | 188.8s |
-| redis/redis | 1 | 3/5 | 60% | 309.6s | 302.1s |
-| redis/redis | 4 | 3/5 | 60% | 205.8s | 205.4s |
-| redis/redis | 6 | 3/5 | 60% | 189.0s | 196.8s |
-| redis/redis | 8 | 2/5 | 40% | 193.3s | 195.7s |
-| rust-lang/rustlings | 1 | 5/5 | 100% | 299.7s | 299.7s |
-| rust-lang/rustlings | 4 | 4/5 | 80% | 200.6s | 200.7s |
-| rust-lang/rustlings | 6 | 3/5 | 60% | 176.2s | 194.2s |
-| rust-lang/rustlings | 8 | 3/5 | 60% | 206.3s | 209.0s |
-| spring-projects/spring-petclinic | 1 | 4/5 | 80% | 305.5s | 292.4s |
-| spring-projects/spring-petclinic | 4 | 5/5 | 100% | 206.6s | 206.6s |
-| spring-projects/spring-petclinic | 6 | 4/5 | 80% | 163.3s | 182.0s |
-| spring-projects/spring-petclinic | 8 | 3/5 | 60% | 199.1s | 202.0s |
-| vuejs/core | 1 | 5/5 | 100% | 242.5s | 242.5s |
-| vuejs/core | 4 | 3/5 | 60% | 198.2s | 222.9s |
-| vuejs/core | 6 | 3/5 | 60% | 173.7s | 188.1s |
-| vuejs/core | 8 | 4/5 | 80% | 174.9s | 189.8s |
+| burntsushi/ripgrep | 1 | 4/5 | 80% | 188.5s | 232.6s |
+| burntsushi/ripgrep | 4 | 2/5 | 40% | 132.4s | 214.2s |
+| burntsushi/ripgrep | 6 | 2/5 | 40% | 144.2s | 176.6s |
+| burntsushi/ripgrep | 8 | 2/5 | 40% | 140.0s | 205.8s |
+| django/django | 1 | 4/5 | 80% | 231.6s | 239.9s |
+| django/django | 4 | 5/5 | 100% | 191.5s | 191.5s |
+| django/django | 6 | 2/5 | 40% | 162.1s | 169.4s |
+| django/django | 8 | 3/5 | 60% | 197.2s | 205.8s |
+| expressjs/express | 1 | 5/5 | 100% | 296.0s | 296.0s |
+| expressjs/express | 4 | 4/5 | 80% | 201.0s | 201.9s |
+| expressjs/express | 6 | 3/5 | 60% | 175.7s | 173.7s |
+| expressjs/express | 8 | 4/5 | 80% | 198.4s | 208.5s |
+| facebook/react | 1 | 5/5 | 100% | 260.1s | 260.1s |
+| facebook/react | 4 | 3/5 | 60% | 185.2s | 192.2s |
+| facebook/react | 6 | 4/5 | 80% | 181.8s | 184.4s |
+| facebook/react | 8 | 3/5 | 60% | 182.1s | 212.2s |
+| fastapi/fastapi | 1 | 5/5 | 100% | 248.6s | 248.6s |
+| fastapi/fastapi | 4 | 3/5 | 60% | 175.1s | 188.3s |
+| fastapi/fastapi | 6 | 4/5 | 80% | 171.6s | 177.4s |
+| fastapi/fastapi | 8 | 2/5 | 40% | 195.7s | 194.2s |
+| gin-gonic/gin | 1 | 5/5 | 100% | 246.9s | 246.9s |
+| gin-gonic/gin | 4 | 3/5 | 60% | 179.0s | 177.4s |
+| gin-gonic/gin | 6 | 4/5 | 80% | 179.9s | 183.7s |
+| gin-gonic/gin | 8 | 4/5 | 80% | 195.1s | 195.5s |
+| golang/example | 1 | 5/5 | 100% | 243.5s | 243.5s |
+| golang/example | 4 | 5/5 | 100% | 198.6s | 198.6s |
+| golang/example | 6 | 3/5 | 60% | 154.7s | 185.0s |
+| golang/example | 8 | 3/5 | 60% | 156.6s | 199.2s |
+| jquery/jquery | 1 | 5/5 | 100% | 311.2s | 311.2s |
+| jquery/jquery | 4 | 3/5 | 60% | 203.2s | 186.6s |
+| jquery/jquery | 6 | 3/5 | 60% | 178.4s | 184.7s |
+| jquery/jquery | 8 | 3/5 | 60% | 186.4s | 197.6s |
+| karpathy/nanogpt | 1 | 5/5 | 100% | 245.1s | 245.1s |
+| karpathy/nanogpt | 4 | 3/5 | 60% | 154.4s | 187.7s |
+| karpathy/nanogpt | 6 | 3/5 | 60% | 174.8s | 180.1s |
+| karpathy/nanogpt | 8 | 4/5 | 80% | 188.3s | 189.2s |
+| lodash/lodash | 1 | 4/5 | 80% | 234.2s | 245.5s |
+| lodash/lodash | 4 | 0/5 | 0% | 153.0s | 0.0s |
+| lodash/lodash | 6 | 3/5 | 60% | 154.5s | 178.6s |
+| lodash/lodash | 8 | 0/5 | 0% | 154.1s | 0.0s |
+| pallets/flask | 1 | 4/5 | 80% | 283.3s | 265.9s |
+| pallets/flask | 4 | 1/5 | 20% | 181.6s | 197.7s |
+| pallets/flask | 6 | 4/5 | 80% | 183.7s | 186.7s |
+| pallets/flask | 8 | 5/5 | 100% | 194.4s | 194.4s |
+| redis/redis | 1 | 5/5 | 100% | 317.3s | 317.3s |
+| redis/redis | 4 | 3/5 | 60% | 202.9s | 230.3s |
+| redis/redis | 6 | 5/5 | 100% | 201.8s | 201.8s |
+| redis/redis | 8 | 4/5 | 80% | 218.6s | 214.9s |
+| rust-lang/rustlings | 1 | 4/5 | 80% | 276.4s | 288.0s |
+| rust-lang/rustlings | 4 | 4/5 | 80% | 202.3s | 212.9s |
+| rust-lang/rustlings | 6 | 3/5 | 60% | 180.7s | 197.3s |
+| rust-lang/rustlings | 8 | 3/5 | 60% | 196.9s | 202.5s |
+| spring-projects/spring-petclinic | 1 | 3/5 | 60% | 273.1s | 306.2s |
+| spring-projects/spring-petclinic | 4 | 2/5 | 40% | 138.4s | 199.0s |
+| spring-projects/spring-petclinic | 6 | 2/5 | 40% | 164.4s | 185.5s |
+| spring-projects/spring-petclinic | 8 | 3/5 | 60% | 200.8s | 204.3s |
+| vuejs/core | 1 | 5/5 | 100% | 242.9s | 242.9s |
+| vuejs/core | 4 | 3/5 | 60% | 190.7s | 204.7s |
+| vuejs/core | 6 | 1/5 | 20% | 172.2s | 166.1s |
+| vuejs/core | 8 | 3/5 | 60% | 181.8s | 186.1s |
 
 DONE

@@ -38,6 +38,12 @@ export function dnaFingerprint(profile: RepoProfile, kit?: PlayerKit | BossKit):
   })).digest('hex').slice(0, 16);
 }
 
+/** Prompt/art recipe changes invalidate bundles without rerolling DNA-based creature names. */
+export function designFingerprint(profile: RepoProfile, kind: 'hero' | 'boss', kit?: PlayerKit | BossKit): string {
+  const dna = dnaFingerprint(profile, kit);
+  return kind === 'boss' ? createHash('sha256').update(`upright-kaiju-1:${dna}`).digest('hex').slice(0, 16) : dna;
+}
+
 export function dnaEmblem(tokens: string[]): string | undefined {
   const printable = tokens.map(token => token.replace(/[^\x21-\x7e]/g, '')).filter(Boolean);
   return (printable.find(token => token.length <= 2) ?? printable[0])?.slice(0, 2);

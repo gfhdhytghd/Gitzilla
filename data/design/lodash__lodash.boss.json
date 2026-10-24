@@ -1,6 +1,6 @@
 {
   "name": "LODASH, GUARDIAN OF LOST RUN IN CONTEXT",
-  "epithet": "Its 5 limbs feed the sleepless heart of lodash.js.",
+  "epithet": "A bark-armored, root-spined kaiju; 5 code-limbs guard the chest reactor.",
   "body": "tree",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "web",
   "intro": [
     "$ git clone lodash/lodash",
-    "[##########] architecture awakened",
-    "FATAL: lodash.js",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: lodash.js",
     "function arrayReduceRight(array, iterate"
   ],
   "taunts": [
@@ -31,18 +31,18 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-ring-0": "iteratee() ring",
-    "0-charge-1": "iteratee() charge",
-    "1-spiral-0": "iteratee() spiral",
-    "2-ring-0": "log() ring",
-    "3-spiral-0": "wrap() spiral",
-    "4-ring-0": "build() ring"
+    "0-ring-0": "iteratee() while(true) Loop",
+    "0-charge-1": "message() git push --force",
+    "1-spiral-0": "apply() Recursion",
+    "2-ring-0": "log() while(true) Loop",
+    "3-spiral-0": "wrap() Recursion",
+    "4-ring-0": "build() while(true) Loop"
   },
   "limbNames": {
-    "limb-0": "iteratee Claw",
-    "limb-1": "apply Tendril",
-    "limb-2": "basename Mandible",
-    "limb-3": "baseAry Coil",
-    "limb-4": "build Claw"
+    "limb-0": "object() Claw",
+    "limb-1": "curry() Lens",
+    "limb-2": "run() Mandible",
+    "limb-3": "baseConvert() Tendril",
+    "limb-4": "min() Coil"
   }
 }

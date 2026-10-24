@@ -1,6 +1,6 @@
 {
   "name": "EXPRESS, THE MOSSBOUND SEND",
-  "epithet": "Its 4 limbs feed the sleepless heart of index.js.",
+  "epithet": "A parasite-crowned, ember-shedding kaiju; 4 code-limbs guard the chest reactor.",
   "body": "swarm",
   "eyes": 12,
   "mouth": "brackets",
@@ -18,8 +18,8 @@
   "theme": "web",
   "intro": [
     "$ git clone expressjs/express",
-    "[##########] architecture awakened",
-    "FATAL: index.js",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: index.js",
     "function shouldHaveBody (buf) {"
   ],
   "taunts": [
@@ -31,16 +31,16 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "createApp() summon",
-    "0-charge-1": "createApp() charge",
-    "1-spiral-0": "app() spiral",
-    "2-summon-0": "get() summon",
-    "3-spiral-0": "Recursive Regret"
+    "0-summon-0": "createApp() npm install Swarm",
+    "0-charge-1": "send() git push --force",
+    "1-spiral-0": "app() Recursion",
+    "2-summon-0": "get() npm install Swarm",
+    "3-spiral-0": "use() Recursion"
   },
   "limbNames": {
-    "limb-0": "test Coil",
-    "limb-1": "app Claw",
-    "limb-2": "json Tendril",
-    "limb-3": "root Mandible"
+    "limb-0": "render() Tendril",
+    "limb-1": "fn() Coil",
+    "limb-2": "html() Antenna",
+    "limb-3": "accept() Plating"
   }
 }

@@ -5,8 +5,10 @@ import type { BossDesign, BossKit, PlayerKit, RepoProfile } from '../shared/type
 import { fallbackBoss, fallbackHero } from './fallback.ts';
 import { bossSchema, heroSchema } from './schema.ts';
 import { validateBoss, validateHero } from './validate.ts';
-import { artDNA, dnaFingerprint } from './code.ts';
+import { artDNA, designFingerprint } from './code.ts';
 import { applicableWeaponName, weaponIdentifiers, type HeroDesignWithWeapon } from './weapon.ts';
+import { reconcileCodeNames } from '../sim/code.ts';
+import { kaijuBodyDirection } from './kaiju.ts';
 
 export { fallbackBoss, fallbackHero } from './fallback.ts';
 export { validateBoss, validateHero } from './validate.ts';
@@ -62,8 +64,8 @@ export async function readApiKey(rootDir: string): Promise<string | undefined> {
 }
 
 export const designFileStem = (slug: string) => slug.toLowerCase().replace(/[^a-z0-9._-]+/g, '__');
-export const designCacheKey = (profile: RepoProfile, kind: Kind, kit?: PlayerKit | BossKit) => `${profile.slug}:${profile.seed >>> 0}:${kind}:v2:${dnaFingerprint(profile, kit)}`;
-export const designCacheFilename = (profile: RepoProfile, kind: Kind, kit?: PlayerKit | BossKit) => `${designFileStem(profile.slug)}.${profile.seed >>> 0}.${kind}.v2.${dnaFingerprint(profile, kit)}.json`;
+export const designCacheKey = (profile: RepoProfile, kind: Kind, kit?: PlayerKit | BossKit) => `${profile.slug}:${profile.seed >>> 0}:${kind}:v2:${designFingerprint(profile, kind, kit)}`;
+export const designCacheFilename = (profile: RepoProfile, kind: Kind, kit?: PlayerKit | BossKit) => `${designFileStem(profile.slug)}.${profile.seed >>> 0}.${kind}.v2.${designFingerprint(profile, kind, kit)}.json`;
 
 function repoContext(profile: RepoProfile) {
   return {
@@ -78,7 +80,7 @@ function repoContext(profile: RepoProfile) {
 function prompt(profile: RepoProfile, kind: Kind, kit: PlayerKit | BossKit): string {
   const direction = kind === 'hero'
     ? 'Design a cute, heroic, friendly 16–20px chibi hero, like a Soul Knight knight/ranger/mage. The language, purpose, README, and quirks inspire class, headgear, accessory and catchphrase. Four hex colors: primary, secondary, skin/visor, accent. Emblem is 1–2 printable ASCII characters. The player must read as one of the good guys. Optional weaponName must be ONE complete, valid-looking CODE EXPRESSION in this hero language, at most 24 characters, using an exact identifier from weaponIdentifiers. Express the weapon construct in syntax: JS blaster await fetch(router), TS <Blaster>render(), Go smg for { go serve() }, C shotgun #define SPRAY(redis), Rust cannon unsafe { search() }, Python staff yield from app(), Java laser stream().map(owner), blade rm -rf ./printer. Adapt examples to real supplied symbols; do not invent identifier aliases or truncate a symbol/expression. English weapon labels such as Promise Blaster, yield Staff, or printf() Pistol are rejected. Preserve weapon kind and projectile/muzzle/impact vocabulary; rename only, no stats or gameplay changes.'
-    : 'Design a huge asymmetric, weird eldritch code monster, clearly a boss and never a player. Architecture is anatomy: components are limbs, dependencies are tentacles, cycles are glowing red knots, the heart file is a pulsing core, contributors inspire 1–12 eyes, commits leave scars, old age may add moss/legacy. Five hex colors: body dark, body light, glow, accent, eye. Give EVERY provided attack ID and limb ID a name using dev humor (rm -rf, merge conflict, segfault). Include 2–4 terminal summon lines and 3–6 short taunts. Never depend on player count.';
+    : `Design a huge, terrifying code kaiju, clearly a boss and never a hero. ${kaijuBodyDirection} Architecture is anatomy: components are limb armor/organs, dependencies are cables/tendrils along the body, cycles are glowing red knots, the heart file is a chest reactor, contributors inspire 1–12 eyes, commits leave scars, and old age adds moss or fossilized scales. Epithets and 2–4 terminal intro lines evoke city-shaking footfalls, a tail smashing the stack, dorsal plates charging and atomic code breath; weave in actual heart/symbol/TODO evidence. Keep the name's epithet distinct and never repeat the repo name in it. Five hex colors: body dark, body light, glow, accent, eye. Give EVERY attack and limb ID its real code symbol with kaiju/dev-humor flavor; preserve distinct assigned source prefixes. Include 3–6 short taunts. Never depend on player count.`;
   const identity = kind === 'hero'
     ? { weapon: (kit as PlayerKit).weapon, skill: (kit as PlayerKit).skill, codeWeapon: (kit as PlayerKit).code?.weapon,
       signature: (kit as PlayerKit).code?.signature, weaponIdentifiers: weaponIdentifiers(profile, kit as PlayerKit) }
@@ -193,8 +195,8 @@ export function applyHeroDesign(kit: PlayerKit, design: HeroDesignWithWeapon): P
 }
 
 export function applyBossDesign(kit: BossKit, design: BossDesign): BossKit {
-  return {
+  return reconcileCodeNames({
     ...kit, design: structuredClone(design), name: design.name, palette: [...design.palette], theme: design.theme,
     attacks: kit.attacks.map(attack => ({ ...attack, name: design.attackNames[attack.id] || attack.name })),
-  };
+  });
 }

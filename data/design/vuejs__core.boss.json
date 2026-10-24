@@ -1,6 +1,6 @@
 {
   "name": "CORE, THE BASE CREATE RENDERER PARADOX",
-  "epithet": "Its 8 limbs feed the sleepless heart of packages/shared/index.js.",
+  "epithet": "A parasite-crowned, ember-shedding kaiju; 8 code-limbs guard the chest reactor.",
   "body": "swarm",
   "eyes": 12,
   "mouth": "zipper",
@@ -18,8 +18,8 @@
   "theme": "web",
   "intro": [
     "$ git clone vuejs/core",
-    "[##########] architecture awakened",
-    "FATAL: packages/shared/index.js",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: packages/shared/index.js",
     "export interface ComponentCustomProps {}"
   ],
   "taunts": [
@@ -31,24 +31,24 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-cascade-0": "render() cascade",
-    "0-charge-1": "render() charge",
-    "1-cascade-0": "foo() cascade",
-    "2-cascade-0": "render() cascade",
-    "3-cascade-0": "resolve() cascade",
-    "4-cascade-0": "render() cascade",
-    "5-cascade-0": "render() cascade",
-    "6-cascade-0": "render() cascade",
-    "7-fan-0": "render() fan"
+    "0-cascade-0": "render() Merge Conflict",
+    "0-charge-1": "h() git push --force",
+    "1-cascade-0": "foo() Merge Conflict",
+    "2-cascade-0": "test() Merge Conflict",
+    "3-cascade-0": "resolve() Merge Conflict",
+    "4-cascade-0": "ref() Merge Conflict",
+    "5-cascade-0": "Child() Merge Conflict",
+    "6-cascade-0": "nextTick() Merge Conflict",
+    "7-fan-0": "Comp() throw Spray"
   },
   "limbNames": {
-    "limb-0": "foo Mandible",
-    "limb-1": "NodeTypes Coil",
-    "limb-2": "render Claw",
-    "limb-3": "compile Tendril",
-    "limb-4": "nextTick Mandible",
-    "limb-5": "resolve Coil",
-    "limb-6": "render Claw",
-    "limb-7": "foo Tendril"
+    "limb-0": "content() Plating",
+    "limb-1": "compile() Root",
+    "limb-2": "click() Claw",
+    "limb-3": "parse() Lens",
+    "limb-4": "watch() Mandible",
+    "limb-5": "get() Tendril",
+    "limb-6": "timeout() Coil",
+    "limb-7": "set() Antenna"
   }
 }

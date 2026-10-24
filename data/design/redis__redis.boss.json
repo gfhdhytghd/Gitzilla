@@ -1,6 +1,6 @@
 {
   "name": "REDIS, THE UNFIXED QUICKLIST TEST",
-  "epithet": "Its 7 limbs feed the sleepless heart of src/server.h.",
+  "epithet": "A bulky, armored-bellied kaiju; 7 code-limbs guard the chest reactor.",
   "body": "blob",
   "eyes": 12,
   "mouth": "brackets",
@@ -18,8 +18,8 @@
   "theme": "legacy",
   "intro": [
     "$ git clone redis/redis",
-    "[##########] architecture awakened",
-    "FATAL: src/server.h",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: src/server.h",
     "static inline void kvSpecInit(kvSpec *sp"
   ],
   "taunts": [
@@ -31,22 +31,22 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-summon-0": "main() summon",
-    "0-slam-1": "main() slam",
-    "1-summon-0": "strlen() summon",
-    "2-summon-0": "test() summon",
-    "3-spiral-0": "fullname() spiral",
-    "4-ring-0": "manifest_modules() rin",
-    "5-spiral-0": "RedisModule_OnLoad() s",
-    "6-ring-0": "resp() ring"
+    "0-summon-0": "main() npm install Swarm",
+    "0-slam-1": "crc64() Stack Overflow",
+    "1-summon-0": "strlen() npm install Swarm",
+    "2-summon-0": "test() npm install Swarm",
+    "3-spiral-0": "fullname() Recursion",
+    "4-ring-0": "manifest_modules() while(true) Loop",
+    "5-spiral-0": "RedisModule_OnLoad() Recursion",
+    "6-ring-0": "resp() while(true) Loop"
   },
   "limbNames": {
-    "limb-0": "main Claw",
-    "limb-1": "cleanup Tendril",
+    "limb-0": "size_t() Claw",
+    "limb-1": "cleanup() Lens",
     "limb-2": "main Mandible",
-    "limb-3": "struct_code Coil",
-    "limb-4": "manifest_modules Claw",
-    "limb-5": "HelloBlock_FreeData Tendril",
-    "limb-6": "run Mandible"
+    "limb-3": "write() Tendril",
+    "limb-4": "manifest_field() Coil",
+    "limb-5": "HelloBlock_FreeData() Antenna",
+    "limb-6": "run() Plating"
   }
 }

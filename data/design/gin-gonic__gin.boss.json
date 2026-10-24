@@ -1,6 +1,6 @@
 {
   "name": "GIN, ANCIENT BYTESCONV REVENANT",
-  "epithet": "Its 6 limbs feed the sleepless heart of internal/bytesconv/bytesconv.go.",
+  "epithet": "A many-eyed, reactor-gazing kaiju; 6 code-limbs guard the chest reactor.",
   "body": "eye",
   "eyes": 12,
   "mouth": "maw",
@@ -18,8 +18,8 @@
   "theme": "legacy",
   "intro": [
     "$ git clone gin-gonic/gin",
-    "[##########] architecture awakened",
-    "FATAL: internal/bytesconv/bytesconv.go",
+    "[##########] dorsal plates charged; kaiju rising",
+    "FATAL: atomic code breath :: internal/bytesconv/bytesconv.go",
     "type Core interface {"
   ],
   "taunts": [
@@ -31,20 +31,20 @@
     "Works on my machine."
   ],
   "attackNames": {
-    "0-fan-0": "Render() fan",
-    "0-charge-1": "Render() charge",
-    "1-laser-0": "Name() laser",
-    "2-ring-0": "Render() ring",
-    "3-spiral-0": "GET() spiral",
-    "4-ring-0": "Open() ring",
-    "5-spiral-0": "Marshal() spiral"
+    "0-fan-0": "Render() throw Spray",
+    "0-charge-1": "Bind() git push --force",
+    "1-laser-0": "Name() grep Trace",
+    "2-ring-0": "String() while(true) Loop",
+    "3-spiral-0": "GET() Recursion",
+    "4-ring-0": "Open() while(true) Loop",
+    "5-spiral-0": "Marshal() Recursion"
   },
   "limbNames": {
-    "limb-0": "Bind Tendril",
-    "limb-1": "Error Mandible",
-    "limb-2": "WriteContentType Coil",
-    "limb-3": "GET Claw",
-    "limb-4": "StringToBytes Tendril",
-    "limb-5": "NewDecoder Mandible"
+    "limb-0": "Header() Antenna",
+    "limb-1": "Engine() Plating",
+    "limb-2": "WriteContentType() Root",
+    "limb-3": "Use() Claw",
+    "limb-4": "Context() Lens",
+    "limb-5": "NewEncoder() Mandible"
   }
 }

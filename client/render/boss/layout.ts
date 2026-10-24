@@ -63,7 +63,7 @@ export interface BossLayout {
   spots: GrowthSpot[];
   scars: ScarLayout[];
   extent: number;            // half-size of a box that contains everything (for sprite buffers)
-  kaiju?: { plates: PlateLayout[]; heads: { x: number; y: number }[]; mouth: { x: number; y: number }; tailLen: number; jawLimb: number; slots: string[] };
+  kaiju?: { plates: PlateLayout[]; heads: { x: number; y: number }[]; mouth: { x: number; y: number }; tailLen: number; jawLimb: number; slots: string[]; hint: BossBody };
 }
 
 const BODIES: BossBody[] = ["blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"];
@@ -112,7 +112,10 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
   // The kaiju is the primary boss; the older archetypes only show up as rare variants (~15% by seed) or when forced.
   const variant: BossBody = d?.body && BODIES.includes(d.body) ? d.body : BODIES[(seed >>> 5) % BODIES.length];
   const forced = (kit as BossKit & BossVisualHints).forceBody;
-  const body: BodyKind = forced ?? (((seed >>> 7) % 100) < 15 ? variant : "kaiju");
+  // The kaiju IS the boss. design.body (Gemini / saved designs) only flavors it (see `hint` in the kaiju case);
+  // the other silhouettes are reachable only through the dev override `forceBody`.
+  const body: BodyKind = forced ?? "kaiju";
+  const hint: BossBody = variant;
   const mouthKind: BossMouth = d?.mouth ?? MOUTHS[(seed >>> 9) % MOUTHS.length];
   const growths: BossGrowth[] = (d?.growths?.length ? d.growths : [GROWTHS[(seed >>> 11) % GROWTHS.length], GROWTHS[(seed >>> 15) % GROWTHS.length]]).filter((g, i, a) => a.indexOf(g) === i).slice(0, 3);
   const eyeCount = Math.max(1, Math.min(12, d?.eyes ?? 3 + (seed % 6)));
@@ -190,6 +193,9 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       });
       heart.x = an.heart.x; heart.y = an.heart.y; heart.hitR = an.heart.r; heart.r = 10;
       const ob: Material = "obsidian";
+      // design.body hint -> detail materials (the silhouette stays the kaiju)
+      const limbMat: Material = hint === "machine" ? "metal" : hint === "golem" ? "stone" : ob;
+      const tailMat: Material = hint === "tree" ? "bark" : hint === "serpent" ? "scales" : hint === "machine" ? "metal" : ob;
       // torso, belly, hips, neck, head, snout
       lobes.push({ x: 3, y: -4, r: 22, ry: 30, owner: -1, mat: ob });
       lobes.push({ x: 9, y: 18, r: 18, owner: -1, mat: ob });
@@ -200,29 +206,41 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       lobes.push({ x: -22, y: -55, r: 8, ry: 5, owner: -1, mat: ob }); // brow ridge
       // arms: upper arm stays, the forearm is severed when the arms limb breaks
       const arm = own("arms");
-      lobes.push({ x: -20, y: -9, r: 6, owner: -1, mat: ob });
+      lobes.push({ x: -20, y: -9, r: 6, owner: -1, mat: limbMat });
       lobes.push({ x: -28, y: -2, r: 5, ry: 4, owner: arm, mat: ob, sever: true });
+      if (hint === "spider") {
+        // spider hint: a second pair of little arms under the first
+        lobes.push({ x: -18, y: 7, r: 5, owner: -1, mat: limbMat });
+        lobes.push({ x: -26, y: 13, r: 4, ry: 3.5, owner: arm, mat: ob, sever: true });
+      }
+      if (hint === "blob") lobes.push({ x: 20, y: -18, r: 11, owner: -1, mat: ob }, { x: 22, y: 6, r: 10, owner: -1, mat: ob }); // bulbous hide
       // legs (charred, not severed, when broken)
       const leg = own("leg"), legB = own("leg-back");
-      lobes.push({ x: -7, y: 28, r: 14, owner: leg, mat: ob }, { x: -11, y: 44, r: 8, ry: 10, owner: leg, mat: ob }, { x: -16, y: 55, r: 12, ry: 4, owner: leg, mat: ob });
-      lobes.push({ x: 17, y: 26, r: 13, owner: legB, mat: ob }, { x: 15, y: 42, r: 8, ry: 10, owner: legB, mat: ob }, { x: 11, y: 54, r: 11, ry: 4, owner: legB, mat: ob });
+      lobes.push({ x: -7, y: 28, r: 14, owner: leg, mat: limbMat }, { x: -11, y: 44, r: 8, ry: 10, owner: leg, mat: ob }, { x: -16, y: 55, r: 12, ry: 4, owner: leg, mat: ob });
+      lobes.push({ x: 17, y: 26, r: 13, owner: legB, mat: limbMat }, { x: 15, y: 42, r: 8, ry: 10, owner: legB, mat: ob }, { x: 11, y: 54, r: 11, ry: 4, owner: legB, mat: ob });
       // tail: a tapering bezier of lobes; the tip (and, if the tail limb breaks, the outer half) is severed
       const tail = own("tail"), tip = own("tail-tip");
       const tx = an.tailLen;
-      const P = [[16, 22], [46, 48], [tx - 30, 50], [tx, 30]];
+      // serpent hint: the tail sweeps lower in a deeper S-curve (same tip, so the tail-tip anchor still matches)
+      const P = hint === "serpent" ? [[16, 22], [40, 62], [tx - 34, 64], [tx, 30]] : [[16, 22], [46, 48], [tx - 30, 50], [tx, 30]];
       const N = 14;
       for (let k = 0; k <= N; k++) {
         const t = k / N, u = 1 - t;
         const x = u * u * u * P[0][0] + 3 * u * u * t * P[1][0] + 3 * u * t * t * P[2][0] + t * t * t * P[3][0];
         const y = u * u * u * P[0][1] + 3 * u * u * t * P[1][1] + 3 * u * t * t * P[2][1] + t * t * t * P[3][1];
         const owner = t >= 0.72 && tip >= 0 ? tip : t >= 0.45 ? tail : -1;
-        lobes.push({ x, y, r: Math.max(2.5, 13 - t * 10.5), owner, mat: ob, sever: owner >= 0 });
+        lobes.push({ x, y, r: Math.max(2.5, 13 - t * 10.5), owner, mat: k % 2 && hint === "machine" ? ob : tailMat, sever: owner >= 0 });
       }
       // extra heads for very cyclic repos (the dependency knot grew more heads)
       const heads = [{ x: -30, y: -48 }];
+      // very cyclic repos grow heads; the hydra hint guarantees at least two
+      const nHeads = hint === "hydra" ? Math.max(an.heads, kit.limbs.some((l) => l.weakPoint) ? 3 : 2) : an.heads;
+      an.heads = nHeads;
       if (an.heads >= 2) { lobes.push({ x: 0, y: -50, r: 8, owner: -1, mat: ob }, { x: -6, y: -62, r: 9, ry: 7, owner: -1, mat: ob }, { x: -16, y: -61, r: 6, ry: 4.5, owner: -1, mat: ob }); heads.push({ x: -9, y: -64 }); }
       if (an.heads >= 3) { lobes.push({ x: 12, y: -48, r: 7, owner: -1, mat: ob }, { x: 14, y: -60, r: 8, ry: 6, owner: -1, mat: ob }, { x: 5, y: -60, r: 5, ry: 4, owner: -1, mat: ob }); heads.push({ x: 11, y: -62 }); }
       for (const h of heads) eyes.push({ x: h.x - 1, y: h.y - 1, r: h === heads[0] ? 3 : 2, limb: -1, phase: R() * 10 });
+      // eye hint: a row of small eyes opens along the neck and back
+      if (hint === "eye") for (const [ex, ey] of [[-8, -36], [2, -28], [10, -16], [12, -2], [16, 12]]) eyes.push({ x: ex, y: ey, r: 2, limb: -1, phase: R() * 10 });
       // dorsal plates along the spine, shaped like brackets taken from the repo's tokens
       const toks = (kit.code?.tokens ?? []).join("");
       const shapes = [...new Set([...toks].map((c) => ("{}".includes(c) ? "}" : "<>".includes(c) ? ">" : "[]".includes(c) ? "]" : "()".includes(c) ? ")" : "")).filter(Boolean))];
@@ -250,7 +268,8 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
         plates.push({ x, y, nx, ny, ch: chars[k % chars.length], scale, owner, order: nPlates - 1 - k });
       }
       mouth = null;
-      kaiju = { plates, heads, mouth: an.mouth, tailLen: tx, jawLimb: own("jaw"), slots: an.limbs.map((l) => l.slot) };
+      kaiju = { plates, heads, mouth: an.mouth, tailLen: tx, jawLimb: own("jaw"), slots: an.limbs.map((l) => l.slot), hint };
+      if (hint === "tree" && !growths.includes("moss")) growths.push("moss");
       break;
     }
     case "blob": {
