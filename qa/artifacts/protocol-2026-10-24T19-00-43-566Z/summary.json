@@ -1,0 +1,46 @@
+{
+  "target": "http://localhost:5175",
+  "room": "YDVT",
+  "results": [
+    {
+      "name": "lobby resume preserves identity and selected kit",
+      "status": "PASS"
+    },
+    {
+      "name": "repo/boss spam keeps latest request; invalid and 200KB slugs recover",
+      "status": "PASS"
+    },
+    {
+      "name": "eight humans replace seven bots; ninth human rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "owner leaving transfers control; former owner resume keeps identity",
+      "status": "PASS"
+    },
+    {
+      "name": "malformed JSON/message fuzz leaves socket and lobby usable",
+      "status": "PASS"
+    },
+    {
+      "name": "start double-click/spam creates one progressing match",
+      "status": "FAIL",
+      "detail": "Error: Timeout: initial snapshot"
+    },
+    {
+      "name": "mid-match resume restores player and advances input ack",
+      "status": "FAIL",
+      "detail": "Error: Timeout: resumed snapshot"
+    },
+    {
+      "name": "sleep/stalled input idles movement and fire after 300ms",
+      "status": "FAIL",
+      "detail": "TypeError: Cannot read properties of undefined (reading 'state')"
+    },
+    {
+      "name": "malformed aim is ignored without stopping a live match",
+      "status": "PASS"
+    }
+  ],
+  "note": "Bounded protocol probes; no real auth, sensors or heap instrumentation."
+}

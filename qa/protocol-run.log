@@ -1,0 +1,20 @@
+npm notice run npx
+npm notice run 'tsx' qa/protocol.ts
+PASS lobby resume preserves identity and selected kit
+PASS repo/boss spam keeps latest request; invalid and 200KB slugs recover
+PASS eight humans replace seven bots; ninth human rejected
+PASS owner leaving transfers control; former owner resume keeps identity
+PASS malformed JSON/message fuzz leaves socket and lobby usable
+PASS start double-click/spam creates one progressing match
+PASS mid-match resume restores player and advances input ack
+PASS sleep/stalled input idles movement and fire after 300ms
+FAIL malformed aim is ignored without stopping a live match: AssertionError [ERR_ASSERTION]: Match stopped: Spread syntax requires ...iterable[Symbol.iterator] to be a function
++ actual - expected
+
++ {
++   message: 'Match stopped: Spread syntax requires ...iterable[Symbol.iterator] to be a function',
++   t: 'error'
++ }
+- undefined
+
+Evidence: qa/artifacts/protocol-2026-10-24T19-01-57-075Z/summary.json

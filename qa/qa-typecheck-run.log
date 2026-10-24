@@ -1,0 +1,13 @@
+npm notice run npx
+npm notice run 'tsc' --noEmit --target es2023 --module esnext --moduleResolution bundler --allowImportingTsExtensions --skipLibCheck --strict qa/browser.ts qa/common.ts qa/fixture.ts qa/protocol.ts qa/reconnect.test.ts qa/robustness.test.ts qa/soak.ts qa/upstream.test.ts
+qa/protocol.ts(102,43): error TS2339: Property 'message' does not exist on type 'ServerMsg'.
+  Property 'message' does not exist on type '{ t: "welcome"; you: string; token: string; lobby: LobbyState; }'.
+sim/match.ts(101,10): error TS2339: Property 'updatePickups' does not exist on type 'ArenaMatch'.
+sim/match.ts(103,12): error TS2339: Property 'updateReview' does not exist on type 'ArenaMatch'.
+sim/match.ts(126,52): error TS2339: Property 'beginReview' does not exist on type 'ArenaMatch'.
+sim/match.ts(330,16): error TS2339: Property 'drop' does not exist on type 'ArenaMatch'.
+sim/match.ts(331,43): error TS2339: Property 'drop' does not exist on type 'ArenaMatch'.
+sim/match.ts(382,14): error TS2339: Property 'drop' does not exist on type 'ArenaMatch'.
+sim/match.ts(382,44): error TS2339: Property 'drop' does not exist on type 'ArenaMatch'.
+sim/match.ts(443,12): error TS2339: Property 'drop' does not exist on type 'ArenaMatch'.
+sim/match.ts(444,38): error TS2339: Property 'drop' does not exist on type 'ArenaMatch'.

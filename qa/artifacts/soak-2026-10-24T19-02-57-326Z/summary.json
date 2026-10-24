@@ -1,0 +1,10 @@
+{
+  "isolated": true,
+  "accelerated": true,
+  "actualRoomServerAndSim": true,
+  "explicitGC": true,
+  "limits": "20 natural real-sim defeats with 300 ticks per room step; no live Hall writes, real wall-clock endurance, DEV heap instrumentation or browser heap profiling.",
+  "samples": [],
+  "retainedHeapGrowthBytes": null,
+  "remainingMatchIntervals": 0
+}

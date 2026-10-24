@@ -1,0 +1,52 @@
+{
+  "target": "http://localhost:5175",
+  "room": "MPZB",
+  "humans": 8,
+  "bots": 0,
+  "success": true,
+  "wallSeconds": 5.001,
+  "clients": [
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    },
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 100,
+      "ack": 150
+    }
+  ],
+  "errors": [],
+  "limits": "Shared DEV, not a controlled benchmark; coordinator activity can affect scheduling."
+}

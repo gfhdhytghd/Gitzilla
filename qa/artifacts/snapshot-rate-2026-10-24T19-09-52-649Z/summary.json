@@ -1,0 +1,17 @@
+{
+  "target": "http://localhost:5175",
+  "room": "GWCA",
+  "humans": 1,
+  "bots": 7,
+  "success": true,
+  "wallSeconds": 5,
+  "clients": [
+    {
+      "simulationSeconds": 5.033333333333325,
+      "snapshots": 107,
+      "ack": 150
+    }
+  ],
+  "errors": [],
+  "limits": "Shared DEV, not a controlled benchmark; coordinator activity can affect scheduling."
+}

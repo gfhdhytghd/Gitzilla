@@ -1,0 +1,7 @@
+npm notice run npx
+npm notice run 'tsx' qa/takeover.ts
+AssertionError [ERR_ASSERTION]: Displaced original tab should not repeatedly steal session back
+
+3 !== 1
+
+{"counts":[{"welcomes":3,"sockets":3},{"welcomes":3,"sockets":3}],"evidence":"qa/artifacts/takeover-2026-10-24T19-03-11-484Z/summary.json"}

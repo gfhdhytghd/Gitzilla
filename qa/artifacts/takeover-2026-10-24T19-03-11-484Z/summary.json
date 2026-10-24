@@ -1,0 +1,15 @@
+{
+  "target": "http://localhost:5175",
+  "counts": [
+    {
+      "welcomes": 3,
+      "sockets": 3
+    },
+    {
+      "welcomes": 3,
+      "sockets": 3
+    }
+  ],
+  "errors": [],
+  "failure": "AssertionError [ERR_ASSERTION]: Displaced original tab should not repeatedly steal session back\n\n3 !== 1\n"
+}

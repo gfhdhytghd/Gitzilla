@@ -1,0 +1,11 @@
+npm notice run npx
+npm notice run 'vitest' run qa/robustness.test.ts
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 1 skipped (3)
+   Start at  15:00:43
+   Duration  2.40s (tests 96%, transform 2%, import 2%)
+

@@ -1,0 +1,10 @@
+Completed 0 matches; remaining match intervals 0; mean retained-heap delta NaN bytes; qa/artifacts/soak-2026-10-24T19-02-57-326Z/summary.json
+/home/wilf/data/HackPSU/repo-kaiju/qa/common.ts:20
+  throw new Error(`Timeout: ${label}`);
+        ^
+
+Error: Timeout: natural accelerated defeat
+    at until (/home/wilf/data/HackPSU/repo-kaiju/qa/common.ts:20:9)
+    at async <anonymous> (/home/wilf/data/HackPSU/repo-kaiju/qa/soak.ts:26:21)
+
+Node.js v26.12.0

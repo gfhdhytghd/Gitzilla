@@ -1,0 +1,4 @@
+npm notice run npx
+npm notice run 'tsx' qa/autopsy.ts
+PASS natural autopsy (17.07s) and same-player reload
+Evidence: qa/artifacts/autopsy-2026-10-24T19-20-55-633Z/summary.json

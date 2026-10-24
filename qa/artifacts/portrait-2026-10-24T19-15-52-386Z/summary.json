@@ -1,0 +1,12 @@
+{
+  "target": "http://localhost:5175",
+  "layoutReady": false,
+  "results": [
+    {
+      "status": "HARNESS_FAILURE",
+      "failure": "Error: page.evaluate: ReferenceError: __name is not defined\n    at eval (eval at evaluate (:370:30), <anonymous>:1:17)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    }
+  ],
+  "pageErrors": [],
+  "limits": "Chromium phone/touch/DPR and native safe-area emulation; CDP frozen lifecycle, not physical sensors, Safari or real OS app suspension."
+}

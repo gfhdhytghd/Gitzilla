@@ -1,0 +1,2 @@
+npm notice run typecheck
+npm notice run tsc --noEmit

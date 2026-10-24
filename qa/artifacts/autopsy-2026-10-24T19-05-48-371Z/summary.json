@@ -1,0 +1,14 @@
+{
+  "target": "http://localhost:5175",
+  "success": false,
+  "ids": [
+    "7c640e83-2f3a-42a1-9a4b-05b6ad81d7d4",
+    "7c640e83-2f3a-42a1-9a4b-05b6ad81d7d4"
+  ],
+  "autopsies": 0,
+  "errors": [
+    "Server restarted. Your fight was reset to the lobby; repos and kits were restored."
+  ],
+  "pageErrors": [],
+  "failure": "Error: Server restarted. Your fight was reset to the lobby; repos and kits were restored."
+}

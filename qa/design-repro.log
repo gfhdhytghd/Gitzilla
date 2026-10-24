@@ -1,0 +1,67 @@
+npm notice run npx
+npm notice run 'vitest' run design/index.test.ts -t grounds fallback hero
+
+ RUN  v5.0.5 /home/wilf/data/HackPSU/repo-kaiju
+
+ ❯ design/index.test.ts (25 tests | 1 failed | 24 skipped) 9ms
+   ❯ real source DNA (round 2) (7)
+     × grounds fallback hero identity, emblem, limbs, attacks, intro and taunts in real source 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  design/index.test.ts > real source DNA (round 2) > grounds fallback hero identity, emblem, limbs, attacks, intro and taunts in real source
+AssertionError: expected { name: 'FLASK, THE UNMERGED', …(11) } to deeply equal { name: 'FLASK, THE UNMERGED', …(11) }
+
+- Expected
++ Received
+
+@@ -1,12 +1,12 @@
+  {
+    "attackNames": {
+      "0-ring-0": "renderForest() ring",
+      "0-slam-1": "renderForest() slam",
+-     "1-summon-0": "app() summon",
+-     "2-ring-0": "app() ring",
+-     "3-spiral-0": "github_link() spiral",
++     "1-summon-0": "Bug Factory",
++     "2-ring-0": "Exception Orbit",
++     "3-spiral-0": "Stack Overflow",
+      "4-ring-0": "Exception Orbit",
+    },
+    "body": "serpent",
+    "epithet": "Its 5 limbs feed the sleepless heart of src/flask/__init__.py.",
+    "eyes": 12,
+@@ -20,13 +20,13 @@
+      "FATAL: src/flask/__init__.py",
+      "return renderForest(tree);",
+    ],
+    "limbNames": {
+      "limb-0": "renderForest Claw",
+-     "limb-1": "get Tendril",
+-     "limb-2": "client Mandible",
+-     "limb-3": "setup Coil",
++     "limb-1": "tests Tendril",
++     "limb-2": "examples Mandible",
++     "limb-3": "docs Coil",
+      "limb-4": ".devcontainer Claw",
+    },
+    "mouth": "maw",
+    "name": "FLASK, THE UNMERGED",
+    "palette": [
+
+ ❯ design/index.test.ts:210:55
+    208|     expect(b.taunts.some(line => line.includes('fix fern recursion')))…
+    209|     expect(b.intro).toContain('return renderForest(tree);');
+    210|     expect(fallbackBoss(p, bossKitFromProfile(p, 8))).toEqual(b);
+       |                                                       ^
+    211|   });
+    212|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 skipped (25)
+   Start at  15:06:06
+   Duration  129ms (import 43%, transform 30%, tests 21%, worker 6%)
+
