@@ -1,4 +1,18 @@
-DONE (code flavor) · DONE (portrait) · DONE (round 2)
+DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+IN PROGRESS: ux P1s → qa fixes (net + portrait done, see below) → edu PvP
+
+## QA fixes (codex-qa) + coordinator portrait review — done
+- QA-UI-01: net.ts keeps/cancels one retry timer; open() refuses while a socket is CONNECTING/OPEN. `QA_REPRO=1 npx vitest run qa/reconnect.test.ts` → 2/2 pass.
+- QA-UI-02: close code 4001 → status `displaced`, no reconnect; full-screen "this room is open in another tab" with `[ use here ]` (`conn.reclaim()`).
+- QA-PORTRAIT-01: viewport sizing = integer device scale unless it wastes >15% of the budget, then fractional; compact deck (<290px) on short phones; 360x640@2 now 360x288 CSS (geometry assertions pass; full qa/portrait.ts runs keep ending INCONCLUSIVE on dev-server restarts).
+- Review: empty deck boxes collapse; boss bar sits in/under the real notch inset (no extra band); boss silhouette reveal plays once per repo, in-place swap for design updates (never stuck dark); after summon the red button becomes a small `⟲ change boss` link.
+
+## UX audit P0s + top-5 quick wins — done (for claude-ux re-audit)
+- P0-1 / QW1: phones choose controls in the LOBBY (`controls-card`: tilt phone · seated / small moves · touch only). iOS permission prompts run inside that tap; the choice is the client-local motion profile (`kaiju.motionProfile`, tap-only = touch). In-game there is no sheet: a small `tap to enable tilt` pill (`motion-enable`) appears in the deck only after the intro, only if still needed.
+- P0-2 / QW2: hints match the live mode: touch = "drag on the arena to move · tap to attack · DASH / SKILL buttons" + a 5s MOVE | ATTACK ghost split over the viewport; motion = "tilt to move · tap or swing to attack". Sensor pill says `touch controls` (neutral grey) or `motion: on/waiting/off`; ⟲ recalibrate only in motion mode. Joystick zone = left half of the viewport.
+- P0-3 / QW3: join box takes exactly 4 letters (0→O 1→I 5→S 8→B), `join` disabled until 4, checks `GET /api/room/<code>` → "room ZZZZ not found — check the code, or [create ZZZZ]". Router: bad codes get a full-screen error card with `$ cd ~ (back to start)`; digit typos in links are auto-corrected. Any server error before welcome → same fatal card, link pill `LINK ERR`.
+- P0-4 / QW4: sticky phone next-step bar (`next-step`): pick repo → cloning… → ready/waiting for <host> (N in) → pick BOSS ↓ → ▶ START FIGHT (N heroes). Picker collapses to `✓ owner/repo · change` after a summon; summon button turns secondary.
+- QW5: plain labels: `♥ hp`, `◆ armor`, `⚡ energy` (code words kept in values/tooltips), autopsy header `damage · best combo · limbs broken · revives · final blow`, sensor pill copy.
 
 ## Code flavor card (claude-ui section) — done
 - HUD vocabulary with plain hints (tooltips + hint copy): `hp` (health), `try{}` (armor), `RAM …MB` (energy), dash = `--force`, skill button shows `$ <skill>`, downed = SEGFAULT with "systemctl restart (revive)" hint, teammate rows `restart N%` / `segfault`, pickups toast `+1 commit ♥ (heal)` / `test passed ✓ (+armor)` / `☕ +RAM (energy)`, victory `exit 0 (boss deleted)`, defeat `exit 1 (squad wiped)`.

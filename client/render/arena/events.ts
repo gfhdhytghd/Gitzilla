@@ -2,7 +2,7 @@
 import type { GameEvent, PlayerState, SkillKind } from "../../../shared/types.ts";
 import { drawGlow, hash2, TAU } from "./pix.ts";
 import { drawText, textWidth } from "./font.ts";
-import { addShake, burst, drawParticles, emit, every, fx, setView, stepParticles, type Particle, type View } from "./fx.ts";
+import { addShake, burst, drawParticles, emit, every, fx, playerColor, setView, stepParticles, type Particle, type View } from "./fx.ts";
 import { telegraphInfo } from "./hazards.ts";
 import { drawPerkCards } from "./props.ts";
 import { playerGlyphs, playerWeapons, registerPlayerGlyphs, registerPlayerWeapon } from "./bullets.ts";
@@ -15,11 +15,13 @@ const glyphKeys = new Map<string, string>();
 const IMPACT_COLOR: Record<string, string> = { blaster: "#fff27a", smg: "#9ffcff", shotgun: "#ffd08a", cannon: "#ffb36b", staff: "#f0c8ff", laser: "#c8ffd0", blade: "#ffffff" };
 const numbers = new Map<string, { p: Particle; sum: number; at: number; crit: boolean }>();
 const MAX_NUMBERS = 7;
+const numberTimes: number[] = [];
+/** floating damage numbers alive right now (time-window count, independent of merging) */
 function liveNumbers() {
-  let n = 0;
-  for (const v of numbers.values()) if (v.p.life < v.p.max && v.p.text.startsWith("-")) n++;
-  return n;
+  while (numberTimes.length && fx.now - numberTimes[0] > 0.8) numberTimes.shift();
+  return numberTimes.length;
 }
+function noteNumber() { numberTimes.push(fx.now); }
 let avgHit = 8;
 
 interface Banner { text: string; sub: string; color: string; at: number; dur: number; scale: number; y: number }
@@ -87,17 +89,30 @@ function ingest(e: GameEvent, time: number) {
         if (time - lf > 0.14) fx.limbFlash.set(e.limb ?? "heart", time);
       }
       if (toPlayer) {
+        const atk = x.source && x.source !== "boss" ? playerWeapons.get(x.source) : undefined;
+        if (atk && !fx.pvp && every("imp" + x.source, 0.14, time)) emit({ kind: "glyph", x: e.x + (Math.random() - 0.5) * 10, y: e.y - 6, vy: -22, max: 0.35, text: atk.impact.slice(0, 8), color: IMPACT_COLOR[atk.kind] ?? "#ffe14a" });
         players.set(e.target, { ...(players.get(e.target) ?? { name: "" }), x: e.x, y: e.y });
-        emit({ kind: "glyph", x: e.x, y: e.y - 14, vx: (Math.random() - 0.5) * 20, vy: -30, grav: 40, max: 0.9, text: "-" + Math.round(e.amount) + " ERR", color: "#ff3a5c" });
+        const pvpHit = fx.pvp && !!x.source && x.source !== "boss";
+        // PvP: the number wears the attacker's color so the class can see who hit whom (one number per target per 0.2 s)
+        if (!pvpHit || (every("pvpnum" + e.target, 0.25, time) && liveNumbers() < MAX_NUMBERS)) {
+          const np = emit({ kind: "glyph", x: e.x, y: e.y - 14, vx: (Math.random() - 0.5) * 20, vy: -30, grav: 40, max: 0.9, text: "-" + Math.round(e.amount) + " ERR", color: pvpHit ? playerColor(x.source!) : "#ff3a5c" });
+          if (np) noteNumber();
+        }
         emit({ kind: "glitch", x: e.x, y: e.y - 4, max: 0.2, size: 10 });
-        burst(e.x, e.y, 8, { kind: "px", speed: 50, max: 0.4, colors: ["#ff3a5c", "#ffffff"], drag: 3 });
-        addShake(3 + (x.impact ?? 0.3) * 4);
-        fx.danger = Math.max(fx.danger, 0.8);
-        if (x.hitStop) fx.hitStop = Math.max(fx.hitStop, time + x.hitStop / 1000);
+        burst(e.x, e.y, 8, { kind: "px", speed: 50, max: 0.4, colors: [pvpHit ? playerColor(x.source!) : "#ff3a5c", "#ffffff"], drag: 3 });
+        // with up to 30 students on a projector, only heavy PvP hits shake the screen and nobody gets the red vignette
+        if (!pvpHit) { addShake(3 + (x.impact ?? 0.3) * 4); fx.danger = Math.max(fx.danger, 0.8); }
+        else if ((x.impact ?? 0) >= 0.6) addShake(2);
+        if (x.hitStop && (!pvpHit || (x.impact ?? 0) >= 0.6)) fx.hitStop = Math.max(fx.hitStop, time + x.hitStop / 1000);
         break;
       }
       // damage dealt by players (boss or minion)
       avgHit = avgHit * 0.97 + e.amount * 0.03;
+      // fragile organ (single maintainer) takes critical hits: amber crack sparks
+      if (toBoss && e.limb && fx.boss?.kit.limbs.find((l) => l.id === e.limb)?.fragile) {
+        burst(e.x, e.y, 6, { kind: "spark", speed: 110, max: 0.3, colors: ["#ffffff", "#ffd27a", "#ffb02e"] });
+        if (every("frag" + e.limb, 0.6, time)) burst(e.x, e.y, 3, { kind: "shard", speed: 60, max: 0.6, text: "/\\|", spin: 14, color: "#ffd27a", color2: "#a05a10", grav: 160 });
+      }
       // impact text of the attacker's code weapon (e.g. "FREE()", "BREAK;", "$1")
       const wpn = x.source ? playerWeapons.get(x.source) : undefined;
       if (wpn && every("imp" + x.source, 0.14, time)) {
@@ -132,7 +147,7 @@ function ingest(e: GameEvent, time: number) {
           kind: "glyph", x: e.x + ox * 10, y: e.y + oy * 8, vx: ox * 26 + (Math.random() - 0.5) * 8, vy: oy * 30 - 18, grav: 50, drag: 1.5, max: critOk ? 1.0 : 0.8,
           text: critOk ? "-" + Math.round(e.amount) + " CRIT" : "-" + Math.round(e.amount), color: critOk ? "#ff7a2a" : crit ? "#ffb05a" : toBoss ? "#fff4c4" : "#d0ffb0", size: critOk ? 2 : 1,
         });
-        if (p) numbers.set(key, { p, sum: e.amount, at: time, crit: critOk });
+        if (p) { numbers.set(key, { p, sum: e.amount, at: time, crit: critOk }); noteNumber(); }
       }
       for (const [k, v] of numbers) if (time - v.at > 1.2) numbers.delete(k);
       // small combo tag next to the number (claude-ui shows the big HUD combo)
@@ -226,7 +241,8 @@ function ingest(e: GameEvent, time: number) {
     case "perk": {
       const p = players.get(e.player);
       if (p) {
-        emit({ kind: "glyph", x: p.x, y: p.y - 24, vy: -14, max: 1.6, text: "MERGED " + e.perk.toUpperCase(), color: "#3dff9a" });
+        const label = e.correct === true ? "CORRECT! " + e.perk.toUpperCase() : e.correct === false ? "NOT QUITE: " + e.perk.toUpperCase() : "MERGED " + e.perk.toUpperCase();
+        emit({ kind: "glyph", x: p.x, y: p.y - 24, vy: -14, max: 1.6, text: label, color: e.correct === false ? "#ffb02e" : "#3dff9a" });
         emit({ kind: "ring", x: p.x, y: p.y, size: 22, max: 0.45, color: "#3dff9a" });
         burst(p.x, p.y, 14, { kind: "px", speed: 50, max: 0.7, colors: ["#3dff9a", "#ffffff"], grav: -40, glow: true });
       }

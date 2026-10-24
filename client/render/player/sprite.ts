@@ -1,5 +1,6 @@
 // Procedural chibi hero sprites: paint into a color grid, auto 1px outline, rasterize once, cache.
 import type { HeroLook } from "./look.ts";
+import { scale2x, shadePass, outlinePass, rasterCells } from "./hires.ts";
 
 export const SW = 26;          // sprite grid width
 export const SH = 28;          // sprite grid height
@@ -614,6 +615,42 @@ export function tinted(src: HTMLCanvasElement, color: string): HTMLCanvasElement
   return cv;
 }
 
+/**
+ * Edu 2x-only detail: anime catchlights, hair strands, dithered cloth shading on the shadow side,
+ * a helmet glint. Works on the EPX-upscaled grid (52x56) of the very same 1x frame.
+ */
+function hiresDetails(cells: (string | null)[], L: HeroLook, f: FrameSpec) {
+  const W = SW * 2, c = L.c;
+  const hd = f.pose === "idle" ? (f.i === 1 ? 1 : 0) : (f.i % 2 === 1 ? -1 : 0);
+  const bd = f.pose === "run" && f.i % 2 === 1 ? -1 : 0;
+  const ht = HEAD_TOP + hd;
+  const set = (x: number, y: number, col: string) => { if (x >= 0 && y >= 0 && x < W && y < SH * 2 && cells[y * W + x]) cells[y * W + x] = col; };
+  const get = (x: number, y: number) => cells[y * W + x];
+  // hair strands
+  for (let y = 0; y < SH * 2; y++) for (let x = 0; x < W; x++) {
+    const col = get(x, y);
+    if (col === c.hair && (x + 2 * y) % 7 === 0) cells[y * W + x] = c.hairD;
+    else if (col === c.hairL && (x + y) % 5 === 0) cells[y * W + x] = c.hair;
+  }
+  // dithered shading on the body's shadow side (right edge columns of the torso)
+  const body = new Set([c.primary, c.secondary, c.cloth, c.metal, c.secondaryD, "#e9eef6"]);
+  for (let y = (19 + bd) * 2 + 1; y <= (23 + bd) * 2 + 1; y++) for (let x = 30; x <= 33; x++) {
+    const col = get(x, y);
+    if (col && body.has(col) && (x + y) % 2 === 0) cells[y * W + x] = col === c.metal ? c.metalD : col === c.primary ? c.primaryD : col === c.secondary ? c.secondaryD : c.clothD;
+  }
+  // eyes: crisp 1px catchlights instead of 2x2 white blocks
+  if (L.face === "eyes" && f.expr === "normal" && L.headgear !== "helmet") {
+    const ey = (ht + 5) * 2;
+    for (const ex of [26, 32]) {
+      set(ex + 1, ey, c.eye); set(ex, ey + 1, c.eye); set(ex + 1, ey + 1, c.eye);
+      set(ex, ey, c.white);
+      set(ex + 2, ey + 2, "#cfd8ff");
+    }
+  }
+  // helmet glint
+  if (L.headgear === "helmet") { set(19, ht * 2 + 1, c.white); set(20, ht * 2 + 1, c.white); set(19, ht * 2 + 2, c.white); }
+}
+
 const frameCache = new Map<string, HTMLCanvasElement>();
 const codeCells = new Map<string, [number, number][]>();
 
@@ -625,26 +662,37 @@ export function heroCodeCells(L: HeroLook, f: FrameSpec): [number, number][] {
 }
 
 /** 1px dilated flat-color silhouette (sprite + 1px border each side), drawn under the body as a rim/glow. */
-export function heroRim(L: HeroLook, f: FrameSpec, color: string): HTMLCanvasElement {
-  const k = L.key + "|" + f.pose + f.i + f.expr + "|rim" + color;
+export function heroRim(L: HeroLook, f: FrameSpec, color: string, res = 1): HTMLCanvasElement {
+  const k = L.key + "|" + f.pose + f.i + f.expr + "|rim" + color + "|r" + res;
   let cv = frameCache.get(k);
   if (cv) return cv;
-  const flat = heroFrame(L, f, color);
+  const flat = heroFrame(L, f, color, res);
   cv = document.createElement("canvas");
-  cv.width = SW + 2; cv.height = SH + 2;
+  cv.width = SW * res + 2; cv.height = SH * res + 2;
   const g = cv.getContext("2d")!;
   for (const [ox, oy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) g.drawImage(flat, ox, oy);
   frameCache.set(k, cv);
   return cv;
 }
 
-/** Variant: "" normal, or a CSS color to flat-tint the silhouette (white flash, RGB split, ghosts). */
-export function heroFrame(L: HeroLook, f: FrameSpec, variant = ""): HTMLCanvasElement {
-  const k = L.key + "|" + f.pose + f.i + f.expr + "|" + variant;
+/**
+ * Variant: "" normal, or a CSS color to flat-tint the silhouette (white flash, RGB split, ghosts).
+ * res 2 = edu high-detail sprite (52x56): the same 1x grid, EPX-upscaled, shaded and outlined at 2x.
+ */
+export function heroFrame(L: HeroLook, f: FrameSpec, variant = "", res = 1): HTMLCanvasElement {
+  const k = L.key + "|" + f.pose + f.i + f.expr + "|" + variant + (res > 1 ? "|r2" : "");
   let cv = frameCache.get(k);
   if (cv) return cv;
   if (variant) {
-    cv = tinted(heroFrame(L, f), variant);
+    cv = tinted(heroFrame(L, f, "", res), variant);
+  } else if (res > 1) {
+    const g = paintHero(L, f);
+    codeCells.set(L.key + "|" + f.pose + f.i + f.expr, g.code);
+    const cells = scale2x(g.cells, SW, SH);
+    hiresDetails(cells, L, f);
+    shadePass(cells, SW * 2, SH * 2);
+    outlinePass(cells, SW * 2, SH * 2, L.c.outline);
+    cv = rasterCells(cells, SW * 2, SH * 2);
   } else {
     const g = paintHero(L, f);
     codeCells.set(L.key + "|" + f.pose + f.i + f.expr, g.code);

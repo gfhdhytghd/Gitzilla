@@ -17,6 +17,23 @@ const TAGLINES = [
   "tech debt has entered the arena.",
 ];
 
+export function normalizeRoomCode(v: string): string {
+  const map: Record<string, string> = { "0": "O", "1": "I", "5": "S", "8": "B" };
+  return v.toUpperCase().replace(/[0158]/g, (d) => map[d]).replace(/[^A-Z]/g, "").slice(0, 4);
+}
+
+/** true/false from GET /api/room/<code>; null when the server can't tell (old server, offline) — then just try. */
+async function roomExists(c: string): Promise<boolean | null> {
+  try {
+    const r = await fetch(`/api/room/${c}`);
+    if (!r.ok) return null;
+    const j = (await r.json()) as { exists?: boolean };
+    return typeof j.exists === "boolean" ? j.exists : null;
+  } catch {
+    return null;
+  }
+}
+
 async function createRoom(mock: boolean): Promise<string> {
   if (mock) return Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
   const res = await fetch("/api/room", { method: "POST" });
@@ -60,11 +77,35 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   const hall = createHallBoard(opts.mock, { rows: 5 });
   hall.classList.add("landing-hall");
   const toggleHall = () => el.classList.toggle("hall-open");
-  const code = h("input.code-input", { maxlength: 4, placeholder: "CODE", autocomplete: "off", autocapitalize: "characters", spellcheck: "false", "aria-label": "room code" }) as HTMLInputElement;
-  code.addEventListener("input", () => (code.value = code.value.toUpperCase().replace(/[^A-Z0-9]/g, "")));
-  const join = () => {
-    const c = code.value.trim();
-    if (c.length < 2) return code.focus();
+  // room codes are exactly 4 letters; digits that look like letters are mapped (0→O, 1→I, 5→S, 8→B)
+  const code = h("input.code-input", { "data-testid": "join-code", maxlength: 4, placeholder: "ABCD", autocomplete: "off", autocapitalize: "characters", spellcheck: "false", inputmode: "text", "aria-label": "4-letter room code" }) as HTMLInputElement;
+  const joinBtn = h("button.btn.join-btn", { "data-testid": "join-submit", disabled: true, onclick: () => join() }, "join") as HTMLButtonElement;
+  const joinMsg = h("div.join-msg", { role: "status" });
+  code.addEventListener("input", () => {
+    code.value = normalizeRoomCode(code.value);
+    joinBtn.disabled = code.value.length !== 4;
+    joinMsg.replaceChildren();
+  });
+  const join = async (force = false) => {
+    const c = normalizeRoomCode(code.value);
+    if (c.length !== 4) {
+      joinMsg.replaceChildren("room codes are 4 letters, like ", h("b", null, "QXRT"));
+      return code.focus();
+    }
+    if (!force && !opts.mock) {
+      joinBtn.disabled = true;
+      joinMsg.replaceChildren(h("span.dim", null, `$ ping room ${c}…`));
+      const exists = await roomExists(c);
+      joinBtn.disabled = false;
+      if (exists === false) {
+        joinMsg.replaceChildren(
+          h("span.red", null, `room ${c} not found`),
+          " — check the code, or ",
+          h("button.btn-link", { "data-testid": "join-create-anyway", onclick: () => join(true) }, `create ${c}`),
+        );
+        return;
+      }
+    }
     opts.go(c);
   };
   code.addEventListener("keydown", (e) => e.key === "Enter" && join());
@@ -88,8 +129,9 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
           null,
           h("span.prompt", null, "$ join "),
           code,
-          h("button.btn", { onclick: join }, "⏎"),
+          joinBtn,
         ),
+        joinMsg,
         h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),

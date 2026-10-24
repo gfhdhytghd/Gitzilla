@@ -68,7 +68,7 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
 
   const sh = Math.max(shake, fx.shake);
   const sincePhase = time - fx.phaseGlitch;
-  const glitch = sincePhase >= 0 && sincePhase < 0.7 ? 1 - sincePhase / 0.7 : time - fx.limbBreak < 0.15 ? 0.4 : fx.defeatAt > 0 && hash2(Math.floor(time * 10), 3) < 0.2 ? 0.5 : 0;
+  const glitch = sincePhase >= 0 && sincePhase < 0.7 ? 1 - sincePhase / 0.7 : time - fx.limbBreak < 0.15 ? 0.4 : !fx.pvp && fx.defeatAt > 0 && hash2(Math.floor(time * 10), 3) < 0.2 ? 0.5 : 0;
 
   // ---- glitch slices (phase change, limb break, defeat) ----
   if (glitch > 0) {
@@ -142,8 +142,9 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
   ctx.restore();
 
   // ---- end screens (drawn in logical space) ----
-  if (fx.victoryAt > 0 && time - fx.victoryAt > 1.75) bsod(ctx, time - fx.victoryAt - 1.75, v);
-  if (fx.defeatAt > 0 && time - fx.defeatAt > 0.6) panic(ctx, time - fx.defeatAt - 0.6, v);
+  // boss end screens only exist in battle (edu PvP has no boss; claude-ui shows the class ranking)
+  if (!fx.pvp && fx.victoryAt > 0 && time - fx.victoryAt > 1.75) bsod(ctx, time - fx.victoryAt - 1.75, v);
+  if (!fx.pvp && fx.defeatAt > 0 && time - fx.defeatAt > 0.6) panic(ctx, time - fx.defeatAt - 0.6, v);
 }
 
 function wrap(text: string, maxChars: number): string[] {

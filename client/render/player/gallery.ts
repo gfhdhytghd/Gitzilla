@@ -236,7 +236,8 @@ async function arenaScene() {
       p.alive = !(j === 5 && (t % 10) > 6);
       p.reviveProgress = p.alive ? 0 : ((t % 10) - 6) / 4;
     });
-    [...team].sort((a, b) => a.y - b.y).forEach((p) => drawPlayer(ctx, p, t, p.id === "a0"));
+    const edu = !!params.get("edu");
+    [...team].sort((a, b) => a.y - b.y).forEach((p) => drawPlayer(ctx, p, t, p.id === "a0", edu ? { scale: 2, pvp: true } : undefined));
     A.drawPostFx?.(ctx, t, 0);
     requestAnimationFrame(loop);
   };
@@ -311,6 +312,43 @@ const terms = [24, 25, 26, 27, 28, 31].map((k) => {
   return { cv, kit: kitFor(k) };
 });
 
+// ---------------------------------------------------------------- ?compare=1 : 1x (pixel-doubled) vs edu 2x high-detail
+function compareScene() {
+  document.querySelectorAll("h2, #portraits, #terminals").forEach((e) => ((e as HTMLElement).style.display = "none"));
+  const ids = [24, 25, 26, 27, 28, 29, 30, 31, 0, 2, 4, 5];
+  const CWc = 64, CHc = 74;
+  stage.width = 6 * CWc * SCALE; stage.height = Math.ceil(ids.length / 3) * CHc * SCALE;
+  const mk = (k: number, j: number, pre: string): PlayerState => ({
+    id: pre + j, name: NAMES[k] ?? "kai", x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0.2], hp: 7, armor: 5, energy: 200, alive: true,
+    downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: [], kit: kitFor(k), perks: [],
+    stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+  });
+  const pairs = ids.map((k, j) => ({ a: mk(k, j, "c1_"), b: mk(k, j, "c2_"), j }));
+  const loop = () => {
+    const t = performance.now() / 1000;
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "#17121f"; ctx.fillRect(0, 0, stage.width, stage.height);
+    for (const { a, b, j } of pairs) {
+      const col = j % 3, row = Math.floor(j / 3);
+      const x0 = col * 2 * CWc, y0 = row * CHc;
+      ctx.fillStyle = (col + row) % 2 ? "#1d1728" : "#1a1524";
+      ctx.fillRect(x0, y0, CWc * 2, CHc);
+      // left: battle 1x sprite pixel-doubled; right: edu native 2x
+      a.x = x0 + CWc / 2; a.y = y0 + 38;
+      ctx.save(); ctx.translate(a.x, a.y); ctx.scale(2, 2); ctx.translate(-a.x, -a.y);
+      drawPlayer(ctx, a, t, false);
+      ctx.restore();
+      b.x = x0 + CWc + CWc / 2; b.y = y0 + 38;
+      drawPlayer(ctx, b, t, false, { scale: 2, pvp: true });
+      drawText(ctx, "1X", x0 + 3, y0 + CHc - 8, "#6f6590", "left", "");
+      drawText(ctx, "EDU 2X", x0 + CWc + 3, y0 + CHc - 8, "#8bffb0", "left", "");
+    }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
 let last = performance.now() / 1000;
 const fixedT = params.get("t");
 function frame() {
@@ -332,10 +370,34 @@ function frame() {
     const fixedAge = params.get("age");
     paintHeroCard(c.cv, c.kit, now, fixedAge !== null ? Number(fixedAge) + ci * 0.08 : (now + ci * 0.37) % 4);
   }
-  if (!fixedT) if (params.get("arena")) arenaScene();
-else if (params.get("strip")) stripScene();
-else requestAnimationFrame(frame);
+  if (!fixedT) requestAnimationFrame(frame);
 }
-if (params.get("arena")) arenaScene();
+
+// ---------------------------------------------------------------- ?bench=30 : N edu heroes, logs ms/frame
+function benchScene(n: number) {
+  const ps: PlayerState[] = Array.from({ length: n }, (_, j) => ({
+    id: "b" + j, name: NAMES[j % NAMES.length], x: 30 + (j % 10) * 44, y: 40 + Math.floor(j / 10) * 90, vx: 40, vy: 0, facing: [1, 0.2] as [number, number],
+    hp: 7, armor: 5, energy: 200, alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 0, buffs: j % 4 === 0 ? ["firewall"] : [],
+    kit: kitFor(j % 32), perks: j % 3 === 0 ? ["--force"] : [], stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+  }));
+  let frames = 0, total = 0;
+  const loop = () => {
+    const t = performance.now() / 1000;
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "#17121f"; ctx.fillRect(0, 0, W, H);
+    const t0 = performance.now();
+    for (const p of ps) { p.energy -= 0.5; if (p.energy < 50) p.energy = 200; drawPlayer(ctx, p, t, p.id === "b0", { scale: 2, pvp: true }); }
+    const dtm = performance.now() - t0;
+    if (frames++ > 20) total += dtm;
+    if (frames === 140) console.log(`BENCH ${n} heroes @2x: ${(total / 119).toFixed(2)} ms/frame (drawPlayer only)`);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+if (params.get("bench")) benchScene(Number(params.get("bench")));
+else if (params.get("compare")) compareScene();
+else if (params.get("arena")) arenaScene();
 else if (params.get("strip")) stripScene();
 else requestAnimationFrame(frame);

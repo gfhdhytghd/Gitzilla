@@ -1,11 +1,13 @@
 // Shared FX state between drawBoss / drawEvents / drawPostFx + a pooled particle system.
 import type { BossState } from "../../../shared/types.ts";
-import { disc, drawGlow, TAU } from "./pix.ts";
+import { disc, drawGlow, hslToRgb, rgbToHex, TAU } from "./pix.ts";
 import { textSprite } from "./font.ts";
 
 export const fx = {
   now: 0,
   boss: null as BossState | null,
+  bossSeenAt: -10,                      // drawBoss refreshes this; a stale boss (edu PvP has none) is dropped
+  pvp: false,                           // edu classroom PvP: no boss, bullets colored per player
   bossFlash: -10,                       // time of last hit on the boss
   limbFlash: new Map<string, number>(), // limb id -> time of last hit
   look: null as [number, number] | null,
@@ -186,4 +188,15 @@ export function every(key: string, every: number, now: number): boolean {
   if (now - last < every && now >= last) return false;
   gates.set(key, now);
   return true;
+}
+
+// ---------- per-player colors (PvP readability; shared with claude-ui / claude-player via playerColor) ----------
+const BASE_COLS = ["#5ad8ff", "#ffd23f", "#7dff9a", "#ff7ad8", "#ff9a3a", "#b48aff", "#ffffff", "#ff5a5a"];
+const colorIdx = new Map<string, number>();
+export function playerColor(id: string): string {
+  let i = colorIdx.get(id);
+  if (i === undefined) colorIdx.set(id, (i = colorIdx.size));
+  if (i < BASE_COLS.length) return BASE_COLS[i];
+  // 30 students: golden-angle hues, bright and saturated so they read on any floor
+  return rgbToHex(hslToRgb((i * 137.508) % 360, 0.9, 0.65));
 }

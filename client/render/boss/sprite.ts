@@ -28,7 +28,7 @@ let nextLayoutId = 1;
 export function getBodySprite(kit: BossKit, L: BossLayout, broken: boolean[], tint: number, frame: number): BodySprite {
   let lid = layoutIds.get(L);
   if (!lid) layoutIds.set(L, (lid = nextLayoutId++));
-  const key = kit.seed + "|" + kit.repo + "|" + lid + "|" + broken.map((b) => (b ? 1 : 0)).join("") + "|" + tint + "|" + frame + "|" + kit.palette.join("") + "|" + (kit.code ? (kit.code.snippets?.[0] ?? "") + Object.keys(kit.code.limbSymbols ?? {}).length : "");
+  const key = kit.seed + "|" + kit.repo + "|" + lid + "|" + broken.map((b) => (b ? 1 : 0)).join("") + "|" + tint + "|" + frame + "|" + kit.palette.join("") + "|" + kit.limbs.map((l) => (l.fragile ? 1 : 0)).join("") + "|" + (kit.code ? (kit.code.snippets?.[0] ?? "") + Object.keys(kit.code.limbSymbols ?? {}).length : "");
   let s = cache.get(key);
   if (s) return s;
   if (cache.size > 64) cache.clear();
@@ -185,6 +185,7 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   if (L.body !== "swarm" && L.body !== "eye") drawEngravings(bctx, kit, L, art, R, broken, solid);
   if (organic || L.body === "tree") drawScars(bctx, L, art);
   drawKnots(bctx, L, art, broken);
+  drawFragile(bctx, kit, L, broken);
   if (L.heart.style !== "iris") drawSocket(bctx, L, art);
   // broken stumps: charred
   L.limbs.forEach((l, i) => {
@@ -481,6 +482,27 @@ function drawKnots(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, b
     }
     ctx.fillStyle = art.dangerRamp[3];
     disc(ctx, l.x, l.y, 1.5);
+  });
+}
+
+/** Single-maintainer components (bus factor 1): cracked organs with glowing amber fissures. */
+function drawFragile(ctx: CanvasRenderingContext2D, kit: BossKit, L: BossLayout, broken: boolean[]) {
+  L.limbs.forEach((l, i) => {
+    if (broken[i] || !kit.limbs[i]?.fragile) return;
+    const R = rng(kit.seed ^ (i * 977 + 13));
+    for (let c = 0; c < 4; c++) {
+      let a = R() * Math.PI * 2;
+      let x = l.x + Math.cos(a) * l.r * 0.2, y = l.y + Math.sin(a) * l.r * 0.2;
+      const steps = 4 + Math.floor(R() * 4);
+      for (let k = 0; k < steps; k++) {
+        a += (R() - 0.5) * 1.3;
+        const nx = x + Math.cos(a) * 2.2, ny = y + Math.sin(a) * 2.2;
+        if (Math.hypot(nx - l.x, ny - l.y) > l.r - 1) break;
+        ctx.fillStyle = "#1a0a02"; line(ctx, x + 1, y + 1, nx + 1, ny + 1);
+        ctx.fillStyle = k % 2 ? "#ffb02e" : "#ffd27a"; line(ctx, x, y, nx, ny);
+        x = nx; y = ny;
+      }
+    }
   });
 }
 

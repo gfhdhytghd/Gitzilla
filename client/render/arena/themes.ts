@@ -1,6 +1,9 @@
 // Arena tilesets per theme. Static layer is generated once per (theme, seed) with ImageData
 // + crisp fillRect decorations; ambient animation is a small list of cheap per-frame items.
 import type { ArenaTheme } from "../../../shared/types.ts";
+
+/** Renderer-side themes: the six boss themes plus the edu "classroom" (no boss, PvP). */
+export type Theme = ArenaTheme | "classroom";
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bayer, disc, drawGlow, hash2, hexToRgb, line, makeCanvas, mix, rgbToHex, rng, type RGB } from "./pix.ts";
 import { drawTextRaw } from "./font.ts";
@@ -19,7 +22,8 @@ export interface Pal {
   rainColor?: string;
 }
 
-export const PALETTES: Record<ArenaTheme, Pal> = {
+export const PALETTES: Record<Theme, Pal> = {
+  classroom: { f: ["#74563a", "#7c5c3e", "#846344"], grout: "#3e2818", line: "#9a7450", engrave: "#5a3e28", accent: "#fff4c8", accent2: "#7fd8ff", cap: "#cfc6b4", face: "#2f5a3a", faceDark: "#1e3a26", edge: "#efe6d4", light: "#fff4d0" },
   terminal: { f: ["#060b08", "#09120c", "#0d1911"], grout: "#030604", line: "#0f2617", engrave: "#174428", accent: "#39ff6a", accent2: "#b6ff3a", cap: "#1d2a22", face: "#0e1612", faceDark: "#070c09", edge: "#2f4638", light: "#1bd14a", rainColor: "#1f8a3c" },
   kernel: { f: ["#28221f", "#332c27", "#3f3630"], grout: "#161210", line: "#4a3f36", engrave: "#55473b", accent: "#ff8a2a", accent2: "#ffd23f", cap: "#55504b", face: "#2e2926", faceDark: "#1b1715", edge: "#7a716a", light: "#ff7a1a" },
   web: { f: ["#0a081d", "#0f0c28", "#151133"], grout: "#05040f", line: "#2a1d63", engrave: "#2b2672", accent: "#ff3df2", accent2: "#2ef2ff", cap: "#2a2158", face: "#130f33", faceDark: "#0a0820", edge: "#5a48b8", light: "#b02cff" },
@@ -40,14 +44,15 @@ export type Ambient =
   | { k: "grate"; x: number; y: number; w: number; h: number; ph: number }
   | { k: "drip"; x: number; y: number; ph: number }
   | { k: "plot"; pts: [number, number][]; c: string; ph: number }
-  | { k: "fluoro"; x: number; w: number; ph: number };
+  | { k: "fluoro"; x: number; w: number; ph: number }
+  | { k: "clock"; x: number; y: number; ph: number };
 
 export interface ArenaLayer { canvas: HTMLCanvasElement; ambient: Ambient[]; pal: Pal }
 
 const cache = new Map<string, ArenaLayer>();
 
 /** code: the boss repo's real lines (heartLines + snippets) to print on the floor; optional. */
-export function getArena(theme: ArenaTheme, seed: number, code?: string[]): ArenaLayer {
+export function getArena(theme: Theme, seed: number, code?: string[]): ArenaLayer {
   const key = theme + "|" + seed + "|" + (code ? code.length + ":" + code.join("").length : "");
   let a = cache.get(key);
   if (!a) {
@@ -79,7 +84,7 @@ const CODE_LINES = [
 ];
 
 // ---------- build ----------
-function build(theme: ArenaTheme, seed: number, code?: string[]): ArenaLayer {
+function build(theme: Theme, seed: number, code?: string[]): ArenaLayer {
   const pal = PALETTES[theme];
   const [c, ctx] = makeCanvas(ARENA_W, ARENA_H);
   const img = ctx.createImageData(ARENA_W, ARENA_H);
@@ -148,6 +153,21 @@ function build(theme: ArenaTheme, seed: number, code?: string[]): ArenaLayer {
           // coffee stains
           break;
         }
+        case "classroom": {
+          // parquet: alternating 16px blocks of horizontal / vertical 4px planks
+          const horiz = ((tx + ty) & 1) === 0;
+          const along = horiz ? u : v, across = horiz ? v : u;
+          const plank = Math.floor(across / 4);
+          const pid = hash2(tx * 4 + plank, ty, seed);
+          // calm, low-contrast planks: heroes and bullets must read on top of this
+          let val = 0.5 + (pid - 0.5) * 0.25 + (hash2(horiz ? x >> 3 : x, horiz ? y : y >> 3, seed + 5) - 0.5) * 0.08;
+          col = F[Math.max(0, Math.min(2, Math.floor(val * 3 + (bayer(x, y) - 0.5) * 0.25)))];
+          if (across % 4 === 0) col = mix(col, G, 0.45);
+          if (along === 0 && plank % 2 === 0) col = mix(col, G, 0.35);
+          // polish sheen
+          if (((x + y * 2) % 37) === 0) col = mix(col, [230, 200, 160], 0.35);
+          break;
+        }
         case "legacy":
         default: {
           // voronoi cobbles
@@ -208,7 +228,7 @@ function inPlay(x: number, y: number, m = 0) {
   return x > WALL_SIDE + m && x < ARENA_W - WALL_SIDE - m && y > WALL_TOP + m && y < ARENA_H - WALL_BOTTOM - m;
 }
 
-function engraveCode(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: ArenaTheme) {
+function engraveCode(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: Theme) {
   const n = theme === "notebook" ? 5 : 7;
   for (let i = 0; i < n; i++) {
     const t = CODE_LINES[Math.floor(R() * CODE_LINES.length)].toUpperCase();
@@ -225,7 +245,7 @@ function engraveCode(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, t
   }
 }
 
-function gitGraph(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: ArenaTheme, ambient: Ambient[]) {
+function gitGraph(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: Theme, ambient: Ambient[]) {
   // a git log graph running along the floor seams (tile grid lines), with merges, commit dots and glowing pulses
   const lanes = 3;
   const seam = Math.round((R() < 0.5 ? 48 + R() * 32 : ARENA_W - 96 - R() * 32) / 16) * 16;
@@ -260,13 +280,14 @@ function gitGraph(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, them
 
 // ---- the arena floor is a source file of the BOSS repo ----
 const KW = new Set("if else elif for while do return def fn func function class struct enum impl trait match case switch break continue const let var mut pub use import from export package module type interface extends implements new delete try catch except finally throw raise async await yield lambda public private protected static void int float bool string char true false null none nil self this super go defer select range in is not and or with as unsafe where loop".split(" "));
-const SYNTAX: Record<ArenaTheme, { kw: string; str: string; num: string; com: string; id: string; pun: string; alpha: number }> = {
+const SYNTAX: Record<Theme, { kw: string; str: string; num: string; com: string; id: string; pun: string; alpha: number }> = {
   terminal: { kw: "#39ff6a", str: "#b6ff3a", num: "#7dffb0", com: "#1f6a34", id: "#2fb85a", pun: "#1f8a3c", alpha: 0.12 },
   kernel: { kw: "#ff8a2a", str: "#ffd23f", num: "#ffb36b", com: "#6a5a4a", id: "#c8a888", pun: "#8a7a6a", alpha: 0.12 },
   web: { kw: "#ff3df2", str: "#2ef2ff", num: "#ffe14a", com: "#5a4a9a", id: "#b48aff", pun: "#7a6ad8", alpha: 0.12 },
   notebook: { kw: "#3b6fd8", str: "#c25b5b", num: "#3a9a5a", com: "#8a7f66", id: "#2b3550", pun: "#5a5040", alpha: 0.13 },
   enterprise: { kw: "#3a6ad8", str: "#b05a2a", num: "#2a8a5a", com: "#8a8678", id: "#3a3830", pun: "#5a5850", alpha: 0.12 },
   legacy: { kw: "#ffb347", str: "#c6ff7a", num: "#ffd27a", com: "#5f6656", id: "#a8b098", pun: "#7c8474", alpha: 0.12 },
+  classroom: { kw: "#fff4c8", str: "#ffd27a", num: "#9fe8ff", com: "#cfc6b4", id: "#efe6d4", pun: "#cfc6b4", alpha: 0.1 },
 };
 
 function tokenize(line: string): { t: string; k: "kw" | "str" | "num" | "com" | "id" | "pun" | "ws" }[] {
@@ -284,7 +305,7 @@ function tokenize(line: string): { t: string; k: "kw" | "str" | "num" | "com" | 
   return out;
 }
 
-function floorSource(ctx: CanvasRenderingContext2D, theme: ArenaTheme, code: string[]) {
+function floorSource(ctx: CanvasRenderingContext2D, theme: Theme, code: string[]) {
   const syn = SYNTAX[theme];
   const rowH = 13, sc = 2;
   const x0 = WALL_SIDE + 6;
@@ -314,7 +335,7 @@ function floorSource(ctx: CanvasRenderingContext2D, theme: ArenaTheme, code: str
   ctx.globalAlpha = 1;
 }
 
-function bracketWalls(ctx: CanvasRenderingContext2D, pal: Pal, theme: ArenaTheme) {
+function bracketWalls(ctx: CanvasRenderingContext2D, pal: Pal, theme: Theme) {
   // walls built from brackets: { } along the top cap, } down the right wall, }; along the bottom
   ctx.globalAlpha = theme === "notebook" ? 0.5 : 0.45;
   ctx.fillStyle = pal.edge;
@@ -324,7 +345,7 @@ function bracketWalls(ctx: CanvasRenderingContext2D, pal: Pal, theme: ArenaTheme
   ctx.globalAlpha = 1;
 }
 
-function circuitTraces(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: ArenaTheme, ambient: Ambient[]) {
+function circuitTraces(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: Theme, ambient: Ambient[]) {
   const n = theme === "web" ? 9 : 6;
   for (let i = 0; i < n; i++) {
     // start at a wall edge, run inward with 45-degree bends
@@ -376,7 +397,7 @@ function crt(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: 
   ambient.push({ k: "screen", x: x + 2, y: y + 2, w, h, c, bg: screenBg, ph: R() * 10, style });
 }
 
-function floorProps(ctx: CanvasRenderingContext2D, theme: ArenaTheme, pal: Pal, R: () => number, ambient: Ambient[], seed: number) {
+function floorProps(ctx: CanvasRenderingContext2D, theme: Theme, pal: Pal, R: () => number, ambient: Ambient[], seed: number) {
   const L = WALL_SIDE + 4, Rt = ARENA_W - WALL_SIDE - 4, B = ARENA_H - WALL_BOTTOM - 4;
   switch (theme) {
     case "terminal": {
@@ -488,6 +509,33 @@ function floorProps(ctx: CanvasRenderingContext2D, theme: ArenaTheme, pal: Pal, 
       ctx.globalAlpha = 1;
       break;
     }
+    case "classroom": {
+      // teacher's desk (bottom-left) with laptop + apple, bookshelf (bottom-right), recycling bin with paper balls
+      box(ctx, L + 4, B - 20, 52, 16, "#7a5232", "#07040c", "#9a6a42");
+      ctx.fillStyle = "#5a3a22"; ctx.fillRect(L + 4, B - 6, 52, 2);
+      crt(ctx, L + 10, B - 31, 16, 9, "#3a3e4a", "#5a6070", "#10202a", "#7fd8ff", "cursor", ambient, R);
+      ctx.fillStyle = "#07040c"; disc(ctx, L + 44, B - 15, 3.5);
+      ctx.fillStyle = "#d8283a"; disc(ctx, L + 44, B - 15, 2.5);
+      ctx.fillStyle = "#ff7a8a"; ctx.fillRect(L + 43, B - 17, 1, 1);
+      ctx.fillStyle = "#3a8a3a"; ctx.fillRect(L + 45, B - 20, 2, 2);
+      // bookshelf
+      box(ctx, Rt - 40, B - 30, 36, 28, "#5a3a22", "#07040c", "#7a5232");
+      for (let r = 0; r < 3; r++) {
+        ctx.fillStyle = "#3a2414"; ctx.fillRect(Rt - 39, B - 21 + r * 9, 34, 1);
+        for (let k = 0; k < 8; k++) {
+          const bh = 5 + Math.floor(R() * 3);
+          ctx.fillStyle = ["#c04a3a", "#3a6ad8", "#e0b020", "#3a9a5a", "#8a5ad8", "#d8d0c0"][Math.floor(R() * 6)];
+          ctx.fillRect(Rt - 38 + k * 4, B - 21 + r * 9 - bh, 3, bh);
+        }
+      }
+      ctx.fillStyle = "#e8e0d0"; drawTextRaw(ctx, "CS101", Rt - 34, B - 29);
+      // bin + paper balls
+      box(ctx, Rt - 54, B - 12, 9, 10, "#4a5a6a", "#07040c", "#6a7a8a");
+      for (let k = 0; k < 4; k++) { ctx.fillStyle = "#f0ece0"; disc(ctx, Rt - 62 + k * 5 + R() * 2, B - 3 - R() * 3, 1.5); }
+      // chalk dust motes
+      for (let i = 0; i < 10; i++) ambient.push({ k: "firefly", x: 30 + R() * 420, y: 30 + R() * 230, ph: R() * 20, c: "#fff4c8" });
+      break;
+    }
     case "legacy": {
       // broken pillars in corners, half-buried CRT, rubble
       for (const [px, py] of [[L + 4, B - 30], [Rt - 22, B - 30], [L + 4, WALL_TOP + 6]]) {
@@ -514,7 +562,7 @@ function floorProps(ctx: CanvasRenderingContext2D, theme: ArenaTheme, pal: Pal, 
   }
 }
 
-function walls(ctx: CanvasRenderingContext2D, theme: ArenaTheme, pal: Pal, R: () => number, ambient: Ambient[], seed: number) {
+function walls(ctx: CanvasRenderingContext2D, theme: Theme, pal: Pal, R: () => number, ambient: Ambient[], seed: number) {
   const W = ARENA_W, H = ARENA_H;
   // shadow cast by the top wall onto the floor (dithered)
   ctx.fillStyle = "#000000";
@@ -627,6 +675,27 @@ function walls(ctx: CanvasRenderingContext2D, theme: ArenaTheme, pal: Pal, R: ()
         ctx.fillStyle = "#2a3242"; ctx.fillRect(x + 19, fy + 1, 2, fh - 2);
         ambient.push({ k: "fluoro", x, w: 40, ph: R() * 10 });
       }
+      break;
+    }
+    case "classroom": {
+      // a chalkboard along the whole top wall, with chalk code and a tray
+      const bx0 = WALL_SIDE + 2, bx1 = W - WALL_SIDE - 2;
+      ctx.fillStyle = "#6a4a30"; ctx.fillRect(bx0 - 1, fy, bx1 - bx0 + 2, fh + 1);
+      ctx.fillStyle = "#2f5a3a"; ctx.fillRect(bx0 + 1, fy + 1, bx1 - bx0 - 2, fh - 2);
+      for (let y = fy + 1; y < fy + fh - 1; y++) for (let x = bx0 + 1; x < bx1 - 1; x++) if (hash2(x, y, seed + 3) < 0.06) { ctx.fillStyle = "#3a6a46"; ctx.fillRect(x, y, 1, 1); }
+      const chalk = ["CLASS HERO:", "DEF FIGHT(SELF):", "RETURN SKILL", "# TODO: WRITE TESTS!", "QUIZ: WHAT IS COUPLING?", "O(N LOG N)", "A -> B -> A ?!"];
+      let cx = bx0 + 6;
+      ctx.globalAlpha = 0.75;
+      for (let k = 0; cx < bx1 - 40; k++) {
+        const t = chalk[(k + seed) % chalk.length];
+        ctx.fillStyle = k % 3 === 2 ? "#ffd27a" : "#efe6d4";
+        drawTextRaw(ctx, t, cx, fy + 3 + (k % 2) * 6);
+        cx += t.length * 4 + 14;
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#8a6440"; ctx.fillRect(bx0, fy + fh - 1, bx1 - bx0, 2);
+      for (let k = 0; k < 5; k++) { ctx.fillStyle = ["#ffffff", "#ffd27a", "#7fd8ff", "#ff9ab0", "#ffffff"][k]; ctx.fillRect(bx0 + 30 + k * 57, fy + fh - 2, 3, 1); }
+      ambient.push({ k: "clock", x: W - WALL_SIDE - 14, y: 3, ph: R() });
       break;
     }
     case "legacy": {
@@ -807,6 +876,16 @@ export function drawAmbient(ctx: CanvasRenderingContext2D, layer: ArenaLayer, ti
         if (n > 0 && n < a.pts.length) { const [x, y] = a.pts[n - 1]; ctx.fillStyle = "#2b3550"; ctx.fillRect(x, y - 2, 1, 5); }
         break;
       }
+      case "clock": {
+        // wall clock: second hand ticks (class is almost over)
+        ctx.fillStyle = "#07040c"; disc(ctx, a.x, a.y + 5, 5.5);
+        ctx.fillStyle = "#f4efe4"; disc(ctx, a.x, a.y + 5, 4.5);
+        const sec = Math.floor(time + a.ph * 60);
+        const sa = (sec / 60) * Math.PI * 2 - Math.PI / 2, ma = (time / 600) * Math.PI * 2 - Math.PI / 2 + 4;
+        ctx.fillStyle = "#2a2a2a"; line(ctx, a.x, a.y + 5, a.x + Math.cos(ma) * 2.5, a.y + 5 + Math.sin(ma) * 2.5);
+        ctx.fillStyle = "#d8283a"; line(ctx, a.x, a.y + 5, a.x + Math.cos(sa) * 3.5, a.y + 5 + Math.sin(sa) * 3.5);
+        break;
+      }
       case "fluoro": {
         const bad = hash2(Math.floor(time * 10), Math.floor(a.ph * 100)) < 0.03;
         if (!bad) drawGlow(ctx, a.x + a.w / 2, 30, "#fff4d0", 26, 0.18);
@@ -816,5 +895,5 @@ export function drawAmbient(ctx: CanvasRenderingContext2D, layer: ArenaLayer, ti
   }
 }
 
-export function themeAccent(theme: ArenaTheme) { return PALETTES[theme]?.accent ?? "#39ff6a"; }
+export function themeAccent(theme: Theme) { return PALETTES[theme]?.accent ?? "#39ff6a"; }
 void rgbToHex;

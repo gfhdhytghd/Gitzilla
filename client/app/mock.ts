@@ -125,6 +125,7 @@ export function createMockConn(opts: ConnOpts): Conn {
     ],
     boss: { repo: null, status: "empty", kit: null },
     phase: "lobby",
+    mode: "battle",
   };
   if (opts.role === "screen") lobby.players.shift(), (lobby.ownerId = "b1");
   const pushLobby = () => emit({ t: "lobby", lobby });
@@ -170,7 +171,7 @@ export function createMockConn(opts: ConnOpts): Conn {
     // ?mock=review: start the boss just above the phase-2 threshold to reach CODE REVIEW quickly
     if (mode === "review") {
       const st = (match as unknown as { state?: MatchState }).state;
-      if (st) st.boss.hp = st.boss.maxHp * 0.505;
+      if (st?.boss) st.boss.hp = st.boss.maxHp * 0.505;
     }
     const rnd = mulberry32(7);
     const botMove = new Map<string, [number, number]>();
@@ -280,7 +281,7 @@ export function createMockConn(opts: ConnOpts): Conn {
 function fakeAutopsy(lobby: LobbyState): Autopsy {
   const kit = lobby.boss.kit!;
   return {
-    victory: true, duration: 163.4,
+    mode: "battle", victory: true, duration: 163.4,
     boss: { repo: kit.repo, heart: "src/core/index.ts", limbs: kit.limbs.map((l, i) => ({ component: l.component, broken: i % 2 === 0, damageTaken: 1200 - i * 170 })) },
     players: lobby.players.filter((p) => p.kit).map((p, i) => ({ id: p.id, name: p.name, repo: p.repo!, stats: { damage: 2400 - i * 400, bestCombo: 4 - i, limbsBroken: 2 - (i % 2), revives: i % 3, killingBlow: i === 0 } })),
     mvp: lobby.players[0].id,
@@ -413,7 +414,7 @@ function fakeMatch(plist: { id: string; name: string; kit: PlayerKit }[], kit: B
       bullets = keep;
     },
     snapshot(): MatchState {
-      const s: MatchState = structuredClone({ t: Math.max(0, t), status, players, boss, bullets, hazards, minions, events, obstacles: [], pickups: [], perkOffer: null });
+      const s: MatchState = structuredClone({ t: Math.max(0, t), status, players, boss, bullets, hazards, minions, events, obstacles: [], pickups: [], perkOffer: null, mode: "battle", heroScale: 1, pvp: null });
       if (status === "countdown") s.t = t;
       events = [];
       return s;
@@ -421,7 +422,7 @@ function fakeMatch(plist: { id: string; name: string; kit: PlayerKit }[], kit: B
     autopsy(): Autopsy {
       const best = [...players].sort((a, b) => b.stats.damage - a.stats.damage)[0];
       return {
-        victory: status === "victory", duration: t,
+        mode: "battle", victory: status === "victory", duration: t,
         boss: { repo: kit.repo, heart: "src/core/index.ts", limbs: kit.limbs.map((l, i) => ({ component: l.component, broken: boss.limbs[i].broken, damageTaken: Math.round(limbDmg.get(l.id) ?? 0) })) },
         players: players.map((p) => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: p.stats })),
         mvp: best?.id ?? null,

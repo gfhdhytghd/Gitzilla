@@ -3,7 +3,7 @@
 import type { Bullet } from "../../../shared/types.ts";
 import { disc, drawGlow, makeCanvas } from "./pix.ts";
 import { textSprite } from "./font.ts";
-import { emit, every, fx } from "./fx.ts";
+import { emit, every, fx, playerColor } from "./fx.ts";
 
 const PLAYER: Record<string, { glyph: string; color: string; glow: string; scale?: number }> = {
   blaster: { glyph: "=>", color: "#fff27a", glow: "#ffd23f" },
@@ -90,7 +90,7 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
   // pass 1: additive glows (lights the floor around projectiles)
   for (const b of bullets) {
     if (b.owner === "boss") drawGlow(ctx, b.x, b.y, b.kind === "bug" ? "#9dff3a" : danger, 9, 0.55);
-    else { const s = PLAYER[b.kind] ?? PLAYER.blaster; drawGlow(ctx, b.x, b.y, s.glow, b.kind === "cannon" ? 11 : 7, 0.5); }
+    else { const s = PLAYER[b.kind] ?? PLAYER.blaster; drawGlow(ctx, b.x, b.y, fx.pvp ? playerColor(b.owner) : s.glow, b.kind === "cannon" ? 11 : 7, 0.5); }
   }
   // infinite-loop rings: the loop's source text circles along each expanding ring of bullets
   drawLoopRings(ctx, bullets, time, danger);
@@ -118,7 +118,9 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
       const s = bossPlate(glyph, r, pulse ? "#ff7a9a" : "#c0103a", pulse ? "#ffffff" : danger);
       ctx.drawImage(s, x - (s.width >> 1), y - (s.height >> 1));
     } else {
-      const st = PLAYER[b.kind] ?? PLAYER.blaster;
+      const base = PLAYER[b.kind] ?? PLAYER.blaster;
+      // PvP: every hero's shots wear that hero's color so you can tell whose bullet is coming at you
+      const st = fx.pvp ? { ...base, color: playerColor(b.owner), glow: playerColor(b.owner) } : base;
       // trail
       ctx.fillStyle = st.glow;
       const tl = b.kind === "laser" ? 9 : b.kind === "cannon" ? 6 : 4;
@@ -159,7 +161,7 @@ export function drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], ti
       glyph = glyph.slice(0, b.kind === "cannon" ? 6 : 5);
       if (b.kind === "staff") { ctx.fillStyle = "#07040c"; disc(ctx, x, y, 4.5); ctx.fillStyle = "#5a2a9a"; disc(ctx, x, y, 3.5); ctx.fillStyle = st.glow; disc(ctx, x - 0.5, y - 0.5, 2.5); }
       if (b.kind === "cannon") {
-        const s2 = bossPlate(glyph, 3, "#8a3a10", "#ffb36b");
+        const s2 = bossPlate(glyph, 3, "#8a3a10", fx.pvp ? st.glow : "#ffb36b");
         ctx.drawImage(s2, x - (s2.width >> 1), y - (s2.height >> 1));
       } else {
         const s = textSprite(glyph, b.kind === "staff" ? "#ffffff" : st.color, "#0a0618", st.scale ?? 1);

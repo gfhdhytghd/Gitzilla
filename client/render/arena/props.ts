@@ -280,29 +280,33 @@ export function drawPerkCards(ctx: CanvasRenderingContext2D, time: number) {
   const fy0 = Math.max(26, v.y + 4), fy1 = Math.min(278, v.y + v.h - 4);
   for (let x = fx0; x < fx1; x++) if (((x + off) >> 2) % 2 === 0) { ctx.fillRect(x, fy0, 1, 1); ctx.fillRect(x, fy1, 1, 1); }
   // the full CODE REVIEW banner + descriptions live in claude-ui's HUD; keep only a tiny in-world tag
-  drawText(ctx, "CODE REVIEW T-" + left.toFixed(1) + "S", v.x + v.w / 2, fy0 + 3, pulse > 0.5 ? "#ffffff" : "#3dff9a", { align: "center", scale: fx.textScale });
+  const quiz = !!offer.quiz;
+  drawText(ctx, (quiz ? "QUIZ: PICK AN ANSWER T-" : "CODE REVIEW T-") + left.toFixed(1) + "S", v.x + v.w / 2, fy0 + 3, pulse > 0.5 ? "#ffffff" : "#3dff9a", { align: "center", scale: fx.textScale });
   offer.pads.forEach((pad, i) => {
     const pickers = players.filter((p) => offer.picked[p.id] === pad.id);
     const best = bestBy.get(pad.id) ?? 0;
     const x = Math.round(pad.x), y = Math.round(pad.y);
     const glow = pickers.length ? "#3dff9a" : "#5ad8ff";
-    const name = pad.name.toUpperCase();
+    // edu quiz: the pad is an answer (a real module/file name); revealed as correct/wrong after the offer ends
+    const letter = "ABC"[i] ?? String(i + 1);
+    const name = (quiz && pad.answer ? letter + ": " + pad.answer : pad.name).toUpperCase().slice(0, 22);
+    const revealed = quiz && pad.correct !== undefined;
     const cw = Math.max(textWidth(name) + 8, 40);
     const ch = 16;
     const bob = Math.round(Math.sin(time * 2 + i * 2) * 1.5);
     const cx = Math.max(Math.max(12, v.x + 2), Math.min(Math.min(ARENA_W - 12, v.x + v.w - 2) - cw, Math.round(x - cw / 2))), cy = Math.max(fy0 + 12, y - pad.r - ch - 2 + bob);
+    const edge = revealed ? (pad.correct ? "#3fb950" : "#f85149") : glow;
     ctx.globalAlpha = 0.92;
     ctx.fillStyle = "#07040c"; ctx.fillRect(cx - 1, cy - 1, cw + 2, ch + 2);
     ctx.fillStyle = "#0d1117"; ctx.fillRect(cx, cy, cw, ch);
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#161b22"; ctx.fillRect(cx, cy, cw, 7);
-    ctx.fillStyle = glow; ctx.fillRect(cx, cy, 2, ch);
-    // progress bar along the bottom while someone is standing on it
+    ctx.fillStyle = edge; ctx.fillRect(cx, cy, 2, ch);
     if (best > 0 && !pickers.length) { ctx.fillStyle = "#3dff9a"; ctx.fillRect(cx, cy + ch - 1, Math.round(cw * best), 1); }
-    drawText(ctx, "#" + (100 + ((i * 37 + key.length * 7) % 899)), cx + 4, cy + 1, "#8b949e", { outline: null });
-    const tag = pickers.length ? "MERGED" : "OPEN";
+    drawText(ctx, quiz ? "ANSWER " + letter : "#" + (100 + ((i * 37 + key.length * 7) % 899)), cx + 4, cy + 1, "#8b949e", { outline: null });
+    const tag = revealed ? (pad.correct ? "✓ RIGHT" : "✗ WRONG") : pickers.length ? (quiz ? "PICKED" : "MERGED") : quiz ? "?" : "OPEN";
     const tagW = textWidth(tag) + 4;
-    ctx.fillStyle = pickers.length ? "#8957e5" : "#238636"; ctx.fillRect(cx + cw - tagW - 2, cy + 1, tagW, 6);
+    ctx.fillStyle = revealed ? (pad.correct ? "#238636" : "#da3633") : pickers.length ? "#8957e5" : "#238636"; ctx.fillRect(cx + cw - tagW - 2, cy + 1, tagW, 6);
     drawText(ctx, tag, cx + cw - tagW, cy + 1, "#ffffff", { outline: null });
     drawText(ctx, name, cx + 4, cy + 9, "#e6edf3", { outline: null });
     ctx.fillStyle = "#3fb950"; ctx.fillRect(cx + cw - 12, cy + ch - 3, 4, 1);

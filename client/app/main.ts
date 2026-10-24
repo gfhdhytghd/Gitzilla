@@ -4,7 +4,7 @@ import { type AppCtx, type Screen, toast } from "./app";
 import { createAutopsy } from "./autopsy";
 import { createGame } from "./game";
 import { consumeAuthError } from "./github";
-import { createLanding, createWhoami } from "./landing";
+import { createLanding, createWhoami, normalizeRoomCode } from "./landing";
 import { createLobby } from "./lobby";
 import { createMockConn } from "./mock";
 import { connect } from "./net";
@@ -17,10 +17,41 @@ const mock = params.has("mock");
 // renderer chunks are lazy; screens wait briefly so portraits/backdrops use the real art, not placeholders
 const modulesReady = Promise.race([loadModules(), new Promise((r) => setTimeout(r, 2000))]);
 
+/** Full-screen terminal error with a way back to the landing page. */
+function fatalScreen(title: string, detail: string): HTMLElement {
+  return h(
+    "div.screen.fatal",
+    { "data-testid": "fatal" },
+    h(
+      "div.term-window",
+      null,
+      h("div.term-title.err", null, h("span.dots", null, "● ● ●"), " gitzilla: error"),
+      h(
+        "div.term-body",
+        null,
+        h("div.red", null, `fatal: ${title}`),
+        h("div.dim", null, detail),
+        h("a.btn.btn-primary", { href: "/", "data-testid": "back-home" }, "$ cd ~  (back to start)"),
+      ),
+    ),
+  );
+}
+
 function route() {
   root.innerHTML = "";
-  const m = location.pathname.match(/^\/r\/([A-Za-z0-9]{2,12})\/?$/);
-  if (m) return enterRoom(m[1].toUpperCase());
+  const m = location.pathname.match(/^\/r\/([^/]+)\/?$/);
+  if (m) {
+    const code = normalizeRoomCode(decodeURIComponent(m[1]));
+    if (code.length !== 4 || code !== m[1].toUpperCase()) {
+      if (code.length === 4) {
+        // e.g. /r/0v39 → /r/OVSB-style fix-ups: send them to the corrected code
+        history.replaceState(null, "", `/r/${code}${location.search}`);
+        return enterRoom(code);
+      }
+      return root.append(fatalScreen(`"${m[1]}" isn't a room code`, "room codes are 4 letters, like QXRT. check the link or the code on the big screen."));
+    }
+    return enterRoom(code);
+  }
   if (location.pathname !== "/") history.replaceState(null, "", "/" + location.search);
   modulesReady.finally(showLanding);
 }
@@ -156,7 +187,15 @@ function startRoom(room: string, role: Role, name: string) {
           if (app.lobby) app.lobby.phase = "autopsy";
           break;
         case "error":
-          toast(m.message, "err");
+          // before we ever got a welcome, an error is fatal for this page: show a card with a way back
+          if (!app.you && !app.lobby) {
+            app.conn.close();
+            link.className = "link-status closed";
+            link.textContent = "LINK ERR";
+            screen?.destroy();
+            screen = null;
+            root.replaceChildren(fatalScreen("can't join this room", m.message));
+          } else toast(m.message, "err");
           break;
       }
       screen?.onMsg?.(m, app);
