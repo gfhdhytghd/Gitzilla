@@ -1527,3 +1527,14 @@ body.settings-open .kj-touch-overlay { display:none; }
 .settings-button[hidden] { display:none; }
 .settings-dialog .btn, .settings-button { font-family:var(--term); font-size:16px; }
 .settings-dialog .controls-card { box-shadow:none; }
+.lobby-actions { display:flex; align-items:center; gap:10px; margin-left:auto; }
+.lobby-actions .leave-ctl { margin-left:0; }
+.settings-button.settings-in-actions { position:static; flex:none; min-height:30px; }
+@media(max-width:600px) {
+  .lobby-actions { flex:1 0 100%; min-width:0; gap:8px; }
+  .lobby-actions > .btn, .lobby-actions > .leave-ctl { flex:1; min-width:0; }
+  .lobby-actions .btn { white-space:normal; overflow-wrap:anywhere; margin:0; padding:8px; }
+  .lobby-actions .leave-ctl > .btn { width:100%; }
+}
+.settings-button { width:40px; height:40px; min-height:40px; padding:6px; font-size:22px; }
+.lobby-actions > .settings-button { flex:0 0 40px; padding:6px; }

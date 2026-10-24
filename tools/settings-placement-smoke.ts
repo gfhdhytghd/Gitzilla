@@ -20,9 +20,15 @@ try {
    const button=document.querySelector('[data-testid="settings-open"]') as HTMLElement;
    const parent=document.querySelector(selector) as HTMLElement;
    const before=button.getBoundingClientRect();
-   if(button.parentElement!==parent)throw new Error('Settings is outside the page scroll container: '+button.parentElement?.className+' vs '+parent?.className);
-   if(getComputedStyle(button).position!=='absolute')throw new Error('Settings must be positioned relative to the page');
-   if(before.top<0||before.top>30||Math.abs(innerWidth-before.right)>20)throw new Error('Settings is not at the top-right');
+   if(button.textContent?.trim()!=='⚙'||!button.getAttribute('aria-label'))throw new Error('Settings must be an accessible icon-only button');
+   const actions=parent.querySelector('.lobby-actions');
+   if(actions){
+    const copy=actions.firstElementChild!.getBoundingClientRect(),leave=actions.querySelector('[data-testid=leave-room]')!.getBoundingClientRect();
+    if(button.parentElement!==actions||before.left<=leave.left||Math.abs(before.top-copy.top)>8||Math.abs(before.top-leave.top)>8)throw new Error('Settings must follow Copy link and Leave room in the same row');
+   }
+   if(!actions&&button.parentElement!==parent)throw new Error('Settings is outside the page scroll container: '+button.parentElement?.className+' vs '+parent?.className);
+   if(!actions&&getComputedStyle(button).position!=='absolute')throw new Error('Settings must be positioned relative to the page');
+   if(!actions&&(before.top<0||before.top>30||Math.abs(innerWidth-before.right)>20))throw new Error('Settings is not at the top-right');
    parent.scrollTop=300;
    return {delta:before.top-button.getBoundingClientRect().top,scroll:parent.scrollTop};
   },selector);

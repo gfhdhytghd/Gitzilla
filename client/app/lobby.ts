@@ -487,14 +487,14 @@ export function createLobby(app: AppCtx): Screen {
     screen ? h("button.btn.btn-tiny", { "data-testid": "new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
     leaveMsg,
   );
+  const actions = h("div.lobby-actions", null, screen ? null : copyBtn, leaveCtl);
   const header = h(
     "header.lobby-head",
     null,
     h("div.room-code", null, h("span.dim", null, "ROOM "), app.room),
     ownerBadge,
     modeCtl,
-    screen ? null : copyBtn,
-    leaveCtl,
+    actions,
   );
 
   const qrHelp1 = h("div.qr-help", null, "scan with your phone (hold it upright)");

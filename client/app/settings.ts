@@ -108,17 +108,19 @@ function maybeOnboard() {
 }
 export function placeSettingsButton(page?: HTMLElement) {
   if (!button) return;
-  const container = page?.querySelector<HTMLElement>('.lobby-scroll, .ap-scroll') ?? page;
+  const actions = page?.querySelector<HTMLElement>('.lobby-actions');
+  const container = actions ?? page?.querySelector<HTMLElement>('.lobby-scroll, .ap-scroll') ?? page;
   button.parentElement?.classList.remove('settings-page');
   button.hidden = !container;
+  button.classList.toggle('settings-in-actions', !!actions);
   if (container) {
-    container.classList.add('settings-page');
+    if (!actions) container.classList.add('settings-page');
     container.append(button);
   } else document.body.append(button);
 }
 export function installSettings() {
   if (loadMotionProfile() === 'seated') saveMotionProfile('standard');
-  button = h('button.btn.settings-button', { 'data-testid': 'settings-open', 'aria-label': 'Settings', hidden: true, onclick: openSettings }, '⚙ ', h('span', null, 'Settings')) as HTMLButtonElement;
+  button = h('button.btn.settings-button', { 'data-testid': 'settings-open', 'aria-label': 'Settings', title: 'Settings', hidden: true, onclick: openSettings }, '⚙') as HTMLButtonElement;
   dialog = h('dialog.settings-dialog', { 'data-testid': 'settings-dialog', 'aria-labelledby': 'settings-title', 'data-input-ignore': true }) as HTMLDialogElement;
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   document.body.append(button, dialog);
