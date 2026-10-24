@@ -1,0 +1,124 @@
+{
+  "slug": "rust-lang/rustlings",
+  "description": ":crab: Small exercises to get you used to reading and writing Rust code!",
+  "stars": 64448,
+  "primaryLanguage": "Rust",
+  "languages": {
+    "Rust": 341440,
+    "HTML": 6461,
+    "CSS": 1004,
+    "Shell": 242,
+    "Just": 93
+  },
+  "totalFiles": 230,
+  "totalLoc": 10252,
+  "commits": 3405,
+  "contributors": 489,
+  "ageDays": 4057,
+  "components": [
+    {
+      "name": "solutions",
+      "files": 95,
+      "loc": 3001,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "exercises",
+      "files": 95,
+      "loc": 2876,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "src",
+      "files": 15,
+      "loc": 2509,
+      "fanIn": 4,
+      "fanOut": 4
+    },
+    {
+      "name": "src/dev",
+      "files": 3,
+      "loc": 487,
+      "fanIn": 1,
+      "fanOut": 1
+    },
+    {
+      "name": "src/list",
+      "files": 2,
+      "loc": 471,
+      "fanIn": 1,
+      "fanOut": 1
+    },
+    {
+      "name": "src/watch",
+      "files": 3,
+      "loc": 440,
+      "fanIn": 1,
+      "fanOut": 1
+    },
+    {
+      "name": "misc",
+      "files": 10,
+      "loc": 279,
+      "fanIn": 1,
+      "fanOut": 1
+    },
+    {
+      "name": "website",
+      "files": 7,
+      "loc": 189,
+      "fanIn": 0,
+      "fanOut": 0
+    }
+  ],
+  "heart": "src/exercise.rs",
+  "heartFanIn": 9,
+  "edges": [
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      6,
+      2
+    ]
+  ],
+  "cycles": [
+    [
+      "src",
+      "src/dev",
+      "src/list",
+      "src/watch",
+      "misc"
+    ]
+  ],
+  "maxDepth": 0,
+  "testRatio": 0.02608695652173913,
+  "seed": 2349371326
+}

@@ -1,0 +1,169 @@
+{
+  "slug": "jquery/jquery",
+  "description": "jQuery JavaScript Library",
+  "stars": 59910,
+  "primaryLanguage": "JavaScript",
+  "languages": {
+    "JavaScript": 1340812,
+    "HTML": 69363,
+    "PHP": 9959,
+    "Shell": 2571,
+    "CSS": 2254
+  },
+  "totalFiles": 285,
+  "totalLoc": 46525,
+  "commits": 6864,
+  "contributors": 349,
+  "ageDays": 6413,
+  "components": [
+    {
+      "name": "test",
+      "files": 143,
+      "loc": 37470,
+      "fanIn": 0,
+      "fanOut": 1
+    },
+    {
+      "name": "src",
+      "files": 24,
+      "loc": 5749,
+      "fanIn": 6,
+      "fanOut": 5
+    },
+    {
+      "name": "misc",
+      "files": 62,
+      "loc": 1254,
+      "fanIn": 5,
+      "fanOut": 3
+    },
+    {
+      "name": "src/attributes",
+      "files": 4,
+      "loc": 451,
+      "fanIn": 1,
+      "fanOut": 3
+    },
+    {
+      "name": "src/core",
+      "files": 16,
+      "loc": 422,
+      "fanIn": 4,
+      "fanOut": 2
+    },
+    {
+      "name": "root",
+      "files": 2,
+      "loc": 401,
+      "fanIn": 0,
+      "fanOut": 0
+    },
+    {
+      "name": "src/selector",
+      "files": 21,
+      "loc": 391,
+      "fanIn": 1,
+      "fanOut": 2
+    },
+    {
+      "name": "src/css",
+      "files": 13,
+      "loc": 387,
+      "fanIn": 2,
+      "fanOut": 3
+    }
+  ],
+  "heart": "src/core.js",
+  "heartFanIn": 63,
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      6,
+      2
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      7,
+      2
+    ],
+    [
+      7,
+      4
+    ]
+  ],
+  "cycles": [
+    [
+      "src",
+      "misc",
+      "src/attributes",
+      "src/core",
+      "src/selector",
+      "src/css"
+    ]
+  ],
+  "maxDepth": 1,
+  "testRatio": 0.5017543859649123,
+  "seed": 1484102062
+}

@@ -1,0 +1,167 @@
+{
+  "slug": "fastapi/fastapi",
+  "description": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
+  "stars": 104078,
+  "primaryLanguage": "Python",
+  "languages": {
+    "Python": 4626334,
+    "JavaScript": 1066,
+    "Shell": 574,
+    "HTML": 480,
+    "CSS": 25
+  },
+  "totalFiles": 1202,
+  "totalLoc": 112739,
+  "commits": 7945,
+  "contributors": 907,
+  "ageDays": 2877,
+  "components": [
+    {
+      "name": "tests",
+      "files": 649,
+      "loc": 83358,
+      "fanIn": 0,
+      "fanOut": 6
+    },
+    {
+      "name": "fastapi",
+      "files": 23,
+      "loc": 14422,
+      "fanIn": 5,
+      "fanOut": 3
+    },
+    {
+      "name": "docs_src",
+      "files": 457,
+      "loc": 6024,
+      "fanIn": 1,
+      "fanOut": 4
+    },
+    {
+      "name": "scripts",
+      "files": 38,
+      "loc": 3447,
+      "fanIn": 1,
+      "fanOut": 0
+    },
+    {
+      "name": "misc",
+      "files": 14,
+      "loc": 1575,
+      "fanIn": 4,
+      "fanOut": 2
+    },
+    {
+      "name": "fastapi/openapi",
+      "files": 5,
+      "loc": 1324,
+      "fanIn": 5,
+      "fanOut": 2
+    },
+    {
+      "name": "fastapi/security",
+      "files": 7,
+      "loc": 1308,
+      "fanIn": 3,
+      "fanOut": 2
+    },
+    {
+      "name": "docs",
+      "files": 9,
+      "loc": 1281,
+      "fanIn": 0,
+      "fanOut": 0
+    }
+  ],
+  "heart": "fastapi/__init__.py",
+  "heartFanIn": 623,
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      5
+    ],
+    [
+      0,
+      6
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      6,
+      5
+    ]
+  ],
+  "cycles": [
+    [
+      "fastapi",
+      "misc",
+      "fastapi/openapi",
+      "fastapi/security"
+    ]
+  ],
+  "maxDepth": 2,
+  "testRatio": 0.5540765391014975,
+  "seed": 3386353004
+}

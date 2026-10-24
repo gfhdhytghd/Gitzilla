@@ -1,0 +1,256 @@
+{
+  "slug": "django/django",
+  "description": "The Web framework for perfectionists with deadlines.",
+  "stars": 91576,
+  "primaryLanguage": "Python",
+  "languages": {
+    "Python": 19220392,
+    "Jinja": 257785,
+    "JavaScript": 204921,
+    "CSS": 92395,
+    "Shell": 3452,
+    "Smarty": 392,
+    "Procfile": 47
+  },
+  "totalFiles": 1886,
+  "totalLoc": 278953,
+  "commits": 35051,
+  "contributors": 3513,
+  "ageDays": 5292,
+  "components": [
+    {
+      "name": "tests",
+      "files": 737,
+      "loc": 117985,
+      "fanIn": 0,
+      "fanOut": 7
+    },
+    {
+      "name": "django/db",
+      "files": 123,
+      "loc": 48596,
+      "fanIn": 7,
+      "fanOut": 3
+    },
+    {
+      "name": "django/contrib",
+      "files": 437,
+      "loc": 47699,
+      "fanIn": 3,
+      "fanOut": 6
+    },
+    {
+      "name": "misc",
+      "files": 395,
+      "loc": 28022,
+      "fanIn": 7,
+      "fanOut": 5
+    },
+    {
+      "name": "django/core",
+      "files": 112,
+      "loc": 16254,
+      "fanIn": 7,
+      "fanOut": 5
+    },
+    {
+      "name": "django/utils",
+      "files": 48,
+      "loc": 8935,
+      "fanIn": 7,
+      "fanOut": 4
+    },
+    {
+      "name": "django/test",
+      "files": 7,
+      "loc": 5739,
+      "fanIn": 3,
+      "fanOut": 6
+    },
+    {
+      "name": "django/template",
+      "files": 27,
+      "loc": 5723,
+      "fanIn": 6,
+      "fanOut": 4
+    }
+  ],
+  "heart": "django/db/__init__.py",
+  "heartFanIn": 376,
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      5
+    ],
+    [
+      0,
+      6
+    ],
+    [
+      0,
+      7
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      3,
+      7
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      6,
+      2
+    ],
+    [
+      6,
+      3
+    ],
+    [
+      6,
+      4
+    ],
+    [
+      6,
+      5
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      7,
+      3
+    ],
+    [
+      7,
+      4
+    ],
+    [
+      7,
+      5
+    ]
+  ],
+  "cycles": [
+    [
+      "django/db",
+      "django/contrib",
+      "misc",
+      "django/core",
+      "django/utils",
+      "django/test",
+      "django/template"
+    ]
+  ],
+  "maxDepth": 1,
+  "testRatio": 0.40137857900318136,
+  "seed": 4244418796
+}

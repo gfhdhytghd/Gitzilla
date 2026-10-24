@@ -1,0 +1,135 @@
+2026-10-24T18:26:23.520Z [start] {"players":4,"boss":"pallets/flask","seconds":10,"headed":false,"baseURL":"http://127.0.0.1:5173","output":"/home/wilf/data/HackPSU/repo-kaiju/docs/shots/2026-10-24T18-26-23-520Z-1186888"}
+2026-10-24T18:26:23.532Z [server] Reusing http://127.0.0.1:5173
+2026-10-24T18:26:23.532Z [note] Fallback repos: burntsushi/ripgrep, django/django, expressjs/express, facebook/react, fastapi/fastapi, gin-gonic/gin, golang/example, jquery/jquery, karpathy/nanogpt, lodash/lodash, pallets/flask, redis/redis, rust-lang/rustlings, spring-projects/spring-petclinic, vuejs/core
+2026-10-24T18:26:24.370Z [browser] /usr/bin/chromium
+2026-10-24T18:26:25.001Z [http-error] Playtester 1: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:25.001Z [console:error] Playtester 1: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:25.002Z [requestfailed] Playtester 1: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:25.002Z [http-error] Playtester 3: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:25.002Z [console:error] Playtester 3: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:25.002Z [http-error] Playtester 4: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:25.002Z [console:error] Playtester 4: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:25.002Z [requestfailed] Playtester 3: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:25.002Z [requestfailed] Playtester 4: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:25.002Z [http-error] Playtester 2: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:25.002Z [console:error] Playtester 2: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:25.002Z [requestfailed] Playtester 2: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:25.026Z [console:debug] Playtester 2: [vite] connecting...
+2026-10-24T18:26:25.027Z [console:debug] Playtester 3: [vite] connecting...
+2026-10-24T18:26:25.029Z [console:debug] Playtester 1: [vite] connecting...
+2026-10-24T18:26:25.030Z [console:debug] Playtester 4: [vite] connecting...
+2026-10-24T18:26:25.032Z [console:debug] Playtester 1: [vite] connected.
+2026-10-24T18:26:25.035Z [console:debug] Playtester 3: [vite] connected.
+2026-10-24T18:26:25.035Z [console:debug] Playtester 2: [vite] connected.
+2026-10-24T18:26:25.035Z [console:debug] Playtester 4: [vite] connected.
+2026-10-24T18:26:38.606Z [console:log] Playtester 2: [vite] server connection lost. Polling for restart...
+2026-10-24T18:26:38.606Z [console:log] Playtester 4: [vite] server connection lost. Polling for restart...
+2026-10-24T18:26:38.606Z [console:log] Playtester 3: [vite] server connection lost. Polling for restart...
+2026-10-24T18:26:38.607Z [console:log] Playtester 1: [vite] server connection lost. Polling for restart...
+2026-10-24T18:26:39.713Z [http-error] Playtester 1: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:39.713Z [console:error] Playtester 1: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:39.713Z [http-error] Playtester 2: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:39.713Z [console:error] Playtester 2: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:39.713Z [requestfailed] Playtester 1: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:39.713Z [requestfailed] Playtester 2: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:39.743Z [http-error] Playtester 3: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:39.744Z [console:error] Playtester 3: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:39.744Z [http-error] Playtester 4: 404 http://127.0.0.1:5173/client/app/main.ts
+2026-10-24T18:26:39.744Z [console:error] Playtester 4: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:39.744Z [requestfailed] Playtester 3: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:39.744Z [requestfailed] Playtester 4: GET http://127.0.0.1:5173/client/app/main.ts net::ERR_ABORTED
+2026-10-24T18:26:39.759Z [console:debug] Playtester 2: [vite] connecting...
+2026-10-24T18:26:39.759Z [console:debug] Playtester 3: [vite] connecting...
+2026-10-24T18:26:39.759Z [console:debug] Playtester 1: [vite] connecting...
+2026-10-24T18:26:39.759Z [console:debug] Playtester 4: [vite] connecting...
+2026-10-24T18:26:39.763Z [console:debug] Playtester 1: [vite] connected.
+2026-10-24T18:26:39.764Z [console:debug] Playtester 3: [vite] connected.
+2026-10-24T18:26:39.764Z [console:debug] Playtester 4: [vite] connected.
+2026-10-24T18:26:39.764Z [console:debug] Playtester 2: [vite] connected.
+2026-10-24T18:26:40.045Z [shot] landing-phone.png
+2026-10-24T18:26:40.064Z [shot] landing-desktop.png
+2026-10-24T18:26:40.064Z [incomplete-ui] landing: Playtester 1: missing visible [data-testid="create-room"] during landing (http://127.0.0.1:5173/)
+2026-10-24T18:26:40.129Z [http-error] Playtester 1: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400046
+2026-10-24T18:26:40.129Z [console:error] Playtester 1: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.129Z [requestfailed] Playtester 1: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400046 net::ERR_ABORTED
+2026-10-24T18:26:40.131Z [http-error] Playtester 2: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400046
+2026-10-24T18:26:40.131Z [console:error] Playtester 2: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.131Z [requestfailed] Playtester 2: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400046 net::ERR_ABORTED
+2026-10-24T18:26:40.131Z [http-error] Playtester 3: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400046
+2026-10-24T18:26:40.131Z [console:error] Playtester 3: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.131Z [requestfailed] Playtester 3: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400046 net::ERR_ABORTED
+2026-10-24T18:26:40.132Z [http-error] Playtester 4: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400046
+2026-10-24T18:26:40.132Z [console:error] Playtester 4: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.132Z [requestfailed] Playtester 4: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400046 net::ERR_ABORTED
+2026-10-24T18:26:40.132Z [console:debug] Playtester 1: [vite] connecting...
+2026-10-24T18:26:40.133Z [console:debug] Playtester 4: [vite] connecting...
+2026-10-24T18:26:40.133Z [console:debug] Playtester 2: [vite] connecting...
+2026-10-24T18:26:40.133Z [console:debug] Playtester 3: [vite] connecting...
+2026-10-24T18:26:40.138Z [console:debug] Playtester 1: [vite] connected.
+2026-10-24T18:26:40.139Z [console:debug] Playtester 3: [vite] connected.
+2026-10-24T18:26:40.139Z [console:debug] Playtester 4: [vite] connected.
+2026-10-24T18:26:40.139Z [console:debug] Playtester 2: [vite] connected.
+2026-10-24T18:26:40.177Z [http-error] Playtester 1: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400118
+2026-10-24T18:26:40.177Z [console:error] Playtester 1: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.177Z [requestfailed] Playtester 1: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400118 net::ERR_ABORTED
+2026-10-24T18:26:40.180Z [console:debug] Playtester 1: [vite] connecting...
+2026-10-24T18:26:40.183Z [console:debug] Playtester 1: [vite] connected.
+2026-10-24T18:26:40.481Z [http-error] Playtester 3: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:40.481Z [console:error] Playtester 3: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.481Z [requestfailed] Playtester 3: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:40.482Z [http-error] Playtester 2: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:40.482Z [console:error] Playtester 2: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.482Z [requestfailed] Playtester 2: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:40.483Z [http-error] Playtester 1: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:40.483Z [console:error] Playtester 1: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.483Z [requestfailed] Playtester 1: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:40.483Z [console:debug] Playtester 2: [vite] connecting...
+2026-10-24T18:26:40.484Z [http-error] Playtester 4: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:40.484Z [console:error] Playtester 4: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:40.484Z [requestfailed] Playtester 4: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:40.485Z [console:debug] Playtester 3: [vite] connecting...
+2026-10-24T18:26:40.486Z [console:debug] Playtester 1: [vite] connecting...
+2026-10-24T18:26:40.487Z [console:debug] Playtester 4: [vite] connecting...
+2026-10-24T18:26:40.489Z [console:debug] Playtester 2: [vite] connected.
+2026-10-24T18:26:40.492Z [console:debug] Playtester 3: [vite] connected.
+2026-10-24T18:26:40.492Z [console:debug] Playtester 1: [vite] connected.
+2026-10-24T18:26:40.492Z [console:debug] Playtester 4: [vite] connected.
+2026-10-24T18:26:47.467Z [http-error] Playtester 3: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:47.467Z [console:error] Playtester 3: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:47.467Z [requestfailed] Playtester 3: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:47.468Z [http-error] Playtester 4: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:47.468Z [console:error] Playtester 4: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:47.468Z [requestfailed] Playtester 4: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:47.468Z [http-error] Playtester 2: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:47.468Z [console:error] Playtester 2: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:47.468Z [http-error] Playtester 1: 404 http://127.0.0.1:5173/client/app/main.ts?t=1792866400395
+2026-10-24T18:26:47.468Z [console:error] Playtester 1: Failed to load resource: the server responded with a status of 404 (Not Found)
+2026-10-24T18:26:47.469Z [requestfailed] Playtester 1: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:47.469Z [requestfailed] Playtester 2: GET http://127.0.0.1:5173/client/app/main.ts?t=1792866400395 net::ERR_ABORTED
+2026-10-24T18:26:47.469Z [console:debug] Playtester 3: [vite] connecting...
+2026-10-24T18:26:47.470Z [console:debug] Playtester 4: [vite] connecting...
+2026-10-24T18:26:47.470Z [console:debug] Playtester 2: [vite] connecting...
+2026-10-24T18:26:47.471Z [console:debug] Playtester 1: [vite] connecting...
+2026-10-24T18:26:47.476Z [console:debug] Playtester 3: [vite] connected.
+2026-10-24T18:26:47.477Z [console:debug] Playtester 2: [vite] connected.
+2026-10-24T18:26:47.477Z [console:debug] Playtester 4: [vite] connected.
+2026-10-24T18:26:47.477Z [console:debug] Playtester 1: [vite] connected.
+2026-10-24T18:26:48.064Z [note] Could not capture failure-desktop.png: TimeoutError: page.screenshot: Timeout 8000ms exceeded.
+Call log:
+[2m  - taking page screenshot[22m
+[2m    - disabled all CSS animations[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+
+2026-10-24T18:26:48.065Z [note] Could not capture failure-phone.png: TimeoutError: page.screenshot: Timeout 8000ms exceeded.
+Call log:
+[2m  - taking page screenshot[22m
+[2m    - disabled all CSS animations[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+
+2026-10-24T18:26:48.079Z [testid-inventory] Playtester 1: []
+2026-10-24T18:26:48.092Z [testid-inventory] Playtester 2: []
+2026-10-24T18:26:48.104Z [testid-inventory] Playtester 3: []
+2026-10-24T18:26:48.117Z [testid-inventory] Playtester 4: []
+2026-10-24T18:26:49.129Z [result] exit=2 outcome=incomplete-or-failed artifacts=/home/wilf/data/HackPSU/repo-kaiju/docs/shots/2026-10-24T18-26-23-520Z-1186888

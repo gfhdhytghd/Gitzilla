@@ -1,0 +1,8 @@
+# codex-input: client/input/
+You own `client/input/`. Implement the interface in BRIEF exactly. Browser-only TS, no deps.
+- Detect mode: motion if `DeviceMotionEvent` exists AND coarse pointer/touch device; keyboard otherwise. `needsPermission` true on iOS (requestPermission exists) until granted. If denied or no events within 1s after grant -> touch mode.
+- Keyboard/mouse: WASD/arrows, mouse aim relative to self (via toArena/getSelf); aim null (auto) if mouse idle > 2s. Fire: hold LMB or J. Dash: Space/K/Shift. Skill: E/L/RMB. Edge-trigger dash/skill (true exactly once per press).
+- Motion: tilt (DeviceOrientation beta/gamma, accounting for screen.orientation angle so landscape works both ways) relative to calibrated neutral -> move vector with deadzone (~5°) and saturation (~25°), smoothed. Gestures from DeviceMotion acceleration (without gravity when available): forward thrust peak (z axis toward screen) -> fire burst of ~0.6s; sideways swing peak -> dash; shake (>=3 alternating peaks in 600ms) -> skill. Debounce/refractory periods. Also: any touch held on screen = fire (very helpful for demos). Haptics helper `vibrate(pattern)` export used by app on hits.
+- Touch fallback: left-half virtual joystick, right-side DASH/SKILL buttons, hold elsewhere to fire. Render it as a simple overlay DOM element with class names (`.kj-touch-*`) — claude-ui will restyle; keep markup minimal.
+- Also export `createInputDebugPanel()` that shows live raw sensor values + detected gestures (for tuning at the venue).
+- Vitest unit tests for the gesture recognizer with synthetic sensor traces (keep recognizer as pure functions).

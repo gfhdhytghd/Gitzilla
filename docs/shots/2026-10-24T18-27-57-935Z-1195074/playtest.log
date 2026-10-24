@@ -1,0 +1,29 @@
+2026-10-24T18:27:57.935Z [start] {"players":2,"boss":"pallets/flask","seconds":13,"headed":false,"baseURL":"http://127.0.0.1:40875","output":"/home/wilf/data/HackPSU/repo-kaiju/docs/shots/2026-10-24T18-27-57-935Z-1195074"}
+2026-10-24T18:27:57.949Z [server] Reusing http://127.0.0.1:40875
+2026-10-24T18:27:57.949Z [note] Fallback repos: pallets/flask, lodash/lodash
+2026-10-24T18:27:58.098Z [browser] /usr/bin/chromium
+2026-10-24T18:27:59.136Z [shot] landing-desktop.png
+2026-10-24T18:27:59.136Z [shot] landing-phone.png
+2026-10-24T18:27:59.192Z [room] FIXT
+2026-10-24T18:27:59.258Z [ws:open] Playtester 1: ws://127.0.0.1:40875/ws
+2026-10-24T18:27:59.259Z [ws:sent] Playtester 1: hello
+2026-10-24T18:27:59.317Z [ws:open] Playtester 2: ws://127.0.0.1:40875/ws
+2026-10-24T18:27:59.317Z [ws:sent] Playtester 2: hello
+2026-10-24T18:27:59.336Z [ws:sent] Playtester 1: setRepo
+2026-10-24T18:27:59.370Z [ws:sent] Playtester 2: setRepo
+2026-10-24T18:27:59.602Z [ws:sent] Playtester 1: setBoss
+2026-10-24T18:27:59.821Z [shot] lobby-phone.png
+2026-10-24T18:27:59.827Z [shot] lobby-desktop.png
+2026-10-24T18:27:59.852Z [ws:sent] Playtester 1: start
+2026-10-24T18:27:59.903Z [ws:status] Playtester 2: fighting
+2026-10-24T18:27:59.903Z [ws:status] Playtester 1: fighting
+2026-10-24T18:27:59.944Z [shot] boss-intro-desktop.png
+2026-10-24T18:27:59.944Z [shot] boss-intro-phone.png
+2026-10-24T18:28:09.960Z [shot] mid-fight-010s-phone.png
+2026-10-24T18:28:09.969Z [shot] mid-fight-010s-desktop.png
+2026-10-24T18:28:09.969Z [fight] 10s: Playtester 1 202 snapshots / 201 inputs; Playtester 2 202 snapshots / 202 inputs
+2026-10-24T18:28:10.852Z [ws:autopsy] Playtester 1: victory
+2026-10-24T18:28:10.852Z [ws:autopsy] Playtester 2: victory
+2026-10-24T18:28:10.892Z [shot] autopsy-desktop.png
+2026-10-24T18:28:10.892Z [shot] autopsy-phone.png
+2026-10-24T18:28:11.591Z [result] exit=0 outcome=autopsy artifacts=/home/wilf/data/HackPSU/repo-kaiju/docs/shots/2026-10-24T18-27-57-935Z-1195074

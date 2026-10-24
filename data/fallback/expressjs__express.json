@@ -1,0 +1,76 @@
+{
+  "slug": "expressjs/express",
+  "description": "Fast, unopinionated, minimalist web framework for node.",
+  "stars": 69577,
+  "primaryLanguage": "JavaScript",
+  "languages": {
+    "JavaScript": 515401
+  },
+  "totalFiles": 154,
+  "totalLoc": 18092,
+  "commits": 6183,
+  "contributors": 395,
+  "ageDays": 6328,
+  "components": [
+    {
+      "name": "test",
+      "files": 96,
+      "loc": 13950,
+      "fanIn": 0,
+      "fanOut": 3
+    },
+    {
+      "name": "lib",
+      "files": 6,
+      "loc": 2342,
+      "fanIn": 3,
+      "fanOut": 0
+    },
+    {
+      "name": "examples",
+      "files": 51,
+      "loc": 1791,
+      "fanIn": 1,
+      "fanOut": 2
+    },
+    {
+      "name": "root",
+      "files": 1,
+      "loc": 9,
+      "fanIn": 2,
+      "fanOut": 1
+    }
+  ],
+  "heart": "index.js",
+  "heartFanIn": 96,
+  "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      1
+    ]
+  ],
+  "cycles": [],
+  "maxDepth": 3,
+  "testRatio": 0.6233766233766234,
+  "seed": 4042100819
+}
