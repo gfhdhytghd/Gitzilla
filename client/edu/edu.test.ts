@@ -79,7 +79,7 @@ describe("lesson engine", () => {
     const [start] = e.ingest(state(0.5));
     expect(start.concept).toBe("code-quality");
     expect(start.fact).toContain("@ana");
-    expect(e.ingest(state(8, { events: [{ type: "downed", player: "p1" }] }))[0].fact).toBe("`@ana` weakness D: 2 circular dependencies. Tip: Break the cycle api <-> db");
+    expect(e.ingest(state(8, { events: [{ type: "downed", player: "p1" }] }))[0].fact).toBe("`@ana` tech-debt penalty D: 2 circular dependencies. Tip: Break the cycle api <-> db");
     const e2 = new LessonEngine({ ...ctx, you: "p2" });
     e2.ingest(state(0.5));
     const [hit] = e2.ingest(state(9, { events: [{ type: "hit", target: "p2", source: "p1", amount: 18, x: 0, y: 0 }] }));

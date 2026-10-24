@@ -348,7 +348,7 @@ export const STAT_LABEL: Record<QualityStat["stat"], { code: string; plain: stri
   damage: { code: "dmg", plain: "damage", from: "cohesion" },
   energy: { code: "RAM", plain: "energy", from: "documentation" },
   regen: { code: "gc()", plain: "regen", from: "documentation" },
-  weakness: { code: "debt", plain: "weakness", from: "loops + TODOs" },
+  weakness: { code: "debt", plain: "tech-debt penalty", from: "import loops + TODOs" },
 };
 
 // ---------- fact templates ----------

@@ -1,8 +1,8 @@
 // Edu demo page: a fake classroom PvP match built from data/fallback repos, a scripted event stream (lessons, hits,
 // KOs, round change, pop quiz + reveal) and every edu component in phone / desktop / projector layouts.
-// The report-card grades here come from a DEMO estimator; in the game they come from codex-sim (PlayerKit.quality).
+// Report cards use the sim's real edu grading (playerKitFromProfile(p, { mode: "edu" })).
 // ?view=desktop|phone|screen|report|report-screen|arch|genesis|gallery  &t=<seconds to fast-forward>
-import type { Autopsy, GameEvent, MatchState, PerkOffer, PlayerKit, PlayerState, QualityStat, RepoProfile } from "../../shared/types.ts";
+import type { Autopsy, GameEvent, MatchState, PerkOffer, PlayerKit, PlayerState, RepoProfile } from "../../shared/types.ts";
 import { bossKitFromProfile, playerKitFromProfile } from "../../sim/kits.ts";
 import { h } from "../app/util.ts";
 import { buildGenesisLocal } from "../genesis/local.ts";
@@ -19,35 +19,6 @@ const files = import.meta.glob("../../data/fallback/*.json", { eager: true, impo
 const profiles = new Map(Object.values(files).map((p) => [p.slug, p]));
 const P = (slug: string) => profiles.get(slug)!;
 
-// ---------- demo-only quality estimator (real signals, invented thresholds) ----------
-const grade = (v: number, cuts: [number, number, number, number], higherBetter = true): QualityStat["grade"] => {
-  const s = higherBetter ? v : -v;
-  const c = higherBetter ? cuts : (cuts.map((x) => -x) as typeof cuts);
-  return s >= c[0] ? "A" : s >= c[1] ? "B" : s >= c[2] ? "C" : s >= c[3] ? "D" : "F";
-};
-function demoQuality(p: RepoProfile): QualityStat[] {
-  const d = p.dna!;
-  const pct = Math.round(p.testRatio * 100);
-  const comps = p.components;
-  const avgOut = comps.reduce((s, c) => s + c.fanOut, 0) / Math.max(1, comps.length);
-  const untested = comps.find((c) => !/test/i.test(c.name)) ?? comps[0];
-  const fnPerFile = d.counts.functions / Math.max(1, p.totalFiles);
-  const lf = d.longestFunction;
-  const commentRatio = d.counts.comments / Math.max(1, p.totalLoc);
-  const debt = d.counts.todo + d.counts.fixme + d.counts.hack;
-  const debtPer1k = (debt / Math.max(1, p.totalLoc)) * 1000;
-  const big = comps.find((c) => c.fanOut === Math.max(...comps.map((x) => x.fanOut)));
-  const q: QualityStat[] = [
-    { stat: "armor", value: 0, grade: grade(pct, [35, 22, 12, 5]), signal: `tests: ${pct}% of files`, tip: `add tests for \`${untested?.name ?? "src"}\` to raise it` },
-    { stat: "speed", value: 0, grade: grade(avgOut + p.maxDepth * 0.5, [1, 1.8, 2.6, 3.4], false), signal: `avg ${avgOut.toFixed(1)} imports per module, chain depth ${p.maxDepth}`, tip: big ? `\`${big.name}\` imports ${big.fanOut} modules: split it` : "keep imports one-way" },
-    { stat: "damage", value: 0, grade: grade(lf?.lines ?? 40, [60, 150, 400, 1000], false), signal: lf ? `longest function \`${lf.name}\`: ${lf.lines} lines` : `${fnPerFile.toFixed(1)} functions per file`, tip: lf ? `break \`${lf.name}()\` into smaller functions` : "keep functions short" },
-    { stat: "energy", value: 0, grade: grade(commentRatio * 100 + (p.readme?.length ?? 0) / 800, [22, 14, 8, 3]), signal: `${Math.round(commentRatio * 100)} comment lines per 100 · README ${((p.readme?.length ?? 0) / 1000).toFixed(1)} KB`, tip: (p.readme?.length ?? 0) < 1500 ? "write a README: what it does, how to run it" : `document \`${d.identifiers[0] ?? "the main API"}\`` },
-    { stat: "hp", value: 0, grade: grade(Math.log10(Math.max(10, p.totalLoc)), [4.6, 4.2, 3.7, 3.2]), signal: `${p.totalLoc.toLocaleString("en-US")} lines of code`, tip: "size is capped: quality matters more than quantity" },
-    { stat: "weakness", value: 0, grade: p.cycles.length >= 2 ? "F" : p.cycles.length ? "D" : grade(debtPer1k, [0.2, 0.6, 1.5, 4], false), signal: p.cycles.length ? `${p.cycles.length} circular dependenc${p.cycles.length > 1 ? "ies" : "y"} · ${debt} TODO/HACK` : `${debt} TODO/FIXME/HACK (${debtPer1k.toFixed(1)} per 1k lines)`, tip: p.cycles.length ? `break the loop ${p.cycles[0].slice(0, 2).join(" ↔ ")}` : debt ? `resolve the ${debt} TODOs, oldest first` : "no debt: keep it that way" },
-  ];
-  return q;
-}
-
 // ---------- the class ----------
 const CLASS: [string, string][] = [
   ["ana", "pallets/flask"], ["ben", "rust-lang/rustlings"], ["cy", "expressjs/express"], ["dee", "karpathy/nanogpt"],
@@ -55,8 +26,9 @@ const CLASS: [string, string][] = [
 ];
 const students = CLASS.map(([name, slug], i) => {
   const p = P(slug);
-  const quality = demoQuality(p);
-  const kit: PlayerKit = { ...playerKitFromProfile(p), quality };
+  // the sim's real edu grading (sim/quality.ts), same as in a classroom match
+  const kit: PlayerKit = playerKitFromProfile(p, { mode: "edu" });
+  const quality = kit.quality!;
   return { id: `p${i + 1}`, name, repo: slug, quality, kit, profile: p };
 });
 const YOU = "p2";
@@ -268,7 +240,7 @@ function viewGallery() {
 
 function viewIndex() {
   const links = ["desktop", "phone", "screen", "report", "report-screen", "arch", "genesis", "gallery"];
-  app.append(h("div.demo-index", null, h("h1", null, "GITZILLA // EDU LAB"), h("p", null, "Classroom PvP lessons, quiz, report cards. Report-card grades on this page come from a demo estimator; in the game, codex-sim computes them."), ...links.map((l) => h("a.btn", { href: `?view=${l}${["desktop", "phone", "screen"].includes(l) ? "&t=12" : ""}` }, l))));
+  app.append(h("div.demo-index", null, h("h1", null, "GITZILLA // EDU LAB"), h("p", null, "Classroom PvP lessons, quiz, report cards. Report cards use the sim's real edu grading of each fallback repo."), ...links.map((l) => h("a.btn", { href: `?view=${l}${["desktop", "phone", "screen"].includes(l) ? "&t=12" : ""}` }, l))));
 }
 
 document.body.dataset.view = view;
