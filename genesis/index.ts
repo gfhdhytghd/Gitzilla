@@ -1,4 +1,5 @@
 import type { BossAttack, BossKit, Genesis, PlayerKit, QualityStat, RepoProfile, TraceStep } from '../shared/types.ts';
+import { bossArchetypeFromProfile } from '../sim/archetypes.ts';
 
 export type GenesisKind = 'hero' | 'boss';
 export const MAX_GENESIS_BYTES = 12 * 1024;
@@ -49,6 +50,33 @@ export function qualityTrace(quality: readonly QualityStat[]): TraceStep[] {
       to: caption(q.tip), ref: `quality-tip:${q.stat}`,
     })),
   ];
+}
+
+/** Explain the final silhouette with the sim's exact winning selection reason.
+ * If a caller explicitly overrides the archetype, keep that identity and show
+ * its real repo context rather than claiming a different rule selected it. */
+export function bossArchetypeTrace(profile: RepoProfile, kit: BossKit): TraceStep {
+  const maxFanOut = Math.max(0, ...profile.components.map(c => c.fanOut));
+  const debt = (profile.dna?.counts.todo ?? 0) + (profile.dna?.counts.fixme ?? 0) + (profile.dna?.counts.hack ?? 0);
+  const signals: Record<BossKit['archetype'], string> = {
+    kaiju: `${human(profile.components.length)} modules · ${human(profile.cycles.length)} cycles`,
+    hydra: `${human(profile.cycles.length)} import cycles · fan-out ${human(maxFanOut)}`,
+    mecha: `${profile.primaryLanguage} · ${human(profile.maxDepth)} import layers`,
+    abyssal: `${human(profile.totalLoc)} LOC · ${human(profile.ageDays)}d · ${human(debt)} debt marks`,
+  };
+  const silhouettes: Record<BossKit['archetype'], string> = {
+    kaiju: 'Kaiju · crystal-backed titan', hydra: 'Hydra · many-headed terror',
+    mecha: 'Mecha · armored machine', abyssal: 'Abyssal · crystalline serpent',
+  };
+  const selected = bossArchetypeFromProfile(profile);
+  const reason = selected.reason.split(' → ')[0]
+    .replace(' circular dependency groups', ' import cycles')
+    .replace('Highest component fan-out', 'fan-out')
+    .replace(' systems code; dependency depth ', ' · import depth ')
+    .replace(/, ([\d,]+ LOC)$/, ' · $1')
+    .replace('analyzed LOC', 'LOC').replace('days of history', 'days old')
+    .replace('TODO/FIXME/HACK notes', 'debt marks');
+  return { part: 'class', from: caption(selected.archetype === kit.archetype ? reason : signals[kit.archetype]), to: caption(silhouettes[kit.archetype]), ref: 'archetype' };
 }
 
 /** Boss budget bars are percentages of the one anatomical attack budget. */
@@ -126,6 +154,8 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
     add('name', p.slug, `name: ${hero.title}`);
   } else {
     const boss = kit as BossKit;
+    // Transitional callers may still hold pre-contract kits in memory.
+    if (boss.archetype) trace.push(bossArchetypeTrace(p, boss));
     for (const limb of boss.limbs) {
       const c = p.components.find(c => c.name === limb.component);
       add('limb', c ? withMetric(c.name, `${human(c.loc)} LOC`) : 'No modules found', withMetric(boss.design?.limbNames[limb.id] ?? leaf(limb.component), `${human(limb.maxHp)} HP`), limb.id);
@@ -152,10 +182,11 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
     add('glyphs', tokens.length ? tokens.join(' · ') : 'No code samples found', tokens.length ? 'Code carved into the monster' : 'A creature takes shape');
     add('name', p.slug, `name: ${boss.name}`);
 
-    // Phones may show only eight steps. Lead with anatomy, heart, vulnerability
-    // (or eyes for acyclic repos), then an attack before the remaining detail.
+    // Phones may show only eight steps. Keep the silhouette's real-code reason
+    // in that opening alongside anatomy, heart, vulnerability and an attack.
     const highlights = [
       trace.find(t => t.part === 'limb'), trace.find(t => t.part === 'heart'),
+      trace.find(t => t.ref === 'archetype'),
       trace.find(t => t.part === 'weakpoint' && boss.limbs.some(l => l.id === t.ref && l.weakPoint)) ?? trace.find(t => t.part === 'eyes'),
       trace.find(t => t.part === 'attack'),
     ].filter((t): t is TraceStep => !!t);

@@ -21,9 +21,19 @@ Weapon mappings reserve the complete code expression (up to 24 characters) on th
 compaction cuts a weapon token or removes a closing delimiter.
 
 Battle heroes lead with weapon, skill, glyphs and signature (or class without a signature).
-Bosses lead with their largest component's limb, heart, a cycle weak point (or eyes),
-and an attack. The remaining mappings follow, with the final name reveal last, so
+Bosses lead with their largest component's limb, heart, why this archetype,
+a cycle weak point (or eyes), and an attack. The remaining mappings follow, with the final name reveal last, so
 the first few steps already tell a story on phones.
+
+The archetype row has `part: 'class'`, `ref: 'archetype'`. It uses
+`sim/archetypes.ts`'s `bossArchetypeFromProfile` winning reason, shortened to a
+40-character source caption without duplicating selection thresholds or precedence.
+Examples: `2 import cycles` → `Hydra · many-headed terror`,
+`150 debt marks` → `Abyssal · crystalline serpent`. The destination always follows
+the final `kit.archetype`; an explicit caller override gets factual repo context
+instead of a mismatched selection reason. `bossArchetypeTrace(profile, kit)` is
+exported for other consumers. This data layer doesn't read or invent live poses,
+airborne state, animation timing, or combat behavior.
 
 `sampleFiles`
 uses only supplied paths (up to 40); absent DNA produces empty source samples and
