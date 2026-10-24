@@ -1,10 +1,10 @@
 // Player renderer: Soul Knight-style chibi heroes generated from repo kits.
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
-import { lookFor, type HeroLook } from "./look.ts";
+import { lookFor, syntaxColor, type HeroLook } from "./look.ts";
 import { heroFrame, heroRim, heroCodeCells, tinted, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle } from "./weapons.ts";
-import { drawText, glyphBits } from "./font.ts";
+import { drawText, glyphBits, textCanvas, GLYPH_W } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
 
 export { lookFor } from "./look.ts";
@@ -393,8 +393,8 @@ function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     // the USB staff's payload: an upright glowing lambda floating off the tip
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 5);
-    ctx.fillStyle = L.c.accent;
+    ctx.globalAlpha = 0.3 + 0.12 * Math.sin(t * 5);
+    ctx.fillStyle = L.c.accentL;
     filledEllipse(ctx, tx + Math.cos(ang) * 3, ty + Math.sin(ang) * 3 - 3, 3, 3);
     ctx.restore();
     drawText(ctx, "λ", tx + Math.cos(ang) * 3, ty + Math.sin(ang) * 3 - 5 + Math.round(Math.sin(t * 4)), "#ffffff", "center", "");
@@ -585,7 +585,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     ctx.globalCompositeOperation = "lighter";
     drawBody(ctx, L, { pose: "idle", i: Math.floor(t * 2) % 2, expr: "normal" }, dx - glitch, dy, flip, 1, 1, "#b98bff");
     ctx.restore();
-    drawText(ctx, "#" + (hashStr(p.id + Math.floor(m.skillT.fork ?? 0)) >>> 0).toString(16).padStart(8, "0").slice(0, 7), dx, dy - 30, "#b98bff");
+    drawText(ctx, "#" + (hashStr(p.id + Math.floor(m.skillT.fork ?? 0)) >>> 0).toString(16).padStart(8, "0").slice(0, 7), dx, dy + 3, "#b98bff");
     if (Math.floor(t * 4) % 2 === 0) drawText(ctx, "!", dx, dy - 37 + Math.round(Math.sin(t * 8)), "#ff4a5a");
   }
   // --- skill: rollback rewind ghost (where you were ~2s ago) + blink trail
@@ -723,7 +723,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   }
 
   // --- idle: a tiny keyboard floats up and the hero types; long idle -> sleep(1)
-  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 2, feet - 3, t, idleFor);
+  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 5, feet - 5, t, idleFor, flip);
 
   // --- 2-3 real tokens orbit the head; brighter while the skill is ready
   const orbit = L.tokens.filter((tk) => tk.length <= 3 && /^[^A-Za-z0-9]+$/.test(tk)).slice(0, 2);
@@ -1076,7 +1076,7 @@ function signatureLabel(raw: string | undefined): string {
   return sig.length <= 16 ? sig : "";
 }
 
-function drawIdleKeyboard(ctx: CanvasRenderingContext2D, m: Mem, kx: number, ky: number, t: number, idleFor: number) {
+function drawIdleKeyboard(ctx: CanvasRenderingContext2D, m: Mem, kx: number, ky: number, t: number, idleFor: number, flip: number) {
   const k = Math.min(1, (idleFor - 3) / 0.3);
   const yy = Math.round(ky + (1 - k) * 4 + Math.sin(t * 2.5) * 0.8);
   const x0 = Math.round(kx) - 5;
@@ -1101,7 +1101,7 @@ function drawIdleKeyboard(ctx: CanvasRenderingContext2D, m: Mem, kx: number, ky:
   }
   if (idleFor > 8 && t - m.sleepT > 1.6) {
     m.sleepT = t;
-    spawn(m, 1, () => ({ x: kx + 6, y: yy - 20, vx: 4, vy: -9, g: 0, life: 1.5, max: 1.5, col: "#9aa0b8", sz: 1, glyph: "sleep(1)", front: true }));
+    spawn(m, 1, () => ({ x: kx + flip * 16, y: yy - 8, vx: flip * 5, vy: -8, g: 0, life: 1.5, max: 1.5, col: "#9aa0b8", sz: 1, glyph: "sleep(1)", front: true }));
   }
 }
 
@@ -1302,4 +1302,76 @@ export function paintHeroCard(c: HTMLCanvasElement, kit: PlayerKit, time: number
   g.globalAlpha = 1;
   g.fillStyle = "#ffffff";
   g.fillRect(0, scanY, size, s);
+}
+
+// ---------------------------------------------------------------- lobby terminal card
+const termTmp = new Map<string, HTMLCanvasElement>();
+
+/**
+ * Lobby card: the hero stands on a mini terminal window titled "~/repo (main)" whose body shows the
+ * hero's real code (kit.code.snippet + identifiers) with line numbers, syntax-colored. Any canvas size
+ * (best >= 160x120); everything is drawn at an integer scale. `readyAge` (seconds since ready) types the
+ * code in and materializes the hero like paintHeroCard; omit it for an already-revealed hero.
+ */
+export function paintHeroTerminal(c: HTMLCanvasElement, kit: PlayerKit, time: number, readyAge = 99): void {
+  const g = c.getContext("2d")!;
+  const s = Math.max(1, Math.floor(Math.min(c.width / 80, c.height / 60)));
+  const W = Math.floor(c.width / s), H = Math.floor(c.height / s);
+  const L = lookFor(kit);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, c.width, c.height);
+  g.imageSmoothingEnabled = false;
+  g.setTransform(s, 0, 0, s, 0, 0);
+  const winH = H - 4;
+  // window chrome
+  g.fillStyle = "#3a3150"; g.fillRect(0, 0, W, winH);
+  g.fillStyle = L.syn.bg; g.fillRect(1, 8, W - 2, winH - 9);
+  g.fillStyle = "#2a2438"; g.fillRect(1, 1, W - 2, 7);
+  [["#ff5f57", 3], ["#febc2e", 7], ["#28c840", 11]].forEach(([col, dx]) => { g.fillStyle = col as string; g.fillRect(dx as number, 3, 2, 2); });
+  const repoName = (kit.repo || "repo").split("/").pop() || "repo";
+  g.save();
+  g.beginPath(); g.rect(15, 1, W - 16, 7); g.clip();
+  g.drawImage(textCanvas("~/" + repoName + " (main)", "#cfc6e6", ""), 15, 1);
+  g.restore();
+  // body: real code with line numbers
+  const words = (kit.code?.snippet || L.lang + " " + repoName).split(/(\s+)/).filter((w) => w.trim());
+  const idents = (kit.code?.identifiers ?? []).slice(0, 4);
+  const cols = Math.max(4, Math.floor((W - 14) / GLYPH_W));
+  const lines: { text: string; color: string }[][] = [];
+  let line: { text: string; color: string }[] = [], len = 0;
+  const push = (w: string, color: string) => {
+    if (len && len + 1 + w.length > cols) { lines.push(line); line = []; len = 0; }
+    line.push({ text: w.slice(0, cols), color }); len += (len ? 1 : 0) + Math.min(cols, w.length);
+  };
+  for (const w of words) push(w, syntaxColor(w, L.syn, idents));
+  if (line.length) lines.push(line);
+  for (const id of idents) lines.push([{ text: id + "()", color: L.syn.fn }]);
+  const maxLines = Math.floor((winH - 11) / 7);
+  const typed = readyAge >= 0.9 ? Infinity : Math.floor((readyAge / 0.9) * 60);
+  let budget = typed;
+  g.save();
+  g.beginPath(); g.rect(1, 8, W - 2, winH - 9); g.clip();
+  lines.slice(0, maxLines).forEach((ln, i) => {
+    const y = 10 + i * 7;
+    g.drawImage(textCanvas(String(i + 1), "#5c6370", ""), 1, y - 1);
+    let x = 11;
+    for (const tok of ln) {
+      if (budget <= 0) break;
+      const shown = tok.text.slice(0, Math.max(0, budget));
+      budget -= tok.text.length + 1;
+      g.drawImage(textCanvas(shown, tok.color, ""), x - 1, y - 1);
+      x += (tok.text.length + 1) * GLYPH_W;
+    }
+  });
+  // blinking block cursor after the last typed character
+  if (Math.floor(normTime(time) * 2) % 2 === 0) { g.fillStyle = "#e8f4ff"; g.fillRect(11, 10 + Math.min(lines.length, maxLines) * 7, 3, 5); }
+  g.restore();
+  // the hero stands on the window's bottom edge, right side
+  const P = Math.max(26, Math.floor((H * 0.8) / 26) * 26);
+  const key = L.key + "|" + P;
+  let tmp = termTmp.get(key);
+  if (!tmp) { tmp = document.createElement("canvas"); tmp.width = tmp.height = P; termTmp.set(key, tmp); }
+  paintHeroCard(tmp, kit, time, readyAge);
+  g.drawImage(tmp, W - P + Math.floor(P * 0.12), H - P + Math.floor(P * 0.02));
+  g.setTransform(1, 0, 0, 1, 0, 0);
 }

@@ -29,7 +29,8 @@ function scanlines(scale: number) {
   if (!c) {
     const h = s >= 3 ? s : 2;
     const [cv, g] = makeCanvas(1, h);
-    g.fillStyle = "rgba(0,0,0,0.22)";
+    // at 1-2 canvas px per logical px the canvas is CSS-upscaled: a dark row would become a thick band, so go light
+    g.fillStyle = s >= 3 ? "rgba(0,0,0,0.22)" : "rgba(0,0,0,0.08)";
     g.fillRect(0, h - 1, 1, 1);
     if (s >= 4) { g.fillStyle = "rgba(255,255,255,0.025)"; g.fillRect(0, 0, 1, 1); }
     scanCache.set(s, (c = cv));

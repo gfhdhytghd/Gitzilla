@@ -1,7 +1,7 @@
 // Dev gallery: 24 heroes across all weapons / skills / states, plus lobby portraits.
 // Open via vite: /client/render/player/gallery.html  (?scale=3)
 import type { HeroDesign, PlayerKit, PlayerState, SkillKind, WeaponKind } from "../../../shared/types.ts";
-import { drawPlayer, notePlayerEvents, paintHeroCard, setPlayerMood } from "./index.ts";
+import { drawPlayer, notePlayerEvents, paintHeroCard, paintHeroTerminal, setPlayerMood } from "./index.ts";
 import { drawText } from "./font.ts";
 
 const WEAPONS: WeaponKind[] = ["blade", "blaster", "smg", "shotgun", "cannon", "staff", "laser"];
@@ -302,6 +302,15 @@ function stripScene() {
   });
 }
 
+const termEl = document.getElementById("terminals")!;
+const terms = [24, 25, 26, 27, 28, 31].map((k) => {
+  const cv = document.createElement("canvas");
+  cv.width = 320; cv.height = 240;
+  cv.style.cssText = "image-rendering:pixelated;width:240px;height:180px;background:#0d0a14";
+  termEl.appendChild(cv);
+  return { cv, kit: kitFor(k) };
+});
+
 let last = performance.now() / 1000;
 const fixedT = params.get("t");
 function frame() {
@@ -315,6 +324,7 @@ function frame() {
   const order = [...sims].sort((a, b) => a.p.y - b.p.y);
   for (const s of sims) step(s, now, dt);
   for (const s of order) drawPlayer(ctx, s.p, t, s.b === "you");
+  terms.forEach((tc, i) => paintHeroTerminal(tc.cv, tc.kit, now, params.get("age") !== null ? Number(params.get("age")) : (now + i * 0.5) % 5));
   for (const c of cards) {
     const g = c.cv.getContext("2d")!;
     void g;

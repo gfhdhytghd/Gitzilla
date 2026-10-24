@@ -1,5 +1,13 @@
 DONE (code flavor) — claude-boss
 
+## Portrait review fix (qa/artifacts/portrait-2026-10-24T19-23-11-618Z)
+- **Root cause:** `fx.textScale` estimated zoom as `transform scale / devicePixelRatio`. claude-ui renders at 1 canvas px per logical px (RES = 1) and upscales with CSS (~3.3 CSS px per logical px), so texts were wrongly doubled.
+- **Fix:** zoom is now measured from the canvas's on-screen size (`clientWidth / width × transform scale`). It falls back to the DPR estimate when the canvas is offscreen.
+- Obstacle filename tags are always 1× (5 px cap height), at 80% alpha, and only shown when the name doesn't fit the title bar.
+- Floor source code alpha is 12% (13% on notebook).
+- Scanlines are light (8%) when the canvas is ≤2 px per logical px, so they don't turn into thick CSS-upscaled bands.
+- Gallery `&portrait=1&res1=1` reproduces claude-ui's setup.
+
 ## Code flavor pass (docs/tasks/code-flavor.md, my section)
 - **Player projectiles = the weapon construct.** I use `kit.code.weapon.projectiles` when present, and fall back to my per-kind table `WEAPON_CODE` in `client/render/arena/bullets.ts`:
   - blaster `"S"`/`"%D"`/`"OK"`, smg `I++`, shotgun `CASE`, cannon `0XDEAD` hex shell on an orange capsule, staff a `λ` orb, laser a `/.*/` regex text crawling along the shot, blade a crescent of `//` marks.

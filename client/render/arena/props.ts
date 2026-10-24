@@ -100,7 +100,12 @@ export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle
     drawGlow(ctx, o.x, o.y, extColor(o.label), Math.max(8, o.w * 0.45), 0.12);
     // filename tag under the block when the title bar is too narrow for it
     const nm = baseName(o.label);
-    if (textWidth(nm) > o.w - (o.w >= 22 ? 10 : 3) || fx.textScale > 1) drawText(ctx, nm.length > 16 ? nm.slice(0, 15) + "~" : nm, Math.round(o.x), y0 + s.height + 1, extColor(o.label), { align: "center", scale: fx.textScale });
+    // small tag under the block (5px cap height, never upscaled: heroes and bullets must out-read it)
+    if (textWidth(nm) > o.w - (o.w >= 22 ? 10 : 3)) {
+      ctx.globalAlpha = 0.8;
+      drawText(ctx, nm.length > 14 ? nm.slice(0, 13) + "~" : nm, Math.round(o.x), y0 + s.height + 1, extColor(o.label), { align: "center" });
+      ctx.globalAlpha = 1;
+    }
     // cracks grow as hp drops
     const dmg = 1 - Math.max(0, o.hp) / Math.max(1, o.maxHp);
     const cracks = Math.floor(dmg * 6);

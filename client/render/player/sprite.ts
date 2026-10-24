@@ -59,12 +59,12 @@ function paintHero(L: HeroLook, f: FrameSpec): Grid {
     const flap = run ? (f.i % 2 === 0 ? 2 : 1) : f.i === 1 ? 0 : 0;
     for (let y = 19; y <= 25; y++) {
       const t = y - 19;
-      const x0 = 8 - Math.floor((t * (1 + flap)) / 4);
+      const x0 = 7 - Math.floor((t * (2 + flap)) / 4);
       g.rect(x0, y + bd, 10, y + bd, t < 2 ? c.secondaryL : y === 25 ? c.secondaryD : c.secondary);
       // cape interior = a dark code editor (real code scrolls here at draw time)
       if (t >= 1 && y < 25) for (let x = x0 + 1; x <= 9; x++) { g.set(x, y + bd, L.syn.bg); g.code.push([x, y + bd]); }
     }
-    if (run) g.set(8 - flap - 1, 24 + bd, c.secondaryD);
+    if (run) g.set(7 - flap - 2, 24 + bd, c.secondaryD);
   } else if (L.back === "laptop") {
     g.rect(5, 18 + bd, 9, 23 + bd, c.metalD);
     g.rect(5, 18 + bd, 9, 18 + bd, c.metal);

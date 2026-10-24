@@ -21,6 +21,7 @@ export const fx = {
   danger: 0,                            // screen-edge danger vignette, decays
   view: { x: 0, y: 0, w: 480, h: 288 },  // visible logical window (camera); landscape default = whole arena
   textScale: 1,                         // floating-text upscale when the effective CSS zoom is small (portrait phones)
+  cssPerLogical: 3,                     // measured on-screen zoom
 };
 
 export type View = { x: number; y: number; w: number; h: number };
@@ -29,9 +30,12 @@ export type View = { x: number; y: number; w: number; h: number };
 export function setView(ctx: CanvasRenderingContext2D, view?: View) {
   fx.view = view ? { ...view } : { x: 0, y: 0, w: 480, h: 288 };
   const m = ctx.getTransform();
+  const cv = ctx.canvas as HTMLCanvasElement;
+  // CSS px per logical px: use the canvas's on-screen size when it's in the DOM (callers may render at 1 canvas px per
+  // logical px and upscale with CSS); otherwise assume the backing store is DPR-scaled.
   const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
-  const cssPerLogical = Math.abs(m.a || 1) / dpr;
-  // 3x5 glyphs need ~2.2 CSS px per logical px to read comfortably; below that, draw texts at 2x
+  const cssPerLogical = cv.clientWidth > 0 && cv.width > 0 ? (cv.clientWidth / cv.width) * Math.abs(m.a || 1) : Math.abs(m.a || 1) / dpr;
+  fx.cssPerLogical = cssPerLogical;
   fx.textScale = cssPerLogical < 2.2 ? 2 : 1;
 }
 

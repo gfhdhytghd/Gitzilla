@@ -261,11 +261,11 @@ function gitGraph(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, them
 // ---- the arena floor is a source file of the BOSS repo ----
 const KW = new Set("if else elif for while do return def fn func function class struct enum impl trait match case switch break continue const let var mut pub use import from export package module type interface extends implements new delete try catch except finally throw raise async await yield lambda public private protected static void int float bool string char true false null none nil self this super go defer select range in is not and or with as unsafe where loop".split(" "));
 const SYNTAX: Record<ArenaTheme, { kw: string; str: string; num: string; com: string; id: string; pun: string; alpha: number }> = {
-  terminal: { kw: "#39ff6a", str: "#b6ff3a", num: "#7dffb0", com: "#1f6a34", id: "#2fb85a", pun: "#1f8a3c", alpha: 0.13 },
+  terminal: { kw: "#39ff6a", str: "#b6ff3a", num: "#7dffb0", com: "#1f6a34", id: "#2fb85a", pun: "#1f8a3c", alpha: 0.12 },
   kernel: { kw: "#ff8a2a", str: "#ffd23f", num: "#ffb36b", com: "#6a5a4a", id: "#c8a888", pun: "#8a7a6a", alpha: 0.12 },
-  web: { kw: "#ff3df2", str: "#2ef2ff", num: "#ffe14a", com: "#5a4a9a", id: "#b48aff", pun: "#7a6ad8", alpha: 0.13 },
-  notebook: { kw: "#3b6fd8", str: "#c25b5b", num: "#3a9a5a", com: "#8a7f66", id: "#2b3550", pun: "#5a5040", alpha: 0.18 },
-  enterprise: { kw: "#3a6ad8", str: "#b05a2a", num: "#2a8a5a", com: "#8a8678", id: "#3a3830", pun: "#5a5850", alpha: 0.14 },
+  web: { kw: "#ff3df2", str: "#2ef2ff", num: "#ffe14a", com: "#5a4a9a", id: "#b48aff", pun: "#7a6ad8", alpha: 0.12 },
+  notebook: { kw: "#3b6fd8", str: "#c25b5b", num: "#3a9a5a", com: "#8a7f66", id: "#2b3550", pun: "#5a5040", alpha: 0.13 },
+  enterprise: { kw: "#3a6ad8", str: "#b05a2a", num: "#2a8a5a", com: "#8a8678", id: "#3a3830", pun: "#5a5850", alpha: 0.12 },
   legacy: { kw: "#ffb347", str: "#c6ff7a", num: "#ffd27a", com: "#5f6656", id: "#a8b098", pun: "#7c8474", alpha: 0.12 },
 };
 
