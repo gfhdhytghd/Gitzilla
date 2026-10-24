@@ -4,7 +4,9 @@ import type { BossKit, LobbyPlayer, LobbyState, PlayerKit } from "../../shared/t
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
+import { codeSpan } from "./codefmt";
 import { createGenesisMount } from "./genesisMount";
+import { isTrained, openTraining } from "./training";
 import { loadMotionProfile, saveMotionProfile } from "../input";
 import type { MotionProfile } from "../../shared/types";
 import { createLogo } from "./logo";
@@ -99,12 +101,12 @@ function createControlsCard(): HTMLElement {
           if (r.some((x) => x !== "granted")) {
             pick("tap-only");
             toast("motion permission denied — using touch controls", "info");
-          }
+          } else if (!isTrained()) openTraining({ onDone: () => render() }); // ~20s tutorial + per-player thresholds
         },
         () => pick("tap-only"),
       );
     };
-    const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : prof === "seated" ? "motion (seated, small tilts)" : "motion: tilt to move · tap or swing to attack";
+    const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : prof === "seated" ? "motion (seated, small tilts)" : "motion: tilt · swing · twist · spin";
     el.replaceChildren(
       h("div.cc-title", null, "🎮 controls ", chosen ? h("span.cc-chosen", null, `✓ ${label}`) : h("span.dim", null, "— choose before the fight")),
       h(
@@ -116,6 +118,10 @@ function createControlsCard(): HTMLElement {
         hasSensors ? h(`button.btn${prof === "seated" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-seated", onclick: () => enableMotion("seated") }, "seated / small moves") : null,
         h(`button.btn${prof === "tap-only" && chosen ? ".btn-primary" : ""}`, { "data-testid": "controls-touch", onclick: () => pick("tap-only") }, "touch only"),
       ),
+      ...(chosen && prof !== "tap-only" ? [h("div.cc-train", null,
+            isTrained() ? h("span.ok", null, "✓ gestures trained ") : h("span.dim", null, "not trained yet "),
+            h("button.btn-link", { "data-testid": "controls-retrain", onclick: () => openTraining({ onDone: () => render() }) }, isTrained() ? "↻ re-train gestures" : "▶ train gestures (20s)")),
+        h("div.cc-legend", null, "tilt = move · swing / tap = attack · twist / double-tap = dash · spin / long-press = skill")] : []),
     );
   };
   render();
@@ -379,6 +385,11 @@ export function createLobby(app: AppCtx): Screen {
     bossErr,
     h("button.btn.btn-danger", { "data-testid": "boss-repo-submit", onclick: submitBoss }, "☠ summon boss"),
     bossChips,
+    // owner can also summon one of their own GitHub repos (private ones use the owner's token server-side)
+    createGithubPicker((full) => {
+      bossInput.value = full;
+      submitBoss();
+    }, { kind: "boss" }),
   );
   const bossTitle = h("h2.panel-title.red", null, "BOSS KAIJU");
   const eduInfo = h(
@@ -433,6 +444,7 @@ export function createLobby(app: AppCtx): Screen {
   const squadList = h("div.squad-list");
   const squadCount = h("span.count");
   const botCount = h("span.bot-n", null, "0");
+  const botLabel = h("span.dim", null, "AI teammates: ");
   const setBots = (d: number) => {
     const cur = app.lobby?.players.filter((p) => p.bot).length ?? 0;
     const humans = (app.lobby?.players.length ?? 0) - cur;
@@ -442,7 +454,7 @@ export function createLobby(app: AppCtx): Screen {
   const botCtl = h(
     "div.bot-ctl",
     null,
-    h("span.dim", null, "AI teammates: "),
+    botLabel,
     h("button.btn.btn-tiny", { "data-testid": "bots-minus", onclick: () => setBots(-1) }, "-"),
     botCount,
     h("button.btn.btn-tiny", { "data-testid": "bots-plus", onclick: () => setBots(1) }, "+"),
@@ -509,6 +521,9 @@ export function createLobby(app: AppCtx): Screen {
     leaveCtl,
   );
 
+  const qrHelp1 = h("div.qr-help", null, "scan with your phone (hold it upright)");
+  const qrHelp2 = h("div.qr-help.yellow", null, "★ the first phone to join is the host");
+  const classCounter = h("div.class-counter", { hidden: true });
   let body: HTMLElement;
   if (screen) {
     const logo = createLogo(3, "stack");
@@ -523,8 +538,9 @@ export function createLobby(app: AppCtx): Screen {
         h("div.qr-url", null, url.replace(/^https?:\/\//, "")),
         h("div.qr-code-big", null, app.room),
         h("div.qr-corner-mark", null, markCanvas(2)),
-        h("div.qr-help", null, "scan with your phone (hold it upright)"),
-        h("div.qr-help.yellow", null, "★ the first phone to join is the host"),
+        qrHelp1,
+        qrHelp2,
+        classCounter,
       ),
       h("div.big-right", null, squad, bossPanel),
     );
@@ -580,9 +596,9 @@ export function createLobby(app: AppCtx): Screen {
       info.append(
         h("div.pcard-title", null, p.kit.design?.title ?? p.kit.title),
         ...(p.kit.design?.catchphrase ? [h("div.pcard-quote", null, `“${p.kit.design.catchphrase}”`)] : []),
-        h("div.pcard-kit", null, h("span.tag", { title: `weapon (${p.kit.weapon})` }, `${WEAPON_ICON[p.kit.weapon] ?? ""} ${p.kit.code?.weapon?.name ?? p.kit.weapon}`), h("span.tag.tag-skill", { title: "skill" }, `⚡ ${p.kit.skill}`)),
+        h("div.pcard-kit", null, h("span.tag.tag-weapon", { title: `weapon (${p.kit.weapon})` }, `${WEAPON_ICON[p.kit.weapon] ?? ""} `, codeSpan(p.kit.code?.weapon?.name ?? p.kit.weapon)), h("span.tag.tag-skill", { title: "skill" }, `⚡ ${p.kit.skill}`)),
         lobby.mode === "edu" && p.kit.quality?.length
-          ? h("div.pcard-gpa", { style: `--c:${GRADE_COLOR[gpaGrade(gpa(p.kit.quality))]}` }, `code grade ${gpaGrade(gpa(p.kit.quality))} · GPA ${gpa(p.kit.quality).toFixed(1)}`)
+          ? h("div.pcard-gpa", { style: `--c:${GRADE_COLOR[gpaGrade(gpa(p.kit.quality))]}` }, h("b.gpa-letter", null, gpaGrade(gpa(p.kit.quality))), h("span.gpa-txt", null, ` code grade · GPA ${gpa(p.kit.quality).toFixed(1)}`))
           : h("div.pcard-hearts", null, hearts(p.kit)),
         ...codeBits(p.kit, false),
       );
@@ -602,7 +618,15 @@ export function createLobby(app: AppCtx): Screen {
   }
 
   function renderSquad(lobby: LobbyState) {
-    squadCount.textContent = `${lobby.players.filter((p) => p.status === "ready").length}/${lobby.players.length} ready`;
+    const nReady = lobby.players.filter((p) => p.status === "ready").length;
+    squadCount.textContent = `${nReady}/${lobby.players.length} ready`;
+    const edu = lobby.mode === "edu";
+    // classroom copy on the projector: the teacher's screen is the host; bots are opponents in PvP
+    botLabel.textContent = edu ? "AI classmates (bots): " : "AI teammates: ";
+    qrHelp1.textContent = edu ? "students: scan to join · hold your phone upright" : "scan with your phone (hold it upright)";
+    qrHelp2.textContent = edu ? "★ the teacher starts the brawl here" : "★ the first phone to join is the host";
+    classCounter.hidden = !(screen && edu);
+    classCounter.textContent = `${lobby.players.filter((p) => !p.bot).length} / 30 joined · ${nReady} ready`;
     const seen = new Set<string>();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
@@ -627,7 +651,7 @@ export function createLobby(app: AppCtx): Screen {
     for (const [id, c] of cardEls) if (!seen.has(id)) (c.remove(), cardEls.delete(id), cardSig.delete(id));
     // empty slots up to 4 to make the "4+ players" target visible
     squadList.querySelectorAll(".pcard-slot").forEach((e) => e.remove());
-    for (let i = lobby.players.length; i < (screen ? 8 : 4); i++)
+    if (!(screen && lobby.mode === "edu")) for (let i = lobby.players.length; i < (screen ? 8 : 4); i++)
       squadList.append(h("div.pcard.pcard-slot", null, h("div.pcard-portrait", null, h("div.portrait-empty", null, "+")), h("div.pcard-info", null, h("div.dim", null, `slot ${i + 1} · scan to join`))));
     backdrop.setHeroes(lobby.players.filter((p) => p.kit).map((p) => p.kit!));
   }
@@ -672,7 +696,7 @@ export function createLobby(app: AppCtx): Screen {
             null,
             h("div.you-title", null, k.design?.title ?? k.title),
             k.design?.catchphrase ? h("div.pcard-quote", null, `“${k.design.catchphrase}”`) : null,
-            h("div.kv", null, h("span", null, "weapon"), h("b", null, `${WEAPON_ICON[k.weapon] ?? ""} ${k.code?.weapon?.name ?? k.weapon}`)),
+            h("div.kv", null, h("span", null, "weapon"), h("b.kv-weapon", null, `${WEAPON_ICON[k.weapon] ?? ""} `, codeSpan(k.code?.weapon?.name ?? k.weapon))),
             ...(k.code?.weapon
               ? [h("div.kv.dim", null, `a ${k.weapon} · fires ${k.code.weapon.projectiles.map((x) => `"${x}"`).join(" ")} · hits go ${k.code.weapon.impact}`)]
               : []),

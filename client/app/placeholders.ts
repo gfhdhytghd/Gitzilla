@@ -245,9 +245,11 @@ export function createInput(opts: {
   opts.canvas.parentElement!.addEventListener("pointerdown", md);
   addEventListener("pointerup", mu);
   addEventListener("contextmenu", cm);
-  return {
+  return ({
     mode: "keyboard",
     sensorStatus: "off",
+    lastGesture: null,
+    setProfile() {},
     motionProfile: "standard",
     setMotionProfile() {},
     needsPermission: false,
@@ -278,7 +280,7 @@ export function createInput(opts: {
       removeEventListener("pointerup", mu);
       removeEventListener("contextmenu", cm);
     },
-  };
+  } as unknown) as InputHandle;
 }
 
 export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], _time: number) {

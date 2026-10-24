@@ -1,4 +1,37 @@
-DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## Boss from your own GitHub repos — done
+- Boss panel (owner only, inside the owner controls) mounts the same `createGithubPicker(…, {kind:"boss"})`: stars-first, filter, 🔒, language, pushed-ago; picking fills the boss input and sends `setBoss` with `full_name`. Paste-link + famous-repo chips kept. Test ids `boss-github-connect` / `boss-github-repos` (hero picker keeps `github-*`).
+
+## UX pass 2 (claude-ux portrait re-audit + edu audit) — done
+- PR-0: lobby updates compared to the previous state: match → lobby without an autopsy → amber banner "⚠ the match was interrupted — the host can start again" (edu: "the brawl… the teacher"); ownerId change → toast "★ you are now the host" / "host is now X". Also P0-3 nit: after a fatal pre-welcome error the link pill stays `LINK ERR` (no "retrying").
+- PR-2: thumb buttons hidden during the intro (and motion v3 has none anyway). PR-3: the touch overlay (joystick/charge ring) is hidden while an intro, BSOD or defeat/class-dismissed card is up. PR-4: ghost split says "ATTACK · tap here" and starts 1.2s after the FIGHT flash. PR-5: phone lobby has 120px+safe-area under the sticky bar, and the in-panel `$ ./fight.sh` is hidden on phones (the next-step bar is the one START). PR-6: lesson/quiz chips in the deck are full width.
+- EDU-4: projector copy in edu: "students: scan to join · hold your phone upright" / "★ the teacher starts the brawl here", `N / 30 joined · M ready` counter (26px), dense roster of joined students only (no empty slots) with a 28px grade letter, bots labelled "AI classmates (bots)".
+- EDU-5: projector brawl: right-gutter `$ leaderboard` top 10 at 28px with rank numbers, lesson cards moved into the left gutter (no longer over the arena), event log hidden there.
+- EDU-6: not in my code — the "repo shape → stats: same 5-pt budget" line is drawn by claude-genesis's reveal; **request → claude-genesis/claude-edu:** in edu mode say "code quality → stats (see your report card)".
+- PR-1 (combat text pile-up) and EDU-1/2/3/7 belong to claude-boss / claude-edu.
+
+## Weapon names as code — done (my surfaces)
+- `client/app/codefmt.ts`: `tokenize()` (keywords / calls / identifiers / strings / numbers / punctuation; lossless), `codeSpan(src, fit=24)` (monospace, highlighted, `white-space: nowrap`, names >24 chars shrink via font-size — never truncated mid-token), `drawCode()` for canvas (shrinks the size until it fits). Test: client/app/codefmt.test.ts.
+- Used on: lobby squad cards + your hero card, HUD/deck weapon line (`⌐ for { go serve() } fires "go"`; only the projectile list may ellipsize), autopsy squad rows, share card (`⌐ <weapon>` line).
+- **Request → claude-genesis:** the genesis reveal draws the weapon name itself; please render it with the same token colours (kw #ff6ac1, call #3de8ff, id #e8fff2, str #ffd23d, punct #9aa7b4) and shrink rather than truncate — `tokenize` from client/app/codefmt.ts is importable.
+- Also adapted to codex-input's v3 touch surface (no buttons in any phone mode): status pills show in touch mode too (`✦ hold` / `⚡ double-tap`), no space reserved for buttons, touch hint "drag to move · tap = attack · double-tap = dash · hold = skill", my long-press ring defers to the input module's own `input-charge` ring.
+
+## Motion v3 UI — done (claude-ui part)
+- Game (phones, motion mode): every drawn control is gone (DASH/SKILL buttons, joystick hidden via `[data-input=motion]`); the deck is status-only: `✦ spin or hold — READY/Ns` and `⚡ twist — READY/Ns` pills with cooldown fill. Gesture toasts for 400ms (`⚡ dash`, `✦ skill`, `▸ attack`) derived from sampled InputFrames (dash/skill edges, fire rising edge). Long-press charging ring under the finger (starts after the 180ms tap window, fills in 550ms; drawing only — input owns the gesture). Tips copy: "tilt = move · swing/tap = attack · twist = dash · spin/hold = skill".
+- Lobby gesture training (`client/app/training.ts`, `data-testid=training`): opens after choosing tilt/seated (once permission is granted) — 5 steps with an animated pixel phone, live meter and ✓s: hold (stillness → neutral), tilt (4 directions + live dot pad), swing ×3 (linear accel; iOS null `acceleration` → high-passed accelerationIncludingGravity), twist ×3 (rotation spike whose 400ms angle stays <120°), spin ×2 (∫|rotationRate| ≥ 270° in 1.2s) or long-press. Touch alternates count too (tap, double-tap, long-press). Skippable; re-train from the lobby controls card and the in-game ☰ menu.
+- Stores `kaiju.gestureProfile` = `{v:3, neutral, tilt{left,right,up,down}, swing m/s², twist °/s, spin °, at}` (60%/80% of the user's median peaks, clamped). game.ts calls `input.setProfile(profile)` if the input module exposes it.
+- Verified with synthetic DeviceOrientation/DeviceMotion events in Playwright (390×844): all 5 steps ✓ → profile saved; in-game motion mode shows 0 control buttons, pills + ring render.
+
+## Logo — done
+- `client/app/mark.ts`: the brand kaiju (same grids as brand/make_logo.py) animated — roar cycle (jaw drops 1px, </> beam spreads + brightens + glow), glyph flicker, plate ripple, blink. `markCanvas()` for static use.
+- Landing: mark + GIT(#2fe39a)/ZILLA(#ff3e9a) wordmark lockup (stacked on phones), glitch/RGB-split kept; big-screen QR panel uses the stacked logo; share card has the mark + wordmark; projector in-match late-join QR has the mark. Footer copy updated to the v3 gestures.
+
+- Now wired to codex-input's v3 API: training also writes its thresholds via `saveThresholds()` (kaiju.motionCalibration.v3) and the game calls `input.setProfile({swingThreshold, twistThreshold, spinAngle, neutral})`; toasts use `input.lastGesture` (`⚡ dash · twist`), falling back to frame edges.
+- FYI coordinator/codex-input: with codex-input's uncommitted v3 input, keyboard move/fire only work in keyboard mode, so tools/playtest.ts's phone context (touch mode, keyboard-driven) reports `moving: 0, firing: 0` → harness exit 2 although the match runs to autopsy. Harness or input needs a tweak (not claude-ui).
+
+## Contract requests (motion v3)
+- codex-input: `InputController.setProfile(p: GestureProfile)` (shape above) to apply trained thresholds; optional `onGesture(fn)` / last-gesture getter so toasts can say exactly what fired (today derived from frames).
 
 ## Leave / new room — done (DONE (leave))
 - Lobby header `⏏ leave room` (`leave-room`): owner gets a 1-tap confirm "you own this room — ownership passes to <next human>. tap again to leave"; projector shows `⏏ end class` + `new room`.

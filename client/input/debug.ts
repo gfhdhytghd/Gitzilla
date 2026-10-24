@@ -1,4 +1,6 @@
+import type { RotationRate } from './gestures';
 import type { MotionProfile } from '../../shared/types';
+import { readAudioDebugStatus } from '../audio/status';
 
 export interface InputDebugState {
   mode: string;
@@ -10,13 +12,15 @@ export interface InputDebugState {
   gamma: number;
   angle: number;
   acceleration: { x: number; y: number; z: number };
+  rotationRate: RotationRate | null;
+  spinDegrees: number;
   move: [number, number];
   gestures: string[];
 }
 
 export const debugState: InputDebugState = {
   mode: 'uninitialized', permission: 'unknown', sensors: 'off', calibrating: false, profile: 'standard', beta: 0, gamma: 0, angle: 0,
-  acceleration: { x: 0, y: 0, z: 0 }, move: [0, 0], gestures: [],
+  acceleration: { x: 0, y: 0, z: 0 }, rotationRate: null, spinDegrees: 0, move: [0, 0], gestures: [],
 };
 
 export function recordGesture(gesture: string): void {
@@ -33,9 +37,12 @@ export function createInputDebugPanel(): HTMLDivElement & { dispose(): void } {
   const render = () => {
     const s = debugState;
     const a = s.acceleration;
+    const audio = readAudioDebugStatus();
     panel.textContent = `INPUT ${s.mode} | profile: ${s.profile} | sensors: ${s.sensors} | permission: ${s.permission}${s.calibrating ? ' | calibrating' : ''}\n` +
+      `audio: ${audio.state} | music: ${audio.musicPlaying ? 'playing' : 'idle'} | session: ${audio.session}${audio.muted ? ' | muted' : ''}${audio.needsGesture ? ' | tap to resume' : ''}${audio.error ? ` | ${audio.error}` : ''}\n` +
       `beta ${s.beta.toFixed(1)} gamma ${s.gamma.toFixed(1)} screen ${s.angle}°\n` +
       `accel x ${a.x.toFixed(2)} y ${a.y.toFixed(2)} z ${a.z.toFixed(2)} |a| ${Math.hypot(a.x, a.y, a.z).toFixed(2)}\n` +
+      `gyro ${s.rotationRate ? Object.values(s.rotationRate).map(v => v.toFixed(0)).join(', ') + ' deg/s' : 'unavailable (double-tap dash)'} | spin ${s.spinDegrees.toFixed(0)}°\n` +
       `move ${s.move.map(v => v.toFixed(2)).join(', ')}\n` + s.gestures.join('\n');
   };
   render();

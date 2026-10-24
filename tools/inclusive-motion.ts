@@ -42,6 +42,11 @@ if(localStorage.getItem('kaiju.motionProfile'))boot();
 setInterval(()=>{if(!window.__input)return;window.dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:45,gamma:window.__gamma}));window.dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:0,y:0,z:0}}));const f=window.__input.sample();window.__frames.push(f);document.querySelector('#status').textContent=window.__input.motionProfile+' / '+window.__input.mode+' / sensors '+window.__input.sensorStatus+'\n'+JSON.stringify(f);},33);
 </script>` }));
   page.on('pageerror', error => errors.push(error.stack || error.message));
+  const revision = Date.now();
+  await page.route('**/client/input/**', route => {
+    const url = new URL(route.request().url()); url.searchParams.set('input-revision', String(revision));
+    return route.continue({ url: url.toString() });
+  });
   await page.goto(`${base}/__input-profile-test`, { waitUntil: 'networkidle' });
   await page.getByTestId('profile-seated').tap();
   assert.equal(await permissionCount(), 0, 'choosing a profile before controller creation must not prompt');
@@ -68,11 +73,12 @@ setInterval(()=>{if(!window.__input)return;window.dispatchEvent(new DeviceOrient
   assert.deepEqual((await latest()).move, [0, 0]); assert(!(await latest()).fire);
   assert.equal(await page.evaluate(() => (window as any).__input.mode), 'touch');
   assert.equal(await permissionCount(), 2);
-  assert(await page.locator('.kj-touch-joystick-zone').isVisible());
-  check('tap-only ignores every sensor and exposes the joystick');
+  assert.equal(await page.locator('.kj-touch-joystick-zone,.kj-touch-button').count(), 0);
+  check('tap-only ignores every sensor and uses invisible full-screen gestures');
   await page.touchscreen.tap(120, 380);
+  await page.waitForTimeout(350);
   assert((await latest()).fire);
-  await page.waitForTimeout(450);
+  await page.waitForTimeout(650);
   assert(!(await latest()).fire);
   check('tap-only tap attacks without sensor input');
   await page.screenshot({ path: join(output, 'tap-only.png') });

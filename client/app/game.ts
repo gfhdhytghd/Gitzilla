@@ -7,6 +7,7 @@ import { ARENA_H, ARENA_W } from "../../shared/types";
 import { type AppCtx, type Screen } from "./app";
 import { createHud, rankPvp } from "./hud";
 import { markCanvas } from "./mark";
+import { loadGestureProfile, openTraining, toThresholds } from "./training";
 import { type GenesisHandle, playGenesis } from "../genesis";
 import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay } from "../edu";
 import { audio, muteBtn } from "./sound";
@@ -43,7 +44,13 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // portrait control deck: HUD panels are re-homed here; the DASH/SKILL buttons (client/input) dock at its bottom
   const sensorRow = h("div.deck-sensors");
   const deckMid = h("div.deck-mid");
-  const deck = h("div.deck", null, sensorRow, deckMid);
+  // motion v3: no on-screen controls — the deck only says what the gestures are ready to do
+  const gsSkillState = h("b"), gsDashState = h("b");
+  const gsSkillLbl = h("span", null, "✦ spin or hold"), gsDashLbl = h("span", null, "⚡ twist");
+  const gsSkill = h("div.gs-pill.skill", null, gsSkillLbl, gsSkillState);
+  const gsDash = h("div.gs-pill.dash", null, gsDashLbl, gsDashState);
+  const gestStatus = h("div.gest-status", { "data-testid": "gesture-status" }, gsSkill, gsDash);
+  const deck = h("div.deck", null, sensorRow, gestStatus, deckMid);
   const lateQr = spectator
     ? h("div.late-qr", null, h("div.lq-brand", null, markCanvas(2), h("span", null, h("b.g", null, "GIT"), h("b.z", null, "ZILLA"))), h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
     : null;
@@ -62,6 +69,20 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         h("div.dim", null, spectator ? "the match keeps running for everyone else." : "your hero drops out; the squad keeps fighting."),
         h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? "⏏ end class" : "⏏ leave the fight"),
         spectator ? h("button.btn", { "data-testid": "game-new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
+        !spectator && isPhone()
+          ? h("button.btn", {
+              "data-testid": "game-retrain",
+              onclick: () => {
+                menuSheet.hidden = true;
+                openTraining({
+                  onDone: () => {
+                    const p = loadGestureProfile();
+                    if (p) input?.setProfile?.(toThresholds(p));
+                  },
+                });
+              },
+            }, "↻ re-train gestures")
+          : null,
         h("button.btn.btn-primary", { onclick: () => (menuSheet.hidden = true) }, "▶ resume"),
       ),
     ),
@@ -587,9 +608,38 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     input = createInput({ canvas, toArena, getSelf: () => selfPos });
     if (isTouchDevice()) console.info("[kaiju] motion-v2 real input active; waiting for sensor delivery");
+    // per-player thresholds from the lobby gesture training (codex-input motion v3 consumes them when available)
+    const prof = loadGestureProfile();
+    if (prof && typeof input.setProfile === "function") {
+      try {
+        input.setProfile(toThresholds(prof));
+      } catch (e) {
+        console.warn("[kaiju] setProfile failed", e);
+      }
+    }
+    let lastNoticeAt = 0;
+    let wasFiring = false, lastAttackToast = 0;
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
-      app.conn.send({ t: "input", frame: input.sample() });
+      const frame = input.sample();
+      app.conn.send({ t: "input", frame });
+      el.dataset.input = input.mode;
+      const notice = input.lastGesture;
+      if (input.mode !== "keyboard" && notice && notice.at !== lastNoticeAt) {
+        // codex-input says exactly what fired and how ("⚡ dash · twist")
+        lastNoticeAt = notice.at;
+        const label = notice.kind === "dash" ? "⚡ dash" : notice.kind === "skill" ? "✦ skill" : "▸ attack";
+        gestureToast(notice.via ? `${label} · ${notice.via}` : label, notice.kind);
+      } else if (input.mode !== "keyboard" && notice === undefined) {
+        // older input module: derive from frames
+        if (frame.dash) gestureToast("⚡ dash", "dash");
+        if (frame.skill) gestureToast("✦ skill", "skill");
+        if (frame.fire && !wasFiring && performance.now() - lastAttackToast > 700) {
+          lastAttackToast = performance.now();
+          gestureToast("▸ attack", "attack");
+        }
+      }
+      wasFiring = frame.fire;
       updatePhoneControls();
     }, 1000 / 30);
     if (input.mode === "keyboard") showKeyHint();
@@ -632,6 +682,38 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
   };
 
+  const gToast = h("div.gesture-toast");
+  stage.append(gToast);
+  const gestureToast = (text: string, kind: string) => {
+    gToast.textContent = text;
+    gToast.className = `gesture-toast show ${kind}`;
+    clearTimeout(gToastTimer);
+    gToastTimer = window.setTimeout(() => gToast.classList.remove("show"), 400);
+  };
+  let gToastTimer = 0;
+  // long-press = skill (motion v3): a charging ring grows under the finger; it only draws — input owns the gesture
+  const pressRing = h("div.press-ring");
+  let pressTimer = 0;
+  const ringDown = (e: PointerEvent) => {
+    if (!input || input.mode === "keyboard" || (e.target as Element).closest("button, .game-menu")) return;
+    if (document.querySelector('[data-testid="input-charge"]')) return; // the input module draws its own (real) charge ring
+    pressRing.style.left = `${e.clientX}px`;
+    pressRing.style.top = `${e.clientY}px`;
+    pressRing.classList.remove("go");
+    pressTimer = window.setTimeout(() => {
+      document.body.append(pressRing);
+      void pressRing.offsetWidth;
+      pressRing.classList.add("go"); // starts after the tap window so quick taps don't flash a ring
+    }, 180);
+  };
+  const ringUp = () => {
+    clearTimeout(pressTimer);
+    setTimeout(() => pressRing.remove(), 80);
+  };
+  el.addEventListener("pointerdown", ringDown);
+  addEventListener("pointerup", ringUp);
+  addEventListener("pointercancel", ringUp);
+
   // Phones (motion or touch): sensor pill, recalibrate, a compact "enable tilt" pill, and mode-specific hints.
   // Nothing covers the arena during the intro; permission is normally granted in the lobby controls card.
   let enablePill: HTMLButtonElement | null = null;
@@ -665,15 +747,15 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (enablePill) enablePill.hidden = !(introOver && mode === "motion" && input.needsPermission);
     if (introOver && !tipsShown && latest?.status === "fighting") {
       tipsShown = true;
-      const tips = h("div.motion-tips", null, mode === "touch" ? "drag on the arena to move · tap to attack · DASH / SKILL buttons" : "tilt to move · tap or swing to attack · DASH / SKILL buttons");
+      const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing/tap = attack · twist = dash · spin/hold = skill");
       overlay.append(tips);
       setTimeout(() => tips.classList.add("fade"), 6000);
-      if (mode === "touch") showTouchSplit();
+      if (mode === "touch") setTimeout(showTouchSplit, 1200); // after the "$ ./fight --now" flash
     }
   };
   /** 5s ghost hint over the viewport for touch mode: what the left/right of the arena do. */
   const showTouchSplit = () => {
-    const ghost = h("div.touch-ghost", { "aria-hidden": "true" }, h("div.tg-l", null, "MOVE", h("small", null, "drag here")), h("div.tg-r", null, "ATTACK", h("small", null, "tap anywhere")));
+    const ghost = h("div.touch-ghost", { "aria-hidden": "true" }, h("div.tg-l", null, "MOVE", h("small", null, "drag here")), h("div.tg-r", null, "ATTACK", h("small", null, "tap here")));
     stage.append(ghost);
     const off = () => ghost.classList.add("fade");
     setTimeout(off, 5000);
@@ -993,6 +1075,15 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       const sk = document.querySelector<HTMLElement>(".kj-touch-skill");
       const da = document.querySelector<HTMLElement>(".kj-touch-dash");
       skillCdMax = Math.max(skillCdMax, me.skillCd);
+      const touchMode = input?.mode === "touch";
+      gsSkillLbl.textContent = touchMode ? "✦ hold" : "✦ spin or hold";
+      gsDashLbl.textContent = touchMode ? "⚡ double-tap" : "⚡ twist";
+      gsSkillState.textContent = me.skillCd > 0 ? `${me.skillCd.toFixed(1)}s` : "READY";
+      gsSkill.classList.toggle("ready", me.skillCd <= 0);
+      gsSkill.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
+      gsDashState.textContent = me.dashCd > 0 ? `${me.dashCd.toFixed(1)}s` : "READY";
+      gsDash.classList.toggle("ready", me.dashCd <= 0);
+      gsDash.style.setProperty("--cd", me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2).toFixed(2) : "1");
       if (sk) {
         sk.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
         sk.dataset.ready = me.skillCd > 0 ? "0" : "1";
@@ -1057,6 +1148,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       safeProbe.remove();
       document.body.append(muteBtn);
       removeEventListener("keydown", onKey);
+      removeEventListener("pointerup", ringUp);
+      removeEventListener("pointercancel", ringUp);
+      pressRing.remove();
       if (sendIv) clearInterval(sendIv);
       input?.dispose();
       feed?.dispose();

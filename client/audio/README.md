@@ -8,9 +8,10 @@ const audio = createAudio(); // one per app, retained across screens
 audio.music('lobby'); // remembers the selection; silent until unlocked
 
 // Call directly in a gesture handler. Resume is invoked before the first await.
-document.addEventListener('pointerdown', () => {
-  void audio.unlock().catch(console.warn);
-}, { capture: true });
+for (const type of ['pointerup', 'touchend', 'click', 'keydown'])
+  document.addEventListener(type, () => {
+    void audio.unlock().catch(console.warn);
+  }, { capture: true, passive: true });
 
 // On each new authoritative snapshot, once (never every render frame):
 audio.music(state.status === 'victory' || state.status === 'defeat'
@@ -40,3 +41,7 @@ SFX have per-category cooldowns and a 12-voice priority cap; warnings and match 
 Tests: `npx vitest run client/audio`. They verify the pure event mapping, personal emphasis, all skill variants, deterministic finite PCM, unique musical identities, phase tempo and loop boundaries. Human sound quality, device speakers, iOS audio routing and background/resume behavior still need listening on devices.
 
 Browser/DSP smoke (using the existing Playwright devDependency): start the dev server, then `npx tsx tools/audio-smoke.ts`. It exercises every audition control, checks lazy gesture unlock, observes actual PCM with an instrumented output analyser, checks phase durations, mute/unmute/volume/cleanup, and captures desktop/phone screenshots plus JSON under `docs/shots/<timestamp>-audio/`. This is browser rendering/DSP evidence, not a human listening test or a physical iOS test.
+
+Phone sessions: `unlock()` calls native `resume()` synchronously, before any promise boundary. It requests `navigator.audioSession.type = 'playback'` when supported; otherwise it starts a looping, inline, genuinely silent PCM WAV media element within the same gesture. The fallback element is not muted (its samples are zero); mute pauses it and dispose removes it. Session category is restored on dispose. Visibility/pageshow and suspended/interrupted state changes retry resume, with activating gesture listeners re-armed until output is running. No automatic suspend on hide. The lobby enable-motion tap should also call `audio.unlock()` directly, before awaiting permission/fullscreen; existing app-wide capture listeners already cover pointerup/touchend/click.
+
+`audio.state`, `audio.musicPlaying` and `readAudioDebugStatus()` expose audio state without creating a context. `?debug=input` displays state/session/music/mute/retry status. `npx tsx tools/phone-audio.ts` tests the real DEV landing under strict autoplay with portrait touch emulation, output DSP, both session branches, and visibility/pageshow recovery. Eight lifecycle unit tests cover interruptions, blocked media and synchronous resume. Browser emulation cannot establish physical iOS silent-switch behavior; real-phone listening remains necessary. Session rationale: [Audio Session specification](https://www.w3.org/TR/audio-session/), [Web Audio specification](https://www.w3.org/TR/webaudio/), and [WebKit background-resume issue](https://bugs.webkit.org/show_bug.cgi?id=252746).

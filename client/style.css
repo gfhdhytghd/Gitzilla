@@ -1298,3 +1298,142 @@ body:has(.game-menu:not([hidden])) .kj-touch-overlay { display: none; }
 .lq-brand b { font-family: var(--pix); font-size: 9px; font-weight: normal; }
 .lq-brand .g { color: #1a9e6a; } .lq-brand .z { color: #ff3e9a; }
 .qr-corner-mark { display: none; }
+
+/* ===================== motion v3: gesture training ===================== */
+.training { position: fixed; inset: 0; z-index: 1200; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top, 0px) + 14px) 18px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,.25) 0 1px, transparent 1px 3px), #05070a; text-align: center; touch-action: none; user-select: none; -webkit-user-select: none; }
+.training.flash { animation: tr-flash .4s ease-out; }
+@keyframes tr-flash { from { background-color: rgba(57,255,136,.25); } }
+.tr-head { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
+.tr-steps { display: flex; gap: 6px; }
+.tr-steps i { width: 14px; height: 6px; background: #1d3b2b; }
+.tr-steps i.on { background: var(--yellow); }
+.tr-steps i.done { background: var(--green); }
+.tr-stage { position: relative; flex: 1; min-height: 180px; width: 100%; display: grid; place-items: center; }
+.tr-title { font-family: var(--pix); font-size: 15px; color: var(--green); line-height: 1.4; }
+.tr-sub { font-size: 21px; color: var(--text); max-width: 420px; }
+.tr-meter { width: min(340px, 86vw); height: 14px; background: #0b1a12; box-shadow: 0 0 0 2px #1d3b2b; }
+.tr-meter i { display: block; height: 100%; width: 0; background: repeating-linear-gradient(90deg, var(--cyan) 0 6px, #1fb3cc 6px 8px); transition: width .08s; }
+.tr-meter-lbl { font-size: 17px; color: var(--dim); min-height: 1em; }
+.tr-checks { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; font-family: var(--pix); font-size: 12px; min-height: 22px; }
+.tr-check { color: #355a47; }
+.tr-check.ok { color: var(--green); }
+.tr-actions { display: flex; gap: 10px; width: 100%; justify-content: center; }
+.tr-actions .btn { min-height: 52px; }
+.tr-next[hidden] { display: none; }
+/* the pixel phone */
+.tr-phone { width: 64px; height: 112px; position: relative; background: #0d1117; box-shadow: 0 -4px 0 0 #8b949e, 0 4px 0 0 #8b949e, -4px 0 0 0 #8b949e, 4px 0 0 0 #8b949e, 8px 8px 0 4px rgba(0,0,0,.6); }
+.tr-screen { position: absolute; inset: 8px 6px 14px; background: #06110c; display: grid; place-items: center; font-family: var(--pix); font-size: 10px; color: var(--cyan); }
+.tr-phone::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 10px; height: 4px; margin-left: -5px; background: #8b949e; }
+.a-hold { animation: tr-hold 2.4s steps(4) infinite; }
+@keyframes tr-hold { 50% { transform: rotateX(18deg) translateY(2px); } }
+.a-tilt { animation: tr-tilt 2.4s steps(8) infinite; }
+@keyframes tr-tilt { 25% { transform: rotate(-22deg); } 50% { transform: rotate(0) skewY(0); } 75% { transform: rotate(22deg); } }
+.a-swing { animation: tr-swing 1.1s steps(5) infinite; }
+@keyframes tr-swing { 0%, 50%, 100% { transform: translate(0, 0); } 25% { transform: translate(34px, -18px) rotate(10deg); } }
+.a-twist { animation: tr-twist 1.2s steps(6) infinite; }
+@keyframes tr-twist { 0%, 40%, 100% { transform: rotateY(0) rotate(0); } 15% { transform: rotate(38deg); } 25% { transform: rotate(-6deg); } }
+.a-spin { animation: tr-spin 1.6s steps(12) infinite; }
+@keyframes tr-spin { to { transform: rotate(360deg); } }
+.tr-tiltpad { position: absolute; right: 8%; top: 50%; width: 96px; height: 96px; margin-top: -48px; box-shadow: inset 0 0 0 2px #1d3b2b; display: grid; place-items: center; }
+.tr-tiltpad[hidden] { display: none; }
+.tr-dot { width: 12px; height: 12px; background: var(--yellow); transition: transform .06s; }
+/* long-press charging ring (training + game) */
+.press-ring { position: fixed; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; pointer-events: none; z-index: 1300;
+  background: conic-gradient(var(--yellow) calc(var(--p, 0) * 360deg), rgba(255,210,61,.15) 0); -webkit-mask: radial-gradient(circle, transparent 28px, #000 29px); mask: radial-gradient(circle, transparent 28px, #000 29px); }
+.press-ring.go { animation: press-charge .55s linear forwards; }
+@property --p { syntax: "<number>"; inherits: false; initial-value: 0; }
+@keyframes press-charge { from { --p: 0; } to { --p: 1; } }
+.cc-train { margin-top: 8px; font-size: 17px; }
+.cc-train .btn-link { font-size: 18px; color: var(--yellow); }
+.cc-legend { margin-top: 4px; font-size: 15px; color: var(--dim); }
+
+/* ===================== motion v3 in game: no controls, status only ===================== */
+/* motion mode: drop every drawn control (DASH/SKILL buttons, joystick) — the phone body is the controller */
+body:has(.screen.game[data-input="motion"]) .kj-touch-button,
+body:has(.screen.game[data-input="motion"]) .kj-touch-joystick-zone,
+body:has(.screen.game[data-input="motion"]) .kj-touch-joystick { display: none !important; }
+.gest-status { display: none; }
+.screen.game.phone-portrait[data-input="motion"] .gest-status { display: flex; gap: 8px; }
+.gs-pill { flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 8px 10px; font-size: 19px; color: var(--dim);
+  background: linear-gradient(90deg, rgba(61,232,255,.16) calc(var(--cd, 1) * 100%), rgba(2,6,4,.7) 0); box-shadow: 0 0 0 2px #29483a; }
+.gs-pill b { font-family: var(--pix); font-size: 10px; font-weight: normal; }
+.gs-pill.ready { color: var(--text); box-shadow: 0 0 0 2px var(--cyan), 0 0 12px rgba(61,232,255,.35); }
+.gs-pill.ready b { color: var(--cyan); }
+.gs-pill.dash.ready { box-shadow: 0 0 0 2px var(--green); }
+.gs-pill.dash.ready b { color: var(--green); }
+/* motion mode deck has no buttons below: give the space back */
+.screen.game.phone-portrait[data-input="motion"] .deck { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+/* gesture toast: tiny, 400ms, bottom of the viewport */
+.gesture-toast { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%) scale(.8); opacity: 0; pointer-events: none; z-index: 4;
+  font-family: var(--pix); font-size: 11px; padding: 4px 8px; background: rgba(0,0,0,.7); color: #fff; text-shadow: 1px 1px 0 #000; transition: opacity .12s, transform .12s; }
+.gesture-toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+.gesture-toast.dash { color: var(--green); } .gesture-toast.skill { color: var(--cyan); } .gesture-toast.attack { color: var(--yellow); }
+.gs-pill > span { white-space: nowrap; font-size: 17px; }
+
+/* weapon names as highlighted code */
+code.codex { font-family: var(--term); white-space: nowrap; letter-spacing: 0; background: rgba(0,0,0,.35); padding: 0 3px; }
+.codex .t-kw { color: #ff6ac1; } .codex .t-fn { color: var(--cyan); } .codex .t-id { color: #e8fff2; }
+.codex .t-str { color: var(--yellow); } .codex .t-num { color: var(--amber); } .codex .t-op { color: #9aa7b4; }
+.tag-weapon { white-space: nowrap; max-width: 100%; }
+.kv-weapon { white-space: nowrap; }
+.hs-weapon { overflow: visible; text-overflow: clip; }
+.hs-proj { color: var(--dim); }
+.ap-name code.codex { font-size: .8em; margin-left: 4px; }
+.hs-weapon { display: flex; align-items: baseline; gap: 2px; min-width: 0; }
+.hs-weapon code.codex { flex: none; }
+.hs-weapon .hs-proj { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* input v3 draws no buttons in any phone mode: status pills for touch too, no reserved button space */
+.screen.game.phone-portrait[data-input="touch"] .gest-status { display: flex; gap: 8px; }
+.screen.game.phone-portrait[data-input="touch"] .deck { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+.screen.game.phone-portrait.deck-compact .deck { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); }
+
+/* Hall of Monsters as a modal (phones / small screens): a visible way out. */
+.hall-close { display: none; }
+.landing.hall-open .landing-hall .hall-close { display: block; margin: 0 0 8px auto; min-height: 44px; min-width: 44px; font-size: 12px; }
+@media (max-width: 600px) {
+  .landing.hall-open .landing-hall { width: 100vw; max-height: 100dvh; overflow: auto; top: 0; transform: translateX(-50%);
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+}
+.gh-boss { border-top-color: #3a1620; }
+.gh-boss .gh-row:hover, .gh-boss .gh-row:focus-visible { background: rgba(255,51,85,.14); }
+.gh-boss .gh-row:hover .gh-name::before { color: var(--red); }
+.gh-boss .gh-mark { color: var(--red); }
+
+/* ===== ux pass 2 ===== */
+.interrupt-banner { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); z-index: 1100; max-width: min(560px, 94vw);
+  padding: 10px 14px; font-size: 20px; color: #1a1300; background: var(--amber); box-shadow: 0 0 0 3px #000, 6px 6px 0 rgba(0,0,0,.5); display: flex; gap: 10px; align-items: center; }
+.interrupt-banner .btn-link { color: #1a1300; font-size: 20px; }
+/* PR-3: no joystick ring or touch widgets over intros / outros */
+body:has(.screen.game .intro, .screen.game .bsod, .screen.game .defeat) .kj-touch-overlay { display: none !important; }
+/* PR-5: room under the sticky next-step bar; on phones the bar is the one START */
+@media (max-width: 600px) and (orientation: portrait) {
+  .lobby-scroll { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px); }
+  .screen.lobby:has(.next-bar.go) .boss-panel .btn-start, .screen.lobby .boss-panel .btn-start { display: none !important; }
+  .screen.lobby .boss-panel .start-hint { display: none; }
+}
+/* PR-6: lesson/toast chips in the deck get the full width */
+.deck .edu-feed, .deck .edu-feed .edu-card, .deck .edu-quiz { width: 100%; max-width: none; align-self: stretch; box-sizing: border-box; }
+/* EDU-4: projector classroom roster — dense grid, readable from the back row */
+.class-counter { font-family: var(--pix); font-size: 26px; color: var(--yellow); text-shadow: 3px 3px 0 #000; margin-top: 6px; }
+.class-counter[hidden] { display: none; }
+body.bigscreen .screen.lobby.edu .squad-list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+body.bigscreen .screen.lobby.edu .pcard { min-height: 64px; padding: 6px; align-items: center; }
+body.bigscreen .screen.lobby.edu .pcard-portrait { width: 52px; height: 52px; }
+body.bigscreen .screen.lobby.edu .pcard-portrait canvas { width: 48px; height: 48px; }
+body.bigscreen .screen.lobby.edu .pcard-name { font-size: 14px; }
+body.bigscreen .screen.lobby.edu .pcard-repo, body.bigscreen .screen.lobby.edu .pcard-title { display: none; }
+.gpa-letter { font-weight: normal; }
+body.bigscreen .screen.lobby.edu .pcard-info { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+body.bigscreen .screen.lobby.edu .gpa-txt { display: none; }
+body.bigscreen .screen.lobby.edu .gpa-letter { font-family: var(--pix); font-size: 28px; color: var(--c, var(--green)); text-shadow: 3px 3px 0 #000; }
+
+/* EDU-5: projector brawl — big top-10 leaderboard in the right gutter, lesson cards in the left gutter */
+body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .hud-team { width: calc(var(--gx) - 16px); max-width: 420px; top: calc(var(--gy) + 4px); padding: 8px 10px; }
+body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .tm-row { font-size: 28px; line-height: 1.1; grid-template-columns: minmax(0, 1fr) 90px; }
+body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .tm-bar { display: none; }
+body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .tm-st { font-size: 26px; text-align: right; }
+body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .hud-team::before { content: "$ leaderboard"; display: block; font-family: var(--pix); font-size: 14px; color: var(--green); margin-bottom: 6px; }
+body.bigscreen .screen.game .edu-feed.v-screen.edu-mount { left: 8px; right: auto; bottom: auto; top: calc(var(--gy) + 4px); transform: none; width: calc(var(--gx) - 16px); max-width: 440px; opacity: .95; }
+body.bigscreen .screen.game .edu-feed.v-screen.edu-mount .edu-card { max-height: 70vh; overflow: hidden; }
+body.bigscreen .screen.game:has(.hud-pvp:not(.hidden)) .hud-log { display: none; }

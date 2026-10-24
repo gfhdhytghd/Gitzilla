@@ -108,6 +108,8 @@ export function createMockConn(opts: ConnOpts): Conn {
   const pkit = (slug: string): PlayerKit => {
     const k = pkit0(slug);
     if (lobby.mode === "edu" && !k.quality?.length) k.quality = fakeQuality(k.seed);
+    const EXPR = ["for { go serve() }", "yield from app()", "unsafe { search() }", "await Promise.all(render())", "try { parse() }"];
+    if (k.code?.weapon && !/[({]/.test(k.code.weapon.name)) k.code.weapon = { ...k.code.weapon, name: EXPR[k.seed % EXPR.length] };
     if (!k.code?.signature) k.code = { weapon: k.code?.weapon, tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
     return k;
   };

@@ -1,6 +1,7 @@
 // Terminal-style HUD overlay (DOM). Updated every frame but only touches the DOM when a value changes.
 import type { BossKit, GameEvent, MatchState, PlayerState } from "../../shared/types";
 import { fmtTime, h, shortRepo } from "./util";
+import { codeSpan } from "./codefmt";
 
 const setText = (el: HTMLElement, s: string) => {
   if (el.textContent !== s) el.textContent = s;
@@ -198,7 +199,11 @@ export function createHud(spectator: boolean): Hud {
         arNum.title = "armor = try{} — catches hits first, regenerates";
         setText(enNum, `${Math.round(me.energy)}MB`);
         const w = me.kit.code?.weapon;
-        setText(weaponLine, w ? `⌐ ${w.name}  ${w.projectiles.slice(0, 2).map((x) => `"${x}"`).join(" ")}` : `⌐ ${me.kit.weapon}`);
+        const wName = w?.name ?? me.kit.weapon;
+        if (weaponLine.dataset.name !== wName) {
+          weaponLine.dataset.name = wName;
+          weaponLine.replaceChildren("⌐ ", codeSpan(wName), ...(w ? [h("span.hs-proj", null, ` fires ${w.projectiles.slice(0, 2).map((x) => `"${x}"`).join(" ")}`)] : []));
+        }
         setStyle(enFill, "width", `${Math.max(0, Math.min(100, (me.energy / me.kit.maxEnergy) * 100)).toFixed(1)}%`);
         toggle(selfPanel, "low", me.hp <= 2 && me.alive);
         const perks = me.perks ?? [];
@@ -284,7 +289,7 @@ export function createHud(spectator: boolean): Hud {
       // team
       // PvP: a live leaderboard (top N by standing, 30-student classes don't fit a full list)
       const others = s.pvp
-        ? rankPvp(s).slice(0, spectator ? 12 : 6).map((r) => s.players.find((p) => p.id === r.id)!).filter(Boolean)
+        ? rankPvp(s).slice(0, spectator ? 10 : 6).map((r) => s.players.find((p) => p.id === r.id)!).filter(Boolean)
         : s.players.filter((p) => spectator || p.id !== you);
       const seen = new Set<string>();
       for (const p of others) {
@@ -296,7 +301,8 @@ export function createHud(spectator: boolean): Hud {
           teamRows.set(p.id, r);
           team.append(r.row);
         }
-        setText(r.name, `${p.name}`);
+        const rank = s.pvp ? others.indexOf(p) + 1 : 0;
+        setText(r.name, rank ? `${rank}. ${p.name}` : `${p.name}`);
         r.name.title = shortRepo(p.kit.repo);
         setStyle(r.bar.firstElementChild as HTMLElement, "width", `${Math.max(0, (p.hp / p.kit.maxHp) * 100).toFixed(0)}%`);
         setStyle(r.row, "--c", p.kit.palette[0] ?? "#39ff88");

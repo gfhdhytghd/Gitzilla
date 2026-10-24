@@ -67,8 +67,10 @@ export function consumeAuthError() {
 }
 
 /** Lobby widget: hidden when auth is disabled; Connect button when signed out; picker when signed in. */
-export function createGithubPicker(onPick: (fullName: string) => void): HTMLElement {
-  const el = h("div.gh", { style: "display:none" });
+export function createGithubPicker(onPick: (fullName: string) => void, opts: { kind?: "hero" | "boss" } = {}): HTMLElement {
+  const boss = opts.kind === "boss";
+  const tid = (id: string) => (boss ? `boss-${id}` : id); // unique test ids when both pickers are on screen
+  const el = h(`div.gh${boss ? ".gh-boss" : ""}`, { style: "display:none" });
   fetchMe().then(({ enabled, user }) => {
     if (!enabled) return;
     el.style.display = "";
@@ -78,15 +80,15 @@ export function createGithubPicker(onPick: (fullName: string) => void): HTMLElem
 
   function signedOut() {
     el.replaceChildren(
-      h("button.btn.btn-gh", { "data-testid": "github-connect", onclick: () => login() }, h("span.gh-mark", null, "◉"), " Connect GitHub"),
-      h("span.gh-hint.dim", null, " pick from your own repos, private too 🔒"),
+      h("button.btn.btn-gh", { "data-testid": tid("github-connect"), onclick: () => login() }, h("span.gh-mark", null, "◉"), " Connect GitHub"),
+      h("span.gh-hint.dim", null, boss ? " summon one of your own repos as the boss 🔒" : " pick from your own repos, private too 🔒"),
     );
   }
 
   function signedIn(user: GhUser) {
     const avatar = user.avatar ? h("img.gh-avatar", { src: user.avatar, alt: "", width: 16, height: 16 }) : h("span.gh-avatar.ph", null, "@");
     const filter = h("input.term-input.gh-filter", { placeholder: "filter repos…", spellcheck: "false", autocomplete: "off", "aria-label": "filter repos" }) as HTMLInputElement;
-    const list = h("div.gh-list", { "data-testid": "github-repos" }, h("div.dim.blink", null, "$ gh repo list --limit 300 …"));
+    const list = h("div.gh-list", { "data-testid": tid("github-repos") }, h("div.dim.blink", null, "$ gh repo list --limit 300 …"));
     el.replaceChildren(
       h(
         "div.gh-who",

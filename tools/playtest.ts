@@ -66,7 +66,7 @@ interface Client {
   context: BrowserContext;
   page: Page;
   telemetry: Telemetry;
-  touchDriver?: { session: CDPSession; x: number; y: number; originX: number; originY: number };
+  touchDriver?: { session: CDPSession; x: number; y: number; originX: number; originY: number; down?: boolean; nextAttack?: number };
 }
 
 export async function playtest(options: Options): Promise<number> {
@@ -255,12 +255,18 @@ export async function playtest(options: Options): Promise<number> {
       context.setDefaultTimeout(UI_TIMEOUT);
       if (phone) await context.addInitScript(() => {
         // No synthetic sensors in this generic harness: exercise the real touch fallback.
-        // tools/motion-v2.ts separately proves sensor input against authoritative snapshots.
+        // tools/motion-v3.ts separately proves sensor input against authoritative snapshots.
         Object.defineProperty(window, 'DeviceMotionEvent', { configurable: true, value: undefined });
         Object.defineProperty(window, 'DeviceOrientationEvent', { configurable: true, value: undefined });
       });
       const client: Client = { name: spectator ? 'Phone spectator' : `Playtester ${i + 1}`, phone, spectator, context,
         page: await context.newPage(), telemetry: { snapshots: 0, fightingSnapshots: 0, inputs: 0, moving: 0, firing: 0, dashes: 0, skills: 0, ack: -1, autopsy: false, sources: {}, lessons: 0, quizAnswers: 0 } };
+      // DEV's broad /data/ watch ignore can leave old input transforms cached.
+      const inputRevision = Date.now();
+      await client.page.route('**/client/input/**', route => {
+        const url = new URL(route.request().url()); url.searchParams.set('input-revision', String(inputRevision));
+        return route.continue({ url: url.toString() });
+      });
       clients.push(client);
       attach(client);
     }
@@ -333,38 +339,49 @@ export async function playtest(options: Options): Promise<number> {
       const skillPeriod = Math.floor(elapsed / 12);
       await Promise.all(fighters.map(async (client, index) => {
         const direction = directions[(Math.floor(elapsed / 1.5) + index) % directions.length];
-        const old = held.get(client);
-        if (old !== direction) {
-          if (old) await client.page.keyboard.up(old);
-          await client.page.keyboard.down(direction);
-          held.set(client, direction);
+        const gesturePhone = client.phone && await client.page.locator('.kj-touch-overlay').count() > 0;
+        if (!gesturePhone) {
+          const old = held.get(client);
+          if (old !== direction) {
+            if (old) await client.page.keyboard.up(old);
+            await client.page.keyboard.down(direction); held.set(client, direction);
+          }
+          if (dashPeriod !== lastDash) await client.page.keyboard.press('Space');
+          if (skillPeriod !== lastSkill) await client.page.keyboard.press('KeyE');
+          return;
         }
-        if (dashPeriod !== lastDash) await client.page.keyboard.press('Space');
-        if (skillPeriod !== lastSkill) await client.page.keyboard.press('KeyE');
-        if (client.phone) {
-          const zone = client.page.locator('.kj-touch-joystick-zone');
-          if (!client.touchDriver && await zone.isVisible()) {
-            const box = await zone.boundingBox();
-            if (box) {
-              const x = box.x + box.width * 0.35, y = box.y + box.height * 0.5;
-              const session = await client.context.newCDPSession(client.page);
-              client.touchDriver = { session, x, y, originX: x, originY: y };
-              await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x, y }] });
-            }
+        // Real phone fallback: invisible drag + tap/double-tap/long-press. No buttons.
+        if (!client.touchDriver) {
+          const box = await client.page.getByTestId('game-canvas').boundingBox();
+          if (!box) return;
+          const x = box.x + box.width * 0.35, y = box.y + box.height * 0.5;
+          client.touchDriver = { session: await client.context.newCDPSession(client.page), x, y, originX: x, originY: y, nextAttack: 0 };
+        }
+        const touch = client.touchDriver;
+        const release = async () => {
+          if (touch.down) await touch.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+          touch.down = false;
+        };
+        if (skillPeriod !== lastSkill) {
+          await release();
+          await touch.session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: touch.originX, y: touch.originY }] });
+          await sleep(620);
+          await touch.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        } else if (dashPeriod !== lastDash) {
+          await release(); await client.page.touchscreen.tap(touch.originX, touch.originY);
+          await sleep(80); await client.page.touchscreen.tap(touch.originX, touch.originY);
+        } else if (Date.now() >= (touch.nextAttack ?? 0)) {
+          await release(); await client.page.touchscreen.tap(touch.originX, touch.originY);
+          // Let the single-tap classifier rule out a second tap before starting a drag.
+          await sleep(330); touch.nextAttack = Date.now() + 1200;
+        } else {
+          if (!touch.down) {
+            await touch.session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: touch.originX, y: touch.originY }] });
+            touch.down = true;
           }
-          const touch = client.touchDriver;
-          if (touch) {
-            const vector = { KeyW: [0, -1], KeyD: [1, 0], KeyS: [0, 1], KeyA: [-1, 0] }[direction as 'KeyW' | 'KeyD' | 'KeyS' | 'KeyA'];
-            touch.x = touch.originX + vector[0] * 44; touch.y = touch.originY + vector[1] * 44;
-            const joy = { id: 1, x: touch.x, y: touch.y };
-            await touch.session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [joy] });
-            for (const action of [dashPeriod !== lastDash ? 'dash' : '', skillPeriod !== lastSkill ? 'skill' : ''].filter(Boolean)) {
-              const box = await client.page.locator(`.kj-touch-${action}`).boundingBox();
-              if (!box) continue;
-              await touch.session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [joy, { id: 2, x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
-              await touch.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [joy] });
-            }
-          }
+          const vector = { KeyW: [0, -1], KeyD: [1, 0], KeyS: [0, 1], KeyA: [-1, 0] }[direction as 'KeyW' | 'KeyD' | 'KeyS' | 'KeyA'];
+          touch.x = touch.originX + vector[0] * 44; touch.y = touch.originY + vector[1] * 44;
+          await touch.session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: touch.x, y: touch.y }] });
         }
       }));
       lastDash = dashPeriod;
@@ -382,7 +399,10 @@ export async function playtest(options: Options): Promise<number> {
       await client.page.keyboard.up('KeyJ');
       const direction = held.get(client);
       if (direction) await client.page.keyboard.up(direction);
-      if (client.touchDriver) await client.touchDriver.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      if (client.touchDriver?.down) {
+        await client.touchDriver.session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        client.touchDriver.down = false;
+      }
     }));
     phase = 'autopsy';
     try { await owner.page.getByTestId('autopsy').waitFor({ state: 'visible', timeout: 5000 }); }

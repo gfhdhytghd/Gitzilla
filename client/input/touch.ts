@@ -1,126 +1,72 @@
 import { normalize } from './gestures';
 import { recordGesture } from './debug';
+import { createTouchGestureState, recognizeTouch, type TouchAction, type TouchSignal } from './touch-gestures';
 
 export interface TouchControls {
-  move: [number, number];
-  readonly fire: boolean;
-  dash: boolean;
-  skill: boolean;
+  move: [number, number]; readonly fire: boolean; dash: boolean; skill: boolean;
+  /** Legacy method name: enables invisible drag movement only, never draws a joystick. */
   setJoystick(enabled: boolean): void;
-  clear(): void;
-  dispose(): void;
+  clear(): void; dispose(): void;
 }
 
-/** Minimal self-contained markup; .kj-touch-* classes are available to the app stylesheet. */
-export function createTouchControls(options: { joystick?: boolean } = {}): TouchControls {
-  let joystickEnabled = options.joystick ?? true;
+/** Full-screen gesture surface. No drawn buttons/joystick, including sensor fallback. */
+export function createTouchControls(options: { joystick?: boolean; onAction?: (action: TouchAction, via: string) => void } = {}): TouchControls {
+  let dragEnabled = options.joystick ?? true;
   let fireUntil = 0;
+  let pointer: number | null = null;
+  let origin: [number, number] = [0, 0];
+  let gestures = createTouchGestureState();
   const overlay = document.createElement('div');
   overlay.className = 'kj-touch-overlay';
-  const zone = document.createElement('div');
-  zone.className = 'kj-touch-joystick-zone';
-  zone.setAttribute('aria-label', 'Drag to move');
-  const stick = document.createElement('div');
-  stick.className = 'kj-touch-joystick';
-  const knob = document.createElement('div');
-  knob.className = 'kj-touch-knob';
-  stick.append(knob);
-  zone.append(stick);
-  overlay.append(zone);
+  overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:30';
+  const ring = document.createElement('div');
+  ring.setAttribute('data-testid', 'input-charge');
+  ring.setAttribute('aria-hidden', 'true');
+  ring.style.cssText = 'position:absolute;width:52px;height:52px;margin:-26px;border-radius:50%;pointer-events:none;display:none';
+  overlay.append(ring);
   const state: TouchControls = {
     move: [0, 0], dash: false, skill: false,
-    get fire() { return firePointers.size > 0 || performance.now() < fireUntil; },
-    setJoystick(enabled) {
-      joystickEnabled = enabled;
-      zone.style.display = enabled ? '' : 'none';
-      overlay.setAttribute('data-mode', enabled ? 'touch' : 'motion');
-      if (!enabled) { joystickPointer = null; state.move = [0, 0]; knob.style.transform = ''; }
-    },
-    clear() {
-      joystickPointer = null;
-      state.move = [0, 0];
-      fireUntil = 0;
-      state.dash = state.skill = false;
-      firePointers.clear();
-      knob.style.transform = '';
-    },
-    dispose() { cleanup.forEach(fn => fn()); overlay.remove(); },
+    get fire() { return performance.now() < fireUntil; },
+    setJoystick(enabled) { dragEnabled = enabled; overlay.setAttribute('data-mode', enabled ? 'touch' : 'motion'); state.move = [0, 0]; },
+    clear() { pointer = null; state.move = [0, 0]; fireUntil = 0; state.dash = state.skill = false;
+      gestures = createTouchGestureState(); ring.style.display = 'none'; },
+    dispose() { state.clear(); window.clearInterval(timer); cleanup.forEach(fn => fn()); overlay.remove(); },
+  };
+  const process = (event: TouchSignal) => {
+    const result = recognizeTouch(gestures, event); gestures = result.state;
+    ring.style.display = result.charge > 0.08 ? '' : 'none';
+    ring.style.background = `conic-gradient(#c8ff70 ${result.charge * 360}deg,#152c4288 0deg)`;
+    ring.style.boxShadow = 'inset 0 0 0 19px #0b112099';
+    if (result.action) {
+      const via = result.action === 'skill' ? 'long-press' : result.action === 'dash' ? 'double-tap' : 'tap';
+      if (result.action === 'attack') fireUntil = event.at + 600;
+      else { state[result.action] = true; fireUntil = 0; }
+      recordGesture(`${via} → ${result.action}`); options.onAction?.(result.action, via);
+    }
   };
   const cleanup: (() => void)[] = [];
-  const listen = (target: EventTarget, type: string, fn: (e: PointerEvent) => void) => {
-    target.addEventListener(type, fn as EventListener);
-    cleanup.push(() => target.removeEventListener(type, fn as EventListener));
+  const listen = (type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel', fn: (e: PointerEvent) => void) => {
+    window.addEventListener(type, fn, { passive: false });
+    cleanup.push(() => window.removeEventListener(type, fn));
   };
-  let joystickPointer: number | null = null;
-  let origin: [number, number] = [0, 0];
-  const firePointers = new Set<number>();
-  const updateJoystick = (e: PointerEvent) => {
-    state.move = normalize((e.clientX - origin[0]) / 44, (e.clientY - origin[1]) / 44);
-    knob.style.transform = `translate(${state.move[0] * 30}px, ${state.move[1] * 30}px)`;
-  };
-  listen(zone, 'pointerdown', e => {
-    if (!joystickEnabled || joystickPointer !== null) return;
-    e.preventDefault();
-    joystickPointer = e.pointerId;
-    origin = [e.clientX, e.clientY];
-    const rect = zone.getBoundingClientRect();
-    stick.style.left = `${e.clientX - rect.left - 48}px`;
-    stick.style.top = `${e.clientY - rect.top - 48}px`;
-    stick.style.bottom = 'auto';
-    zone.setPointerCapture?.(e.pointerId);
-    updateJoystick(e);
+  listen('pointerdown', e => {
+    if ((e.pointerType !== 'touch' && e.pointerType !== 'pen') || pointer !== null) return;
+    if ((e.target as Element | null)?.closest?.('button,input,textarea,select,a,[contenteditable="true"],[data-input-ignore]')) return;
+    e.preventDefault(); pointer = e.pointerId; origin = [e.clientX, e.clientY];
+    ring.style.left = `${e.clientX}px`; ring.style.top = `${e.clientY}px`;
+    process({ type: 'down', at: performance.now(), x: e.clientX, y: e.clientY });
   });
-  const button = (action: 'dash' | 'skill') => {
-    const el = document.createElement('button');
-    el.className = `kj-touch-button kj-touch-${action}`;
-    el.type = 'button';
-    el.setAttribute('aria-label', action.toUpperCase());
-    el.setAttribute('data-testid', `input-${action}`);
-    el.textContent = action.toUpperCase();
-    listen(el, 'pointerdown', e => {
-      e.preventDefault();
-      state[action] = true;
-      recordGesture(`BUTTON → ${action}`);
-      el.setPointerCapture?.(e.pointerId);
-    });
-    overlay.append(el);
-  };
-  button('dash');
-  button('skill');
-  // Zero-specificity defaults let the app restyle the classes without !important.
-  const style = document.createElement('style');
-  style.textContent = `
-    :where(.kj-touch-overlay) { position:fixed;inset:0;z-index:30;pointer-events:none;user-select:none;-webkit-user-select:none }
-    :where(.kj-touch-joystick-zone) { position:absolute;left:0;bottom:0;width:50%;height:70%;pointer-events:auto;touch-action:none }
-    :where(.kj-touch-joystick) { position:absolute;left:28%;bottom:18%;width:96px;height:96px;border:2px solid #75dfca88;border-radius:50%;background:#071c2a66;pointer-events:none }
-    :where(.kj-touch-knob) { position:absolute;left:32px;top:32px;width:32px;height:32px;border-radius:50%;background:#75dfca99 }
-    :where(.kj-touch-button) { position:absolute;right:16px;width:86px;height:70px;border:2px solid #75dfca;border-radius:12px;background:#102839dd;color:#d5fff5;font:bold 12px monospace;pointer-events:auto;touch-action:none }
-    :where(.kj-touch-dash) { bottom:24px }
-    :where(.kj-touch-skill) { bottom:106px }
-  `;
-  overlay.append(style);
-  listen(window, 'pointermove', e => {
-    if (e.pointerId === joystickPointer) { e.preventDefault(); updateJoystick(e); }
+  listen('pointermove', e => {
+    if (e.pointerId !== pointer) return;
+    e.preventDefault(); process({ type: 'move', at: performance.now(), x: e.clientX, y: e.clientY });
+    if (dragEnabled) state.move = normalize((e.clientX - origin[0]) / 44, (e.clientY - origin[1]) / 44);
   });
-  listen(window, 'pointerdown', e => {
-    if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
-    if ((e.target as Element | null)?.closest?.('input, textarea, select, button, a, [contenteditable="true"]')) return;
-    firePointers.add(e.pointerId);
-    fireUntil = Math.max(fireUntil, performance.now() + 400);
-    recordGesture('TAP / HOLD → attack');
+  listen('pointerup', e => {
+    if (e.pointerId !== pointer) return;
+    process({ type: 'up', at: performance.now() }); pointer = null; state.move = [0, 0];
   });
-  const release = (e: PointerEvent) => {
-    if (e.pointerId === joystickPointer) {
-      joystickPointer = null;
-      state.move = [0, 0];
-      knob.style.transform = '';
-    }
-    firePointers.delete(e.pointerId);
-  };
-  listen(window, 'pointerup', release);
-  listen(window, 'pointercancel', release);
-  listen(zone, 'lostpointercapture', release);
-  state.setJoystick(joystickEnabled);
-  document.body.append(overlay);
+  listen('pointercancel', e => { if (e.pointerId === pointer) state.clear(); });
+  const timer = window.setInterval(() => process({ type: 'tick', at: performance.now() }), 16);
+  state.setJoystick(dragEnabled); document.body.append(overlay);
   return state;
 }
