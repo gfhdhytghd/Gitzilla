@@ -164,6 +164,7 @@ function exitButtons(app: AppCtx): HTMLElement {
 
 export function createAutopsy(app: AppCtx): Screen {
   const a0 = app.autopsy!;
+  if (a0.mode === "pvp") return createDuelAutopsy(app);
   if (!a0.boss) return createPvpAutopsy(app);
   const a = { ...a0, boss: a0.boss };
   const lobby = app.lobby;
@@ -420,4 +421,18 @@ function createPvpAutopsy(app: AppCtx): Screen {
       el.remove();
     },
   };
+}
+
+function createDuelAutopsy(app: AppCtx): Screen {
+  const a = app.autopsy!, ranking = a.ranking ?? [];
+  const backdrop = createBackdrop({ dim: 0.85 });
+  const el = h("div.screen.autopsy", { "data-testid": "autopsy" }, backdrop.canvas,
+    h("div.ap-scroll", null, h("header.ap-head", null,
+      h("div.ap-verdict.win", null, "PVP RESULTS"),
+      h("div.ap-sub", null, a.mvp ? `Winner: ${ranking.find(p => p.id === a.mvp)?.name ?? "Player"}` : "Draw"),
+      h("p", null, "Round wins, then KOs, then damage decide the ranking."),
+      ...ranking.map((p, i) => h("div.rp-card", null, `#${i + 1} ${p.name} · ${p.repo} · ${p.roundWins} round wins · ${p.kos} KOs · ${p.damage.toFixed(1)} damage`)),
+      isOwner(app) ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "Rematch") : h("p", null, "Waiting for the host to start a rematch"),
+      exitButtons(app))));
+  return { el, update() {}, destroy() { backdrop.destroy(); el.remove(); } };
 }

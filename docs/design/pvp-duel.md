@@ -1,0 +1,13 @@
+# Two-player PvP
+
+`POST /api/room?mode=pvp` creates a duel room. The landing page and lobby expose **PvP duel**. The room has two human player slots; read-only screens can watch. Bots and boss selection are rejected by the server. Both players connect GitHub and select their own repository. Controls are the ordinary keyboard, touch, or motion controls, including simultaneous movement and firing.
+
+Eligibility is checked server-side with that player's OAuth token against GitHub's authenticated `/user` and `/repos/{owner}/{repo}` responses. Numeric user IDs establish ownership. Owned repositories must not be forks (even when GitHub reports administrator permission). Otherwise the repository must be public and the user must have explicit `maintain` or `admin` permission. Read, write, triage, and mere public accessibility do not qualify. Missing metadata fails closed. Two different authenticated GitHub IDs are required. Each start rechecks both tokens and repositories; roster, mode, or selection changes while verification runs abort the start. Lobby reconnects clear eligibility and require reselection. Credentials and identity proofs are not persisted.
+
+Owned private repositories reuse existing credentialed-analysis protections: no public cache, generative design call, Hall publication, or persisted source/genesis. Source-derived art is still visible to participants in the room, as in ordinary private-repository battles. Only select a private project if sharing the room with the opponent is appropriate.
+
+The existing deterministic PvP simulation runs in a separate `pvp` mode with regular balanced hero kits. It never uses classroom grading, quizzes, or lesson effects. Up to three 75-second rounds; most KOs wins each round, then damage; an exact tie awards no round win. First to two round wins ends early. Equal final scores are a draw. Players respawn after a KO. Leaving the match forfeits to the remaining player. A disconnected player can reconnect using the existing room session. Classroom remains the shared-Boss lesson workflow.
+
+References: [authenticated user](https://docs.github.com/en/rest/users/users#get-the-authenticated-user), [repository metadata](https://docs.github.com/en/rest/repos/repos#get-a-repository).
+
+Validation: `npm run typecheck`, `npm test`, `npm run build`, and `npx tsx tools/pvp-smoke.ts`. The smoke uses only synthetic GitHub identities and local analysis, opens two Chromium players, verifies `pvp` snapshots with two players and no Boss, exercises keyboard movement, and reaches the results screen. It does not prove live OAuth scopes or physical-device motion behavior.

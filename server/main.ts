@@ -1,3 +1,4 @@
+import { verifyPvpAccess } from './pvp-access.ts';
 import { analyzeClassroomSubmission } from '../analysis/classroom.ts';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import https from 'node:https';
@@ -47,7 +48,7 @@ const rooms = new RoomServer(wss, {
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
   analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
-  buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
+  verifyPvpAccess, buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
   defaultRubric, parseRubric, scoreRepo,
   feedbackForPlayer(profile, rubric, context) {
     return buildFeedback(profile, rubric, scoreRepo(profile, rubric), context, context.quiz);
@@ -114,8 +115,8 @@ server.on('request', (req, res) => {
     if (url.pathname === '/api/room' && req.method === 'POST') {
       req.resume();
       const mode = url.searchParams.get('mode');
-      if (mode && mode !== 'battle' && mode !== 'edu') { json(res, 400, { error: 'Choose battle or edu mode' }); return; }
-      const room = rooms.createRoom(undefined, mode === 'edu' ? 'edu' : 'battle');
+      if (mode && mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') { json(res, 400, { error: 'Choose battle or edu mode' }); return; }
+      const room = rooms.createRoom(undefined, mode === 'edu' ? 'edu' : mode === 'pvp' ? 'pvp' : 'battle');
       printRoomQr(room);
       json(res, 201, { room });
       return;

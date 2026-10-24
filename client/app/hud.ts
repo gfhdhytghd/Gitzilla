@@ -233,9 +233,10 @@ export function createHud(spectator: boolean): Hud {
         toggle(dashEl, "ready", me.dashCd <= 0);
         setStyle(dashFill, "height", `${me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2) * 100 : 100}%`);
         toggle(downed, "show", !me.alive && s.status === "fighting");
+        setText(downed.querySelector(".dn-sub")!, s.pvp ? "Respawning shortly. Get ready for the next exchange." : "you're down · a teammate standing next to you runs systemctl restart (revive)");
         if (!me.alive) {
           setStyle(dnBar, "--p", String(me.reviveProgress));
-          setText(dnPct, `${Math.round(me.reviveProgress * 100)}%`);
+          setText(dnPct, s.pvp ? "RESTARTING" : `${Math.round(me.reviveProgress * 100)}%`);
         }
       }
 
@@ -321,7 +322,7 @@ export function createHud(spectator: boolean): Hud {
         toggle(r.row, "me", p.id === you);
         const sc = s.pvp?.scores[p.id];
         setText(r.st, sc ? `${sc.kos} KO` : p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");
-        r.st.title = p.alive ? "health" : "downed: stand next to them to revive (systemctl restart)";
+        r.st.title = p.alive ? "health" : s.pvp ? "Respawning shortly" : "downed: stand next to them to revive (systemctl restart)";
       }
       for (const [id, r] of teamRows) if (!seen.has(id)) (r.row.remove(), teamRows.delete(id));
 

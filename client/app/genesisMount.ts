@@ -16,7 +16,7 @@ export interface GenesisSource {
 export interface GenesisMount {
   host: HTMLElement;
   /** Returns true while a cinematic is mounted for this source. */
-  sync(src: GenesisSource, mode: "battle" | "edu"): boolean;
+  sync(src: GenesisSource, mode: "battle" | "edu" | "pvp"): boolean;
   readonly done: boolean;
   dispose(): void;
 }

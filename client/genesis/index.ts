@@ -25,7 +25,7 @@ export interface GenesisOpts {
   slug?: string;              // shown while live (before genesis arrives)
   compact?: boolean;          // phone card (~45% height): fewer terminal lines, bigger character
   condensed?: boolean;        // ~4 s version (pre-fight intro)
-  mode?: "battle" | "edu";    // edu: 2x hero, narrated pauses per stage, report card instead of the equal budget
+  mode?: "battle" | "edu" | "pvp";    // edu: 2x hero, narrated pauses per stage, report card instead of the equal budget
   autoAdvance?: boolean;      // edu: auto-continue after each narration (default: true when compact, else tap)
   interactive?: boolean;      // tap to skip / replay (default true)
   loop?: boolean;             // replay automatically after a pause (demo / attract mode)

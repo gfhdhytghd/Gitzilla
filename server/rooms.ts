@@ -1,3 +1,4 @@
+import type { PvpAccess } from './pvp-access';
 import { ClassroomSession, type ClassroomSource } from './classroom';
 import { classroomExport } from './classroom-export';
 import type { IncomingMessage } from 'node:http';
@@ -16,6 +17,7 @@ export interface Match {
   readonly over: boolean;
 }
 export interface GameServices {
+  verifyPvpAccess?(repo: string, token: string): Promise<PvpAccess>;
   analyzeClassroomSubmission?(repo: string, ref: string, token: string, needsChecks: boolean): Promise<ClassroomSource>;
   defaultRubric?(): Rubric;
   parseRubric?(text: string, filename?: string): Rubric;
@@ -48,6 +50,7 @@ interface Member {
   name: string;
   namedByUser?: boolean;
   privateRepo?: boolean;
+  pvpAccess?: PvpAccess; // Memory-only; invalidated on reconnect and mode changes.
   profile?: RepoProfile; // Memory-only, never part of the room-store whitelist.
   socket: WebSocket | null;
   lobby: LobbyPlayer;
@@ -96,7 +99,7 @@ interface Room {
 const idle = (seq = 0): InputFrame => ({ seq, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard' });
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => m.role === 'player' && m.socket !== null);
-const capacity = (room: Room) => room.mode === 'edu' ? 30 : 8;
+const capacity = (room: Room) => room.mode === 'edu' ? 30 : room.mode === 'pvp' ? 2 : 8;
 const bots = (room: Room) => [...room.members.values()].filter(m => m.lobby.bot);
 const squad = (room: Room) => [...connectedPlayers(room), ...bots(room)];
 const phoneRequest = (request?: IncomingMessage) => request?.headers['sec-ch-ua-mobile'] === '?1' ||
@@ -157,7 +160,7 @@ export class RoomServer {
         ? { repo: saved.boss.repo, status: 'error', kit: null, error: 'Reconnect GitHub and reselect the private boss repo.' }
         : { ...saved.boss };
       if (boss.status === 'analyzing') { boss.status = 'error'; boss.error = 'Server restarted during analysis. Choose the boss again.'; }
-      const room: Room = { code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : 'battle', teacherId: saved.teacherId, members, boss,
+      const room: Room = { code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : saved.mode === 'pvp' ? 'pvp' : 'battle', teacherId: saved.teacherId, members, boss,
         privateBoss: saved.privateBoss, bossProfile: saved.privateBoss ? undefined : saved.bossProfile,
         bossRevision: 0, phase: 'lobby', events: [],
         restartNotice: saved.phase === 'match'
@@ -392,6 +395,7 @@ export class RoomServer {
     } else if (msg.t === 'setRepo') {
       const revision = ++member.revision;
       member.profile = undefined;
+      member.pvpAccess = undefined;
       member.lobby = { id: member.id, name: member.name, repo: msg.repo, status: 'analyzing', kit: null, progress: { stage: 'clone', pct: 0 } };
       room.pendingProgress?.delete(member.id);
       this.broadcastLobby(room);
@@ -402,6 +406,13 @@ export class RoomServer {
         try { token = request && this.services.getGithubToken ? await this.services.getGithubToken(request) : null; }
         catch { throw new Error('GitHub connection unavailable. Reconnect GitHub and retry.'); }
         if (revision !== member.revision || member.socket !== socket) return;
+        if (room.mode === 'pvp') {
+          if (!token || !this.services.verifyPvpAccess) throw new Error('Connect GitHub before choosing a PvP repository.');
+          const access = await this.services.verifyPvpAccess(msg.repo, token);
+          if (revision !== member.revision || member.socket !== socket) return;
+          if ([...room.members.values()].some(m => m.id !== member.id && m.socket && m.pvpAccess?.userId === access.userId)) throw new Error('PvP needs two different GitHub accounts.');
+          member.pvpAccess = access;
+        }
         credentialed = !!token;
         member.privateRepo = credentialed; // Set before streaming any private paths.
         // The token lives only in this call; never attach it to member/profile/kit/messages.
@@ -425,7 +436,7 @@ export class RoomServer {
       }
       this.broadcastLobby(room);
     } else if (msg.t === 'setBoss') {
-      if (room.mode === 'edu') throw new Error('Classroom PvP has no boss. Choose student repos instead.');
+      if (room.mode !== 'battle') throw new Error('This mode has no boss repository.');
       const revision = ++room.bossRevision;
       room.bossProfile = undefined;
       room.privateBoss = false;
@@ -460,6 +471,7 @@ export class RoomServer {
       this.broadcastLobby(room);
     } else if (msg.t === 'start') {
       if (room.mode === 'edu' && !this.options.allowLegacyEdu) throw new Error('Classroom mode now attacks one shared Boss. Refresh and open the teacher screen to publish a lesson.');
+      if (room.mode === 'pvp') await this.validatePvpStart(room, member);
       this.start(room);
     } else { throw new Error('Unknown message'); }
   }
@@ -511,6 +523,11 @@ export class RoomServer {
     const repo = member.lobby.repo;
     if (!repo) return;
     const revision = ++member.revision, mode = room.mode;
+    if (mode === 'pvp') {
+      member.pvpAccess = undefined; member.profile = undefined;
+      member.lobby = { id: member.id, name: member.name, repo: null, status: 'empty', kit: null };
+      if (broadcast) this.broadcastLobby(room); return;
+    }
     const oldKit = member.lobby.kit;
     member.lobby = { ...member.lobby, status: 'analyzing', error: undefined, genesis: undefined, progress: { stage: 'map', pct: 0.82 } };
     if (broadcast) this.broadcastLobby(room);
@@ -545,10 +562,20 @@ export class RoomServer {
   }
 
   private async setMode(room: Room, mode: GameMode) {
-    if (mode !== 'battle' && mode !== 'edu') throw new Error('Choose battle or edu mode');
+    if (mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') throw new Error('Choose battle, classroom, or PvP mode');
     if (room.mode === mode) return;
     if (mode === 'battle' && connectedPlayers(room).length > 8) throw new Error('Battle supports 8 players. Keep this class in edu mode or ask students to leave first.');
+    if (mode === 'pvp' && connectedPlayers(room).length > 2) throw new Error('PvP supports exactly two players.');
     room.mode = mode;
+    for (const member of room.members.values()) member.pvpAccess = undefined;
+    if (mode === 'pvp') {
+      for (const bot of bots(room)) { bot.revision++; room.members.delete(bot.id); }
+      for (const member of room.members.values()) {
+        member.revision++; member.profile = undefined;
+        member.lobby = { id: member.id, name: member.name, repo: null, status: 'empty', kit: null };
+      }
+      this.broadcastLobby(room); return;
+    }
     if (mode === 'edu' && !room.rubric) room.rubric = this.services.defaultRubric?.();
     const keepBots = Math.max(0, capacity(room) - connectedPlayers(room).length);
     for (const bot of bots(room).slice(keepBots)) { bot.revision++; room.members.delete(bot.id); }
@@ -559,6 +586,7 @@ export class RoomServer {
   }
 
   private async setBots(room: Room, requested: number) {
+    if (room.mode === 'pvp') throw new Error('PvP requires two human players; bots are disabled.');
     if (!Number.isFinite(requested)) throw new Error('Choose 0–7 AI teammates');
     const count = Math.min(7, capacity(room) - connectedPlayers(room).length, Math.max(0, Math.floor(requested)));
     const current = bots(room);
@@ -636,6 +664,10 @@ export class RoomServer {
     if (suppliedName) member.namedByUser = true;
     member.lobby.name = member.name;
     member.socket = socket; member.input = undefined;
+    if (room.mode === 'pvp' && room.phase === 'lobby') {
+      member.pvpAccess = undefined; member.profile = undefined; member.revision++;
+      member.lobby = { id: member.id, name: member.name, repo: null, status: 'empty', kit: null };
+    }
     // Every new WS hello may be a fresh iOS page. Desktop keyboard is immediately
     // usable; phone clients must report live sensors or an explicit touch choice.
     member.controlsReady = !phoneRequest(request); member.controlsMode = undefined;
@@ -728,12 +760,31 @@ export class RoomServer {
     room.cleanupTimer.unref();
   }
 
+  private async validatePvpStart(room: Room, owner: Member) {
+    const roster = connectedPlayers(room);
+    if (roster.length !== 2 || roster.some(m => m.lobby.status !== 'ready' || !m.pvpAccess)) throw new Error('PvP requires exactly two verified human players.');
+    const captured = roster.map(m => ({ member: m, socket: m.socket, revision: m.revision, access: m.pvpAccess! }));
+    const verified = await Promise.all(captured.map(async c => {
+      const request = c.socket ? this.requests.get(c.socket) : undefined;
+      const token = request ? await this.services.getGithubToken?.(request) : null;
+      if (!token || !this.services.verifyPvpAccess) throw new Error('Reconnect GitHub before starting PvP.');
+      return this.services.verifyPvpAccess(c.access.repo, token);
+    }));
+    if (room.mode !== 'pvp' || room.phase !== 'lobby' || room.ownerId !== owner.id || !owner.socket
+        || connectedPlayers(room).length !== 2 || captured.some((c, i) => c.member.socket !== c.socket || c.member.revision !== c.revision
+          || c.member.pvpAccess !== c.access || verified[i].userId !== c.access.userId)) throw new Error('The PvP roster changed. Verify repositories and try again.');
+    if (verified[0].userId === verified[1].userId) throw new Error('PvP needs two different GitHub accounts.');
+  }
+
   private start(room: Room) {
     const humans = connectedPlayers(room).filter(p => p.lobby.status === 'ready' && p.lobby.kit);
     if (bots(room).some(p => p.lobby.status !== 'ready' || !p.lobby.kit)) throw new Error('Wait for AI teammates to finish loading');
     const players = [...humans, ...bots(room)];
     let boss: BossKit | null = null;
-    if (room.mode === 'edu') {
+    if (room.mode === 'pvp') {
+      if (connectedPlayers(room).length !== 2 || humans.length !== 2 || bots(room).length) throw new Error('PvP requires exactly two ready human players.');
+      if (humans.some(p => !p.pvpAccess) || humans[0].pvpAccess!.userId === humans[1].pvpAccess!.userId) throw new Error('Both players must verify an eligible repository with different GitHub accounts.');
+    } else if (room.mode === 'edu') {
       if (players.length < 2) throw new Error('Classroom PvP needs at least 2 ready students or bots');
       if (players.some(p => !p.lobby.kit?.quality?.length)) throw new Error('Classroom quality stats are still loading. Reselect repos after the update.');
       const missing = this.services.feedbackForPlayer || this.services.applyRubric ? players.filter(p => !p.profile) : [];

@@ -14,7 +14,7 @@ export interface ClassroomPvpState extends PvpState {
   quizEndsAt: number | null;
   quizScores: Record<string, number>;
 }
-export type ClassroomState = MatchState & { mode: 'edu'; boss: null; heroScale: 2; pvp: ClassroomPvpState };
+export type ClassroomState = MatchState & { mode: 'edu' | 'pvp'; boss: null; heroScale: 2; pvp: ClassroomPvpState };
 export type ClassroomRankingRow = NonNullable<Autopsy['ranking']>[number] & { left?: boolean };
 export type ClassroomAutopsy = Omit<Autopsy, 'ranking'> & { ranking: ClassroomRankingRow[] };
 type Student = { id: string; name: string; kit: PlayerKit };
@@ -54,20 +54,22 @@ export class ClassroomMatch implements Match {
   private quiz: ClassroomQuiz | null = null;
   private holds = new Map<string, { pad: string; t: number }>();
   private id = 1;
+  private forfeited = false;
   private seed = 0x434c4153;
   private rng: () => number;
   private width: number;
   private height: number;
 
-  constructor(students: Student[]) {
+  constructor(students: Student[], private duel = false) {
+    if (duel && students.length !== 2) throw new Error('PvP requires exactly two players');
     if (students.length < 2 || students.length > 30) throw new Error('Classroom PvP needs 2–30 students');
     this.seed = students.reduce((seed, p) => [...p.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), seed), this.seed);
     this.rng = random(this.seed);
     const arena = pvpArenaSize(students.length); this.width = arena.width; this.height = arena.height;
     this.state = {
-      t: 0, status: 'countdown', mode: 'edu', boss: null, heroScale: 2,
+      t: 0, status: 'countdown', mode: duel ? 'pvp' : 'edu', boss: null, heroScale: 2,
       players: students.map(student => {
-        const kit = asClassroomKit(student.kit);
+        const kit = duel ? structuredClone(student.kit) : asClassroomKit(student.kit);
         return { id: student.id, name: student.name, kit, x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0], hp: kit.maxHp, armor: kit.maxArmor, energy: kit.maxEnergy,
           alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 2, buffs: [], perks: [],
           stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false } };
@@ -97,7 +99,7 @@ export class ClassroomMatch implements Match {
     for (const bullet of forgetPlayer(s, id)) this.shots.delete(bullet);
     this.lessons.removePlayer(id);
     this.updateLeader();
-    if (!s.players.length) { this.finish(true); return; }
+    if (!s.players.length || (this.duel && s.players.length < 2)) { this.finish(true); return; }
     if (!this.over && this.quiz?.subject === id) {
       // The question's subject left. Reopen only this quiz, giving the remaining
       // students a fair answer window; combat time, HP and round scores stay intact.
@@ -177,7 +179,7 @@ export class ClassroomMatch implements Match {
     p.facing = aim;
     const [mx, my] = input?.move ?? [0, 0];
     if (input?.dash && p.dashCd <= 0) { r.direction = Math.hypot(mx, my) > 0.1 ? unit(mx, my) : aim; r.dash = 0.19; p.dashCd = 1.7; p.invuln = Math.max(p.invuln, 0.24); }
-    const facts = (p.kit as ClassroomKit).classroom;
+    const facts = this.duel ? undefined : (p.kit as ClassroomKit).classroom;
     const slow = active && (facts?.todoDensity ?? 0) > 0 && (this.state.t + (p.kit.seed >>> 0) % 120 / 10) % 12 < 1.5;
     if (slow && !r.slow) this.lessons.offer('tech-debt', p.id, { player: p.name, repo: p.kit.repo, todos: facts!.todoCount, density: facts!.todoDensity.toFixed(1),
       text: `${p.name}'s open TODOs add a short game slow. The analyzed repo has ${facts!.todoCount} TODO/FIXME/HACK notes.` });
@@ -247,16 +249,16 @@ export class ClassroomMatch implements Match {
     const r = this.runtime.get(target.id)!; r.lastHit = this.state.t; r.armor = 0;
     source.stats.damage += amount; this.state.pvp.scores[source.id].damage += amount; this.roundScores.get(source.id)!.damage += amount;
     this.emit({ type: 'hit', target: target.id, source: source.id, amount, x: target.x, y: target.y, direction, crit: weakness > 0, impact: clamp(amount / 4, 0.1, 1), hitStop: amount >= 3 ? 40 : 0 });
-    const facts = (source.kit as ClassroomKit).classroom, damage = source.kit.quality?.find(q => q.stat === 'damage');
-    this.lessons.offer('component', source.id, { player: source.name, repo: source.kit.repo, component: facts?.components[0]?.name ?? source.kit.repo,
+    const facts = this.duel ? undefined : (source.kit as ClassroomKit).classroom, damage = source.kit.quality?.find(q => q.stat === 'damage');
+    if (!this.duel) this.lessons.offer('component', source.id, { player: source.name, repo: source.kit.repo, component: facts?.components[0]?.name ?? source.kit.repo,
       amount: Number(amount.toFixed(1)), grade: damage?.grade ?? 'C', cycles: facts?.cycles.length ?? 0, signal: damage?.signal ?? 'Analysis unavailable',
       text: `${source.name} dealt ${amount.toFixed(1)} damage. Their damage grade ${damage?.grade ?? 'C'} comes from ${damage?.signal ?? 'a neutral value until analysis is available'}.` });
     if (armor > 0) {
       const f = (target.kit as ClassroomKit).classroom;
-      this.lessons.offer('test-coverage', target.id, { player: target.name, repo: target.kit.repo, percent: Number(((f?.testRatio ?? 0) * 100).toFixed(1)), armor: target.kit.maxArmor,
+      if (!this.duel) this.lessons.offer('test-coverage', target.id, { player: target.name, repo: target.kit.repo, percent: Number(((f?.testRatio ?? 0) * 100).toFixed(1)), armor: target.kit.maxArmor,
         text: `${target.name}'s test-derived armor absorbed ${armor.toFixed(1)} damage. ${target.kit.quality?.find(q => q.stat === 'armor')?.signal ?? 'Source analysis is unavailable.'}` });
     }
-    const targetFacts = (target.kit as ClassroomKit).classroom;
+    const targetFacts = this.duel ? undefined : (target.kit as ClassroomKit).classroom;
     if (targetFacts?.cycles.length) this.lessons.offer('circular-dependency', target.id, { player: target.name, repo: target.kit.repo, members: targetFacts.cycles[0].join(' ↔ '), cycles: targetFacts.cycles.length, bonus: Math.round(weakness * 100) });
     if (target.hp <= 0) {
       target.alive = false; target.downedFor = 0; target.reviveProgress = 0; r.respawn = 2.5; r.streak = 0; target.vx = target.vy = 0;
@@ -280,6 +282,11 @@ export class ClassroomMatch implements Match {
     const leader = this.ranked()[0];
     if (!leader) { this.state.pvp.leader = null; return; }
     const score = this.state.pvp.scores[leader.id];
+    if (this.duel) {
+      const other = this.ranked()[1];
+      const next = other ? this.state.pvp.scores[other.id] : undefined;
+      if (next && next.roundWins === score.roundWins && next.kos === score.kos && next.damage === score.damage && next.downs === score.downs) { this.state.pvp.leader = null; return; }
+    }
     this.state.pvp.leader = score.kos > 0 || score.damage > 0 || score.roundWins > 0 ? leader.id : null;
   }
   private endRound() {
@@ -288,10 +295,17 @@ export class ClassroomMatch implements Match {
       const x = this.roundScores.get(a.id)!, y = this.roundScores.get(b.id)!; return y.kos - x.kos || y.damage - x.damage || a.id.localeCompare(b.id);
     });
     const winner = sorted[0], score = this.roundScores.get(winner.id)!;
-    if (score.kos > 0 || score.damage > 0) this.state.pvp.scores[winner.id].roundWins++;
+    const runnerUp = sorted[1] ? this.roundScores.get(sorted[1].id) : undefined;
+    const tied = this.duel && runnerUp?.kos === score.kos && runnerUp.damage === score.damage;
+    if (!tied && (score.kos > 0 || score.damage > 0)) this.state.pvp.scores[winner.id].roundWins++;
     this.state.bullets = []; this.shots.clear();
     if (this.state.pvp.round >= 3 || this.state.pvp.scores[winner.id].roundWins >= 2) { this.finish(); return; }
     const s = this.state;
+    if (this.duel) {
+      s.pvp.round++; s.pvp.roundEndsAt = s.t + 75;
+      s.players.forEach((p, i) => { this.resetPlayer(p, this.spawnPoints()[i]); this.roundScores.set(p.id, { kos: 0, damage: 0 }); });
+      return;
+    }
     this.quiz = classroomQuiz(s.players, s.pvp.round, this.seed, s.t, this.width, this.height);
     s.perkOffer = this.quiz.offer; s.pvp.phase = 'quiz'; s.pvp.quizEndsAt = this.quiz.endsAt; this.holds.clear(); this.nextBuff.clear();
     s.players.forEach((p, i) => this.resetPlayer(p, { x: this.width / 2 + (i % 6 - 2.5) * 24, y: this.height / 2 + 80 + Math.floor(i / 6) * 18 }));
@@ -314,7 +328,7 @@ export class ClassroomMatch implements Match {
     }
     if (s.t >= offer.endsAt && s.pvp.phase === 'quiz') {
       s.pvp.phase = 'reveal'; offer.pads.forEach(p => { p.correct = p.id === quiz.correctId; }); offer.quiz!.explain = quiz.explain;
-      this.lessons.offer(offer.quiz!.concept as Concept, quiz.subject, { question: offer.quiz!.question, answer: offer.pads.find(p => p.id === quiz.correctId)!.answer!, explain: quiz.explain });
+      if (!this.duel) this.lessons.offer(offer.quiz!.concept as Concept, quiz.subject, { question: offer.quiz!.question, answer: offer.pads.find(p => p.id === quiz.correctId)!.answer!, explain: quiz.explain });
     }
     if (s.t >= quiz.endsAt) {
       s.pvp.round++; s.pvp.phase = 'round'; s.pvp.roundEndsAt = s.t + 75; s.pvp.quizEndsAt = null; s.perkOffer = null; this.quiz = null;
@@ -326,6 +340,7 @@ export class ClassroomMatch implements Match {
   }
   private finish(abandoned = false) {
     if (this.over) return;
+    this.forfeited = abandoned;
     this.updateLeader(); this.state.pvp.phase = 'finished'; this.state.status = abandoned ? 'defeat' : 'victory';
     this.state.perkOffer = null; this.state.pvp.quizEndsAt = null; this.quiz = null; this.holds.clear(); this.nextBuff.clear();
     this.emit({ type: abandoned ? 'defeat' : 'victory' });
@@ -337,8 +352,8 @@ export class ClassroomMatch implements Match {
     const ranking: ClassroomRankingRow[] = this.ranked().map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: this.state.pvp.scores[p.id].kos,
       damage: this.state.pvp.scores[p.id].damage, roundWins: this.state.pvp.scores[p.id].roundWins, quality: structuredClone(p.kit.quality ?? []) }));
     ranking.push(...structuredClone([...this.departed.values()]));
-    ranking.sort((a, b) => b.roundWins - a.roundWins || b.kos - a.kos || b.damage - a.damage || a.id.localeCompare(b.id));
-    return { mode: 'edu', victory: false, boss: null, duration: Math.max(0, this.state.t - 2), mvp: this.state.pvp.leader,
+    ranking.sort((a, b) => (this.duel && this.forfeited ? Number(!!a.left) - Number(!!b.left) : 0) || b.roundWins - a.roundWins || b.kos - a.kos || b.damage - a.damage || a.id.localeCompare(b.id));
+    return { mode: this.duel ? 'pvp' : 'edu', victory: this.duel && this.state.players.length > 0, boss: null, duration: Math.max(0, this.state.t - 2), mvp: this.duel && this.forfeited ? this.state.players[0]?.id ?? null : this.state.pvp.leader,
       players: this.state.players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { ...p.stats } })),
       ranking };
   }

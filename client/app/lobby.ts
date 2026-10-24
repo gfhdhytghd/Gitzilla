@@ -510,9 +510,9 @@ export function createLobby(app: AppCtx): Screen {
   }, "copy link");
   const ownerBadge = h("span.owner-badge");
   // Classroom opens a dedicated teacher room; battle rooms keep their existing participants.
-  const modeBtn = (m: "battle" | "edu", label: string) =>
+  const modeBtn = (m: "battle" | "edu" | "pvp", label: string) =>
     h("button.mode-btn", { "data-testid": `mode-${m}`, "data-mode": m, onclick: async () => {
-      if (m === "battle" || app.mock) { app.conn.send({ t: "setMode", mode: m }); return; }
+      if (m !== "edu" || app.mock) { app.conn.send({ t: "setMode", mode: m }); return; }
       try {
         const response = await fetch("/api/room?mode=edu", { method: "POST" });
         if (!response.ok) throw new Error("Could not create a classroom");
@@ -520,7 +520,7 @@ export function createLobby(app: AppCtx): Screen {
         location.assign(`/r/${room}?screen=1`);
       } catch { toast("Could not open the teacher classroom. Please try again.", "err"); }
     } }, label);
-  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: code together and attack one shared Boss" }, modeBtn("battle", "⚔ boss raid"), modeBtn("edu", "🎓 classroom"));
+  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: code together and attack one shared Boss" }, modeBtn("battle", "⚔ boss raid"), modeBtn("pvp", "PvP duel"), modeBtn("edu", "🎓 classroom"));
   // ⏏ leave room (owner: one extra tap that says who inherits the room); projector: end class / new room
   let leaveArmedAt = 0;
   const leaveMsg = h("span.leave-msg", { role: "status" });
@@ -695,7 +695,7 @@ export function createLobby(app: AppCtx): Screen {
     for (const [id, c] of cardEls) if (!seen.has(id)) (c.remove(), cardEls.delete(id), cardSig.delete(id));
     // empty slots up to 4 to make the "4+ players" target visible
     squadList.querySelectorAll(".pcard-slot").forEach((e) => e.remove());
-    if (!(screen && lobby.mode === "edu")) for (let i = lobby.players.length; i < (screen ? 8 : 4); i++)
+    if (!(screen && lobby.mode === "edu")) for (let i = lobby.players.length; i < (lobby.mode === "pvp" ? 2 : screen ? 8 : 4); i++)
       squadList.append(h("div.pcard.pcard-slot", null, h("div.pcard-portrait", null, h("div.portrait-empty", null, "+")), h("div.pcard-info", null, h("div.dim", null, `slot ${i + 1} · scan to join`))));
     backdrop.setHeroes(lobby.players.filter((p) => p.kit).map((p) => p.kit!));
   }
@@ -763,6 +763,18 @@ export function createLobby(app: AppCtx): Screen {
     const owner = isOwner(app);
     bossTitle.textContent = lobby.mode === "edu" ? "CLASSROOM BRAWL" : "BOSS KAIJU";
     if (lobby.mode === "edu") return renderClassroom(lobby, owner);
+    if (lobby.mode === "pvp") {
+      bossTitle.textContent = "PVP DUEL";
+      eduInfo.hidden = false;
+      eduInfo.replaceChildren(h("p", null, "Two players. Best of three rounds. Most KOs wins; damage breaks ties."), h("p", null, "Connect GitHub. Use your own non-fork repository, or a public repository you maintain or administer. Your own forks are not eligible."));
+      for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = true;
+      bossOwnerCtl.style.display = "none"; changeBossLink.style.display = "none";
+      startBtn.style.display = owner ? "" : "none";
+      const ready = lobby.players.filter(p => p.status === "ready").length;
+      startBtn.disabled = ready !== 2; startBtn.textContent = "START PVP DUEL";
+      startHint.textContent = ready === 2 ? "Both repositories verified. Ready to fight." : "Invite a friend and verify both repositories.";
+      return;
+    }
     eduInfo.hidden = true;
     for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = false;
     startBtn.textContent = "$ ./fight.sh";
@@ -915,7 +927,8 @@ export function createLobby(app: AppCtx): Screen {
       b.disabled = !isOwner(app);
     }
     ownerBadge.textContent = isOwner(app) ? "★ you own this room" : "";
-    botCtl.style.display = isOwner(app) ? "" : "none";
+    botCtl.style.display = isOwner(app) && lobby.mode !== "pvp" ? "" : "none";
+    youChips.hidden = lobby.mode === "pvp";
     botCount.textContent = String(lobby.players.filter((p) => p.bot).length);
     renderRubric(lobby);
     renderSquad(lobby);
@@ -936,7 +949,7 @@ export function createLobby(app: AppCtx): Screen {
     const owner = isOwner(app);
     const ready = lobby.players.filter((p) => p.status === "ready").length;
     const edu = lobby.mode === "edu";
-    const bossOk = edu || lobby.boss.status === "ready";
+    const bossOk = edu || lobby.mode === "pvp" || lobby.boss.status === "ready";
     const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? (edu ? "the teacher" : "the host");
     let text = "", cls = "", act: (() => void) | null = null;
     const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
@@ -959,11 +972,13 @@ export function createLobby(app: AppCtx): Screen {
       text = lobby.boss.status === "analyzing" ? "⟳ summoning the boss…" : "② pick the BOSS repo ↓";
       cls = lobby.boss.status === "analyzing" ? "busy" : "";
       act = () => (bossPanel.scrollIntoView({ behavior: "smooth", block: "start" }), bossInput.focus());
+    } else if (lobby.mode === "pvp" && ready !== 2) {
+      text = "Waiting for two verified GitHub repositories"; cls = "busy";
     } else if (edu && ready < 2) {
       text = `waiting for classmates (${ready} ready) — or add AI teammates`;
       cls = "busy";
     } else {
-      text = edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
+      text = lobby.mode === "pvp" ? "START PVP DUEL" : edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
       cls = "go";
       act = tryStart;
     }
@@ -972,7 +987,7 @@ export function createLobby(app: AppCtx): Screen {
     nextAction = act;
     // data-testid="start-match" always belongs to the VISIBLE start control: the sticky bar on phone-portrait
     // (where the panel button is hidden by CSS), the panel button everywhere else
-    const barIsStart = phoneLobby() && owner && me?.status === "ready" && bossOk && (!edu || ready >= 2);
+    const barIsStart = phoneLobby() && owner && me?.status === "ready" && bossOk && (!edu || ready >= 2) && (lobby.mode !== "pvp" || ready === 2);
     nextBar.disabled = !!barIsStart && cls !== "go";
     nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
     startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";

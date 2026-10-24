@@ -117,7 +117,7 @@ function startRoom(room: string, role: Role, name: string) {
         if (!o.newRoom) return location.assign(mock ? "/?mock=1" : "/");
         if (mock) return location.assign(`/r/${Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("")}?mock=1`);
         try {
-          const r = await fetch(mode === "edu" && role === "screen" ? "/api/room?mode=edu" : "/api/room", { method: "POST" });
+          const r = await fetch(`/api/room?mode=${mode}`, { method: "POST" });
           const j = (await r.json()) as { room: string };
           location.assign(`/r/${j.room}${role === "screen" ? "?screen=1" : ""}`);
         } catch {

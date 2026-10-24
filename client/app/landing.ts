@@ -34,9 +34,9 @@ async function roomExists(c: string): Promise<boolean | null> {
   }
 }
 
-async function createRoom(mock: boolean, mode: "battle" | "edu" = "battle"): Promise<string> {
+async function createRoom(mock: boolean, mode: "battle" | "edu" | "pvp" = "battle"): Promise<string> {
   if (mock) return Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ"[Math.floor(Math.random() * 24)]).join("");
-  const res = await fetch(mode === "edu" ? "/api/room?mode=edu" : "/api/room", { method: "POST" });
+  const res = await fetch(`/api/room?mode=${mode}`, { method: "POST" });
   if (!res.ok) throw new Error(`server said ${res.status}`);
   const j = (await res.json()) as { room: string };
   return j.room;
@@ -63,7 +63,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   cycleTag();
 
   const busy = (b: boolean) => el.classList.toggle("busy", b);
-  const create = async (screen: boolean, mode: "battle" | "edu" = "battle") => {
+  const create = async (screen: boolean, mode: "battle" | "edu" | "pvp" = "battle") => {
     busy(true);
     try {
       const room = await createRoom(opts.mock, mode);
@@ -147,6 +147,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
         ),
         joinMsg,
         h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
+        h("button.btn.btn-ghost.host-big", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP: challenge a friend ]"),
         h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 classroom: code together, raid together ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),

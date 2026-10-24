@@ -494,7 +494,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     introGenesis?.dispose();
     introGenesis = null;
   };
-  const mountIntroGenesis = (kind: "hero" | "boss", kit: MatchState["players"][number]["kit"] | NonNullable<MatchState["boss"]>["kit"] | undefined, genesis: Parameters<typeof playGenesis>[1]["genesis"], mode: "battle" | "edu"): HTMLElement | null => {
+  const mountIntroGenesis = (kind: "hero" | "boss", kit: MatchState["players"][number]["kit"] | NonNullable<MatchState["boss"]>["kit"] | undefined, genesis: Parameters<typeof playGenesis>[1]["genesis"], mode: "battle" | "edu" | "pvp"): HTMLElement | null => {
     if (!kit) return null;
     const host = h(`div.in-genesis.${kind}`, { "data-testid": "intro-genesis" });
     try {
@@ -524,9 +524,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         h(
           "div.in-text",
           null,
-          h("div.in-line.dim", null, `$ make class ROOM=${app.room}`),
-          h("div.in-line.green", null, `${s.players.length} heroes compiled · stats graded from code quality`),
-          h("div.in-name", null, "CLASSROOM BRAWL"),
+          h("div.in-line.dim", null, s.mode === "pvp" ? `$ make duel ROOM=${app.room}` : `$ make class ROOM=${app.room}`),
+          h("div.in-line.green", null, s.mode === "pvp" ? "Two repositories compiled into balanced heroes" : `${s.players.length} heroes compiled · stats graded from code quality`),
+          h("div.in-name", null, s.mode === "pvp" ? "PVP DUEL" : "CLASSROOM BRAWL"),
           h("div.in-line.in-epithet", null, s.pvp ? `best of ${s.pvp.rounds} rounds · most KOs wins` : "free-for-all"),
         ),
       ),

@@ -379,7 +379,7 @@ export interface PerkOffer { endsAt: number; pads: PerkPad[]; picked: Record<str
 }
 
 // ---------- Education mode ----------
-export type GameMode = "battle" | "edu";
+export type GameMode = "battle" | "edu" | "pvp";
 // Concepts the lesson engine knows; sim/server tag events with them so the client can teach in context.
 export type Concept = "dependency-graph" | "fan-in" | "fan-out" | "heart-module" | "circular-dependency" | "coupling"
   | "component" | "cascade" | "dead-code" | "tech-debt" | "test-coverage" | "recursion" | "stack-overflow" | "race-condition"

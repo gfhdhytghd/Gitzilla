@@ -676,6 +676,7 @@ export function createMatch(players: MatchPlayer[], boss: BossKit | null, option
 export function createMatch(players: MatchPlayer[], boss: BossKit | null, options?: { mode?: GameMode }): Match;
 export function createMatch(players: MatchPlayer[], boss: BossKit | null, options: { mode?: GameMode } = {}): Match {
   if (options.mode === 'edu') return new ClassroomMatch(players);
+  if (options.mode === 'pvp') return new ClassroomMatch(players, true);
   if (!boss) throw new Error('Battle mode needs a boss');
   return new ArenaMatch(players, boss);
 }

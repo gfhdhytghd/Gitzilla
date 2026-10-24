@@ -1295,3 +1295,70 @@ it('rejects legacy PvP start commands in production classroom mode', async () =>
   await until(() => teacher.messages.find(m => m.t === 'error' && m.message.includes('shared Boss')));
   expect(teacher.messages.some(m => m.t === 'snapshot')).toBe(false);
 });
+
+describe('PvP duel authority and isolation', () => {
+  function accessServices() {
+    let revoked = false;
+    const verify = vi.fn(async (repo: string, token: string) => {
+      if (revoked) throw new Error('Access revoked');
+      return { userId: token === 'alice' ? 1 : 2, login: token, repo, private: true };
+    });
+    return { verify, revoke() { revoked = true; }, services: {
+      getGithubToken: async (req: http.IncomingMessage) => req.headers.cookie ?? null,
+      verifyPvpAccess: verify,
+    } };
+  }
+  it('requires two eligible distinct accounts, rejects bots/boss, and rechecks permissions at start', async () => {
+    const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
+    const a = await f.connect('player', undefined, 'Alice', 'alice');
+    const b = await f.connect('player', undefined, 'Bob', 'bob');
+    const third = new WebSocket(f.wsUrl);
+    await once(third, 'open');
+    const denied = once(third, 'message');
+    third.send(JSON.stringify({ t: 'hello', room: f.room, role: 'player', name: 'Third' }));
+    expect(JSON.parse(String((await denied)[0]))).toMatchObject({ t: 'error', message: 'Room is full (2 players)' });
+    third.close();
+    a.send({ t: 'setBots', count: 1 }); a.send({ t: 'setBoss', repo: 'third/party' }); a.send({ t: 'start' });
+    await until(() => a.messages.filter(m => m.t === 'error').length >= 3);
+    expect(a.lobby()?.phase).toBe('lobby');
+    a.send({ t: 'setRepo', repo: 'alice/own' }); b.send({ t: 'setRepo', repo: 'bob/own' });
+    await until(() => a.lobby()?.players.every(p => p.status === 'ready'));
+    expect(auth.verify).toHaveBeenCalledTimes(2);
+    auth.revoke(); a.send({ t: 'start' });
+    await until(() => a.messages.some(m => m.t === 'error' && m.message.includes('Access revoked')));
+    expect(a.lobby()?.phase).toBe('lobby');
+    const before = a.messages.length;
+    const anon = await f.connect('screen'); anon.send({ t: 'setRepo', repo: 'alice/own' });
+    await until(() => anon.messages.some(m => m.t === 'error'));
+    expect(a.messages.slice(before).some(m => m.t === 'snapshot')).toBe(false);
+  });
+  it('denies a second slot using the same GitHub account and invalidates reconnect selection', async () => {
+    const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
+    const a = await f.connect('player', undefined, 'Alice', 'alice');
+    const b = await f.connect('player', undefined, 'Other tab', 'alice');
+    a.send({ t: 'setRepo', repo: 'alice/one' });
+    await until(() => a.lobby()?.players.find(p => p.id === a.welcome.you)?.status === 'ready');
+    b.send({ t: 'setRepo', repo: 'alice/two' });
+    await until(() => b.lobby()?.players.some(p => p.status === 'error' && p.error?.includes('different GitHub')));
+    const resumed = await f.connect('player', a.welcome.token, 'Alice', 'bob');
+    expect(resumed.welcome.lobby.players.find(p => p.id === a.welcome.you)?.status).toBe('empty');
+  });
+  it('starts a verified duel with two humans and no boss, preserves mode after persistence', async () => {
+    const auth = accessServices(), file = persistenceFile();
+    const f = await setup(0.05, auth.services, { persistenceFile: file, debounceMs: 1 }, undefined, 'pvp');
+    const a = await f.connect('player', undefined, 'Alice', 'alice'), b = await f.connect('player', undefined, 'Bob', 'bob');
+    a.send({ t: 'setRepo', repo: 'alice/own' }); b.send({ t: 'setRepo', repo: 'bob/own' });
+    await until(() => a.lobby()?.players.every(p => p.status === 'ready'));
+    a.send({ t: 'start' });
+    await until(() => a.messages.some(m => m.t === 'autopsy'));
+    expect(auth.verify).toHaveBeenCalledTimes(4);
+    const result = a.messages.find(m => m.t === 'autopsy');
+    expect(result && result.t === 'autopsy' && result.result.mode).toBe('pvp');
+    expect(f.recorded).toHaveLength(0);
+    await wait(30);
+    const persisted = JSON.parse(readFileSync(file, 'utf8'));
+    expect(persisted.rooms[0].mode).toBe('pvp');
+    expect(readFileSync(file, 'utf8')).not.toContain('userId');
+    expect(readFileSync(file, 'utf8')).not.toContain('src/real-heart.ts');
+  });
+});

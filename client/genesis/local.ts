@@ -68,7 +68,7 @@ export function buildGenesisLocal(p: RepoProfile, kit: PlayerKit | BossKit): Gen
 }
 
 /** Thin genesis from a kit alone (no profile): enough for a short replay when the server sent none. */
-export function genesisFromKit(kit: PlayerKit | BossKit, mode?: "battle" | "edu"): Genesis {
+export function genesisFromKit(kit: PlayerKit | BossKit, mode?: "battle" | "edu" | "pvp"): Genesis {
   const boss = isBossKit(kit);
   const edu = !boss && (mode === "edu" || kit.quality !== undefined);
   // A kit knows its organ names, not analyzed file/LOC counts. Never invent them.
