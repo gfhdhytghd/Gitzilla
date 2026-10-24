@@ -34,7 +34,7 @@ export function fallbackHero(profile: RepoProfile, kit: PlayerKit): HeroDesignWi
     headgear: choose(headgear, seed, 3), accessory: choose(accessories, seed, 8),
     emblem: dnaEmblem(dna.tokens) ?? choose(['{}', '++', '#', '<>', '*', 'R'], seed, 12), palette: [...palette],
     catchphrase: identifier ? short(`${identifier}() saves the party.`, 40) : choose(['Small hero. Clean commits.', 'One more patch saves the party.', 'Tests green. Sword ready.', 'I brought a rollback.'], seed, 16),
-    weaponName: fallbackWeaponName(kit),
+    weaponName: fallbackWeaponName(profile, kit),
   };
 }
 

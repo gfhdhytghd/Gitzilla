@@ -874,6 +874,7 @@ export function createLobby(app: AppCtx): Screen {
     if (!screen) renderNext(lobby);
   }
 
+  const phoneLobby = () => matchMedia("(max-width: 600px) and (orientation: portrait)").matches;
   function renderNext(lobby: LobbyState) {
     const me = lobby.players.find((p) => p.id === app.you);
     const owner = isOwner(app);
@@ -907,6 +908,11 @@ export function createLobby(app: AppCtx): Screen {
     nextBar.textContent = text;
     nextBar.className = `next-bar ${cls}`;
     nextAction = act;
+    // data-testid="start-match" always belongs to the VISIBLE start control: the sticky bar on phone-portrait
+    // (where the panel button is hidden by CSS), the panel button everywhere else
+    const barIsStart = phoneLobby() && cls === "go";
+    nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
+    startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
   }
 
   // animation tick for clone logs + noise portraits
@@ -941,12 +947,16 @@ export function createLobby(app: AppCtx): Screen {
   }, 80);
 
   audio.music("lobby");
+  // the start control's test id follows the layout (phone bar vs panel button)
+  const onResize = () => render();
+  addEventListener("resize", onResize);
   render();
   return {
     el,
     update: render,
     destroy() {
       clearInterval(iv);
+      removeEventListener("resize", onResize);
       heroGenesis.dispose();
       bossGenesis.dispose();
       closeBossFull();

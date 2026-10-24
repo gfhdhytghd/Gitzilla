@@ -11,5 +11,5 @@
     "#82f4d2"
   ],
   "catchphrase": "Foo() saves the party.",
-  "weaponName": "Promise Blaster"
+  "weaponName": "await fetch(add)"
 }

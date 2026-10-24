@@ -11,5 +11,5 @@
     "#ffe36c"
   ],
   "catchphrase": "app() saves the party.",
-  "weaponName": "yield Staff"
+  "weaponName": "yield from alias()"
 }

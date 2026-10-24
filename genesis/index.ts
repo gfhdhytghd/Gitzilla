@@ -17,7 +17,7 @@ const caption = (s: string, max = 40) => {
 };
 const leaf = (path: string) => path.split('/').filter(Boolean).at(-1) ?? path;
 // Reserve space for the number so a long name never crowds out its payoff.
-const withMetric = (name: string, metric: string) => `${caption(name, Math.max(1, 37 - metric.length))} · ${metric}`;
+const withMetric = (name: string, metric: string, max = 40) => `${caption(name, Math.max(1, max - 3 - metric.length))} · ${metric}`;
 
 /** Decode actual kit values, rather than re-rolling the sim's five-point allocation. */
 export function heroBudget(kit: PlayerKit): Genesis['budget'] {
@@ -89,7 +89,9 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
   const p = profile;
   const trace: TraceStep[] = [];
   const add = (part: TraceStep['part'], from: string, to: string, ref?: string) => {
-    trace.push({ part, from: caption(from), to: caption(to), ...(ref && clean(ref, 96) ? { ref: clean(ref, 96) } : {}) });
+    // Weapon names are complete code expressions (up to 24 chars). An ellipsis
+    // could split a token or remove its closing delimiter; keep them whole.
+    trace.push({ part, from: caption(from), to: part === 'weapon' ? clean(to, to.length) || '[source omitted]' : caption(to), ...(ref && clean(ref, 96) ? { ref: clean(ref, 96) } : {}) });
   };
   const languageBytes = Object.values(p.languages).reduce((s, n) => s + n, 0);
   const lang = languageBytes ? withMetric(p.primaryLanguage, `${pct((p.languages[p.primaryLanguage] ?? 0) / languageBytes)} of code`) : p.primaryLanguage;
@@ -99,7 +101,12 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
   if (kind === 'hero') {
     const hero = kit as PlayerKit;
     if (hero.quality !== undefined) trace.push(...qualityTrace(hero.quality));
-    add('weapon', lang, hero.code?.weapon?.name ?? hero.weapon);
+    const weaponName = hero.code?.weapon?.name ?? hero.weapon;
+    const sourceWidth = Math.max(1, 40 - 3 - weaponName.length);
+    const weaponFrom = lang.length <= sourceWidth ? lang : languageBytes
+      ? withMetric(p.primaryLanguage, pct((p.languages[p.primaryLanguage] ?? 0) / languageBytes), sourceWidth)
+      : caption(p.primaryLanguage, sourceWidth);
+    add('weapon', weaponFrom, weaponName);
     add('skill', hero.skill === 'fork' ? `${human(p.contributors)} contributors` : skillReason(p), `skill: ${hero.skill}`);
     add('glyphs', tokens.length ? tokens.join(' · ') : `${p.primaryLanguage} syntax`, tokens.length ? 'Code becomes your ammo' : 'Language-forged ammo');
     if (hero.code?.signature) add('name', p.dna?.identifiers[0] ?? hero.code.signature, `signature: ${hero.code.signature}`, 'signature');
@@ -176,7 +183,7 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
   while (bytes() > MAX_GENESIS_BYTES && genesis.snippets.length) genesis.snippets.pop();
   for (const cap of [160, 120, 80, 48, 32, 24]) {
     if (bytes() <= MAX_GENESIS_BYTES) break;
-    for (const step of trace) { step.from = step.from.slice(0, cap); step.to = step.to.slice(0, cap); if (step.ref) step.ref = step.ref.slice(0, cap); }
+    for (const step of trace) { step.from = step.from.slice(0, cap); if (step.part !== 'weapon') step.to = step.to.slice(0, cap); if (step.ref) step.ref = step.ref.slice(0, cap); }
   }
   return genesis;
 }

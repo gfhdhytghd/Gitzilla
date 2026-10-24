@@ -56,6 +56,7 @@ interface Room {
   members: Map<string, Member>;
   boss: LobbyState['boss'];
   bossProfile?: RepoProfile;
+  privateBoss?: boolean;
   bossRevision: number;
   phase: LobbyState['phase'];
   match?: Match;
@@ -124,9 +125,12 @@ export class RoomServer {
         members.set(player.id, { ...player, lobby, role: player.role ?? 'player', socket: null, revision: 0, inputAt: 0,
           botInput: lobby.bot ? this.services.createBot?.(player.botSeed ?? lobby.kit?.seed ?? 1) : undefined });
       }
-      const boss = { ...saved.boss };
+      const boss: LobbyState['boss'] = saved.privateBoss
+        ? { repo: saved.boss.repo, status: 'error', kit: null, error: 'Reconnect GitHub and reselect the private boss repo.' }
+        : { ...saved.boss };
       if (boss.status === 'analyzing') { boss.status = 'error'; boss.error = 'Server restarted during analysis. Choose the boss again.'; }
-      const room: Room = { code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : 'battle', teacherId: saved.teacherId, members, boss, bossProfile: saved.bossProfile,
+      const room: Room = { code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : 'battle', teacherId: saved.teacherId, members, boss,
+        privateBoss: saved.privateBoss, bossProfile: saved.privateBoss ? undefined : saved.bossProfile,
         bossRevision: 0, phase: 'lobby', events: [],
         restartNotice: saved.phase === 'match'
           ? 'Server restarted. Your fight was reset to the lobby; repos and kits were restored.'
@@ -142,7 +146,11 @@ export class RoomServer {
         id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed,
         lobby: this.persistedLobby(m),
       })),
-      boss: room.boss, bossProfile: room.bossProfile, phase: room.phase, restartNotice: room.restartNotice,
+      boss: room.privateBoss
+        ? { repo: room.boss.repo, status: 'error', kit: null, error: 'Reconnect GitHub and reselect the private boss repo.' }
+        : room.boss,
+      privateBoss: room.privateBoss, bossProfile: room.privateBoss ? undefined : room.bossProfile,
+      phase: room.phase, restartNotice: room.restartNotice,
     }));
   }
 
@@ -327,11 +335,20 @@ export class RoomServer {
       if (room.mode === 'edu') throw new Error('Classroom PvP has no boss. Choose student repos instead.');
       const revision = ++room.bossRevision;
       room.bossProfile = undefined;
+      room.privateBoss = false;
       room.boss = { repo: msg.repo, status: 'analyzing', kit: null, progress: { stage: 'clone', pct: 0 } };
       room.pendingProgress?.delete('boss');
       this.broadcastLobby(room);
+      let credentialed = false;
       try {
-        const profile = await this.services.analyzeRepo(msg.repo, { onProgress: this.bossProgress(room, revision) });
+        const request = this.requests.get(socket);
+        let token: string | null = null;
+        try { token = request && this.services.getGithubToken ? await this.services.getGithubToken(request) : null; }
+        catch { throw new Error('GitHub connection unavailable. Reconnect GitHub and retry.'); }
+        if (revision !== room.bossRevision || member.socket !== socket || room.ownerId !== member.id) return;
+        credentialed = !!token;
+        room.privateBoss = credentialed;
+        const profile = await this.services.analyzeRepo(msg.repo, { ...(token ? { token } : {}), onProgress: this.bossProgress(room, revision) });
         if (revision !== room.bossRevision) return;
         room.pendingProgress?.delete('boss');
         room.boss.progress = { stage: 'map', pct: 0.82 };
@@ -339,11 +356,13 @@ export class RoomServer {
         const kit = this.services.bossKitFromProfile(profile, Math.max(1, squad(room).length));
         room.bossProfile = profile; room.boss = { repo: profile.slug, status: 'ready', kit,
           genesis: this.services.buildGenesis?.(profile, kit, 'boss'), progress: { stage: 'ready', pct: 1 } };
-        this.refineBoss(room, revision, profile, kit);
+        if (!credentialed) this.refineBoss(room, revision, profile, kit);
       } catch (error) {
         if (revision !== room.bossRevision) return;
         room.boss.progress = undefined; room.pendingProgress?.delete('boss');
-        room.boss.status = 'error'; room.boss.error = error instanceof Error ? error.message : 'Analysis failed';
+        room.boss.status = 'error'; room.boss.error = credentialed
+          ? 'Could not analyze this repository. Check GitHub access and try again.'
+          : error instanceof Error ? error.message : 'Analysis failed';
       }
       this.broadcastLobby(room);
     } else if (msg.t === 'start') {
@@ -615,7 +634,7 @@ export class RoomServer {
     }
     const match = this.services.createMatch(players.map(p => ({ id: p.id, name: p.name, kit: p.lobby.kit! })), boss, { mode: room.mode });
     room.restartNotice = undefined;
-    room.privateMatch = players.some(p => p.privateRepo);
+    room.privateMatch = !!room.privateBoss || players.some(p => p.privateRepo);
     if (boss) room.boss.kit = boss;
     room.match = match; room.departed = new Set(); room.phase = 'match'; room.events = [];
     for (const member of room.members.values()) member.input = undefined;

@@ -20,6 +20,7 @@ import { handleTraceRoute, TraceStore } from './traces.ts';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
 const production = process.env.NODE_ENV === 'production';
+const port = Number(process.env.PORT || 5173);
 const addresses = lanAddresses();
 const certificate = loadTls(root, process.env.REPO_KAIJU_HTTPS === '1', addresses);
 const tls = !!certificate;
@@ -40,7 +41,7 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
-  // Public/boss lookups must not inherit an ambient server PAT with private access.
+  // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
   analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
   buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
   playerKitFromProfile(profile, options) {
@@ -56,7 +57,9 @@ const rooms = new RoomServer(wss, {
 }, { persistenceFile: process.env.ROOMS_FILE || resolve(root, '.cache/rooms.json') });
 const vite = production ? null : await (await import('vite')).createServer({
   root,
-  server: { middlewareMode: true, hmr: { server }, fs: { deny: [
+  // Vite's fallback target uses server.port. Leave the browser port/protocol inferred
+  // from /@vite/client so localhost:5175 and HTTPS tunnels share the same origin.
+  server: { port, middlewareMode: true, hmr: { server }, fs: { deny: [
     '.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.cache/**',
   ] } },
   appType: 'spa',
@@ -130,7 +133,6 @@ server.on('request', (req, res) => {
   });
 });
 
-const port = Number(process.env.PORT || 5173);
 server.listen(port, '0.0.0.0', () => {
   const actualPort = (server.address() as { port: number }).port;
   const protocol = tls ? 'https' : 'http';

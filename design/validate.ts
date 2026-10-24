@@ -1,7 +1,7 @@
 import type { BossDesign, BossKit, PlayerKit, RepoProfile } from '../shared/types.ts';
 import { fallbackBoss, fallbackHero } from './fallback.ts';
 import { accessories, archetypes, bodies, growths, headgear, mouths, themes } from './schema.ts';
-import { cleanWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
+import { validWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
 
 function record(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -30,7 +30,7 @@ export function validateHero(value: unknown, profile: RepoProfile, kit: PlayerKi
     title: text(source.title, fallback.title, 24), archetype: enumeration(source.archetype, archetypes, fallback.archetype),
     headgear: enumeration(source.headgear, headgear, fallback.headgear), accessory: enumeration(source.accessory, accessories, fallback.accessory),
     emblem: emblem || fallback.emblem, palette: palette(source.palette, fallback.palette), catchphrase: text(source.catchphrase, fallback.catchphrase, 40),
-    weaponName: cleanWeaponName(source.weaponName) ?? fallback.weaponName,
+    weaponName: validWeaponName(source.weaponName, profile, kit) ?? fallback.weaponName,
   };
 }
 

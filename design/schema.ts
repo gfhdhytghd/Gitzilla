@@ -17,7 +17,7 @@ const palette = (count: number) => array({ type: 'string', pattern: '^#[0-9a-fA-
 export const heroSchema = object({
   title: string(24), archetype: enumeration(archetypes), headgear: enumeration(headgear), accessory: enumeration(accessories),
   emblem: { type: 'string', minLength: 1, maxLength: 2, pattern: '^[ -~]{1,2}$' },
-  palette: palette(4), catchphrase: string(40), weaponName: string(20),
+  palette: palette(4), catchphrase: string(40), weaponName: { ...string(24), description: 'Code expression in the hero language using a real repo identifier and a weapon-kind construct. Never an English weapon label.' },
 }, ['weaponName']);
 
 export function bossSchema(kit: BossKit) {

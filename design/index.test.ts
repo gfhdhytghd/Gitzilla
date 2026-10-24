@@ -7,6 +7,7 @@ import type { CodeDNA, RepoProfile, WeaponKind } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from '../sim/kits.ts';
 import { applyBossDesign, applyHeroDesign, createDesignService, designCacheFilename, designCacheKey, designFileStem, fallbackBoss, fallbackHero, parseApiKey, readApiKey, validateBoss, validateHero } from './index.ts';
 import { bossSchema, heroSchema } from './schema.ts';
+import { cleanWeaponName, validWeaponName } from './weapon.ts';
 
 // JSON imports infer tuples/union-valued fields as broad arrays/strings; use the producer's contract.
 const profile = JSON.parse(JSON.stringify(rawProfile)) as RepoProfile;
@@ -173,6 +174,7 @@ describe('cache and offline assets', () => {
     const files = (await readdir(fallbackDir)).filter(file => file.endsWith('.json'));
     const manifest = JSON.parse(await readFile(new URL('../data/design/manifest.json', import.meta.url), 'utf8'));
     const savedEpithets: string[] = [];
+    const savedWeapons: string[] = [];
     expect(files.length).toBeGreaterThanOrEqual(10);
     for (const file of files) {
       const p = JSON.parse(await readFile(new URL(file, fallbackDir), 'utf8')) as RepoProfile;
@@ -186,12 +188,16 @@ describe('cache and offline assets', () => {
       expect(suffix.replace(/[^a-z0-9]/gi, '').toLowerCase()).not.toContain(p.slug.split('/').pop()!.replace(/[^a-z0-9]/gi, '').toLowerCase());
       savedEpithets.push(suffix);
       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(validateBoss(b, p, bk));
-      expect(h.weaponName.length).toBeGreaterThan(0); expect(h.weaponName.length).toBeLessThanOrEqual(20);
+      expect(h.weaponName.length).toBeGreaterThan(0); expect(h.weaponName.length).toBeLessThanOrEqual(24);
+      expect(validWeaponName(h.weaponName, p, pk)).toBe(h.weaponName);
+      if (manifest.entries[p.slug].hero.source === 'fallback') expect(h.weaponName).toBe(pk.code!.weapon!.name);
+      savedWeapons.push(h.weaponName);
       expect(await api.designHero(p, pk)).toEqual(h); expect(await api.designBoss(p, bk)).toEqual(b);
       expect(onResult).toHaveBeenCalledWith({ slug: p.slug, kind: 'hero', source: 'precomputed' });
       expect(onResult).toHaveBeenCalledWith({ slug: p.slug, kind: 'boss', source: 'precomputed' });
     }
     expect(new Set(savedEpithets).size, savedEpithets.join('\n')).toBe(files.length);
+    expect(new Set(savedWeapons).size, savedWeapons.join('\n')).toBe(files.length);
     expect(fetcher).not.toHaveBeenCalled();
   });
   it('gives every fallback boss a distinct DNA-derived epithet, stable across squad sizes', async () => {
@@ -213,7 +219,8 @@ describe('cache and offline assets', () => {
 });
 
 describe('code weapon names', () => {
-  const weapon = { name: 'printf() Pistol', projectiles: ['"str"', '.then()'], muzzle: 'printf', impact: '\\n' };
+  const p = { ...profile, primaryLanguage: 'JavaScript', dna: { ...profile.dna!, identifiers: ['emit'], componentSymbols: {} } };
+  const weapon = { name: 'await fetch(emit)', projectiles: ['"str"', '.then()'], muzzle: 'printf', impact: '\\n' };
   const kit = { ...heroKit, weapon: 'blaster' as const, code: {
     tokens: ['=>'], signature: 'emit()', snippet: 'return emit();', identifiers: ['emit'], weapon,
   } };
@@ -224,28 +231,33 @@ describe('code weapon names', () => {
     for (const kind of kinds) {
       const legacy = { ...heroKit, weapon: kind, code: undefined };
       const a = fallbackHero(profile, legacy), b = fallbackHero(profile, legacy);
-      expect(a.weaponName).toBe(b.weaponName); expect(a.weaponName!.length).toBeLessThanOrEqual(20);
+      expect(a.weaponName).toBe(b.weaponName); expect(a.weaponName!.length).toBeLessThanOrEqual(24);
       names.add(a.weaponName!);
     }
     expect(names.size).toBe(kinds.length);
-    expect(fallbackHero(profile, { ...kit, code: { ...kit.code, weapon: { ...weapon, name: 'Promise Blaster' } } }).weaponName).toBe('Promise Blaster');
+    expect(fallbackHero(p, kit).weaponName).toBe(weapon.name);
+    expect(fallbackHero(p, { ...kit, code: { ...kit.code, weapon: { ...weapon, name: 'Promise Blaster' } } }).weaponName).not.toBe('Promise Blaster');
   });
 
-  it('accepts optional Gemini names and clamps invalid or missing names to usable fallback', () => {
+  it('accepts optional code expressions and rejects labels/broken/overlength expressions whole', () => {
     expect(heroSchema.required).not.toContain('weaponName');
-    expect(heroSchema.properties.weaponName).toEqual({ type: 'string', minLength: 1, maxLength: 20 });
-    expect(validateHero({ ...hero, weaponName: 'x'.repeat(80) }, profile, kit).weaponName).toHaveLength(20);
-    for (const value of [undefined, null, 42, '', '  ', '\x00']) {
-      expect(validateHero({ ...hero, weaponName: value }, profile, kit).weaponName).toBe(weapon.name);
+    expect(heroSchema.properties.weaponName).toMatchObject({ type: 'string', minLength: 1, maxLength: 24 });
+    for (const value of [undefined, null, 42, '', '  ', '\x00', 'Promise Blaster', 'emit() Pistol', 'yield Staff', 'await fetch(emit', 'await fetch(emit))', 'fire(emit +)', 'fire(emit emit)', 'fire(emit,,emit)', 'fire(&emit)', 'fire!(emit)', 'fire(emit::shot)', 'x'.repeat(80), 'await fetch(imaginary)', 'await fetch(emit2)', 'await fetch("emit")']) {
+      expect(validWeaponName(value, p, kit)).toBeUndefined();
+      const fallback = validateHero({ ...hero, weaponName: value }, p, kit).weaponName;
+      expect(fallback).toBe(weapon.name);
     }
+    expect(cleanWeaponName('await fetch(verylongname)')).toBeUndefined();
+    expect(validWeaponName('emit(shot)', p, kit)).toBe('emit(shot)');
+    expect(validWeaponName('yield from emit()', p, kit)).toBeUndefined();
   });
 
   it('maps only the weapon name and leaves all stats, code, glyphs and FX intact', () => {
-    const design = { ...hero, weaponName: 'emit() Pistol' };
+    const design = { ...hero, weaponName: 'emit(shot)' };
     const changed = applyHeroDesign(kit, design);
     expect(changed).toEqual({ ...kit, design, title: design.title, palette: design.palette,
-      code: { ...kit.code, weapon: { ...weapon, name: 'emit() Pistol' } } });
-    expect(kit.code.weapon.name).toBe('printf() Pistol');
+      code: { ...kit.code, weapon: { ...weapon, name: 'emit(shot)' } } });
+    expect(kit.code.weapon.name).toBe('await fetch(emit)');
     expect(changed.code!.weapon!.projectiles).toEqual(weapon.projectiles);
     expect(changed.code!.weapon!.muzzle).toBe(weapon.muzzle); expect(changed.code!.weapon!.impact).toBe(weapon.impact);
   });
@@ -253,23 +265,48 @@ describe('code weapon names', () => {
   it('keeps old designs and old kits compatible without constructing partial weapons', () => {
     const { weaponName: _ignored, ...oldDesign } = hero;
     expect(applyHeroDesign(kit, oldDesign).code).toEqual(kit.code);
-    expect(applyHeroDesign({ ...heroKit, code: undefined }, { ...hero, weaponName: 'Byte Pistol' }).code).toBeUndefined();
+    expect(applyHeroDesign({ ...heroKit, code: undefined }, { ...hero, weaponName: 'fire(emit)' }).code).toBeUndefined();
+    expect(applyHeroDesign(kit, { ...hero, weaponName: 'Promise Blaster' }).code).toEqual(kit.code);
   });
 
   it('sends the existing weapon vocabulary to Gemini and maps a returned rename', async () => {
-    const fetcher = vi.fn().mockResolvedValue(response({ ...hero, weaponName: 'emit() Pistol' }));
-    const design = await service(fetcher).designHero(profile, kit);
-    expect(applyHeroDesign(kit, design).code!.weapon!.name).toBe('emit() Pistol');
+    const fetcher = vi.fn().mockResolvedValue(response({ ...hero, weaponName: 'emit(shot)' }));
+    const design = await service(fetcher).designHero(p, kit);
+    expect(applyHeroDesign(kit, design).code!.weapon!.name).toBe('emit(shot)');
     const prompt = JSON.parse(fetcher.mock.calls[0][1].body).contents[0].parts[0].text;
-    expect(prompt).toContain('optional weaponName'); expect(prompt).toContain('plain weapon hint');
+    expect(prompt).toContain('Optional weaponName'); expect(prompt).toContain('24 characters'); expect(prompt).toContain('CODE EXPRESSION');
     expect(prompt).toContain(JSON.stringify(weapon));
   });
 
   it('invalidates hero caches for the weapon vocabulary, while renaming never rerolls art or bosses', () => {
-    const renamed = applyHeroDesign(kit, { ...hero, weaponName: 'emit() Pistol' });
+    const renamed = applyHeroDesign(kit, { ...hero, weaponName: 'emit(shot)' });
     expect(designCacheKey(profile, 'hero', renamed)).toBe(designCacheKey(profile, 'hero', kit));
     expect(designCacheKey(profile, 'hero', { ...kit, code: { ...kit.code, weapon: { ...weapon, projectiles: ['go'] } } })).not.toBe(designCacheKey(profile, 'hero', kit));
     expect(fallbackBoss(profile, bossKitFromProfile(profile, 8)).name).toBe(boss.name);
+  });
+  it.each([
+    ['JavaScript', 'blaster', 'router', 'await fetch(router)'], ['TypeScript', 'blaster', 'render', '<Blaster>render()'],
+    ['Ruby', 'blaster', 'dispatch', 'puts dispatch!'], ['Go', 'smg', 'serve', 'for { go serve() }'],
+    ['Kotlin', 'smg', 'route', 'launch { route() }'], ['C', 'shotgun', 'redis', '#define SPRAY(redis)'],
+    ['C++', 'shotgun', 'mux', 'std::spread(mux)'], ['Rust', 'cannon', 'search', 'unsafe { search() }'],
+    ['Zig', 'cannon', 'walk', 'comptime blast(walk)'], ['Python', 'staff', 'app', 'yield from app()'],
+    ['Python', 'staff', 'render', 'lambda: render()'], ['Haskell', 'staff', 'tree', 'fmap cast tree'],
+    ['Java', 'laser', 'owner', 'stream().map(owner)'], ['C#', 'laser', 'beam', '.Select(beam)'],
+    ['SQL', 'laser', 'pets', 'JOIN pets ON fire'], ['JavaScript', 'blade', 'printer', 'rm -rf ./printer'],
+    ['JavaScript', 'blade', 'bug', ':%s/bug//g'], ['JavaScript', 'blade', 'printer', 'git reset --hard printer'],
+  ])('accepts %s %s syntax using its real symbol', (language, kind, symbol, expression) => {
+    const fixture = { ...p, primaryLanguage: language, dna: { ...p.dna, identifiers: [symbol] } };
+    const codeKit = { ...kit, weapon: kind as WeaponKind, code: { ...kit.code, signature: `${symbol}()`, identifiers: [symbol] } };
+    expect(validWeaponName(expression, fixture, codeKit)).toBe(expression);
+  });
+  it('rejects English model output through the mocked REST path and preserves sim code', async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ ...hero, weaponName: 'Promise Blaster' }));
+    expect((await service(fetcher).designHero(p, kit)).weaponName).toBe(weapon.name);
+  });
+  it('retains honest sim seed-literal names when no complete source identifier can fit', () => {
+    const noSource = { ...p, dna: { ...p.dna, identifiers: ['a'.repeat(60)], componentSymbols: {} } };
+    const oversized = { ...kit, code: { ...kit.code, signature: '', identifiers: [], weapon: { ...weapon, name: 'fire(123)' } } };
+    expect(fallbackHero(noSource, oversized).weaponName).toBe('fire(123)');
   });
 });
 
