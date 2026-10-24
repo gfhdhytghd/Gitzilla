@@ -65,15 +65,17 @@ export class TextLayer {
     let lo = 0, hi = str.length;
     while (lo < hi) {
       const mid = (lo + hi + 1) >> 1;
-      if (this.measure(str.slice(0, mid) + "…", size, font, min) <= maxW) lo = mid; else hi = mid - 1;
+      if (this.measure(str.slice(0, mid) + "..", size, font, min) <= maxW) lo = mid; else hi = mid - 1;
     }
-    return lo > 0 ? str.slice(0, lo) + "…" : "";
+    return lo > 0 ? str.slice(0, lo) + ".." : "";
   }
 
   text(str: string, x: number, y: number, o: TextOpts = {}): number {
     if (!str) return 0;
     const c = this.ctx;
     const size = o.size ?? 8, font = o.font ?? "term", min = o.min ?? 10;
+    // "…" renders as an underscore-ish blob in VT323; spell it out
+    str = str.replace(/…/g, "..");
     if (o.maxW !== undefined) str = this.fit(str, o.maxW, size, font, min);
     if (!str) return 0;
     this.setFont(size, font, min);

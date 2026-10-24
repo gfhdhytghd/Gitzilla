@@ -1,4 +1,21 @@
-DONE (genesis) + DONE (edu pvp)
+DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+
+## Genesis polish (coordinator list), all 5 done and checked in 1280x720 screenshots
+1. **Boss pacing.** The boss map stage is capped at 2.4 s and the hero's at 3.0 s. Same-part runs (7 limbs, 7 weak points, 8 attacks) fire as a fast volley.
+   - Boss reveal now lands at about 7.4 s; hero reveal at about 8 s.
+   - The reveal stage is never condensed, and `onDone` fires 0.9 s after it ends. The finished sprite and name card stay up for at least 2.2 s, intro included.
+   - Demo `loop` restarts 3 s after done.
+2. **Boss map clarity.**
+   - The graph arrows fade out as the map starts. Organs fly in as small glowing blobs and land with a pop ring.
+   - The boss silhouette fills in (body color plus a pulsing outline) as organs arrive, so the forming monster is the star of the frame.
+   - Limbs are filled lobes, not dashed circles.
+   - At most 2 wires (current plus the previous one fading) and 1 caption are alive at once.
+3. **Fill the host.** The demo's desktop layout now fills the viewport.
+   - Text sizes follow the host's CSS height instead of the logical pixel size: about 22 px terminal and 26 px header on a 720 px screen, clamped from 11 to 24 px.
+   - Pixel art keeps integer device scaling.
+4. **Terminal wraps, never truncates.** Lines wrap as monospace rows at space, `/`, `·` and `>`, with an indented continuation.
+   - `…` renders as a blob in VT323, so it's spelled `..` everywhere, including the server's own truncations.
+5. **Full stage names** (`clone › parse › graph › map › assemble › reveal`) in every layout, for both the hero and the live header. When space is short, the header drops the label first, then shortens the slug, then shrinks the font.
 
 Summary: `client/genesis/` ships `playGenesis(host, opts)`, a canvas cinematic that shows a repo turning into its hero or boss in six stages. Every stage is drawn from real data.
 - Live mode: analyzer progress streams real paths.
