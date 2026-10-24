@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GITZILLA // Edu Lab</title>
+    <link rel="icon" href="data:," />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/client/style.css" />
+    <style>
+      html, body { overflow: auto; height: auto; min-height: 100%; }
+      #app { position: static; }
+      .demo-arena { image-rendering: pixelated; display: block; width: 100%; height: auto; }
+      .demo-index { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+      .demo-index h1 { font: 18px var(--pix); color: var(--green); }
+      .demo-index .btn { display: inline-block; margin: 6px; text-decoration: none; }
+      /* desktop: arena + side gutter */
+      .demo-desktop { display: flex; gap: 16px; padding: 16px; height: 100vh; box-sizing: border-box; align-items: flex-start; }
+      .demo-stage { position: relative; flex: 1; max-width: 960px; }
+      .demo-quiz-top { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: min(560px, 90%); }
+      /* phone portrait */
+      body[data-view="phone"] { display: flex; justify-content: center; }
+      .demo-phone { width: 390px; height: 844px; display: flex; flex-direction: column; background: #000; position: relative; overflow: hidden; }
+      .demo-phone-top { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 18px; color: var(--red); }
+      .demo-phone-view { height: 300px; overflow: hidden; display: flex; justify-content: center; }
+      .demo-phone-view canvas { width: auto; height: 300px; max-width: none; transform: translateX(10%); }
+      .demo-deck { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #05070a; border-top: 2px solid var(--line); }
+      .demo-deck-row { font-size: 18px; color: var(--dim); }
+      .demo-deck-feed { min-height: 64px; }
+      .demo-deck-btns { margin-top: auto; display: flex; gap: 10px; }
+      .demo-deck-btns span { flex: 1; text-align: center; padding: 22px 0; border: 2px solid var(--green-d); font: 12px var(--pix); color: var(--green); }
+      /* projector */
+      .demo-screen { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #000; }
+      .demo-screen .demo-arena { width: 100%; height: 100%; object-fit: contain; }
+      .demo-screen-quiz { position: absolute; top: 4vh; left: 50%; transform: translateX(-50%); }
+      .demo-report { max-width: 980px; margin: 0 auto; padding: 16px; }
+      .demo-report.v-screen { max-width: none; padding: 2vw; }
+      .demo-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding: 16px; }
+      .demo-tile { border: 2px solid var(--c); padding: 8px; background: #070d10; }
+      .demo-tile .edu-diagram { width: 192px; height: 108px; margin: 6px 0; }
+      .demo-tile p { margin: 0; font-size: 17px; line-height: 1.05; }
+      .demo-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; padding: 16px; align-items: start; }
+      .demo-note { font-size: 18px; margin: 6px 0; line-height: 1.05; }
+      .demo-note b { color: var(--yellow); font-weight: normal; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/client/edu/demo.ts"></script>
+  </body>
+</html>

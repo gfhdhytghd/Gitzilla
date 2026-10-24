@@ -1,6 +1,14 @@
 export { playerKitFromProfile, bossKitFromProfile } from './kits.ts';
 export { createMatch, WEAPONS } from './match.ts';
-export type { Match } from './match.ts';
+export type { Match, BattleMatch, BattleState, BattleAutopsy } from './match.ts';
 export { bossRegions } from './regions.ts';
-export { squadBudget, ATTACK_COST } from './balance.ts';
+export { squadBudget, ATTACK_COST, MATCH_TUNING } from './balance.ts';
 export type { HitFeedback } from './balance.ts';
+export { PERKS, createPerkOffer } from './perks.ts';
+export { weaponCode, SKILL_FLAVOR, ATTACK_FLAVOR } from './flavor.ts';
+export type { CodeWeapon } from './flavor.ts';
+export type { BossCode } from './code.ts';
+export { pvpArenaSize } from './pvp.ts';
+export type { ClassroomState, ClassroomPvpState } from './pvp.ts';
+export type { ClassroomFacts, ClassroomKit } from './quality.ts';
+export type { SocialBossKit } from './social.ts';
