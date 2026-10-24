@@ -1,16 +1,36 @@
-DONE — codex-genesis
+DONE (edu pvp) — codex-genesis
 
 Implemented the server-side pure TypeScript code → character story builder in `genesis/`.
 No commits, new dependencies, shared-contract edits, or other owners' implementation edits.
 
+## Classroom PvP revision (latest)
+- Completed `buildGenesis(profile, eduKit, 'hero')`: when `quality` is present, the trace IS the report card. First seven steps show all supplied grades (armor, speed, damage, weakness, HP, energy, regen), followed by concrete improvement tips, then hero identity/cosmetics. All captions stay ≤40 chars; grades/values come directly from sim, including zero and fractional values.
+- Exported `qualityTrace(quality)` for consumers needing only report-card rows. No `GameMode` API change or boss needed. Existing battle behavior remains when `quality` is absent; `quality: []` does not invent missing grades.
+- Read the new top section of `docs/tasks/edu.md` and `QualityStat` / nullable-boss contracts. No `MatchState`/`Autopsy` boss dereferences exist in `genesis/`; initial scoped typecheck PASS with the nullable contract.
+- Initial full workspace typecheck fails in teammate-owned client/app, audio, Hall, server and sim files during migration; no Genesis diagnostics. Ownership is preserved.
+- Report-card traces use `PlayerKit.quality`: actual signal → actual stat/value/grade, then improvement tips. No independent quality grading or formulas in Genesis. Existing hero wiring auto-selects report-card behavior when quality is present.
+- Edu budget is empty, because code-quality stats do not share the battle five-point pool. Full tips/signals stay on `kit.quality`, joined by trace refs `quality:<stat>` and `quality-tip:<stat>`.
+- **Handoff to codex-net / claude-genesis / claude-edu:** build a sim-owned edu kit with quality, then use the existing `buildGenesis(profile, kit, 'hero')` call. Rebuild both kit and Genesis for every ready human/bot on mode changes and after optional design decoration. Edu has no boss Genesis call. Grade refs `quality:<stat>` and tip refs `quality-tip:<stat>` join the short trace to the unabridged `kit.quality` row in lobby/autopsy. Render `kit.quality` in edu instead of the empty `genesis.budget`.
+- No shared/client/server/sim edits or commits. Tests use all 15 real fallback profiles with explicitly supplied report-card contract fixtures; actual sim grading/PvP runtime remains sim-owned and was not claimed as integrated proof here.
+- Scoped validation: `npx vitest run genesis` **41/41 PASS**; `npx tsc -p genesis/tsconfig.json --noEmit` **PASS**; `git diff --check -- genesis docs/progress/codex-genesis.md` **PASS**.
+- Full workspace typecheck currently reports **255 diagnostics, zero in Genesis**, while other owners migrate null-boss/state fixtures (client/app, Hall, server, sim). No unrelated files changed. This supersedes the pre-migration typecheck PASS recorded below.
+- Initial full workspace suite: **359 PASS, 1 FAIL, 6 SKIP**; the failure was a 5s timeout in teammate-owned `qa/robustness.test.ts` / nonnumeric-aim lifecycle case. Immediate targeted rerun: **3 PASS, 1 SKIP**. Final full rerun: **375 PASS, 1 FAIL, 6 SKIP**, the same QA timeout; all **41 Genesis tests PASS**. Concurrent teammates added tests between runs. No further retries or unrelated QA edits; workspace suite is not claimed green.
+
+## Cinematic caption revision
+- Coordinator requested game-facing captions: `from` and `to` are now each **≤40 characters**, with human numbers (`Rust · 95% of code`, `12,485 LOC`, `1,703 HP`). Formulas, rule thresholds, seed numbers and hex colors are removed from display copy. Numeric payoffs retain space when long names are ellipsized.
+- First four hero steps: weapon, skill, glyphs, signature (class if no signature). First four boss steps: largest component limb, heart, cycle weak point (eyes if acyclic), attack. Every other limb/attack mapping remains, with stable IDs in `ref`; final name reveal stays last.
+- Actual budgets, metrics, graph, source data and credential filtering are unchanged. Detailed balance formulas stay in sim and the budget helpers rather than captions.
+- Updated tests cover caption limits across base and designed fallback kits, mobile ordering, and exact readable examples. Latest 60-payload size audit: **2,567–7,211 bytes**.
+- No server/client/shared edits or commits in this revision. Handoff wiring below remains the same.
+
 ## Delivered
 - `genesis/index.ts`: synchronous `buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kind: 'hero' | 'boss'): Genesis`, plus small exported `heroBudget` / `bossBudget` explain helpers and `MAX_GENESIS_BYTES`.
 - Detached real metrics, languages, components/edges/cycles, heart/fan-in, up to 40 supplied file paths and 12 real source snippets; no guessed paths/source. Absent DNA yields zero extracted counts and empty code samples.
-- Ordered trace covers language/class/weapon/palette, exact skill-rule precedence, shape and every stat allocation, signature/glyphs/outfit, each component/limb, import-edge tentacles, heart, each cycle weak point, eyes/scars, TODO bug labels, EVERY attack source/kind/reason/ID and its current parameters, theme/age, final design/body/name.
+- Ordered cinematic trace covers language/class/weapon/palette, skill, stat allocation, signature/glyphs/outfit, each component/limb, import-edge tentacles, heart, each cycle weak point, eyes/scars, TODO bug labels, every attack source/name/ID, theme/age, final design/body/name. Rule precedence and equal budgets are checked against the sim in tests.
 - Reads final kit values; applied designs and squad rescaling are reflected without touching balance.
 - Hero budget bars = five decoded stat points. Boss bars = component percentages of the one anatomical attack-share budget, total 100%; these are different units. Fixed squad health/threat and cycle-normalized 36% effective limb HP are explained separately.
 - Filters recognizable credentials BEFORE truncation, whitelists output fields, never fetches/logs/persists, never accepts token/options. Private profiles work identically inside the room. Server remains responsible for keeping credentialed data away from Gemini/Hall/storage/analytics.
-- Compaction sheds optional samples first, then shortens captions without dropping mappings. 60 measured base/fallback-designed payloads across 15 repos: **2,944–9,154 bytes**, comfortably below 12 KiB. UTF-8 stress case covered.
+- Compaction sheds optional samples first, then shortens captions without dropping mappings. 60 measured base/fallback-designed payloads across 15 repos: **2,567–7,211 bytes**, comfortably below 12 KiB. UTF-8 stress case covered.
 - `genesis/index.test.ts`, `genesis/tsconfig.json`, `genesis/README.md`.
 
 ## Handoff to codex-net
@@ -68,14 +88,14 @@ No server edits by codex-genesis. WebSocket/client integration and visual/device
 
 ## Contract requests / honest mapping boundaries
 - No shared contract additions required.
-- Contributors → eyes: `design/fallback.ts` clamps contributor count to 1–12 for the fallback design; Gemini may provide a different repo-informed target. Without a design, current renderer uses seed-derived target (3–8); anatomical eyes may exceed a design target. Trace explicitly reports the actual mode instead of asserting contributors mechanically set every rendered eye.
-- Commits → scars: current renderer scars are seed-based. Trace reports commits as context and correctly labels scars seed-based; commit subjects supply taunt material. Renderer owner can implement literal commit-driven scars later, then update the explain text.
-- TODOs label bug minions; they do NOT set minion count. Each summon trace reports `attack.params.count` (currently 3 bugs/cast).
+- Contributors → eyes: `design/fallback.ts` clamps contributor count to 1–12 for the fallback design; Gemini may provide a different repo-informed target. Without a design, current renderer uses seed-derived target (3–8); anatomical eyes may exceed a design target. Captions pair contributors with designed eyes only; procedural eyes use “A creature takes shape”.
+- Commits → scars: current renderer scars are seed-based. Captions use “A battle-worn creature” → “Scars across its hide” without claiming commits mechanically cause scars. Real commit subjects get a separate taunt mapping when present.
+- TODOs label bug minions; they do NOT set minion count. Captions connect TODOs to swarm labels only; numeric summon parameters remain in the kit.
 - Hero `cape` trace describes code rows on outfit/cape and any actual design accessory; it does not promise every hero wears a cape.
 
-## Verification
-- `npx vitest run genesis`: **22/22 PASS**, all 15 fallback profiles, rule precedence/all five stat allocations, all eight attack kinds, design overrides, detached inputs, missing DNA, private credential filtering, UTF-8 payload compaction, squad-independent boss share budgets.
+## Earlier caption-revision verification (before edu contract migration)
+- `npx vitest run genesis`: **23/23 PASS**, all 15 fallback profiles, rule precedence/all five stat allocations, all eight attack kinds, design overrides, detached inputs, missing DNA, private credential filtering, UTF-8 payload compaction, squad-independent boss share budgets, short human captions and mobile highlight order.
 - `npx tsc -p genesis/tsconfig.json --noEmit`: **PASS**.
 - Final `npm run typecheck`: **PASS**.
-- Final `npm test`: **318 PASS, 6 SKIP**, 29 files passed / 3 skipped (concurrent teammates added tests during this run; Genesis tests all pass).
+- Final `npm test`: **336 PASS, 6 SKIP**, 31 files passed / 3 skipped (concurrent teammates added tests during this run; Genesis tests all pass).
 - No dev server started/restarted and no live/5173 access. This module has no browser/runtime side effects.

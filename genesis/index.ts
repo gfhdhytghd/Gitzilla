@@ -1,4 +1,4 @@
-import type { BossAttack, BossKit, Genesis, PlayerKit, RepoProfile, TraceStep } from '../shared/types.ts';
+import type { BossAttack, BossKit, Genesis, PlayerKit, QualityStat, RepoProfile, TraceStep } from '../shared/types.ts';
 
 export type GenesisKind = 'hero' | 'boss';
 export const MAX_GENESIS_BYTES = 12 * 1024;
@@ -9,10 +9,20 @@ const secret = /(?:gh[pousr]_|github_pat_|sk-(?:proj-)?)[\w-]{12,}|\b(?:AKIA|ASI
 const clean = (s: string, max = 160) => secret.test(s) ? '' : s.replace(/[\x00-\x1f\x7f]/g, ' ').trim().slice(0, max);
 const lines = (values: string[], count: number, length: number) => [...new Set(values.map(v => clean(v, length)).filter(Boolean))].slice(0, count);
 const num = (n: number) => Number(n.toFixed(3));
-const pct = (n: number) => `${num(n * 100)}%`;
+const human = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 1 });
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+const caption = (s: string, max = 40) => {
+  const text = clean(s, s.length) || '[source omitted]';
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+};
+const leaf = (path: string) => path.split('/').filter(Boolean).at(-1) ?? path;
+// Reserve space for the number so a long name never crowds out its payoff.
+const withMetric = (name: string, metric: string) => `${caption(name, Math.max(1, 37 - metric.length))} · ${metric}`;
 
 /** Decode actual kit values, rather than re-rolling the sim's five-point allocation. */
 export function heroBudget(kit: PlayerKit): Genesis['budget'] {
+  // Classroom PvP earns stats independently. There is no shared five-point pool.
+  if (kit.quality !== undefined) return [];
   return [
     { label: 'hp', value: kit.maxHp - 5 },
     { label: 'armor', value: kit.maxArmor - 3 },
@@ -20,6 +30,25 @@ export function heroBudget(kit: PlayerKit): Genesis['budget'] {
     { label: 'speed', value: (kit.speed - 77) / 8 },
     { label: 'damage', value: (kit.damageMul - 0.9) / 0.1 },
   ].map(b => ({ ...b, value: num(b.value) }));
+}
+
+/** Display the sim's report card verbatim in meaning; never grade a repo twice.
+ * References join short captions to the complete signal/tip on kit.quality.
+ * Show all grades before tips, so a phone's first eight steps cover the card. */
+export function qualityTrace(quality: readonly QualityStat[]): TraceStep[] {
+  const order: QualityStat['stat'][] = ['armor', 'speed', 'damage', 'weakness', 'hp', 'energy', 'regen'];
+  const rows = [...quality].sort((a, b) => order.indexOf(a.stat) - order.indexOf(b.stat));
+  return [
+    ...rows.map(q => ({
+      part: 'stats' as const, from: caption(q.signal),
+      to: caption(`${q.stat} ${q.grade} · ${q.value.toLocaleString('en-US', { maximumFractionDigits: 3 })}`),
+      ref: `quality:${q.stat}`,
+    })),
+    ...rows.filter(q => q.tip.trim()).map(q => ({
+      part: 'stats' as const, from: `Improve ${q.stat} · ${q.grade}`,
+      to: caption(q.tip), ref: `quality-tip:${q.stat}`,
+    })),
+  ];
 }
 
 /** Boss budget bars are percentages of the one anatomical attack budget. */
@@ -35,25 +64,22 @@ export function bossBudget(kit: BossKit): Genesis['budget'] {
 }
 
 function skillReason(p: RepoProfile): string {
-  const concentration = Math.max(0, ...p.components.map(c => c.fanIn)) / Math.max(1, p.components.reduce((s, c) => s + c.fanIn, 0));
-  if (p.testRatio >= 0.18) return `tests ${pct(p.testRatio)} >= 18% (first rule)`;
-  if (p.cycles.length >= 2) return `tests <18%; ${p.cycles.length} cycles >=2`;
-  if (p.components.length >= 4 && concentration < 0.4) return `tests <18%; cycles <2; ${p.components.length} components; fan-in concentration ${pct(concentration)} <40%`;
-  return p.contributors >= 15 ? `earlier skill rules unmet; contributors ${p.contributors} >=15` : 'tests/cycles/distribution/contributor rules unmet; default';
+  if (p.testRatio >= 0.18) return `tests ${pct(p.testRatio)} · healing power`;
+  if (p.cycles.length >= 2) return `${human(p.cycles.length)} cycles · rewind the chaos`;
+  return `tests ${pct(p.testRatio)} · ${human(p.components.length)} modules`;
 }
 
 function attackReason(p: RepoProfile, kit: BossKit, attack: BossAttack): string {
   const i = kit.limbs.findIndex(l => l.component === attack.source);
   const c = p.components.find(c => c.name === attack.source);
-  const prefix = `${attack.source}: `;
   switch (attack.kind) {
-    case 'cascade': return `${prefix}in dependency cycle (first attack rule)`;
-    case 'fan': return `${prefix}acyclic; fan-out ${c?.fanOut ?? 0} >=4`;
-    case 'laser': return `${prefix}depth ${p.maxDepth} >=4; second component`;
-    case 'summon': return `${prefix}earlier rules unmet; files ${c?.files ?? 5} >=35`;
-    case 'ring': case 'spiral': return `${prefix}earlier rules unmet; index ${i} ${i % 2 ? 'odd' : 'even'}`;
-    case 'slam': return `${prefix}largest component contains heart ${p.heart}`;
-    case 'charge': return `${prefix}largest component does not contain heart`;
+    case 'cascade': return withMetric(attack.source, 'dependency loop');
+    case 'fan': return withMetric(attack.source, `${human(c?.fanOut ?? 0)} imports out`);
+    case 'laser': return withMetric(attack.source, `${human(p.maxDepth)} layers deep`);
+    case 'summon': return withMetric(attack.source, `${human(c?.files ?? 5)} files`);
+    case 'ring': case 'spiral': return withMetric(attack.source, `formation ${i + 1}`);
+    case 'slam': return withMetric(attack.source, 'heart-bearing module');
+    case 'charge': return withMetric(attack.source, 'largest module');
   }
 }
 
@@ -63,61 +89,70 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
   const p = profile;
   const trace: TraceStep[] = [];
   const add = (part: TraceStep['part'], from: string, to: string, ref?: string) => {
-    trace.push({ part, from: clean(from, 220) || '[source omitted]', to: clean(to, 240) || '[source omitted]', ...(ref && clean(ref, 96) ? { ref: clean(ref, 96) } : {}) });
+    trace.push({ part, from: caption(from), to: caption(to), ...(ref && clean(ref, 96) ? { ref: clean(ref, 96) } : {}) });
   };
   const languageBytes = Object.values(p.languages).reduce((s, n) => s + n, 0);
-  const lang = `language: ${p.primaryLanguage}${languageBytes ? ` ${pct((p.languages[p.primaryLanguage] ?? 0) / languageBytes)}` : ''}`;
+  const lang = languageBytes ? withMetric(p.primaryLanguage, `${pct((p.languages[p.primaryLanguage] ?? 0) / languageBytes)} of code`) : p.primaryLanguage;
+  const tokens = lines(p.dna?.tokens ?? [], 4, 8);
   let budget: Genesis['budget'];
 
   if (kind === 'hero') {
     const hero = kit as PlayerKit;
-    add('class', lang, `class: ${hero.design?.archetype ?? hero.title}${hero.design ? ' (design from repo + weapon)' : ''}`);
-    add('weapon', lang, `weapon: ${hero.code?.weapon?.name ?? hero.weapon}; kind ${hero.weapon}`);
-    add('palette', `${lang}; seed ${p.seed}${hero.design ? '; authored design' : '; seed parity sets visor'}`, `palette: ${hero.palette.join(' ')}`);
-    add('skill', skillReason(p), `skill: ${hero.skill}`);
-    const shape = (p.totalFiles + p.maxDepth * 3 + p.cycles.length * 7 + Math.round(p.testRatio * 100)) % 5;
-    add('stats', `shape=(files ${p.totalFiles} + depth ${p.maxDepth}*3 + cycles ${p.cycles.length}*7 + round(tests*100)) %5 = ${shape}`, '5 equal-budget points: 2 at shape, 0 at (shape+2)%5, 1 elsewhere');
+    if (hero.quality !== undefined) trace.push(...qualityTrace(hero.quality));
+    add('weapon', lang, hero.code?.weapon?.name ?? hero.weapon);
+    add('skill', hero.skill === 'fork' ? `${human(p.contributors)} contributors` : skillReason(p), `skill: ${hero.skill}`);
+    add('glyphs', tokens.length ? tokens.join(' · ') : `${p.primaryLanguage} syntax`, tokens.length ? 'Code becomes your ammo' : 'Language-forged ammo');
+    if (hero.code?.signature) add('name', p.dna?.identifiers[0] ?? hero.code.signature, `signature: ${hero.code.signature}`, 'signature');
+    add('class', lang, `class: ${hero.design?.archetype ?? hero.title}`);
+    add('palette', lang, hero.design ? 'Your signature colors' : 'Language-forged colors');
     budget = heroBudget(hero);
-    const actual = [hero.maxHp, hero.maxArmor, hero.maxEnergy, hero.speed, hero.damageMul];
-    const formulas = ['5 + points', '3 + points', '150 + 35*points', '77 + 8*points', '0.9 + 0.1*points'];
-    budget.forEach((b, i) => add('stats', `${b.label}: ${b.value} budget points; ${formulas[i]}`, `${b.label}: ${num(actual[i])}`, b.label));
-    const tokens = lines(p.dna?.tokens ?? [], 12, 16);
-    if (tokens.length) add('glyphs', `real tokens: ${tokens.join(' ')}`, `crest/orbiting glyphs; shots: ${hero.code?.weapon?.projectiles.join(' ') ?? hero.code?.tokens.join(' ') ?? ''}`);
-    else add('glyphs', `${lang}; no extracted DNA tokens`, `language weapon glyphs: ${hero.code?.weapon?.projectiles.join(' ') ?? '(none)'}`);
-    if (hero.code?.signature) add('name', `identifier: ${p.dna?.identifiers[0] ?? hero.code.signature}`, `signature: ${hero.code.signature}`);
-    if (hero.code?.snippet) add('cape', `source: ${hero.code.snippet}`, 'code rows etched into outfit / cape', p.dna?.snippets[0]?.file ?? p.heart);
-    if (hero.design) add('cape', `repo design; seed ${p.seed}`, `headgear: ${hero.design.headgear}; accessory: ${hero.design.accessory}; emblem: ${hero.design.emblem}`);
-    add('name', `${p.slug}${hero.design ? '; repo/DNA authored design' : `; ${p.primaryLanguage} class table`}`, `name: ${hero.title}`);
+    if (hero.quality === undefined) {
+      add('stats', `${human(p.totalFiles)} files · ${human(p.components.length)} modules`, '5 points · one fair fight');
+      const actual = [
+        `${human(hero.maxHp)} HP`, `${human(hero.maxArmor)} armor`, `${human(hero.maxEnergy)} energy`,
+        `${human(hero.speed)} speed`, `${human(hero.damageMul)}× damage`,
+      ];
+      budget.forEach((b, i) => add('stats', `${b.label} · ${human(b.value)} ${b.value === 1 ? 'point' : 'points'}`, actual[i], b.label));
+    }
+    if (hero.code?.snippet) add('cape', hero.code.snippet, 'Your code, etched into your outfit', p.dna?.snippets[0]?.file ?? p.heart);
+    if (hero.design) add('cape', `class: ${hero.design.archetype}`, `${hero.design.headgear} · ${hero.design.accessory}`);
+    add('name', p.slug, `name: ${hero.title}`);
   } else {
     const boss = kit as BossKit;
-    if (boss.design) add('class', `component graph + seed ${p.seed}; repo-authored design`, `body: ${boss.design.body}; mouth: ${boss.design.mouth}; growths: ${boss.design.growths.join(', ')}`);
-    const totalLoc = p.components.slice(0, 8).reduce((s, c) => s + c.loc, 0) || 1;
     for (const limb of boss.limbs) {
       const c = p.components.find(c => c.name === limb.component);
-      add('limb', c ? `${c.name}: ${c.loc} LOC, ${c.files} files; weight=0.5/${boss.limbs.length}+0.5*LOC/${totalLoc}` : 'no analyzed components; sim core fallback', `limb: ${boss.design?.limbNames[limb.id] ?? limb.component}; ${limb.maxHp} HP`, limb.id);
+      add('limb', c ? withMetric(c.name, `${human(c.loc)} LOC`) : 'No modules found', withMetric(boss.design?.limbNames[limb.id] ?? leaf(limb.component), `${human(limb.maxHp)} HP`), limb.id);
     }
-    add('limb', `${p.edges.length} real component import edges`, 'dependencies: swaying tentacles between component limbs', 'dependencies');
-    add('heart', `heart: ${p.heart}; fan-in ${p.heartFanIn}`, `core: ${boss.heart}; pulsing heart`, p.heart);
+    add('heart', `${human(p.cycles.length)} cycles · heart fan-in ${human(p.heartFanIn)}`, `heart: ${leaf(boss.heart)}`, p.heart);
     for (const limb of boss.limbs) {
-      add('weakpoint', `${limb.component}: ${p.cycles.some(c => c.includes(limb.component)) ? 'in dependency cycle' : 'acyclic'}`, limb.weakPoint ? 'red weak point; 1.5x damage' : 'normal limb; no cycle bonus', limb.id);
+      add('weakpoint', withMetric(limb.component, limb.weakPoint ? 'dependency loop' : 'no cycles'), limb.weakPoint ? 'Glowing weak point · 1.5× damage' : 'Armored limb', limb.id);
     }
-    add('eyes', `contributors: ${p.contributors}${boss.design ? '; repo-informed design' : `; seed ${p.seed}`}`, boss.design ? `design eye target: ${boss.design.eyes} (layout may add anatomical eyes)` : `seed eye target: ${3 + ((boss.seed >>> 0) % 6)}; contributor mapping needs design`);
-    add('scars', `commits: ${p.commits}; seed ${p.seed}`, 'scars: seed-based; commit subjects supply taunt material');
+    add('eyes', boss.design ? `${human(p.contributors)} contributors` : 'A creature takes shape', boss.design ? `${human(boss.design.eyes)} watchful eyes` : `${3 + ((boss.seed >>> 0) % 6)} watchful eyes`);
+    add('limb', `${human(p.edges.length)} import connections`, 'Dependencies become tentacles', 'dependencies');
+    if (boss.design) add('class', `${human(p.components.length)} modules entwined`, `${boss.design.body} · ${boss.design.growths.join(' · ')}`);
+    add('scars', 'A battle-worn creature', 'Scars across its hide');
+    if (p.dna?.commits.length) add('name', `${human(p.commits)} commits`, 'Commit messages become taunts', 'commits');
     const todos = p.dna?.counts.todo ?? 0;
-    const labels = lines(boss.code?.todos ?? [], 2, 60);
-    add('minions', `TODO x${todos}; ${boss.code?.todos.length ?? 0} extracted bug labels`, `minion labels: ${labels.join(' | ') || '(no extracted labels)'}; count comes from summon attacks`);
+    add('minions', `${human(todos)} TODOs · unfinished business`, boss.code?.todos.length ? 'Your TODOs name the bug swarm' : 'A bug swarm awaits');
     for (const attack of boss.attacks) {
-      add('attack', attackReason(p, boss, attack), `${attack.kind}: ${attack.name}; ${attack.telegraph}s warning; ${attack.damage} damage; ${num(attack.cooldown)}s cooldown; ${attack.params.count} ${attack.kind === 'summon' ? 'bugs/cast' : 'shots'}; speed ${attack.params.speed}; share ${pct(attack.params.threatShare ?? 0)}`, attack.id);
+      add('attack', attackReason(p, boss, attack), attack.name, attack.id);
     }
     budget = bossBudget(boss);
-    add('stats', 'same squad size => same core HP and total anatomical threat', `core HP ${boss.maxHp}; limb effective HP pool 36%; budget bars = attack-share %`);
-    add('stats', 'LOC weights split one threat budget; cycles normalize limb HP', `enrage at ${pct(boss.enrageAt)} HP; speed ${boss.speed}; cooldowns priced by attack kind`);
-    add('theme', `${lang}; age ${p.ageDays} days; legacy if >3650 except web/notebook${boss.design ? '; design override' : ''}`, `arena: ${boss.theme}`);
-    add('palette', `${lang}; ${boss.design ? 'repo-authored design' : 'language accent + fixed monster colors'}`, `palette: ${boss.palette.join(' ')}`);
-    const tokens = lines(p.dna?.tokens ?? [], 12, 16);
-    add('glyphs', tokens.length ? `real tokens: ${tokens.join(' ')}` : 'no extracted DNA tokens', tokens.length ? 'boss projectile glyphs + heart code + limb inscriptions' : 'seed art; no invented source excerpts');
-    const epithet = p.cycles.length ? 'cycles => tangled horror' : boss.limbs.length <= 2 ? '<=2 components => monolith' : p.totalLoc < 15000 ? '<15000 LOC => micro-horror' : 'component graph => dependency devourer';
-    add('name', `${p.slug}; ${boss.design ? 'repo/DNA authored design' : epithet}`, `name: ${boss.name}`);
+    add('stats', 'One squad · one shared challenge', `${human(boss.maxHp)} HP · equal threat`);
+    add('stats', 'The heart grows desperate', `Enrages at ${pct(boss.enrageAt)} HP`);
+    add('theme', withMetric(p.primaryLanguage, `${human(p.ageDays)} days old`), `arena: ${boss.theme}`);
+    add('palette', lang, 'Monster-forged colors');
+    add('glyphs', tokens.length ? tokens.join(' · ') : 'No code samples found', tokens.length ? 'Code carved into the monster' : 'A creature takes shape');
+    add('name', p.slug, `name: ${boss.name}`);
+
+    // Phones may show only eight steps. Lead with anatomy, heart, vulnerability
+    // (or eyes for acyclic repos), then an attack before the remaining detail.
+    const highlights = [
+      trace.find(t => t.part === 'limb'), trace.find(t => t.part === 'heart'),
+      trace.find(t => t.part === 'weakpoint' && boss.limbs.some(l => l.id === t.ref && l.weakPoint)) ?? trace.find(t => t.part === 'eyes'),
+      trace.find(t => t.part === 'attack'),
+    ].filter((t): t is TraceStep => !!t);
+    trace.splice(0, trace.length, ...highlights, ...trace.filter(t => !highlights.includes(t)));
   }
 
   const sampleFiles = lines([
