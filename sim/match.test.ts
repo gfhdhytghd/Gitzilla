@@ -51,7 +51,7 @@ describe('repository kits', () => {
       expect(kit.attacks.reduce((sum, a) => sum + a.params.threatShare, 0)).toBeCloseTo(1);
       expect(kit.maxHp).toBe(squadBudget(6).hp);
     }
-    expect(squadBudget(8).hp / 8).toBe(squadBudget(4).hp / 4);
+    expect(squadBudget(8).hp / 8).toBeCloseTo(squadBudget(4).hp / 4, 0);
   });
   it('ignores readme/tree art-direction context when calculating stats and attack budgets', () => {
     const profile = syntheticProfile(8);

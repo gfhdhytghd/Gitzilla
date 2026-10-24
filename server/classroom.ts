@@ -11,7 +11,7 @@ export interface ClassroomSource {
 export interface SubmissionTicket { id: string; generation: number; revision: number }
 const round = (n: number) => Math.round(n * 10) / 10;
 const REFERENCE_STUDENTS = 4;
-const BOSS_HP_PER_STEP = 60;
+const BOSS_HP_PER_STEP = 20;
 const bounded = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi;
 const text = (s: unknown, name: string, max: number, empty = false): string => {
   if (typeof s !== 'string' || s.length > max || (!empty && !s.trim())) throw new Error(`Invalid ${name}`);
@@ -44,7 +44,7 @@ export class ClassroomSession {
   private credited = new Map<string, number>();
   private submittedAt = new Map<string, number>();
   constructor(plan: ClassroomPlan, private now: () => number = Date.now) {
-    this.state = { plan: normalizeClassroomPlan(plan), phase: 'setup', stepIndex: 0, attempt: 1, deadline: null, remainingMs: null, serverTime: now(), raidEndsAt: null, bossHp: plan.steps.length * 60, bossMaxHp: plan.steps.length * 60, rows: [], rounds: [] };
+    this.state = { plan: normalizeClassroomPlan(plan), phase: 'setup', stepIndex: 0, attempt: 1, deadline: null, remainingMs: null, serverTime: now(), raidEndsAt: null, bossHp: plan.steps.length * BOSS_HP_PER_STEP, bossMaxHp: plan.steps.length * BOSS_HP_PER_STEP, rows: [], rounds: [] };
   }
   roster(students: { id: string; name: string; connected: boolean }[]) {
     for (const s of students) {
