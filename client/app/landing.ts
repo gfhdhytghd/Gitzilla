@@ -90,7 +90,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
           code,
           h("button.btn", { onclick: join }, "⏎"),
         ),
-        h("button.btn.btn-ghost", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
+        h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),
       h(

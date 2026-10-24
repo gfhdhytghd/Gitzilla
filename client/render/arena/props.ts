@@ -3,7 +3,7 @@ import type { Obstacle, PerkOffer, Pickup, PlayerState } from "../../../shared/t
 import { ARENA_W } from "../../../shared/types.ts";
 import { disc, drawGlow, hash2, line, makeCanvas, TAU } from "./pix.ts";
 import { drawText, drawTextRaw, textWidth } from "./font.ts";
-import { addShake, burst, emit } from "./fx.ts";
+import { addShake, burst, emit, fx } from "./fx.ts";
 
 // ---------------- obstacles: files of the boss repo as cover ----------------
 
@@ -100,7 +100,7 @@ export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle
     drawGlow(ctx, o.x, o.y, extColor(o.label), Math.max(8, o.w * 0.45), 0.12);
     // filename tag under the block when the title bar is too narrow for it
     const nm = baseName(o.label);
-    if (textWidth(nm) > o.w - (o.w >= 22 ? 10 : 3)) drawText(ctx, nm.length > 16 ? nm.slice(0, 15) + "~" : nm, Math.round(o.x), y0 + s.height + 1, extColor(o.label), { align: "center" });
+    if (textWidth(nm) > o.w - (o.w >= 22 ? 10 : 3) || fx.textScale > 1) drawText(ctx, nm.length > 16 ? nm.slice(0, 15) + "~" : nm, Math.round(o.x), y0 + s.height + 1, extColor(o.label), { align: "center", scale: fx.textScale });
     // cracks grow as hp drops
     const dmg = 1 - Math.max(0, o.hp) / Math.max(1, o.maxHp);
     const cracks = Math.floor(dmg * 6);
@@ -140,17 +140,27 @@ interface PickTrack { x: number; y: number; vx: number; vy: number; kind: Pickup
 const pickTracks = new Map<number, PickTrack>();
 const pickSprites = new Map<string, HTMLCanvasElement>();
 
+// Pickups are code items: heart = "+1 commit" green diff chip, energy = coffee (RAM for devs), armor = "tests passed" shield.
 const PICK_ART: Record<Pickup["kind"], { rows: string[]; pal: Record<string, string>; glow: string }> = {
-  heart: { rows: [".oo.oo.", "orrorro", "orwrrro", "orrrrro", ".orrro.", "..oro..", "...o..."], pal: { o: "#2a0610", r: "#ff3a5c", w: "#ffd0da" }, glow: "#ff3a5c" },
-  energy: { rows: ["...o...", "..obo..", ".obwbo.", "obbwbbo", ".obbbo.", "..obo..", "...o..."], pal: { o: "#061a2a", b: "#2ee6ff", w: "#e8ffff" }, glow: "#2ee6ff" },
-  armor: { rows: ["ooooooo", "oggwggo", "oggwggo", "oggwggo", ".oggwo.", "..ogo..", "...o..."], pal: { o: "#10141c", g: "#9aa6bc", w: "#e8eef8" }, glow: "#9ab8ff" },
+  heart: {
+    rows: [".ooooooo.", "oGGGwGGGo", "oGgGwGgGo", "owwwwwwwo", "oGgGwGgGo", "oGGGwGGGo", ".ooooooo."],
+    pal: { o: "#062a10", G: "#2ea043", g: "#3fb950", w: "#e6ffec" }, glow: "#3fb950",
+  },
+  energy: {
+    rows: ["ooooooo..", "obbbbbooo", "owwwwwo.o", "owcccwo.o", "owwwwwooo", "owwwwwo..", ".ooooo..."],
+    pal: { o: "#1a0e06", b: "#6a3a1a", w: "#f2ede4", c: "#2ee6ff" }, glow: "#2ee6ff",
+  },
+  armor: {
+    rows: [".ooooooo.", "osssssWso", "osssssgso", "ossssgsso", "osgsgssso", ".osggsso.", "..ossso..", "...ooo..."],
+    pal: { o: "#10141c", s: "#9aa6bc", W: "#e8eef8", g: "#3fb950" }, glow: "#9ab8ff",
+  },
 };
 
 function pickupSprite(kind: Pickup["kind"]): HTMLCanvasElement {
   let c = pickSprites.get(kind);
   if (c) return c;
   const art = PICK_ART[kind];
-  const [cv, g] = makeCanvas(7, 7);
+  const [cv, g] = makeCanvas(art.rows[0].length, art.rows.length);
   art.rows.forEach((row, y) => row.split("").forEach((ch, x) => { if (art.pal[ch]) { g.fillStyle = art.pal[ch]; g.fillRect(x, y, 1, 1); } }));
   pickSprites.set(kind, (c = cv));
   return c;
@@ -186,12 +196,15 @@ export function drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], ti
       ctx.globalAlpha = 1;
     }
     const s = pickupSprite(p.kind);
-    if (pop < 1) ctx.drawImage(s, x - 3, y - 5 + bob - Math.round((1 - pop) * 6), 7, 7);
-    else ctx.drawImage(s, x - 3, y - 5 + bob);
-    // sparkle
-    if (Math.floor(time * 3 + p.id) % 4 === 0) { ctx.fillStyle = "#ffffff"; ctx.fillRect(x + 2, y - 5 + bob, 1, 1); }
-    // despawn blink is handled by the sim removing it; blink when old
-    if (age > 12 && Math.floor(time * 10) % 2) { ctx.globalAlpha = 0.5; ctx.fillStyle = "#000"; ctx.fillRect(x - 3, y - 5 + bob, 7, 7); ctx.globalAlpha = 1; }
+    const sx = x - (s.width >> 1), sy = y - 6 + bob - (pop < 1 ? Math.round((1 - pop) * 6) : 0);
+    // blink before despawn (sim removes it at 15 s)
+    if (!(age > 12 && Math.floor(time * 10) % 2)) ctx.drawImage(s, sx, sy);
+    // coffee steam / sparkle
+    if (p.kind === "energy") {
+      ctx.fillStyle = "#e8e8f0";
+      for (let k = 0; k < 2; k++) { const f = (time * 1.5 + k * 0.5 + p.id * 0.3) % 1; ctx.globalAlpha = 1 - f; ctx.fillRect(sx + 2 + k * 2 + Math.round(Math.sin(f * 6 + k) * 1), sy - 1 - Math.round(f * 5), 1, 1); }
+      ctx.globalAlpha = 1;
+    } else if (Math.floor(time * 3 + p.id) % 4 === 0) { ctx.fillStyle = "#ffffff"; ctx.fillRect(sx + s.width - 2, sy, 1, 1); }
   }
   for (const [id, tr] of pickTracks) {
     if (seen.has(id)) continue;
@@ -257,9 +270,12 @@ export function drawPerkCards(ctx: CanvasRenderingContext2D, time: number) {
   const pulse = 0.5 + 0.5 * Math.sin(time * 4);
   const off = Math.floor(time * 20);
   ctx.fillStyle = "#3dff9a";
-  for (let x = 12; x < ARENA_W - 12; x++) if (((x + off) >> 2) % 2 === 0) { ctx.fillRect(x, 26, 1, 1); ctx.fillRect(x, 278, 1, 1); }
+  const v = fx.view;
+  const fx0 = Math.max(12, v.x + 4), fx1 = Math.min(ARENA_W - 12, v.x + v.w - 4);
+  const fy0 = Math.max(26, v.y + 4), fy1 = Math.min(278, v.y + v.h - 4);
+  for (let x = fx0; x < fx1; x++) if (((x + off) >> 2) % 2 === 0) { ctx.fillRect(x, fy0, 1, 1); ctx.fillRect(x, fy1, 1, 1); }
   // the full CODE REVIEW banner + descriptions live in claude-ui's HUD; keep only a tiny in-world tag
-  drawText(ctx, "CODE REVIEW T-" + left.toFixed(1) + "S", ARENA_W / 2, 29, pulse > 0.5 ? "#ffffff" : "#3dff9a", { align: "center" });
+  drawText(ctx, "CODE REVIEW T-" + left.toFixed(1) + "S", v.x + v.w / 2, fy0 + 3, pulse > 0.5 ? "#ffffff" : "#3dff9a", { align: "center", scale: fx.textScale });
   offer.pads.forEach((pad, i) => {
     const pickers = players.filter((p) => offer.picked[p.id] === pad.id);
     const best = bestBy.get(pad.id) ?? 0;
@@ -269,7 +285,7 @@ export function drawPerkCards(ctx: CanvasRenderingContext2D, time: number) {
     const cw = Math.max(textWidth(name) + 8, 40);
     const ch = 16;
     const bob = Math.round(Math.sin(time * 2 + i * 2) * 1.5);
-    const cx = Math.max(12, Math.min(ARENA_W - 12 - cw, Math.round(x - cw / 2))), cy = Math.max(54, y - pad.r - ch - 2 + bob);
+    const cx = Math.max(Math.max(12, v.x + 2), Math.min(Math.min(ARENA_W - 12, v.x + v.w - 2) - cw, Math.round(x - cw / 2))), cy = Math.max(fy0 + 12, y - pad.r - ch - 2 + bob);
     ctx.globalAlpha = 0.92;
     ctx.fillStyle = "#07040c"; ctx.fillRect(cx - 1, cy - 1, cw + 2, ch + 2);
     ctx.fillStyle = "#0d1117"; ctx.fillRect(cx, cy, cw, ch);

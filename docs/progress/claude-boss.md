@@ -1,3 +1,36 @@
+DONE (code flavor) — claude-boss
+
+## Code flavor pass (docs/tasks/code-flavor.md, my section)
+- **Player projectiles = the weapon construct.** I use `kit.code.weapon.projectiles` when present, and fall back to my per-kind table `WEAPON_CODE` in `client/render/arena/bullets.ts`:
+  - blaster `"S"`/`"%D"`/`"OK"`, smg `I++`, shotgun `CASE`, cannon `0XDEAD` hex shell on an orange capsule, staff a `λ` orb, laser a `/.*/` regex text crawling along the shot, blade a crescent of `//` marks.
+  - `trackPlayers` registers each hero's weapon and re-registers when the kit/weapon changes. Explicit hooks are available too: `registerPlayerWeapon(id, kind, weapon)` (internal) and `registerPlayerGlyphs`.
+- **Impact text.** A `hit` with `source` = a player pops that weapon's `impact` text (e.g. `FREE()`, `BREAK;`, `$1`, `RETURN`) at the hit point. It's tiny, fades in 0.35 s, and is rate-limited per player. **Muzzle text stays with claude-player.**
+- **Boss attacks as code disasters:**
+  - ring = `WHILE(TRUE){` source text circling each expanding ring
+  - spiral = recursion `F(` / `))` bullets
+  - fan = thrown `ERR` / `EXC` / `!`
+  - laser = race condition (two thin beams converge onto the lane during wind-up; the attack name crawls along the beam's white core)
+  - slam = Stack Overflow (stack frames `AT <real limb symbol>` rain and pile into a column on the target, then a `STACK OVERFLOW` pop)
+  - charge = `GIT PUSH --FORCE` label on the lane, plus a red force-push spark trail and `--FORCE` glyphs while the boss rushes
+  - summon = an `$ NPM INSTALL` floor progress bar with the hint `(BUGS INCOMING)`
+  - cascade = `<<<<<<< HEAD` / `=======` / `>>>>>>> MAIN` merge-conflict markers in the zone, plus a `MERGE CONFLICT` label
+- **Pickups as code items:** heart = green `+` diff chip ("+1 COMMIT (HP)"), energy = coffee mug with steam ("+COFFEE (ENERGY)"), armor = shield with a green ✓ ("TESTS PASSED (ARMOR)"). Every popup carries a plain-language hint.
+- **Arena = a source file of the boss repo.**
+  - Once the boss kit's code is known, the floor prints the real `heartLines` + `snippets` as giant (2×), faint, syntax-highlighted source with per-theme colors (keywords, strings, numbers, comments, identifiers, punctuation). Line numbers run down the left wall; the walls are built from `{ } ;` brackets.
+  - The git graph now runs along the floor seams with commit dots and glowing pulses.
+  - Without code, the old generic engravings are used. The layer is cached per (theme, seed, code).
+- **Font:** added `λ`, `Λ`, `✓`, `→`, `←`, `·`, `☕`.
+- **Fix:** web neon signs are now picked by position hash. The PRNG returned correlated values at a 4-call stride from one state, making every sign "NPM".
+
+DONE (portrait) — claude-boss
+
+## Portrait camera support (docs/tasks/portrait.md)
+- `drawPostFx(ctx, time, shake, view?)` and `drawEvents(ctx, events, time, view?)` take an optional `view = { x, y, w, h }`: the visible logical window under the camera. Omit it and you get the landscape full-arena default, unchanged.
+  - **Contract**: call both with the same transform used for the world draws (camera translate/scale still applied). drawPostFx maps `view` through that transform to find the device rect, and clamps to the canvas. If the rect doesn't line up at all, it covers the whole canvas.
+  - Screen-space parts follow the view: scanlines, vignette, danger vignette, flash, chromatic aberration, glitch slices, BSOD (wrapped to the width, title split over two lines when narrow), KERNEL PANIC, phase and limb-break banners (centered, shrunk to fit), the CODE REVIEW tag and frame, PR-card clamping, and hazard labels (clamped to the view).
+- **Readable texts**: `fx.textScale` = 2 when the effective zoom is below 2.2 CSS px per logical px (`transform scale / devicePixelRatio`; ≈1.7 on portrait phones), else 1. It upscales floating glyph texts (damage numbers, ERR, SEGFAULT, pickups, perks, skills), hazard labels, obstacle filename tags, BSOD/panic body text and the CODE REVIEW tag. Landscape desktop and the big screen stay at 1×.
+- **Gallery**: `&portrait=1` simulates the phone camera (390×490 CSS viewport at the page DPR, height-fit integer scale, follows p0, passes `view`). Verified at DPR 3 with live, fx and BSOD shots.
+
 DONE (round 2) — claude-boss
 
 ## Round 2: real code painted onto the monsters

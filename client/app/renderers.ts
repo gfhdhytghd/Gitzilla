@@ -7,6 +7,8 @@ import * as ph from "./placeholders";
 // Essential input is eager: a failed optional chunk must never leave phones on a placeholder.
 import { createInput as realCreateInput } from "../input";
 
+export interface View { x: number; y: number; w: number; h: number }
+
 export interface Renderers {
   drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean): void;
   playerPortrait(kit: PlayerKit, size: number): HTMLCanvasElement;
@@ -16,8 +18,9 @@ export interface Renderers {
   drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], time: number): void;
   drawHazards(ctx: CanvasRenderingContext2D, hazards: Hazard[], time: number): void;
   drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], time: number): void;
-  drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number): void;
-  drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number): void;
+  /** `view` = visible window in logical px (portrait camera); omitted = whole arena. */
+  drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number, view?: View): void;
+  drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number, view?: View): void;
   // round 2 (claude-boss arena): placeholders until exported
   drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], time: number): void;
   drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], time: number): void;

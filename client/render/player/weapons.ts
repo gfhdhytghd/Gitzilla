@@ -4,52 +4,59 @@ import type { HeroLook } from "./look.ts";
 import { hashStr } from "./color.ts";
 
 // keys: M metal light, m metal, d metal dark, p primary, P primary light, s secondary,
-//       a accent, A accent light (glow), w wood, W wood light, k near-black, h hand
+//       a accent, A accent light (glow; rightmost A = muzzle), w wood, W wood light, k near-black, h hand,
+//       b brace glow, C cursor white, c cursor shade, K keycap light
+// Every weapon is a code object: a {}-braced pistol, a ;-magazine SMG, a mechanical-switch shotgun,
+// a keycap cannon, a USB-stick staff (λ floats at the tip), a regex-ring emitter and a cursor-bar katana.
 const ART: Record<WeaponKind, string[]> = {
   blaster: [
-    "...MMMMMM..",
-    ".pPmmmmmmmA",
-    ".pphhkd....",
-    "...hh......",
+    "...b.....b..",
+    "..bMMMMMMMbA",
+    ".ppbmmmmmb..",
+    ".phh........",
+    "..hh........",
   ],
   smg: [
     "....MMMMMM..",
     "ddPmmmmmmmmA",
-    "d..hhmkd.d..",
-    "...hh..dd...",
+    "d..hhm.a....",
+    "...hh..d....",
+    "......d.....",
   ],
   shotgun: [
-    "......MMMMMMMM",
+    ".......s......",
+    "......sss.....",
+    "......kkk.....",
     "WWWWwwmmmmmmmA",
     "ww..hhd.wwww..",
     "....hh........",
   ],
   cannon: [
-    "....PPPPPPP..",
-    "...pmMMMMMMMd",
-    "kddmmmmmmmmAa",
-    "...pmmmmmmmAa",
-    "....pddddddd.",
-    ".....hh......",
-    ".....hh......",
+    "....mmmmmmmm...",
+    "...mKKKKKKKKm..",
+    "kddmKKkkKKKKmAa",
+    "...mKKKKKKKKmAa",
+    "....dddddddd...",
+    ".....hh........",
+    ".....hh........",
   ],
   staff: [
-    "............sAs.",
-    "...........saAAa",
-    "wWWWWhhWWWWWsaAs",
-    "w.....hh.....s..",
+    "..........pppMM.",
+    "wWWWWhhWWWpPpMkA",
+    "w.....hh..pppMM.",
   ],
   laser: [
-    "..MMMMMMMM...",
-    "kdmAmAmAmmmMA",
-    "..hhppd......",
+    "...a..a..a...",
+    "..MaMMaMMaMM.",
+    "kdmAmmAmmAmmA",
+    "..hhpa..a....",
     "..hh.........",
   ],
   blade: [
-    "....s.........",
-    "....sMMMMMMMMM.",
-    "Whh.smmmmmmmmmA",
-    ".hhs..........",
+    "....s..........",
+    "WkWksCCCCCCCCCA",
+    ".hh.scccccccc..",
+    ".hh.s..........",
   ],
 };
 
@@ -69,6 +76,7 @@ export function weaponSprite(L: HeroLook, kind: WeaponKind): WeaponSprite {
   const pal: Record<string, string> = {
     M: c.metalL, m: c.metal, d: c.metalD, p: c.primary, P: c.primaryL, s: c.secondary,
     a: c.accent, A: c.accentL, w: c.wood, W: c.woodL, k: "#1d1626", h: c.skin,
+    b: c.accentL, C: "#ffffff", c: "#bcd6ff", K: "#eef0f6",
   };
   const rows = ART[kind] ?? ART.blaster;
   const w = Math.max(...rows.map((r) => r.length)) + 2, h = rows.length + 2;

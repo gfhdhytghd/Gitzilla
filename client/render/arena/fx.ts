@@ -19,7 +19,21 @@ export const fx = {
   slowmoUntil: 0,
   flash: 0,                             // full-screen white flash amount, decays
   danger: 0,                            // screen-edge danger vignette, decays
+  view: { x: 0, y: 0, w: 480, h: 288 },  // visible logical window (camera); landscape default = whole arena
+  textScale: 1,                         // floating-text upscale when the effective CSS zoom is small (portrait phones)
 };
+
+export type View = { x: number; y: number; w: number; h: number };
+
+/** Update the visible window + text scale from the caller's view and current transform. */
+export function setView(ctx: CanvasRenderingContext2D, view?: View) {
+  fx.view = view ? { ...view } : { x: 0, y: 0, w: 480, h: 288 };
+  const m = ctx.getTransform();
+  const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
+  const cssPerLogical = Math.abs(m.a || 1) / dpr;
+  // 3x5 glyphs need ~2.2 CSS px per logical px to read comfortably; below that, draw texts at 2x
+  fx.textScale = cssPerLogical < 2.2 ? 2 : 1;
+}
 
 export function addShake(px: number) { fx.shake = Math.min(10, Math.max(fx.shake, px)); }
 
@@ -112,7 +126,7 @@ export function drawParticles(ctx: CanvasRenderingContext2D) {
         break;
       }
       case "glyph": {
-        const s = textSprite(p.text, t < 0.15 ? "#ffffff" : p.color, "#07040c", p.size);
+        const s = textSprite(p.text, t < 0.15 ? "#ffffff" : p.color, "#07040c", Math.min(3, p.size + fx.textScale - 1));
         if (t > 0.75 && Math.floor(p.life * 30) % 2) break; // flicker out
         ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
         break;

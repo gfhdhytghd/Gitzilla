@@ -192,7 +192,7 @@ export function createAutopsy(app: AppCtx): Screen {
         "header.ap-head",
         null,
         h("div.ap-verdict" + (a.victory ? ".win" : ".loss"), null, a.victory ? "VICTORY" : "DEFEAT"),
-        h("div.ap-sub", null, `$ autopsy --boss ${a.boss.repo} · ${fmtTime(a.duration)} · exit ${a.victory ? "0" : "137"}`),
+        h("div.ap-sub", null, `$ autopsy --boss ${a.boss.repo} · ${fmtTime(a.duration)} · exit ${a.victory ? "0 (boss deleted)" : "1 (squad wiped)"}`),
         h("div.ap-top-actions", null,
           owner ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "$ git reset --hard && REMATCH") : h("div.dim", null, "waiting for the owner to rematch…"),
         ),

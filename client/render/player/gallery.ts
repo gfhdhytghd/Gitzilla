@@ -1,7 +1,7 @@
 // Dev gallery: 24 heroes across all weapons / skills / states, plus lobby portraits.
 // Open via vite: /client/render/player/gallery.html  (?scale=3)
 import type { HeroDesign, PlayerKit, PlayerState, SkillKind, WeaponKind } from "../../../shared/types.ts";
-import { drawPlayer, notePlayerEvents, paintHeroCard } from "./index.ts";
+import { drawPlayer, notePlayerEvents, paintHeroCard, setPlayerMood } from "./index.ts";
 import { drawText } from "./font.ts";
 
 const WEAPONS: WeaponKind[] = ["blade", "blaster", "smg", "shotgun", "cannon", "staff", "laser"];
@@ -41,7 +41,17 @@ const STATES: { b: Behavior; buff?: SkillKind }[] = [
 ];
 
 // Real-looking CodeDNA-derived kit.code per language (round 2).
-const CODE: Record<string, { tokens: string[]; signature: string; snippet: string; identifiers: string[] }> = {
+type GalleryCode = NonNullable<PlayerKit["code"]>;
+const WEAPON_CODE: Record<string, GalleryCode["weapon"]> = {
+  TypeScript: { name: "as any Blaster", projectiles: ["as any", "=>"], muzzle: "as any", impact: "never" },
+  Rust: { name: "unsafe{} Cannon", projectiles: ["&mut"], muzzle: "unsafe", impact: "panic!" },
+  Python: { name: "yield Staff", projectiles: ["λ"], muzzle: "yield", impact: "return" },
+  Go: { name: "goroutine SMG", projectiles: ["go", "<-ch"], muzzle: "go", impact: "<-" },
+  C: { name: "#define Shotgun", projectiles: ["#"], muzzle: "#define", impact: "segv" },
+  Java: { name: "Stream Beam", projectiles: [".map()"], muzzle: "stream", impact: "NPE" },
+  JavaScript: { name: "Promise Blaster", projectiles: [".then()"], muzzle: "await", impact: "reject" },
+};
+const CODE: Record<string, Omit<GalleryCode, "weapon">> = {
   TypeScript: { tokens: ["=>", "const", "{}", "?.", "as"], signature: "createServer()", snippet: "export const app = createServer(opts);", identifiers: ["createServer", "parseConfig"] },
   Rust: { tokens: ["fn", "::", "&mut", "?", "let"], signature: "borrow_mut()", snippet: "fn main() -> Result<(), Box<dyn Error>> {", identifiers: ["borrow_mut", "Parser"] },
   Python: { tokens: ["def", ":", "self", "**", "->"], signature: "parse_args()", snippet: "def get_response(self, request):", identifiers: ["parse_args", "Request"] },
@@ -65,12 +75,13 @@ function kitFor(i: number): PlayerKit {
     repo, title: `${lang} ${TITLES[weapon]}`, weapon, skill: SKILLS[i % SKILLS.length],
     maxHp: 7, maxArmor: 5, maxEnergy: 200, speed: 90, damageMul: 1,
     palette: ["#172131", color, seed & 1 ? "#ffe2ac" : "#d5f5ff", "#f4faf7"], seed,
-    code: CODE[lang],
+    code: { ...CODE[lang], weapon: WEAPON_CODE[lang] },
     ...(des ? { design: des[1], title: des[1].title, palette: des[1].palette } : {}),
   };
 }
 
 const params = new URLSearchParams(location.search);
+if (params.get("mood") === "victory") setPlayerMood("victory");
 const SCALE = Number(params.get("scale") || 3);
 const COLS = 8, CW = 60, CH = 74;
 const W = COLS * CW, H = Math.ceil(STATES.length / COLS) * CH;
@@ -212,7 +223,10 @@ async function arenaScene() {
       p.x += p.vx * dt; p.y += p.vy * dt;
       const ax = boss.x - p.x, ay = boss.y - p.y, al = Math.hypot(ax, ay);
       p.facing = [ax / al, ay / al];
-      if ((t * 4 + j) % 1 < dt * 4) p.energy -= 2;
+      if ((t * 4 + j) % 1 < dt * 4) {
+        p.energy -= 2;
+        notePlayerEvents([{ type: "hit", target: "boss", amount: 3, x: boss.x - 30 + Math.random() * 20, y: boss.y - 10 + Math.random() * 30, crit: Math.random() < 0.2, source: p.id }]);
+      }
       if (p.energy < 50) p.energy = 200;
       const c = (t + j * 1.7) % 12;
       p.buffs = c < 3 ? [p.kit.skill] : [];
@@ -233,7 +247,7 @@ async function arenaScene() {
 function stripScene() {
   document.querySelectorAll("h2, #portraits").forEach((e) => ((e as HTMLElement).style.display = "none"));
   const OFFS = [-0.1, 0.02, 0.05, 0.09, 0.14, 0.2, 0.3, 0.45, 0.7, 1.0];
-  const EVENTS = ["hurt-armor", "hurt-hp", "dash", "downed", "revive", "firewall", "overclock", "hotfix", "rollback", "fork", "shoot-blade", "shoot-cannon", "perk"];
+  const EVENTS = ["hurt-armor", "hurt-hp", "dash", "downed", "revive", "firewall", "overclock", "hotfix", "rollback", "fork", "shoot-blade", "shoot-cannon", "perk", "idle-type"];
   const SW2 = 48, SH2 = 56;
   stage.width = OFFS.length * SW2 * SCALE; stage.height = EVENTS.length * SH2 * SCALE;
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
@@ -251,7 +265,7 @@ function stripScene() {
         stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
         perks: [],
       };
-      const T0 = 1, tEnd = T0 + off;
+      const T0 = 1, tEnd = ev === "idle-type" ? 2.5 + (off + 0.1) * 8 : T0 + off;
       for (let t = 0; t <= tEnd + 1e-6; t += 1 / 60) {
         const after = t >= T0;
         if (ev === "hurt-armor" && after && p.armor === 5) p.armor = 4;
@@ -277,6 +291,7 @@ function stripScene() {
           if (ev === "fork") { p.x = cx + Math.min(14, (t - T0) * 40); p.vx = t - T0 < 0.35 ? 40 : 0; }
           if (ev === "overclock") p.vx = 60;
         }
+        if (ev === "idle-type") { /* stand still: keyboard appears after 3s */ }
         if (ev === "perk" && after && !p.perks.length) p.perks = ["--force", "lint --fix", "cache hit"];
         if (ev.startsWith("shoot") && after && Math.abs(t - T0) < 1 / 120) p.energy -= 5;
         const last = t + 1 / 60 > tEnd + 1e-6;

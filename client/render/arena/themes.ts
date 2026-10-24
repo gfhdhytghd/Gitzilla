@@ -46,12 +46,13 @@ export interface ArenaLayer { canvas: HTMLCanvasElement; ambient: Ambient[]; pal
 
 const cache = new Map<string, ArenaLayer>();
 
-export function getArena(theme: ArenaTheme, seed: number): ArenaLayer {
-  const key = theme + "|" + seed;
+/** code: the boss repo's real lines (heartLines + snippets) to print on the floor; optional. */
+export function getArena(theme: ArenaTheme, seed: number, code?: string[]): ArenaLayer {
+  const key = theme + "|" + seed + "|" + (code ? code.length + ":" + code.join("").length : "");
   let a = cache.get(key);
   if (!a) {
     if (cache.size > 8) cache.clear();
-    a = build(theme in PALETTES ? theme : "terminal", seed);
+    a = build(theme in PALETTES ? theme : "terminal", seed, code);
     cache.set(key, a);
   }
   return a;
@@ -78,7 +79,7 @@ const CODE_LINES = [
 ];
 
 // ---------- build ----------
-function build(theme: ArenaTheme, seed: number): ArenaLayer {
+function build(theme: ArenaTheme, seed: number, code?: string[]): ArenaLayer {
   const pal = PALETTES[theme];
   const [c, ctx] = makeCanvas(ARENA_W, ARENA_H);
   const img = ctx.createImageData(ARENA_W, ARENA_H);
@@ -173,11 +174,13 @@ function build(theme: ArenaTheme, seed: number): ArenaLayer {
     }
   ctx.putImageData(img, 0, 0);
 
-  const ambient: Ambient[] = [];
 
   // ---- floor engravings: code text, git graph, circuit traces ----
-  engraveCode(ctx, pal, R, theme);
-  gitGraph(ctx, pal, R, theme);
+  const ambient: Ambient[] = [];
+  const ambientEarly = ambient;
+  if (code && code.length) floorSource(ctx, theme, code);
+  else engraveCode(ctx, pal, R, theme);
+  gitGraph(ctx, pal, R, theme, ambientEarly);
   if (theme === "terminal" || theme === "web" || theme === "kernel") circuitTraces(ctx, pal, R, theme, ambient);
 
   // ---- theme props (floor) ----
@@ -185,6 +188,7 @@ function build(theme: ArenaTheme, seed: number): ArenaLayer {
 
   // ---- walls ----
   walls(ctx, theme, pal, R, ambient, seed);
+  if (code && code.length) bracketWalls(ctx, pal, theme);
 
   // ---- baked light pools ----
   ctx.globalCompositeOperation = "lighter";
@@ -221,30 +225,102 @@ function engraveCode(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, t
   }
 }
 
-function gitGraph(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: ArenaTheme) {
-  // a vertical git log graph engraved on the floor, with lanes, merges and commit dots
+function gitGraph(ctx: CanvasRenderingContext2D, pal: Pal, R: () => number, theme: ArenaTheme, ambient: Ambient[]) {
+  // a git log graph running along the floor seams (tile grid lines), with merges, commit dots and glowing pulses
   const lanes = 3;
-  const x0 = R() < 0.5 ? 40 + Math.round(R() * 30) : ARENA_W - 80 - Math.round(R() * 30);
-  const colors = theme === "notebook" ? ["#3b6fd8", "#e0574a", "#3a9a5a"] : theme === "web" ? ["#ff3df2", "#2ef2ff", "#ffe14a"] : [pal.engrave, pal.line, pal.engrave];
-  const alpha = theme === "notebook" ? 0.7 : theme === "web" ? 0.35 : 0.7;
-  ctx.globalAlpha = alpha;
-  let active = [true, R() < 0.5, false];
-  for (let y = WALL_TOP + 10; y < ARENA_H - WALL_BOTTOM - 8; y += 10) {
+  const seam = Math.round((R() < 0.5 ? 48 + R() * 32 : ARENA_W - 96 - R() * 32) / 16) * 16;
+  const colors = theme === "notebook" ? ["#3b6fd8", "#e0574a", "#3a9a5a"] : theme === "web" ? ["#ff3df2", "#2ef2ff", "#ffe14a"] : theme === "terminal" ? ["#39ff6a", "#b6ff3a", "#1fd1a0"] : theme === "kernel" ? ["#ff8a2a", "#ffd23f", "#c8a050"] : theme === "enterprise" ? ["#3a6ad8", "#2a8a5a", "#b05a2a"] : ["#ffb347", "#c6ff7a", "#8ac0ff"];
+  const top = WALL_TOP + 4, bot = ARENA_H - WALL_BOTTOM - 4;
+  const active = [true, R() < 0.6, R() < 0.3];
+  const segs: [number, number, number, number, number][] = [];
+  for (let y = top; y < bot; y += 16) {
     for (let l = 0; l < lanes; l++) {
       if (!active[l]) continue;
-      const x = x0 + l * 8;
-      ctx.fillStyle = colors[l];
-      ctx.fillRect(x, y, 1, 10);
-      if (R() < 0.35) { ctx.fillStyle = colors[l]; disc(ctx, x, y + 5, 1.5); ctx.fillStyle = pal.grout; ctx.fillRect(x, y + 5, 1, 1); }
+      segs.push([seam + l * 16, y, seam + l * 16, Math.min(bot, y + 16), l]);
     }
-    // branch / merge
     if (R() < 0.3) {
       const a = Math.floor(R() * lanes), b = (a + 1) % lanes;
-      ctx.fillStyle = colors[b];
-      line(ctx, x0 + a * 8, y, x0 + b * 8, y + 8);
+      segs.push([seam + a * 16, y, seam + b * 16, y + 16, b]);
       active[b] = !active[b] || R() < 0.5;
+      if (!active.some(Boolean)) active[0] = true;
     }
   }
+  ctx.globalAlpha = theme === "notebook" ? 0.6 : 0.4;
+  for (const [x0, y0, x1, y1, l] of segs) { ctx.fillStyle = colors[l]; line(ctx, x0, y0, x1, y1); }
+  ctx.globalAlpha = theme === "notebook" ? 0.8 : 0.6;
+  for (const [x0, y0, , , l] of segs) if (hash2(x0, y0, 7) < 0.4) { ctx.fillStyle = "#07040c"; disc(ctx, x0, y0, 2.5); ctx.fillStyle = colors[l]; disc(ctx, x0, y0, 1.5); }
+  ctx.globalAlpha = 1;
+  // a pulse per lane travels the branch (glowing commits flowing)
+  for (let l = 0; l < lanes; l++) {
+    const pts: [number, number][] = [];
+    for (const [x0, y0, x1, y1, ll] of segs) if (ll === l && x0 === x1) { if (!pts.length) pts.push([x0, y0]); pts.push([x1, y1]); }
+    if (pts.length > 1) ambient.push({ k: "trace", pts: [pts[0], pts[pts.length - 1]], c: colors[l], speed: 40 + l * 12, ph: R() * 10, len: 0 });
+  }
+}
+
+// ---- the arena floor is a source file of the BOSS repo ----
+const KW = new Set("if else elif for while do return def fn func function class struct enum impl trait match case switch break continue const let var mut pub use import from export package module type interface extends implements new delete try catch except finally throw raise async await yield lambda public private protected static void int float bool string char true false null none nil self this super go defer select range in is not and or with as unsafe where loop".split(" "));
+const SYNTAX: Record<ArenaTheme, { kw: string; str: string; num: string; com: string; id: string; pun: string; alpha: number }> = {
+  terminal: { kw: "#39ff6a", str: "#b6ff3a", num: "#7dffb0", com: "#1f6a34", id: "#2fb85a", pun: "#1f8a3c", alpha: 0.13 },
+  kernel: { kw: "#ff8a2a", str: "#ffd23f", num: "#ffb36b", com: "#6a5a4a", id: "#c8a888", pun: "#8a7a6a", alpha: 0.12 },
+  web: { kw: "#ff3df2", str: "#2ef2ff", num: "#ffe14a", com: "#5a4a9a", id: "#b48aff", pun: "#7a6ad8", alpha: 0.13 },
+  notebook: { kw: "#3b6fd8", str: "#c25b5b", num: "#3a9a5a", com: "#8a7f66", id: "#2b3550", pun: "#5a5040", alpha: 0.18 },
+  enterprise: { kw: "#3a6ad8", str: "#b05a2a", num: "#2a8a5a", com: "#8a8678", id: "#3a3830", pun: "#5a5850", alpha: 0.14 },
+  legacy: { kw: "#ffb347", str: "#c6ff7a", num: "#ffd27a", com: "#5f6656", id: "#a8b098", pun: "#7c8474", alpha: 0.12 },
+};
+
+function tokenize(line: string): { t: string; k: "kw" | "str" | "num" | "com" | "id" | "pun" | "ws" }[] {
+  const out: { t: string; k: "kw" | "str" | "num" | "com" | "id" | "pun" | "ws" }[] = [];
+  const re = /(\s+)|("[^"]*"?|'[^']*'?|`[^`]*`?)|(\/\/.*|#.*|--.*)|(\b\d[\w.]*)|([A-Za-z_$][\w$]*)|(.)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(line))) {
+    if (m[1]) out.push({ t: m[1], k: "ws" });
+    else if (m[2]) out.push({ t: m[2], k: "str" });
+    else if (m[3]) out.push({ t: m[3], k: "com" });
+    else if (m[4]) out.push({ t: m[4], k: "num" });
+    else if (m[5]) out.push({ t: m[5], k: KW.has(m[5].toLowerCase()) ? "kw" : "id" });
+    else out.push({ t: m[6], k: "pun" });
+  }
+  return out;
+}
+
+function floorSource(ctx: CanvasRenderingContext2D, theme: ArenaTheme, code: string[]) {
+  const syn = SYNTAX[theme];
+  const rowH = 13, sc = 2;
+  const x0 = WALL_SIDE + 6;
+  const maxChars = Math.floor((ARENA_W - x0 - WALL_SIDE - 4) / (4 * sc));
+  let row = 0;
+  for (let y = WALL_TOP + 5; y + 10 < ARENA_H - WALL_BOTTOM; y += rowH, row++) {
+    const src = code[row % code.length] ?? "";
+    // line number on the left wall
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = theme === "notebook" ? "#c8b898" : "#5a6070";
+    const ln = String(row + 1);
+    drawTextRaw(ctx, ln, WALL_SIDE - 2 - ln.length * 4, y + 3);
+    // syntax-coloured giant source
+    ctx.globalAlpha = syn.alpha;
+    let col = 0;
+    const lead = src.length - src.trimStart().length;
+    col = Math.min(8, lead);
+    for (const tok of tokenize(src.trim())) {
+      if (col >= maxChars) break;
+      if (tok.k === "ws") { col += tok.t.length; continue; }
+      const text = tok.t.slice(0, maxChars - col);
+      ctx.fillStyle = syn[tok.k];
+      drawTextRaw(ctx, text, x0 + col * 4 * sc, y, sc);
+      col += text.length;
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function bracketWalls(ctx: CanvasRenderingContext2D, pal: Pal, theme: ArenaTheme) {
+  // walls built from brackets: { } along the top cap, } down the right wall, }; along the bottom
+  ctx.globalAlpha = theme === "notebook" ? 0.5 : 0.45;
+  ctx.fillStyle = pal.edge;
+  for (let x = 2; x < ARENA_W - 4; x += 8) drawTextRaw(ctx, (x >> 3) % 2 ? "}" : "{", x, 0);
+  for (let y = 10; y < ARENA_H - 8; y += 7) drawTextRaw(ctx, "}", ARENA_W - WALL_SIDE + 4, y);
+  for (let x = 4; x < ARENA_W - 8; x += 8) drawTextRaw(ctx, (x >> 3) % 2 ? ";" : "}", x, ARENA_H - WALL_BOTTOM + 2);
   ctx.globalAlpha = 1;
 }
 
@@ -518,7 +594,8 @@ function walls(ctx: CanvasRenderingContext2D, theme: ArenaTheme, pal: Pal, R: ()
       const signs = ["</>", "{ }", "=>", "NPM", "404", "<DIV>", "JS", "CSS"];
       let x = WALL_SIDE + 24 + Math.floor(R() * 20);
       while (x < W - 60) {
-        const t = signs[Math.floor(R() * signs.length)];
+        R();
+        const t = signs[Math.floor(hash2(x, seed, 31) * signs.length)];
         ambient.push({ k: "neon", x: x, y: fy + 3, text: t, c: R() < 0.5 ? pal.accent : pal.accent2, ph: R() * 10, scale: 2 });
         x += t.length * 8 + 40 + Math.floor(R() * 50);
       }

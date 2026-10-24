@@ -2,7 +2,7 @@
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
 import { lookFor, type HeroLook } from "./look.ts";
-import { heroFrame, heroRim, tinted, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
+import { heroFrame, heroRim, heroCodeCells, tinted, ANCHOR_X, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle } from "./weapons.ts";
 import { drawText, glyphBits } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
@@ -17,6 +17,8 @@ const SPRITE_FOOT = 27;
 interface Particle {
   x: number; y: number; vx: number; vy: number; g: number;
   life: number; max: number; col: string; sz: number; glyph?: string; add?: boolean; front?: boolean;
+  len?: number;   // diff line drawn after the glyph ("+ ----")
+  mark?: string;  // raw 1px footprint mark (";" or ".")
 }
 interface Ghost { x: number; y: number; fr: HTMLCanvasElement; flip: number; t: number; life: number; alpha: number }
 interface Mem {
@@ -35,12 +37,28 @@ interface Mem {
   duckX: number; duckY: number; duckFlip: number;
   kbT: number; kbX: number; kbY: number; kbAmp: number; crit: boolean;
   perks: Set<string>; perkT: Record<string, number>;
+  muzzleT: number; impactT: number; stepFrame: number; stepN: number; moveT: number; clackT: number; sleepT: number;
 }
 
 const mems = new Map<string, Mem>();
 
 const externalShots = new Map<string, number>();
 const externalHits = new Map<string, { dir: [number, number]; impact: number; crit: boolean }>();
+/** Hits dealt BY a player (source = their id): spark that weapon's impact text where the shot landed. */
+const pendingImpacts = new Map<string, { x: number; y: number; crit: boolean }[]>();
+let mood: "fight" | "victory" | "defeat" = "fight";
+
+/** Optional: "victory" turns every standing hero's face into ^_^ with a little hop. */
+export function setPlayerMood(m: "fight" | "victory" | "defeat"): void {
+  mood = m;
+}
+
+/** Default code-construct weapon flavor when the kit has no kit.code.weapon (see docs/tasks/code-flavor.md). */
+const WEAPON_FLAVOR: Record<WeaponKind, { muzzle: string; impact: string }> = {
+  blaster: { muzzle: "printf", impact: "\\n" }, smg: { muzzle: "loop", impact: "++" },
+  shotgun: { muzzle: "switch", impact: "break;" }, cannon: { muzzle: "alloc", impact: "free()" },
+  staff: { muzzle: "=>", impact: "return" }, laser: { muzzle: "match", impact: "$1" }, blade: { muzzle: "cut", impact: "rm" },
+};
 
 /**
  * Optional hook: forward each snapshot's events (call once per released batch). "hit" events that
@@ -49,6 +67,11 @@ const externalHits = new Map<string, { dir: [number, number]; impact: number; cr
  */
 export function notePlayerEvents(events: GameEvent[]): void {
   for (const e of events) {
+    if (e.type === "hit" && e.source && e.source !== "boss" && e.target !== e.source) {
+      const list = pendingImpacts.get(e.source) ?? [];
+      if (list.length < 4) list.push({ x: e.x, y: e.y, crit: !!e.crit });
+      pendingImpacts.set(e.source, list);
+    }
     if (e.type !== "hit" || e.target === "boss") continue;
     const d = e.direction;
     const len = d ? Math.hypot(d[0], d[1]) : 0;
@@ -83,6 +106,7 @@ function memFor(p: PlayerState, t: number): Mem {
       lastGhost: 0, lastDust: 0, lastFlame: 0, lastPlus: 0, swingDir: 1, duckX: p.x - 12, duckY: p.y - 10, duckFlip: 1,
       kbT: -99, kbX: 0, kbY: 0, kbAmp: 0, crit: false,
       perks: new Set(p.perks ?? []), perkT: {},
+      muzzleT: -99, impactT: -99, stepFrame: -1, stepN: 0, moveT: t, clackT: 0, sleepT: 0,
       phase: (hashStr(p.id) % 1000) / 1000,
     };
     if (mems.size > 48) for (const [k, v] of mems) if (t - v.t > 5) mems.delete(k);
@@ -99,7 +123,7 @@ const SKILL_COLOR: Record<string, string> = {
   firewall: "#58e6ff", fork: "#b98bff", hotfix: "#5dff8a", overclock: "#ffa53a", rollback: "#6aa8ff",
 };
 const SKILL_TEXT: Record<string, string> = {
-  firewall: "$ FIREWALL", fork: "$ GIT FORK", hotfix: "$ HOTFIX", overclock: "$ OVERCLOCK", rollback: "$ GIT REVERT",
+  firewall: "$ TRY{}CATCH", fork: "$ GIT FORK", hotfix: "$ +PATCH", overclock: "$ SUDO !!", rollback: "$ GIT REVERT",
 };
 
 function spawn(m: Mem, n: number, f: (i: number) => Particle) {
@@ -121,6 +145,11 @@ function observe(p: PlayerState, m: Mem, L: HeroLook, t: number, dt: number) {
     m.hpHit = p.hp < m.hp - 0.001;
     const hy = p.y - 4;
     if (m.hpHit) {
+      // the hero "loses lines": red diff minuses fly off
+      spawn(m, 3, (i) => ({
+        x: p.x + (i - 1) * 5, y: hy - 2, vx: (i - 1) * 25 + (Math.random() - 0.5) * 10, vy: -35 - Math.random() * 15, g: 50,
+        life: 0.55, max: 0.55, col: "#ff4a5a", sz: 1, glyph: "-", len: 3, front: true,
+      }));
       spawn(m, 8, () => ({
         x: p.x, y: hy, vx: (Math.random() - 0.5) * 90, vy: -Math.random() * 70 - 10, g: 220,
         life: 0.5, max: 0.5, col: Math.random() < 0.5 ? "#ff3b5c" : "#ffd0d8", sz: 1, front: true,
@@ -143,6 +172,7 @@ function observe(p: PlayerState, m: Mem, L: HeroLook, t: number, dt: number) {
 
   if (p.dashCd > m.dashCd + 0.05 && p.alive) {
     m.dashT = t;
+    spawn(m, 1, () => ({ x: m.x, y: m.y + FOOT - 4, vx: 0, vy: -6, g: 0, life: 0.6, max: 0.6, col: "#a8ecff", sz: 1, glyph: "--force" }));
     spawn(m, 6, () => ({
       x: p.x + (Math.random() - 0.5) * 6, y: p.y + FOOT - 1, vx: -p.vx * 0.1 + (Math.random() - 0.5) * 30, vy: -Math.random() * 15, g: 0,
       life: 0.35, max: 0.35, col: "#d8d0e8", sz: 2,
@@ -248,6 +278,7 @@ function pickFrame(p: PlayerState, m: Mem, t: number): FrameSpec {
   let expr: Expr = "normal";
   if (!p.alive) expr = "ko";
   else if (t - m.hurtT < 0.35) expr = "hurt";
+  else if (mood === "victory") expr = "happy";
   else {
     const bt = (t + m.phase * 3.7) % 3.3;
     if (bt < 0.12) expr = "blink";
@@ -257,16 +288,44 @@ function pickFrame(p: PlayerState, m: Mem, t: number): FrameSpec {
 }
 
 // ---------------------------------------------------------------- body composition
-function drawBody(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, x: number, feet: number, flip: number, sx: number, sy: number, variant = "") {
+function drawBody(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, x: number, feet: number, flip: number, sx: number, sy: number, variant = "", scroll = -1) {
   const cv = heroFrame(L, fr, variant);
   ctx.save();
   ctx.translate(x, feet);
   ctx.scale(flip * sx, sy);
   ctx.drawImage(cv, -ANCHOR_X, -SPRITE_FOOT);
+  if (scroll >= 0 && !variant) paintCodeCells(ctx, L, fr, scroll);
   ctx.restore();
 }
 
-function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, m: Mem, t: number, x: number, feet: number, flip: number, bob: number) {
+/** Cape interior / laptop screen = the hero's real code, syntax-colored, scrolling upward. */
+function paintCodeCells(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, scroll: number) {
+  const cells = heroCodeCells(L, fr);
+  if (!cells.length || !L.codeRows.length) return;
+  const rows = L.codeRows, n = rows.length;
+  for (const [cx, cy] of cells) {
+    const col = rows[(cy + scroll) % n][cx % 8];
+    if (!col) continue;
+    ctx.fillStyle = col;
+    ctx.fillRect(cx - ANCHOR_X, cy - SPRITE_FOOT, 1, 1);
+  }
+}
+
+/** git checkout: the body re-materializes line by line (top -> down) with a green "+" scan. */
+function drawBodyReveal(ctx: CanvasRenderingContext2D, L: HeroLook, fr: FrameSpec, x: number, feet: number, flip: number, k: number) {
+  const cv = heroFrame(L, fr);
+  const rows = Math.max(1, Math.min(cv.height, Math.round(cv.height * k)));
+  ctx.save();
+  ctx.translate(x, feet);
+  ctx.scale(flip, 1);
+  ctx.drawImage(cv, 0, 0, cv.width, rows, -ANCHOR_X, -SPRITE_FOOT, cv.width, rows);
+  ctx.fillStyle = "#5dff8a";
+  ctx.fillRect(-ANCHOR_X + 4, -SPRITE_FOOT + rows, cv.width - 8, 1);
+  ctx.restore();
+  drawText(ctx, "+", x - 12, feet - SPRITE_FOOT + rows - 3, "#5dff8a");
+}
+
+function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, m: Mem, t: number, x: number, feet: number, flip: number, bob: number): [number, number] {
   const kind = p.kit.weapon;
   const ws = weaponSprite(L, kind);
   let ang = Math.atan2(p.facing[1], p.facing[0]);
@@ -325,6 +384,22 @@ function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     drawMuzzle(ctx, L, kind, 1 - since / 0.07);
   }
   ctx.restore();
+  // muzzle position in world space (same transform chain as above)
+  const leftK = leftward ? -1 : 1;
+  const px0 = ws.tipX - Math.round(recoil), py0 = ws.tipY;
+  const p1x = px0 * Math.cos(swing) - py0 * Math.sin(swing), p1y = (px0 * Math.sin(swing) + py0 * Math.cos(swing)) * leftK;
+  const tx = hx + p1x * Math.cos(ang) - p1y * Math.sin(ang), ty = hy + p1x * Math.sin(ang) + p1y * Math.cos(ang);
+  if (kind === "staff") {
+    // the USB staff's payload: an upright glowing lambda floating off the tip
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 5);
+    ctx.fillStyle = L.c.accent;
+    filledEllipse(ctx, tx + Math.cos(ang) * 3, ty + Math.sin(ang) * 3 - 3, 3, 3);
+    ctx.restore();
+    drawText(ctx, "λ", tx + Math.cos(ang) * 3, ty + Math.sin(ang) * 3 - 5 + Math.round(Math.sin(t * 4)), "#ffffff", "center", "");
+  }
+  return [tx, ty];
 }
 
 // ---------------------------------------------------------------- auras
@@ -342,6 +417,14 @@ function drawFirewall(ctx: CanvasRenderingContext2D, x: number, y: number, t: nu
   const pop = Math.min(1, age / 0.18);
   const r = 15 * (0.4 + 0.6 * pop) + Math.sin(t * 5) * 0.6;
   const cy = y - 2;
+  // try { ... } catch: giant braces hug the bubble
+  ctx.fillStyle = "#9df3ff";
+  const h = Math.round(r * 0.8);
+  for (const side of [-1, 1]) {
+    const bx = Math.round(x + side * (r + 3));
+    const pts: [number, number][] = [[bx, cy - h], [bx - side, cy - h + 1], [bx - side, cy - 2], [bx - side * 2, cy], [bx - side, cy + 2], [bx - side, cy + h - 1], [bx, cy + h]];
+    for (let i = 0; i < pts.length - 1; i++) pixLine(ctx, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
+  }
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = 0.14;
@@ -401,6 +484,11 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   const fr = pickFrame(p, m, t);
   const dashing = t - m.dashT < 0.25 || sp > p.kit.speed * 1.7;
   const overclock = p.buffs.includes("overclock");
+  if (sp > 8 || !p.alive) m.moveT = t;
+  const idleFor = t - Math.max(m.moveT, m.shotT, m.hurtT, m.reviveT);
+  // code on the cape scrolls ~1.5 lines/s, flutters faster while running
+  const scroll = Math.floor(t * (fr.pose === "run" ? 5 : 1.5) + m.phase * 40);
+  const hop = mood === "victory" && p.alive ? -Math.round(Math.abs(Math.sin(t * 6 + m.phase * 4)) * 3) : 0;
 
   // --- ground: shadow + friendly ring
   ctx.fillStyle = "rgba(8,4,16,0.42)";
@@ -416,6 +504,30 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     }
   }
 
+  // --- git-branch trail: faint commit line + dots along where the hero walked
+  if (p.alive && m.hist.length > 12 && t - m.moveT < 1.5) {
+    ctx.save();
+    ctx.fillStyle = L.c.primaryL;
+    let prev: { x: number; y: number } | null = null;
+    for (let i = m.hist.length - 1 - 8, k = 0; i >= 0; i -= 7, k++) {
+      const h = m.hist[i];
+      const age = t - h.t;
+      ctx.globalAlpha = 0.28 * (1 - age / 2.2);
+      const hx = Math.round(h.x), hy = Math.round(h.y) + FOOT;
+      if (prev) pixLine(ctx, prev.x, prev.y, hx, hy);
+      if (k % 3 === 1) ctx.fillRect(hx - 1, hy - 1, 2, 2);
+      prev = { x: hx, y: hy };
+    }
+    ctx.restore();
+  }
+  // --- footprints: ; and . left on each step
+  if (p.alive && fr.pose === "run" && (fr.i === 0 || fr.i === 2) && fr.i !== m.stepFrame) {
+    m.stepN++;
+    spawn(m, 1, () => ({ x: x - flip * 2 + (m.stepN % 2 ? 2 : -1), y: feet - 2, vx: 0, vy: 0, g: 0, life: 1.2, max: 1.2,
+      col: "#d9d0ec", sz: 1, mark: m.stepN % 2 ? ";" : "." }));
+  }
+  m.stepFrame = fr.pose === "run" ? fr.i : -1;
+
   // --- emitters
   if (p.alive && sp > 25 && t - m.lastDust > 0.14 && !dashing) {
     m.lastDust = t;
@@ -429,6 +541,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     if (m.ghosts.length > 14) m.ghosts.shift();
   }
   if (overclock && p.alive && t - m.lastFlame > 0.04) {
+    if (Math.random() < 0.08) spawn(m, 1, () => ({ x: x - flip * 8, y: y - 4, vx: -flip * 10, vy: -20, g: 0, life: 0.5, max: 0.5, col: "#ffb13a", sz: 1, glyph: "!!" }));
     m.lastFlame = t;
     spawn(m, 2, () => ({ x: x + (Math.random() - 0.5) * 10, y: feet - Math.random() * 6, vx: (Math.random() - 0.5) * 10 - p.vx * 0.2, vy: -25 - Math.random() * 25, g: -20,
       life: 0.45, max: 0.45, col: Math.random() < 0.5 ? "#ffcf3a" : "#ff6a1a", sz: Math.random() < 0.3 ? 2 : 1, add: true }));
@@ -436,7 +549,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   if (p.buffs.includes("hotfix") && p.alive && t - m.lastPlus > 0.18) {
     m.lastPlus = t;
     spawn(m, 1, () => ({ x: x + (Math.random() - 0.5) * 20, y: y + (Math.random() - 0.5) * 8, vx: 0, vy: -18, g: 0,
-      life: 0.9, max: 0.9, col: "#5dff8a", sz: 1, glyph: "+", front: true }));
+      life: 0.9, max: 0.9, col: "#5dff8a", sz: 1, glyph: "+", len: 2 + Math.floor(Math.random() * 4), front: true }));
   }
 
   // --- particles (back layer) + afterimages
@@ -472,7 +585,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     ctx.globalCompositeOperation = "lighter";
     drawBody(ctx, L, { pose: "idle", i: Math.floor(t * 2) % 2, expr: "normal" }, dx - glitch, dy, flip, 1, 1, "#b98bff");
     ctx.restore();
-    drawText(ctx, "FORK()", dx, dy - 30, "#b98bff");
+    drawText(ctx, "#" + (hashStr(p.id + Math.floor(m.skillT.fork ?? 0)) >>> 0).toString(16).padStart(8, "0").slice(0, 7), dx, dy - 30, "#b98bff");
     if (Math.floor(t * 4) % 2 === 0) drawText(ctx, "!", dx, dy - 37 + Math.round(Math.sin(t * 8)), "#ff4a5a");
   }
   // --- skill: rollback rewind ghost (where you were ~2s ago) + blink trail
@@ -489,7 +602,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
         drawBody(ctx, L, fr, gx, gy, flip, 1, 1, "#6aa8ff");
         ctx.restore();
       }
-      drawText(ctx, "<<", (m.rollX + p.x) / 2, (m.rollY + p.y) / 2 - 4, "#6aa8ff");
+      drawText(ctx, "HEAD~1", m.rollX, m.rollY - 14, "#6aa8ff");
     }
   }
 
@@ -527,7 +640,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   const bob = fr.pose === "run" ? (fr.i % 2 === 1 ? -1 : 0) : 0;
   // directional knockback lean from forwarded hit events (snaps back over ~150ms)
   const kk = Math.max(0, 1 - (t - m.kbT) / 0.15);
-  const bx = x + Math.round(m.kbX * m.kbAmp * kk), bfeet = feet + Math.round(m.kbY * m.kbAmp * kk * 0.6);
+  const bx = x + Math.round(m.kbX * m.kbAmp * kk), bfeet = feet + Math.round(m.kbY * m.kbAmp * kk * 0.6) + hop;
 
   // invulnerability blink (not during dashes)
   let alpha = 1;
@@ -536,7 +649,8 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   ctx.save();
   ctx.globalAlpha = alpha;
   const aimUp = p.facing[1] < -0.55;
-  if (aimUp) drawWeapon(ctx, L, p, m, t, bx, bfeet, flip, bob);
+  let tip: [number, number] = [x, y];
+  if (aimUp) tip = drawWeapon(ctx, L, p, m, t, bx, bfeet, flip, bob);
 
   // glow outline for overclock / hotfix
   const glowCol = overclock ? "#ffb13a" : p.buffs.includes("hotfix") ? "#5dff8a" : p.buffs.includes("rollback") ? "#6aa8ff" : "";
@@ -569,7 +683,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     drawBody(ctx, L, fr, bx - o, bfeet, flip, sx, sy, "#ff2050");
     drawBody(ctx, L, fr, bx + o, bfeet, flip, sx, sy, "#20e0ff");
     ctx.restore();
-    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy);
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
     // horizontal slice displacement
     const cv = heroFrame(L, fr);
     const band = 3 + ((Math.floor(t * 60) * 7) % 14);
@@ -578,11 +692,52 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     ctx.scale(flip, 1);
     ctx.drawImage(cv, 0, band, cv.width, 3, -ANCHOR_X, -SPRITE_FOOT + band, cv.width, 3);
     ctx.restore();
+  } else if (t - m.reviveT < 0.45) {
+    drawBodyReveal(ctx, L, fr, bx, bfeet, flip, (t - m.reviveT) / 0.45);
   } else {
-    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy);
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
   }
-  if (!aimUp) drawWeapon(ctx, L, p, m, t, bx, bfeet, flip, bob);
+  if (!aimUp) tip = drawWeapon(ctx, L, p, m, t, bx, bfeet, flip, bob);
   ctx.restore();
+
+  // --- weapon-as-code text: muzzle word pops on firing; impact word sparks where your shots land
+  const wf = p.kit.code?.weapon;
+  const flavor = WEAPON_FLAVOR[p.kit.weapon] ?? WEAPON_FLAVOR.blaster;
+  if (t - m.shotT < 0.02 && t - m.muzzleT > 1.6) {
+    m.muzzleT = t;
+    const word = (wf?.muzzle || flavor.muzzle).trim();
+    const fx = p.facing[0] || flip, fy = p.facing[1] || 0;
+    if (word && word.length <= 6) spawn(m, 1, () => ({ x: tip[0] + fx * 10, y: tip[1] + fy * 8 - 4, vx: fx * 14, vy: -10, g: 0, life: 0.32, max: 0.32,
+      col: isYou ? L.c.accentL : rgba(L.c.accentL, 0.55), sz: 1, glyph: word, front: true }));
+  }
+  const hits = pendingImpacts.get(p.id);
+  if (hits?.length) {
+    pendingImpacts.delete(p.id);
+    const h = hits[hits.length - 1];
+    if (t - m.impactT > (h.crit ? 0.35 : 1.0)) {
+      m.impactT = t;
+      const word = (wf?.impact || flavor.impact).trim().slice(0, 8);
+      spawn(m, 1, () => ({ x: h.x + (Math.random() - 0.5) * 6, y: h.y - 4, vx: (Math.random() - 0.5) * 16, vy: -22, g: 20, life: 0.4, max: 0.4,
+        col: h.crit ? "#ffe45c" : "#e8f4ff", sz: 1, glyph: word, front: true }));
+    }
+  }
+
+  // --- idle: a tiny keyboard floats up and the hero types; long idle -> sleep(1)
+  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 2, feet - 3, t, idleFor);
+
+  // --- 2-3 real tokens orbit the head; brighter while the skill is ready
+  const orbit = L.tokens.filter((tk) => tk.length <= 3 && /^[^A-Za-z0-9]+$/.test(tk)).slice(0, 2);
+  if (p.alive && orbit.length) {
+    const ready = p.skillCd <= 0;
+    const cols = [L.syn.kw, L.syn.fn];
+    ctx.save();
+    orbit.forEach((tk, i) => {
+      const a = t * 0.8 + m.phase * 5 + (i / orbit.length) * Math.PI * 2;
+      ctx.globalAlpha = ready ? 0.45 + 0.15 * Math.sin(t * 4 + i) : 0.16;
+      drawText(ctx, tk, x + Math.cos(a) * 14, y - 13 + Math.sin(a) * 4, cols[i], "center", "");
+    });
+    ctx.restore();
+  }
 
   if (L.duck) {
     const tx = p.x - flip * 13, ty = p.y - 12;
@@ -598,6 +753,10 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
   // --- front auras
   if (p.buffs.includes("firewall")) drawFirewall(ctx, x, y, t, t - (m.skillT.firewall ?? -9));
   if (overclock) {
+    ctx.save();
+    ctx.globalAlpha = 0.75 + 0.25 * Math.sin(t * 10);
+    drawText(ctx, "SUDO", x, feet + 3, "#ffb13a");
+    ctx.restore();
     // speed sparks: tiny lightning ticks
     if (Math.floor(t * 20) % 3 === 0) {
       ctx.fillStyle = "#ffe08a";
@@ -677,6 +836,20 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
 
   // revive ring
   drawRevive(ctx, x, y + 2, p.reviveProgress, t);
+
+  // the crash dump: a short stack trace of the hero's real functions types out, then fades
+  const sa = t - m.downT;
+  if (sa < 2) {
+    const ids = L.idents.filter((s0) => s0.length <= 12).slice(0, 3);
+    const frames = ["SEGFAULT", ...(ids.length ? ids : ["main", "run"]).map((s0) => "AT " + s0 + (s0.endsWith(")") ? "" : "()"))];
+    ctx.save();
+    ctx.globalAlpha = sa < 1.5 ? 0.9 : 0.9 * (1 - (sa - 1.5) / 0.5);
+    frames.forEach((line, i) => {
+      if (sa < 0.1 + i * 0.12) return;
+      drawText(ctx, line, x + 12, y - 16 + i * 6, i === 0 ? "#ff4a5a" : "#9aa0b8", "left");
+    });
+    ctx.restore();
+  }
 
   // floating ghost with "404" halo
   if (fall >= 1) {
@@ -813,7 +986,15 @@ function updateDrawParticles(ctx: CanvasRenderingContext2D, m: Mem, dt: number, 
     ctx.save();
     if (q.add) ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = Math.min(1, k * 1.5);
-    if (q.glyph) drawText(ctx, q.glyph, q.x, q.y - 2, q.col);
+    if (q.mark) {
+      ctx.fillStyle = q.col;
+      const mx = Math.round(q.x), my = Math.round(q.y);
+      ctx.fillRect(mx, my, 1, 1);
+      if (q.mark === ";") { ctx.fillRect(mx, my + 2, 1, 1); ctx.fillRect(mx - 1, my + 3, 1, 1); }
+    } else if (q.glyph) {
+      drawText(ctx, q.glyph, q.x, q.y - 2, q.col);
+      if (q.len) { ctx.fillStyle = q.col; ctx.fillRect(Math.round(q.x) + 3, Math.round(q.y), q.len, 1); }
+    }
     else {
       ctx.fillStyle = q.col;
       const s = k < 0.4 && q.sz > 1 ? 1 : q.sz;
@@ -877,7 +1058,7 @@ function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isY
     ctx.fillStyle = "#ffe45c";
     for (let i = 0; i < 3; i++) ctx.fillRect(x - 3 + i, ay + i, 7 - i * 2, 1);
     ctx.fillRect(x, ay + 3, 1, 1);
-    drawText(ctx, name, x, top, "#ffe45c");
+    drawText(ctx, (p.perks?.length ? name + " v1." + p.perks.length : name), x, top, "#ffe45c");
     return;
   }
   const pip = pipCanvas(L, initialOf(name));
@@ -893,6 +1074,35 @@ function signatureLabel(raw: string | undefined): string {
     if (!/\)$/.test(sig) && /\(/.test(raw ?? "")) sig += "()";
   }
   return sig.length <= 16 ? sig : "";
+}
+
+function drawIdleKeyboard(ctx: CanvasRenderingContext2D, m: Mem, kx: number, ky: number, t: number, idleFor: number) {
+  const k = Math.min(1, (idleFor - 3) / 0.3);
+  const yy = Math.round(ky + (1 - k) * 4 + Math.sin(t * 2.5) * 0.8);
+  const x0 = Math.round(kx) - 5;
+  ctx.save();
+  ctx.globalAlpha = k;
+  ctx.fillStyle = "#120b18";
+  ctx.fillRect(x0 - 1, yy - 1, 12, 5);
+  ctx.fillStyle = "#3a3150";
+  ctx.fillRect(x0, yy, 10, 3);
+  ctx.fillStyle = "#cfc6e6";
+  const hot = Math.floor(t * 9) % 15;
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) {
+    ctx.fillStyle = (r * 5 + c) * 3 % 15 === hot ? "#ffe45c" : "#cfc6e6";
+    ctx.fillRect(x0 + 1 + c * 2 - r, yy + r, 1, 1);
+  }
+  ctx.fillStyle = "#cfc6e6";
+  ctx.fillRect(x0 + 3, yy + 2, 4, 1); // space bar
+  ctx.restore();
+  if (t - m.clackT > 0.13) {
+    m.clackT = t;
+    spawn(m, 1, () => ({ x: x0 + 1 + Math.random() * 8, y: yy - 1, vx: (Math.random() - 0.5) * 12, vy: -18, g: 60, life: 0.22, max: 0.22, col: "#ffffff", sz: 1, front: true }));
+  }
+  if (idleFor > 8 && t - m.sleepT > 1.6) {
+    m.sleepT = t;
+    spawn(m, 1, () => ({ x: kx + 6, y: yy - 20, vx: 4, vy: -9, g: 0, life: 1.5, max: 1.5, col: "#9aa0b8", sz: 1, glyph: "sleep(1)", front: true }));
+  }
 }
 
 // ---------------------------------------------------------------- perk badges

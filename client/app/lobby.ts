@@ -372,7 +372,7 @@ export function createLobby(app: AppCtx): Screen {
       info.append(
         h("div.pcard-title", null, p.kit.design?.title ?? p.kit.title),
         ...(p.kit.design?.catchphrase ? [h("div.pcard-quote", null, `“${p.kit.design.catchphrase}”`)] : []),
-        h("div.pcard-kit", null, h("span.tag", null, `${WEAPON_ICON[p.kit.weapon] ?? ""} ${p.kit.weapon}`), h("span.tag.tag-skill", null, `⚡ ${p.kit.skill}`)),
+        h("div.pcard-kit", null, h("span.tag", { title: `weapon (${p.kit.weapon})` }, `${WEAPON_ICON[p.kit.weapon] ?? ""} ${p.kit.code?.weapon?.name ?? p.kit.weapon}`), h("span.tag.tag-skill", { title: "skill" }, `⚡ ${p.kit.skill}`)),
         h("div.pcard-hearts", null, hearts(p.kit)),
         ...codeBits(p.kit, false),
       );
@@ -446,7 +446,10 @@ export function createLobby(app: AppCtx): Screen {
             null,
             h("div.you-title", null, k.design?.title ?? k.title),
             k.design?.catchphrase ? h("div.pcard-quote", null, `“${k.design.catchphrase}”`) : null,
-            h("div.kv", null, h("span", null, "weapon"), h("b", null, `${WEAPON_ICON[k.weapon] ?? ""} ${k.weapon}`)),
+            h("div.kv", null, h("span", null, "weapon"), h("b", null, `${WEAPON_ICON[k.weapon] ?? ""} ${k.code?.weapon?.name ?? k.weapon}`)),
+            ...(k.code?.weapon
+              ? [h("div.kv.dim", null, `a ${k.weapon} · fires ${k.code.weapon.projectiles.map((x) => `"${x}"`).join(" ")} · hits go ${k.code.weapon.impact}`)]
+              : []),
             h("div.kv", null, h("span", null, "skill"), h("b", null, `⚡ ${k.skill}`)),
             h("div.kv.dim", null, SKILL_DESC[k.skill] ?? ""),
             ...codeBits(k, true),

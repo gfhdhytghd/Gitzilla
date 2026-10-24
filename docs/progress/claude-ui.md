@@ -1,4 +1,22 @@
-DONE (round 2)
+DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## Code flavor card (claude-ui section) — done
+- HUD vocabulary with plain hints (tooltips + hint copy): `hp` (health), `try{}` (armor), `RAM …MB` (energy), dash = `--force`, skill button shows `$ <skill>`, downed = SEGFAULT with "systemctl restart (revive)" hint, teammate rows `restart N%` / `segfault`, pickups toast `+1 commit ♥ (heal)` / `test passed ✓ (+armor)` / `☕ +RAM (energy)`, victory `exit 0 (boss deleted)`, defeat `exit 1 (squad wiped)`.
+- Weapon as code: `kit.code.weapon.name` on lobby cards (kind in tooltip), you-card line "a blaster · fires "…" · hits go <impact>", HUD weapon line `⌐ <name> "proj" "proj"`.
+- Minimap = editor minimap: faint syntax-coloured "code rows" shaped by the boss's real heart lines + a file tab `▾ <heart file> · map`.
+- Thumb buttons: code word above the plain one (`--force` / DASH, `$ firewall` / SKILL).
+- Pending (not started, waiting on handoff): mount claude-genesis' compile cinematic (client/genesis/) in the lobby hero card, boss reveal and pre-fight intro once docs/progress/claude-genesis.md exists.
+
+## Portrait card (phones = portrait only) — done
+- isPhone() = coarse pointer && short side < 600. Phone portrait game layout (`.phone-portrait`):
+  boss bar (+timer) under the safe-area inset → camera viewport (full arena height at the largest integer DEVICE-pixel scale that leaves ≥300px for the deck; shows ~200–260 logical px of width; follows the hero horizontally with smoothing + move-direction lead, clamped; intro looks at the boss) → control deck.
+- Camera: canvas is resized to the view; the world transform composes camera + intro zoom + shake; toArena() maps through the view. drawEvents/drawPostFx get an optional `view {x,y,w,h}` (claude-boss to honour; ignored otherwise).
+- Edge indicators (pixel arrows drawn on the canvas): off-screen boss (heart + BOSS), a cast aimed at you (pulsing red/yellow + attack name), downed teammates (name + revive %).
+- Minimap top-right of the viewport (120×72 CSS, ¼ scale canvas): obstacles, perk pads, hazards (lasers dotted), pickups, boss regions/body, teammates, you (blinking), and the camera window.
+- Deck: self HP/ARM/NRG (+ perk badges), sensor pill + recalibrate + mute, team list + combo counter, event log; CODE REVIEW becomes a 3-card strip in the deck (cards tappable → hint toast) while pads are on the floor; toasts above the deck; downed banner at the bottom of the viewport. DASH/SKILL = two half-width 92px thumb buttons at the bottom (SKILL left, DASH right) with cooldown fill. Joystick zone (touch fallback) limited to the viewport.
+- Rotate guard: full-screen pixel "ROTATE TO PORTRAIT ↻" overlay for coarse-pointer phones in landscape (CSS, game keeps running); first tap tries fullscreen + screen.orientation.lock("portrait").
+- Landing / lobby / autopsy: single-column portrait layouts (≤600px wide): bigger tap targets (46–56px buttons, larger chips/GitHub rows), you → boss → squad order, no horizontal overflow (min-width:0 on grid items), host-on-big-screen hidden on phones, hall toggle, autopsy diff/table compacted; share card unchanged (1200×630).
+- Verified with Playwright on the dev server at 390×844 and 360×800 (isMobile, hasTouch, DPR 3): intro, fight, code review, lobby, autopsy, rotate guard (844×390), plus desktop 1280×720 unchanged. Harness (now portrait phone) reached autopsy; a second run died to a dev-server restart.
 
 Round 2 summary: real code shows up on hero cards (signature + snippet), on the boss panel (scrolling heart lines, TODOs as "known bugs", commits as "recent sins"), in the intro, and in the autopsy (red diff of each destroyed limb's real symbols plus the removed heart lines). The game composes obstacles, pickups and perk pads, with a compact CODE REVIEW strip, pickup toasts and perk badges. Round-1 review fixes are done too: docked HUD, ambient margins, compact downed banner, phone overflow. Verification: the e2e on the dev server (5175) reached autopsy with exit 0 and 0 errors. Later reruns failed only when the shared dev server restarted mid-run. The only open item is analysis-progress paths, which is blocked on the contract request below.
 

@@ -14,7 +14,10 @@ export { drawText, textWidth } from "./font.ts";
 
 export function drawArenaBackground(ctx: CanvasRenderingContext2D, theme: ArenaTheme, seed: number, time: number): void {
   fx.now = time;
-  const layer = getArena(theme, seed >>> 0);
+  // the floor prints the boss repo's real source once the boss (and its code) is known
+  const kit = fx.boss?.kit;
+  const code = kit && (kit.seed >>> 0) === (seed >>> 0) && kit.code ? [...(kit.code.heartLines ?? []), ...(kit.code.snippets ?? [])].filter((l) => l.trim()) : undefined;
+  const layer = getArena(theme, seed >>> 0, code && code.length ? code : undefined);
   ctx.drawImage(layer.canvas, 0, 0);
   drawAmbient(ctx, layer, time);
 }
