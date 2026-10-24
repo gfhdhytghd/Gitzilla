@@ -5,9 +5,13 @@
 // r 13; heart at (0,0) r 19. Everything else (lobes, appendages, eyes, legs, growths) is cosmetic,
 // driven by kit.design (Gemini art direction) when present, else by the seed.
 import type { BossAttackKind, BossBody, BossGrowth, BossKit, BossMouth } from "../../../shared/types.ts";
+import { kaijuAnatomy } from "./anatomy.ts";
+import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
 
 export type Appendage = "spines" | "coil" | "claw" | "lens" | "fist" | "horns" | "hive" | "antenna" | "nub";
-export type Material = "flesh" | "scales" | "chitin" | "stone" | "metal" | "bark" | "foliage" | "sclera";
+export type Material = "flesh" | "scales" | "chitin" | "stone" | "metal" | "bark" | "foliage" | "sclera" | "obsidian" | "belly";
+/** "kaiju" (the primary, Godzilla-inspired archetype) is renderer-only; the others come from BossDesign.body. */
+export type BodyKind = BossBody | "kaiju";
 
 export interface LimbLayout {
   id: string;
@@ -23,7 +27,10 @@ export interface LimbLayout {
 }
 
 /** A body mass blob. owner: -1 core/extra, else limb index (vanishes / becomes a stump when broken). */
-export interface Lobe { x: number; y: number; r: number; owner: number; mat: Material; sq?: number /* squareness exponent */; ry?: number }
+export interface Lobe { x: number; y: number; r: number; owner: number; mat: Material; sq?: number /* squareness exponent */; ry?: number; sever?: boolean /* removed (not charred) when its owner limb breaks */ }
+/** Optional extra hints (gallery/dev): forceBody overrides the archetype pick. */
+export interface BossVisualHints { forceBody?: BodyKind }
+export interface PlateLayout { x: number; y: number; nx: number; ny: number; ch: string; scale: number; owner: number; order: number /* 0 = tail end */ }
 export interface EyeLayout { x: number; y: number; r: number; limb: number /* -1 = core */; phase: number }
 export interface TentacleLayout {
   from: number; to: number;  // limb indices; from = -1 => dangling from body
@@ -42,7 +49,7 @@ export interface GrowthSpot { kind: BossGrowth; x: number; y: number; angle: num
 export interface ScarLayout { x0: number; y0: number; x1: number; y1: number }
 
 export interface BossLayout {
-  body: BossBody;
+  body: BodyKind;
   mouthKind: BossMouth;
   growths: BossGrowth[];
   bodyR: number;
@@ -56,6 +63,7 @@ export interface BossLayout {
   spots: GrowthSpot[];
   scars: ScarLayout[];
   extent: number;            // half-size of a box that contains everything (for sprite buffers)
+  kaiju?: { plates: PlateLayout[]; heads: { x: number; y: number }[]; mouth: { x: number; y: number }; tailLen: number; jawLimb: number; slots: string[] };
 }
 
 const BODIES: BossBody[] = ["blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"];
@@ -94,18 +102,21 @@ const layoutCache = new Map<string, BossLayout>();
 export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
   const akey = anchors ? anchors.map((a) => a.id + ":" + Math.round(a.x) + "," + Math.round(a.y) + "," + Math.round(a.r)).join(";") : "";
   const d = kit.design;
-  const dkey = d ? d.body + d.mouth + d.eyes + d.growths.join("") : "";
+  const dkey = (d ? d.body + d.mouth + d.eyes + d.growths.join("") : "") + ((kit as BossKit & BossVisualHints).forceBody ?? "");
   const key = kit.repo + "|" + kit.seed + "|" + kit.limbs.length + "|" + akey + "|" + dkey;
   const hit = layoutCache.get(key);
   if (hit) return hit;
   if (layoutCache.size > 200) layoutCache.clear();
   const R = prng(kit.seed ^ 0x9e3779b9);
   const seed = kit.seed >>> 0;
-  const body: BossBody = d?.body && BODIES.includes(d.body) ? d.body : BODIES[(seed >>> 5) % BODIES.length];
+  // The kaiju is the primary boss; the older archetypes only show up as rare variants (~15% by seed) or when forced.
+  const variant: BossBody = d?.body && BODIES.includes(d.body) ? d.body : BODIES[(seed >>> 5) % BODIES.length];
+  const forced = (kit as BossKit & BossVisualHints).forceBody;
+  const body: BodyKind = forced ?? (((seed >>> 7) % 100) < 15 ? variant : "kaiju");
   const mouthKind: BossMouth = d?.mouth ?? MOUTHS[(seed >>> 9) % MOUTHS.length];
   const growths: BossGrowth[] = (d?.growths?.length ? d.growths : [GROWTHS[(seed >>> 11) % GROWTHS.length], GROWTHS[(seed >>> 15) % GROWTHS.length]]).filter((g, i, a) => a.indexOf(g) === i).slice(0, 3);
   const eyeCount = Math.max(1, Math.min(12, d?.eyes ?? 3 + (seed % 6)));
-  const mat = MATERIAL[body];
+  const mat: Material = body === "kaiju" ? "obsidian" : MATERIAL[body];
   const n = kit.limbs.length;
   const totalHp = kit.limbs.reduce((s, l) => s + l.maxHp, 0) || 1;
   const bodyR = 26 + Math.round(R() * 4);
@@ -113,7 +124,9 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
   const anchorOf = (id: string) => anchors?.find((a) => a.id === id);
   const limbs: LimbLayout[] = kit.limbs.map((l, i) => {
     const an = anchorOf(l.id);
-    const ax = an ? Math.round(an.x) : Math.round(Math.cos(limbAngle(kit, i)) * 37), ay = an ? Math.round(an.y) : Math.round(Math.sin(limbAngle(kit, i)) * 32);
+    // no sim regions (portraits): use the shared kaiju anatomy, which is what the sim builds its regions from
+    const ka = kaijuAnchors(kit).limbs[i];
+    const ax = an ? Math.round(an.x) : ka ? ka.dx : Math.round(Math.cos(limbAngle(kit, i)) * 37), ay = an ? Math.round(an.y) : ka ? ka.dy : Math.round(Math.sin(limbAngle(kit, i)) * 32);
     const angle = Math.atan2(ay, ax || 0.001);
     const share = l.maxHp / totalHp;
     const kinds = kit.attacks.filter((a) => a.source === l.component).map((a) => a.kind);
@@ -125,7 +138,8 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
     };
   });
   const ha = anchorOf("heart");
-  const hx = ha ? Math.round(ha.x) : 0, hy = ha ? Math.round(ha.y) : 0;
+  const chest = kaijuAnchors(kit).chest;
+  const hx = ha ? Math.round(ha.x) : chest.dx, hy = ha ? Math.round(ha.y) : chest.dy;
   const heart = { x: hx, y: hy, r: 12, hitR: ha ? ha.r : 19, style: (body === "eye" ? "iris" : body === "machine" ? "reactor" : "braces") as "braces" | "iris" | "reactor" };
 
   const lobes: Lobe[] = [];
@@ -162,7 +176,83 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
     }
   };
 
+  let kaiju: BossLayout["kaiju"];
   switch (body) {
+    case "kaiju": {
+      const an = kaijuAnatomy(kit);
+      const slotIdx = (slot: string) => an.limbs.findIndex((l) => l.slot === slot);
+      const own = (slot: string) => slotIdx(slot);
+      // limb visuals sit exactly on the shared anatomy anchors
+      limbs.forEach((l, i) => {
+        const a = an.limbs[i];
+        if (!a) return;
+        l.x = a.x; l.y = a.y; l.hitR = a.r; l.r = a.r; l.angle = Math.atan2(a.y, a.x || 0.001);
+      });
+      heart.x = an.heart.x; heart.y = an.heart.y; heart.hitR = an.heart.r; heart.r = 10;
+      const ob: Material = "obsidian";
+      // torso, belly, hips, neck, head, snout
+      lobes.push({ x: 3, y: -4, r: 22, ry: 30, owner: -1, mat: ob });
+      lobes.push({ x: 9, y: 18, r: 18, owner: -1, mat: ob });
+      lobes.push({ x: -9, y: 6, r: 13, ry: 22, owner: -1, mat: "belly" });
+      lobes.push({ x: -13, y: -30, r: 12, owner: -1, mat: ob });
+      lobes.push({ x: -27, y: -46, r: 16, ry: 12, owner: -1, mat: ob });
+      lobes.push({ x: -42, y: -43, r: 10, ry: 6.5, owner: -1, mat: ob });
+      lobes.push({ x: -22, y: -55, r: 8, ry: 5, owner: -1, mat: ob }); // brow ridge
+      // arms: upper arm stays, the forearm is severed when the arms limb breaks
+      const arm = own("arms");
+      lobes.push({ x: -20, y: -9, r: 6, owner: -1, mat: ob });
+      lobes.push({ x: -28, y: -2, r: 5, ry: 4, owner: arm, mat: ob, sever: true });
+      // legs (charred, not severed, when broken)
+      const leg = own("leg"), legB = own("leg-back");
+      lobes.push({ x: -7, y: 28, r: 14, owner: leg, mat: ob }, { x: -11, y: 44, r: 8, ry: 10, owner: leg, mat: ob }, { x: -16, y: 55, r: 12, ry: 4, owner: leg, mat: ob });
+      lobes.push({ x: 17, y: 26, r: 13, owner: legB, mat: ob }, { x: 15, y: 42, r: 8, ry: 10, owner: legB, mat: ob }, { x: 11, y: 54, r: 11, ry: 4, owner: legB, mat: ob });
+      // tail: a tapering bezier of lobes; the tip (and, if the tail limb breaks, the outer half) is severed
+      const tail = own("tail"), tip = own("tail-tip");
+      const tx = an.tailLen;
+      const P = [[16, 22], [46, 48], [tx - 30, 50], [tx, 30]];
+      const N = 14;
+      for (let k = 0; k <= N; k++) {
+        const t = k / N, u = 1 - t;
+        const x = u * u * u * P[0][0] + 3 * u * u * t * P[1][0] + 3 * u * t * t * P[2][0] + t * t * t * P[3][0];
+        const y = u * u * u * P[0][1] + 3 * u * u * t * P[1][1] + 3 * u * t * t * P[2][1] + t * t * t * P[3][1];
+        const owner = t >= 0.72 && tip >= 0 ? tip : t >= 0.45 ? tail : -1;
+        lobes.push({ x, y, r: Math.max(2.5, 13 - t * 10.5), owner, mat: ob, sever: owner >= 0 });
+      }
+      // extra heads for very cyclic repos (the dependency knot grew more heads)
+      const heads = [{ x: -30, y: -48 }];
+      if (an.heads >= 2) { lobes.push({ x: 0, y: -50, r: 8, owner: -1, mat: ob }, { x: -6, y: -62, r: 9, ry: 7, owner: -1, mat: ob }, { x: -16, y: -61, r: 6, ry: 4.5, owner: -1, mat: ob }); heads.push({ x: -9, y: -64 }); }
+      if (an.heads >= 3) { lobes.push({ x: 12, y: -48, r: 7, owner: -1, mat: ob }, { x: 14, y: -60, r: 8, ry: 6, owner: -1, mat: ob }, { x: 5, y: -60, r: 5, ry: 4, owner: -1, mat: ob }); heads.push({ x: 11, y: -62 }); }
+      for (const h of heads) eyes.push({ x: h.x - 1, y: h.y - 1, r: h === heads[0] ? 3 : 2, limb: -1, phase: R() * 10 });
+      // dorsal plates along the spine, shaped like brackets taken from the repo's tokens
+      const toks = (kit.code?.tokens ?? []).join("");
+      const shapes = [...new Set([...toks].map((c) => ("{}".includes(c) ? "}" : "<>".includes(c) ? ">" : "[]".includes(c) ? "]" : "()".includes(c) ? ")" : "")).filter(Boolean))];
+      const chars = shapes.length ? shapes : ["}", ">"];
+      // spine = the actual back edge of the silhouette (head -> shoulders -> back -> hips -> top of the tail)
+      const spine = [[-16, -57], [-4, -45], [9, -37], [17, -27], [23, -13], [25, 1], [27, 15], [33, 22], [46, 30], [60, 36], [76, 39], [tx - 12, 30]];
+      const segLen: number[] = [];
+      let total = 0;
+      for (let k = 1; k < spine.length; k++) { const d2 = Math.hypot(spine[k][0] - spine[k - 1][0], spine[k][1] - spine[k - 1][1]); segLen.push(d2); total += d2; }
+      const nPlates = 7 + ((kit.code?.tokens?.length ?? (seed >>> 3)) % 4);
+      const plates: NonNullable<BossLayout["kaiju"]>["plates"] = [];
+      const platesLimb = own("plates"), neckLimb = own("neck-plates");
+      for (let k = 0; k < nPlates; k++) {
+        const t = (k + 0.5) / nPlates * 0.9;
+        let dist = t * total, j = 0;
+        while (j < segLen.length - 1 && dist > segLen[j]) { dist -= segLen[j]; j++; }
+        const f = Math.min(1, dist / segLen[j]);
+        const x = spine[j][0] + (spine[j + 1][0] - spine[j][0]) * f, y = spine[j][1] + (spine[j + 1][1] - spine[j][1]) * f;
+        const dx = spine[j + 1][0] - spine[j][0], dy = spine[j + 1][1] - spine[j][1], dl = Math.hypot(dx, dy) || 1;
+        // outward normal (up/right of the spine when walking head -> tail)
+        let nx = dy / dl, ny = -dx / dl;
+        if (nx < 0 && ny > 0) { nx = -nx; ny = -ny; }
+        const scale = t < 0.1 ? 3 : t < 0.22 ? 4 : t < 0.5 ? 5 : t < 0.68 ? 4 : t < 0.82 ? 3 : 2;
+        const owner = t < 0.22 ? neckLimb : t < 0.6 ? platesLimb : -1;
+        plates.push({ x, y, nx, ny, ch: chars[k % chars.length], scale, owner, order: nPlates - 1 - k });
+      }
+      mouth = null;
+      kaiju = { plates, heads, mouth: an.mouth, tailLen: tx, jawLimb: own("jaw"), slots: an.limbs.map((l) => l.slot) };
+      break;
+    }
     case "blob": {
       lobes.push({ x: hx * 0.5, y: hy * 0.5, r: bodyR, owner: -1, mat });
       const bulges = 2 + Math.floor(R() * 3);
@@ -295,7 +385,7 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
     if (brow === 1 || eyeCount === 1) eyes.push({ x: hx + Math.round((R() - 0.5) * 6), y: hy - bodyR + 9, r: eyeCount === 1 ? 6 : 5, limb: -1, phase: R() * 10 });
     else for (const s of [-1, 1]) eyes.push({ x: hx + s * (7 + Math.round(R() * 3)), y: hy - bodyR + 10 + Math.round(R() * 2), r: 3 + Math.round(R()), limb: -1, phase: R() * 10 });
   }
-  const want = body === "eye" ? Math.max(eyeCount, limbs.length) : eyeCount;
+  const want = body === "eye" ? Math.max(eyeCount, limbs.length) : body === "kaiju" ? eyes.length : eyeCount;
   let guard = 0;
   const solid = (x: number, y: number) => lobes.some((o) => Math.hypot(x - o.x, (y - o.y) * (o.ry ? o.r / o.ry : 1)) < o.r - 2 && o.mat !== "foliage");
   while (eyes.length < want && guard++ < 400) {
@@ -341,7 +431,7 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
     scars.push({ x0, y0, x1: x0 + Math.cos(la) * len, y1: y0 + Math.sin(la) * len });
   }
 
-  const out: BossLayout = { body, mouthKind: mouth ? mouthKind : "none", growths, bodyR, heart, mouth: mouthKind === "none" ? null : mouth, limbs, lobes, eyes, tentacles, legs, spots, scars, extent: 100 };
+  const out: BossLayout = { body, mouthKind: mouth ? mouthKind : "none", growths, bodyR, heart, mouth: mouthKind === "none" ? null : mouth, limbs, lobes, eyes, tentacles, legs, spots, scars, extent: body === "kaiju" ? 124 : 100, kaiju };
   layoutCache.set(key, out);
   return out;
 }
@@ -350,5 +440,5 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
 export function bossHitRegions(kit: BossKit, x: number, y: number) {
   const L = bossLayout(kit);
   return L.limbs.map((l) => ({ id: l.id, x: x + l.x, y: y + l.y, r: l.hitR }))
-    .concat([{ id: "heart", x, y, r: L.heart.hitR }]);
+    .concat([{ id: "heart", x: x + L.heart.x, y: y + L.heart.y, r: L.heart.hitR }]);
 }

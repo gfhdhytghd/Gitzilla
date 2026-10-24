@@ -15,6 +15,8 @@ const players = new Map<string, { x: number; y: number; name: string }>();
 const glyphKeys = new Map<string, string>();
 const numbers = new Map<string, { p: Particle; sum: number; at: number; crit: boolean }>();
 const MAX_NUMBERS = 7;
+/** floating-text budget: ~4 on a narrow portrait camera, 7 otherwise */
+function maxNumbers() { return fx.view.w < 300 ? 4 : MAX_NUMBERS; }
 const numberTimes: number[] = [];
 /** floating damage numbers alive right now (time-window count, independent of merging) */
 function liveNumbers() {
@@ -97,7 +99,7 @@ function ingest(e: GameEvent, time: number) {
         players.set(e.target, { ...(players.get(e.target) ?? { name: "" }), x: e.x, y: e.y });
         const pvpHit = fx.pvp && !!x.source && x.source !== "boss";
         // PvP: the number wears the attacker's color so the class can see who hit whom (one number per target per 0.2 s)
-        if (!pvpHit || (every("pvpnum" + e.target, 0.25, time) && liveNumbers() < MAX_NUMBERS)) {
+        if (!pvpHit || (every("pvpnum" + e.target, 0.25, time) && liveNumbers() < maxNumbers())) {
           const np = emit({ kind: "glyph", x: e.x, y: e.y - 14, vx: (Math.random() - 0.5) * 20, vy: -30, grav: 40, max: 0.9, text: "-" + Math.round(e.amount) + " ERR", color: pvpHit ? heroColor(x.source!) : "#ff3a5c" });
           if (np) noteNumber();
         }
@@ -116,14 +118,18 @@ function ingest(e: GameEvent, time: number) {
         burst(e.x, e.y, 6, { kind: "spark", speed: 110, max: 0.3, colors: ["#ffffff", "#ffd27a", "#ffb02e"] });
         if (every("frag" + e.limb, 0.6, time)) burst(e.x, e.y, 3, { kind: "shard", speed: 60, max: 0.6, text: "/\\|", spin: 14, color: "#ffd27a", color2: "#a05a10", grav: 160 });
       }
-      // impact text of the attacker's code weapon (e.g. "FREE()", "BREAK;", "$1")
-      const wpn = x.source ? playerWeapons.get(x.source) : undefined;
-      if (wpn && every("imp" + x.source, 0.14, time)) {
-        emit({ kind: "bold", x: e.x + (Math.random() - 0.5) * 10, y: e.y + (Math.random() - 0.5) * 6, vx: (Math.random() - 0.5) * 30, vy: -22, max: 0.4, text: wpn.impact.slice(0, 8), color: heroColor(x.source!) });
-      }
+      const narrow = fx.view.w < 300; // portrait phone camera: keep the boss face and the aim line clear
       const crit = x.crit ?? e.amount > avgHit * 2.4;
       const dir = x.direction ?? [0, -1];
       const ang = Math.atan2(dir[1], dir[0]);
+      // impact text of the attacker's code weapon (e.g. "FREE()", "BREAK;", "$1"), pushed sideways off the shot's line
+      const wpn = x.source ? playerWeapons.get(x.source) : undefined;
+      if (wpn && every("imp" + x.source, narrow ? 0.4 : 0.2, time) && every("impAll", narrow ? 0.25 : 0.12, time) && liveNumbers() < maxNumbers()) {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const pxn = -Math.sin(ang) * side, pyn = Math.cos(ang) * side;
+        emit({ kind: narrow ? "glyph" : "bold", x: e.x + pxn * 10, y: e.y + pyn * 10 - 2, vx: pxn * 22, vy: pyn * 22 - 10, max: narrow ? 0.3 : 0.4, text: wpn.impact.slice(0, narrow ? 5 : 8), color: heroColor(x.source!) });
+        noteNumber();
+      }
       burst(e.x, e.y, crit ? 10 : 4, { kind: "spark", speed: crit ? 120 : 80, spread: 1.6, dir: ang + Math.PI, max: 0.25, colors: ["#ffffff", "#ffd23f", "#ff9a2a"] });
       // big CRIT label only for genuinely heavy hits, globally rate-limited; other crits roll into orange numbers
       const critOk = crit && e.amount >= Math.max(10, avgHit * 1.4) && every("crit", 0.45, time);
@@ -136,25 +142,26 @@ function ingest(e: GameEvent, time: number) {
       // one rolling number per limb: keep summing while it's still on screen
       const key = e.target + "|" + (e.limb ?? "");
       const prev = numbers.get(key);
-      if (!critOk && prev && !prev.crit && prev.p.life < prev.p.max * 0.75 && prev.p.text === "-" + Math.round(prev.sum)) {
+      const mergeOk = narrow ? time - (prev?.at ?? -9) < 0.3 || (prev && prev.p.life < prev.p.max * 0.75) : !critOk;
+      if (mergeOk && prev && (narrow || !prev.crit) && prev.p.life < prev.p.max * 0.75 && prev.p.text.startsWith("-" + Math.round(prev.sum))) {
         prev.sum += e.amount;
-        prev.p.text = "-" + Math.round(prev.sum);
+        prev.p.text = "-" + Math.round(prev.sum) + (prev.crit ? " CRIT" : "");
         prev.p.life = Math.min(prev.p.life, 0.15);
         prev.at = time;
-      } else if (critOk || liveNumbers() < MAX_NUMBERS) {
+      } else if ((critOk && !narrow) || liveNumbers() < maxNumbers()) {
         // drift outward, away from the boss face
         const b = fx.boss;
         let ox = 0, oy = -1;
         if (toBoss && b) { const dx = e.x - b.x, dy = e.y - b.y, l = Math.hypot(dx, dy) || 1; ox = dx / l; oy = Math.min(-0.3, dy / l); }
         const p = emit({
           kind: "glyph", x: e.x + ox * 10, y: e.y + oy * 8, vx: ox * 26 + (Math.random() - 0.5) * 8, vy: oy * 30 - 18, grav: 50, drag: 1.5, max: critOk ? 1.0 : 0.8,
-          text: critOk ? "-" + Math.round(e.amount) + " CRIT" : "-" + Math.round(e.amount), color: critOk ? "#ff7a2a" : crit ? "#ffb05a" : toBoss ? "#fff4c4" : "#d0ffb0", size: critOk ? 2 : 1,
+          text: critOk ? "-" + Math.round(e.amount) + " CRIT" : "-" + Math.round(e.amount), color: critOk ? "#ff7a2a" : crit ? "#ffb05a" : toBoss ? "#fff4c4" : "#d0ffb0", size: critOk && !narrow ? 2 : 1,
         });
         if (p) { numbers.set(key, { p, sum: e.amount, at: time, crit: critOk }); noteNumber(); }
       }
       for (const [k, v] of numbers) if (time - v.at > 1.2) numbers.delete(k);
       // small combo tag next to the number (claude-ui shows the big HUD combo)
-      if (e.combo && e.combo >= 2 && every("combo", 0.5, time) && liveNumbers() < MAX_NUMBERS + 2) {
+      if (e.combo && e.combo >= 2 && every("combo", 0.5, time) && liveNumbers() < maxNumbers() + (narrow ? 0 : 2)) {
         emit({ kind: "glyph", x: e.x + 12, y: e.y - 4, vx: 10, vy: -16, max: 0.6, text: "X" + e.combo, color: "#ffe14a", size: 1 });
         if (e.combo >= 3) emit({ kind: "ring", x: e.x, y: e.y, size: 16, max: 0.3, color: "#ffe14a" });
       }

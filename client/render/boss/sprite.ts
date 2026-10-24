@@ -57,12 +57,20 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   const C = L.extent;
   const R = rng(kit.seed ^ 0x51ed);
   const ph = (frame / BREATH_FRAMES) * Math.PI * 2;
-  const blend = L.body === "swarm" ? 2.5 : L.body === "golem" || L.body === "machine" ? 4 : L.body === "serpent" ? 5 : 9;
+  const blend = L.body === "swarm" ? 2.5 : L.body === "golem" || L.body === "machine" ? 4 : L.body === "serpent" ? 5 : L.body === "kaiju" ? 6 : 9;
+  const isKaiju = L.body === "kaiju";
+  const cuts: { x: number; y: number; r: number }[] = []; // kaiju: where a severed part was cut off
 
   // lobes with breathing + broken limbs collapsed to stumps
   const lobes: Lobe[] = [];
   const stumped = new Set<number>();
   L.lobes.forEach((o, i) => {
+    if (isKaiju && o.owner >= 0 && broken[o.owner]) {
+      // kaiju: severed parts (forearm, tail tip) vanish; legs/plates stay and get charred later
+      if (o.sever) { if (!stumped.has(o.owner)) { stumped.add(o.owner); cuts.push({ x: o.x, y: o.y, r: o.r }); } return; }
+      lobes.push({ ...o });
+      return;
+    }
     if (o.owner >= 0 && broken[o.owner]) {
       if (stumped.has(o.owner)) return;
       stumped.add(o.owner);
@@ -70,7 +78,7 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
       lobes.push({ ...o, x: st.x, y: st.y, r: st.r, owner: o.owner, ry: undefined, mat: o.mat === "foliage" ? "bark" : o.mat });
       return;
     }
-    const wob = o.mat === "metal" || o.mat === "stone" ? 0 : Math.sin(ph + i * 1.9) * (o.owner < 0 && i === 0 ? 0.8 : 0.6);
+    const wob = o.mat === "metal" || o.mat === "stone" || (isKaiju && i > 1) ? 0 : Math.sin(ph + i * 1.9) * (o.owner < 0 && i === 0 ? 0.8 : 0.6);
     lobes.push({ ...o, r: o.r + wob });
   });
 
@@ -132,6 +140,21 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
           break;
         }
         case "chitin": v = Math.pow(Math.max(0, v), 1.3) * 1.05; dith = 0.5; break;
+        case "obsidian": {
+          // dense reptile scales + a glossy rim of light
+          const u = (x + ((y >> 1) & 1)) & 1, w = y & 1;
+          if (w === 1 && u === 0) v -= 0.12;
+          if (((x * 7 + y * 13) & 15) === 0) v += 0.15;
+          if (v > 0.9) v += 0.2;
+          dith = 0.6;
+          break;
+        }
+        case "belly": {
+          // horizontal armored belly bands
+          if (((y - C) & 3) === 0) v -= 0.22; else if (((y - C) & 3) === 1) v += 0.08;
+          dith = 0.4;
+          break;
+        }
         case "stone": v += (hash2(x, y, kit.seed) - 0.5) * 0.18; dith = 0.4; break;
         case "metal": {
           v = 0.25 + Math.round(v * 3) / 3 * 0.7; dith = 0.3;
@@ -173,7 +196,7 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   // ---- 2. surface details (clipped to body) ----
   bctx.globalCompositeOperation = "source-atop";
   bctx.translate(C, C);
-  const organic = L.body === "blob" || L.body === "hydra" || L.body === "serpent" || L.body === "spider";
+  const organic = L.body === "blob" || L.body === "hydra" || L.body === "serpent" || L.body === "spider" || isKaiju;
   if (organic) drawVeins(bctx, L, art, R, tint);
   if (L.body === "golem") drawCracks(bctx, L, art, R, tint);
   if (L.body === "eye") drawScleraVeins(bctx, L, art, R);
@@ -187,8 +210,10 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   drawKnots(bctx, L, art, broken);
   drawFragile(bctx, kit, L, broken);
   if (L.heart.style !== "iris") drawSocket(bctx, L, art);
+  // kaiju damage: cut ends (severed tail tip / forearm) and charred, cracked parts that stay attached
+  if (isKaiju) drawKaijuDamage(bctx, kit, L, art, broken, cuts);
   // broken stumps: charred
-  L.limbs.forEach((l, i) => {
+  if (!isKaiju) L.limbs.forEach((l, i) => {
     if (!broken[i]) return;
     const st = stumpOf(l);
     const ox = st.x + Math.cos(l.angle) * st.r * 0.55, oy = st.y + Math.sin(l.angle) * st.r * 0.55;
@@ -204,24 +229,61 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   // ---- 3. compose: back appendages/growths, body, front ----
   const [out, octx] = makeCanvas(size, size);
   octx.translate(C, C);
-  const useAppendages = L.body !== "eye" && L.body !== "tree" && L.body !== "hydra";
+  const useAppendages = L.body !== "eye" && L.body !== "tree" && L.body !== "hydra" && !isKaiju;
   drawGrowths(octx, L, art, broken, "back", kit.seed);
   if (useAppendages) L.limbs.forEach((l, i) => { if (!broken[i]) drawAppendage(octx, l, art, kit.seed + i * 77, "back", frame); });
   octx.setTransform(1, 0, 0, 1, 0, 0);
   octx.drawImage(bodyC, 0, 0);
   octx.translate(C, C);
   L.limbs.forEach((l, i) => {
-    if (broken[i]) drawWires(octx, l, art, kit.seed + i);
+    if (broken[i] && !isKaiju) drawWires(octx, l, art, kit.seed + i);
     else if (useAppendages) drawAppendage(octx, l, art, kit.seed + i * 77, "front", frame);
     else if (L.body === "hydra") drawJaw(octx, l, art);
   });
   drawGrowths(octx, L, art, broken, "front", kit.seed);
+  if (isKaiju) for (const c of cuts) drawCutWires(octx, c, art, kit.seed);
   octx.setTransform(1, 0, 0, 1, 0, 0);
   outlineSprite(out, art.outline);
   return { canvas: out, white: null, cx: C, cy: C };
 }
 
 // ---------- archetype details ----------
+
+function drawKaijuDamage(ctx: CanvasRenderingContext2D, kit: BossKit, L: BossLayout, art: BossArt, broken: boolean[], cuts: { x: number; y: number; r: number }[]) {
+  const R = rng(kit.seed ^ 0xdead);
+  // cut faces: dark ring + raw red flesh + bone
+  for (const c of cuts) {
+    ctx.fillStyle = art.outline; disc(ctx, c.x, c.y, c.r + 1);
+    ctx.fillStyle = art.dangerRamp[0]; disc(ctx, c.x, c.y, c.r - 0.5);
+    ctx.fillStyle = art.dangerRamp[1]; disc(ctx, c.x - 0.5, c.y - 0.5, Math.max(1, c.r - 2));
+    ctx.fillStyle = art.boneRamp[3]; disc(ctx, c.x, c.y, Math.max(1, c.r * 0.3));
+  }
+  // charred cracks on broken parts that stay attached (legs, jaw, plates base)
+  L.limbs.forEach((l, i) => {
+    if (!broken[i]) return;
+    ctx.fillStyle = art.outline;
+    disc(ctx, l.x, l.y, Math.max(3, l.r * 0.45));
+    for (let k = 0; k < 5; k++) {
+      let a = R() * Math.PI * 2, x = l.x, y = l.y;
+      for (let st = 0; st < 5; st++) {
+        const nx = x + Math.cos(a) * 2.2, ny = y + Math.sin(a) * 2.2;
+        ctx.fillStyle = "#07040c"; line(ctx, x, y + 1, nx, ny + 1);
+        ctx.fillStyle = st < 2 ? "#ff7a2a" : art.dangerRamp[1]; line(ctx, x, y, nx, ny);
+        x = nx; y = ny; a += (R() - 0.5) * 1.2;
+      }
+    }
+  });
+}
+
+function drawCutWires(ctx: CanvasRenderingContext2D, c: { x: number; y: number; r: number }, art: BossArt, seed: number) {
+  const R = rng(seed ^ Math.round(c.x * 31 + c.y));
+  const cols = ["#ff4d4d", "#ffd23f", "#3fd2ff", "#7dff6b", art.bone];
+  for (let i = 0; i < 4; i++) {
+    let x = c.x + (R() - 0.5) * c.r, y = c.y + (R() - 0.5) * c.r, a = R() * Math.PI * 2;
+    ctx.fillStyle = cols[i % cols.length];
+    for (let s2 = 0; s2 < 4 + R() * 5; s2++) { ctx.fillRect(Math.round(x), Math.round(y), 1, 1); a += (R() - 0.5) * 0.8; x += Math.cos(a); y += Math.sin(a); }
+  }
+}
 
 function drawCracks(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, R: () => number, tint: number) {
   for (let i = 0; i < 9; i++) {

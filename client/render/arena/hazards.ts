@@ -2,7 +2,7 @@
 import type { Hazard } from "../../../shared/types.ts";
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bayer, disc, drawGlow, hash2, line, TAU } from "./pix.ts";
-import { drawText, textSprite } from "./font.ts";
+import { boldSprite, drawText, textSprite } from "./font.ts";
 import { addShake, burst, emit, fx } from "./fx.ts";
 
 const names = new Map<number, string>();      // hazard id -> attack name (from latest telegraph event)
@@ -222,6 +222,9 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
     const since = time - (armedAt.get(h.id) ?? time);
     const fade = Math.max(0, 1 - Math.max(0, since - 0.55) / 0.2);
     const w = h.r + Math.sin(time * 60) * 1.2;
+    // the kaiju's atomic breath is cyan and made of </> glyphs; other bosses fire a red beam with the attack name
+    const atomic = fx.bossKind === "kaiju";
+    const cCore = "#ffffff", cMid = atomic ? "#9ff8ff" : "#ffb0c0", cEdge = atomic ? "#3ee6ff" : red;
     let endS = 0;
     for (let s = 0; s < len; s += 1) {
       const x = h.x + ux * s, y = h.y + uy * s;
@@ -229,28 +232,29 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
       endS = s;
       for (let k = -Math.ceil(w); k <= Math.ceil(w); k++) {
         const ak = Math.abs(k);
-        ctx.fillStyle = ak <= w * 0.35 ? "#ffffff" : ak <= w * 0.7 ? "#ffb0c0" : red;
+        ctx.fillStyle = ak <= w * 0.35 ? cCore : ak <= w * 0.7 ? cMid : cEdge;
         if (ak > w * fade) continue;
         ctx.fillRect(Math.round(x + px * k), Math.round(y + py * k), 1, 1);
       }
-      if (s % 14 === 0) drawGlow(ctx, x, y, red, 14, 0.5 * fade);
+      if (s % 14 === 0) drawGlow(ctx, x, y, cEdge, 14, 0.5 * fade);
     }
-    // the beam is made of text: the attack name crawls along the white core
-    const text = ((names.get(h.id) ?? "") || "RACE CONDITION").split("::")[0].trim().toUpperCase() + "  ";
+    // the beam is made of text crawling along its white core
+    const text = atomic ? "</> " : ((names.get(h.id) ?? "") || "RACE CONDITION").split("::")[0].trim().toUpperCase() + "  ";
     if (fade > 0.6 && w >= 3) {
-      const off = (time * 140) % (text.length * 5);
+      const off = (time * (atomic ? 220 : 140)) % (text.length * 5);
       for (let s2 = 10 - off; s2 < endS - 4; s2 += 5) {
         const ci = Math.floor((s2 + off) / 5) % text.length;
         const ch = text[ci];
         if (ch === " " || s2 < 8) continue;
-        const g = textSprite(ch, "#7a0a24", null);
-        ctx.drawImage(g, Math.round(h.x + ux * s2) - 1, Math.round(h.y + uy * s2) - 2);
+        const g = atomic ? boldSprite(ch, "#0a3a5a") : textSprite(ch, "#7a0a24", null);
+        ctx.drawImage(g, Math.round(h.x + ux * s2) - (g.width >> 1), Math.round(h.y + uy * s2) - (g.height >> 1));
       }
     }
+    if (atomic && Math.random() < 0.5) emit({ kind: "bold", x: h.x + ux * (20 + Math.random() * endS * 0.8) + px * (Math.random() - 0.5) * 16, y: h.y + uy * (20 + Math.random() * endS * 0.8) + py * (Math.random() - 0.5) * 16, vx: px * 20 * (Math.random() - 0.5), vy: -10, max: 0.35, text: ["<", "/", ">", "{}"][Math.floor(Math.random() * 4)], color: "#3ee6ff" });
     // impact sparks where the beam hits the wall
     const ex = h.x + ux * endS, ey = h.y + uy * endS;
     drawGlow(ctx, ex, ey, "#ffffff", 10, fade);
-    if (Math.random() < 0.6) emit({ kind: "spark", x: ex, y: ey, vx: -ux * 60 + (Math.random() - 0.5) * 120, vy: -uy * 60 + (Math.random() - 0.5) * 120, max: 0.3, color: red, color2: "#ffd23f" });
+    if (Math.random() < 0.6) emit({ kind: "spark", x: ex, y: ey, vx: -ux * 60 + (Math.random() - 0.5) * 120, vy: -uy * 60 + (Math.random() - 0.5) * 120, max: 0.3, color: atomic ? "#3ee6ff" : red, color2: atomic ? "#ffffff" : "#ffd23f" });
   }
 }
 

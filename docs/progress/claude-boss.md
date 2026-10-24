@@ -1,3 +1,41 @@
+DONE (kaiju boss) — claude-boss
+
+## Kaiju boss (Godzilla-inspired, generic; related to brand/gitzilla-mark.svg)
+- **Primary archetype = "kaiju"**, a renderer-side BodyKind.
+  - About 85% of bosses by seed. The old archetypes (or `design.body`) show up only as rare variants (~15%).
+  - Dev override: `kit.forceBody` (gallery `&body=`).
+- **Anatomy** (facing left, toward the heroes):
+  - Upright obsidian-scaled saurian with an ash-grey banded belly, a big head with brow ridge and snout, small clawed arms, heavy legs with feet and toe claws, and a long tapering tail.
+  - Tail length comes from the kit: a laser means a deep dependency chain, which means a longer tail.
+  - Very cyclic repos (≥3 weak-point limbs) grow 2–3 heads.
+  - Material is "obsidian": dense scales with a glossy rim. The repo hue tints the charcoal, and the hide stays dark when enraged.
+- **Dorsal plates:** rows of brand-colored bracket glyphs (`}` `>` `]` `)` from the repo's tokens) in pink/cyan/green plus the language accent.
+  - 7–10 plates (count from tokens) sit on the actual back edge, half buried in the hide.
+  - Tail plates point up (clean 90° rotation).
+  - A broken plate row turns cracked grey and loses every other plate, with sparks.
+- **Signature move:** before a laser, the plates light up one by one from tail to head (white-hot with cyan glow and rising particles). The jaw opens with a cyan charge glow at the mouth and stays open ~0.9 s for the breath.
+  - The beam is the **atomic breath**: cyan/white with bold `</>` glyphs crawling along it and code-glyph sparks.
+  - The sim fires it from `bossMouth()` (shared anatomy), so it really leaves the jaw.
+- **Code stays:**
+  - The chest heart core scrolls the real heartLines inside `{ }`.
+  - Real symbols and snippets are carved into the hide (placed by searching the body mask).
+  - TODO bugs, weak-point knots, fragile organs ("1 MAINTAINER") and parasites all sit on the anatomy anchors.
+- **Damage:**
+  - The tail tip (and, if the tail limb breaks, the outer half of the tail) is severed: cut face, raw flesh, bone, dangling wires.
+  - Broken arms lose the forearm.
+  - Broken legs and jaw stay but are charred with glowing cracks; a broken jaw hangs open with missing teeth.
+- **Eyes:** red with a cyan slit pupil that tracks the target, plus blinks.
+- **Shared anatomy:** `shared/kaiju-anatomy.ts` (owned by me) exports `kaijuAnchors(kit)` (chest, mouth, one anchor per limb id) and `KAIJU_SLOTS`.
+  - Limb i → slot i: plates, tail, jaw, arms, leg, neck-plates, leg-back, tail-tip.
+  - codex-sim already builds regions and the laser origin from it (keeping its 13/19 combat radii).
+  - My renderer places art from the same function, and portraits/variants fall back to it, so art and hitboxes can't drift. Covered by `layout.test.ts`.
+- **Portrait text clutter (UX audit PR-1):** when view.w < 300:
+  - at most 4 floating texts;
+  - damage numbers merge per target within 300 ms (crits too);
+  - impact words are smaller and shorter (≤5 chars), pushed sideways off the shot's line, and rate-limited (also globally in every view);
+  - CRIT stays at 1×.
+- **Gallery:** `?mode=grid&one=1&atk=laser&boss=flask&theme=web` (breath sequence), `&phase=3&broken=0,1,2,7` (damage), `&portrait=1&res1=1&follow=boss` (phone camera on the boss), `?mode=portraits` / `?mode=bodies`.
+
 DONE (glyph bullets) — claude-boss
 
 ## Glyph bullets (player projectiles + impact sparks as readable code)
@@ -160,3 +198,10 @@ Every renderer in my BRIEF interface is in and verified in headless Chromium scr
 
 ## Contract requests
 - Hazard has no telegraph duration, so the renderer estimates it (slam/cascade active window 0.45 s, laser 0.75 s). An optional `Hazard.telegraph?: number` would make the countdowns exact.
+
+## Kaiju anatomy handoff (for codex-sim) — shared/kaiju-anatomy.ts
+- `kaijuAnchors(kit)` → `{ chest: {dx,dy,r}, mouth: {dx,dy}, limbs: [{id, slot, dx, dy, r}] }`, offsets relative to BossState.x/y, one entry per kit.limbs id. Limb i → slot i:
+  plates, tail, jaw, arms, leg, neck-plates, leg-back, tail-tip.
+- Sim: `regions = limbs.map(l => ({ id: l.id, x: b.x + l.dx, y: b.y + l.dy, r: l.r })).concat({ id: "heart", x: b.x + chest.dx, y: b.y + chest.dy, r: chest.r })`.
+- Laser / atomic breath: please originate the laser hazard at `b + mouth` (dx -48, dy -39). The renderer draws the breath from the hazard origin.
+- The kaiju is ~150 px wide: head at dx ≈ -56, tail tip at dx ≈ +tailLen (94–112). Suggested clamp for the boss center: x ∈ [70, 370], y ∈ [70, 222].
