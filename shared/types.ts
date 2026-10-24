@@ -188,8 +188,21 @@ export interface BossLimb {
   parasites?: KnownVuln[]; // stretch: vulns living in this organ
 }
 
+// Boss archetypes: distinct silhouette + movement + attack/animation presets (inspired by docs/design-refs/boss-*.png;
+// never copies of Toho designs). The sim picks one deterministically from real repo traits (see sim/kits.ts).
+export type BossArchetype =
+  | "kaiju"    // classic upright saurian, glowing crystalline dorsal fins, stomp-walk, tail sweep, '</>' breath
+  | "hydra"    // multi-headed winged dragon (cyclic repos): hovers, wing gusts, each head fires its own beam, dive
+  | "mecha"    // armored machine kaiju (systems languages / heavy infra): rocket fists, eye lasers, missile barrages, jet hop
+  | "abyssal"; // black crystalline serpent-dragon with glowing veins (huge/old repos): coils, burrows, crystal eruptions
+
+// What the boss body is doing right now; the sim drives it, renderers animate it (so art and gameplay stay in sync).
+export type BossPose = "idle" | "walk" | "windup" | "attack" | "recover" | "fly" | "dive" | "burrow" | "emerge"
+  | "stagger" | "roar" | "enrage" | "death";
+
 export interface BossKit {
   repo: string;
+  archetype: BossArchetype;
   name: string;          // e.g. "LODASH, THE MONOLITH"
   maxHp: number;         // core HP, scaled by player count
   limbs: BossLimb[];
@@ -266,6 +279,8 @@ export interface BossState {
   casting: { attackId: string; t: number; total: number; target: [number, number] | null } | null;
   targetPlayer: string | null;
   enraged: boolean;
+  pose: { name: BossPose; t: number; total: number; dir: [number, number]; head?: number }; // head = which head acts (hydra)
+  airborne: boolean;         // hydra in flight / abyssal burrowed: changes what can be hit (sim decides)
   // Hit regions in absolute arena px, owned by sim. Renderer anchors limb art here.
   // id = limb id, or "heart" for the core.
   regions: { id: string; x: number; y: number; r: number }[];
