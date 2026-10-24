@@ -1,3 +1,35 @@
+DONE (duelyst heroes)
+
+Duelyst-style generals (user design refs docs/design-refs/hero-1.png, hero-2.png):
+- **New body** (`client/render/player/general.ts`). A parametric rig per archetype: polygons, tapered limbs, and ellipses in a 100-unit figure space with ~7-head proportions. It's rasterized natively at the target height:
+  - 32 px in-game (was ~20)
+  - 64 px edu heroScale 2
+  - 96 px full-detail portraits (res 3)
+  Pixel-art passes on top: dark seams where armor plates meet, per-plate bevels lit from the top-left, a strong accent rim light on the back edge, a 1px outline, glows with a 1px bloom halo, and a dithered cape.
+- **Archetypes as distinct generals.**
+  - knight: horned great helm + angular spiked pauldrons + cape
+  - heavy: hulking, huge pauldrons with double spikes, small helm sunk in the gorget
+  - ranger: hooded cowl + mask + glowing eyes
+  - mage: robe to the ground + tall wizard hat / hood, glowing eyes, staff raised
+  - engineer: visor helm + backpack, mech-bulky
+  - rogue: wide crouched stance, horned hood, tattered cape
+  All have angular layered pauldrons with gilded lips, diamond knee guards, tassets, gauntlets, a chest core gem, and a belt gem. Palette: dark armor tinted by the repo's primary, gilded trim (primary mixed with gold), and glows in the accent color (cyan/gold/magenta per palette).
+- **Code identity kept.**
+  - Cursor-glow visor/eyes (red on hurt/KO); the in-game code weapons (v2), now held at the rig's real front hand.
+  - Glowing syntax-colored code lines etched across the chest plate and a glowing greave seam (res >= 2).
+  - The repo token/emblem glowing on the chest (res >= 2).
+  - The cape shows **real code**: scrolling syntax-colored minimap lines in-game, and the actual `kit.code.snippet` written as readable 3x5 text on res-3 portrait capes.
+  - Orbiting tokens, tags, perks, and all FX remain.
+- **In-game sizing.** Feet are at p.y+14 and the head top at ~p.y-18 (~32 px tall + horns). Every hero-relative FX offset was rescaled (tags, pips, rings, shadow, callouts, orbit, perk badges, firewall bubble, revive ring, lying body, keyboard, duck). The boss stays far bigger (96–160 px).
+- **Portraits.** `playerPortrait(kit, size, frame, hires)` now renders the general natively at r = floor(size/46) (1–4), drawn 1:1. The code weapon is drawn at scale r-1 (EPX at 2x), with guns held flat and the blade/staff raised, plus an accent glow. `portraitWeaponLayer` matches it exactly. `paintHeroCard`, `paintHeroTerminal`, and `weaponShowcase` all work with it.
+- **Gallery.** There's a new `--generals` row (168 px cards, res 3) and bigger cells for the in-game grid and `?compare=1` (1x vs edu 2x). Checked in screenshots: portraits, the in-game grid, the filmstrip (hurt/dash/downed/revive), the edu comparison, and the 480x288 arena at phone-camera scale.
+- **Tests.** Player tests: 12 pass. The full suite fails only in design/index.test.ts (not mine).
+
+### For other agents
+- **codex-sim (hitbox).** The visual chest center stays at (p.x, p.y); the body spans about y-18..y+14 and x±11. The current bullet hit radius of 6 still sits on the torso and stays forgiving, so **no change needed**. If you want hits to match the bigger silhouette, use 7 (×heroScale in edu). Melee/AoE ranges are unaffected.
+- **claude-genesis.** `HERO_SIZE = 32` is now too small for a 32 px-tall general (tiny slots clip the weapon). Use 64 (or 64/128 hires); 144+ gives the full-detail res-3 general with code on the cape. Keep using `portraitWeaponLayer(kit, size, hires)` for the weapon layer.
+- **claude-ui.** Portrait size → figure height: 64 gives ~32 px, 96 gives ~64 px, 144+ gives ~96 px with the readable code cape. The share card / MVP card should use >= 144. The 32 px backdrop lineup still works; the figure fits with feet on the edge.
+
 DONE (weapon v2)
 
 Weapon v2 (user: "the weapon is still regular, I want code elements there"). Every weapon is now BUILT from code:
