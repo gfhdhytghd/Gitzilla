@@ -2,6 +2,7 @@
 // repo's real numbers. claude-genesis shows it when lobby.mode === "edu". Pure (no DOM).
 import type { Genesis, GenesisStage, QualityStat } from "../../shared/types.ts";
 import { STAT_LABEL } from "./concepts.ts";
+import { plainRow } from "./explain.ts";
 import { gpa, gpaGrade, sortStats, strongest, weakest } from "./quality.ts";
 
 /** Contract stages plus the cinematic's own assemble/reveal beats. */
@@ -36,6 +37,7 @@ export function eduGenesisNotes(g: Genesis, kind: "hero" | "boss" = "hero", qual
   const q = quality?.length ? sortStats(quality) : null;
   const best = strongest(quality);
   const worst = weakest(quality);
+  const worstPlain = worst ? plainRow(worst) : null;
 
   const notes: Record<EduStage, EduNote> = {
     clone: {
@@ -107,8 +109,8 @@ export function eduGenesisNotes(g: Genesis, kind: "hero" | "boss" = "hero", qual
     ready: {
       stage: "ready",
       title: "$ ready",
-      text: q && worst ? `To level up for real: ${worst.tip}` : "Ready to fight. Every move it makes comes from the code you just watched.",
-      fact: q && worst ? `${STAT_LABEL[worst.stat].plain} ${worst.grade}: ${worst.signal}` : `${g.slug}`,
+      text: q && worstPlain ? `To level up for real: ${worstPlain.tip ?? worst!.tip}` : "Ready to fight. Every move it makes comes from the code you just watched.",
+      fact: q && worstPlain ? `${worstPlain.word} ${worst!.grade}: ${worstPlain.measure}` : `${g.slug}`,
     },
   };
   return notes;

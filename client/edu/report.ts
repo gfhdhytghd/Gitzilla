@@ -2,7 +2,8 @@
 // highlights, quiz, glossary), and the architecture report for a boss repo (plain words + "where it needs help").
 import type { Autopsy, BossKit, Genesis, QualityStat } from "../../shared/types.ts";
 import { h } from "../app/util.ts";
-import { ALL_CONCEPTS, type EduConcept, STAT_LABEL, conceptInfo } from "./concepts.ts";
+import { ALL_CONCEPTS, type EduConcept, conceptInfo } from "./concepts.ts";
+import { plainRow } from "./explain.ts";
 import { diagramCanvas, glyphBadge } from "./diagrams.ts";
 import type { LessonEngine } from "./engine.ts";
 import type { EduVariant } from "./feed.ts";
@@ -16,41 +17,68 @@ const shortRepo = (r: string) => r.split("/").pop() || r;
 
 // ---------- report card ----------
 
-export function createReportCard(s: Student, opts: { size?: "sm" | "md" | "lg"; you?: boolean } = {}): HTMLElement {
+const LETTERS: QualityStat["grade"][] = ["F", "D", "C", "B", "A"];
+
+/** One plain-language row: grade · word (alias) · what it measures · F-to-A scale, then your number (vs the class),
+ *  then what the next grade needs + one concrete tip. Tapping the word opens the concept's animated diagram. */
+function reportRow(x: QualityStat, peers: QualityStat[], size: "sm" | "md" | "lg"): HTMLElement {
+  const r = plainRow(x, peers);
+  const scale = h("span.rc-scale", { "aria-label": `grade ${x.grade} on a scale from F to A` }, ...LETTERS.map((l) => h(`span${l === x.grade ? ".on" : ""}`, null, l)));
+  if (size === "sm")
+    return h("div.rc-row", { style: `--c:${GRADE_COLOR[x.grade]}`, title: `${r.word}: ${r.what}` }, h("span.rc-grade", null, x.grade), h("div.rc-main", null, h("span.rc-word", null, r.word)));
+  const info = conceptInfo(r.concept);
+  const explainer = h("div.rc-concept", { hidden: true });
+  const word = h(
+    "button.rc-word",
+    {
+      type: "button",
+      title: `what is ${r.word}? tap for the animated explanation`,
+      onclick: () => {
+        if (!explainer.childElementCount) explainer.append(diagramCanvas(r.concept), h("p", null, h("b", { style: `color:${info.color}` }, info.title), " ", ...richText(info.text), " ", ...richText(info.more)));
+        explainer.hidden = !explainer.hidden;
+      },
+    },
+    r.word,
+  );
+  return h(
+    "div.rc-row",
+    { style: `--c:${GRADE_COLOR[x.grade]}` },
+    h("span.rc-grade", null, x.grade),
+    h(
+      "div.rc-main",
+      null,
+      h("div.rc-l1", null, word, r.alias ? h("small.rc-alias", null, ` ${r.alias}`) : null, h("span.rc-what", null, r.what), scale),
+      h("div.rc-l2", null, ...richText(r.measure), r.effect ? h("b.rc-effect", null, ` → ${r.effect}`) : null),
+      r.next || r.tip
+        ? h("div.rc-l3", null, r.next ? h("span.rc-nextgrade", null, `next: ${r.next}. `) : null, r.tip ? h("span.rc-tip", null, "try: ", ...richText(r.tip)) : null)
+        : null,
+      explainer,
+    ),
+  );
+}
+
+export function createReportCard(s: Student, opts: { size?: "sm" | "md" | "lg"; you?: boolean; peers?: Student[] } = {}): HTMLElement {
   const size = opts.size ?? "md";
   const q = s.quality?.length ? sortStats(s.quality) : null;
   const avg = gpa(q ?? undefined);
   const overall = gpaGrade(avg);
   const worst = weakest(q ?? undefined);
+  const peerRows = (opts.peers ?? []).flatMap((p) => p.quality ?? []);
   const head = h(
     "div.rc-head",
     null,
     h("div.rc-id", null, h("span.rc-name", null, `@${s.name}`), h("span.rc-repo", null, s.repo)),
-    q ? h("div.rc-gpa", { style: `--c:${GRADE_COLOR[overall]}`, title: `grade point average ${avg.toFixed(2)} / 4` }, overall, h("small", null, `GPA ${avg.toFixed(1)}`)) : null,
+    q ? h("div.rc-gpa", { style: `--c:${GRADE_COLOR[overall]}`, title: `average of the ${q.length} grades below: ${avg.toFixed(2)} out of 4` }, overall, h("small", null, `GPA ${avg.toFixed(1)}`)) : null,
   );
   if (!q) return h(`div.edu-rc.size-${size}${opts.you ? ".you" : ""}`, null, head, h("div.rc-pending", null, "$ grading… report card arrives when the repo is analyzed"));
-  const rows = q.map((x) => {
-    const lab = STAT_LABEL[x.stat];
-    const showTip = size === "lg" || (size === "md" && (x.grade === "D" || x.grade === "F" || x === worst));
-    return h(
-      "div.rc-row",
-      { style: `--c:${GRADE_COLOR[x.grade]}`, title: x.tip },
-      h("span.rc-grade", null, x.grade),
-      h(
-        "div.rc-main",
-        null,
-        h("span.rc-stat", null, h("b", null, lab.code), lab.code === lab.plain ? null : ` ${lab.plain}`, size === "sm" ? null : h("small", null, ` ← ${lab.from}`)),
-        size === "sm" ? null : h("span.rc-signal", null, ...richText(x.signal)),
-        showTip ? h("span.rc-tip", null, "tip: ", ...richText(x.tip)) : null,
-      ),
-    );
-  });
+  const fix = worst && worst.grade !== "A" ? plainRow(worst, peerRows) : null;
   return h(
     `div.edu-rc.size-${size}${opts.you ? ".you" : ""}`,
     null,
     head,
-    h("div.rc-rows", null, ...rows),
-    worst && size !== "sm" ? h("div.rc-next", null, h("span.edu-prompt", null, "$ next: "), ...richText(worst.tip)) : null,
+    size === "sm" ? null : h("p.rc-how", null, "Each grade comes from your real code. Higher = stronger hero. Tap a word to learn what it means."),
+    h("div.rc-rows", null, ...q.map((x) => reportRow(x, peerRows, size))),
+    fix?.tip && size !== "sm" ? h("div.rc-next", null, h("span.edu-prompt", null, `$ fix first (${fix.word} ${fix.grade}): `), ...richText(fix.tip)) : null,
   );
 }
 
@@ -112,7 +140,7 @@ export function createClassReport(opts: {
   const table = h(
     "div.edu-rank",
     null,
-    h("div.rk-row.rk-headrow", null, h("span", null, "#"), h("span", null, "student"), h("span", null, "KO"), h("span", null, "rnd"), h("span", null, "dmg"), h("span", null, "grd")),
+    h("div.rk-row.rk-headrow", null, h("span", null, "#"), h("span", null, "student"), h("span", null, "KOs"), h("span", null, "rounds won"), h("span", null, "damage"), h("span", null, "code grade")),
     ...ranking.map((r, i) => {
       const g = gpaGrade(gpa(byId.get(r.id)?.quality));
       const hasQ = !!byId.get(r.id)?.quality?.length;
@@ -130,6 +158,7 @@ export function createClassReport(opts: {
   );
 
   const me = you ? byId.get(you) : undefined;
+  const allRows = students.flatMap((s) => s.quality ?? []);
   const tips = students
     .map((s) => ({ s, w: weakest(s.quality) }))
     .filter((x): x is { s: Student; w: QualityStat } => !!x.w)
@@ -145,26 +174,29 @@ export function createClassReport(opts: {
       "Better-engineered code makes a stronger hero, but skill still counts: a C-grade repo can still land KOs.",
       table,
     ),
-    me ? section("your report card", "Every stat was earned by a real signal in your repo. Each tip is a real change you can make.", createReportCard(me, { size: "lg", you: true })) : null,
+    me ? section("your report card", "Every grade was earned by something real in your repo, and every tip is a change you can make this week.", createReportCard(me, { size: "lg", you: true, peers: students })) : null,
     variant === "screen"
       ? section("report cards", null, h("div.edu-rc-grid", null, ...students.map((s) => createReportCard(s, { size: "sm", you: s.id === you }))))
       : null,
     tips.length
       ? section(
           "biggest improvement tips",
-          "The single change that would raise each student's lowest grade.",
+          "The one change that would raise each student's lowest grade.",
           h(
             "div.edu-tips",
             null,
-            ...tips.map(({ s, w }) =>
-              h(
+            ...tips.map(({ s, w }) => {
+              if (w.grade === "A")
+                return h(`div.tip-row${s.id === you ? ".you" : ""}`, { style: `--c:${GRADE_COLOR.A}` }, h("span.tip-who", null, `@${s.name}`), h("span.tip-grade", null, "no fixes needed"), h("span.tip-text", null, "every grade you can change is an A: keep writing tests as the project grows"));
+              const r = plainRow(w, allRows);
+              return h(
                 `div.tip-row${s.id === you ? ".you" : ""}`,
                 { style: `--c:${GRADE_COLOR[w.grade]}` },
                 h("span.tip-who", null, `@${s.name}`),
-                h("span.tip-grade", null, `${STAT_LABEL[w.stat].plain} ${w.grade}`),
-                h("span.tip-text", null, ...richText(w.tip)),
-              ),
-            ),
+                h("span.tip-grade", null, `${r.word} ${w.grade}`),
+                h("span.tip-text", null, ...richText(r.tip ?? w.tip), r.next ? h("small", null, ` (${r.next})`) : null),
+              );
+            }),
           ),
         )
       : null,
@@ -172,7 +204,10 @@ export function createClassReport(opts: {
       ? section(
           "class highlights",
           null,
-          h("div.edu-hl", null, ...hl.map((x) => h("div.hl-row", { style: `--c:${GRADE_COLOR[x.q.grade]}` }, h("span.hl-stat", null, `best ${STAT_LABEL[x.stat].from}`), h("b", null, `@${x.who.name}`), h("span.hl-sig", null, `${x.q.grade}: `, ...richText(x.q.signal))))),
+          h("div.edu-hl", null, ...hl.map((x) => {
+            const r = plainRow(x.q);
+            return h("div.hl-row", { style: `--c:${GRADE_COLOR[x.q.grade]}` }, h("span.hl-stat", null, `best ${r.word}`), h("span.hl-val", null, h("b", null, `@${x.who.name} ${x.q.grade}`), " · ", ...richText(r.measure.split(" · ")[0])));
+          })),
         )
       : null,
     quizRows.length
@@ -182,7 +217,15 @@ export function createClassReport(opts: {
           h("div.edu-quizscores", null, ...quizRows.map(([id, sc]) => h(`div.qs-row${id === you ? ".you" : ""}`, null, h("b", null, `@${byId.get(id)?.name ?? id}`), h("span", null, `${sc.right}/${sc.total}`), h("span.qs-bar", { style: `--p:${sc.total ? sc.right / sc.total : 0}` })))),
         )
       : null,
-    section("glossary", "Concepts you met this match (✓) and the rest of today's vocabulary. Tap one to see it animated.", createGlossary(opts.engine ? opts.engine.glossary(EDU_GLOSSARY) : EDU_GLOSSARY.map((concept) => ({ concept, met: false, count: 0, fact: null })))),
+    (() => {
+      // ✓ = came up as a lesson this match, or was graded on the report cards (that's where it was taught)
+      const graded = new Set<string>(allRows.length ? ["code-quality", ...sortStats(allRows).map((q) => plainRow(q).concept)] : []);
+      const rows = (opts.engine ? opts.engine.glossary(EDU_GLOSSARY) : EDU_GLOSSARY.map((concept) => ({ concept, met: false, count: 0, fact: null })))
+        .map((r) => (r.met || !graded.has(r.concept) ? r : { ...r, met: true }))
+        .sort((x, y) => Number(y.met) - Number(x.met));
+      const anyMet = rows.some((r) => r.met);
+      return section("glossary", anyMet ? "✓ = came up in this match or on your report card. Tap any word to see it animated." : "Today's vocabulary. Tap any word to see it animated.", createGlossary(rows));
+    })(),
   );
 }
 

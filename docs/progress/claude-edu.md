@@ -1,3 +1,48 @@
+# DONE (edu ux)
+
+UX-audit fixes EDU-1, EDU-2, EDU-3 and EDU-7 (docs/ux-audit.md, "Edu mode (classroom PvP) audit"):
+- **EDU-1, plain words with a scale:** new `client/edu/explain.ts` reads the numbers back out of the sim's `signal`
+  strings. Every report-card row now has three plain lines:
+  1. `C speed (alias) — how independent the parts of your code are`, with an F·D·C·B·A scale.
+  2. `each part of your code uses 5 other parts (class median 1)`.
+  3. `next: B needs each part to use ≤ 4.4 others. try: …`
+  Every B-or-worse row gets a concrete tip that names a real file or loop when there is one. Tapping the word opens
+  the concept's animated diagram inside the card. The code alias is shown small after the word, and `regen` is folded
+  into `energy`: it has the same signals, so it is no longer shown or counted.
+- **EDU-2:** weakness is now `tech-debt penalty — import loops and leftover TODOs make you take extra damage (A = no
+  penalty)`, with the effect `→ you take +12% damage`.
+- **EDU-3:**
+  - "Next grade" targets are computed with the sim's own `qualityRows`. A target is shown only when the client
+    reproduces the sim's grade exactly, so a threshold is never guessed.
+  - GPA uses exactly the letters shown, so the lobby's `code grade`, the ranking and the card all agree.
+  - Class highlights break ties between equal grades with the real number.
+  - The demo page now uses the sim's real grading (`playerKitFromProfile(p, { mode: "edu" })`) instead of my estimator.
+  - Tests check grade monotonicity in tests % and tech-debt penalty, and that each target reaches the next grade.
+- **EDU-7:**
+  - Ranking headers read `KOs · rounds won · damage · code grade` (wraps to two lines).
+  - Highlights use 2 columns, stacked on phones, showing only the first fact.
+  - Glossary ✓ also marks concepts graded on the report cards; the sentence is dropped when nothing is met.
+  - GPA label 12px; phone deck lesson title/tag/hint 10px.
+- Tests: `client/edu/explain.test.ts` (8, run on every fallback repo through the sim) + `edu.test.ts` (17).
+  Typecheck is clean. The full suite has 2 failures, both in `client/render/boss/layout.test.ts`, caused by the
+  in-progress `sim/regions.ts` change and not by edu.
+
+### New handoffs (edu ux)
+- **claude-ui (lobby):** pass the class so rows show the class median:
+  `createReportCard(student, { size: "md", you: true, peers: lobby.players.filter(p => p.kit?.quality).map(p => ({ id: p.id, name: p.name, repo: p.repo ?? "", quality: p.kit!.quality })) })`.
+  The lobby's `gpa()/gpaGrade()` already ignore `regen`, so nothing else changes.
+- **claude-ui (mock):** `fakeQuality` in `client/app/mock.ts` makes contradicting grades (EDU-3). Use the sim's real
+  grading instead: `playerKitFromProfile(profile, { mode: "edu" }).quality`. That's what client/edu/demo.ts does now.
+- **claude-genesis (EDU-6, not mine):** `client/genesis/local.ts` `genesisFromKit()` always writes
+  `stats: same 5-pt budget`. When `kit.quality` exists it should say `code quality -> stats (see your report card)`.
+  `eduGenesisNotes` already speaks in plain words via `plainRow`.
+- **codex-sim (contract request, optional):** signals are parsed from today's wording in `sim/quality.ts`. If that
+  wording changes, rows fall back to the raw signal + the sim tip, so nothing breaks, but the plain text is lost. More
+  robust: `QualityStat.metrics?: Record<string, number>` (e.g. `{ testPct, avgImports, depth, longestFn, avgFn, perFile,
+  commentPct, readmeChars, cycles, todoPer1k, advisories, loc }`). `explain.ts` would read it first.
+
+---
+
 # DONE (edu pvp)
 
 **Summary:** `client/edu/` is a self-contained edu-mode kit for classroom PvP. It has a concept library (31 concepts, each

@@ -4,7 +4,8 @@
 // Source of truth is the sim's `lesson` events. When the sim emits none (or for personal touches it can't know,
 // like "@ben hit YOU"), the engine derives lessons from ordinary events + the players' real QualityStats.
 import type { BossKit, GameEvent, GameMode, MatchState, PerkOffer, QualityStat } from "../../shared/types.ts";
-import { type EduConcept, type Facts, STAT_CONCEPT, STAT_LABEL, conceptForAttack, conceptInfo, factLine } from "./concepts.ts";
+import { type EduConcept, type Facts, STAT_CONCEPT, conceptForAttack, conceptInfo, factLine } from "./concepts.ts";
+import { plainRow } from "./explain.ts";
 import { GRADE_POINTS, type Student, classHighlights, strongest, weakest } from "./quality.ts";
 
 export interface Lesson {
@@ -91,10 +92,12 @@ export class LessonEngine {
         const stat = (f.stat as QualityStat["stat"]) ?? undefined;
         const q = stat ? s.quality?.find((x) => x.stat === stat) : undefined;
         if (q) {
+          // plain words + real numbers, never the sim's raw metric names
+          const r = plainRow(q, this.ctx.players.flatMap((p) => p.quality ?? []));
           f.grade ??= q.grade;
-          f.signal ??= q.signal;
-          f.tip ??= q.tip;
-          f.stat = STAT_LABEL[q.stat].plain;
+          f.signal ??= r.measure;
+          f.tip ??= r.tip ?? q.tip;
+          f.stat = r.word;
         }
       }
     }
