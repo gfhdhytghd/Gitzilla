@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { analyzeGitHubRepo, countFromPage } from './github.ts';
 import { archive } from './fixtures.ts';
 
-const body = archive([{ path: 'src/main.ts', text: "import './heart';" }, { path: 'src/heart.ts', text: 'export const heart = 1' }]);
+const body = archive([{ path: 'README.md', text: '# Test Kaiju\n![Badge](https://badge.example/x.svg)\nA repo for graph tests.' }, { path: 'src/main.ts', text: "import './heart';" }, { path: 'src/heart.ts', text: 'export const heart = 1' }]);
 const json = (data: unknown, headers?: HeadersInit) => new Response(JSON.stringify(data), { headers });
 
 describe('GitHub source and metadata requests', () => {
@@ -20,6 +20,8 @@ describe('GitHub source and metadata requests', () => {
     expect(p.totalFiles).toBe(2); expect(p.heart).toBe('src/heart.ts'); expect(p.heartFanIn).toBe(1);
     expect(p.stars).toBe(99); expect(p.commits).toBe(318); expect(p.contributors).toBe(27);
     expect(p.languages).toEqual({ TypeScript: 1234 }); expect(p.ageDays).toBeGreaterThan(1000);
+    expect(p.readme).toContain('Test Kaiju'); expect(p.readme).not.toContain('badge.example');
+    expect(p.tree).toContain('src/heart.ts'); expect(p.tree).toContain('README.md');
     expect(calls).toHaveLength(5);
     expect(calls.find(call => call.url.includes('codeload'))?.init?.headers).not.toHaveProperty('Authorization');
   });

@@ -10,7 +10,11 @@ describe('checked-in famous repository snapshots', () => {
       expect(repos).toContain(slug);
       const p = offlineProfile(slug);
       expect(p.slug).toBe(slug); expect(p.fallback).toBe(true);
+      if (slug === 'spring-projects/spring-petclinic') expect(p.primaryLanguage).toBe('Java');
       expect(p.description).not.toContain('synthetic');
+      expect(typeof p.readme).toBe('string'); expect(Buffer.byteLength(p.readme!)).toBeLessThanOrEqual(4096);
+      expect(p.tree!.length).toBeGreaterThan(0); expect(p.tree!.length).toBeLessThanOrEqual(120);
+      expect(new Set(p.tree).size).toBe(p.tree!.length); expect(p.tree).toContain(p.heart);
       expect(p.totalFiles).toBeGreaterThan(0); expect(p.totalLoc).toBeGreaterThan(0);
       expect(p.components.length).toBeGreaterThan(0); expect(p.components.length).toBeLessThanOrEqual(8);
       expect(new Set(p.components.map(c => c.name)).size).toBe(p.components.length);

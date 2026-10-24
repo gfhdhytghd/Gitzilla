@@ -41,6 +41,20 @@ describe('public repo analysis API', () => {
     mocks.github.mockResolvedValueOnce({ ...profile, slug: 'demo/other' }); mocks.mkdir.mockRejectedValueOnce(new Error('EROFS'));
     expect((await analyzeRepo('demo/other')).slug).toBe('demo/other');
   });
+  it('corrects primary language on pre-existing fresh cache entries without refetching', async () => {
+    const { analyzeRepo } = await import('./index.ts');
+    mocks.readFile.mockResolvedValue(JSON.stringify({ ...profile, primaryLanguage: 'CSS', languages: { CSS: 5000, Java: 100 } }));
+    mocks.stat.mockResolvedValue({ mtimeMs: Date.now() });
+    expect((await analyzeRepo('demo/project')).primaryLanguage).toBe('Java');
+    expect(mocks.github).not.toHaveBeenCalled();
+  });
+  it('refreshes pre-context cache entries even if their modification time is fresh', async () => {
+    const { analyzeRepo } = await import('./index.ts');
+    const { readme: _readme, tree: _tree, ...old } = profile;
+    mocks.readFile.mockResolvedValue(JSON.stringify(old)); mocks.stat.mockResolvedValue({ mtimeMs: Date.now() });
+    expect((await analyzeRepo('demo/project')).tree).toContain('src/main.ts');
+    expect(mocks.github).toHaveBeenCalledOnce();
+  });
   it('uses stale real cache on network failure and marks that response as fallback', async () => {
     const { analyzeRepo } = await import('./index.ts');
     mocks.readFile.mockResolvedValue(JSON.stringify(profile)); mocks.stat.mockResolvedValue({ mtimeMs: Date.now() - 2 * 86_400_000 });

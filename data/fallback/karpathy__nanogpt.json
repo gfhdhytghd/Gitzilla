@@ -40,5 +40,29 @@
   "cycles": [],
   "maxDepth": 0,
   "testRatio": 0,
-  "seed": 593896085
+  "seed": 593896085,
+  "readme": "nanoGPT\n\n---\n\nUpdate Nov 2025 nanoGPT has a new and improved cousin called nanochat. It is very likely you meant to use/find nanochat instead. nanoGPT (this repo) is now very old and deprecated but I will leave it up for posterity.\n\n---\n\nThe simplest, fastest repository for training/finetuning medium-sized GPTs. It is a rewrite of minGPT that prioritizes teeth over education. Still under active development, but currently the file train.py reproduces GPT-2 (124M) on OpenWebText, running on a single 8XA100 40GB node in about 4 days of training. The code itself is plain and readable: train.py is a ~300-line boilerplate training loop and model.py a ~300-line GPT model definition, which can optionally load the GPT-2 weights from OpenAI. That's it.\n\nBecause the code is so simple, it is very easy to hack to your needs, train new models from scratch, or finetune pretrained checkpoints (e.g. biggest one currently available as a starting point would be the GPT-2 1.3B model from OpenAI).\ninstall\n\npip install torch numpy transformers datasets tiktoken wandb tqdm\n\nDependencies:\n\n- pytorch <3\n- numpy <3\n-  transformers for huggingface transformers <3 (to load GPT-2 checkpoints)\n-  datasets for huggingface datasets <3 (if you want to download + preprocess OpenWebText)\n-  tiktoken for OpenAI's fast BPE code <3\n-  wandb for optional logging <3\n-  tqdm for progress bars <3\nquick start\n\nIf you are not a deep learning professional and you just want to feel the magic and get your feet wet, the fastest way to get started is to train a character-level GPT on the works of Shakespeare. First, we download it as a single (1MB) file and turn it from raw text into one large stream of integers:\n\npython data/shakespeare_char/prepare.py\n\nThis creates a train.bin and val.bin in that data directory. Now it is time to train your GPT. The size of it very much depends on the computational resources of your system:\n\nI have a GPU. Great, we can quickly train a baby GPT with the settings provided in the config/train_shakespeare_char.py config file:\n\npython train.py config/train_shakespeare_char.py\n\nIf you peek inside it, you'll see that we're training a GPT with a context size of up to 256 characters, 384 feature channels, and it is a 6-layer Transformer with 6 heads in each layer. On one A100 GPU this training run takes about 3 minutes and the best validation loss is 1.4697. Based on the configuration, the model checkpoints are being written into the --out_dir directory out-shakespeare-char. So once the training finishes we can sample from the best model by pointing the sampling script at this directory:\n\npython sample.py --out_dir=out-shakespeare-char\n\nThis generates a few samples, for example:\n\nANGELO:\nAnd cowards it be strawn to my bed,\nAnd thrust the gates of my threats,\nBecause he that ale away, and hang'd\nAn one with him.\n\nDUKE VINCENTIO:\nI thank your eyes against it.\n\nDUKE VINCENTIO:\nThen will answer him to save the malm:\nAnd what have you tyrannous shall do this?\n\nDUKE VINCENTIO:\nIf you have done evils of all disposition\nTo end his power, the day of thrust for a common men\nThat I leave, to fight with over-liking\nHasting in a roseman.\n\nlol  ¯\\_(ツ)_/¯. Not bad for a character-level model after 3 minutes of training on a GPU. Better results are quite likely obtainable by instead finetuning a pretrained GPT-2 model on this dataset (see finetuning section later).\n\nI only have a macbook (or other cheap computer). No worries, we can still train a GPT but we want to dial things down a notch. I recommend getting the bleeding edge PyTorch nightly (select it here when installing) as it is currently quite likely to make your code more efficient. But even without it, a simple train run could look as follows:\n\npython train.py config/train_shakespeare_char.py --device=cpu --compile=False --eval_iters=20 --log_interval=1 --block_size=64 --batch_size=12 --n_layer=4 --n_head=4 --n_embd=128 --max_iters=2000 --lr_decay_iters=2000 --dropout=0.0\n\nHere, since we are running on CPU instead of GPU we must set both --device=cpu and also turn off PyTorch 2.0 compile with --",
+  "tree": [
+    "data/",
+    "config/",
+    "data/openwebtext/",
+    "data/shakespeare_char/",
+    "data/shakespeare/",
+    "README.md",
+    "model.py",
+    "train.py",
+    "bench.py",
+    "sample.py",
+    "data/openwebtext/prepare.py",
+    "data/shakespeare_char/prepare.py",
+    "configurator.py",
+    "config/train_shakespeare_char.py",
+    "data/shakespeare/prepare.py",
+    "config/train_gpt2.py",
+    "config/finetune_shakespeare.py",
+    "config/eval_gpt2_medium.py",
+    "config/eval_gpt2_large.py",
+    "config/eval_gpt2_xl.py",
+    "config/eval_gpt2.py"
+  ]
 }

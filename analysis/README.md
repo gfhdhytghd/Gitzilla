@@ -6,7 +6,7 @@ const profile = await analyzeRepo('https://github.com/facebook/react');
 const demoRepos = listFallbackRepos();
 ```
 
-`analyzeRepo` accepts `owner/name`, GitHub repository URLs, `.git` clone URLs, and GitHub tree/file links. Repo identity and seeds use lowercase `owner/name`. Malformed inputs reject with a helpful error; any well-formed repo returns a profile, including offline or nonexistent repos.
+`analyzeRepo` accepts `owner/name`, GitHub repository URLs, `.git` clone URLs, and GitHub tree/file links. Repo identity and seeds use lowercase `owner/name`. `primaryLanguage` chooses the largest programming-language byte count, ignores markup/styles/data/build files, combines Jupyter Notebook bytes with Python, and uses Shell only when no other programming language is available. The raw `languages` map is preserved. Fresh/stale cache and offline snapshot reads apply the same rule, so old CSS-dominated profiles are corrected immediately. Malformed inputs reject with a helpful error; any well-formed repo returns a profile, including offline or nonexistent repos.
 
 The live path downloads `https://codeload.github.com/<slug>/tar.gz/HEAD`, incrementally decompresses/parses tar in memory, and requests GitHub REST repo metadata, language bytes, and approximate commit/contributor counts (`per_page=1` with the `Link` last-page number). `GITHUB_TOKEN` is optional and is sent only to `api.github.com`. API metadata failures do not discard a successful source analysis; unavailable metadata is zero/unknown and languages are measured from retained source.
 
@@ -37,3 +37,11 @@ npm test
 ```
 
 Tests use tiny in-memory archives and source fixtures, mocked HTTP, and the checked-in snapshots; no network is needed for the test suite.
+
+## Art-director context
+
+Every new analysis also includes `readme` and `tree` for the optional Gemini design step. A root `README.md` (or README/rst/txt variant) is retained separately from source counting. Badges, Markdown/HTML images, HTML decoration, comments, and link destinations are removed; the cleaned excerpt is at most 4 KiB UTF-8 and never splits a multibyte character. Missing/unavailable README text is an empty string.
+
+`tree` contains at most 120 unique notable retained paths: up to 40 directories, root README/manifests, the graph heart, then a mixture of the largest and most-imported source files. Directory paths end with `/`. This is design context from the same bounded archive sample, rather than an exhaustive repository file listing. README text and path context do not change source totals, gameplay stats, or seeds.
+
+Pre-context disk cache entries are refreshed on the next request even inside the normal 24-hour TTL; if the network is unavailable, their real cached stats remain usable with empty README and the known heart path. Famous offline snapshots include the complete context excerpt/list from regeneration. Synthetic offline profiles have empty README and explicitly synthetic paths.
