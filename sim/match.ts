@@ -3,6 +3,7 @@ import type { Autopsy, BossAttack, BossKit, Bullet, GameEvent, Hazard, InputFram
 import { BossAi } from './bossAi.ts';
 import { clamp, distance, unit } from './math.ts';
 import { activeBossRegions, bossRegions } from './regions.ts';
+import { ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
 
 export interface Match {
   step(dt: number, inputs: Map<string, InputFrame>): void;
@@ -43,9 +44,12 @@ class ArenaMatch implements Match {
   private minionShot = 0;
   private pending: { t: number; angle: number; speed: number; damage: number; x: number; y: number; kind: string }[] = [];
   private decoys = new Map<string, { x: number; y: number; until: number }>();
+  private pressureCd = 3;
+  private pressureRound = 0;
+  private pressure: { t: number; x: number; y: number; angle: number }[] = [];
 
   constructor(players: { id: string; name: string; kit: PlayerKit }[], kit: BossKit) {
-    this.ai = new BossAi(kit.seed, players.length);
+    this.ai = new BossAi(ENCOUNTER_SEED ^ players.length, players.length);
     this.state = {
       t: 0, status: 'countdown', bullets: [], hazards: [], minions: [], events: [],
       players: players.map((p, i) => ({
@@ -95,6 +99,7 @@ class ArenaMatch implements Match {
     const decision = this.ai.step(dt, s.boss, targets);
     if (decision.started) this.telegraph(decision.started, decision.target!);
     if (decision.fired) this.attack(decision.fired, decision.target!);
+    this.updatePressure(dt, targets);
     this.moveBoss(dt);
     s.boss.regions = bossRegions(s.boss);
     this.pending = this.pending.filter(shot => {
@@ -250,6 +255,35 @@ class ArenaMatch implements Match {
     }
   }
 
+  /** A common threat floor independent of repo shape, overlapping the anatomical cast. */
+  private updatePressure(dt: number, targets: PlayerState[]) {
+    const budget = squadBudget(this.state.players.length);
+    this.pressure = this.pressure.filter(stream => {
+      stream.t -= dt;
+      if (stream.t > 0) return true;
+      for (const offset of [-0.13, 0, 0.13]) {
+        const a = stream.angle + offset;
+        this.bullet('boss', 'fan', stream.x + Math.cos(a) * 24, stream.y + Math.sin(a) * 24,
+          Math.cos(a) * 60, Math.sin(a) * 60, 3, budget.hitDamage, 8);
+      }
+      return false;
+    });
+    this.pressureCd -= dt;
+    if (this.pressureCd > 0 || !budget.pressureLanes || !targets.length) return;
+    this.pressureCd += budget.pressurePeriod * (this.state.boss.enraged ? 0.9 : 1);
+    const b = this.state.boss;
+    const lanes = Math.min(targets.length, budget.pressureLanes);
+    for (let lane = 0; lane < lanes; lane++) {
+      const target = targets[(this.pressureRound + Math.floor(lane * targets.length / lanes)) % targets.length];
+      const angle = Math.atan2(target.y - b.y, target.x - b.x);
+      const id = `pressure-${this.pressureRound}-${lane}`;
+      this.hazard('laser', b.x, b.y, 3, angle, 1, 0.95, 0, id);
+      this.emit({ type: 'telegraph', attackId: id, name: `WARN: parallel worker ${lane + 1}`, targetPlayer: target.id });
+      this.pressure.push({ t: 0.95, x: b.x, y: b.y, angle });
+    }
+    this.pressureRound++;
+  }
+
   private bullet(owner: string, kind: string, x: number, y: number, vx: number, vy: number, r: number, damage: number, life: number) {
     const bullet = { id: this.id++, owner, kind, x, y, vx, vy, r };
     this.state.bullets.push(bullet); this.shots.set(bullet.id, { damage, life });
@@ -270,19 +304,19 @@ class ArenaMatch implements Match {
       if (b.owner === 'boss') {
         const blocked = this.state.hazards.some(h => h.kind === 'firewall' && distance(h, b) <= h.r);
         if (blocked) hit = true;
-        else for (const p of this.state.players) if (p.alive && p.invuln <= 0 && distance(p, b) < 6 + b.r) { this.hurtPlayer(p, meta.damage); hit = true; break; }
+        else for (const p of this.state.players) if (p.alive && p.invuln <= 0 && distance(p, b) < 6 + b.r) { this.hurtPlayer(p, meta.damage, unit(b.vx, b.vy)); hit = true; break; }
       } else {
         const player = this.state.players.find(p => p.id === b.owner)!;
         const minion = this.state.minions.find(m => m.hp > 0 && distance(m, b) <= 7 + b.r);
         if (minion) {
           const damage = Math.min(minion.hp, meta.damage); minion.hp -= damage; player.stats.damage += damage;
-          this.emit({ type: 'hit', target: String(minion.id), amount: damage, x: minion.x, y: minion.y }); hit = true;
+          this.hit({ type: 'hit', target: String(minion.id), amount: damage, x: minion.x, y: minion.y }, player.id, unit(b.vx, b.vy)); hit = true;
         } else {
           const region = activeBossRegions(this.state.boss).find(region => distance(region, b) < region.r + b.r);
-          if (region) { this.hurtBoss(player, region.id, meta.damage, region.x, region.y); hit = true;
+          if (region) { this.hurtBoss(player, region.id, meta.damage, region.x, region.y, unit(b.vx, b.vy)); hit = true;
             if (b.kind === 'cannon') for (const m of this.state.minions) if (m.hp > 0 && distance(m, b) < 28) {
               const amount = Math.min(m.hp, meta.damage * 0.5); m.hp -= amount; player.stats.damage += amount;
-              this.emit({ type: 'hit', target: String(m.id), amount, x: m.x, y: m.y });
+              this.hit({ type: 'hit', target: String(m.id), amount, x: m.x, y: m.y }, player.id, unit(m.x - b.x, m.y - b.y));
             }
           }
         }
@@ -293,7 +327,7 @@ class ArenaMatch implements Match {
     this.state.bullets = next;
   }
 
-  private hurtBoss(p: PlayerState, id: string, base: number, x: number, y: number) {
+  private hurtBoss(p: PlayerState, id: string, base: number, x: number, y: number, direction = unit(x - p.x, y - p.y)) {
     const b = this.state.boss;
     if (b.hp <= 0) return;
     const limb = b.limbs.find(l => l.id === id);
@@ -304,7 +338,8 @@ class ArenaMatch implements Match {
     const combo = hits.size;
     p.stats.bestCombo = Math.max(p.stats.bestCombo, combo);
     const damage = base * (1 + Math.min(4, combo - 1) * 0.14) * (id === 'heart' || kit?.weakPoint ? 1.5 : 1);
-    const dealt = Math.min(b.hp, damage * (limb ? 0.8 : b.phase === 3 && b.limbs.some(l => !l.broken) ? 0.6 : 1));
+    // Cycles still break faster and flash as crits, but don't add free core DPS to a repo's total budget.
+    const dealt = Math.min(b.hp, damage * (limb ? 0.8 / (kit?.weakPoint ? 1.5 : 1) : b.phase === 3 && b.limbs.some(l => !l.broken) ? 0.6 : 1));
     b.hp = Math.max(0, b.hp - dealt); p.stats.damage += dealt;
     if (limb && !limb.broken) {
       const limbHit = Math.min(limb.hp, damage);
@@ -324,20 +359,20 @@ class ArenaMatch implements Match {
         }
       }
     }
-    this.emit({ type: 'hit', target: 'boss', ...(limb ? { limb: id } : {}), amount: dealt, x, y, combo });
+    this.hit({ type: 'hit', target: 'boss', ...(limb ? { limb: id } : {}), amount: dealt, x, y, combo }, p.id, direction, id === 'heart' || !!kit?.weakPoint || combo >= 3);
     const ratio = b.hp / b.maxHp;
     if (ratio <= b.kit.enrageAt && b.phase === 1) { b.phase = 2; b.enraged = true; this.emit({ type: 'phase', phase: 2 }); }
     if (ratio <= 0.15 && b.phase < 3) { b.phase = 3; b.enraged = true; this.emit({ type: 'phase', phase: 3 }); }
     if (b.hp <= 0) p.stats.killingBlow = true;
   }
 
-  private hurtPlayer(p: PlayerState, damage: number) {
+  private hurtPlayer(p: PlayerState, damage: number, direction = unit(p.x - this.state.boss.x, p.y - this.state.boss.y)) {
     if (!p.alive || p.invuln > 0 || damage <= 0) return;
     if (p.buffs.includes('fork')) damage *= 0.5;
     const armor = Math.min(p.armor, damage); p.armor -= armor; p.hp = Math.max(0, p.hp - (damage - armor));
     p.invuln = 0.65;
     const r = this.players.get(p.id)!; r.lastDamage = this.state.t; r.armorTick = 0;
-    this.emit({ type: 'hit', target: p.id, amount: damage, x: p.x, y: p.y });
+    this.hit({ type: 'hit', target: p.id, amount: damage, x: p.x, y: p.y }, 'boss', direction);
     if (p.hp <= 0) { p.alive = false; p.downedFor = 0; p.reviveProgress = 0; this.emit({ type: 'downed', player: p.id }); }
   }
 
@@ -361,7 +396,7 @@ class ArenaMatch implements Match {
             inside = dx * Math.cos(h.angle) + dy * Math.sin(h.angle) >= 0 && Math.abs(-dx * Math.sin(h.angle) + dy * Math.cos(h.angle)) < h.r + 5;
           }
           if (inside && p.alive && p.invuln <= 0 && !p.buffs.includes('firewall') && !meta.victims.has(p.id)) {
-            this.hurtPlayer(p, meta.damage); meta.victims.add(p.id);
+            this.hurtPlayer(p, meta.damage, h.kind === 'laser' ? [Math.cos(h.angle), Math.sin(h.angle)] : unit(p.x - h.x, p.y - h.y)); meta.victims.add(p.id);
           }
         }
       }
@@ -385,6 +420,12 @@ class ArenaMatch implements Match {
   }
 
   private emit(event: GameEvent) { this.state.events.push(event); }
+  private hit(event: Extract<GameEvent, { type: 'hit' }>, source: string, direction: [number, number], crit = false) {
+    const impact = clamp(event.amount / (source === 'boss' ? 6 : 25) + (crit ? 0.2 : 0), 0.1, 1);
+    const feedback: HitFeedback = { source, direction, crit, impact, hitStop: impact >= 0.6 ? 50 : crit ? 30 : 0 };
+    // Structural extension remains wire-compatible until the coordinator adds optional shared fields.
+    this.emit({ ...event, ...feedback });
+  }
   private finish(victory: boolean) {
     if (this.over) return;
     this.state.status = victory ? 'victory' : 'defeat';
