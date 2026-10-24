@@ -11,11 +11,14 @@ import { designHero, designBoss, fallbackHero, fallbackBoss, applyHeroDesign, ap
 import { recordMatch, top } from '../hall/index.ts';
 import { handleAuthRoute, getSession, getGithubToken } from '../auth/index.ts';
 import { createBot } from '../sim/bots.ts';
+import { buildGenesis } from '../genesis/index.ts';
 import { RoomServer } from './rooms.ts';
 import { qrSvg, qrTerminal } from './qr.ts';
 import { lanAddresses, loadTls, urlHost } from './tls.ts';
+import { handleTraceRoute, TraceStore } from './traces.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
 const production = process.env.NODE_ENV === 'production';
 const addresses = lanAddresses();
 const certificate = loadTls(root, process.env.REPO_KAIJU_HTTPS === '1', addresses);
@@ -38,10 +41,10 @@ server.on('upgrade', (request, socket, head) => {
 });
 const rooms = new RoomServer(wss, {
   // Public/boss lookups must not inherit an ambient server PAT with private access.
-  analyzeRepo: (repo, options) => analyzeRepo(repo, { token: options?.token ?? '' }),
-  listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
-  playerKitFromProfile(profile) {
-    const kit = playerKitFromProfile(profile);
+  analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
+  buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
+  playerKitFromProfile(profile, options) {
+    const kit = playerKitFromProfile(profile, options);
     return applyHeroDesign(kit, fallbackHero(profile, kit));
   },
   bossKitFromProfile(profile, count, design) {
@@ -63,6 +66,7 @@ const mime: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
   '.woff': 'font/woff', '.woff2': 'font/woff2', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.map': 'application/json',
+  '.webmanifest': 'application/manifest+json',
 };
 function json(res: ServerResponse, status: number, data: unknown) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(data));
@@ -93,12 +97,20 @@ server.on('request', (req, res) => {
     if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
       json(res, 404, { error: 'Not found' }); return;
     }
+    if (await handleTraceRoute(req, res, url.pathname, traces)) return;
     if (url.pathname === '/api/room' && req.method === 'POST') {
       req.resume();
-      const room = rooms.createRoom();
+      const mode = url.searchParams.get('mode');
+      if (mode && mode !== 'battle' && mode !== 'edu') { json(res, 400, { error: 'Choose battle or edu mode' }); return; }
+      const room = rooms.createRoom(undefined, mode === 'edu' ? 'edu' : 'battle');
       printRoomQr(room);
       json(res, 201, { room });
       return;
+    }
+    if (url.pathname.startsWith('/api/room/') && req.method === 'GET') {
+      const code = decodeURIComponent(url.pathname.slice('/api/room/'.length)).toUpperCase();
+      if (!/^[A-Z]{4}$/.test(code)) { json(res, 400, { error: 'Use a four-letter room code (A–Z only; no digits).' }); return; }
+      json(res, 200, rooms.roomInfo(code)); return;
     }
     if (url.pathname === '/api/fallbacks' && req.method === 'GET') { json(res, 200, listFallbackRepos()); return; }
     if (url.pathname === '/api/qr' && req.method === 'GET') {

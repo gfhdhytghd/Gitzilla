@@ -1,4 +1,4 @@
-DONE
+DONE (edu pvp) · DONE (leave) · DONE (motion-v3 server) · DONE (genesis)
 
 Current infrastructure: DEV/testing is `http://localhost:5175`. Port 5173 and `https://gitzilla.wilflin.me` are stable LIVE from `../gitzilla-live`; never start/stop/test them. Only the coordinator deploys live.
 
@@ -169,3 +169,113 @@ DONE
 - No outstanding server contract requests for this card. Notice uses the existing ServerMsg error/toast channel; shared/ unchanged.
 
 DONE
+
+## QA-NET-01 priority fix / Genesis queue
+- Coordinator assigned Genesis wiring, then reprioritized the malformed-aim match-stopper ahead of it. Genesis task/handoff inspected; analysis onProgress and genesis/buildGenesis were not landed at initial read. Will return to Genesis after QA reproductions pass.
+- Added full InputFrame sanitization: safe nonnegative integer seq, finite/clamped/normalized move, null-or-finite normalized aim, boolean coercion, source enum fallback, unknown fields discarded. Bot output passes the same boundary.
+- Isolated a thrown sim step: log only the room/tick-drop message, replace held inputs with idle while retaining sequence, skip the failed tick without replaying it, keep match/snapshot timers and lobby phase running. Raw error/input/private data are not logged.
+- Regression tests cover malformed/nonfinite/overflow inputs and recovery after an injected throwing sim frame. Running coordinator QA repros next; DEV 5175 only.
+
+## QA-NET-01 — fixed before Genesis
+- `npx vitest run server/input.test.ts server/rooms.test.ts`: **22 PASS**.
+- `QA_REPRO=1 npx vitest run qa/robustness.test.ts`: **4 PASS**, including the malformed-aim repro and 20 completed accelerated real-sim matches with interval cleanup.
+- `npx tsx qa/protocol.ts` on DEV 5175: **9/9 PASS**. Evidence: `qa/artifacts/protocol-2026-10-24T19-27-45-842Z/summary.json`; malformed aim no longer stops the live DEV match.
+- `npm run typecheck`: PASS. No live/5173/tunnel access.
+- Returning to Genesis wiring now: codex-genesis builder and codex-repo onProgress APIs have landed and their exact handoffs were read.
+
+## Genesis implementation in progress
+- Read codex-genesis's completed handoff and actual buildGenesis, plus codex-repo's onProgress API. Main now wires the pure builder and forwards onProgress alongside the token option.
+- Room broadcasts coalesce progress across repo jobs at <=8 Hz (125ms), retaining only each job's latest event and max eight paths. Revision/status guards discard superseded/finished-job callbacks. Terminal map/design/ready state transitions remain immediate; streaming telemetry does not trigger repeated disk writes.
+- Seed-ready human/bot/boss entries receive Genesis. Gemini-pending entries expose design progress; completion or failure returns ready, rebuilding the trace for the actual final kit. Boss Genesis is rebuilt after squad-size scaling at start.
+- Credentialed Genesis is permitted inside the room per the new card, while external Gemini/Hall remains disabled. Private Genesis/progress/source-derived kit code/design/title are excluded from the persistence file; resume still preserves gameplay stats/seed/slug. Public Genesis persists for replay. Recognizable credentials are filtered by the builder (no auth options enter it).
+- Adding transport/throttle/stale-job/design/bot/private-room/persistence tests and DEV-only smoke assertions next. Live 5173/tunnel remains untouched.
+
+## DONE (genesis) — server transport + replay wiring
+- Pure builder is wired in main. Human/bot/boss ready entries receive Genesis, final optional art refreshes it, and boss squad scaling rebuilds it. Live progress is coalesced per room at ~8Hz with request-revision guards and <=8 paths/event; map/design/ready state transitions are immediate.
+- Fast cached stages can coalesce inside one 125ms window; the complete real Genesis payload supplies the replay (explicit cached-websocket regression added). No artificial analysis delays or invented file paths.
+- Credentialed Genesis is ephemeral inside its room per the new card; private source-derived Genesis/progress/code/design/title are not persisted. Private Gemini/Hall exclusion remains intact. Builder credential filtering is exercised by a private in-room test.
+- Focused server input/room + Genesis tests: **70 PASS** across four files at latest run. Tests cover real helper output, bot/boss/human attachment, public replay across restart, progress throttling, stale callbacks, design success/failure and credentialed ephemeral data.
+- Actual DEV 5175 lobby wire check **PASS**: Flask Genesis has real sample paths and nonempty trace. Full five-second fight smoke was interrupted at 20 snapshots during active source reloads; do not claim throughput acceptance for that attempt.
+
+## DONE — UX audit P0-3 (mistyped room codes)
+- Unknown hello now self-heals ONLY with a nonempty string resume token. Fresh unknown hello returns Room not found without creating anything. Codes require four letters A–Z; digit-containing codes get a clear error.
+- Added GET `/api/room/<CODE>` -> `{exists,players,phase}`. Missing rooms return `{exists:false,players:0,phase:null}` without creating a room; invalid codes return HTTP 400.
+- Unit tests and actual DEV 5175 checks **PASS** for existence/player counts, digit rejection, fresh unknown rejection and resume-only self-heal. Updated isolated restart integration test to supply a stale token.
+- UI handoff: use GET lookup before a fresh join; do not send a resume field for a first-time/mistyped-code join. Existing remembered-token tabs retain self-heal.
+
+## Current queue — latest EDU PvP overrides all earlier boss-based edu notes
+- Read the new top of docs/tasks/edu.md plus docs/social-impact.md. Nullable boss assumptions fixed in server completion/Hall and battle smoke checks; no server diagnostics remain in the current global typecheck, while many other-owner null-boss updates are still landing.
+- Next: persisted owner setMode, 30-student capacity, no-boss >=2-player start, code-quality kits/report-card regeneration on mode changes, teacher projector ownership/control, separate/skipped edu Hall, PvP bots/real sim integration once the new factory lands. Social-impact battle fields will pass through unchanged; MotionProfile remains client-only.
+- Main API safety boundary remains DEV 5175 only. Smoke now rejects live/non-loopback/non-5175 targets and tolerates a brief initial DEV watcher restart without falling back to live.
+
+## EDU classroom PvP implementation in progress
+- Following only the NEW top of docs/tasks/edu.md: boss-free FFA, code-quality report cards, <=30 students, >=2 ready fighters (bots allowed), teacher projector can own/control without playing. Earlier boss-based edu behavior is superseded.
+- Added persisted mode/teacher identity and owner-only lobby setMode, mode-specific capacity, no-boss edu start, mode-aware kit derivation/regeneration, optional profile re-fetch after restore, and nullable-safe autopsy/Hall handling. Edu is skipped by the battle Hall. Player profiles remain memory-only; private quality tips are redacted in persisted kits.
+- Teacher API proposal implemented: POST `/api/room?mode=edu` creates an edu room; first screen to join becomes teacher/owner, occupies zero student slots, can setMode/setBots/start/rematch, and can resume its screen token. UI should remember that screen resume token separately and enter `?screen=1`; teacher resume reclaims projector ownership.
+- Snapshots/lobby common JSON is encoded once per broadcast (per-client ack wrapper only), avoiding 30 repeated serializations for a classroom.
+- Sim factory signature now accepts null boss/options but real PvP implementation and quality mapping were still being written at last read. Server refuses edu start until quality arrays exist; real-game acceptance awaits those owner modules. Adding mocked-protocol + full-class capacity tests meanwhile.
+
+## Handoff → claude-ui / coordinator (EDU PvP + teacher flow)
+- `POST /api/room?mode=edu` creates a classroom immediately; response remains `{room}`. Enter `/r/ROOM?screen=1`. First projector screen claims teacher ownership (even if students arrived first), occupies zero student slots, and can setMode/setBots/start/rematch.
+- **Remember and send that screen's welcome.token on screen reload/reconnect**, separately from the player's resume token. Server persists the teacher screen identity/role and lets its token reclaim teacher ownership after a disconnect or restart. Current client net.ts only remembers player tokens; this needs the UI owner.
+- Student capacity is 30 in edu / 8 in battle. Bots retain the current contract's 0..7 count and get displaced by arriving humans at capacity. Classroom start needs >=2 ready fighters (bots allowed), no boss; all kits must carry quality rows. Teacher need not pick a repo or participate.
+- Owner-only setMode is lobby-only, persisted, and regenerates students' kits/report cards for the selected mode (keeping appearance). A battle switch is rejected while >8 humans are connected; no students are kicked out. Room info endpoint still returns exactly exists/players/phase.
+- Edu autopsy/null boss/ranking is broadcast intact and never enters the public battle Hall. Battle social-impact metadata is passed intact; MotionProfile stays client-only and isn't added to network inputs.
+- Common lobby/snapshot JSON is encoded once per broadcast to reduce 30-student CPU work; acknowledgements remain per-client.
+- Protocol tests now cover all these paths, including 30 actual WebSocket student connections, teacher reclaim and mode persistence. Real classroom physics acceptance is pending codex-sim's in-progress PvP factory.
+
+## EDU PvP protocol validation (15:43 local)
+- Focused server input/room tests: **33 PASS** after adding teacher/30-student/mode/quality/null-boss/ranking/Hall and social-impact metadata coverage.
+- Mode switch regenerates kits from memory-only source profiles or fresh request-scoped analysis, preserving appearance. Restored mismatched kits refresh when a player resumes; private source remains unpersisted. Bulk mode mapping batches lobby broadcasts.
+- Added `server/classroom-smoke.ts`, DEV-loopback-5175-only, bounded snapshot history, teacher + 2..30 student connections, optional bots, quality/Genesis assertions, null-boss/heroScale/PvP state and 5s input/snapshot checks. Actual classroom run next once codex-sim's real factory is ready; no fake combat acceptance claim.
+- Battle autopsy/Hall hook test confirms fragile/maintainers/issues/parasites, repoIssues and busFactor are passed intact, with no fabricated issues/advisories. Accessibility MotionProfile remains client-only.
+- Repeated file-watch reloads interrupted earlier fight smoke attempts; Genesis/P0 actual lobby/HTTP wire checks passed separately, and QA-NET-01 repro passed on actual DEV. No live interactions.
+
+## High-priority explicit LEAVE — before edu closeout
+- New user card preempts final edu handoff. Implement `{t:'leave'}` in every phase: remove membership, revoke resume token durably, transfer ownership to a remaining human, close with code **4002** / reason **left**, and delete/flush the room when no connected human/screen remains (bots do not keep it alive).
+- UI handoff: clear the room/player-or-screen resume token, stop reconnecting on 4002, navigate to landing/create flow. A revoked token must not auto-recreate an unknown room via the stale-tab self-heal rule.
+- **URGENT sim handoff / contract request:** please add optional `Match.removePlayer?(id: string): void` to battle AND ClassroomMatch. The server will call it on explicit leave so simulation targets/bullets/player/score/revive/quiz state truly lose the hero while others continue. Current public Match API has no removal method; no server reflection into private sim fields or match reset will be used. Server-side membership/snapshot/result filtering can land immediately, but full physical removal acceptance needs this hook.
+- Teacher screens count as human occupants; ordinary socket drops retain resumability. An explicit last-human leave closes the abandoned room and revokes all remaining dormant room tokens, rather than allowing bots/ghost slots to resurrect it.
+- Edu real acceptance already passed before this card: XATY teacher+2 students, GAAI teacher+30 students (99–100 snapshots each/5s), EFED teacher+2 bots, JAEA battle regression. Full tests 449 PASS / 7 optional skips, final typecheck/build PASS; actual four-process restart test now also restores edu teacher + quality cards and restarts null-boss PvP. These results remain distinct from pending explicit-leave acceptance.
+
+## LEAVE server implementation / handoff (16:02 local)
+- Implemented explicit leave before phase/role guards (players + projector screens). Code **4002**, reason **left**. Membership, held inputs, ephemeral profile, queued analysis/progress and resume identity are removed; ownership passes to a connected human player, then screen. Bots never receive ownership.
+- Last connected human's explicit leave stops timers and deletes the room, also revoking dormant room identities. Atomically flushes rooms.json before socket close. Revoked tokens are stored only as SHA-256 tombstones, backwards-compatible with existing room files, and checked before stale-code self-heal and after async hello auth.
+- Hook `Match.removePlayer?(id)` is called; departed IDs are excluded from ongoing wire snapshots/autopsy. **Physical sim removal still awaits codex-sim hook**, requested in the section above and coordinator question. Do not claim that piece complete until real sim tests pass.
+- UI owner: handle 4002 as terminal, remove `kaiju.token.ROOM` / `kaiju.screenToken.ROOM`, clear reconnect and navigate to landing/create. The server rejects the revoked token even after restart.
+- Focused input/room tests: **38 PASS** including leave in all three phases, human/screen owner transfer, bots continuing, no-human deletion, durable revocation, fresh rejoin and stale-analysis suppression. Fixing one test-only type-narrowing diagnostic before global checks.
+
+## LEAVE real-sim gate (16:02)
+- Added mandatory real battle + edu transport regressions in `server/rooms.test.ts`, using actual offline profiles/kits/factory/bots. **Currently 2 FAIL as expected at the missing removePlayer hook assertion**, before attempting leave. These are acceptance gates, not a known net regression; codex-sim must land the hook. Run `npx vitest run server/rooms.test.ts -t 'real .* sim'` after that handoff.
+- Actual main.ts **five-process** restart test PASS: edu participants leave mid-fight, teacher leaves last, HTTP lookup confirms deletion, fifth fresh process rejects all three revoked tokens with 4002 and does not self-heal the deleted room.
+- Latest build PASS, typecheck PASS; pre-gate full regression 471 PASS / 7 optional skips. DEV battle smoke WKZN passed 99 snapshots/client/5s; now extending it to assert explicit leave/owner/deletion/revocation too.
+- Expanded actual DEV battle smoke AKEH PASS: 2 humans + 2 real bots, 100 snapshots/client/5s, explicit owner leave, live teammate stream/owner transfer, last-human deletion with bots, revoked-token rejection after deletion. This proves transport/lifecycle; physical sim removal remains the explicit missing-hook gate above.
+
+## Motion-v3 trace upload — implemented / handoff → codex-input (16:06)
+- Coordinator dispatched sim.removePlayer to codex-sim; proceeding with queued motion-v3 per instruction, then will rerun the real removal gates once `DONE (removePlayer)` lands.
+- `POST /api/trace`: send `Content-Type: application/json`, body = your raw trace object (or sample array). No rigid sensor schema, so your UA/platform/orientation/motion/rotationRate/gesture/training fields survive unchanged. Success **201 `{id: "<milliseconds>-<random>.json"}`**. Invalid JSON/primitives 400, wrong content-type 415, >2 MiB actual bytes (including chunked uploads) 413.
+- Stores only that JSON body at `.cache/traces/<id>`, file mode 0600; no cookies, auth token, IP, session or server-side personal metadata added. Keeps latest 200 trace files; other filenames untouched. `.cache` remains denied through HTTP/Vite.
+- `GET /api/trace/list`: **200 `{traces:[{id,bytes,createdAt}, ...]}`**, newest first, metadata only. Local TCP peer + localhost/loopback Host required; forwarded/public tunnel requests get 403 even if their proxy TCP peer is loopback. Use `curl http://localhost:5175/api/trace/list` locally. No public read endpoint was added.
+- Added isolated `TRACES_DIR` override for process tests. Endpoint unit tests **5 PASS**: exact 2MiB, oversized advertised/chunked byte counts, JSON/method errors, retention, file privacy and tunnel-list denial. Actual main.ts process test next.
+- Added requested `.webmanifest: application/manifest+json` production MIME mapping; existing SVG MIME unchanged.
+- Motion-v3 actual entrypoint acceptance PASS: isolated production main.ts upload/list, public-proxy-list 403 and .cache raw-file 404; production manifest returns application/manifest+json and valid JSON. Five-process leave/revocation/restart test still PASS.
+- Build PASS after the manifest copy. Latest root typecheck saw other-owner transient audio/tools and mid-edit sim.removePlayer diagnostics; no server diagnostics. Will recheck after removePlayer DONE rather than editing their files.
+- DONE (motion-v3 server): actual DEV 5175 upload/list PASS, forwarded list denied and raw .cache path 404. Uploaded probe is explicitly labeled SYNTHETIC (ua/platform), not a phone measurement; no real-phone gesture/tuning acceptance claimed. README + input-owner handoff above specify the exact endpoint contract. Manifest MIME actual production response verified too.
+- Root typecheck now PASS (16:08), after other-owner edits settled. Sim hook implementation is present; waiting for the requested DONE (removePlayer) marker before final validation. Server keeps filtering departed ranking rows per the user's latest explicit "autopsy: just remove" instruction; no historical-left row exposure unless coordinator requests that behavior.
+
+## Final merged validation after DONE (removePlayer) (16:09)
+- Sim handoff landed and marked DONE (removePlayer). Real battle + classroom removal gates now passed inside the full suite; no server test failures. Actual classroom smoke DJQY PASS: 2 students + 1 bot + teacher, 100 snapshots each/5s, student removal, teacher leave and deletion. Actual battle GYVQ PASS: 2 humans + 2 bots, 99 snapshots each/5s, owner transfer, deletion, revoked-token denial.
+- Latest build PASS (only existing player/boss chunk warnings). `ROOM_RESTART_TEST=1 npm test` → **475 PASS, 23 FAIL, 6 optional skips**. The 23 failures are all `client/input/index.test.ts`, current motion-v3 edits, TypeError reading window.location.search in createInput ~448. This is an input-owner handoff, not a server failure; do not edit their files.
+- Latest typecheck during motion-v3 edit failed only in `client/input/touch.ts:49,50`: string event-name overload with a PointerEvent listener vs EventListener. Previously passed before the new input edit. No server diagnostics. Input owner/coordinator: please resolve these two current merged gates in your scope; server focused suite is being recorded independently.
+- Server activeResult continues removing departed ranking rows per the user's explicit autopsy removal requirement; sim may retain detached historical left rows internally. No shared changes needed by net.
+- Final owned suite: `ROOM_RESTART_TEST=1 npx vitest run server` → **47 PASS** across 5 files, including actual battle/classroom physical removal, trace caps/retention/access, TLS helper and five-process persistence/revocation/manifest checks.
+- Input owner's mid-edit location issue has since been fixed: focused input/index suite now **25 PASS**. Re-running full suite once against that change. Latest typecheck still has external motion-v3 typing in input profile tuple/touch listeners and app/placeholders' new InputController fields; no server errors.
+
+## DONE — codex-net final handoff (16:11 local)
+- All queued server owner parts complete: explicit leave in every phase (physical sim removal, durable resume revocation, human/projector ownership transfer, no-human deletion), classroom PvP/teacher/capacity/quality wiring, Genesis/progress, motion-v3 trace upload/local listing, and production webmanifest MIME.
+- `ROOM_RESTART_TEST=1 npm test`: **519 PASS / 6 optional skips**, 46 files passed. Server-only suite: **47 PASS** across 5 files, including real battle/classroom factory removals and five actual main.ts processes.
+- Final `npm run build`: **PASS** after latest modules landed; only existing static/dynamic player/boss import warnings.
+- DEV battle GYVQ: 2 humans + 2 bots, 99 snapshots/client/5s; leave/owner/deletion/revocation PASS. DEV classroom DJQY: teacher + 2 students + 1 bot, 100 snapshots each/5s; student/teacher leave + deletion PASS. Earlier full-class GAAI had 30 actual students (99–100 snapshots/5s); no render/device claims implied.
+- Latest root typecheck is down to **one external error**: `tools/motion-v3.ts:197` TS2322 (null acceleration not assignable to DeviceMotionEventAccelerationInit | undefined). Input owner: fix the synthetic nullable-acceleration typing in your tool; server has no diagnostics. Earlier input/location/tuple/touch/placeholder issues are superseded by this latest result.
+- Trace acceptance: 5 unit tests, actual DEV upload/list, isolated production entrypoint and raw-cache denial all PASS. Exactly 2MiB accepted, over-limit chunked/advertised bodies 413, last 200 retained, forwarded/public-host lists 403. Probe was explicitly SYNTHETIC; real-phone motion evidence belongs to input owner.
+- **No commits/pushes, no shared/ edits, no changes outside authorized server/progress paths, no stable-live/5173/tunnel interactions.** Only coordinator deploys. Continue idle integration checks when requested/new modules need a server adapter change.
