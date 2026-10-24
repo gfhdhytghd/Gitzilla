@@ -108,11 +108,11 @@
       "loc": 392,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 1,
       "topMaintainers": [
         "antirez"
-      ],
-      "issues": []
+      ]
     }
   ],
   "heart": "src/server.h",
@@ -544,32 +544,28 @@
       "id": "GHSA-24wv-mv5m-xv4h",
       "pkg": "redis",
       "ecosystem": "PyPI",
+      "version": "4.5.1",
+      "source": "utils/req-res-validator/requirements.txt",
       "summary": "redis-py Race Condition vulnerability",
       "fixed": "4.5.3",
+      "aliases": [
+        "CVE-2023-28858",
+        "PYSEC-2023-45"
+      ],
       "component": "utils"
     },
     {
       "id": "GHSA-8fww-64cx-x8p5",
       "pkg": "redis",
       "ecosystem": "PyPI",
+      "version": "4.5.1",
+      "source": "utils/req-res-validator/requirements.txt",
       "summary": "redis-py Race Condition due to incomplete fix",
       "fixed": "4.5.4",
-      "component": "utils"
-    },
-    {
-      "id": "PYSEC-2023-45",
-      "pkg": "redis",
-      "ecosystem": "PyPI",
-      "summary": "redis-py before 4.5.3, as used in ChatGPT and other products, leaves a connection open after canceling an async Redis command at an inopportune time (in the case of a pipeline oper",
-      "fixed": "4.5.3",
-      "component": "utils"
-    },
-    {
-      "id": "PYSEC-2023-46",
-      "pkg": "redis",
-      "ecosystem": "PyPI",
-      "summary": "redis-py through 4.5.3 leaves a connection open after canceling an async Redis command at an inopportune time (in the case of a non-pipeline operation), and can send response data ",
-      "fixed": "4.5.4",
+      "aliases": [
+        "CVE-2023-28859",
+        "PYSEC-2023-46"
+      ],
       "component": "utils"
     }
   ],

@@ -18,13 +18,13 @@
       "loc": 13950,
       "fanIn": 0,
       "fanOut": 3,
-      "issues": [],
       "maintainers": 44,
       "topMaintainers": [
         "dougwilson",
         "wesleytodd",
         "jonchurch"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "lib",
@@ -453,6 +453,7 @@
     "avgFunctionLength": 8.8,
     "hasTestDir": true
   },
+  "vulns": [],
   "repoIssues": [
     {
       "number": 2414,
@@ -466,6 +467,5 @@
       ]
     }
   ],
-  "vulns": [],
   "busFactor": 1
 }

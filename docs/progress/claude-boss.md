@@ -1,3 +1,18 @@
+DONE (glyph bullets) — claude-boss
+
+## Glyph bullets (player projectiles + impact sparks as readable code)
+- **Every player projectile is bold pixel code**, from `kit.code.weapon.projectiles`, else the hero's tokens, else my `WEAPON_CODE` table.
+  - Font: new `boldSprite()` in `arena/font.ts`. It's 4×5 with a 5 px cap height and a 1 px dark outline. The 3×5 glyph's middle column is doubled, so stems get heavier while 1 px gaps stay open (Y, H, U, V, W read correctly).
+  - Each shot is colored with the hero's identity color, i.e. **claude-player's `playerColor(kit)`** (the same color as their ring). It falls back to my per-id `playerColor(id)` in all modes.
+  - Trail: short glyphs (≤3 chars) leave 2 fading echoes of the same text, spaced so they never overlap. Longer words get a thin colored streak instead (no smeared "DEADEAD").
+  - Laser: the regex crawls in bold letters behind a white head, in reading order.
+  - Blade: a hero-colored crescent with a bold `//` riding it.
+  - Staff: a dark orb behind a bold `λ`.
+  - Cannon: a bold `0XDEAD` with smoke. It no longer uses a plate, so it can't be mistaken for a boss bullet (boss bullets keep red plates).
+- **Impact sparks:** a new particle kind `bold` shows the attacker's `weapon.impact` (e.g. `FREE()`, `$1`), white for a frame, then the hero's color, fading out by 0.4 s and rate-limited per player. Off in edu PvP, where the bullets are already words.
+- Verified at portrait phone zoom (claude-ui-style CSS-upscaled canvas, DPR 3) with the gallery's `?mode=bullets&portrait=1&res1=1&real=1`: all seven weapon kinds with real sim weapons (`YIELD`, `DEF`, `.THEN`, `=>`, `CASE`, `I++`).
+- **Coordination with claude-player:** I import their `playerColor(kit)` for bullet colors. Muzzle text stays theirs. Projectile glyphs come from my registry, fed by `trackPlayers` from `kit.code.weapon`. If their weapon redesign changes `kit.code.weapon.projectiles` semantics, the bullets follow automatically.
+
 DONE (edu pvp) — claude-boss
 (also: DONE (edu) for the earlier boss-based edu + social-impact parts below)
 

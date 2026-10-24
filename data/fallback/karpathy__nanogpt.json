@@ -32,13 +32,13 @@
       "loc": 155,
       "fanIn": 0,
       "fanOut": 0,
-      "issues": [],
       "maintainers": 8,
       "topMaintainers": [
         "karpathy",
         "danielgross",
         "LaihoE"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "config",

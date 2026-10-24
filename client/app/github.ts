@@ -40,6 +40,8 @@ async function fetchRepos(): Promise<GhRepo[] | 401 | 502> {
   }
 }
 
+const fmtStars = (n: number) => (n >= 10000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n ?? 0));
+
 function ago(iso: string): string {
   const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
   if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
@@ -110,9 +112,9 @@ export function createGithubPicker(onPick: (fullName: string) => void): HTMLElem
           h(
             "button.gh-row",
             { title: r.full_name, onclick: () => onPick(r.full_name) },
+            h("span.gh-stars", { title: `${r.stars} stars` }, `★ ${fmtStars(r.stars)}`),
             h("span.gh-name", null, r.private ? "🔒 " : "", r.full_name),
             r.language ? h("span.gh-lang", { style: `--lc:${LANG_COL[r.language] ?? "#6f9b85"}` }, r.language) : h("span"),
-            h("span.gh-stars", null, `★${r.stars}`),
             h("span.gh-ago", null, ago(r.pushed_at)),
           ),
         ),
@@ -129,7 +131,8 @@ export function createGithubPicker(onPick: (fullName: string) => void): HTMLElem
         list.replaceChildren(h("div.pcard-err", null, "github said no (502). "), h("button.btn-link", { onclick: load }, "retry"));
         return;
       }
-      repos = res;
+      // most-starred first (the server already sends this order; keep it stable if it ever doesn't)
+      repos = [...res].sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0));
       render();
     };
     load();

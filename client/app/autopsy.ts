@@ -3,8 +3,9 @@ import type { Autopsy, BossKit, PlayerKit } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createHallBoard } from "./hall";
+import { markCanvas } from "./mark";
 import { reportCard } from "./report";
-import { createClassReport } from "../edu";
+import { createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
 import { fmtTime, fontsReady, h, isPhone, shortRepo } from "./util";
 
@@ -91,12 +92,71 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
       g.fillText("★ MVP", 330, 440);
     }
   }
+  // brand mark + wordmark in the corner
+  g.drawImage(markCanvas(3), 52, H - 112);
+  g.font = '22px "Press Start 2P", monospace';
+  g.fillStyle = "#2fe39a";
+  g.fillText("GIT", 196, H - 84);
+  g.fillStyle = "#ff3e9a";
+  g.fillText("ZILLA", 196 + g.measureText("GIT").width, H - 84);
   g.fillStyle = "rgba(255,255,255,.4)";
   g.font = '26px "VT323", monospace';
-  g.fillText("$ play GITZILLA at HackPSU · your repo is a kaiju", 58, H - 56);
+  g.fillText("$ play at HackPSU · your repo is a kaiju", 196, H - 52);
   g.fillStyle = "rgba(0,0,0,.18)";
   for (let yy = 0; yy < H; yy += 3) g.fillRect(0, yy, W, 1);
   return c;
+}
+
+type AutopsyBoss = NonNullable<Autopsy["boss"]>;
+
+/**
+ * Social impact ending — "Adopt an Organ": feature the most fragile organ (fragile flag, else fewest maintainers)
+ * and point at real issues: the organ's own, else the repo's good-first issues, else the repo's issues page.
+ * Always ends with a scannable QR (huge on the projector).
+ */
+function adoptOrgan(boss: AutopsyBoss, big: boolean): HTMLElement {
+  const byMaint = (x: AutopsyBoss["limbs"][number]) => x.maintainers ?? 99;
+  const fragile = boss.limbs.filter((l) => l.fragile).sort((a, b) => byMaint(a) - byMaint(b));
+  const counted = boss.limbs.filter((l) => l.maintainers !== undefined).sort((a, b) => byMaint(a) - byMaint(b));
+  const organ = fragile[0] ?? counted[0] ?? [...boss.limbs].sort((a, b) => b.damageTaken - a.damageTaken)[0] ?? null;
+  const issues = organ?.issues?.length ? organ.issues : boss.repoIssues?.length ? boss.repoIssues : [];
+  const issuesPage = `https://github.com/${boss.repo}/issues?q=is%3Aopen+label%3A%22good+first+issue%22`;
+  const target = issues[0]?.url ?? issuesPage;
+  const m = organ?.maintainers;
+  const who = m === undefined ? (organ?.fragile ? "barely anyone maintains this" : "it could use more hands") : m <= 0 ? "nobody maintains this right now" : m === 1 ? "only 1 person maintains this" : `only ${m} people maintain this`;
+  const qr = h("img.adopt-qr", { src: `/api/qr?text=${encodeURIComponent(target)}`, alt: "scan to adopt", width: big ? 320 : 150, height: big ? 320 : 150 });
+  return h(
+    `section.panel.ap-adopt${big ? ".big" : ""}`,
+    { "data-testid": "adopt-organ" },
+    h("h2.panel-title", null, "♥ ADOPT AN ORGAN"),
+    h(
+      "div.adopt-row",
+      null,
+      h(
+        "div.adopt-text",
+        null,
+        organ ? h("div.adopt-organ", null, h("code", null, organ.component), organ.fragile ? h("span.adopt-tag", null, " fragile") : null) : null,
+        h("div.adopt-who", null, `${who}.`),
+        h("div.adopt-sub", null, `you just fought ${shortRepo(boss.repo)}. now help keep it alive — it's real open source.`),
+        issues.length
+          ? h("ul.adopt-issues", null, ...issues.slice(0, big ? 3 : 4).map((i) => h("li", null, h("a", { href: i.url, target: "_blank", rel: "noopener" }, `#${i.number} ${i.title}`), i.labels?.length ? h("small", null, ` ${i.labels.slice(0, 2).join(" · ")}`) : null)))
+          : h("div.adopt-sub", null, h("a", { href: issuesPage, target: "_blank", rel: "noopener" }, `open ${boss.repo} good-first issues ↗`)),
+        boss.busFactor !== undefined ? h("div.adopt-sub.dim", null, `bus factor: ${boss.busFactor} — that many people leaving would stall the project`) : null,
+      ),
+      h("div.adopt-scan", null, qr, h("div", null, "scan to adopt it")),
+    ),
+  );
+}
+
+/** [ new room ] [ leave ] next to REMATCH (projector: end class / new room). */
+function exitButtons(app: AppCtx): HTMLElement {
+  const screen = app.role === "screen";
+  return h(
+    "div.ap-exit",
+    null,
+    h("button.btn", { "data-testid": "autopsy-new-room", onclick: () => app.leave({ newRoom: true }) }, "[ new room ]"),
+    h("button.btn.btn-ghost", { "data-testid": "autopsy-leave", onclick: () => app.leave() }, screen ? "[ end class ]" : "[ leave ]"),
+  );
 }
 
 export function createAutopsy(app: AppCtx): Screen {
@@ -215,11 +275,14 @@ export function createAutopsy(app: AppCtx): Screen {
         h("div.ap-sub", null, `$ autopsy --boss ${a.boss.repo} · ${fmtTime(a.duration)} · exit ${a.victory ? "0 (boss deleted)" : "1 (squad wiped)"}`),
         h("div.ap-top-actions", null,
           owner ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "$ git reset --hard && REMATCH") : h("div.dim", null, "waiting for the owner to rematch…"),
+          exitButtons(app),
         ),
       ),
+      ...(app.role === "screen" ? [adoptOrgan(a.boss, true)] : []),
       h(
         "div.ap-grid",
         null,
+        ...(app.role === "screen" ? [] : [adoptOrgan(a.boss, false)]),
         h(
           "section.panel.ap-boss",
           null,
@@ -241,6 +304,18 @@ export function createAutopsy(app: AppCtx): Screen {
               )
             : null,
         ),
+        // claude-edu: the boss repo in plain words, "your repo vs the boss", where the project needs help
+        ...(() => {
+          const g = app.lobby?.boss.genesis;
+          if (!g) return [];
+          try {
+            const heroes = (app.lobby?.players ?? []).filter((p) => p.genesis && !p.bot).slice(0, 4).map((p) => ({ label: p.name, genesis: p.genesis!, you: p.id === app.you }));
+            return [h("section.panel.ap-arch", null, createArchitectureReport({ genesis: g, kit: bossKit, autopsy: a, heroes, variant: app.role === "screen" ? "screen" : isPhone() ? "phone" : "desktop" }))];
+          } catch (e) {
+            console.warn("[kaiju] architecture report failed", e);
+            return [];
+          }
+        })(),
         (() => {
           const hb = createHallBoard(app.mock, { rows: 5, highlight: a.players.map((p) => p.name) });
           hb.classList.add("ap-hall");
@@ -254,7 +329,7 @@ export function createAutopsy(app: AppCtx): Screen {
           h("div.ap-actions", null,
             h("button.btn.btn-primary", { onclick: share }, "share ↗"),
             h("button.btn", { onclick: download }, "⤓ save card.png"),
-            h("a.btn.btn-ghost", { href: "/" }, "new room"),
+
           ),
         ),
       ),
@@ -297,6 +372,7 @@ function createPvpAutopsy(app: AppCtx): Screen {
         h("div.ap-sub", null, `$ make grade · ${fmtTime(a.duration)} · winner: ${winner ? winner.name : "—"}${me ? ` · you: #${ranking.indexOf(me) + 1}` : ""}`),
         h("div.ap-top-actions", null,
           owner ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "$ make rematch") : h("div.dim", null, "waiting for the teacher to start the next round…"),
+          exitButtons(app),
         ),
       ),
       h(
@@ -306,7 +382,7 @@ function createPvpAutopsy(app: AppCtx): Screen {
         (() => {
           try {
             const students = (app.lobby?.players ?? []).filter((p) => p.kit).map((p) => ({ id: p.id, name: p.name, repo: p.repo ?? "", quality: p.kit!.quality }));
-            return h("section.panel.ap-class", null, createClassReport({ autopsy: a, students, engine: null, you: app.you, variant: app.role === "screen" ? "screen" : isPhone() ? "phone" : "desktop" }));
+            return h("section.panel.ap-class", null, createClassReport({ autopsy: a, students, engine: (app.eduEngine as LessonEngine | undefined) ?? null, you: app.you, variant: app.role === "screen" ? "screen" : isPhone() ? "phone" : "desktop" }));
           } catch (e) {
             console.warn("[kaiju] class report failed", e);
             return h("section.panel.ap-class", null, ...cards);

@@ -23,13 +23,13 @@
       "loc": 12485,
       "fanIn": 0,
       "fanOut": 2,
-      "issues": [],
       "maintainers": 31,
       "topMaintainers": [
         "BurntSushi",
         "okdana",
         "blyxxyz"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "crates/ignore",
@@ -76,13 +76,13 @@
       "loc": 5904,
       "fanIn": 1,
       "fanOut": 2,
-      "issues": [],
       "maintainers": 15,
       "topMaintainers": [
         "BurntSushi",
         "atouchet",
         "3point2"
-      ]
+      ],
+      "issues": []
     },
     {
       "name": "tests",
@@ -90,6 +90,12 @@
       "loc": 4974,
       "fanIn": 0,
       "fanOut": 0,
+      "maintainers": 34,
+      "topMaintainers": [
+        "BurntSushi",
+        "alessandroasm",
+        "amaanq"
+      ],
       "issues": [
         {
           "number": 2962,
@@ -100,12 +106,6 @@
             "help wanted"
           ]
         }
-      ],
-      "maintainers": 34,
-      "topMaintainers": [
-        "BurntSushi",
-        "alessandroasm",
-        "amaanq"
       ]
     },
     {
@@ -122,6 +122,12 @@
       "loc": 3118,
       "fanIn": 1,
       "fanOut": 0,
+      "maintainers": 29,
+      "topMaintainers": [
+        "BurntSushi",
+        "atouchet",
+        "dtolnay"
+      ],
       "issues": [
         {
           "number": 2229,
@@ -143,12 +149,6 @@
             "icebox"
           ]
         }
-      ],
-      "maintainers": 29,
-      "topMaintainers": [
-        "BurntSushi",
-        "atouchet",
-        "dtolnay"
       ]
     },
     {
@@ -157,6 +157,12 @@
       "loc": 2537,
       "fanIn": 2,
       "fanOut": 0,
+      "maintainers": 8,
+      "topMaintainers": [
+        "BurntSushi",
+        "atouchet",
+        "albatrossflyon-coder"
+      ],
       "issues": [
         {
           "number": 1791,
@@ -186,12 +192,6 @@
             "help wanted"
           ]
         }
-      ],
-      "maintainers": 8,
-      "topMaintainers": [
-        "BurntSushi",
-        "atouchet",
-        "albatrossflyon-coder"
       ]
     }
   ],

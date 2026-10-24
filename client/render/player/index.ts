@@ -3,8 +3,8 @@
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
 import { lookFor, syntaxColor, type HeroLook } from "./look.ts";
 import { heroFrame, heroRim, heroCodeCells, tinted, ANCHOR_X, SW, SH, type Expr, type FrameSpec } from "./sprite.ts";
-import { weaponSprite, drawMuzzle } from "./weapons.ts";
-import { drawText, glyphBits, textCanvas, GLYPH_W } from "./font.ts";
+import { weaponSprite, drawMuzzle, boldGlyph, weaponWord } from "./weapons.ts";
+import { drawText, glyphBits, textCanvas, textWidth, GLYPH_W } from "./font.ts";
 import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
 
 export { lookFor } from "./look.ts";
@@ -398,8 +398,12 @@ function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     const big = kind === "cannon" ? 4 : kind === "shotgun" ? 3 : 2;
     recoil = big * (1 - since / 0.12);
   }
-  // idle sway of the weapon
-  if (kind !== "blade") ang += Math.sin(t * 2 + m.phase * 6) * 0.03;
+  // snap to 16 directions so the code on the weapon stays crisp; near-horizontal aims hold it perfectly flat
+  {
+    const step = Math.PI / 8;
+    const off = Math.abs(Math.sin(ang)) < 0.2 ? 0 : 1;
+    ang = off ? Math.round(ang / step) * step : Math.cos(ang) < 0 ? Math.PI : 0;
+  }
   const hx = x + 3 * flip, hy = feet - 6 + bob;
   ctx.save();
   ctx.translate(hx, hy);
@@ -418,42 +422,50 @@ function drawWeapon(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     }
     ctx.restore();
   }
-  ctx.rotate(ang);
+  // aiming left uses the mirrored variant whose words are re-stamped readable (no upside-down code)
   const leftward = Math.cos(ang) < 0;
-  if (leftward) ctx.scale(1, -1);
-  ctx.rotate(swing);
-  ctx.translate(-Math.round(recoil), 0);
-  ctx.drawImage(ws.canvas, -ws.px, -ws.py, ws.canvas.width / ws.res, ws.canvas.height / ws.res);
-  // tip glow for staff/laser, muzzle flash on shot
-  if (kind === "staff" || kind === "laser") {
+  const wv = leftward ? weaponSprite(L, kind, RES, true) : ws;
+  const base = leftward ? ang - Math.PI : ang;
+  const sw = leftward ? -swing : swing;
+  const rec = (leftward ? 1 : -1) * Math.round(recoil);
+  ctx.rotate(base + sw);
+  ctx.translate(rec, 0);
+  ctx.drawImage(wv.canvas, -wv.px, -wv.py, wv.canvas.width / wv.res, wv.canvas.height / wv.res);
+  if (kind === "blade" && Math.floor(t * 2.5 + m.phase) % 2 === 0) {
+    // the blade is a text selection: its caret blinks past the tip
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(wv.tipX + (leftward ? -2 : 1), wv.tipY - 4, 1, 8);
+  }
+  if (kind === "laser") {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(t * 6 + m.phase * 9);
+    ctx.globalAlpha = 0.3 + 0.15 * Math.sin(t * 6 + m.phase * 9);
     ctx.fillStyle = L.c.accent;
     ctx.beginPath();
-    ctx.arc(ws.tipX - 1, ws.tipY, kind === "staff" ? 4 : 2, 0, Math.PI * 2);
+    ctx.arc(wv.tipX, wv.tipY, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
   if (kind !== "blade" && since < 0.07) {
-    ctx.translate(ws.tipX, ws.tipY);
+    ctx.translate(wv.tipX, wv.tipY);
+    if (leftward) ctx.scale(-1, 1);
     drawMuzzle(ctx, L, kind, 1 - since / 0.07);
   }
   ctx.restore();
-  // muzzle position in world space (same transform chain as above)
-  const leftK = leftward ? -1 : 1;
-  const px0 = ws.tipX - Math.round(recoil), py0 = ws.tipY;
-  const p1x = px0 * Math.cos(swing) - py0 * Math.sin(swing), p1y = (px0 * Math.sin(swing) + py0 * Math.cos(swing)) * leftK;
-  const tx = hx + p1x * Math.cos(ang) - p1y * Math.sin(ang), ty = hy + p1x * Math.sin(ang) + p1y * Math.cos(ang);
+  // muzzle position (same transform chain as above)
+  const a2 = base + sw, px0 = wv.tipX + rec, py0 = wv.tipY;
+  const tx = hx + px0 * Math.cos(a2) - py0 * Math.sin(a2), ty = hy + px0 * Math.sin(a2) + py0 * Math.cos(a2);
   if (kind === "staff") {
-    // the USB staff's payload: an upright glowing lambda floating off the tip
+    // the staff's head: a big bold upright lambda, glowing
+    const lam = boldGlyph("λ", L.c.accentL, L.c.outline, "#ffffff");
+    const lx = tx + Math.cos(ang) * 4, ly = ty + Math.sin(ang) * 4 + Math.round(Math.sin(t * 4) * 0.8);
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.3 + 0.12 * Math.sin(t * 5);
-    ctx.fillStyle = L.c.accentL;
-    filledEllipse(ctx, tx + Math.cos(ang) * 3, ty + Math.sin(ang) * 3 - 3, 3, 3);
+    ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 5);
+    ctx.fillStyle = L.c.accent;
+    filledEllipse(ctx, lx, ly, 5, 5);
     ctx.restore();
-    drawText(ctx, "λ", tx + Math.cos(ang) * 3, ty + Math.sin(ang) * 3 - 5 + Math.round(Math.sin(t * 4)), "#ffffff", "center", "");
+    ctx.drawImage(lam, Math.round(lx - lam.width / 2), Math.round(ly - lam.height / 2));
   }
   return [tx, ty];
 }
@@ -784,12 +796,21 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   // --- weapon-as-code text: muzzle word pops on firing; impact word sparks where your shots land
   const wf = p.kit.code?.weapon;
   const flavor = WEAPON_FLAVOR[p.kit.weapon] ?? WEAPON_FLAVOR.blaster;
-  if (t - m.shotT < 0.02 && t - m.muzzleT > (isYou ? 1.6 : 3.2)) {
-    m.muzzleT = t;
-    const word = (wf?.muzzle || flavor.muzzle).trim();
-    const fx = p.facing[0] || flip, fy = p.facing[1] || 0;
-    if (word && word.length <= 6) spawn(m, 1, () => ({ x: WX(tip[0] + fx * 10), y: WY(tip[1] + fy * 8 - 4), vx: fx * 14, vy: -10, g: 0, life: 0.32, max: 0.32,
-      col: isYou ? L.c.accentL : rgba(L.c.accentL, 0.55), sz: 1, glyph: word, front: true }));
+  // the muzzle word flashes big, right at the code-shaped barrel (you: every shot; others: smaller, sometimes)
+  if (t - m.shotT < 0.02 && (isYou || t - m.muzzleT > 1.6)) m.muzzleT = t;
+  const mk = 1 - (t - m.muzzleT) / 0.22;
+  if (mk > 0 && p.alive) {
+    const word = (wf?.muzzle || flavor.muzzle).trim().slice(0, 8);
+    const fl = Math.hypot(p.facing[0], p.facing[1]) || 1;
+    const fx = p.facing[0] / fl || flip, fy = p.facing[1] / fl;
+    const big = isYou ? 2 : 1;
+    const half = (textWidth(word.toUpperCase()) * big) / 2;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, mk * 1.8) * (isYou ? 1 : 0.7);
+    ctx.translate(Math.round(tip[0] + fx * (half + 4)), Math.round(tip[1] + fy * (half + 4) - big * 2));
+    ctx.scale(big, big);
+    drawText(ctx, word, 0, -2, mk > 0.7 ? "#ffffff" : L.c.accentL);
+    ctx.restore();
   }
   const hits = pendingImpacts.get(p.id);
   if (hits?.length) {

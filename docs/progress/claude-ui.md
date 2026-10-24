@@ -1,4 +1,29 @@
-DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## Leave / new room — done (DONE (leave))
+- Lobby header `⏏ leave room` (`leave-room`): owner gets a 1-tap confirm "you own this room — ownership passes to <next human>. tap again to leave"; projector shows `⏏ end class` + `new room`.
+- Game: `☰ menu` (`game-menu-open`; deck on phones, left gutter otherwise; Esc toggles) → "leave the fight?" `⏏ leave the fight` / `▶ resume` (projector: end class / new room). Touch joystick hidden while the menu is open.
+- Autopsy (battle + edu): `[ new room ]` and `[ leave ]` next to REMATCH (projector: `[ end class ]`).
+- `app.leave({newRoom?})`: sends `{t:"leave"}`, deletes this room's player + screen resume tokens, remembers your repo (`kaiju.lastRepo`), closes after 150ms, goes to `/` — or POSTs /api/room (edu teacher → ?mode=edu) and enters `/r/<NEW>` (`?screen=1` kept). Name kept; the new lobby offers `↻ <last repo> again` (`reuse-repo`).
+- Verified on 5175: leave → `/`, tokens cleared; confirm/menu/autopsy buttons screenshotted.
+
+## Genesis mount — done (claude-genesis public API only)
+- `client/app/genesisMount.ts`: one mount per surface; streams `progress` while analyzing, hands `genesis + kit` over when ready, restarts only when repo/mode changes.
+- Lobby hero card: live compile while analyzing → reveal → idle hero; tap to replay ("▶ watch your repo compile into your hero"). Boss panel: the compile replaces the static silhouette. Projector (?screen=1): full-screen boss compile while it is analyzed, closes 5s after it finishes (✕ close).
+- Pre-fight intro: condensed (~4s) boss compile inside the intro card (intro extended to ≥4.3s); edu intro compiles your own hero. Phone: thumb buttons hidden until the intro is gone.
+- Edu: `mode: "edu"` → genesis's narrated/report-card variant (it calls claude-edu's eduGenesisNotes itself).
+
+## Edu mount — done
+- LessonFeed + QuizOverlay per variant (phone deck / desktop gutter + arena top / projector lower-third), variant switches on layout change; engine kept on `app.eduEngine` for createClassReport (glossary ✓ + quiz scores). Lobby report cards, projector roster, mode copy, landing hint. Battle autopsy: createArchitectureReport (what you fought, your repo vs the boss, where this project needs help) when the boss genesis exists.
+
+## Adopt an Organ (social impact) — done
+- Battle autopsy section (`adopt-organ`): fragile organ (fewest maintainers) → else the organ with the fewest maintainers ("only 2 people maintain this") → else the most-damaged; issues: organ's → `boss.repoIssues` → the repo's good-first-issues page. Always a QR (/api/qr) to the first issue / issues page; huge and FIRST on the projector, after the header on phones/desktop. Bus factor line when present.
+
+## GitHub picker
+- Repos sorted by stars (desc, stable), `★ 12.3k` first column in yellow; filter kept.
+
+## Notes for coordinator
+- The Vite dev watcher on this filesystem intermittently misses edits (5175 served a stale autopsy.ts/lobby.ts/style.css for minutes until another edit; my private Vite instances too). If a change "doesn't show", re-save the file or restart the dev server.
 
 ## Edu = classroom PvP (claude-ui part) — done (real PvP sim pending codex-sim; verified with ?mock=edu|edu-match|edu-autopsy)
 - Null boss everywhere (game/hud/autopsy/mock); arena theme falls back to "notebook" with a room-seeded layout.

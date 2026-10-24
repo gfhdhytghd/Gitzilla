@@ -7,6 +7,7 @@ import type {
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import type { Conn, ConnOpts, ConnStatus } from "./net";
 import { hash32, mulberry32, normalizeRepo } from "./util";
+import { buildGenesisLocal } from "../genesis";
 
 interface SimMod {
   playerKitFromProfile(p: RepoProfile): PlayerKit;
@@ -94,6 +95,13 @@ export function createMockConn(opts: ConnOpts): Conn {
     }
   })();
   const profile = (slug: string) => profiles.get(slug) ?? fakeProfile(slug);
+  const safeGenesis = (slug: string, kit: PlayerKit | BossKit) => {
+    try {
+      return buildGenesisLocal(profile(slug), kit);
+    } catch {
+      return undefined;
+    }
+  };
   const pkit0 = (slug: string) => { try { return sim ? sim.playerKitFromProfile(profile(slug)) : fakePlayerKit(profile(slug)); } catch { return fakePlayerKit(profile(slug)); } };
   const bkit0 = (slug: string, n: number) => { try { return sim ? sim.bossKitFromProfile(profile(slug), n) : fakeBossKit(profile(slug), n); } catch { return fakeBossKit(profile(slug), n); } };
   // until analysis produces CodeDNA, give mock kits some plausible code so the UI can be exercised
@@ -139,7 +147,10 @@ export function createMockConn(opts: ConnOpts): Conn {
     setTimeout(async () => {
       await ready;
       if (repo.includes("error")) Object.assign(pl, { status: "error", error: "404: repo not found" });
-      else Object.assign(pl, { status: "ready", kit: pkit(repo) });
+      else {
+        const kit = pkit(repo);
+        Object.assign(pl, { status: "ready", kit, genesis: safeGenesis(repo, kit) });
+      }
       pushLobby();
     }, delay);
   };
@@ -148,7 +159,8 @@ export function createMockConn(opts: ConnOpts): Conn {
     pushLobby();
     setTimeout(async () => {
       await ready;
-      lobby.boss = { repo, status: "ready", kit: bkit(repo, lobby.players.length) };
+      const kit = bkit(repo, lobby.players.length);
+      lobby.boss = { repo, status: "ready", kit, genesis: safeGenesis(repo, kit) };
       pushLobby();
     }, delay);
   };
@@ -246,7 +258,8 @@ export function createMockConn(opts: ConnOpts): Conn {
             await ready;
             if (opts.role === "player") Object.assign(lobby.players[0], { repo: "golang/go", status: "ready", kit: pkit("golang/go") });
             for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo) });
-            lobby.boss = { repo: "lodash/lodash", status: "ready", kit: bkit("lodash/lodash", lobby.players.length) };
+            const bk = bkit("lodash/lodash", lobby.players.length);
+            lobby.boss = { repo: "lodash/lodash", status: "ready", kit: bk, genesis: safeGenesis("lodash/lodash", bk) };
             if (mode === "autopsy") {
               lobby.phase = "autopsy";
               pushLobby();
@@ -335,7 +348,14 @@ function fakeAutopsy(lobby: LobbyState): Autopsy {
   const kit = lobby.boss.kit!;
   return {
     mode: "battle", victory: true, duration: 163.4,
-    boss: { repo: kit.repo, heart: "src/core/index.ts", limbs: kit.limbs.map((l, i) => ({ component: l.component, broken: i % 2 === 0, damageTaken: 1200 - i * 170 })) },
+    boss: {
+      repo: kit.repo, heart: "src/core/index.ts", busFactor: 2,
+      limbs: kit.limbs.map((l, i) => ({ component: l.component, broken: i % 2 === 0, damageTaken: 1200 - i * 170, maintainers: [5, 2, 7, 3, 4][i % 5], fragile: false, issues: [] })),
+      repoIssues: [
+        { number: 5812, title: "docs: clarify _.debounce leading/trailing", url: `https://github.com/${kit.repo}/issues/5812`, labels: ["good first issue"] },
+        { number: 5790, title: "test: cover _.get with symbol keys", url: `https://github.com/${kit.repo}/issues/5790`, labels: ["help wanted"] },
+      ],
+    },
     players: lobby.players.filter((p) => p.kit).map((p, i) => ({ id: p.id, name: p.name, repo: p.repo!, stats: { damage: 2400 - i * 400, bestCombo: 4 - i, limbsBroken: 2 - (i % 2), revives: i % 3, killingBlow: i === 0 } })),
     mvp: lobby.players[0].id,
   };

@@ -1,7 +1,7 @@
 {
   "slug": "vuejs/core",
   "description": "🖖 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.",
-  "stars": 54802,
+  "stars": 54804,
   "primaryLanguage": "TypeScript",
   "languages": {
     "TypeScript": 4526123,
@@ -670,7 +670,7 @@
     "avgFunctionLength": 12.6,
     "hasTestDir": true
   },
-  "repoIssues": [],
   "vulns": [],
+  "repoIssues": [],
   "busFactor": 1
 }

@@ -37,13 +37,13 @@
       "loc": 727,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 3,
       "topMaintainers": [
         "eliben",
         "danp",
         "ianlancetaylor"
-      ],
-      "issues": []
+      ]
     },
     {
       "name": "gotypes",
@@ -51,13 +51,13 @@
       "loc": 723,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 8,
       "topMaintainers": [
         "adonovan",
         "jba",
         "AlekSi"
-      ],
-      "issues": []
+      ]
     },
     {
       "name": "internal",
@@ -65,13 +65,13 @@
       "loc": 262,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 4,
       "topMaintainers": [
         "findleyr",
         "jba",
         "bitlux"
-      ],
-      "issues": []
+      ]
     },
     {
       "name": "outyet",
@@ -79,13 +79,13 @@
       "loc": 184,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 3,
       "topMaintainers": [
         "adg",
         "rsc",
         "broady"
-      ],
-      "issues": []
+      ]
     },
     {
       "name": "misc",
@@ -101,13 +101,13 @@
       "loc": 107,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 3,
       "topMaintainers": [
         "rsc",
         "adg",
         "suzmue"
-      ],
-      "issues": []
+      ]
     },
     {
       "name": "template",
@@ -115,12 +115,12 @@
       "loc": 74,
       "fanIn": 0,
       "fanOut": 0,
+      "issues": [],
       "maintainers": 2,
       "topMaintainers": [
         "adg",
         "rsc"
-      ],
-      "issues": []
+      ]
     }
   ],
   "heart": "hello/reverse/reverse.go",
@@ -468,101 +468,173 @@
     "avgFunctionLength": 20.7,
     "hasTestDir": true
   },
-  "busFactor": 3,
   "repoIssues": [],
+  "busFactor": 3,
   "vulns": [
     {
       "id": "GO-2026-6179",
       "pkg": "golang.org/x/mod",
       "ecosystem": "Go",
+      "version": "v0.25.0",
+      "source": "go.mod",
       "summary": "Fix transparency log tile verification bypass in golang.org/x/mod/sumdb/tlog",
-      "fixed": "0.40.0"
+      "fixed": "0.40.0",
+      "aliases": [
+        "BIT-golang-2026-56865",
+        "CVE-2026-56865"
+      ]
     },
     {
       "id": "GO-2026-6180",
       "pkg": "golang.org/x/mod",
       "ecosystem": "Go",
+      "version": "v0.25.0",
+      "source": "go.mod",
       "summary": "Ignore unrelated, unauthenticated hashes in Lookup in golang.org/x/mod/sumdb",
-      "fixed": "0.40.0"
+      "fixed": "0.40.0",
+      "aliases": [
+        "BIT-golang-2026-56864",
+        "CVE-2026-56864"
+      ]
     },
     {
       "id": "GHSA-6g7g-w4f8-9c9x",
       "pkg": "github.com/buger/jsonparser",
       "ecosystem": "Go",
+      "version": "v1.1.1",
+      "source": "ragserver/ragserver-genkit/go.mod",
       "summary": "github.com/buger/jsonparser has a denial of service vulnerability",
       "fixed": "1.1.2",
-      "component": "ragserver"
-    },
-    {
-      "id": "GO-2026-4514",
-      "pkg": "github.com/buger/jsonparser",
-      "ecosystem": "Go",
-      "summary": "Denial of service in github.com/buger/jsonparser",
-      "fixed": "1.1.2",
+      "aliases": [
+        "CVE-2026-32285",
+        "GO-2026-4514"
+      ],
       "component": "ragserver"
     },
     {
       "id": "GHSA-7v39-2hx7-7c43",
       "pkg": "github.com/weaviate/weaviate",
       "ecosystem": "Go",
+      "version": "v1.26.0-rc.1",
+      "source": "ragserver/ragserver-genkit/go.mod",
       "summary": "Weaviate OSS has a Path Traversal Vulnerability via Backup ZipSlip",
       "fixed": "1.30.20",
+      "aliases": [
+        "CVE-2025-67818",
+        "GO-2025-4237"
+      ],
       "component": "ragserver"
     },
     {
       "id": "GHSA-jqpm-wf57-qx5c",
       "pkg": "github.com/weaviate/weaviate",
       "ecosystem": "Go",
+      "version": "v1.26.0-rc.1",
+      "source": "ragserver/ragserver-genkit/go.mod",
       "summary": "Weaviate has an Improper Authorization issue",
       "fixed": "1.38.0-rc.0",
-      "component": "ragserver"
-    },
-    {
-      "id": "GO-2025-4237",
-      "pkg": "github.com/weaviate/weaviate",
-      "ecosystem": "Go",
-      "summary": "Weaviate OSS has a Path Traversal Vulnerability via Backup ZipSlip in github.com/weaviate/weaviate",
-      "fixed": "1.30.20",
-      "component": "ragserver"
-    },
-    {
-      "id": "GO-2026-6140",
-      "pkg": "github.com/weaviate/weaviate",
-      "ecosystem": "Go",
-      "summary": "Weaviate has an Improper Authorization issue in github.com/weaviate/weaviate",
-      "fixed": "1.38.0-rc.0",
+      "aliases": [
+        "CVE-2026-11500",
+        "GO-2026-6140"
+      ],
       "component": "ragserver"
     },
     {
       "id": "GHSA-cp6g-7hqx-qxhp",
       "pkg": "go.mongodb.org/mongo-driver",
       "ecosystem": "Go",
+      "version": "v1.14.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
       "summary": "mongo-go-driver has Heap Out-of-Bounds Read in GSSAPI Error Handling",
       "fixed": "1.17.7",
-      "component": "ragserver"
-    },
-    {
-      "id": "GO-2026-5327",
-      "pkg": "go.mongodb.org/mongo-driver",
-      "ecosystem": "Go",
-      "summary": "Mongo-go-driver: Heap Out-of-Bounds Read in GSSAPI Error Handling in go.mongodb.org/mongo-driver",
-      "fixed": "1.17.7",
+      "aliases": [
+        "CVE-2026-2303",
+        "GO-2026-5327"
+      ],
       "component": "ragserver"
     },
     {
       "id": "GHSA-8wmf-6v46-5gfg",
       "pkg": "go.opentelemetry.io/otel/sdk",
       "ecosystem": "Go",
+      "version": "v1.26.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
       "summary": "OpenTelemetry-Go: Exporter config logging may leak endpoint URLs in info logs",
       "fixed": "1.45.0",
+      "aliases": [
+        "CVE-2026-81870",
+        "GO-2026-6505"
+      ],
       "component": "ragserver"
     },
     {
       "id": "GHSA-9h8m-3fm2-qjrq",
       "pkg": "go.opentelemetry.io/otel/sdk",
       "ecosystem": "Go",
+      "version": "v1.26.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
       "summary": "OpenTelemetry Go SDK Vulnerable to Arbitrary Code Execution via PATH Hijacking",
       "fixed": "1.40.0",
+      "aliases": [
+        "CVE-2026-24051",
+        "GO-2026-4394"
+      ],
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-hfvc-g4fc-pqhx",
+      "pkg": "go.opentelemetry.io/otel/sdk",
+      "ecosystem": "Go",
+      "version": "v1.26.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
+      "summary": "opentelemetry-go: BSD kenv command not using absolute path enables PATH hijacking",
+      "fixed": "1.43.0",
+      "aliases": [
+        "CVE-2026-39883",
+        "GO-2026-5426"
+      ],
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-p9f8-wvj8-2fg8",
+      "pkg": "go.opentelemetry.io/otel/sdk",
+      "ecosystem": "Go",
+      "version": "v1.26.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
+      "summary": "OpenTelemetry-Go: UTF-8 replacement rune bypasses attribute length truncation",
+      "fixed": "1.33.0",
+      "aliases": [
+        "CVE-2026-81869",
+        "GO-2026-6616"
+      ],
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-45gg-vh54-h5m9",
+      "pkg": "golang.org/x/crypto",
+      "ecosystem": "Go",
+      "version": "v0.25.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
+      "summary": "golang.org/x/crypto vulnerable to invoking bypass of certificate restrictions",
+      "fixed": "0.52.0",
+      "aliases": [
+        "CVE-2026-39828",
+        "GO-2026-5014"
+      ],
+      "component": "ragserver"
+    },
+    {
+      "id": "GHSA-5cgq-3rg8-m6cv",
+      "pkg": "golang.org/x/crypto",
+      "ecosystem": "Go",
+      "version": "v0.25.0",
+      "source": "ragserver/ragserver-genkit/go.mod",
+      "summary": "golang.org/x/crypto vulnerable to auth bypass via unenforced @revoked status",
+      "fixed": "0.52.0",
+      "aliases": [
+        "CVE-2026-42508",
+        "GO-2026-5021"
+      ],
       "component": "ragserver"
     }
   ]

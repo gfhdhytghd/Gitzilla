@@ -67,6 +67,15 @@ describe('public repo analysis API', () => {
     expect(syntheticProfile('demo/offline').dna?.identifiers).toEqual([]);
     expect(syntheticProfile('demo/offline').dna?.longestFunction).toBeNull();
   });
+  it('refreshes old advisory caches and strips unverified claims if the refresh fails', async () => {
+    const { analyzeRepo } = await import('./index.ts');
+    mocks.readFile.mockResolvedValue(JSON.stringify({ ...profile, vulns: [{ id: 'OLD', pkg: 'demo', ecosystem: 'npm', summary: 'Unverified' }] }));
+    mocks.stat.mockResolvedValue({ mtimeMs: Date.now() });
+    mocks.github.mockRejectedValue(new Error('offline'));
+    const result = await analyzeRepo('demo/project');
+    expect(mocks.github).toHaveBeenCalledOnce();
+    expect(result.fallback).toBe(true); expect(result.vulns).toEqual([]);
+  });
   it('uses stale real cache on network failure and marks that response as fallback', async () => {
     const { analyzeRepo } = await import('./index.ts');
     mocks.readFile.mockResolvedValue(JSON.stringify(profile)); mocks.stat.mockResolvedValue({ mtimeMs: Date.now() - 2 * 86_400_000 });

@@ -375,6 +375,46 @@ function pvp() {
   requestAnimationFrame(frame);
 }
 
+// all seven weapon kinds firing their code projectiles (check readability at portrait zoom with &portrait=1&res1=1)
+function bulletsShow() {
+  const scale = Number(q.get("scale") ?? 3);
+  const ctx = makeStage(scale);
+  const KINDS = ["blaster", "smg", "shotgun", "cannon", "staff", "laser", "blade"] as const;
+  const ps = KINDS.map((kind, k) => {
+    const base = fakePlayer(k % 4, 30, 40 + k * 34);
+    const kit: PlayerKit = { ...base.kit, weapon: kind, code: q.get("real") ? base.kit.code : undefined };
+    return { ...base, id: "w" + k, name: kind, kit };
+  });
+  let bullets: Bullet[] = [];
+  let id = 1, last = performance.now() / 1000;
+  function frame() {
+    const time = performance.now() / 1000;
+    const dt = Math.min(0.05, time - last); last = time;
+    const ev: GameEvent[] = [];
+    ps.forEach((p, k) => {
+      if (Math.random() < (p.kit.weapon === "smg" || p.kit.weapon === "laser" ? 0.12 : 0.04)) {
+        const sp = p.kit.weapon === "laser" ? 260 : p.kit.weapon === "cannon" ? 70 : 110;
+        const spread = p.kit.weapon === "shotgun" ? [-0.25, 0, 0.25] : [0];
+        for (const a of spread) bullets.push({ id: id++, owner: p.id, kind: p.kit.weapon, x: p.x + 10, y: p.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 3 });
+      }
+    });
+    bullets = bullets.filter((b) => {
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.x > 200 && Math.random() < 0.08) { ev.push({ type: "hit", target: "boss", amount: 5, x: b.x, y: b.y, source: b.owner } as GameEvent); return false; }
+      return b.x < 260;
+    });
+    ctx.setTransform(PORTRAIT && RES1 ? 1 : scale, 0, 0, PORTRAIT && RES1 ? 1 : scale, 0, 0);
+    drawArenaBackground(ctx, (q.get("theme") as ArenaTheme) ?? "terminal", 3, time);
+    trackPlayers(ps);
+    ps.forEach((p) => (drawPlayerMod ? drawPlayerMod(ctx, p, time, false) : stubPlayer(ctx, p)));
+    drawBullets(ctx, bullets, time);
+    drawEvents(ctx, ev, time);
+    drawPostFx(ctx, time, 0);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 function bodies() {
   const wrap = document.getElementById("wrap")!;
   const BODIES = ["blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"] as const;
@@ -398,6 +438,7 @@ nav();
 if (mode === "bodies") bodies();
 else if (mode === "fx") fxSeq();
 else if (mode === "pvp") pvp();
+else if (mode === "bullets") bulletsShow();
 else if (mode === "grid") grid();
 else if (mode === "portraits") portraits();
 else live();

@@ -84,6 +84,13 @@ export const store = {
       return null;
     }
   },
+  del(k: string) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* private mode */
+    }
+  },
   set(k: string, v: string) {
     try {
       localStorage.setItem(k, v);
