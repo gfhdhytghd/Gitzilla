@@ -1,3 +1,5 @@
+<p align="center"><img src="brand/gitzilla-lockup.svg" alt="Gitzilla" width="720"></p>
+
 # Gitzilla
 
 > Your GitHub repository is a living monster. Now make it fight.
