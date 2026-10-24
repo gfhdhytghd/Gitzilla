@@ -30,17 +30,23 @@ describe('Genesis fallback stories', () => {
       expect(g.sampleFiles.every(path => paths.includes(path))).toBe(true);
       expect(g.snippets.every(s => [...(p.dna?.heartLines ?? []), ...(p.dna?.snippets.map(s => s.code) ?? [])].map(line => line.trim()).includes(s))).toBe(true);
       expect(g.trace.every(step => step.from && step.to)).toBe(true);
+      for (const step of g.trace) {
+        expect(step.from.length).toBeLessThanOrEqual(40);
+        expect(step.to.length).toBeLessThanOrEqual(40);
+        expect(`${step.from} ${step.to}`).not.toMatch(/seed|weight=|shape=|>=|<=|#[0-9a-f]{6}\b/i);
+      }
       expect(g.trace.at(-1)?.part).toBe('name');
     }
-    expect(h.trace.slice(0, 4).map(t => t.part)).toEqual(['class', 'weapon', 'palette', 'skill']);
-    expect(h.trace.find(t => t.part === 'weapon')?.to).toContain(hero.weapon);
+    expect(h.trace.slice(0, 4).map(t => t.part)).toEqual(['weapon', 'skill', 'glyphs', 'name']);
+    expect(b.trace.slice(0, 4).map(t => t.part)).toEqual(['limb', 'heart', boss.limbs.some(l => l.weakPoint) ? 'weakpoint' : 'eyes', 'attack']);
+    expect(h.trace.find(t => t.part === 'weapon')?.to).toBe(hero.code?.weapon?.name ?? hero.weapon);
     expect(h.trace.find(t => t.part === 'skill')?.to).toBe(`skill: ${hero.skill}`);
     expect(h.budget.reduce((s, b) => s + b.value, 0)).toBeCloseTo(5);
     expect(b.budget.reduce((s, b) => s + b.value, 0)).toBeCloseTo(100);
     expect(b.trace.filter(t => t.part === 'attack').map(t => t.ref)).toEqual(boss.attacks.map(a => a.id));
     expect(b.trace.filter(t => t.part === 'limb' && t.ref !== 'dependencies').map(t => t.ref)).toEqual(boss.limbs.map(l => l.id));
     for (const limb of boss.limbs) {
-      expect(b.trace.find(t => t.part === 'weakpoint' && t.ref === limb.id)?.to).toBe(limb.weakPoint ? 'red weak point; 1.5x damage' : 'normal limb; no cycle bonus');
+      expect(b.trace.find(t => t.part === 'weakpoint' && t.ref === limb.id)?.to).toBe(limb.weakPoint ? 'Glowing weak point · 1.5× damage' : 'Armored limb');
     }
     expect(buildGenesis(p, hero, 'hero')).toEqual(h);
     expect(JSON.stringify(p)).toBe(before); expect(JSON.stringify(hero)).toBe(heroBefore); expect(JSON.stringify(boss)).toBe(bossBefore);
@@ -65,12 +71,31 @@ describe('Genesis fallback stories', () => {
     expect(b.budget).toEqual(buildGenesis(p, baseBoss, 'boss').budget);
   });
 
+  it('shows human numbers and keeps each transformation readable on phones', () => {
+    const p = structuredClone(profiles[0]);
+    p.primaryLanguage = 'Rust'; p.languages = { Rust: 9500, Python: 500 };
+    p.components[0].loc = 12485; p.heart = 'src/ignore/gitignore.rs'; p.heartFanIn = 41; p.cycles = [];
+    const hero = buildGenesis(p, playerKitFromProfile(p), 'hero');
+    const kit = bossKitFromProfile(p, 4); kit.limbs[0].maxHp = 1703;
+    const design = fallbackBoss(p, kit); design.limbNames[kit.limbs[0].id] = 'Core Claw';
+    const boss = buildGenesis(p, applyBossDesign(kit, design), 'boss');
+    expect(hero.trace[0]).toMatchObject({ from: 'Rust · 95% of code', to: 'unsafe{} Cannon' });
+    expect(boss.trace[0]).toMatchObject({ from: `${p.components[0].name} · 12,485 LOC`, to: 'Core Claw · 1,703 HP' });
+    expect(boss.trace[1]).toMatchObject({ from: '0 cycles · heart fan-in 41', to: 'heart: gitignore.rs' });
+    expect(boss.trace.slice(0, 4).map(t => t.part)).toEqual(['limb', 'heart', 'eyes', 'attack']);
+    for (const profile of profiles) {
+      const base = bossKitFromProfile(profile, 4);
+      const g = buildGenesis(profile, applyBossDesign(base, fallbackBoss(profile, base)), 'boss');
+      expect(g.trace.every(t => t.from.length <= 40 && t.to.length <= 40)).toBe(true);
+    }
+  });
+
   it('handles absent DNA/tree without inventing files, functions or source', () => {
     const p = structuredClone(profiles[0]); delete p.dna; delete p.tree;
     const h = buildGenesis(p, playerKitFromProfile(p), 'hero');
     expect(h.sampleFiles).toEqual([p.heart]); expect(h.snippets).toEqual([]);
     expect(h.metrics.functions).toBe(0); expect(h.metrics.todos).toBe(0);
-    expect(h.trace.find(t => t.part === 'glyphs')?.from).toContain('no extracted DNA');
+    expect(h.trace.find(t => t.part === 'glyphs')?.from).toBe(`${p.primaryLanguage} syntax`);
     expect(h.trace.some(t => t.part === 'cape')).toBe(false);
   });
 
@@ -110,10 +135,14 @@ describe('Genesis fallback stories', () => {
     for (const heart of ['src/0/heart.ts', 'elsewhere.ts']) {
       p.heart = heart;
       const kit = bossKitFromProfile(p, 4), g = buildGenesis(p, kit, 'boss');
-      for (const a of kit.attacks) { kinds.add(a.kind); expect(g.trace.find(t => t.ref === a.id)?.to).toContain(a.kind); }
-      expect(g.trace.find(t => t.ref === '2-summon-0')?.from).toContain('files 40 >=35');
-      expect(g.trace.find(t => t.ref === '3-fan-0')?.from).toContain('fan-out 5 >=4');
-      expect(g.trace.find(t => t.ref === '1-laser-0')?.from).toContain('depth 5 >=4');
+      for (const a of kit.attacks) {
+        kinds.add(a.kind);
+        const text = g.trace.find(t => t.ref === a.id)?.to;
+        expect(a.name.startsWith(text!.replace(/…$/, ''))).toBe(true);
+      }
+      expect(g.trace.find(t => t.ref === '2-summon-0')?.from).toContain('40 files');
+      expect(g.trace.find(t => t.ref === '3-fan-0')?.from).toContain('5 imports out');
+      expect(g.trace.find(t => t.ref === '1-laser-0')?.from).toContain('5 layers deep');
     }
     expect([...kinds].sort()).toEqual(['cascade', 'charge', 'fan', 'laser', 'ring', 'slam', 'spiral', 'summon']);
   });
@@ -153,7 +182,7 @@ describe('Genesis fallback stories', () => {
     const p = profiles[0];
     const results = [1, 4, 8].map(n => {
       const kit = bossKitFromProfile(p, n), g = buildGenesis(p, kit, 'boss');
-      expect(g.trace.find(t => t.part === 'stats')?.to).toContain(`core HP ${kit.maxHp}`);
+      expect(g.trace.find(t => t.part === 'stats')?.to).toContain(`${kit.maxHp.toLocaleString('en-US')} HP`);
       return g;
     });
     expect(results[0].budget).toEqual(results[1].budget);
