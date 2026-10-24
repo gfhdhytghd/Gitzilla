@@ -29,3 +29,11 @@ The teacher identity remains reserved across disconnects. Settlement waits for p
 ## Not verified
 
 Physical iPhone thermal behavior, a real 30 student class, and authenticated private-repository CI/provider quotas.
+
+## Classroom entry repair
+
+A reported room (`AJYI`) exposed the remaining legacy path: an edu lobby created through the old mode switch, with a player owner and no teacher or lesson. The old lobby still carried the PvP explanation.
+
+All edu client routes now use the cooperative classroom screen. A legacy player-owned room offers an explicit same-room teacher link. The battle lobby’s classroom button opens a dedicated teacher classroom. Old PvP prose is removed, and production rejects legacy `start` requests for edu rooms; the old simulation is available only through an explicit compatibility-test option. Existing room data is preserved.
+
+Validation: 741 tests passed, 8 skipped; typecheck and production build passed. The classroom browser smoke also passed same-room teacher entry from an old edu room and the battle-lobby classroom button, in addition to the 30-student cooperative flow.

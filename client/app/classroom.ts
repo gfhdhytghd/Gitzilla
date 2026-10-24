@@ -48,7 +48,8 @@ export function createClassroom(app: AppCtx): Screen {
     clock, button('Leave', 'classroom-leave', () => { if (confirm(teacher() ? 'End this lesson and leave?' : 'Leave this classroom?')) app.leave(); }));
   const taskTitle = h('h2'), taskText = h('p.cr-instructions'), stepRail = h('nav.cr-steps', { 'aria-label': 'Lesson steps' });
   const notice = h('div.cr-notice', { role: 'status' });
-  const task = h('section.cr-task', null, stepRail, taskTitle, taskText, progress, notice);
+  const teacherEntry = h('a.btn.btn-primary', { href: `${location.pathname}?screen=1`, 'data-testid': 'classroom-open-teacher' }, 'Open teacher screen for this room');
+  const task = h('section.cr-task', null, stepRail, taskTitle, taskText, progress, notice, teacherEntry);
   const controls = h('div.cr-controls', { 'data-testid': 'classroom-controls' });
   const rosterList = h('div.cr-roster-list', { 'data-testid': 'classroom-roster' });
   const roster = h('aside.cr-roster', null, h('div.cr-roster-heading', null, h('h2', null, 'Class ranking'), h('small', null, 'Current task · score /100')), rosterList);
@@ -186,6 +187,7 @@ export function createClassroom(app: AppCtx): Screen {
     state = app.lobby?.classroom; if (state && state.serverTime !== lastServerTime) { clockOffset = state.serverTime - Date.now(); lastServerTime = state.serverTime; }
     const owner = teacher(), screen = app.role === 'screen';
     el.classList.toggle('cr-projector', screen); el.classList.toggle('cr-student-view', !screen);
+    teacherEntry.hidden = !(app.role === 'player' && isOwner(app) && !state);
     editor.hidden = !owner || (!!state && state.phase !== 'setup'); hostBoard.hidden = !screen; studentBoard.hidden = screen;
     // A node belongs to one board at a time; roles are fixed for this page.
     if (screen && review.parentElement !== hostBoard.lastElementChild) hostBoard.lastElementChild!.append(review);

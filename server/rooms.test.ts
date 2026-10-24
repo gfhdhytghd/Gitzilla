@@ -81,7 +81,7 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     });
   });
   const wss = new WebSocketServer({ server, path: '/ws' });
-  const rooms = new RoomServer(wss, services, options);
+  const rooms = new RoomServer(wss, services, { allowLegacyEdu: true, ...options });
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const port = (server.address() as { port: number }).port;
   let closed = false;
@@ -1285,4 +1285,13 @@ describe('cooperative staged classroom protocol', () => {
     const t=await restarted.connect('screen',teacher.welcome.token);t.send({t:'classroomControl',action:'resume'});
     await until(()=>t.messages.find(m=>m.t==='classroom'&&m.state.phase==='coding'));
   });
+});
+
+
+it('rejects legacy PvP start commands in production classroom mode', async () => {
+  const test = await setup(999, {}, { allowLegacyEdu: false }, undefined, 'edu');
+  const teacher = await test.connect('screen');
+  teacher.send({ t: 'start' });
+  await until(() => teacher.messages.find(m => m.t === 'error' && m.message.includes('shared Boss')));
+  expect(teacher.messages.some(m => m.t === 'snapshot')).toBe(false);
 });

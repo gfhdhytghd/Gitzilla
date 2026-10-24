@@ -21,6 +21,7 @@ const rooms=new RoomServer(wss,{
 });
 const vite=await createServer({server:{middlewareMode:true,hmr:{server}},appType:'spa'});
 server.on('request',(req,res)=>{void (async()=>{
+  if(req.method==='POST' && req.url==='/api/room?mode=edu'){res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify({room:rooms.createRoom(undefined,'edu')}));return;}
   if(await handleEduRoute(req,res,new URL(req.url!,'http://localhost'),rooms))return;
   if(req.url?.startsWith('/auth/')){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({authenticated:false}));return;}
   vite.middlewares(req,res);
@@ -71,7 +72,16 @@ try {
   const traffic=await a.evaluate(()=>(window as any).traffic);
   if(traffic.sent.some((m:any)=>m.t==='input'||m.t==='controls')||traffic.received.some((m:any)=>m.t==='snapshot'))throw new Error('Classroom started battle stream');
   if(errors.length)throw new Error(errors.join('\n'));
-  const result={passed:true,students:30,flow:'configure,submit,review,pause,raid,export,retry,newSHA,reconnect,next',phoneWidths:[390,360],battleInputs:0,battleSnapshots:0,browserErrors:errors};
+  const oldRoom=rooms.createRoom(undefined,'edu');
+  const migration=await desktop.newPage();await migration.goto(`${base}/r/${oldRoom}`);
+  await migration.getByTestId('classroom-open-teacher').click();
+  await migration.getByTestId('classroom-plan-editor').waitFor();
+  if((await migration.locator('body').innerText()).includes('most KOs wins'))throw new Error('Old classroom PvP copy remains');
+  const battleRoom=rooms.createRoom(undefined,'battle');const entry=await desktop.newPage();
+  await entry.goto(`${base}/r/${battleRoom}`);await entry.getByTestId('mode-edu').click();
+  await entry.getByTestId('classroom-plan-editor').waitFor();
+  if(new URL(entry.url()).pathname===`/r/${battleRoom}`)throw new Error('Battle classroom entry did not open a teacher room');
+  const result={passed:true,legacyRoomMigration:true,battleClassroomEntry:true,students:30,flow:'configure,submit,review,pause,raid,export,retry,newSHA,reconnect,next',phoneWidths:[390,360],battleInputs:0,battleSnapshots:0,browserErrors:errors};
   writeFileSync(`${out}/result.json`,JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 } finally {
   for(const ws of sockets)ws.close();await browser.close();rooms.close();await vite.close();await new Promise<void>(r=>wss.close(()=>r()));await new Promise<void>(r=>server.close(()=>r()));

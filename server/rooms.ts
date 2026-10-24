@@ -37,6 +37,7 @@ export interface GameServices {
   createMatch(players: { id: string; name: string; kit: PlayerKit }[], boss: BossKit | null, options?: { mode?: GameMode }): Match;
 }
 export interface RoomServerOptions {
+  allowLegacyEdu?: boolean; // Explicit compatibility harness only; never enabled by production.
   persistenceFile?: string; // Main supplies .cache/rooms.json; tests can use isolated files.
   debounceMs?: number;
 }
@@ -458,6 +459,7 @@ export class RoomServer {
       }
       this.broadcastLobby(room);
     } else if (msg.t === 'start') {
+      if (room.mode === 'edu' && !this.options.allowLegacyEdu) throw new Error('Classroom mode now attacks one shared Boss. Refresh and open the teacher screen to publish a lesson.');
       this.start(room);
     } else { throw new Error('Unknown message'); }
   }

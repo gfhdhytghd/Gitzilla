@@ -428,8 +428,8 @@ export function createLobby(app: AppCtx): Screen {
   const eduInfo = h(
     "div.edu-info",
     { hidden: true },
-    h("p", null, "no boss: every student's hero fights everyone else. best of 3 rounds, most KOs wins."),
-    h("p", null, "your hero's stats come from your code quality — tests become armor, modular code becomes speed, circular dependencies become a weakness. check your report card."),
+    h("p", null, "The whole class attacks one shared Boss. Submit code, review feedback, improve, and contribute together."),
+    h("p", null, "Teachers set multi-step coding tasks. Each submitted GitHub commit is scored before the automatic class attack."),
   );
   let changingBoss = false;
   const changeBossLink = h("button.btn-link.change-boss", {
@@ -509,10 +509,18 @@ export function createLobby(app: AppCtx): Screen {
     },
   }, "copy link");
   const ownerBadge = h("span.owner-badge");
-  // game mode: owner toggles boss raid ⇄ classroom PvP (lobby only); others see a badge
+  // Classroom opens a dedicated teacher room; battle rooms keep their existing participants.
   const modeBtn = (m: "battle" | "edu", label: string) =>
-    h("button.mode-btn", { "data-testid": `mode-${m}`, "data-mode": m, onclick: () => app.conn.send({ t: "setMode", mode: m }) }, label);
-  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: PvP where your code quality sets your stats" }, modeBtn("battle", "⚔ boss raid"), modeBtn("edu", "🎓 classroom"));
+    h("button.mode-btn", { "data-testid": `mode-${m}`, "data-mode": m, onclick: async () => {
+      if (m === "battle" || app.mock) { app.conn.send({ t: "setMode", mode: m }); return; }
+      try {
+        const response = await fetch("/api/room?mode=edu", { method: "POST" });
+        if (!response.ok) throw new Error("Could not create a classroom");
+        const { room } = await response.json() as { room: string };
+        location.assign(`/r/${room}?screen=1`);
+      } catch { toast("Could not open the teacher classroom. Please try again.", "err"); }
+    } }, label);
+  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: code together and attack one shared Boss" }, modeBtn("battle", "⚔ boss raid"), modeBtn("edu", "🎓 classroom"));
   // ⏏ leave room (owner: one extra tap that says who inherits the room); projector: end class / new room
   let leaveArmedAt = 0;
   const leaveMsg = h("span.leave-msg", { role: "status" });
@@ -660,7 +668,7 @@ export function createLobby(app: AppCtx): Screen {
     // classroom copy on the projector: the teacher's screen is the host; bots are opponents in PvP
     botLabel.textContent = edu ? "AI classmates (bots): " : "AI teammates: ";
     qrHelp1.textContent = edu ? "students: scan to join · hold your phone upright" : "scan with your phone (hold it upright)";
-    qrHelp2.textContent = edu ? "★ the teacher starts the brawl here" : "★ the first phone to join is the host";
+    qrHelp2.textContent = edu ? "★ the teacher launches the class attack" : "★ the first phone to join is the host";
     classCounter.hidden = !(screen && edu);
     classCounter.textContent = `${lobby.players.filter((p) => !p.bot).length} / 30 joined · ${nReady} ready`;
     const seen = new Set<string>();
@@ -886,14 +894,13 @@ export function createLobby(app: AppCtx): Screen {
     for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = true;
     bossOwnerCtl.style.display = "none";
     changeBossLink.style.display = "none";
-    const ready = lobby.players.filter((p) => p.status === "ready").length;
     startBtn.style.display = owner ? "" : "none";
-    startBtn.disabled = !(owner && ready >= 2);
-    startBtn.textContent = "$ make brawl";
+    startBtn.disabled = true;
+    startBtn.textContent = "Open the teacher classroom";
     if (startArmed()) return;
     startHint.classList.remove("warn");
     startHint.textContent = owner
-      ? ready < 2 ? `need ≥2 ready students (${ready} now) — or add AI teammates` : `${ready} students ready. go.`
+      ? "Refresh to open the cooperative teacher classroom."
       : `waiting for ${lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "the teacher"} to start…`;
   }
 

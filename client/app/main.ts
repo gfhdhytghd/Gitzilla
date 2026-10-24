@@ -156,7 +156,7 @@ function startRoom(room: string, role: Role, name: string) {
 
   function refresh() {
     if (!app.lobby) return;
-    if (app.lobby.mode === "edu" && (app.lobby.classroom || app.lobby.phase === "lobby")) {
+    if (app.lobby.mode === "edu") {
       show("classroom"); screen?.update?.(app); return;
     }
     const ph = app.lobby.phase;
