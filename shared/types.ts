@@ -100,6 +100,15 @@ export interface BossDesign {
   limbNames: Record<string, string>;    // BossLimb.id -> creature-part name, e.g. "Router Claw"
 }
 
+// Edu (classroom PvP): every stat is earned by a real code-quality signal, shown to students as a report card.
+export interface QualityStat {
+  stat: "hp" | "armor" | "speed" | "damage" | "energy" | "regen" | "weakness";
+  value: number;             // the resulting game value
+  grade: "A" | "B" | "C" | "D" | "F";
+  signal: string;            // "tests: 31% of files", "2 circular dependencies", "avg function 14 lines"
+  tip: string;               // how to improve it in real code: "Break the cycle api <-> db to lose the weakness"
+}
+
 // ---------- Kits: what a repo becomes in the game (sim/kits.ts derives) ----------
 
 export type WeaponKind =
@@ -131,6 +140,7 @@ export interface PlayerKit {
   palette: string[];         // 4 hex colors derived from language + seed
   seed: number;
   design?: HeroDesign;       // Gemini look; when present its title/palette override the defaults
+  quality?: QualityStat[];   // edu mode only: stats come from code quality (not equal budget), each with its reason
   code?: {                   // from CodeDNA, cosmetic only
     tokens: string[];        // projectile glyphs come from these (real keywords of the repo's language)
     signature: string;       // signature move name, a real identifier, e.g. "parse_args()"
@@ -279,6 +289,13 @@ export interface Hazard {
   armed: boolean;
 }
 
+export interface PvpState {
+  round: number; rounds: number;            // best-of rounds
+  roundEndsAt: number;                      // match time (s) when the round ends
+  scores: Record<string, { kos: number; downs: number; damage: number; roundWins: number }>;
+  leader: string | null;
+}
+
 export interface Minion { id: number; x: number; y: number; hp: number; kind: string }
 
 export type GameEvent =
@@ -323,8 +340,11 @@ export type MotionProfile = "standard" | "seated" | "tap-only"; // seated = smal
 export interface MatchState {
   t: number;                 // seconds since fight start
   status: "countdown" | "fighting" | "victory" | "defeat";
+  mode: GameMode;
   players: PlayerState[];
-  boss: BossState;
+  boss: BossState | null;    // null in edu (classroom PvP): heroes fight each other
+  heroScale: number;         // 1 in battle; 2 in edu (bigger, higher-detail heroes)
+  pvp: PvpState | null;      // edu only
   bullets: Bullet[];
   hazards: Hazard[];
   minions: Minion[];
@@ -411,11 +431,13 @@ export type ServerMsg =
   | { t: "error"; message: string };
 
 export interface Autopsy {
-  victory: boolean;
+  mode: GameMode;
+  victory: boolean;          // battle: squad beat the boss; edu: always false, read `ranking`
+  ranking?: { id: string; name: string; repo: string; kos: number; damage: number; roundWins: number; quality: QualityStat[] }[];
   duration: number;
   boss: { repo: string; limbs: { component: string; broken: boolean; damageTaken: number;
     fragile?: boolean; maintainers?: number; issues?: AdoptIssue[]; parasites?: KnownVuln[] }[]; heart: string;
-    busFactor?: number; repoIssues?: AdoptIssue[] };
+    busFactor?: number; repoIssues?: AdoptIssue[] } | null;   // null in edu PvP
   players: { id: string; name: string; repo: string; stats: PlayerState["stats"] }[];
   mvp: string | null;
 }
