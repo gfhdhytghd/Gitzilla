@@ -1,3 +1,53 @@
+# EDUCATION MODE = CLASSROOM PvP  (user, latest — SUPERSEDES the boss-based edu design below where they conflict)
+User: "for education mode, I want everyone a hero with larger pixel range and fight with each other, weaker balance
+here, just depend on the repo for how strong each is. For use in CS classrooms."
+
+The lesson IS the balance: better-engineered code makes a stronger hero, and every stat says why.
+- **No boss.** All students' heroes fight each other in a free-for-all arena, best of 3 rounds (~75s each). The teacher
+  (room owner) runs it from the projector (?screen=1) and doesn't have to play. 2–30 players (class size!): arena and
+  spawns scale; >8 players → bigger arena or a camera on the big screen; keep 30 heroes performant.
+- **Bigger, higher-detail heroes** (`heroScale: 2`): edu heroes use a 2x-resolution sprite (~32x40) with room for
+  readable code details (cape snippet legible, emblem, weapon etching). Hitboxes scale; the camera zooms out.
+- **Stats from code quality, not equal budget** (`PlayerKit.quality: QualityStat[]`, each with grade A–F, the real
+  signal, and a concrete tip). Mapping (tune ranges so best/worst differ ~2–2.5x, never one-shot):
+  - armor (`try/catch`) ← test ratio / presence of a test dir
+  - hp ← project size (log LOC, capped so a huge repo isn't a tank) + has README
+  - speed ← modularity (low coupling: avg fan-out, max dependency depth)
+  - damage ← cohesion (functions per file in a healthy range, avg function length; giant functions hurt)
+  - energy/regen ← documentation (comment ratio, README length)
+  - weakness ← circular dependencies (take +X% damage) and TODO/FIXME/HACK density ("tech debt": periodic slow)
+  Students see this as a REPORT CARD in the lobby and the autopsy: "armor C — tests are 6% of files. Tip: add tests for
+  utils/parser.py to raise it."
+- **Rounds & quiz:** between rounds a 15s quiz on the projector + phones about a classmate's repo (e.g. "Whose project has
+  a circular dependency?", "Which file is the heart of @ana's repo?"); right answers → a small buff next round.
+- **Lessons:** lesson cards fire on PvP events with real data ("@ben's hit you for 18 — his `parser` module has 0 cycles:
+  damage grade A"). The autopsy is a class ranking + per-student report card + "biggest improvement tips" + glossary.
+- **Social impact:** "Adopt an Organ" stays in BATTLE mode (real OSS repos). Inclusive motion (#4) applies everywhere.
+  OSV parasites stretch: in edu, show known-vuln dependencies as a report-card line ("dependency X has a known advisory,
+  upgrade to ≥ Y").
+
+## Owners (edu PvP)
+- codex-sim: `playerKitFromProfile(p, { mode: "edu" })` → quality stats + QualityStat[]; PvP match (no boss, FFA,
+  friendly fire = the point, respawn after KO within a round with 2s invuln, rounds/scoring/leader, weakness effects);
+  heroScale 2 hitboxes; arena size scales with player count; quiz between rounds about players' repos; lesson events.
+  Bot sweep sanity: strong-quality repos win more but a C-grade repo still lands KOs. Autopsy ranking.
+- codex-net: edu needs no boss; start allowed with ≥2 ready players (bots allowed); up to 30 players in edu rooms
+  (8 in battle); setMode; pass mode through; Hall separate.
+- codex-repo: the extra quality signals (comment ratio, README length, avg function length, functions/file, test dir
+  presence) into RepoProfile/DNA if not already derivable — add fields via a contract request if needed.
+- codex-genesis: in edu the trace is the report card (signal → stat → grade).
+- claude-player: 2x high-detail hero sprites for heroScale 2 (keep the same identity as the 1x hero).
+- claude-boss: edu arena (no boss): a "classroom/lab" theme variant or the notebook theme, scaled to the player count;
+  PvP bullets readable per player color; null-boss safe everywhere.
+- claude-ui: mode toggle, teacher flow (projector view: QR, roster, live leaderboard, round timer, quiz),
+  student phone view (report card in the lobby, PvP HUD: your KOs/rank/round), autopsy ranking + report cards; handle
+  boss === null everywhere.
+- claude-edu: quality lessons + report card component + quiz overlay for PvP + glossary.
+
+---
+(Earlier boss-based edu design follows; keep the reusable parts: concepts library, lesson feed, quiz overlay,
+social-impact sections.)
+
 # Education mode (user request) — the fight teaches you what you're fighting, with REAL repo data
 Contract (shared/types.ts): GameMode "battle"|"edu", LobbyState.mode, ClientMsg setMode, GameEvent "lesson"
 {concept, ref, facts}, PerkOffer.quiz + PerkPad.answer/correct, perk event `correct`.
