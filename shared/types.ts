@@ -125,6 +125,12 @@ export interface PlayerKit {
     signature: string;       // signature move name, a real identifier, e.g. "parse_args()"
     snippet: string;         // one real line shown on the hero card / weapon skin
     identifiers: string[];
+    weapon?: {               // the weapon as a code construct, e.g. "goroutine SMG" firing "go"/"<-ch"
+      name: string;          // <= 20 chars, shown on the card / HUD
+      projectiles: string[]; // 1–4 short literal glyph strings the bullets are made of
+      muzzle: string;        // flash text when firing, e.g. "fork()", "yield"
+      impact: string;        // hit spark text, e.g. "Err", "0xDEAD", "panic!"
+    };
   };
 }
 
