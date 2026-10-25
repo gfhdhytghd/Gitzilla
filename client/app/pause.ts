@@ -3,6 +3,7 @@
 // "$ fg %1 3·2·1" countdown from resumeAt (server epoch ms; falls back to 3s from receipt if clocks disagree).
 import { setPausedAudio } from "./sound";
 import { h, vibrate } from "./util";
+import { t } from "../i18n";
 
 export type PauseInfo = { by: string; since: number; resumeAt: number | null } | null | undefined;
 
@@ -56,7 +57,11 @@ export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; on
       }
       if (!state) return setShown(false);
       if (state.resumeAt === null || performance.now() < resumeLocalEnd) setShown(true);
-      by.textContent = `[1]+  Stopped    gitzilla    (suspended by ${byName})`;
+      // English source in the DOM; the i18n catalog has an exact row for "you" and a {0} pattern for names.
+      // Generic role names are localized first so the pattern yields a fully translated line.
+      by.textContent = byName === "you"
+        ? "[1]+  Stopped    gitzilla    (suspended by you)"
+        : `[1]+  Stopped    gitzilla    (suspended by ${byName === "the host" || byName === "the teacher" ? t(byName) : byName})`;
       host.hidden = !isHost || state.resumeAt !== null;
       hint.textContent = state.resumeAt !== null ? "" : isHost ? opts.hostHint ?? "everyone is frozen · nothing can hit you" : opts.waitHint ?? "waiting for the host to resume…";
     },

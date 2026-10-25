@@ -10338,5 +10338,100 @@
     "id": "43cab8cdd40e89b0",
     "source": "Required evidence not found in the analyzed archive",
     "context": "i18n-explicit"
+  },
+  {
+    "id": "46124e023603420f",
+    "source": "Sound",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f65ca2fabca96679",
+    "source": "music & sound effects",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "3023955c9f035c58",
+    "source": "⏸ pause",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "89f05e21c81ea6ef",
+    "source": "pause (P / Esc)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "315224b32223c2d6",
+    "source": "⏸ pause match (everyone)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "cbe2e787189dd0ed",
+    "source": "▶ RESUME",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "037509bdea93da2a",
+    "source": "⏏ leave",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "46eb9e6cff6e3071",
+    "source": "end match · new room",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b168a640221ca51a",
+    "source": "everyone is frozen · nothing can hit you",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "e540517cc865318c",
+    "source": "waiting for the host to resume…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "0866b6868d81ca8d",
+    "source": "the raid clock is frozen for the whole class",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "a85c5b4cb6f4daed",
+    "source": "your teacher paused the class attack…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "fe84d9a1c0bc6a0f",
+    "source": "⏸ Pause raid (P)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "399ac54413a80592",
+    "source": "▶ Resume raid",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "75eb47b948665da0",
+    "source": "[1]+  Stopped    gitzilla    (suspended by you)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ff483dc3afa68682",
+    "source": "[1]+  Stopped    gitzilla    (suspended by {0})",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c1f687d470f1bd76",
+    "source": "{0} top-level files",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "11468275661c36e9",
+    "source": "top-level files",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "69dc8996414fad56",
+    "source": "summon one of your own repos as the boss 🔒",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

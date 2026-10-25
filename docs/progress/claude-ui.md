@@ -1,4 +1,10 @@
-DONE (pause ui) · DONE (ui review) · DONE (safari autopsy) · DONE (archetypes) · DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+DONE (i18n gap) · DONE (pause ui) · DONE (ui review) · DONE (safari autopsy) · DONE (archetypes) · DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## i18n gap (Settings "Sound" + pause strings) — done, verified zh-CN in Playwright WebKit on DEV :5175
+- Hand-added 19 rows (en/zh/es/fr) to shared/i18n/messages.generated.json + sources.json + gemini-translations.json (coordinator-approved shared/ edit): Sound, music & sound effects, all pause-card/host-button/raid-control strings ("[1]+  Stopped    gitzilla    (suspended by you|{0})", "▶ RESUME", "⏏ leave", "end match · new room", hints, "⏸ Pause raid (P)", "▶ Resume raid", "⏸ pause", "pause (P / Esc)", "⏸ pause match (everyone)"), plus "{0} top-level files" / "top-level files" (UI-7) and the boss-picker private hint. audit-i18n: 0 errors, 0 needsReview; i18n vitest 8/8.
+- pause.ts: "the host"/"the teacher" go through t() before the {0} pattern, so the stopped line is fully localized.
+- Verified: zh-CN Settings (声音 / 音乐与音效), desktop fight pause card, classroom raid pause on student phone + teacher screen — all Chinese.
+- Note: classroom pages follow the ROOM language (host-set `lobby.locale`), not the browser locale — a zh browser in an English classroom stays English by design. Mock: `?mock=raid&locale=zh` sets the mock room's locale for testing.
 
 ## Host pause UI — done (client against the committed contract; server `pause` handling is codex-net's)
 - Host (room owner) only: desktop `⏸ pause` button in the HUD top bar (`pause-match`) + P / Esc keys (P/Esc toggle: pause → resume); phone host: "⏸ pause match (everyone)" in the ☰ menu (`game-pause`) — no new on-screen gameplay buttons. Non-hosts: Esc still opens the menu.

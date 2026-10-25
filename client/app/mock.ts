@@ -145,6 +145,8 @@ export function createMockConn(opts: ConnOpts): Conn {
   if (mode === "raid") {
     lobby.mode = "edu";
     lobby.ownerId = "screen"; // the teacher's projector owns a classroom; phones are students
+    const loc = new URLSearchParams(location.search).get("locale");
+    if (loc === "zh" || loc === "es" || loc === "fr" || loc === "en") lobby.locale = loc; // classroom language is the room's
     const plan = defaultClassroomPlan();
     const now = Date.now();
     lobby.classroom = {

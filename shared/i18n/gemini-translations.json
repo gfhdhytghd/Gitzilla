@@ -17566,5 +17566,138 @@
     "fr": "button, input, textarea, select, a, [data-motion-profile], [data-input-ignore]",
     "provider": "Gemini via AGY",
     "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "46124e023603420f",
+    "en": "Sound",
+    "zh": "声音",
+    "es": "Sonido",
+    "fr": "Son"
+  },
+  {
+    "id": "f65ca2fabca96679",
+    "en": "music & sound effects",
+    "zh": "音乐与音效",
+    "es": "música y efectos de sonido",
+    "fr": "musique et effets sonores"
+  },
+  {
+    "id": "3023955c9f035c58",
+    "en": "⏸ pause",
+    "zh": "⏸ 暂停",
+    "es": "⏸ pausa",
+    "fr": "⏸ pause"
+  },
+  {
+    "id": "89f05e21c81ea6ef",
+    "en": "pause (P / Esc)",
+    "zh": "暂停（P / Esc）",
+    "es": "pausa (P / Esc)",
+    "fr": "pause (P / Échap)"
+  },
+  {
+    "id": "315224b32223c2d6",
+    "en": "⏸ pause match (everyone)",
+    "zh": "⏸ 暂停比赛（所有人）",
+    "es": "⏸ pausar la partida (todos)",
+    "fr": "⏸ mettre la partie en pause (tout le monde)"
+  },
+  {
+    "id": "cbe2e787189dd0ed",
+    "en": "▶ RESUME",
+    "zh": "▶ 继续",
+    "es": "▶ REANUDAR",
+    "fr": "▶ REPRENDRE"
+  },
+  {
+    "id": "037509bdea93da2a",
+    "en": "⏏ leave",
+    "zh": "⏏ 离开",
+    "es": "⏏ salir",
+    "fr": "⏏ quitter"
+  },
+  {
+    "id": "46eb9e6cff6e3071",
+    "en": "end match · new room",
+    "zh": "结束比赛 · 新房间",
+    "es": "terminar partida · nueva sala",
+    "fr": "terminer la partie · nouvelle salle"
+  },
+  {
+    "id": "b168a640221ca51a",
+    "en": "everyone is frozen · nothing can hit you",
+    "zh": "所有人都已冻结 · 没有任何攻击能打到你",
+    "es": "todos están congelados · nada puede golpearte",
+    "fr": "tout le monde est figé · rien ne peut vous toucher"
+  },
+  {
+    "id": "e540517cc865318c",
+    "en": "waiting for the host to resume…",
+    "zh": "等待主持人继续…",
+    "es": "esperando a que el anfitrión reanude…",
+    "fr": "en attente de la reprise par l'hôte…"
+  },
+  {
+    "id": "0866b6868d81ca8d",
+    "en": "the raid clock is frozen for the whole class",
+    "zh": "全班的进攻计时已冻结",
+    "es": "el reloj del ataque está congelado para toda la clase",
+    "fr": "le chrono de l'attaque est figé pour toute la classe"
+  },
+  {
+    "id": "a85c5b4cb6f4daed",
+    "en": "your teacher paused the class attack…",
+    "zh": "老师暂停了全班进攻…",
+    "es": "tu profesor pausó el ataque de la clase…",
+    "fr": "votre enseignant a mis l'attaque de la classe en pause…"
+  },
+  {
+    "id": "fe84d9a1c0bc6a0f",
+    "en": "⏸ Pause raid (P)",
+    "zh": "⏸ 暂停进攻（P）",
+    "es": "⏸ Pausar ataque (P)",
+    "fr": "⏸ Mettre l'attaque en pause (P)"
+  },
+  {
+    "id": "399ac54413a80592",
+    "en": "▶ Resume raid",
+    "zh": "▶ 继续进攻",
+    "es": "▶ Reanudar ataque",
+    "fr": "▶ Reprendre l'attaque"
+  },
+  {
+    "id": "75eb47b948665da0",
+    "en": "[1]+  Stopped    gitzilla    (suspended by you)",
+    "zh": "[1]+  已停止    gitzilla    （由你暂停）",
+    "es": "[1]+  Detenido    gitzilla    (suspendido por ti)",
+    "fr": "[1]+  Arrêté    gitzilla    (suspendu par vous)"
+  },
+  {
+    "id": "ff483dc3afa68682",
+    "en": "[1]+  Stopped    gitzilla    (suspended by {0})",
+    "zh": "[1]+  已停止    gitzilla    （由 {0} 暂停）",
+    "es": "[1]+  Detenido    gitzilla    (suspendido por {0})",
+    "fr": "[1]+  Arrêté    gitzilla    (suspendu par {0})"
+  },
+  {
+    "id": "c1f687d470f1bd76",
+    "en": "{0} top-level files",
+    "zh": "{0} 顶层文件",
+    "es": "archivos de nivel superior de {0}",
+    "fr": "fichiers de premier niveau de {0}"
+  },
+  {
+    "id": "11468275661c36e9",
+    "en": "top-level files",
+    "zh": "顶层文件",
+    "es": "archivos de nivel superior",
+    "fr": "fichiers de premier niveau"
+  },
+  {
+    "id": "69dc8996414fad56",
+    "en": "summon one of your own repos as the boss 🔒",
+    "zh": "把你自己的仓库召唤为首领 🔒",
+    "es": "invoca uno de tus propios repos como jefe 🔒",
+    "fr": "invoquez l'un de vos dépôts comme boss 🔒"
   }
 ]
