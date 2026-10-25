@@ -72,7 +72,18 @@ export interface XRHandle {
   session: XRSession;
   referenceSpace: XRReferenceSpace;
   referenceSpaceType: 'local-floor' | 'local';
+  /** Reused diagnostics updated from actual XRFrame poses before onFrame. */
+  debug: XRDebugState;
   exit(): Promise<void>;
+}
+export interface XRDebugState {
+  referenceSpaceType: 'local-floor' | 'local';
+  referenceOffsetY: number;
+  rawHeadY: number | null;
+  head: { x: number; y: number; z: number } | null;
+  visionPro: boolean;
+  tableHeightOffset: number;
+  tableY: number | null;
 }
 export type XRRenderer = Pick<WebGLRenderer, 'xr' | 'setAnimationLoop'> & Partial<Pick<WebGLRenderer, 'getClearAlpha' | 'setClearAlpha'>>;
 export interface TextureCache {

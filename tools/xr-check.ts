@@ -1,4 +1,4 @@
-/** npx tsx tools/xr-check.ts [--frames 180] [--headed] [--local-only] [--ar [--no-hit-test]] [--art]
+/** npx tsx tools/xr-check.ts [--frames 180] [--height [--vision-pro]] [--local-only] [--ar] [--art]
  * Owned ephemeral Vite only; no shared/dev/live server or gameplay mutation. */
 import { strict as assert } from 'node:assert';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -98,6 +98,50 @@ try {
     assert(Math.abs(evidence.surfaceY - (args.includes('--no-hit-test') ? 0.9 : 0.75)) < 0.005);
   }
   await page.evaluate(() => (window as any).__xrCheck.destroy());
+  if (args.includes('--height')) {
+    const url = `http://127.0.0.1:${address.port}/client/render/stage25d/gallery.html?scene=raid&xr=emulate&vox=0&xrdebug=1`;
+    await page.goto(url);
+    await page.waitForFunction(() => (window as any).__stage && (window as any).__xrDevice);
+    await page.evaluate(async () => {
+      const path = '/tools/iwer-compat.ts'; const { installIWERReferenceSpaceCompatibility } = await import(path);
+      installIWERReferenceSpaceCompatibility();
+    });
+    await page.evaluate(({ local, vision }) => {
+      const device = (window as any).__xrDevice;
+      if (local) { const features = device.supportedFeatures; features.splice(features.indexOf('local-floor'), 1); }
+      if (vision) {
+        // Safari desktop UA with ZERO touch points: correction must depend on a
+        // granted Safari XR session, not assume a particular touch-point count.
+        Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15' });
+        Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, value: 0 });
+      }
+      const button = document.getElementById('enter')!;
+      button.style.display = 'block'; button.onclick = () => { void (window as any).__stage.enterXR('immersive-vr').catch((e: Error) => { (window as any).__heightError = String(e); }); };
+    }, { local: args.includes('--local-only'), vision: args.includes('--vision-pro') });
+    await page.click('#enter');
+    await page.waitForFunction(() => (window as any).__stage.debugXR?.tableY !== null && (window as any).__stage.debugXR?.head);
+    const initial = await page.evaluate(() => JSON.parse(JSON.stringify((window as any).__stage.debugXR)));
+    assert.equal(initial.referenceSpaceType, args.includes('--local-only') ? 'local' : 'local-floor');
+    assert(Math.abs(initial.head.y - 1.6) < 0.001);
+    assert(Math.abs(initial.rawHeadY - (args.includes('--local-only') ? 0 : 1.6)) < 0.001);
+    assert.equal(initial.referenceOffsetY, args.includes('--local-only') ? -1.6 : 0);
+    assert.equal(initial.visionPro, args.includes('--vision-pro'));
+    const expected = args.includes('--vision-pro') ? 0.45 : 1.45;
+    assert(Math.abs(initial.tableY - expected) < 0.001);
+    await page.evaluate(() => (window as any).__stage.setTableHeightOffset(0.1));
+    await page.waitForFunction(y => Math.abs((window as any).__stage.debugXR.tableY - y) < 0.001, expected + 0.1);
+    assert.equal(await page.evaluate(() => localStorage.getItem('kaiju.xr.tableHeightOffset')), '0.1');
+    await page.waitForFunction(y => document.querySelector('[data-testid="xr-debug"]')?.textContent?.includes(`table ${y.toFixed(2)}m`), expected + 0.1);
+    assert(await page.evaluate(() => (window as any).__stage.debugScene.getObjectByName('xr-debug-readout').visible));
+    await page.screenshot({ path: join(output, 'height-debug.png') });
+    evidence.height = { initial, afterOffset: await page.evaluate(() => JSON.parse(JSON.stringify((window as any).__stage.debugXR))),
+      readout: await page.getByTestId('xr-debug').textContent(), actualStage: true, syntheticSafari: args.includes('--vision-pro') };
+    await page.evaluate(() => (window as any).__stage.exitXR());
+    await page.reload(); await page.waitForFunction(() => (window as any).__stage);
+    assert.equal(await page.evaluate(() => (window as any).__stage.getTableHeightOffset()), 0.1);
+    evidence.height.persistedAcrossReload = true;
+    await page.evaluate(() => (window as any).__stage.destroy());
+  }
   if (args.includes('--art')) {
     // Read the real owner's gallery through this owned listener; never edit its
     // scene or drive gameplay/server inputs. Export the current populated root.

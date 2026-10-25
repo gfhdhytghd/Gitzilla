@@ -1,3 +1,48 @@
+DONE (USDZ preview size) · DONE (Vision Pro table height)
+
+Resumed and completed the USDZ handoff after the urgent height fix. Existing stage.exportUSDZ() automatically picks up the new preview defaults; no new caller wiring is needed.
+
+## Final USDZ size/time report
+Measured on ONE frozen real four-player pallets/flask raid, old captured source vs new source, three warm desktop-Chromium exports each:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Archive bytes |22,854,322 (22.85MB)|2,040,850 (2.04MB)|
+| Largest geometry |11,512,427 bytes|699,590 bytes|
+| Median export time |332.6ms|112.7ms|
+| Vertices |204,228|31,288|
+| Triangles |68,172|15,644|
+| Colored actors |11|11|
+
+-91% archive reduction; target under5MB passes. The coordinator's26.8MB capture was a different animated snapshot; this paired comparison uses identical frozen pixels/transforms for causal before/after evidence. All four heroes retain1px source sampling; boss uses2px cells, with silhouette/heart/limb depth and transforms preserved. Visual inspection of before.png/after.png confirms the boss/heroes remain readable; native Vision Pro model rendering is still a device check.
+- Defaults: maxVoxelPixels=12000 shared across actors (actual8197sampled cells in measured raid), adaptive grid LOD instead of dropping/truncating actors;4-bit/channel color palette, half-pixel depth bands, greedy rectangles, indexed exposed faces with covered internal walls culled. Plain floor removes decorative texture details; void grid/non-mesh lines, projected shadow shaders, additive glows and glyph FX omitted. includeDecorations:true is an explicit diagnostic opt-in. Native archive remains STORE/uncompressed with64-byte data alignment; compact USD numeric text preserves exact `#usda 1.0` magic/version, comments, quoted names and asset references.
+- Main artifact: docs/shots/2026-10-25T08-54-32-930Z-usdz-size/{summary.json,before.usdz,after.usdz,before.png,after.png,baseline-code/}. Both new and old source snapshots preserved under baseline-code for reproduction. Re-run npx tsx tools/usdz-size.ts --baseline docs/shots/2026-10-25T08-54-32-930Z-usdz-size/baseline-code. Owned ephemeral Vite/browser, no shared server access. Three warm runs per exporter; native-device timing is NOT claimed.
+- Validation: full merged stage suite50PASS, whole-workspace tscPASS; USDZ tests verify global actor budget, indexed culling, palette merging, omission of floor detail, copied live resources, exact USD header and every archive entry's64-byte alignment/uncompressed method. Existing AR XR smoke also PASS: docs/shots/2026-10-25T08-52-59-408Z-xr-check/summary.json (104stereo frames/0errors). Height tests and four actual-stage reference-space runs are separately documented below.
+- Include NEW spatial-usdz.ts/spatial-usdz.test.ts + tools/usdz-size.ts/usdz-fixture.ts; updated spatial.ts/spatial-voxel.ts/spatial.test.ts, tools/xr-fixture.ts/README.md and this progress file. Height-specific files/types/xr/index changes listed below. Preserved claude-boss's concurrent index/scene/button/clock edits. No commits, dependency/node_modules edits, app/server/sim/shared changes, live requests or shared-service restarts.
+
+DONE (Vision Pro table height) — resuming USDZ size handoff
+
+Confirmed: index.ts overrides the0.9m default with max(0.5, headY-0.15), putting the tabletop only15cm below eyes. It caches fallback headY1.5 before valid tracking and can retain that guess. The local fallback offset y=-1.6 is mathematically correct (origin moves down, reported viewer moves up); do NOT flip sign. Actual real-phone/headset granted reference type remains UNVERIFIED until the new readout reports raw + effective poses. Source: https://developer.apple.com/videos/play/wwdc2024/10066/ discusses local-floor origins; https://developer.mozilla.org/en-US/docs/Web/API/XRReferenceSpace/getOffsetReferenceSpace documents offset-space behavior.
+
+Implemented: owned height.ts helpers with Vision-Pro-only -1m correction, persisted user offset, real tracked pose diagnostics in XRHandle; minimal height/setter/debug wiring in index.ts is necessary to expose requested stage API (no scene/UI button edits). Stage.setTableHeightOffset(m) persists and affect the next XR frame; getTableHeightOffset() supports10cm buttons. Diagnostic behind ?xrdebug=1 will include reference type, raw/effective head heights, reference offset and table height. Claudeboss/UI: please add only the ▲/▼ buttons; helper/wiring supplied here. USDZ already measured22.85MB→2.04MB,333ms→113ms; finish its handoff after this fix.
+
+## Vision Pro height verification / UI handoff
+- Cause proven in source: stage override is eyeY-0.15 (not projection default0.9), plus a guessed1.5m cached before tracking. Replaced the guess with actual XRFrame pose and applied Vision-Pro-only -1m correction. Standard IWER/Quest path remains1.45m with a1.6m head; Safari XR becomes0.45m, so boss no longer sits near eye level. No sign flip: native local fallback remains XRRigidTransform({x:0,y:-1.6,z:0,w:1}). Actual user's grant is UNVERIFIED until the readout provides it; do not claim the emulated values are the user's headset.
+- New owned height.ts/height.test.ts: get/setTableHeightOffset, TABLE_HEIGHT_STEP=0.1, getComfortTableHeight, isVisionProSafari. Stage exposes setTableHeightOffset(m), getTableHeightOffset(), debugXR. Storage key kaiju.xr.tableHeightOffset, meters,0default, bounded±2m. Applied on next XR frame, remains across reload. Claudeboss's concurrently-added up/down raycast buttons + animation-clock/HUD changes in index.ts preserved. My index edits are only height-helper imports/state, pose-based anchor, height calculation, public setter/getter/debug getter and readout lifecycle.
+- `?xrdebug=1` adds DOM output[data-testid=xr-debug] AND a small in-session3D panel (DOM is hidden by native immersive Safari). Shows actual referenceSpaceType, raw headY, effective headY, referenceOffsetY, tableY, user offset and Vision correction. Updates5Hz, retains last DOM numbers after exit; no panel/resources without the flag. New height-debug.ts owns this debug UI, not scene.ts.
+- Full stage unit suite50PASS; whole-workspace tscPASS. Tests cover native offset sign, no pose guess, exact1m correction, offset persistence, normal emulator behavior and existing projection/spatial/USDZ regressions.
+- Real createStage25d + IWER test matrix, all PASS/zeroerrors, explicit native-Safari UA simulation (including0touchpoints), real session frames, ±height setter and persistence across actual reload:
+  - Vision/local: docs/shots/2026-10-25T09-02-34-779Z-xr-check/summary.json →raw0/effective1.6/refOffset-1.6/table0.45; +0.1→0.55.
+  - Vision/local-floor: docs/shots/2026-10-25T09-03-20-257Z-xr-check/summary.json →raw1.6/effective1.6/refOffset0/table0.45; +0.1→0.55.
+  - Normal/local-floor: docs/shots/2026-10-25T09-03-20-233Z-xr-check/summary.json →table1.45 unchanged; +0.1→1.55.
+  - Normal/local: docs/shots/2026-10-25T09-03-20-287Z-xr-check/summary.json →raw0/effective1.6/refOffset-1.6/table1.45; +0.1→1.55.
+- Commands: npx tsx tools/xr-check.ts --frames 30 --height [--vision-pro] [--local-only]. Artifacts include height-debug.png and readout text. tools/iwer-compat.ts adapts pinned IWER2.5's nonstandard mat4 argument to native XRRigidTransform at the TOOLS boundary only; still uses actual IWER pose/reference math, no fake getViewerPose results. Production imports no compatibility shim; no node_modules edits/dependency changes.
+- No commits, app/server/sim/shared edits, live requests, or shared-service restarts. User/coordinator can open the real room with &xrdebug=1 to report actual headset reference/head numbers. 3D/DOM controls provided by claude-boss/UI can call the ready setter now.
+
+DONE (USDZ preview size)
+
+Coordinator reports26.8MB raid snapshot, one voxel mesh14MB. Restricting edits to owned export plumbing/tests/tools. Captured unchanged before implementation under .cache/usdz-size-before for same-frozen-scene before/after benchmark. Plan: bounded adaptive voxel LOD, quantized palette/depth, indexed exposed surface quads and tighter USD numeric formatting while preserving uncompressed64-byte-aligned USDZ. Omit void grid/FX/decorative floor detail in preview only; preserve boss/heroes and world transforms. Measure real raid export bytes + time and render before/after snapshots. No app/index/scene/server/sim/shared changes or commits.
+
 DONE (spatial round 3)
 
 Research delivered to coordinator immediately (2026-10-25): Vision Pro Safari immersive-ar passthrough is still unsupported, including Apple WWDC26 confirmation; prior false-positive isSessionSupported bug exists. Keep VR default, detect AR before gesture and negotiate safely on capable other runtimes. Hand joints require permission, transient-pointer emits UI selects; joint-only tracked hands do not. Native model/USDZ default on visionOS26; Safari27 adds model immersive environments (NOT WebXR AR), plus image controls for spatial/panorama photos. Safari26 supports spatial/Apple Immersive/APMP video. MDN compatibility marks XRHitTestSource/XRPlane/XRAnchor/XRCPUDepthInformation/XRLightProbe Safari unsupported; these are optional capability probes, not promises of real-table sensing. Sources below.

@@ -7,12 +7,14 @@ import { enterXR, exitXR, xrSupported } from '../client/render/stage25d/xr';
 import { createSurfacePlacement, exportSpatialUSDZ, detectSpatialSupport, chooseSpatialMode } from '../client/render/stage25d/spatial';
 import type { SurfacePlacement } from '../client/render/stage25d/spatial';
 import type { XRHandle, XRScale } from '../client/render/stage25d/types';
+import { installIWERReferenceSpaceCompatibility } from './iwer-compat';
 
 const localOnly = new URLSearchParams(location.search).has('local-only');
 const ar = new URLSearchParams(location.search).has('ar');
 const noHitTest = new URLSearchParams(location.search).has('no-hit-test');
 const device = new XRDevice({ ...metaQuest3, supportedFeatures: metaQuest3.supportedFeatures.filter(f => (!localOnly || f !== 'local-floor') && (!noHitTest || f !== 'hit-test')), internalNominalFrameRate: 90 }, { stereoEnabled: true });
 device.installRuntime({ forceInstall: true, polyfillLayers: false });
+installIWERReferenceSpaceCompatibility();
 /** Synthetic table environment plugged into IWER's public SEM interface. Actual
  * XRSession hit-test/anchor APIs remain IWER, not stubbed frame results. */
 class TableEnvironment {
@@ -115,7 +117,7 @@ const api = {
   hands() { device.primaryInputMode = 'hand'; },
   controllers() { device.primaryInputMode = 'controller'; },
   async exportUSDZ() {
-    const blob = await exportSpatialUSDZ(root, { metersPerPixel: 1.2 / 480 });
+    const blob = await exportSpatialUSDZ(root, { metersPerPixel: 1.2 / 480, includeDecorations: true });
     state.usdzBytes = blob.size; state.usdzType = blob.type; state.usdzHeader = Array.from(new Uint8Array(await blob.slice(0, 4).arrayBuffer()));
     return Array.from(new Uint8Array(await blob.arrayBuffer()));
   },

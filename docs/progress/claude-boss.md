@@ -1,4 +1,20 @@
-DONE (3d stage round 3) — claude-boss
+DONE (XR HUD boss HP fix + table height buttons) — claude-boss
+
+## Round 4 (urgent): XR HUD boss HP was frozen on Vision Pro
+- **Root cause:** the HUD redraw was throttled on the caller's `time` (`time - hudAt < 0.25`). game.ts's `pull()` returns `visTime`, which only advances in the page rAF (game.ts:1444), and Vision Pro pauses that while immersive. So after the first draw, `time` never moved and the panel kept showing the HP from session start. The field and math were right (`boss.hp / boss.maxHp`, same as the 2D bar) and `needsUpdate` was set; the redraw just never ran.
+- **Fixes:**
+  - The panel redraws whenever what it shows changes (new pure `stage25d/hud.ts` → `hudInfo(state).key`), at most ~15×/s by the wall clock (`performance.now()`). It is never keyed on the caller's time.
+  - XR clock in `index.ts`: if `pull().time` stalls, the stage advances its own monotonic time from the XR frames, so boss/hero animations no longer freeze in the headset either.
+  - The panel now carries the same numbers as the 2D boss bar: `ceil(pct)%`, the phase label (PHASE 2 · ENRAGED / PHASE 3 · LAST STAND), limb pips in kit order (broken = grey with a red strike, weak points pink), alive count and timer.
+  - It sits above the boss's standing height. At the fixed 150 px the boss stood in front of it and hid the bar's right half and the %.
+- **▲ / ▼ table height:** two new XR buttons (row on top of the panel: SCALE FOLLOW EXIT ▲ ▼), shown in the VR tabletop only (not in life-size or AR). They call `stage.setTableHeightOffset(stage.getTableHeightOffset() ± TABLE_HEIGHT_STEP)`, which is codex-input's version (height.ts; absolute and persisted, so no stub was needed). Through the emulated controller-select path the table goes 1.428 → 1.528 → 1.628 → 1.528 m.
+- Added `debugXR` to the `Stage25d` interface (codex-input's getter wasn't typed), `debugCanvases.hud`, and gallery `&xrmode=vr|ar`.
+- **Checks:**
+  - `stage25d/hud.test.ts` compares against the 2D bar's math verbatim at 100 / 73.2 / 60 (limb break) / 50.5 (phase 2) / 14.9 (phase 3) / 0.4 / overkill. It also checks that each change redraws (a distinct key) and that the key ignores the clock.
+  - Gallery `?scene=raid&xr=emulate&xrmode=vr&hudcheck=1`: the pull time is frozen like game.ts, and the boss steps through full, 73%, a limb break, phase 2, phase 3 and 1%. The drawn bar px and broken pip are read back from the panel canvas into `window.__hudCheck`. All 6 levels OK for two bosses.
+- **Results:** XR update 1.38 ms (unchanged); screen WebKit 1440 at 62.2 fps. tsc clean, vitest 1239 passed / 10 skipped, build OK.
+- **For claude-ui (optional now):** in game.ts `pull()`, compute `time` fresh (e.g. from `performance.now()`) instead of `visTime`. The stage copes either way now.
+
 
 ## Round 3: volumetric sprites, lighting, boss depth, LOD + codex-input's spatial handoff wired
 - **Voxel-extruded sprites (new `stage25d/voxel.ts`):** each sprite is one box, and a fragment shader walks its texel grid (2D DDA through a height field). Every opaque texel is a voxel column: the front face shows the exact pixel; side and top faces are lit.

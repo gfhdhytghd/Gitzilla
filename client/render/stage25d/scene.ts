@@ -16,6 +16,7 @@ import { drawPlayer } from "../player/index.ts";
 import { bossPlane, lift, type BossPlane } from "./staging.ts";
 import { DEPTH_STEP, DEPTH_ZERO, prepareVoxelAtlas, shadowMaterial, voxelBox, voxelInstancedBox, voxelMaterial } from "./voxel.ts";
 import { bossLayout } from "../boss/layout.ts";
+import { HUD_BAR_W, HUD_PIP_GAP, hudInfo, type HudInfo } from "./hud.ts";
 
 THREE.ColorManagement.enabled = false; // pixel art: texture colors pass through untouched
 
@@ -27,6 +28,8 @@ export interface LookExtras {
   events?: GameEvent[];
 }
 
+/** XR button row under the HUD panel: x of each button centre relative to the panel centre (3 px gaps, 252 px) */
+const HUD_BTN_X = { scale: -94, follow: -27, exit: 40, up: 87, down: 114 } as const;
 const near = <T extends THREE.Texture>(t: T): T => { t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; };
 
 // ---------- sprite atlas (all standing billboards are drawn by the existing 2D renderers into one canvas) ----------
@@ -129,7 +132,7 @@ export class StageLook {
   private l3: [number, number, number] = [0, 0, 0];
   private bDir = new THREE.Vector3(); private bMid = new THREE.Vector3(); private bQ = new THREE.Quaternion();
   private col = new THREE.Color();
-  private hudAt = -1;
+  private hudAt = -Infinity; private hudKey = "";
 
   constructor() {
     this.scene.background = new THREE.Color(0x05030a);
@@ -239,11 +242,17 @@ export class StageLook {
     this.hud = new THREE.Mesh(new THREE.PlaneGeometry(256, 48), new THREE.MeshBasicMaterial({ map: this.hudTex, transparent: true }));
     this.hud.visible = false;
     this.root.add(this.hud);
-    for (const [name, label] of [["scale", "SCALE"], ["follow", "FOLLOW"], ["exit", "EXIT"]] as const) {
-      const [c, g] = makeCanvas(64, 16);
-      g.fillStyle = "#0d1117"; g.fillRect(0, 0, 64, 16); g.fillStyle = "#2ee6c8"; g.fillRect(0, 0, 64, 1); g.fillRect(0, 15, 64, 1);
-      drawText(g, label, 32, 5, "#e6edf3", { align: "center" });
-      const b = new THREE.Mesh(new THREE.PlaneGeometry(64, 16), new THREE.MeshBasicMaterial({ map: near(new THREE.CanvasTexture(c)) }));
+    // SCALE / FOLLOW / EXIT, then table height ▲ / ▼ (tabletop only)
+    for (const [name, label, w] of [["scale", "SCALE", 64], ["follow", "FOLLOW", 64], ["exit", "EXIT", 64], ["up", "▲", 24], ["down", "▼", 24]] as const) {
+      const [c, g] = makeCanvas(w, 16);
+      g.fillStyle = "#0d1117"; g.fillRect(0, 0, w, 16); g.fillStyle = "#2ee6c8"; g.fillRect(0, 0, w, 1); g.fillRect(0, 15, w, 1);
+      if (w === 64) drawText(g, label, 32, 5, "#e6edf3", { align: "center" });
+      else {
+        // pixel triangle (the font has no arrows): 8 px wide, 4 rows
+        g.fillStyle = "#e6edf3";
+        for (let r = 0; r < 4; r++) { const k = name === "up" ? r : 3 - r; g.fillRect(11 - k, 6 + r, 2 * k + 2, 1); }
+      }
+      const b = new THREE.Mesh(new THREE.PlaneGeometry(w, 16), new THREE.MeshBasicMaterial({ map: near(new THREE.CanvasTexture(c)) }));
       b.name = name; b.visible = false;
       this.buttons.push(b); this.root.add(b);
     }
@@ -251,7 +260,7 @@ export class StageLook {
 
   get size() { return { w: this.w, h: this.h }; }
   /** debug: the 2D canvases behind the textures (gallery ?atlas=1) */
-  get debugCanvases() { return { floor: this.floorCanvas, atlas: this.atlas, bullets: this.bulCanvas, fx: this.fxCanvas }; }
+  get debugCanvases() { return { floor: this.floorCanvas, atlas: this.atlas, bullets: this.bulCanvas, fx: this.fxCanvas, hud: this.hudCanvas }; }
 
   /** AR passthrough: transparent background, no void room (the real room is the backdrop) */
   setAR(on: boolean) {
@@ -558,31 +567,54 @@ export class StageLook {
     this.depthTex.needsUpdate = true;
   }
 
-  /** XR HUD panel above the far edge: boss HP, alive count, timer (redrawn ~4x/s). */
-  updateHud(state: MatchState, time: number, show: boolean) {
+  /** XR HUD panel above the far edge: boss HP (same numbers as the 2D boss bar), phase, limbs, alive count, timer.
+   *  Redrawn when what it shows changes (hudInfo().key), at most ~15x/s by the wall clock. Never keyed on the caller's
+   *  `time`: in a headset session the page rAF that advances it can pause, which froze the panel (round 4 fix). */
+  updateHud(state: MatchState, show: boolean, heightButtons = false) {
     this.hud.visible = show;
-    for (const b of this.buttons) b.visible = show;
+    for (const b of this.buttons) b.visible = show && (heightButtons || (b.name !== "up" && b.name !== "down"));
     if (!show) return;
     const W = this.w;
-    this.hud.position.set(W / 2, 150, -10);
-    this.buttons.forEach((b, i) => b.position.set(W / 2 - 72 + i * 72, 116, -10));
-    if (time - this.hudAt < 0.25) return;
-    this.hudAt = time;
+    // above the standing boss (it stands in front of the far edge and hid the bar's right half at a fixed 150 px)
+    const y = Math.max(150, (this.plane ? this.plane.feetY - this.plane.top : 0) + 30);
+    this.hud.position.set(W / 2, y, -10);
+    // SCALE FOLLOW EXIT ▲ ▼ in one row on top of the panel, spanning its width
+    for (const b of this.buttons) b.position.set(W / 2 + HUD_BTN_X[b.name as keyof typeof HUD_BTN_X], y + 33, -10);
+    const info = hudInfo(state);
+    if (info.key === this.hudKey) return;
+    const now = performance.now();
+    if (now - this.hudAt < 66 && now >= this.hudAt) return;
+    this.hudAt = now;
+    this.hudKey = info.key;
+    this.drawHud(info);
+  }
+
+  private drawHud(info: HudInfo) {
     const g = this.hudCtx;
     g.fillStyle = "#07040c"; g.fillRect(0, 0, 256, 48);
     g.fillStyle = "#2ee6c8"; g.fillRect(0, 0, 256, 1); g.fillRect(0, 47, 256, 1);
-    const b = state.boss;
+    const b = info.boss;
     if (b) {
-      drawText(g, b.kit.name.split(",")[0].toUpperCase().slice(0, 30), 6, 5, "#ff8ab0", { outline: null });
-      g.fillStyle = "#3a0a18"; g.fillRect(6, 14, 244, 6);
-      g.fillStyle = "#ff3a5c"; g.fillRect(6, 14, Math.round(244 * Math.max(0, b.hp / b.maxHp)), 6);
+      drawText(g, b.name, 6, 4, "#ff8ab0", { outline: null });
+      drawText(g, b.pctText, 250, 4, "#e6edf3", { outline: null, align: "right" });
+      g.fillStyle = "#3a0a18"; g.fillRect(6, 12, HUD_BAR_W, 7);
+      g.fillStyle = b.phase === 3 ? "#ff2a3a" : "#ff3a5c"; g.fillRect(6, 12, b.barPx, 7);
+      g.fillStyle = "#ff8aa0"; g.fillRect(6, 12, b.barPx, 1);
+      drawText(g, b.phaseText, 6, 22, b.phase === 3 ? "#ff3a5c" : b.enraged ? "#ffb000" : "#8b949e", { outline: null });
+      b.limbs.forEach((l, i) => {
+        const x = 6 + i * (b.pipW + HUD_PIP_GAP);
+        g.fillStyle = l.broken ? "#30363d" : "#2a1a10"; g.fillRect(x, 30, b.pipW, 4);
+        if (l.broken) { g.fillStyle = "#ff3a5c"; g.fillRect(x, 31, b.pipW, 1); }
+        else { g.fillStyle = l.weak ? "#ff8ab0" : "#ffb000"; g.fillRect(x, 30, l.px, 4); }
+      });
     }
-    const alive = state.pvp?.royale ? state.pvp.royale.alive.length + "/" + state.players.length + " ALIVE" : state.players.filter((p) => p.alive).length + " HEROES UP";
-    const tt = Math.floor(state.t);
-    drawText(g, alive, 6, 28, "#7dff9a", { outline: null });
-    drawText(g, "T+" + Math.floor(tt / 60) + ":" + String(tt % 60).padStart(2, "0"), 250, 28, "#e6edf3", { outline: null, align: "right" });
+    drawText(g, info.alive, 6, 38, "#7dff9a", { outline: null });
+    drawText(g, info.timer, 250, 38, "#e6edf3", { outline: null, align: "right" });
     this.hudTex.needsUpdate = true;
   }
+
+  /** debug/tests: the key of the panel as last drawn */
+  get hudDrawnKey() { return this.hudKey; }
 
   dispose() {
     this.scene.traverse((o) => {

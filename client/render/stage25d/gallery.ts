@@ -1,11 +1,15 @@
 // 3D stage gallery: the real sim (raid with bot heroes, or an 8-bot royale) rendered through createStage25d.
-//   ?scene=raid|royale  &boss=<slug>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset)
+//   ?scene=raid|royale  &boss=<slug>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset) &xrmode=vr|ar
 // window.__stats = { fps, frameMs, renderMs } for automated checks.
+// ?hudcheck=1 (with xr=emulate): the XR HUD panel check. The pull() time is frozen (like game.ts while a headset pauses
+//   the page rAF) and the boss steps through scripted HP levels / a limb break / phases 2-3; each settled level logs the
+//   panel's drawn bar width (read back from its canvas) next to hudInfo() and the 2D bar's numbers: window.__hudCheck.
 import type { BossKit, InputFrame, MatchState, PlayerState, RepoProfile } from "../../../shared/types.ts";
 import { bossKitFromProfile, createMatch, createPvpController, playerKitFromProfile, pvpArenaSize } from "../../../sim/index.ts";
 import { drawPostFx, getFxCues } from "../arena/index.ts";
 import { createStage25d } from "./index.ts";
 import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
+import { HUD_BAR_W, hudInfo } from "./hud.ts";
 
 const q = new URLSearchParams(location.search);
 const scene = q.get("scene") ?? "raid";
@@ -64,7 +68,7 @@ async function main() {
   let state: MatchState = match.snapshot() as MatchState;
   let pending: MatchState["events"] = [];
   const xrDts: number[] = [], xrUps: number[] = [];
-  const stage = createStage25d({ voxelBullets: q.get("voxbul") !== "0", debugOrbit: Number(q.get("orbit") ?? 0), orbitZoom: Number(q.get("zoom") ?? 1), xr: q.get("xr") !== null, voxels: q.get("vox") === "0" ? false : q.get("vox") === "1" ? true : "auto", onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state, time: performance.now() / 1000, events: pending, extras: extrasFor() }) });
+  const stage = createStage25d({ voxelBullets: q.get("voxbul") !== "0", debugOrbit: Number(q.get("orbit") ?? 0), orbitZoom: Number(q.get("zoom") ?? 1), xr: q.get("xr") !== null, voxels: q.get("vox") === "0" ? false : q.get("vox") === "1" ? true : "auto", onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state: hudCheck ? hudCheck.apply(state) : state, time: hudCheck ? 12.34 : performance.now() / 1000, events: pending, extras: extrasFor() }) });
   stage.canvas.style.position = "absolute"; stage.canvas.style.left = "0"; stage.canvas.style.top = "0";
   stage.canvas.style.width = cssW + "px"; stage.canvas.style.height = cssH + "px";
   stage.canvas.style.imageRendering = "pixelated";
@@ -73,6 +77,7 @@ async function main() {
   const extrasFor = () => ({ you: roster[0].id, world, events: pending, shake: getFxCues().shake });
 
   (globalThis as unknown as { __stage: unknown }).__stage = stage;
+  const hudCheck = q.get("hudcheck") ? createHudCheck(stage.debugCanvases.hud) : null;
   (globalThis as unknown as { __dbgPlayers: unknown }).__dbgPlayers = () => state.players.filter((p) => !p.eliminated).map((p) => [p.id, Math.round(p.hp * 10) / 10, +p.invuln.toFixed(2), p.buffs.join("+"), p.alive]);
   if (q.get("atlas")) {
     const dbg = (stage as unknown as { debugCanvases: { atlas: HTMLCanvasElement } }).debugCanvases.atlas;
@@ -84,7 +89,7 @@ async function main() {
     enter.style.display = "block";
     enter.onclick = () => {
       if (stage.xrActive) void stage.exitXR().then(() => (enter.textContent = "Enter Vision Pro"));
-      else stage.enterXR().then(() => (enter.textContent = "Exit Vision Pro"), (e) => console.error("enterXR failed:", e));
+      else stage.enterXR(q.get("xrmode") === "vr" ? "immersive-vr" : q.get("xrmode") === "ar" ? "immersive-ar" : "auto").then(() => (enter.textContent = "Exit Vision Pro"), (e) => console.error("enterXR failed:", e));
     };
   }
 
@@ -153,6 +158,48 @@ async function main() {
       `$ gitzilla --stage3d ${scene}${phone ? " (phone)" : ""}  ${stats.fps.toFixed(1)} fps  frame ${stats.frameMs.toFixed(1)} ms  render ${stats.renderMs.toFixed(1)} ms`;
   }
   requestAnimationFrame(frame);
+}
+
+/** ?hudcheck=1: scripted boss HP levels; the panel is read back from its canvas once each level has settled */
+function createHudCheck(hud: HTMLCanvasElement) {
+  const LEVELS: { name: string; f: number; mut?: (b: NonNullable<MatchState["boss"]>) => void }[] = [
+    { name: "full", f: 1 },
+    { name: "73%", f: 0.732 },
+    { name: "limb break", f: 0.6, mut: (b) => { b.limbs[0].hp = 0; b.limbs[0].broken = true; } },
+    { name: "phase 2", f: 0.48, mut: (b) => { b.limbs[0].hp = 0; b.limbs[0].broken = true; b.limbs[1].hp = b.limbs[1].maxHp * 0.3; b.phase = 2; b.enraged = true; } },
+    { name: "phase 3", f: 0.12, mut: (b) => { b.limbs[0].hp = 0; b.limbs[0].broken = true; b.phase = 3; b.enraged = true; } },
+    { name: "1%", f: 0.004, mut: (b) => { b.phase = 3; b.enraged = true; } },
+  ];
+  const log: Record<string, unknown>[] = [];
+  (globalThis as unknown as { __hudCheck: unknown }).__hudCheck = log;
+  let t0 = -1, logged = -1;
+  const g = hud.getContext("2d", { willReadFrequently: true })!;
+  return {
+    apply(s: MatchState): MatchState {
+      if (!s.boss) return s;
+      const now = performance.now();
+      if (t0 < 0) t0 = now;
+      const i = Math.min(LEVELS.length - 1, Math.floor((now - t0) / 1500)), L = LEVELS[i];
+      const b = { ...s.boss, hp: s.boss.maxHp * L.f, limbs: s.boss.limbs.map((l) => ({ ...l })) };
+      L.mut?.(b);
+      const out = { ...s, boss: b };
+      // settled (>= 0.6 s into the level): read the drawn bar (row 15, x 6..250) and pips back from the panel canvas
+      if (i !== logged && now - t0 - i * 1500 > 600) {
+        logged = i;
+        const info = hudInfo(out).boss!;
+        const row = g.getImageData(6, 15, HUD_BAR_W, 1).data;
+        let drawn = 0;
+        for (let x = 0; x < HUD_BAR_W; x++) if (row[x * 4] > 200 && row[x * 4 + 1] < 100) drawn++;
+        const pip = g.getImageData(6, 31, info.pipW, 1).data;
+        const brokenDrawn = pip[0] > 200 && pip[1] < 100; // broken pip: red line on grey
+        const pct2d = Math.max(0, b.hp / b.maxHp);
+        log.push({ level: L.name, hp: Math.round(b.hp), maxHp: b.maxHp, phase: b.phase, twoD: `${Math.ceil(pct2d * 100)}%`, xr: info.pctText,
+          expectedPx: info.barPx, drawnPx: drawn, limb0Broken: b.limbs[0].broken, limb0Drawn: brokenDrawn ? "broken" : "intact",
+          ok: drawn === info.barPx && brokenDrawn === b.limbs[0].broken && info.pctText === `${Math.ceil(pct2d * 100)}%` });
+      }
+      return out;
+    },
+  };
 }
 
 function raidBot(i: number) {

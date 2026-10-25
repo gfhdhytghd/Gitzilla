@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { BoxGeometry, Color, DataTexture, Float32BufferAttribute, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, ShaderMaterial, Vector3 } from 'three';
+import { AdditiveBlending, BoxGeometry, CircleGeometry, Color, DataTexture, Float32BufferAttribute, Group, InstancedBufferAttribute, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, ShaderMaterial, Vector3 } from 'three';
 import { unzipSync, strFromU8 } from 'three/addons/libs/fflate.module.js';
 import { chooseSpatialMode, createModelPreview, createSurfacePlacement, detectSpatialSupport, exportSpatialUSDZ, prepareSpatialSnapshot } from './spatial';
 import { surfacePlacementMatrix } from './projection';
@@ -122,7 +122,7 @@ it('freezes texture pixels without sharing/mutating live sources and bakes per-i
   geometry.setAttribute('aUv', new InstancedBufferAttribute(new Float32Array([0, 0, 0.25, 0.5, 0.5, 0.5, 0.25, 0.5]), 4));
   const mesh = new InstancedMesh(geometry, new MeshBasicMaterial({ map: texture }), 2);
   mesh.count = 2;
-  const snapshot = prepareSpatialSnapshot(mesh);
+  const snapshot = prepareSpatialSnapshot(mesh, { includeDecorations: true });
   const a = snapshot.root.children[0] as Mesh, b = snapshot.root.children[1] as Mesh;
   expect(a.geometry).not.toBe(b.geometry);
   expect(b.geometry.getAttribute('uv').getX(0) - a.geometry.getAttribute('uv').getX(0)).toBeCloseTo(0.5);
@@ -150,7 +150,7 @@ it('bakes custom voxel shaders into actual colored columns, excluding transparen
   // Adjacent identical texels become one rectangular column, not two cubes.
   texture.image.data!.set([255, 0, 0, 255], 4); depthMap.image.data![4] = 132;
   const merged = prepareSpatialSnapshot(mesh), mergedMesh = merged.root.children[0] as Mesh;
-  expect(mergedMesh.geometry.getAttribute('position').count).toBe(36);
+  expect(mergedMesh.geometry.getAttribute('position').count).toBe(24);
   mergedMesh.geometry.computeBoundingBox(); expect(mergedMesh.geometry.boundingBox!.max.x).toBe(2);
   merged.dispose();
 });
@@ -168,6 +168,46 @@ it('mounts native model only on support; refreshes/revokes URL resources and ign
   expect(create).toHaveBeenCalledTimes(2); create.mockRestore(); revoke.mockRestore();
   const noModel = createModelPreview({ ownerDocument: { createElement: () => ({}) } } as unknown as HTMLElement, vi.fn());
   expect(noModel.supported).toBe(false); expect(await noModel.refresh()).toBe(false);
+});
+
+function voxelTestMesh(w: number, h: number, data?: Uint8Array) {
+  const geometry = new BoxGeometry(w, h, 2);
+  geometry.setAttribute('aSlot', new Float32BufferAttribute([0, 0, w, h], 4));
+  geometry.setAttribute('aShape', new Float32BufferAttribute([0, h, 2, 0], 4));
+  const material = new ShaderMaterial({ uniforms: { map: { value: new DataTexture(data ?? new Uint8Array(w * h * 4).fill(255), w, h) }, uAtlas: { value: [w, h] } } });
+  return new Mesh(geometry, material);
+}
+
+it('shares a hard voxel budget across every actor and uses LOD instead of truncating actors', () => {
+  const scene = new Group(), a = voxelTestMesh(32, 32), b = voxelTestMesh(32, 32);
+  b.position.x = 100; scene.add(a, b);
+  const snapshot = prepareSpatialSnapshot(scene, { maxVoxelPixels: 32 });
+  expect(snapshot.root.children).toHaveLength(2); expect(snapshot.stats.sampledPixels).toBeLessThanOrEqual(32);
+  expect(snapshot.stats.actors.every(actor => actor.step > 1 && actor.sampledPixels > 0)).toBe(true);
+  const second = snapshot.root.children[1] as Mesh; expect(second.matrix.elements[12]).toBe(100);
+  second.geometry.computeBoundingBox(); expect(second.geometry.boundingBox!.max.x).toBe(32);
+  snapshot.dispose();
+});
+
+it('quantizes nearby colors for merging and culls covered internal side faces', () => {
+  const close = voxelTestMesh(2, 1, new Uint8Array([20, 20, 20, 255, 21, 21, 21, 255]));
+  const merged = prepareSpatialSnapshot(close);
+  expect(merged.stats.actors[0].rectangles).toBe(1); merged.dispose();
+  const distinct = voxelTestMesh(2, 1, new Uint8Array([255, 0, 0, 255, 0, 255, 0, 255]));
+  const snapshot = prepareSpatialSnapshot(distinct), mesh = snapshot.root.children[0] as Mesh;
+  expect(mesh.geometry.getAttribute('position').count).toBe(40); //10quads, no shared internal wall
+  expect(mesh.geometry.index!.count).toBe(60); snapshot.dispose();
+});
+
+it('keeps actors/floor but omits preview FX, grid-like non-mesh objects and decorative floor textures', () => {
+  const scene = new Group(), texture = new DataTexture(new Uint8Array([255, 0, 0, 255]), 1, 1);
+  const floor = new Mesh(new PlaneGeometry(480, 288), new MeshBasicMaterial({ map: texture })); floor.rotation.x = -Math.PI / 2;
+  const glow = new Mesh(new BoxGeometry(), new MeshBasicMaterial({ blending: AdditiveBlending }));
+  const shadow = new Mesh(new CircleGeometry(), new MeshBasicMaterial());
+  scene.add(floor, glow, shadow, voxelTestMesh(4, 4));
+  const snapshot = prepareSpatialSnapshot(scene); expect(snapshot.root.children).toHaveLength(2);
+  expect((snapshot.root.children[0] as Mesh).material).toMatchObject({ map: null });
+  expect((floor.material as MeshBasicMaterial).map).toBe(texture); snapshot.dispose();
 });
 
 it('does not attach a model blob after its owner was torn down during export', async () => {

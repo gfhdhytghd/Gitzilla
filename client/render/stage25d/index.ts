@@ -22,6 +22,8 @@ import type { SpatialSupport } from "./types.ts";
 import type { CameraRig, ProjectedPoint, StageView, XRHandle, XRScale, XRSelectInfo } from "./types.ts";
 import { StageLook, type LookExtras } from "./scene.ts";
 import { lift } from "./staging.ts";
+import { getComfortTableHeight, getTableHeightOffset, setTableHeightOffset, TABLE_HEIGHT_STEP } from "./height.ts";
+import { createXRHeightReadout } from "./height-debug.ts";
 
 export type { StageView } from "./types.ts";
 
@@ -63,6 +65,8 @@ export interface Stage25d {
   resize(cssW: number, cssH: number, dpr: number): void;
   setFollow(playerId: string | null): void;
   setScale(scale: XRScale): void;
+  setTableHeightOffset(meters: number): void;
+  getTableHeightOffset(): number;
   render(ctx: CanvasRenderingContext2D, state: MatchState, time: number, view?: StageView, extras?: Stage25dExtras): void;
   screenToWorld(sx: number, sy: number): { x: number; y: number };
   worldToScreen(x: number, y: number, z?: number): { x: number; y: number; scale: number };
@@ -77,10 +81,12 @@ export interface Stage25d {
   exitXR(): Promise<void>;
   readonly xrActive: boolean;
   /** debug (gallery): the 2D canvases behind the floor / sprite / bullet textures */
-  readonly debugCanvases: { floor: HTMLCanvasElement; atlas: HTMLCanvasElement; bullets: HTMLCanvasElement; fx: HTMLCanvasElement };
+  readonly debugCanvases: { floor: HTMLCanvasElement; atlas: HTMLCanvasElement; bullets: HTMLCanvasElement; fx: HTMLCanvasElement; hud: HTMLCanvasElement };
   readonly debugScene: THREE.Scene;
   readonly cpuMs: number;
   readonly xrLodFlat: boolean;
+  /** debug: the XR session's tracking/height debug info (null outside XR) */
+  readonly debugXR: XRHandle["debug"] | null;
   /** debug: AR surface placement state (null outside AR) */
   readonly debugPlacement: { status: string; source: string; pos: number[]; scale: number; cam: number[] } | null;
   destroy(): void;
@@ -90,6 +96,9 @@ const RETICLE_FLAT = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
 export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   const look = new StageLook();
+  // Input-owned comfort/debug plumbing; scene and UI buttons remain look/UI-owned.
+  const heightReadout = createXRHeightReadout(look.scene);
+  let tableHeightOffset = getTableHeightOffset();
   look.voxBullets = opts.voxelBullets !== false;
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance", preserveDrawingBuffer: false });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
@@ -167,7 +176,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const vox = opts.voxels === undefined || opts.voxels === "auto" ? !phone : opts.voxels;
     const c0 = performance.now();
     look.update(state, time, { ...extras, theme: extras.theme as LookExtras["theme"] }, yaw, rig.camera.quaternion, false, vox);
-    look.updateHud(state, time, false);
+    look.updateHud(state, false);
     look.table.visible = false;
     renderer.render(look.scene, rig.camera);
     cpuMs = performance.now() - c0;
@@ -199,9 +208,14 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   // adaptive LOD (voxels "auto" in XR): keep the headset at its refresh rate; if frames run long for ~1 s, drop to
   // flat billboards for the rest of the session (one-way, so it can't oscillate).
   let xrSlow = 0, xrFlat = false, xrEma = 0;
+  // XR clock: the caller's `time` may stand still while the headset presents (game.ts advances it in the page rAF,
+  // which Vision Pro pauses), so when it stalls the stage keeps its own time running from the XR frames (monotonic).
+  let xrClock = 0, xrSrcTime = NaN;
   function xrFrame(t: number, frame?: XRFrame) {
+    let dtS = 0;
     if (xrLast >= 0) {
       const dt = t - xrLast;
+      dtS = Math.min(0.1, Math.max(0, dt / 1000));
       opts.onXRFrame?.(dt, xrUpd);
       if (!xrFlat && (opts.voxels === undefined || opts.voxels === "auto")) {
         // moving average (frames can arrive in bursts), judged after a 1 s warm-up
@@ -214,7 +228,10 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const u0 = performance.now();
     const src = opts.pull?.() ?? last;
     if (!src) return;
-    const { state, time } = src;
+    const { state } = src;
+    if (src.time !== xrSrcTime) { xrSrcTime = src.time; xrClock = Math.max(xrClock, src.time); }
+    else xrClock += dtS;
+    const time = xrClock;
     const ex = src.extras ?? last?.extras ?? {};
     const W = ex.world?.w ?? 480, H = ex.world?.h ?? 288;
     const fp = follow ? state.players.find((p) => p.id === follow) : null;
@@ -238,7 +255,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
       const yawAR = Math.atan2(camPos.x - W / 2, camPos.z - H / 2);
       prepare(state);
       look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yawAR, cam.quaternion, true, opts.voxels !== false && !xrFlat);
-      look.updateHud(state, time, true);
+      look.updateHud(state, true);
       xrUpd = performance.now() - u0;
       renderer.render(look.scene, cam);
       return;
@@ -246,11 +263,15 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     cam.getWorldPosition(camPos);
     // anchor the diorama to where the viewer's head was when the session (or a scale change) started
     // (wait for a tracked pose: before it the camera sits at the origin)
-    if (!xrHome || xrHome.scale !== xrScale || (xrHome.y < 0.3 && camPos.y >= 0.3)) xrHome = { x: camPos.x, y: camPos.y >= 0.3 ? camPos.y : 1.5, z: camPos.z, scale: xrScale };
+    const trackedHead = xr?.debug.head;
+    if (!trackedHead) { renderer.render(look.scene, cam); return; }
+    if (!xrHome || xrHome.scale !== xrScale) xrHome = { x: trackedHead.x, y: trackedHead.y, z: trackedHead.z, scale: xrScale };
     const table0 = xrScale === "table";
-    // tabletop: arena 1.2 m wide, centred ~0.7 m in front of the head, its top 0.15 m below eye height
+    // Use a real tracked pose; Vision Pro's requested comfort correction lowers
+    // the previous eye-relative tabletop by1m. Never alter reference-space sign.
     const place = getXRPlacement({ mode: xrScale, worldWidth: W, worldHeight: H, follow: fp ? { x: fp.x, y: fp.y } : null,
-      tableWidth: 1.2, tableHeight: table0 ? Math.max(0.5, xrHome.y - 0.15) : undefined, distance: table0 ? 0.7 : undefined });
+      tableWidth: 1.2, tableHeight: table0 ? getComfortTableHeight(xrHome.y, tableHeightOffset, xr!.debug.visionPro) : undefined, distance: table0 ? 0.7 : undefined });
+    if (xr) { xr.debug.tableY = place.position.y; xr.debug.tableHeightOffset = tableHeightOffset; heightReadout.update(xr.debug, cam); }
     place.position.x += xrHome.x;
     place.position.z += xrHome.z;
     look.root.scale.setScalar(place.scale);
@@ -266,7 +287,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const yaw = Math.atan2(camPos.x - W / 2, camPos.z - H / 2);
     prepare(state);
     look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yaw, cam.quaternion, true, opts.voxels !== false && !xrFlat);
-    look.updateHud(state, time, true);
+    look.updateHud(state, true, xrScale === "table");
     xrUpd = performance.now() - u0;
     renderer.render(look.scene, cam);
   }
@@ -291,6 +312,8 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
       placement?.setTableWidth(xrScale === "table" ? 1.2 : (W * 1.7) / 28);
     }
     else if (name === "exit") void exitXR();
+    // ▲ / ▼: nudge the tabletop by one step (codex-input's persisted comfort offset, height.ts)
+    else if (name === "up" || name === "down") api.setTableHeightOffset(api.getTableHeightOffset() + (name === "up" ? TABLE_HEIGHT_STEP : -TABLE_HEIGHT_STEP));
     else if (name === "follow") {
       const ids = (last?.state.players ?? []).filter((p) => !p.eliminated).map((p) => p.id);
       const i = follow ? ids.indexOf(follow) : -1;
@@ -303,6 +326,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     xrLast = -1;
     xrHome = null;
     xrSlow = 0; xrFlat = false;
+    xrClock = 0; xrSrcTime = NaN;
     // no awaits before requestSession (inside xrEnter): the click/pinch activation must still be live
     const want = mode === "auto" ? (support ? chooseSpatialMode(support) ?? "immersive-vr" : "immersive-vr") : mode;
     xr = await xrEnter(renderer, {
@@ -312,6 +336,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
       onFrame: xrFrame,
       onSelect,
       onEnd: () => {
+        heightReadout.hide();
         xr = null;
         placement?.dispose(); placement = null;
         reticle.visible = false;
@@ -334,11 +359,11 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     look.root.scale.setScalar(1);
     look.root.position.set(0, 0, 0);
     look.table.visible = false;
-    look.updateHud(last?.state ?? ({} as MatchState), 0, false);
+    look.updateHud(last?.state ?? ({} as MatchState), false);
   }
   async function exitXR() { await xrExit(xr); }
 
-  return {
+  const api: Stage25d = {
     canvas: renderer.domElement,
     resize(cssW, cssH, dpr) {
       mounted = true;
@@ -346,6 +371,8 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     },
     setFollow(id) { follow = id; },
     setScale(sc) { xrScale = sc; },
+    setTableHeightOffset(meters) { tableHeightOffset = setTableHeightOffset(meters); },
+    getTableHeightOffset: () => tableHeightOffset,
     render,
     screenToWorld: (sx, sy) => {
       const p = rig ? rig.screenToWorld(sx, sy) : { x: sx, y: sy };
@@ -359,6 +386,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     xrSupported: () => xrIsSupported(),
     exportUSDZ: () => exportSpatialUSDZ(look.root, { metersPerPixel: 1.2 / (last?.extras?.world?.w ?? 480) }),
     get xrMode() { return xr?.mode ?? null; },
+    get debugXR() { return xr?.debug ?? null; },
     /** debug: AR placement state */
     get debugPlacement() {
       if (!placement) return null;
@@ -376,10 +404,12 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     /** XR adaptive LOD has dropped to flat billboards */
     get xrLodFlat() { return xrFlat; },
     destroy() {
+      heightReadout.dispose();
       void exitXR();
       fx.project = null;
       look.dispose();
       renderer.dispose();
     },
   };
+  return api;
 }

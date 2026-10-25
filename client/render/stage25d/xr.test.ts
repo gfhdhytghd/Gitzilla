@@ -101,3 +101,14 @@ it('makes AR compositor clear transparent and restores it on session end', async
   expect(handle.mode).toBe('immersive-ar'); expect(setClearAlpha).toHaveBeenCalledWith(0);
   await handle.exit(); expect(setClearAlpha).toHaveBeenLastCalledWith(1);
 });
+
+it('reports raw/effective local poses with the correct negative floor-origin offset, without guessed tracking', async () => {
+  const { r, renderer } = setup(false);
+  const handle = await enterXR(r);
+  const loop = renderer.setAnimationLoop.mock.calls.at(-1)![0] as Function;
+  expect(handle.debug.head).toBeNull();
+  loop(0, { getViewerPose: () => null }); expect(handle.debug.head).toBeNull();
+  loop(1, { getViewerPose: (space: any) => ({ transform: { position: { x: 0, y: space.offset ? -space.offset.position.y : 0, z: 0 } } }) });
+  expect(handle.debug.referenceSpaceType).toBe('local'); expect(handle.debug.referenceOffsetY).toBe(-1.6);
+  expect(handle.debug.rawHeadY).toBe(0); expect(handle.debug.head!.y).toBe(1.6);
+});

@@ -1,11 +1,12 @@
 /** Optional spatial web facilities. None of these are required to play/spectate.
  * Vision Pro currently uses VR + native model; AR hit-test is progressive. */
-import { Color, Group, InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, Texture, TextureSource, Vector3 } from 'three';
+import { AdditiveBlending, Color, Group, InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, Texture, TextureSource, Vector3 } from 'three';
 import type { BufferGeometry, Material, Object3D } from 'three';
 import type { ImmersiveMode, SpatialSupport, XRHandle, XRSelectInfo } from './types';
 import { surfacePlacementMatrix } from './projection';
 import { xrSupported } from './xr';
-import { bakeVoxelExport, isVoxelExport } from './spatial-voxel';
+import { bakeVoxelExport, isVoxelExport, voxelPixelCount } from './spatial-voxel';
+import { compactUSDZ } from './spatial-usdz';
 
 interface NativeModelElement extends HTMLElement {
   ready: Promise<unknown>;
@@ -149,7 +150,14 @@ export async function createSurfacePlacement(handle: XRHandle, options: SurfaceO
   return placement;
 }
 
-export interface SpatialExportOptions { metersPerPixel?: number; maxInstances?: number; maxVoxelPixels?: number }
+export interface SpatialExportOptions {
+  metersPerPixel?: number; maxInstances?: number;
+  /** Total sampled cells, shared across all actors. Adaptive LOD, not truncation. */
+  maxVoxelPixels?: number;
+  colorBits?: number;
+  /** Native preview defaults to actors + plain floor; full scene is opt-in. */
+  includeDecorations?: boolean;
+}
 /** Expand instancing and normalize materials for three's USDZExporter. This is an
  * explicit frozen snapshot, never a per-frame export or mutation of live art. */
 export function prepareSpatialSnapshot(source: Object3D, options: SpatialExportOptions = {}) {
@@ -158,6 +166,10 @@ export function prepareSpatialSnapshot(source: Object3D, options: SpatialExportO
   const atlasGeometries = new Set<BufferGeometry>();
   const voxelPixels = new Map();
   let voxelCount = 0;
+  const voxelBudget = options.maxVoxelPixels ?? 12000;
+  if (!Number.isInteger(voxelBudget) || voxelBudget < 1) throw new RangeError('Snapshot voxel budget must be positive');
+  const stats = { voxelBudget, sourcePixels: 0, sampledPixels: 0, omittedMeshes: 0,
+    actors: [] as { width: number; height: number; sourcePixels: number; sampledPixels: number; step: number; rectangles: number }[] };
   const meterScale = options.metersPerPixel ?? 1;
   if (!Number.isFinite(meterScale) || meterScale <= 0) throw new RangeError('metersPerPixel must be positive');
   root.scale.setScalar(meterScale);
@@ -179,9 +191,9 @@ export function prepareSpatialSnapshot(source: Object3D, options: SpatialExportO
     } else if (image?.data) { copy.image = { ...image, data: image.data.slice() }; }
     copy.needsUpdate = true; textures.set(texture, copy); return copy;
   };
-  const standard = (original: Material, instanceColor?: Color) => {
+  const standard = (original: Material, instanceColor?: Color, plainFloor = false) => {
     const m = original as Material & { color?: Color; emissive?: Color; map?: Texture; uniforms?: { map?: { value: Texture } } };
-    const result = original instanceof MeshStandardMaterial ? original.clone() : new MeshStandardMaterial({
+    const result = plainFloor ? new MeshStandardMaterial({ color: 0x14272b, roughness: 1 }) : original instanceof MeshStandardMaterial ? original.clone() : new MeshStandardMaterial({
       color: m.color ?? 0xffffff, map: m.map ?? m.uniforms?.map?.value ?? null,
       opacity: m.opacity, transparent: m.transparent, alphaTest: m.alphaTest, side: m.side,
       emissive: m.emissive ?? 0x000000, roughness: 0.85, metalness: 0,
@@ -192,6 +204,36 @@ export function prepareSpatialSnapshot(source: Object3D, options: SpatialExportO
     if (instanceColor) result.color.multiply(instanceColor);
     materials.add(result); return result;
   };
+  const omit = (object: Mesh) => {
+    if (Array.isArray(object.material)) return false;
+    const material = object.material as any;
+    if (material.uniforms?.uFloorY) return true;
+    if (options.includeDecorations) return false;
+    return material.blending === AdditiveBlending || object.geometry.type === 'CircleGeometry' ||
+      !!object.geometry.getAttribute('aUv') ||
+      (object instanceof InstancedMesh && isVoxelExport(object) && object.geometry.getAttribute('aSlot').getZ(0) <= 40);
+  };
+  const shares = new Map<Mesh, number[]>();
+  const candidates: { mesh: Mesh; index: number; pixels: number; weight: number }[] = [];
+  source.traverseVisible(object => {
+    if (!(object instanceof Mesh) || omit(object) || !isVoxelExport(object)) return;
+    const count = object instanceof InstancedMesh ? object.count : 1;
+    if (count > (options.maxInstances ?? 50000)) throw new Error('Snapshot instance budget exceeded; reduce export LOD');
+    const actorShares: number[] = []; shares.set(object, actorShares);
+    for (let index = 0; index < count; index++) {
+      const pixels = voxelPixelCount(object, index, voxelPixels); actorShares[index] = pixels;
+      if (!pixels) continue;
+      const slot = object.geometry.getAttribute('aSlot');
+      const hero = slot.getZ(0) === 96 && slot.getW(0) === 100;
+      candidates.push({ mesh: object, index, pixels, weight: Math.sqrt(pixels) * (hero ? 1.5 : 1) });
+      stats.sourcePixels += pixels;
+    }
+  });
+  if (candidates.length > voxelBudget) throw new Error('Snapshot voxel budget is smaller than actor count');
+  if (stats.sourcePixels > voxelBudget) {
+    const weights = candidates.reduce((sum, c) => sum + c.weight, 0), remaining = voxelBudget - candidates.length;
+    for (const c of candidates) shares.get(c.mesh)![c.index] = Math.min(c.pixels, 1 + Math.floor(remaining * c.weight / weights));
+  }
   const dispose = () => {
     for (const material of materials) material.dispose(); materials.clear();
     for (const geometry of geometries.values()) geometry.dispose(); geometries.clear();
@@ -203,15 +245,22 @@ export function prepareSpatialSnapshot(source: Object3D, options: SpatialExportO
       if (!(object instanceof Mesh)) return;
       // Projected silhouette-shadow shaders have no portable static geometry.
       // Leave those to native lighting instead of exporting opaque sprite copies.
-      if (!Array.isArray(object.material) && (object.material as any).uniforms?.uFloorY) return;
+      if (omit(object)) { stats.omittedMeshes++; return; }
       const add = (transform: Matrix4, color?: Color, slot?: number) => {
         if (isVoxelExport(object)) {
-          const baked = bakeVoxelExport(object, slot ?? 0, voxelPixels, (options.maxVoxelPixels ?? 250000) - voxelCount);
+          const share = shares.get(object)![slot ?? 0]; if (!share) return;
+          const baked = bakeVoxelExport(object, slot ?? 0, voxelPixels, share, { colorBits: options.colorBits });
           voxelCount += baked.pixels; atlasGeometries.add(baked.geometry); materials.add(baked.material);
+          const rect = object.geometry.getAttribute('aSlot');
+          stats.actors.push({ width: rect.getZ(0), height: rect.getW(0), sourcePixels: voxelPixelCount(object, slot ?? 0, voxelPixels), sampledPixels: baked.pixels, step: baked.step, rectangles: baked.rectangles });
+          stats.sampledPixels = voxelCount;
           const copy = new Mesh(baked.geometry, baked.material); copy.name = object.name;
           copy.matrixAutoUpdate = false; copy.matrix.copy(transform); root.add(copy); return;
         }
-        const material = Array.isArray(object.material) ? object.material.map(m => standard(m, color)) : standard(object.material, color);
+        const params = (object.geometry as any).parameters;
+        const plainFloor = !options.includeDecorations && object.geometry.type === 'PlaneGeometry' &&
+          Math.abs(object.rotation.x + Math.PI / 2) < 0.001 && (params?.width ?? 0) * (params?.height ?? 0) * object.scale.x * object.scale.y > 50000;
+        const material = Array.isArray(object.material) ? object.material.map(m => standard(m, color, plainFloor)) : standard(object.material, color, plainFloor);
         let geometry = geometries.get(object.geometry);
         if (!geometry) { geometry = object.geometry.clone() as BufferGeometry; geometries.set(object.geometry, geometry); }
         // Stage glyph/FX shaders carry each instance's atlas crop in aUv.
@@ -237,7 +286,7 @@ export function prepareSpatialSnapshot(source: Object3D, options: SpatialExportO
       } else { matrix.copy(object.matrixWorld).premultiply(inverse); add(matrix); }
     });
   } catch (error) { dispose(); throw error; }
-  return { root, dispose };
+  return { root, stats, dispose };
 }
 
 export async function exportSpatialUSDZ(source: Object3D, options: SpatialExportOptions = {}): Promise<Blob> {
@@ -245,7 +294,7 @@ export async function exportSpatialUSDZ(source: Object3D, options: SpatialExport
   try {
     const { USDZExporter } = await import('three/addons/exporters/USDZExporter.js');
     const data = await new USDZExporter().parseAsync(snapshot.root, { onlyVisible: true, maxTextureSize: 1024, includeAnchoringProperties: true });
-    return new Blob([data], { type: 'model/vnd.usdz+zip' });
+    return new Blob([compactUSDZ(data)], { type: 'model/vnd.usdz+zip' });
   } finally { snapshot.dispose(); }
 }
 

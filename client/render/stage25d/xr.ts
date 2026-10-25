@@ -1,4 +1,5 @@
 import type { ImmersiveMode, XRHandle, XROptions, XRRenderer } from './types';
+import { isVisionProSafari, getTableHeightOffset } from './height';
 
 let active: XRHandle | null = null;
 let entering = false;
@@ -43,12 +44,15 @@ export async function enterXR(renderer: XRRenderer, options: XROptions = {}): Pr
     }
     let type: 'local-floor' | 'local' = 'local-floor';
     let space: XRReferenceSpace;
-    try { space = await session.requestReferenceSpace('local-floor'); }
+    let rawSpace: XRReferenceSpace;
+    let referenceOffsetY = 0;
+    try { space = rawSpace = await session.requestReferenceSpace('local-floor'); }
     catch {
-      type = 'local'; space = await session.requestReferenceSpace('local');
+      type = 'local'; space = rawSpace = await session.requestReferenceSpace('local');
       // local has its origin at the eyes, not the floor. Keep table placement
       // below eye level by providing an explicitly estimated floor reference.
-      space = space.getOffsetReferenceSpace(new XRRigidTransform({ y: -(options.fallbackViewerHeight ?? 1.6) }));
+      referenceOffsetY = -(options.fallbackViewerHeight ?? 1.6);
+      space = space.getOffsetReferenceSpace(new XRRigidTransform({ x: 0, y: referenceOffsetY, z: 0, w: 1 }));
     }
     renderer.xr.enabled = true;
     if (mode === 'immersive-ar') renderer.setClearAlpha?.(0);
@@ -79,6 +83,8 @@ export async function enterXR(renderer: XRRenderer, options: XROptions = {}): Pr
     };
     const handle: XRHandle = {
       mode, session: liveSession, referenceSpace: space, referenceSpaceType: type,
+      debug: { referenceSpaceType: type, referenceOffsetY, rawHeadY: null, head: null,
+        visionPro: isVisionProSafari(), tableHeightOffset: getTableHeightOffset(), tableY: null },
       exit() {
         if (ended) return Promise.resolve();
         return ending ??= liveSession.end().catch(error => { ending = undefined; throw error; });
@@ -91,6 +97,15 @@ export async function enterXR(renderer: XRRenderer, options: XROptions = {}): Pr
     active = handle;
     renderer.setAnimationLoop((time, frame) => {
       if (ended || liveSession.visibilityState === 'hidden') return;
+      if (frame?.getViewerPose) {
+        const pose = frame.getViewerPose(space);
+        if (pose) {
+          const p = pose.transform.position;
+          const head = handle.debug.head ??= { x: 0, y: 0, z: 0 };
+          head.x = p.x; head.y = p.y; head.z = p.z;
+          handle.debug.rawHeadY = rawSpace === space ? p.y : frame.getViewerPose(rawSpace)?.transform.position.y ?? null;
+        }
+      }
       if (frame && options.onHand) for (const source of liveSession.inputSources) {
         if (source.hand) options.onHand(source, frame, space);
       }
