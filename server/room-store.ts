@@ -14,6 +14,8 @@ export interface SavedPlayer {
   privateRepo?: boolean;
   botSeed?: number;
   identities?: string[]; // SHA-256 identity fingerprints; never provider credentials.
+  githubIdentity?: string; // SHA-256 of the authenticated GitHub ID, private to the server.
+  controllerToken?: string; // Room controller resume token; cannot resume a display/player.
   lobby: LobbyPlayer;
 }
 export interface SavedRoom {

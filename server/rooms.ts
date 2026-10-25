@@ -5,6 +5,7 @@ import { classroomExport } from './classroom-export';
 import type { InAppFile } from '../shared/classroom';
 import { editorCommit, normalizeEditorFiles } from './in-app';
 import { asPvpAiKit } from '../sim/index';
+import { githubIdFromSession, type GithubIdentity, type GithubSession } from './github-identity';
 import type { IncomingMessage } from 'node:http';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -31,6 +32,7 @@ export interface GameServices {
   applyRubric?(profile: RepoProfile, kit: PlayerKit, rubric: Rubric): PlayerKit;
   analyzeRepo(repo: string, options?: { token?: string; onProgress?: (progress: GenesisProgress) => void }): Promise<RepoProfile>;
   getSession?(request: IncomingMessage): Promise<{ login: string; userId?: string } | null>;
+  getGithubIdentity?(request: IncomingMessage, session: GithubSession): Promise<GithubIdentity | null>;
   getGithubToken?(request: IncomingMessage): Promise<string | null>;
   buildGenesis?(profile: RepoProfile, kit: PlayerKit | BossKit, kind: 'hero' | 'boss'): Genesis;
   listFallbackRepos(): string[];
@@ -58,6 +60,13 @@ interface Member {
   privateRepo?: boolean;
   pvpAccess?: PvpAccess; // Memory-only; invalidated on reconnect and mode changes.
   identities?: string[];
+  githubIdentity?: string;
+  controllerToken?: string;
+  controllerSocket?: WebSocket | null;
+  controllerSeq?: number;
+  displaySeq?: number;
+  displayKeyboardReady?: boolean;
+  inputFromController?: boolean;
   profile?: RepoProfile; // Memory-only, never part of the room-store whitelist.
   socket: WebSocket | null;
   lobby: LobbyPlayer;
@@ -110,7 +119,10 @@ interface Room {
 const idle = (seq = 0): InputFrame => ({ seq, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard' });
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const removedMessage = 'You were removed from this room by the host.';
-const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => m.role === 'player' && m.socket !== null);
+const controllerSignIn = 'Sign in with GitHub on both devices to use your phone as the controller.';
+const controllerNoSeat = 'Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.';
+const online = (member: Member) => !!(member.socket || member.controllerSocket);
+const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => m.role === 'player' && online(m));
 const capacity = (room: Room) => room.mode === 'edu' ? 30 : 8;
 const bots = (room: Room) => [...room.members.values()].filter(m => m.lobby.bot);
 const squad = (room: Room) => [...connectedPlayers(room), ...bots(room)];
@@ -128,7 +140,7 @@ export class RoomServer {
   private classroomWaiters: (() => void)[] = [];
   private rooms = new Map<string, Room>();
   private revokedTokens = new Set<string>();
-  private sessions = new WeakMap<WebSocket, { room: Room; member: Member }>();
+  private sessions = new WeakMap<WebSocket, { room: Room; member: Member; controller?: boolean }>();
   private requests = new WeakMap<WebSocket, IncomingMessage>();
   private joining = new WeakMap<WebSocket, Promise<void>>();
   private onConnection = (socket: WebSocket, request: IncomingMessage) => {
@@ -158,6 +170,7 @@ export class RoomServer {
       for (const player of saved.players) {
         const lobby = { ...player.lobby };
         delete lobby.rubricPreview;
+        delete lobby.paired;
         if (lobby.status === 'analyzing') {
           lobby.status = 'error'; lobby.error = 'Server restarted during analysis. Choose this repo again.';
         }
@@ -196,6 +209,7 @@ export class RoomServer {
       bans: { tokens: [...room.bans.tokens], identities: [...room.bans.identities] },
       players: [...room.members.values()].filter(m => m.role === 'player' || m.id === room.ownerId || m.id === room.teacherId).map(m => ({
         id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed, identities: m.identities,
+        githubIdentity: m.githubIdentity, controllerToken: m.controllerToken,
         lobby: this.persistedLobby(m),
       })),
       boss: room.privateBoss
@@ -207,7 +221,7 @@ export class RoomServer {
   }
 
   private persistedLobby(member: Member): LobbyPlayer {
-    if (!member.privateRepo) { const { controlsReady: _controlsReady, rubricPreview: _preview, ...lobby } = member.lobby; return lobby; }
+    if (!member.privateRepo) { const { controlsReady: _controlsReady, paired: _paired, rubricPreview: _preview, ...lobby } = member.lobby; return lobby; }
     const kit = member.lobby.kit;
     // Whitelist gameplay fields: sim may attach classroom source facts outside PlayerKit.
     const safeKit: PlayerKit | null = kit ? {
@@ -253,6 +267,27 @@ export class RoomServer {
     return room ? { exists: true, players: squad(room).length, phase: room.phase } : { exists: false, players: 0, phase: null };
   }
 
+  private async clientIdentity(request?: IncomingMessage) {
+    const session = request ? await this.services.getSession?.(request) : null;
+    if (!session || !request) return { session: null, github: null };
+    const direct = githubIdFromSession(session);
+    let github: GithubIdentity | null = direct ? { id: direct, login: session.login } : null;
+    if (!github) try { github = await this.services.getGithubIdentity?.(request, session) ?? null; } catch { /* Keep the decoded session for room-ban checks. */ }
+    return { session, github };
+  }
+
+  async mySeat(code: string, request: IncomingMessage) {
+    if (!/^[A-Z]{4}$/.test(code)) return { status: 400, body: { error: 'Use a four-letter room code (A–Z only; no digits).' } };
+    let identity: Awaited<ReturnType<RoomServer['clientIdentity']>>;
+    try { identity = await this.clientIdentity(request); } catch { return { status: 401, body: { error: controllerSignIn } }; }
+    if (!identity.github || !identity.session) return { status: 401, body: { error: controllerSignIn } };
+    const room = this.rooms.get(code), github = tokenHash(`github:${identity.github.id}`);
+    if (room && (room.bans.identities.has(github) || (identity.session.userId && room.bans.identities.has(tokenHash(`auth0:${identity.session.userId}`))))) return { status: 403, body: { error: removedMessage } };
+    const member = room && [...room.members.values()].find(m => m.role === 'player' && !m.lobby.bot && m.githubIdentity === github && !!m.socket);
+    return member ? { status: 200, body: { seatId: member.id, name: member.name, paired: !!member.controllerSocket } }
+      : { status: 404, body: { error: controllerNoSeat } };
+  }
+
   eduOwnerError(code: string, token: string | undefined, lobbyOnly = false): { status: number; error: string } | undefined {
     if (!/^[A-Z]{4}$/.test(code)) return { status: 400, error: 'Use a four-letter room code (A–Z only; no digits).' };
     const room = this.rooms.get(code);
@@ -280,7 +315,7 @@ export class RoomServer {
 
   lobby(room: Room): LobbyState {
     return { room: room.code, ownerId: room.ownerId, mode: room.mode, ...(room.mode === 'edu' ? { locale: room.locale ?? 'en' } : {}),
-      players: squad(room).map(m => ({ ...m.lobby, controlsReady: !!m.lobby.bot || m.controlsReady, rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
+      players: squad(room).map(m => ({ ...m.lobby, paired: !!m.controllerSocket, controlsReady: !!m.lobby.bot || m.controlsReady, rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
       ...(room.classroom ? { classroom: room.classroom.publicState() } : {}),
       ...(room.mode === 'edu' && room.rubric ? { rubric: room.rubric } : {}) };
   }
@@ -299,7 +334,7 @@ export class RoomServer {
 
   private broadcast(room: Room, message: ServerMsg) {
     const packet = JSON.stringify(message);
-    for (const m of room.members.values()) if (m.socket?.readyState === WebSocket.OPEN) m.socket.send(packet);
+    for (const m of room.members.values()) { if (m.socket?.readyState === WebSocket.OPEN) m.socket.send(packet); if (m.controllerSocket?.readyState === WebSocket.OPEN) m.controllerSocket.send(packet); }
   }
 
   private broadcastLobby(room: Room, persist = true) {
@@ -349,6 +384,7 @@ export class RoomServer {
     let msg: ClientMsg;
     try { msg = JSON.parse(raw); } catch { throw new Error('Invalid JSON'); }
     if (!msg || typeof msg.t !== 'string') throw new Error('Invalid message');
+    if (this.sessions.get(socket)?.controller && !['input', 'controls', 'leave', 'pairEnd'].includes(msg.t)) throw new Error('This phone is a controller');
     const limit = msg.t === 'classroomPlan' ? 16 * 1024 * 1024 : msg.t === 'classroomSubmitCode' ? 2 * 1024 * 1024 : 256 * 1024;
     if (raw.length > limit) throw new Error('Room message is too large');
     if (msg.t === 'hello') {
@@ -363,8 +399,10 @@ export class RoomServer {
     const pendingHello = this.joining.get(socket);
     if (pendingHello) await pendingHello;
     const session = this.sessions.get(socket);
-    if (!session || session.member.socket !== socket) throw new Error('Send hello first');
+    if (!session || (session.controller ? session.member.controllerSocket !== socket : session.member.socket !== socket)) throw new Error('Send hello first');
     const { room, member } = session;
+    if (session.controller && !['input', 'controls', 'leave', 'pairEnd'].includes(msg.t)) throw new Error('This phone is a controller');
+    if (msg.t === 'pairEnd' || (session.controller && msg.t === 'leave')) { this.detachController(room, member, true); return; }
     if (msg.t === 'leave') { this.leave(socket, room, member); return; }
     if (msg.t === 'kick' || msg.t === 'transferOwner') {
       if (room.ownerId !== member.id) throw new Error('Only the room owner can do that');
@@ -403,6 +441,7 @@ export class RoomServer {
     if (msg.t === 'controls') {
       if (member.role !== 'player') return;
       if (typeof msg.ready !== 'boolean' || !['standard', 'seated', 'tap-only'].includes(msg.mode)) throw new Error('Invalid controls readiness');
+      if (!session.controller) member.displayKeyboardReady = !phoneRequest(this.requests.get(socket)) && msg.ready;
       if (member.controlsReady === msg.ready && member.controlsMode === msg.mode) return;
       member.controlsReady = msg.ready; member.controlsMode = msg.mode;
       this.broadcastLobby(room, false); // Per-page sensor state must never be restored from disk.
@@ -417,10 +456,16 @@ export class RoomServer {
       }
       const f = sanitizeInputFrame(msg.frame);
       if (!f) return;
-      if (member.input && f.seq <= member.input.seq) return;
+      const seq = session.controller ? member.controllerSeq : member.displaySeq;
+      if (seq !== undefined && f.seq <= seq) return;
+      if (session.controller) member.controllerSeq = f.seq; else {
+        member.displaySeq = f.seq;
+        if (f.source === 'keyboard') member.displayKeyboardReady = true;
+      }
       const pending = member.input;
       member.input = { ...f, dash: !!f.dash || !!pending?.dash, skill: !!f.skill || !!pending?.skill };
       member.inputAt = Date.now();
+      member.inputFromController = !!session.controller;
       return;
     }
     const ownerAction = msg.t === 'setBoss' || msg.t === 'setBots' || msg.t === 'setMode' || msg.t === 'setRubric' || msg.t === 'start' || msg.t === 'rematch';
@@ -432,7 +477,7 @@ export class RoomServer {
       room.restartNotice = undefined;
       room.phase = 'lobby'; room.match = undefined; room.departed = undefined; room.state = undefined; room.result = undefined; room.events = [];
       room.feedback = undefined; room.feedbackProfiles = undefined; room.matchRubric = undefined;
-      for (const m of room.members.values()) m.input = undefined;
+      for (const m of room.members.values()) { m.input = undefined; m.displaySeq = undefined; m.controllerSeq = undefined; }
       this.preparePvpBots(room);
       this.broadcastLobby(room);
       return;
@@ -690,7 +735,8 @@ export class RoomServer {
 
   private async hello(socket: WebSocket, msg: Extract<ClientMsg, { t: 'hello' }>) {
     if (this.sessions.has(socket)) throw new Error('Already joined');
-    if (msg.role !== 'screen' && msg.role !== 'player') throw new Error('Choose player or screen');
+    if (msg.role === 'controller') { await this.helloController(socket, msg); return; }
+    if (msg.role !== 'screen' && msg.role !== 'player') throw new Error('Choose player, screen or controller');
     const code = String(msg.room).toUpperCase();
     if (!/^[A-Z]{4}$/.test(code)) throw new Error('Use a four-letter room code (A–Z only; no digits).');
     let room = this.rooms.get(code);
@@ -701,20 +747,23 @@ export class RoomServer {
     const suppliedName = String(msg.name || '').trim().slice(0, 32);
     let githubName: string | undefined;
     let identity: string | undefined;
+    let githubIdentity: string | undefined;
     const request = this.requests.get(socket);
     if (request && this.services.getSession) {
       try {
-        const session = await this.services.getSession(request);
+        const { session, github } = await this.clientIdentity(request);
         githubName = msg.role === 'player' ? session?.login : undefined;
         if (session?.userId) identity = tokenHash(`auth0:${session.userId}`);
+        if (github) githubIdentity = tokenHash(`github:${github.id}`);
       }
       catch { /* Anonymous play works if session resolution is unavailable. */ }
     }
     if (this.closing || socket.readyState !== WebSocket.OPEN) return;
-    if ((typeof msg.resume === 'string' && room.bans.tokens.has(tokenHash(msg.resume))) || (identity && room.bans.identities.has(identity))) { this.rejectBan(socket); return; }
+    if ((typeof msg.resume === 'string' && room.bans.tokens.has(tokenHash(msg.resume))) || (identity && room.bans.identities.has(identity)) || (githubIdentity && room.bans.identities.has(githubIdentity))) { this.rejectBan(socket); return; }
     if (typeof msg.resume === 'string' && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'left'); return; }
     if (this.rooms.get(code) !== room) throw new Error('Room not found. Check the room code and try again.');
     const previousOwner = room.ownerId;
+    if (msg.resume && [...room.members.values()].some(m => m.controllerToken === msg.resume)) throw new Error('This token resumes a controller, not a player display.');
     let member = msg.resume ? [...room.members.values()].find(m => m.token === msg.resume && m.role === msg.role) : undefined;
     if ((member?.identities ?? []).some(key => room.bans.identities.has(key))) { this.rejectBan(socket); return; }
     if (!member) {
@@ -726,26 +775,33 @@ export class RoomServer {
       const name = suppliedName || githubName?.slice(0, 32) || (msg.role === 'screen' ? 'Big screen' : 'Player');
       member = { id, name, namedByUser: !!suppliedName, token: randomBytes(24).toString('hex'), role: msg.role, socket: null, revision: 0, inputAt: 0, controlsReady: false, lobby: { id, name, repo: null, status: 'empty', kit: null } };
       room.members.set(id, member);
-    } else if (!member.socket && member.role === 'player' && connectedPlayers(room).length >= capacity(room)) {
+    } else if (!online(member) && member.role === 'player' && connectedPlayers(room).length >= capacity(room)) {
       throw new Error(`Room is full (${capacity(room)} players)`);
     } else if (member.socket) {
       this.sessions.delete(member.socket);
       member.socket.close(4001, 'Resumed in another tab');
     }
     if (identity) member.identities = [...new Set([...(member.identities ?? []), identity])];
+    if (member.githubIdentity !== githubIdentity && member.controllerToken) this.detachController(room, member, true);
+    member.githubIdentity = githubIdentity;
+    if (githubIdentity) {
+      member.identities = [...new Set([...(member.identities ?? []), githubIdentity])];
+    }
     // The lobby's rename control reconnects with the same token and a new hello name.
-    if (member.role === 'player' && !member.socket) this.makeRoomForHuman(room);
+    if (member.role === 'player' && !online(member)) this.makeRoomForHuman(room);
     member.name = suppliedName || (!member.namedByUser && githubName?.slice(0, 32)) || member.name;
     if (suppliedName) member.namedByUser = true;
     member.lobby.name = member.name;
-    member.socket = socket; member.input = undefined;
+    member.socket = socket; member.displaySeq = undefined;
+    if (!member.controllerSocket) member.input = undefined;
     if (room.mode === 'pvp' && room.phase === 'lobby') {
       member.pvpAccess = undefined; member.profile = undefined; member.revision++;
       member.lobby = { id: member.id, name: member.name, repo: null, status: 'empty', kit: null };
     }
     // Every new WS hello may be a fresh iOS page. Desktop keyboard is immediately
     // usable; phone clients must report live sensors or an explicit touch choice.
-    member.controlsReady = !phoneRequest(request); member.controlsMode = undefined;
+    member.displayKeyboardReady = !phoneRequest(request);
+    if (!member.controllerSocket) { member.controlsReady = member.displayKeyboardReady; member.controlsMode = undefined; }
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
     if (!room.classroom && (member.role === 'player' || room.mode === 'edu' || room.mode === 'pvp') && (!room.ownerId || !room.members.get(room.ownerId)?.socket)) room.ownerId = member.id;
@@ -774,17 +830,68 @@ export class RoomServer {
   private disconnect(socket: WebSocket) {
     if (this.closing) return;
     const session = this.sessions.get(socket);
-    if (!session || session.member.socket !== socket) return;
+    if (!session) return;
+    if (session.controller) { if (session.member.controllerSocket === socket) this.detachController(session.room, session.member, false); return; }
+    if (session.member.socket !== socket) return;
     this.sessions.delete(socket);
     const { room, member } = session;
     const previousOwner = room.ownerId;
-    member.socket = null; member.input = undefined; member.controlsReady = false;
+    member.socket = null; member.displayKeyboardReady = false;
+    if (!member.controllerSocket || !member.inputFromController) member.input = undefined;
+    if (!member.controllerSocket) member.controlsReady = false;
     if (!room.classroom && room.ownerId === member.id) room.ownerId = connectedPlayers(room)[0]?.id ?? '';
     this.pauseOwnershipChanged(room, previousOwner);
     if (room.classroom) { this.classroomRoster(room); this.publishClassroom(room); }
     this.broadcastLobby(room);
     if (room.feedback) { const owner = room.members.get(room.ownerId); if (owner) this.sendFeedback(room, owner); }
-    if (![...room.members.values()].some(m => m.socket)) this.scheduleCleanup(room);
+    if (![...room.members.values()].some(online)) this.scheduleCleanup(room);
+  }
+
+  private async helloController(socket: WebSocket, msg: Extract<ClientMsg, { t: 'hello' }>) {
+    const code = String(msg.room).toUpperCase();
+    if (!/^[A-Z]{4}$/.test(code)) throw new Error('Use a four-letter room code (A–Z only; no digits).');
+    const room = this.rooms.get(code);
+    if (room && msg.resume && room.bans.tokens.has(tokenHash(msg.resume))) { this.rejectBan(socket); return; }
+    if (msg.resume && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'unlinked'); return; }
+    let identity: Awaited<ReturnType<RoomServer['clientIdentity']>>;
+    try { identity = await this.clientIdentity(this.requests.get(socket)); } catch { throw new Error(controllerSignIn); }
+    if (!identity.session || !identity.github) throw new Error(controllerSignIn);
+    if (this.closing || socket.readyState !== WebSocket.OPEN) return;
+    if (!room || this.rooms.get(code) !== room) throw new Error(controllerNoSeat);
+    const github = tokenHash(`github:${identity.github.id}`), auth0 = identity.session.userId ? tokenHash(`auth0:${identity.session.userId}`) : undefined;
+    if (room.bans.identities.has(github) || (auth0 && room.bans.identities.has(auth0)) || (msg.resume && room.bans.tokens.has(tokenHash(msg.resume)))) { this.rejectBan(socket); return; }
+    const member = [...room.members.values()].find(m => m.role === 'player' && !m.lobby.bot && m.githubIdentity === github
+      && (msg.resume ? m.controllerToken === msg.resume : !!m.socket));
+    if (!member) throw new Error(controllerNoSeat);
+    const previous = member.controllerSocket;
+    if (previous) { this.sessions.delete(previous); this.requests.delete(previous); send(previous, { t: 'error', message: 'Another phone took over the controls' }); previous.close(4001, 'Controller replaced'); }
+    if (!msg.resume) {
+      if (member.controllerToken) this.revokedTokens.add(tokenHash(member.controllerToken));
+      member.controllerToken = randomBytes(24).toString('hex');
+    }
+    member.controllerSocket = socket; member.controllerSeq = undefined; member.controlsReady = false;
+    if (member.inputFromController) { member.input = undefined; member.inputAt = 0; }
+    member.identities = [...new Set([...(member.identities ?? []), github, ...(auth0 ? [auth0] : [])])];
+    this.sessions.set(socket, { room, member, controller: true }); clearTimeout(room.cleanupTimer);
+    this.classroomRoster(room);
+    send(socket, { t: 'welcome', you: member.id, token: member.controllerToken!, controller: true, lobby: this.lobby(room) });
+    this.broadcastLobby(room); this.flushPersistence();
+    if (room.state) send(socket, { t: 'snapshot', state: { ...room.state, paused: room.paused ?? null, events: [] }, ack: -1 });
+    if (room.result) send(socket, { t: 'autopsy', result: room.result });
+    if (room.classroom) this.publishClassroom(room);
+  }
+
+  private detachController(room: Room, member: Member, revoke: boolean) {
+    const socket = member.controllerSocket;
+    member.controllerSocket = null; member.controllerSeq = undefined;
+    if (revoke && member.controllerToken) { this.revokedTokens.add(tokenHash(member.controllerToken)); member.controllerToken = undefined; }
+    if (socket) { this.sessions.delete(socket); this.requests.delete(socket); if (revoke) socket.close(4002, 'unlinked'); }
+    if (member.inputFromController) { member.input = undefined; member.inputAt = 0; }
+    member.controlsReady = !!member.socket && !!member.displayKeyboardReady;
+    this.classroomRoster(room);
+    this.broadcastLobby(room); this.flushPersistence();
+    if (room.classroom) this.publishClassroom(room, false);
+    if (![...room.members.values()].some(online)) this.scheduleCleanup(room);
   }
 
   private leave(socket: WebSocket, room: Room, member: Member) {
@@ -798,6 +905,7 @@ export class RoomServer {
   private kickMember(room: Room, member: Member, by: string) {
     if (!member.lobby.bot) {
       room.bans.tokens.add(tokenHash(member.token));
+      if (member.controllerToken) room.bans.tokens.add(tokenHash(member.controllerToken));
       for (const identity of member.identities ?? []) room.bans.identities.add(identity);
       if (member.pvpAccess) room.bans.identities.add(tokenHash(`github:${member.pvpAccess.userId}`));
     }
@@ -806,18 +914,21 @@ export class RoomServer {
 
   private removeMember(room: Room, member: Member, reason: 'left' | 'kicked', by?: string) {
     const socket = member.socket;
+    const controller = member.controllerSocket;
     const previousOwner = room.ownerId;
     if (reason === 'left') this.revokedTokens.add(tokenHash(member.token));
+    if (reason === 'left' && member.controllerToken) this.revokedTokens.add(tokenHash(member.controllerToken));
     ++member.revision;
-    member.input = undefined; member.profile = undefined; member.preview = undefined; member.socket = null;
+    member.input = undefined; member.profile = undefined; member.preview = undefined; member.socket = null; member.controllerSocket = null;
     room.members.delete(member.id); room.pendingProgress?.delete(member.id);
     room.feedbackProfiles?.delete(member.id);
     if (room.feedback) room.feedback = room.feedback.filter(item => item.playerId !== member.id);
     if (socket) { this.sessions.delete(socket); this.requests.delete(socket); }
+    if (controller) { this.sessions.delete(controller); this.requests.delete(controller); }
     if (reason === 'kicked') room.classroom?.kick(member.id); else room.classroom?.remove(member.id);
     if (room.classroom && room.teacherId === member.id) { room.classroom.end(); this.clearPause(room); }
     if (!room.classroom && room.teacherId === member.id) room.teacherId = undefined;
-    const humans = [...room.members.values()].filter(m => !m.lobby.bot && m.socket);
+    const humans = [...room.members.values()].filter(m => !m.lobby.bot && online(m));
     if (!room.classroom && room.ownerId === member.id) room.ownerId = (humans.find(m => m.role === 'player') ?? humans[0])?.id ?? '';
     this.pauseOwnershipChanged(room, previousOwner);
     if (!humans.length) {
@@ -836,9 +947,9 @@ export class RoomServer {
       this.publishFeedback(room);
     }
     this.flushPersistence(); // Durable leave/revocation before acknowledging by closing.
-    if (socket) {
-      if (reason === 'kicked') send(socket, { t: 'kicked', by: by ?? 'the host' });
-      socket.close(reason === 'kicked' ? 4003 : 4002, reason);
+    for (const peer of [socket, controller]) if (peer) {
+      if (reason === 'kicked') send(peer, { t: 'kicked', by: by ?? 'the host' });
+      peer.close(reason === 'kicked' ? 4003 : 4002, reason);
     }
   }
 
@@ -881,12 +992,13 @@ export class RoomServer {
   private async validatePvpStart(room: Room, owner: Member) {
     const roster = this.pvpFighters(room);
     const ownerSocket = owner.socket;
-    const connections = connectedPlayers(room).map(member => ({ member, socket: member.socket, revision: member.revision }));
+    const connections = connectedPlayers(room).map(member => ({ member, socket: member.socket, controller: member.controllerSocket, revision: member.revision }));
     const botRoster = bots(room).map(m => ({ id: m.id, revision: m.revision }));
-    const captured = roster.map(m => ({ member: m, socket: m.socket, revision: m.revision, access: m.pvpAccess! }));
+    const captured = roster.map(m => ({ member: m, socket: m.socket, controller: m.controllerSocket, revision: m.revision, access: m.pvpAccess! }));
     const verified = await Promise.all(captured.map(async c => {
       try {
-        const request = c.socket ? this.requests.get(c.socket) : undefined;
+        const peer = c.socket ?? c.controller;
+        const request = peer ? this.requests.get(peer) : undefined;
         let token: string | null | undefined;
         try { token = request ? await this.services.getGithubToken?.(request) : null; }
         catch { throw new Error('GitHub connection unavailable. Reconnect GitHub and retry.'); }
@@ -898,7 +1010,7 @@ export class RoomServer {
     }));
     if (room.mode !== 'pvp' || room.phase !== 'lobby' || room.ownerId !== owner.id || !owner.socket || owner.socket !== ownerSocket
         || connectedPlayers(room).length !== connections.length || bots(room).length !== botRoster.length
-        || connections.some(c => room.members.get(c.member.id) !== c.member || c.member.socket !== c.socket || c.member.revision !== c.revision)
+        || connections.some(c => room.members.get(c.member.id) !== c.member || c.member.socket !== c.socket || c.member.controllerSocket !== c.controller || c.member.revision !== c.revision)
         || botRoster.some(c => room.members.get(c.id)?.revision !== c.revision)
         || captured.some((c, i) => c.member.socket !== c.socket || c.member.revision !== c.revision
           || c.member.pvpAccess !== c.access || verified[i].userId !== c.access.userId || verified[i].private !== c.access.private || verified[i].repo !== c.access.repo)) throw new Error('The PvP roster changed. Verify repositories and try again.');
@@ -952,7 +1064,7 @@ export class RoomServer {
     room.feedback = undefined;
     room.matchRubric = matchRubric;
     room.feedbackProfiles = room.mode === 'edu' ? new Map(humans.flatMap(p => p.profile ? [[p.id, p.profile] as const] : [])) : undefined;
-    for (const member of room.members.values()) member.input = undefined;
+    for (const member of room.members.values()) { member.input = undefined; member.displaySeq = undefined; member.controllerSeq = undefined; }
     this.capture(room);
     this.broadcastLobby(room);
     this.publishSnapshot(room);
@@ -974,7 +1086,7 @@ export class RoomServer {
             if (player) inputs.set(m.id, sanitizeInputFrame(m.botInput(room.state, player)) ?? idle());
             continue;
           }
-          inputs.set(m.id, m.socket && m.input && now - m.inputAt < 300 ? { ...m.input } : idle(m.input?.seq));
+          inputs.set(m.id, online(m) && m.input && now - m.inputAt < 300 ? { ...m.input } : idle(m.input?.seq));
           if (m.input) { m.input.dash = false; m.input.skill = false; }
         }
         try { match.step(1 / 30, inputs); }
@@ -1068,18 +1180,20 @@ export class RoomServer {
     const state = { ...room.state, paused: room.paused ?? null, events: room.events.splice(0) };
     const json = JSON.stringify(state);
     for (const m of room.members.values()) if (m.socket?.readyState === WebSocket.OPEN) {
-      m.socket.send(`{"t":"snapshot","state":${json},"ack":${m.input?.seq ?? -1}}`);
+      m.socket.send(`{"t":"snapshot","state":${json},"ack":${m.displaySeq ?? -1}}`);
     }
+    for (const m of room.members.values()) if (m.controllerSocket?.readyState === WebSocket.OPEN) m.controllerSocket.send(`{"t":"snapshot","state":${json},"ack":${m.controllerSeq ?? -1}}`);
   }
 
   private classroomRoster(room: Room) {
-    room.classroom?.roster([...room.members.values()].filter(m => m.role === 'player' && !m.lobby.bot && m.id !== room.teacherId).map(m => ({ id: m.id, name: m.name, connected: !!m.socket })));
+    room.classroom?.roster([...room.members.values()].filter(m => m.role === 'player' && !m.lobby.bot && m.id !== room.teacherId).map(m => ({ id: m.id, name: m.name, connected: online(m) })));
   }
   private publishClassroom(room: Room, persist = true) {
     if (!room.classroom || this.closing) return;
     const state = { ...room.classroom.publicState(), paused: room.paused ?? null };
     for (const member of room.members.values()) send(member.socket, { t: 'classroom', state, ...room.classroom.privatePayload(member.id,
       member.role === 'screen' && member.id === room.teacherId && member.id === room.ownerId) });
+    for (const member of room.members.values()) send(member.controllerSocket ?? null, { t: 'classroom', state, reports: {} });
     if (persist) this.persist();
   }
   private armClassroom(room: Room) {

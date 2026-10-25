@@ -21,6 +21,8 @@ import { handleTraceRoute, TraceStore } from './traces.ts';
 import { handleEduRoute } from './edu-http.ts';
 import { defaultRubric, parseRubric, scoreRepo, buildFeedback } from '../rubric/index.ts';
 import { RoyaleHall } from './royale-hall.ts';
+import { resolveGithubIdentity } from './github-identity.ts';
+import { handleControllerRoute } from './controller-http.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
@@ -47,6 +49,7 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
+  getGithubIdentity: (request, session) => resolveGithubIdentity(request, session, getGithubToken),
   analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
@@ -111,6 +114,7 @@ server.on('request', (req, res) => {
       return;
     }
     const url = new URL(req.url || '/', 'http://localhost');
+    if (await handleControllerRoute(req, res, url, rooms)) return;
     if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
       json(res, 404, { error: 'Not found' }); return;
     }
