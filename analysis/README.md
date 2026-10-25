@@ -14,6 +14,20 @@ The anonymous live path downloads `https://codeload.github.com/<slug>/tar.gz/HEA
 
 Requests have a 12-second network deadline. Concurrent requests share one job only when both the normalized repo and credential match. Anonymous live results are cached for 24 hours in `.cache/analysis/<owner>/<repo>.json`; stale real cache is used if refresh fails. Authenticated analyses **never read or write disk cache**, including when using the environment token. Their memory cache and in-flight jobs are keyed by slug plus SHA-256(token), separately from anonymous results and other tokens. Raw tokens are not persisted in profiles or cache keys. If neither source nor cache is available, famous repos use `data/fallback/*.json`. Unknown repos receive a deterministic synthetic creature with a clearly labeled description and zero GitHub metadata. All offline responses set `fallback: true`, are held in memory for only 60 seconds, and are not persisted over live results. Returned objects are independent copies.
 
+## In-app classroom files
+
+```ts
+import { analyzeFiles } from './analysis/index.ts';
+const profile = analyzeFiles([
+  { path: 'main.py', content: 'def greet(name):\n    return "Hello, " + name\n' },
+  { path: 'tests/test_main.py', content: 'from main import greet\nassert greet("Ada") == "Hello, Ada"\n' },
+], 'in-app');
+```
+
+`analyzeFiles(files: InAppFile[], name: string): RepoProfile` is synchronous and uses the same source/import graph, components, heart, language-byte counts, DNA, README/tree and raw quality measurements as repository analysis. It is also available directly from `analysis/in-app.ts`. The server validates file count/bytes/paths/UTF-8 before calling it, retains the original files for lesson checks, and owns content hashing and grading. `name` is a display identity used as the profile slug/seed input; it does not need GitHub owner/repo syntax. Blank names use `in-app`.
+
+Editor content is inspected statically in memory. This path performs no fetch, GitHub/OSV request, credential lookup, cache/persistence operation, installation or code execution. Every call analyzes the current draft even when the name is unchanged; results are independent objects. Repository source exclusions also apply to editor files (e.g. vendor/build/dependency directories); README and supported manifests are retained as analysis context. GitHub-only metadata remains zero/absent, with no synthetic/offline substitution. Empty drafts and empty Python files return their actual empty measurements; no source is invented. Rubrics and classroom checks remain server-owned.
+
 ## Graph and sampling conventions
 
 - Limits: 40 MiB compressed download, 40 MiB expanded tar, 20,000 retained files, and 1 MiB per individual file. Expanded-byte/file-count limits stop extraction at complete files, so large-repo profiles are **prefix samples**, not whole-repo totals. Download, stream, gzip, and tar failures use the offline path. Archives never extract to disk.

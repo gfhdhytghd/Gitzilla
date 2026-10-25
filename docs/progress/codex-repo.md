@@ -1,3 +1,17 @@
+DONE (in-app editor)
+
+Completed owner work: add synchronous `analyzeFiles(files: InAppFile[], name: string): RepoProfile` to analysis/index.ts. Reuse the graph/DNA/README/tree/quality pipeline entirely in memory; no GitHub, OSV, credential lookup, cache or source execution. Server owner keeps submission validation, hashing and rubric/check scoring.
+
+### In-app editor handoff to codex-net (interface fixed)
+
+```ts
+import { analyzeFiles } from '../analysis/index';
+// After server validation of InAppFile[]:
+const profile = analyzeFiles(files, 'in-app');
+```
+
+`name` becomes the profile's slug/display identity (not a GitHub URL). Returns synchronously; unavailable GitHub stats remain zero, and source-derived graph/DNA/quality fields are measured normally. No synthetic fallback. Server retains submitted files for file/contains checks and owns `inapp:<8 hex>` hash plus report source. No shared-contract change needed: InAppFile is imported from shared/classroom.ts.
+
 DONE (osv fix)
 
 OSV credibility fix complete: concrete pins only, exact-version API match plus affected-version advisory evidence, version/source provenance, branch-correct published fixes, and advisory alias consolidation. All 15 famous snapshots regenerated with authenticated public-only precompute. Owned tests 120/120 PASS; workspace typecheck PASS; workspace suite 466 PASS / 7 skipped. No commits/shared edits/live-server actions.
@@ -431,3 +445,14 @@ Coordinator: please add optional `version?: string; source?: string; aliases?: s
 **data/fallback changed again**: all 15 were regenerated; 13 have byte changes. Advisory records now carry version/source/aliases and conservative matching/fixes. Any design cache fingerprinting the whole profile needs its usual refresh; source DNA/quality/real metadata remain present. No design files edited.
 
 DONE (osv fix)
+
+## In-app editor owner section delivered
+
+- Added `analysis/in-app.ts` and exported `analyzeFiles(files: InAppFile[], name: string): RepoProfile` from `analysis/index.ts`. Synchronous wrapper converts content to the existing source-file shape and calls the exact graph/DNA/context pipeline, with the same vendor/build/source exclusions as GitHub archives.
+- Actual Python files provide components/import edges, fan-in heart, cycles/depth, language byte counts, test ratio, identifiers/function/comment/TODO measurements, snippets, README/tree and the existing qualitySignalsFromProfile inputs. No network/GitHub/OSV requests, credential use, cache reads/writes or execution; every draft is measured freshly even under the same name. Metadata stays unknown/zero, no synthetic fallback.
+- `name` becomes the display slug and stable seed input; no GitHub formatting is required. Empty/blank name defaults to in-app. Empty files/drafts return actual empty metrics. Server owner retains validation, hashing, file/contains checks, rubric scoring and report persistence; no shared or server edits needed.
+- Added five Vitest scenarios: full multi-file Python import/test/quality behavior; offline fresh-edit analysis; excluded directories with retained manifests and UTF-8 byte counts; empty drafts/readmes; deterministic detached results and public export. README documents the exact API and boundaries.
+- Focused `npx vitest run analysis hall`: **128/128 PASS**, 16 files. Explicit owned-module strict TypeScript: **PASS**. Full `npm test`: **808 PASS / 8 skipped**, 75 files. Final workspace `npm run typecheck`: **PASS** (the initial in-flight renderer import resolved when the teammate file landed). No files outside analysis/ and this progress log edited; no snapshots need regenerating because the underlying analyzer is unchanged.
+- No git commits, dependencies, shared edits, screenshots, code execution or live/dev server actions. This completes the codex-repo analysis section; editor UI/Run and server submission handling remain their assigned owners' work.
+
+DONE (in-app editor)

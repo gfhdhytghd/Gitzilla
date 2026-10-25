@@ -11,6 +11,8 @@ import { isVerifiedVuln } from './vulns.ts';
 import { emptyDNA } from './dna.ts';
 import { notifyProgress, replayProfileProgress, type ProgressCallback } from './progress.ts';
 
+export { analyzeFiles } from './in-app.ts';
+
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const CACHE_ROOT = join(ROOT, '.cache/analysis');
 const FALLBACK_ROOT = join(ROOT, 'data/fallback');
