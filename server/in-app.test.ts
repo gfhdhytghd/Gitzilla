@@ -37,6 +37,7 @@ describe('bounded static editor submissions and starters', () => {
   it('uses rubric + exact static checks; cannot fabricate CI success or persist student code', () => {
     const plan = defaultClassroomPlan(); plan.steps[0].checksWeight = 100;
     plan.steps[0].checks = [{ id: 'f', kind: 'file', path: 'python/main.py', label: 'File' }, { id: 'c', kind: 'contains', path: 'python/main.py', text: 'answer = 42', label: 'Answer' }, { id: 'ci', kind: 'ci', path: 'tests', label: 'CI' }];
+    delete plan.steps[0].brief; // These custom checks replace the default task.
     const session = new ClassroomSession(plan);
     session.roster([{ id: 'a', name: 'Alice', connected: true }, { id: 'b', name: 'Bob', connected: true }]); session.control('start');
     const files = [{ path: 'python/main.py', content: 'answer = 42\n# PRIVATE_STUDENT_SOURCE\n' }];

@@ -1,5 +1,5 @@
 import type { RepoProfile } from '../shared/types';
-import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand } from '../shared/classroom';
+import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand, StepBrief } from '../shared/classroom';
 import { normalizeRubric } from './rubrics';
 import { scoreRepo, weightedScore } from '../rubric';
 import { normalizeEditorFiles } from './in-app';
@@ -19,6 +19,24 @@ const text = (s: unknown, name: string, max: number, empty = false): string => {
   if (typeof s !== 'string' || s.length > max || (!empty && !s.trim())) throw new Error(`Invalid ${name}`);
   return s.trim();
 };
+function normalizeBrief(value: StepBrief, checkCount: number): StepBrief {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid step brief');
+  const strings = (items: unknown, name: string, min: number, max: number, chars = Infinity): string[] => {
+    if (!Array.isArray(items) || items.length < min || items.length > max) throw new Error(`Invalid brief ${name}: use ${min}–${max} items`);
+    return items.map(item => text(item, `brief ${name} item`, chars));
+  };
+  const doneWhen = strings(value.doneWhen, 'doneWhen', 0, 12);
+  if (doneWhen.length !== checkCount) throw new Error('Brief doneWhen must have one row per check, in check order');
+  let example: StepBrief['example'];
+  if (value.example !== undefined) {
+    if (!value.example || typeof value.example !== 'object' || Array.isArray(value.example) || typeof value.example.output !== 'string' || value.example.output.length > 2000) throw new Error('Invalid brief example output (maximum 2000 characters)');
+    example = { output: value.example.output, ...(value.example.title !== undefined ? { title: text(value.example.title, 'brief example title', Infinity, true) } : {}) };
+  }
+  return { goal: text(value.goal, 'brief goal', 160), todo: strings(value.todo, 'todo', 1, 8, 160), doneWhen,
+    ...(example ? { example } : {}),
+    ...(value.hints !== undefined ? { hints: strings(value.hints, 'hints', 0, 5) } : {}),
+    ...(value.concepts !== undefined ? { concepts: strings(value.concepts, 'concepts', 0, 6) } : {}) };
+}
 export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
   if (!value || !Array.isArray(value.steps) || value.steps.length < 1 || value.steps.length > 12) throw new Error('A lesson needs 1–12 steps');
   const ids = new Set<string>();
@@ -34,6 +52,7 @@ export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
     });
     if (s.language !== undefined && s.language !== 'python') throw new Error('Choose Python for the editor language');
     return { id, title: text(s.title, 'step title', 120), instructions: text(s.instructions, 'instructions', 8000), durationSec: s.durationSec, rubric: normalizeRubric(s.rubric), checks, checksWeight: s.checksWeight,
+      ...(s.brief !== undefined ? { brief: normalizeBrief(s.brief, checks.length) } : {}),
       ...(s.language !== undefined ? { language: s.language } : {}),
       ...(s.starter !== undefined ? { starter: normalizeEditorFiles(s.starter) } : {}) };
   }) };
@@ -114,6 +133,7 @@ export class ClassroomSession {
     const step = this.state.plan.steps[this.state.stepIndex];
     const criteria = scoreRepo(source.profile, step.rubric);
     const files = new Map(source.files.map(f => [f.path, f.text]));
+    // Keep positional alignment with brief.doneWhen, including failed checks.
     const checks = step.checks.map(c => {
       const run = source.checks.find(r => r.name === c.path);
       const passed = c.kind === 'ci' ? !inApp && run?.status === 'completed' && run.conclusion === 'success' : c.kind === 'file' ? files.has(c.path) : files.get(c.path)?.includes(c.text!) ?? false;

@@ -135,6 +135,7 @@ describe('room protocol over real WebSockets', () => {
     const pause = (client: typeof teacher) => latest(client)?.state.paused;
     const plan = defaultClassroomPlan(); plan.steps[0].checksWeight = 100;
     plan.steps[0].checks = [{ id: 'docs', kind: 'file', path: 'README.md', label: 'README' }];
+    delete plan.steps[0].brief; // This fixture replaces the lesson's checks and instructions.
     teacher.send({ t: 'classroomPlan', plan }); await until(() => latest(teacher));
     teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest(teacher)?.state.phase === 'coding');
     teacher.send({ t: 'pause', paused: true }); await until(() => teacher.messages.find(m => m.t === 'error'));
@@ -1421,7 +1422,9 @@ describe('cooperative staged classroom protocol', () => {
     plan.steps[0].starter = [{ path: 'python/main.py', content: '# TEACHER_STARTER\n' }];
     plan.steps[0].checksWeight = 100;
     plan.steps[0].checks = [{ id: 'f', kind: 'file', path: 'python/main.py', label: 'File' }, { id: 'c', kind: 'contains', path: 'python/main.py', text: 'answer = 42', label: 'Answer' }];
+    plan.steps[0].brief = { goal: 'Set the answer.', todo: ['Open `python/main.py`.', 'Assign 42 to `answer`.'], doneWhen: ['The Python file exists.', 'It contains `answer = 42`.'], example: { output: '  42\n' } };
     teacher.send({ t: 'classroomPlan', plan }); await until(() => latest(a));
+    expect(latest(a)!.state.plan.steps[0].brief).toEqual(plan.steps[0].brief);
     teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest(a)?.state.phase === 'coding');
     const files = [{ path: 'python/main.py', content: 'answer = 42\nraise RuntimeError("PRIVATE_EDITOR_SOURCE")\n' }];
     teacher.send({ t: 'classroomSubmitCode', files }); await until(() => teacher.messages.some(m => m.t === 'error' && m.message.includes('student')));
@@ -1446,6 +1449,7 @@ describe('cooperative staged classroom protocol', () => {
     const resumed = await setup(999, {}, { allowLegacyEdu: false, persistenceFile: file }, f.room, 'edu');
     const student = await resumed.connect('player', a.welcome.token), restored = await until(() => latest(student));
     expect(restored.state.plan.steps[0].starter).toEqual(plan.steps[0].starter); expect(restored.state.plan.steps[0].language).toBe('python');
+    expect(restored.state.plan.steps[0].brief).toEqual(plan.steps[0].brief);
     expect(restored.state.phase).toBe('paused'); expect(restored.reports).toEqual({});
   });
 

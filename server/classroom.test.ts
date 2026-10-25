@@ -10,6 +10,7 @@ function lesson() {
   let time=1000;
   const plan=defaultClassroomPlan(); plan.steps[0].checksWeight=100;
   plan.steps[0].checks=[{id:'readme',kind:'file',path:'README.md',label:'Documentation'}, {id:'answer',kind:'contains',path:'src/main.ts',text:'answer',label:'Answer'}];
+  delete plan.steps[0].brief; // Custom check fixture uses the free-text fallback.
   const s=new ClassroomSession(plan,()=>time);
   s.roster([{id:'a',name:'Alice',connected:true},{id:'b',name:'Bob',connected:true}]);
   return {s, advance:(ms:number)=>{time+=ms;}, plan};

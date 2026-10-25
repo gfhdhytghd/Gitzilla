@@ -36,12 +36,16 @@ it.skipIf(process.env.EDITOR_SERVER_TEST !== '1')('wires real main.ts editor ana
     const teacher = await connect('screen'), student = await connect('player');
     const plan = defaultClassroomPlan(); plan.steps[0].language = 'python'; plan.steps[0].starter = [{ path: 'main.py', content: '# TODO' }];
     plan.steps[0].checksWeight = 100; plan.steps[0].checks = [{ id: 'answer', kind: 'contains', path: 'main.py', text: 'answer = 42', label: 'Answer' }];
+    plan.steps[0].brief = { goal: 'Assign the answer.', todo: ['Set `answer` to 42.'], doneWhen: ['The file contains `answer = 42`.'], example: { output: '  42\n' } };
     teacher.send({ t: 'classroomPlan', plan }); await until(() => student.latest());
+    expect(student.latest()!.state.plan.steps[0].brief).toEqual(plan.steps[0].brief);
+    expect(teacher.latest()!.state.plan.steps[0].brief).toEqual(plan.steps[0].brief);
     teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => student.latest()?.state.phase === 'coding');
     student.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42\nraise RuntimeError("PRIVATE_MAIN_EDITOR")' }] });
     const report = await until(() => student.latest()?.reports[student.welcome.you]);
     expect(report.source).toBe('in-app'); expect(report.commit).toMatch(/^inapp:[a-f\d]{8}$/); expect(report.score).toBe(100); expect(report.criteria.length).toBeGreaterThan(0);
     expect(report).not.toHaveProperty('files');
+    expect(report.checks.map(check => [check.label, check.passed])).toEqual([['Answer', true]]);
     const teacherReport = await until(() => teacher.latest()?.reports[student.welcome.you]);
     expect(teacherReport.files?.[0].content).toContain('PRIVATE_MAIN_EDITOR');
   } finally {
