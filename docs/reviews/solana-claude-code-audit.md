@@ -23,6 +23,7 @@ Manual status checks and bounded identical-byte resends keep background activity
 - `npm test`: 88 files passed, 4 skipped; 1,028 tests passed, 9 skipped.
 - `npm run build`: passed; existing large-chunk/dynamic-import/browser-externalization warnings remain. Receipt panel is 2.97 KB gzip and stays lazy.
 - `npm audit --omit=dev`: zero vulnerabilities.
+- Eight-human durable batch benchmark on this host: 20 batches / 160 receipts, median 11.20 ms, worst 15.07 ms (SQLite FULL/WAL, one transaction per match). Host measurement only.
 - Browser acceptance: 390×844, EN/ZH/ES/FR, no page errors; private-file denial, no-wallet download, independent signature verifier, late wallet registration, rejection, pending timeout, same-wire refresh, finalization UI, disposal.
 - i18n audit: zero errors, all 36 Python starter variants parse. Gemini via AGY generated new copy; DeepSeek completed timed-out batches.
 - Actual Devnet genesis verified; faucet funding unavailable, so finalized-chain proof and real wallet compatibility remain unverified. No real funds used.
