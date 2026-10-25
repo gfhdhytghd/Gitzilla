@@ -1539,3 +1539,39 @@ body.settings-open .kj-touch-overlay { display:none; }
 }
 .settings-button { width:40px; height:40px; min-height:40px; padding:6px; font-size:22px; }
 .lobby-actions > .settings-button { flex:0 0 40px; padding:6px; }
+
+/* ===== coordinator UI review ===== */
+/* UI-1: native selects are unreadable on WebKit (light text on a white control) — draw them for the dark theme */
+select {
+  -webkit-appearance: none; appearance: none; color: #e8edf7; background-color: #101a2b; border: 1px solid #53647d; border-radius: 0;
+  padding: 8px 36px 8px 10px; min-height: 44px; font: inherit; color-scheme: dark;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h10v2H8v2H6v2H4V4H2V2H0z' fill='%2339ff88'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px 8px;
+}
+select:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+select:disabled { opacity: .55; }
+select option { color: #e8edf7; background: #101a2b; }
+/* UI-2: the sheet's actions stay reachable — sticky footer with a scroll cue above it */
+.settings-dialog .settings-actions { position: sticky; bottom: -24px; margin: 0 -24px -24px; padding: 12px 24px calc(14px + env(safe-area-inset-bottom, 0px)); background: #080d18; z-index: 2;
+  box-shadow: 0 -18px 18px -6px #080d18; }
+.settings-dialog .settings-actions .btn { flex: 1 1 auto; }
+@media (max-width: 600px) { .settings-dialog .settings-actions { bottom: -18px; margin: 0 -18px -18px; padding: 10px 18px calc(12px + env(safe-area-inset-bottom, 0px)); } }
+.settings-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.settings-toggle input { width: 22px; height: 22px; accent-color: var(--green); }
+/* UI-3: on phones the floating mute button overlapped content; sound lives in Settings (and in the fight deck) */
+@media (pointer: coarse) { body:not(:has(.screen.game)) .mute-btn { display: none !important; } }
+/* UI-4: keep bracketed ghost labels on one line */
+.nowrap-label { white-space: nowrap; max-width: 100%; }
+@media (max-width: 360px) { .nowrap-label { font-size: 10px; letter-spacing: 0; } }
+/* landing on short phones: items never shrink into each other; the page scrolls instead */
+.landing-inner { overflow-y: auto; justify-content: safe center; -webkit-overflow-scrolling: touch; }
+.landing-inner > * { flex-shrink: 0; }
+@media (max-height: 700px) and (max-width: 600px) { .landing-inner { justify-content: flex-start; padding-top: calc(env(safe-area-inset-top, 0px) + 56px); } }
+/* UI-6: the desktop follow camera gets the minimap + edge arrows like phones */
+.screen.game.cam .mini-wrap { display: block; position: absolute; right: 6px; top: 6px; z-index: 2; pointer-events: none; }
+.screen.game.cam .mini-wrap .minimap { position: static; display: block; width: 144px; height: 86px; opacity: .85; image-rendering: pixelated; box-shadow: 0 0 0 1px rgba(57,255,136,.35), 0 0 0 2px #000; }
+/* fight screen: ⚙ sits with ☰ menu in the left gutter instead of over the team list */
+.screen.game > .settings-button, .screen.game .settings-button.settings-page { position: absolute; top: calc(50% - 26px); left: 4px; right: auto; width: 36px; height: 36px; min-height: 36px; font-size: 18px; opacity: .8; z-index: 7; }
+.screen.game.phone-portrait > .settings-button { top: calc(var(--deck-top, 60%) - 44px); left: 6px; }
+/* stacked dissection on phones: the diff takes the column width instead of its content width (was centered + overflowing) */
+.ap-boss-row > .diff { align-self: stretch; width: 100%; max-width: 100%; }

@@ -138,7 +138,8 @@ export function createMockConn(opts: ConnOpts): Conn {
     phase: "lobby",
     mode: "battle",
   };
-  if (opts.role === "screen") lobby.players.shift(), (lobby.ownerId = "b1");
+  // a real classroom is owned by the teacher's big screen; other mock rooms hand the projector a spectator seat
+  if (opts.role === "screen") lobby.players.shift(), (lobby.ownerId = mode === "edu" ? "screen" : "b1");
   const pushLobby = () => emit({ t: "lobby", lobby });
 
   const setRepo = (id: string, repo: string, delay: number) => {

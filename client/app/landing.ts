@@ -53,8 +53,8 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   // row lockup (188x28 low-res) on wide screens, stacked (140x54) on phones
   const stack = innerWidth < 700;
   const logo = stack
-    ? createLogo(Math.max(1, Math.min(3, Math.floor((innerWidth * 0.86) / 140))), "stack")
-    : createLogo(Math.max(2, Math.min(5, Math.floor(Math.min(innerWidth * 0.8, innerHeight < 800 ? 760 : 940) / 188))), "row");
+    ? createLogo(Math.max(1, Math.min(3, Math.floor((innerWidth * 0.8) / 106))), "stack")
+    : createLogo(Math.max(2, Math.min(5, Math.floor(Math.min(innerWidth * 0.8, innerHeight < 800 ? 760 : 940) / 154))), "row");
   const tag = h("span.typed");
   let tagIdx = 0;
   let cancelType = () => {};
@@ -151,7 +151,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
         ),
         joinMsg,
         h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
-        h("button.btn.btn-ghost", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP: challenge a friend ]"),
+        h("button.btn.btn-ghost.nowrap-label", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP: challenge a friend ]"),
         h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 classroom: code together, raid together ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),

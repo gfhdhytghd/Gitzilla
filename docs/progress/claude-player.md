@@ -1,3 +1,19 @@
+DONE (ui review)
+
+Coordinator UI review (docs/ui-review-coordinator.md). My rows are UI-5 (hero callouts) and UI-6 (hero size + YOU). Verified with Playwright **WebKit** on DEV :5175 (`/r/QAQA?mock=match`, onboarding pre-dismissed via its session flag) on iPhone 15, iPhone SE, and desktop 1280x800. I looked at the fight phases of the mock loop (it cycles fight → boss intro → fight). 0 page errors and 0 console errors.
+- **UI-6, size.** In-game generals are now rendered natively at **40 px** (was 32): `general.ts` FIG/GW/GH/GX/GFOOT ×1.25.
+  - Feet are at p.y+17 and the head top at ~p.y-23. Every hero-relative offset was rescaled: tags, pips, rings, shadow, callouts, orbit tokens, perk badges, firewall bubble, revive ring, lying body, keyboard, duck. Edu 2x heroes are 80 px.
+  - Portrait res is now floor(size/58): 144 gives an 80 px general, 192+ the res-3 one.
+  - On WebKit desktop a hero is now ~30% of the kaiju's height (target ~1/4). On phones the heroes read clearly at camera scale.
+- **UI-6, YOU.** A warm additive spotlight pool + a double marching ring (yellow/cream, counter-rotating) + a 2x bigger bouncing arrow over the yellow name (claude-ui's "YOU" label still shows too). Unmistakable on all three devices.
+- **UI-5, hero text.**
+  - Every word I draw over the arena now goes through a per-frame ration: max 2 words for YOUR hero and 2 shared by everyone else (≤ 4 hero words on screen). Symbols ≤ 2 chars (`+`, `-`, `!!`) are not rationed.
+  - Callouts are ≤ 14 chars or skipped: signatures ≤ 12 + "$ ", and perk names > 12 show the icon pop only. Fades are faster: skill 0.9s, perk 1.0s, 200 OK 0.7s.
+  - The downed stack trace is down to one `SEGFAULT` line (1.2s). Muzzle words, `SUDO`, and `sleep(1)` are you-only. The fork hash shows for 1.5s, then hides.
+- **For claude-boss (UI-5, the long callouts the review quotes).** `$ HOTFIX --DEPLOY --NOW` / `$ GIT FORK --DECOY` come from `client/render/arena/events.ts` SKILL lines, a second skill callout on top of mine. Please drop those (the hero renderer already shows a ≤14-char skill callout at the hero) or shorten them to ≤ 14.
+- **For codex-sim (optional).** The hero body now spans about x±14, y-23..y+17 around (p.x, p.y). Bullet hit radius 6 still sits on the torso; 8 (×heroScale) would match the new silhouette.
+- **For claude-genesis / claude-ui.** Portraits need ≥ 64 px canvases for a full figure (the general's logical canvas is 60x55); 144 gives the detailed 80 px general.
+
 DONE (duelyst heroes)
 
 Duelyst-style generals (user design refs docs/design-refs/hero-1.png, hero-2.png):

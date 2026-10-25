@@ -16,7 +16,7 @@ import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
 import { createRubricEditor, createJudgedCard, localDefaultRubric, type RubricEditor, createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
-import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo, store } from "./util";
+import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo, store, humanComponent } from "./util";
 
 const WEAPON_ICON: Record<string, string> = { blaster: "⌐╦", smg: "≡╤", shotgun: "═╦═", cannon: "▄█▀", staff: "─o", laser: "═══►", blade: "─┼══" };
 const SKILL_DESC: Record<string, string> = {
@@ -756,7 +756,7 @@ export function createLobby(app: AppCtx): Screen {
             "ul.boss-limbs",
             null,
             ...k.limbs.map((l, i) =>
-              h(`li${l.weakPoint ? ".weak" : ""}`, null, i === k.limbs.length - 1 ? "└─ " : "├─ ", h("span.limb-name", { title: l.component }, k.design?.limbNames?.[l.id] ?? l.component), h("span.limb-hp", null, ` ${Math.round(l.maxHp)}hp`), l.weakPoint ? h("span.knot", null, " ⚠KNOT") : null),
+              h(`li${l.weakPoint ? ".weak" : ""}`, null, i === k.limbs.length - 1 ? "└─ " : "├─ ", h("span.limb-name", { title: l.component }, k.design?.limbNames?.[l.id] ?? humanComponent(l.component, k.repo)), h("span.limb-hp", null, ` ${Math.round(l.maxHp)}hp`), l.weakPoint ? h("span.knot", null, " ⚠KNOT") : null),
             ),
           ),
           h("div.boss-attacks", null, ...k.attacks.slice(0, 6).map((a) => h("span.atk", { title: `${a.kind} from ${a.source}` }, a.name))),

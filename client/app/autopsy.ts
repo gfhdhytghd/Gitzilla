@@ -10,7 +10,7 @@ import { ARCH } from "./archetype";
 import { reportCard } from "./report";
 import { createFeedbackView, createClassFeedback, localDefaultRubric, createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
-import { fmtTime, fontsReady, h, isPhone, shortRepo } from "./util";
+import { fmtTime, fontsReady, h, isPhone, shortRepo, humanComponent } from "./util";
 
 function brag(a: Autopsy, pid: string, bossRepo: string): string {
   const p = a.players.find((x) => x.id === pid);
@@ -140,7 +140,7 @@ function adoptOrgan(boss: AutopsyBoss, big: boolean): HTMLElement {
       h(
         "div.adopt-text",
         null,
-        organ ? h("div.adopt-organ", null, h("code", null, organ.component), organ.fragile ? h("span.adopt-tag", null, " fragile") : null) : null,
+        organ ? h("div.adopt-organ", null, h("code", { title: organ.component }, humanComponent(organ.component, boss.repo)), organ.fragile ? h("span.adopt-tag", null, " fragile") : null) : null,
         h("div.adopt-who", null, `${who}.`),
         h("div.adopt-sub", null, `you just fought ${shortRepo(boss.repo)}. now help keep it alive — it's real open source.`),
         issues.length
@@ -194,7 +194,7 @@ export function createAutopsy(app: AppCtx): Screen {
           `div.diff-line.${l.broken ? "del" : "keep"}`,
           { style: `animation-delay:${0.1 + i * 0.06}s` },
           h("span.sign", null, l.broken ? "-" : " "),
-          h("span.comp", null, l.component),
+          h("span.comp", { title: l.component }, humanComponent(l.component, a.boss.repo)),
           h("span.dmgbar", null, h("i", { style: `width:${((l.damageTaken / maxDmg) * 100).toFixed(0)}%` })),
           h("span.dmg", null, `${Math.round(l.damageTaken)} dmg`),
           h("span.mark", null, l.broken ? "✗ broken" : "✓ survived"),

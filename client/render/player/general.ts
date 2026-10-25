@@ -11,9 +11,9 @@ export type GExpr = "normal" | "blink" | "hurt" | "ko" | "happy";
 export interface GFrame { pose: "idle" | "run"; i: number; expr: GExpr }
 
 /** Logical canvas (res 1) — every res r renders at r x these. Feet center = (GX, GFOOT). */
-export const GW = 48, GH = 44, GX = 24, GFOOT = 39;
+export const GW = 60, GH = 55, GX = 30, GFOOT = 49;
 /** Figure height in px at res 1 (feet to helmet top, horns extra). */
-export const FIG = 32;
+export const FIG = 40; // ~1/4 of the kaiju's height on screen (UI-6)
 
 type Pt = [number, number];
 type Shape =

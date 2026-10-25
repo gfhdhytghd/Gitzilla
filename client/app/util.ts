@@ -71,6 +71,13 @@ export function normalizeRepo(input: string): string {
   return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : s;
 }
 
+/** Components the analyzer names "root"/"." are the files at the top of the repo — say so in plain words. */
+export function humanComponent(component: string, repo?: string | null): string {
+  const c = component.trim();
+  if (!c || c === "." || c === "/" || /^(root|\(root\)|misc|other|top-level)$/i.test(c)) return repo ? `${shortRepo(repo)} top-level files` : "top-level files";
+  return c;
+}
+
 export function shortRepo(slug: string | null | undefined): string {
   if (!slug) return "";
   const i = slug.indexOf("/");

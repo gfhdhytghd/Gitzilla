@@ -31,6 +31,12 @@ addEventListener("keydown", (e) => {
 paint();
 document.body.append(muteBtn);
 
+/** For the Settings sheet (phones have no floating mute button outside the fight deck). */
+export const isMuted = () => muted;
+export function setMuted(next: boolean) {
+  if (next !== muted) toggle();
+}
+
 /** Classroom phones stay silent; retain the user’s battle sound preference. */
 export function setClassroomAudio(quiet: boolean) {
   classroomQuiet = quiet; audio.setMuted(quiet || muted); muteBtn.hidden = quiet;

@@ -1,5 +1,5 @@
-// "GITZILLA" logo: the brand mark (kaiju roaring </>, client/app/mark.ts) + a wordmark rasterised from Press Start 2P
-// (sampled at native 8px), two-band dithered fill, 1px outline + hard drop shadow. The low-res frame is composed each
+// "GITZILLA" logo: the brand mark (kaiju roaring </>, client/app/mark.ts) + the brand's 5x7 bitmap wordmark,
+// two-band dithered fill, 1px outline + hard drop shadow. The low-res frame is composed each
 // tick, then upscaled with an occasional RGB-split / slice glitch.
 import { MARK_H, MARK_W, drawMark } from "./mark";
 import { fontsReady } from "./util";
@@ -7,10 +7,21 @@ import { fontsReady } from "./util";
 type RGB = [number, number, number];
 interface Word { text: string; top: RGB; bot: RGB }
 
+// 5x7 pixel font from brand/make_logo.py — a bitmap, so the wordmark is identical in every browser (sampling a web
+// font's pixels broke on WebKit, whose glyph rasterisation/offsets differ).
+const FONT5x7: Record<string, string[]> = {
+  G: [".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".###."],
+  I: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"],
+  T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+  Z: ["#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"],
+  L: ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
+  A: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+};
+
 function rasterLogo(words: Word[]): HTMLCanvasElement {
-  const glyph = 8, pad = 3;
+  const cw = 6, glyph = 7, pad = 3; // 5px glyph + 1px gap, 7px tall
   const chars = words.reduce((n, w) => n + w.text.length, 0);
-  const w = chars * glyph + pad * 2;
+  const w = chars * cw - 1 + pad * 2;
   const hgt = glyph + pad * 2;
   const out = document.createElement("canvas");
   out.width = w;
@@ -19,26 +30,19 @@ function rasterLogo(words: Word[]): HTMLCanvasElement {
   const img = o.createImageData(w, hgt);
   const mask = new Uint8Array(w * hgt);
   const wordOf = new Int8Array(w * hgt).fill(-1);
-  // rasterise at 4x and sample pixel centres: immune to sub-pixel AA at the native 8px size
-  const K = 4;
-  const tmp = document.createElement("canvas");
-  tmp.width = w * K;
-  tmp.height = hgt * K;
-  const t = tmp.getContext("2d", { willReadFrequently: true })!;
   let cx = pad;
   words.forEach((wd, wi) => {
-    t.clearRect(0, 0, tmp.width, tmp.height);
-    t.font = `${8 * K}px "Press Start 2P", monospace`;
-    t.textBaseline = "top";
-    t.fillStyle = "#fff";
-    t.fillText(wd.text, cx * K, pad * K);
-    const d = t.getImageData(0, 0, tmp.width, tmp.height).data;
-    for (let y = 0; y < hgt; y++)
-      for (let x = 0; x < w; x++) {
-        const j = ((y * K + K / 2) * tmp.width + x * K + K / 2) * 4;
-        if (d[j + 3] > 127) (mask[y * w + x] = 1), (wordOf[y * w + x] = wi);
-      }
-    cx += wd.text.length * glyph;
+    for (const ch of wd.text) {
+      (FONT5x7[ch] ?? []).forEach((row, y) =>
+        [...row].forEach((px, x) => {
+          if (px !== "#") return;
+          const i = (pad + y) * w + cx + x;
+          mask[i] = 1;
+          wordOf[i] = wi;
+        }),
+      );
+      cx += cw;
+    }
   });
   const set = (i: number, r: number, g: number, b: number) => {
     img.data[i * 4] = r;

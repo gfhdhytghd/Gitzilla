@@ -10,7 +10,7 @@ import { rgba, hashStr, hexToHsl, hslToHex } from "./color.ts";
 export { lookFor } from "./look.ts";
 
 /** Grid row of the feet bottom edge relative to sprite top. Feet bottom = p.y + FOOT. */
-const FOOT = 14;              // feet = p.y + FOOT (generals are ~32 px tall; head top ~ p.y - 18)
+const FOOT = 17;              // feet = p.y + FOOT (generals are ~40 px tall; head top ~ p.y - 23)
 const SPRITE_FOOT = SPRITE_FEET;
 
 // ---------------------------------------------------------------- per-player memory
@@ -48,6 +48,20 @@ const mems = new Map<string, Mem>();
 // convert between world and that local frame with LX/LY and WX/WY.
 let S = 1, RES = 1, PVP = false, OX = 0, OY = 0;
 let curMem: Mem | null = null;
+let curIsYou = false;
+
+// Floating-text ration (UI-5): per frame at most 2 words for YOUR hero and 2 shared by everyone else, so the arena
+// never shows more than ~4 hero words at once. Symbols (<= 2 chars: "+", "-", "!!") are not rationed.
+let textFrameT = NaN, youWords = 0, otherWords = 0;
+function takeText(_t: number, word: string): boolean {
+  if (word.length <= 2) return true;
+  if (curIsYou) { if (youWords >= 2) return false; youWords++; return true; }
+  if (otherWords >= 2) return false;
+  otherWords++;
+  return true;
+}
+/** Callouts stay short: <= 14 chars or nothing. */
+const MAX_CALLOUT = 14;
 let curFrame: FrameSpec | null = null;
 const LX = (v: number) => OX + (v - OX) / S;
 const LY = (v: number) => OY + (v - OY) / S;
@@ -282,10 +296,10 @@ function ringCanvas(color: string): HTMLCanvasElement {
   let c = ringCache.get(color);
   if (c) return c;
   c = document.createElement("canvas");
-  c.width = 27; c.height = 13;
+  c.width = 33; c.height = 15;
   const g = c.getContext("2d")!;
   g.fillStyle = color;
-  pixEllipse(g, 13, 6, 12, 4.5, 0, Math.PI * 2);
+  pixEllipse(g, 16, 7, 15, 5.5, 0, Math.PI * 2);
   if (ringCache.size > 200) ringCache.clear();
   ringCache.set(color, c);
   return c;
@@ -468,7 +482,7 @@ function hexagon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
 
 function drawFirewall(ctx: CanvasRenderingContext2D, x: number, y: number, t: number, age: number) {
   const pop = Math.min(1, age / 0.18);
-  const r = 21 * (0.4 + 0.6 * pop) + Math.sin(t * 5) * 0.6;
+  const r = 26 * (0.4 + 0.6 * pop) + Math.sin(t * 5) * 0.6;
   const cy = y - 3;
   // try { ... } catch: giant braces hug the bubble
   ctx.fillStyle = "#9df3ff";
@@ -508,7 +522,7 @@ function drawFirewall(ctx: CanvasRenderingContext2D, x: number, y: number, t: nu
 }
 
 function drawRevive(ctx: CanvasRenderingContext2D, x: number, y: number, prog: number, t: number) {
-  const cx = x, cy = y + 6, r = 18;
+  const cx = x, cy = y + 8, r = 22;
   ctx.fillStyle = "rgba(93,255,138,0.25)";
   pixEllipse(ctx, cx, cy, r, r * 0.7, 0, Math.PI * 2, 12, t * 1.5);
   if (prog > 0) {
@@ -548,6 +562,8 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   const L = lookFor(p.kit);
   const m = memFor(p, t);
   curMem = m;
+  curIsYou = isYou;
+  if (t !== textFrameT) { textFrameT = t; youWords = 0; otherWords = 0; }
   const dt = Math.max(0, Math.min(0.1, t - m.t));
   observe(p, m, L, t, dt);
 
@@ -569,17 +585,25 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
 
   // --- ground: shadow + friendly ring
   ctx.fillStyle = "rgba(8,4,16,0.42)";
-  filledEllipse(ctx, x, feet, 9, 2);
+  filledEllipse(ctx, x, feet, 11, 2);
   if (p.alive) {
     const pulse = 0.55 + 0.45 * Math.sin(t * 4 + m.phase * 6);
     if (isYou) {
-      ctx.fillStyle = rgba("#ffe45c", 0.5 + 0.4 * pulse);
-      pixEllipse(ctx, x, feet, 13, 5, 0, Math.PI * 2, 6, t * 2);
+      // unmistakable YOU: warm spotlight pool + double marching ring
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = rgba("#ffe45c", 0.12 + 0.05 * pulse);
+      filledEllipse(ctx, x, feet, 17, 5);
+      ctx.restore();
+      ctx.fillStyle = rgba("#ffe45c", 0.75 + 0.25 * pulse);
+      pixEllipse(ctx, x, feet, 16, 6, 0, Math.PI * 2, 8, t * 2);
+      ctx.fillStyle = rgba("#fff6c0", 0.5 + 0.3 * pulse);
+      pixEllipse(ctx, x, feet, 18, 7, 0, Math.PI * 2, 8, -t * 1.5);
     } else if (PVP) {
       // classroom PvP: everyone else is a rival -> ring in their own hero color
-      ctx.drawImage(ringCanvas(rgba(playerColor(p.kit), 0.8)), x - 13, feet - 6);
+      ctx.drawImage(ringCanvas(rgba(playerColor(p.kit), 0.8)), x - 16, feet - 7);
     } else {
-      ctx.drawImage(ringCanvas(rgba(L.c.ring, 0.62)), x - 13, feet - 6);
+      ctx.drawImage(ringCanvas(rgba(L.c.ring, 0.62)), x - 16, feet - 7);
     }
   }
 
@@ -664,8 +688,9 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     ctx.globalCompositeOperation = "lighter";
     drawBody(ctx, L, { pose: "idle", i: Math.floor(t * 2) % 2, expr: "normal" }, dx - glitch, dy, flip, 1, 1, "#b98bff");
     ctx.restore();
-    drawText(ctx, "#" + (hashStr(p.id + Math.floor(m.skillT.fork ?? 0)) >>> 0).toString(16).padStart(8, "0").slice(0, 7), dx, dy + 3, "#b98bff");
-    if (Math.floor(t * 4) % 2 === 0) drawText(ctx, "!", dx, dy - 50 + Math.round(Math.sin(t * 8)), "#ff4a5a");
+    const hash = "#" + (hashStr(p.id + Math.floor(m.skillT.fork ?? 0)) >>> 0).toString(16).padStart(8, "0").slice(0, 7);
+    if (t - (m.skillT.fork ?? -9) < 1.5 && takeText(t, hash)) drawText(ctx, hash, dx, dy + 3, "#b98bff");
+    if (Math.floor(t * 4) % 2 === 0) drawText(ctx, "!", dx, dy - 62 + Math.round(Math.sin(t * 8)), "#ff4a5a");
   }
   // --- skill: rollback rewind ghost (where you were ~2s ago) + blink trail
   if (p.buffs.includes("rollback")) {
@@ -681,7 +706,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
         drawBody(ctx, L, fr, gx, gy, flip, 1, 1, "#6aa8ff");
         ctx.restore();
       }
-      drawText(ctx, "HEAD~1", LX(m.rollX), LY(m.rollY) - 14, "#6aa8ff");
+      if (takeText(t, "HEAD~1")) drawText(ctx, "HEAD~1", LX(m.rollX), LY(m.rollY) - 14, "#6aa8ff");
     }
   }
 
@@ -782,11 +807,11 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   // --- weapon-as-code text: muzzle word pops on firing; impact word sparks where your shots land
   const wf = p.kit.code?.weapon;
   const flavor = WEAPON_FLAVOR[p.kit.weapon] ?? WEAPON_FLAVOR.blaster;
-  // the muzzle word flashes big, right at the code-shaped barrel (you: every shot; others: smaller, sometimes)
-  if (t - m.shotT < 0.02 && (isYou || t - m.muzzleT > 1.6)) m.muzzleT = t;
+  // the muzzle word flashes big, right at YOUR code-shaped barrel (others: no words, just the flash)
+  if (isYou && t - m.shotT < 0.02) m.muzzleT = t;
   const mk = 1 - (t - m.muzzleT) / 0.22;
-  if (mk > 0 && p.alive) {
-    const word = (wf?.muzzle || flavor.muzzle).trim().slice(0, 8);
+  const word = (wf?.muzzle || flavor.muzzle).trim().slice(0, 8);
+  if (isYou && mk > 0 && p.alive && takeText(t, word)) {
     const fl = Math.hypot(p.facing[0], p.facing[1]) || 1;
     const fx = p.facing[0] / fl || flip, fy = p.facing[1] / fl;
     const big = isYou ? 2 : 1;
@@ -812,7 +837,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   }
 
   // --- idle: a tiny keyboard floats up and the hero types; long idle -> sleep(1)
-  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 7, feet - 13, t, idleFor, flip);
+  if (p.alive && idleFor > 3 && mood === "fight") drawIdleKeyboard(ctx, m, x + flip * 9, feet - 16, t, idleFor, flip);
 
   // --- 2-3 real tokens orbit the head; brighter while the skill is ready
   const orbit = L.tokens.filter((tk) => tk.length <= 3 && /^[^A-Za-z0-9]+$/.test(tk)).slice(0, 2);
@@ -823,13 +848,13 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     orbit.forEach((tk, i) => {
       const a = t * 0.8 + m.phase * 5 + (i / orbit.length) * Math.PI * 2;
       ctx.globalAlpha = ready ? 0.45 + 0.15 * Math.sin(t * 4 + i) : 0.16;
-      drawText(ctx, tk, x + Math.cos(a) * 17, y - 20 + Math.sin(a) * 5, cols[i], "center", "");
+      drawText(ctx, tk, x + Math.cos(a) * 21, y - 25 + Math.sin(a) * 6, cols[i], "center", "");
     });
     ctx.restore();
   }
 
   if (L.duck) {
-    const tx = p.x - flip * 19 * S, ty = p.y - 18 * S;
+    const tx = p.x - flip * 24 * S, ty = p.y - 22 * S;
     const k = 1 - Math.exp(-dt * 5);
     m.duckX += (tx - m.duckX) * k; m.duckY += (ty - m.duckY) * k;
     if (Math.abs(tx - m.duckX) > 1.5) m.duckFlip = tx > m.duckX ? 1 : -1;
@@ -842,10 +867,12 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   // --- front auras
   if (p.buffs.includes("firewall")) drawFirewall(ctx, x, y, t, t - (m.skillT.firewall ?? -9));
   if (overclock) {
-    ctx.save();
-    ctx.globalAlpha = 0.75 + 0.25 * Math.sin(t * 10);
-    drawText(ctx, "SUDO", x, feet + 3, "#ffb13a");
-    ctx.restore();
+    if (isYou && t - (m.skillT.overclock ?? -9) < 2 && takeText(t, "SUDO")) {
+      ctx.save();
+      ctx.globalAlpha = 0.75 + 0.25 * Math.sin(t * 10);
+      drawText(ctx, "SUDO", x, feet + 3, "#ffb13a");
+      ctx.restore();
+    }
     // speed sparks: tiny lightning ticks
     if (Math.floor(t * 20) % 3 === 0) {
       ctx.fillStyle = "#ffe08a";
@@ -861,24 +888,26 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   // standing in someone else's firewall don't spam callouts).
   for (const b of p.buffs) {
     const age = t - (m.skillT[b] ?? -9);
-    if (age < 1.3 && b === p.kit.skill) {
-      const k = age / 1.3;
+    if (age < 0.9 && b === p.kit.skill) {
+      const k = age / 0.9;
       const sig = signatureLabel(p.kit.code?.signature);
       const text = sig ? "$ " + sig : SKILL_TEXT[b] ?? "$ " + b;
+      if (text.length > MAX_CALLOUT || !takeText(t, text)) continue;
       ctx.save();
       ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2;
-      drawText(ctx, text, x, y - 46 - Math.round(k * 8), SKILL_COLOR[b] ?? "#ffffff");
+      drawText(ctx, text, x, y - 56 - Math.round(k * 6), SKILL_COLOR[b] ?? "#ffffff");
       ctx.restore();
     }
   }
   // newly picked perk callout
   for (const k0 of m.perks) {
     const age = t - (m.perkT[k0] ?? -9);
-    if (age < 1.6) {
-      const k = age / 1.6;
+    const ptxt = "+ " + k0;
+    if (age < 1.0 && ptxt.length <= MAX_CALLOUT && takeText(t, ptxt)) {
+      const k = age / 1.0;
       ctx.save();
       ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2;
-      drawText(ctx, "+ " + k0, x, y - 54 - Math.round(k * 8), perkStyle(k0).color);
+      drawText(ctx, ptxt, x, y - 64 - Math.round(k * 6), perkStyle(k0).color);
       ctx.restore();
     }
   }
@@ -889,10 +918,12 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     ctx.fillStyle = rgba("#5dff8a", 1 - ra);
     pixEllipse(ctx, x, y, 4 + ra * 30, (4 + ra * 30) * 0.7);
     ctx.restore();
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, (1 - ra) * 2);
-    drawText(ctx, "200 OK", x, y - 46 - Math.round(ra * 10), "#5dff8a");
-    ctx.restore();
+    if (ra < 0.7 && takeText(t, "200 OK")) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (0.7 - ra) * 3);
+      drawText(ctx, "200 OK", x, y - 56 - Math.round(ra * 8), "#5dff8a");
+      ctx.restore();
+    }
   }
 
   drawTag(ctx, p, L, isYou, x, y, t);
@@ -918,7 +949,7 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
     ctx.save();
     ctx.translate(x, 0);
     ctx.scale(flip, 1);
-    ctx.drawImage(ly, -Math.round(SH / 2) + 2, y + 9 - Math.round(SW / 2), SH, SW);
+    ctx.drawImage(ly, -Math.round(SH / 2) + 2, y + 11 - Math.round(SW / 2), SH, SW);
     ctx.restore();
   }
   void fr;
@@ -928,17 +959,13 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
 
   // the crash dump: a short stack trace of the hero's real functions types out, then fades
   const sa = t - m.downT;
-  if (sa < 2) {
-    const ids = L.idents.filter((s0) => s0.length <= 12).slice(0, 3);
-    const frames = ["SEGFAULT", ...(ids.length ? ids : ["main", "run"]).map((s0) => "AT " + s0 + (s0.endsWith(")") ? "" : "()"))];
+  if (sa < 1.2 && takeText(t, "SEGFAULT")) {
     ctx.save();
-    ctx.globalAlpha = sa < 1.5 ? 0.9 : 0.9 * (1 - (sa - 1.5) / 0.5);
-    frames.forEach((line, i) => {
-      if (sa < 0.1 + i * 0.12) return;
-      drawText(ctx, line, x + 12, y - 16 + i * 6, i === 0 ? "#ff4a5a" : "#9aa0b8", "left");
-    });
+    ctx.globalAlpha = sa < 0.9 ? 0.95 : 0.95 * (1 - (sa - 0.9) / 0.3);
+    drawText(ctx, "SEGFAULT", x + 14, y - 20, "#ff4a5a", "left");
     ctx.restore();
   }
+  void L;
 
   // floating ghost with "404" halo
   if (fall >= 1) {
@@ -1083,7 +1110,7 @@ function updateDrawParticles(ctx: CanvasRenderingContext2D, m: Mem, dt: number, 
       ctx.fillRect(mx, my, 1, 1);
       if (q.mark === ";") { ctx.fillRect(mx, my + 2, 1, 1); ctx.fillRect(mx - 1, my + 3, 1, 1); }
     } else if (q.glyph) {
-      drawText(ctx, q.glyph, qx, qy - 2, q.col);
+      if (takeText(textFrameT, q.glyph)) drawText(ctx, q.glyph, qx, qy - 2, q.col);
       if (q.len) { ctx.fillStyle = q.col; ctx.fillRect(Math.round(qx) + 3, Math.round(qy), q.len, 1); }
     }
     else {
@@ -1151,22 +1178,23 @@ function initialOf(name: string): string {
  * - alive teammates: a tiny colored pip with their initial
  */
 function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isYou: boolean, x: number, y: number, t: number, downed = false) {
-  const top = y - 31;
+  const top = y - 38;
   const name = (p.name || "anon").trim() || "anon";
   if (downed) {
     drawText(ctx, name, x, top, Math.floor(t * 3) % 2 ? "#ff4a5a" : isYou ? "#ffe45c" : "#f4f1ff");
     return;
   }
   if (isYou) {
-    const b = Math.round(Math.sin(t * 6) * 1.5);
-    const ay = top - 8 + b;
+    const b = Math.round(Math.sin(t * 6) * 2);
+    const ay = top - 12 + b;
+    // big outlined down-arrow (2x the old one)
     ctx.fillStyle = "#120b18";
-    ctx.fillRect(x - 4, ay - 1, 9, 1);
-    for (let i = 0; i < 4; i++) ctx.fillRect(x - 4 + i, ay + i, 9 - i * 2, 1);
-    ctx.fillRect(x - 1, ay + 4, 3, 1);
+    for (let i = 0; i < 7; i++) ctx.fillRect(x - 7 + i, ay - 1 + i, 15 - i * 2, 1);
+    ctx.fillRect(x - 1, ay + 6, 3, 1);
     ctx.fillStyle = "#ffe45c";
-    for (let i = 0; i < 3; i++) ctx.fillRect(x - 3 + i, ay + i, 7 - i * 2, 1);
-    ctx.fillRect(x, ay + 3, 1, 1);
+    for (let i = 0; i < 6; i++) ctx.fillRect(x - 6 + i, ay + i, 13 - i * 2, 1);
+    ctx.fillStyle = "#fff6c0";
+    ctx.fillRect(x - 5, ay, 4, 1);
     drawText(ctx, (p.perks?.length ? name + " v1." + p.perks.length : name), x, top, "#ffe45c");
     return;
   }
@@ -1176,18 +1204,18 @@ function drawTag(ctx: CanvasRenderingContext2D, p: PlayerState, L: HeroLook, isY
     return;
   }
   const pip = pipCanvas(L, initialOf(name));
-  ctx.drawImage(pip, x - 4, y - 33);
+  ctx.drawImage(pip, x - 4, y - 40);
 }
 
 /** Real signature identifier, shortened only at a member boundary ("SpringApplication.run()" -> "run()"). */
 function signatureLabel(raw: string | undefined): string {
   let sig = (raw ?? "").trim();
-  if (sig.length > 16) {
+  if (sig.length > MAX_CALLOUT - 2) {
     const parts = sig.split(/\.|::|->|#/);
     sig = parts[parts.length - 1] ?? sig;
     if (!/\)$/.test(sig) && /\(/.test(raw ?? "")) sig += "()";
   }
-  return sig.length <= 16 ? sig : "";
+  return sig.length <= MAX_CALLOUT - 2 ? sig : "";
 }
 
 function drawIdleKeyboard(ctx: CanvasRenderingContext2D, m: Mem, kx: number, ky: number, t: number, idleFor: number, flip: number) {
@@ -1265,7 +1293,7 @@ function drawPerkBadges(ctx: CanvasRenderingContext2D, perks: string[], x: numbe
     const a = t * 1.4 + phase * 6 + (i / n) * Math.PI * 2;
     const isFront = Math.sin(a) >= 0;
     if (isFront !== front) continue;
-    const bx = Math.round(x + Math.cos(a) * 15) - 3, by = Math.round(y + 4 + Math.sin(a) * 5) - 3;
+    const bx = Math.round(x + Math.cos(a) * 19) - 3, by = Math.round(y + 5 + Math.sin(a) * 6) - 3;
     ctx.save();
     if (!front) ctx.globalAlpha = 0.7;
     ctx.drawImage(perkBadge(perks[i]), bx, by);
@@ -1284,12 +1312,12 @@ const PORTRAIT_POSE: Record<string, number> = { blade: -Math.PI / 4, staff: -Mat
  * full-detail ~96 px general with real code on the cape) and drawn 1:1; the code weapon is scaled to match.
  */
 function portraitGeom(kit: PlayerKit, size: number, hires: boolean): { r: number; cx: number; fy: number; pose: number; wres: number; ws: number } {
-  const r = Math.max(1, Math.min(4, Math.floor(size / (hires ? 44 : 46))));
+  const r = Math.max(1, Math.min(4, Math.floor(size / (hires ? 55 : 58))));
   const pose = PORTRAIT_POSE[kit.weapon] ?? 0;
   const ws = Math.max(1, r - 1);              // weapon pixel scale: a notch chunkier than the figure, not 3x
   const wres = ws >= 2 ? 2 : 1;               // weapon canvas res (EPX 2x when scaled)
-  const fy = size < 46 ? size - 1 : Math.floor(size - Math.max(2, size * 0.06)); // tiny slots: feet on the edge so the figure fits
-  return { r, cx: Math.floor(size * (size < 46 ? 0.45 : 0.4)), fy, pose, wres, ws };
+  const fy = size < 58 ? size - 1 : Math.floor(size - Math.max(2, size * 0.06)); // tiny slots: feet on the edge so the figure fits
+  return { r, cx: Math.floor(size * (size < 58 ? 0.45 : 0.4)), fy, pose, wres, ws };
 }
 
 /**
@@ -1595,7 +1623,7 @@ export function paintHeroTerminal(c: HTMLCanvasElement, kit: PlayerKit, time: nu
   // body: real code with line numbers
   const words = (kit.code?.snippet || L.lang + " " + repoName).split(/(\s+)/).filter((w) => w.trim());
   const idents = (kit.code?.identifiers ?? []).slice(0, 4);
-  const P = Math.max(26, Math.floor((H * 0.95) / 26) * 26);
+  const P = Math.max(58, H - 2);
   const cols = Math.max(4, Math.floor((W - 12 - P * 0.62) / GLYPH_W));
   const lines: { text: string; color: string }[][] = [];
   let line: { text: string; color: string }[] = [], len = 0;

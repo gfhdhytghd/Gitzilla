@@ -1,6 +1,6 @@
 // Terminal-style HUD overlay (DOM). Updated every frame but only touches the DOM when a value changes.
 import type { BossKit, GameEvent, MatchState, PlayerState } from "../../shared/types";
-import { fmtTime, h, shortRepo } from "./util";
+import { fmtTime, h, shortRepo, humanComponent } from "./util";
 import { codeSpan } from "./codefmt";
 import { ARCH, bossStateHint } from "./archetype";
 
@@ -262,7 +262,7 @@ export function createHud(spectator: boolean): Hud {
         limbKitSig = sig;
         limbEls = kit.limbs.map((l) => {
           const fill = h("div.lf");
-          const e = h(`div.limb${l.weakPoint ? ".weak" : ""}`, { title: l.component }, fill, h("span", null, kit.design?.limbNames?.[l.id] ?? shortComp(l.component)));
+          const e = h(`div.limb${l.weakPoint ? ".weak" : ""}`, { title: l.component }, fill, h("span", null, kit.design?.limbNames?.[l.id] ?? shortComp(humanComponent(l.component))));
           return { id: l.id, el: e, fill };
         });
         limbsRow.replaceChildren(...limbEls.map((x) => x.el));

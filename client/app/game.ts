@@ -147,17 +147,22 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       for (const c of ["dock-x", "dock-narrow", "dock-y"]) el.classList.remove(c);
       return;
     }
-    view.x = 0;
-    view.w = ARENA_W;
-    view.h = ARENA_H;
-    if (canvas.width !== ARENA_W * RES) canvas.width = ARENA_W * RES;
-    if (canvas.height !== ARENA_H * RES) canvas.height = ARENA_H * RES;
-    const s = Math.floor(Math.min((W * dpr) / ARENA_W, (H * dpr) / ARENA_H));
-    cssScale = s >= 1 ? s / dpr : Math.min(W / ARENA_W, H / ARENA_H);
+    // Desktop/landscape players get a follow camera at 4/3 zoom (UI-6: heroes read tiny next to the kaiju when the
+    // whole 480x288 arena is on screen). Spectators / the big screen keep the full arena.
+    const zoomCam = !spectator && !phone;
+    el.classList.toggle("cam", zoomCam);
+    const VW = zoomCam ? 360 : ARENA_W, VH = zoomCam ? 216 : ARENA_H;
+    if (!zoomCam) view.x = 0, view.y = 0;
+    view.w = VW;
+    view.h = VH;
+    if (canvas.width !== VW * RES) canvas.width = VW * RES;
+    if (canvas.height !== VH * RES) canvas.height = VH * RES;
+    const s = Math.floor(Math.min((W * dpr) / VW, (H * dpr) / VH));
+    cssScale = s >= 1 ? s / dpr : Math.min(W / VW, H / VH);
     // integer device-pixel scale wastes too much space on some phones; fall back to fractional nearest-neighbour
-    if ((ARENA_H * cssScale) / H < 0.78 && (ARENA_W * cssScale) / W < 0.78) cssScale = Math.min(W / ARENA_W, H / ARENA_H);
+    if ((VH * cssScale) / H < 0.78 && (VW * cssScale) / W < 0.78) cssScale = Math.min(W / VW, H / VH);
     view.cssScale = cssScale;
-    const w = Math.round(ARENA_W * cssScale), hh = Math.round(ARENA_H * cssScale);
+    const w = Math.round(VW * cssScale), hh = Math.round(VH * cssScale);
     Object.assign(stage.style, { width: `${w}px`, height: `${hh}px`, left: `${Math.round((W - w) / 2)}px`, top: `${Math.round((H - hh) / 2)}px` });
     el.style.setProperty("--gw", `${w}px`);
     el.style.setProperty("--gh", `${hh}px`);
@@ -798,7 +803,18 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let youRingUntil = 0;
   let youRingStarted = false;
   let meWasDown = false;
-  const drawYouRing = (me: PlayerState, now: number, scale: number) => {
+  // strong = pulsing ring + YOU label (first seconds, after respawn); otherwise a steady ring so you never lose yourself
+  const drawYouRing = (me: PlayerState, now: number, scale: number, strong = true) => {
+    if (!strong) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,210,61,.7)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(Math.round(me.x) + 0.5, Math.round(me.y + 8 * scale) + 0.5, 9 * scale, 3.5 * scale, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     const pulse = 0.5 + 0.5 * Math.sin(now * 8);
     const rx = (10 + pulse * 3) * scale, ry = (4 + pulse) * scale;
     ctx.save();
@@ -817,6 +833,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ctx.restore();
   };
   let camX = 0;
+  let camY = 0;
   let camInit = false;
 
   // ---------------- portrait: edge indicators + minimap ----------------
@@ -935,7 +952,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       g.fillRect(Math.round(me.x * k) - 2, Math.round(me.y * k) - 2, 4, 4);
     }
     g.strokeStyle = "rgba(255,255,255,.55)";
-    g.strokeRect(Math.round(view.x * k) + 0.5, 0.5, Math.round(view.w * k) - 1, minimap.height - 1);
+    g.strokeRect(Math.round(view.x * k) + 0.5, Math.round(view.y * k) + 0.5, Math.round(view.w * k) - 1, Math.round(view.h * k) - 1);
   };
 
   const interp = (rt: number): MatchState | null => {
@@ -1032,12 +1049,17 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (zoom < 1.003) zoom = 1;
 
     // camera: portrait follows the hero (slight lead in the move direction); the intro looks at the boss first
-    if (view.w < ARENA_W) {
-      const focus = (performance.now() < introEnd - 600 || !me) && s.boss ? s.boss.x : me ? me.x + clamp(me.vx * 0.35, -36, 36) : ARENA_W / 2;
-      const target = clamp(focus - view.w / 2, 0, ARENA_W - view.w);
-      camX = camInit ? camX + (target - camX) * (1 - Math.exp(-dtReal * 5)) : target;
+    if (view.w < ARENA_W || view.h < ARENA_H) {
+      const introLook = (performance.now() < introEnd - 600 || !me) && !!s.boss;
+      const fx = introLook ? s.boss!.x : me ? me.x + clamp(me.vx * 0.35, -36, 36) : ARENA_W / 2;
+      const fy = introLook ? s.boss!.y : me ? me.y + clamp(me.vy * 0.25, -24, 24) : ARENA_H / 2;
+      const tx = clamp(fx - view.w / 2, 0, ARENA_W - view.w), ty = clamp(fy - view.h / 2, 0, ARENA_H - view.h);
+      const k = 1 - Math.exp(-dtReal * 5);
+      camX = camInit ? camX + (tx - camX) * k : tx;
+      camY = camInit ? camY + (ty - camY) * k : ty;
       camInit = true;
       view.x = Math.round(camX);
+      view.y = Math.round(camY);
     }
     ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.imageSmoothingEnabled = false;
@@ -1064,12 +1086,12 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (s.boss) safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
     const order = [...s.players].sort((a, b) => a.y - b.y);
     for (const p of order) safe("drawPlayer", R.drawPlayer, ctx, p, visTime, p.id === app.you);
-    if (me && me.alive && performance.now() < youRingUntil) drawYouRing(me, now, s.heroScale ?? 1);
+    if (me && me.alive) drawYouRing(me, now, s.heroScale ?? 1, performance.now() < youRingUntil);
     safe("drawBullets", R.drawBullets, ctx, s.bullets, visTime);
     safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime, view);
     ctx.restore();
     safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, view);
-    if (portrait) {
+    if (portrait || view.w < ARENA_W) {
       drawIndicators(s, me ?? null, now);
       if ((miniTick = (miniTick + 1) % 2) === 0) drawMinimap(s, now);
     }
@@ -1145,7 +1167,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       const b = s.boss!;
       const top = b.regions?.length ? Math.min(...b.regions.map((r) => r.y - r.r)) : b.y - 50;
       bubble.style.left = `${parseFloat(stage.style.left) + clamp(b.x - view.x, 30, view.w - 30) * cssScale}px`;
-      bubble.style.top = `${parseFloat(stage.style.top) + Math.max(20, top) * cssScale}px`;
+      bubble.style.top = `${parseFloat(stage.style.top) + Math.max(20, top - view.y) * cssScale}px`;
     }
 
   };
@@ -1166,7 +1188,13 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     el,
     onMsg(m: ServerMsg) {
       if (m.t === "snapshot") onSnapshot(m.state);
-      if (m.t === "autopsy" && !outro) startOutro(m.result.victory);
+      if (m.t === "autopsy" && !outro) {
+        // nothing was ever shown (reload/reconnect during the autopsy): go straight to it, no outro over a blank arena
+        if (!latest) {
+          outro = { victory: m.result.victory, at: performance.now() };
+          setTimeout(finishOutro, 0);
+        } else startOutro(m.result.victory);
+      }
     },
     destroy() {
       destroyed = true;

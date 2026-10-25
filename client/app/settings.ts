@@ -4,6 +4,7 @@ import { getMotionPermissionState, loadMotionProfile, saveMotionProfile, subscri
 import { createControlsCard } from './controls';
 import { controlsTrained, openControlTraining } from './training';
 import { h, store } from './util';
+import { isMuted, setMuted } from './sound';
 
 interface SettingsContext {
   classroom?: boolean;
@@ -20,6 +21,11 @@ let onboarding = false;
 let dismissed = false;
 let training = false;
 const COMPLETE = 'gitzilla.onboarding.v1';
+// The first-run sheet shows at most once per browser session (iOS forgets motion permission on every load, but the
+// lobby/fight gate asks for that per page — the sheet must not re-appear after every name prompt / room load).
+const SESSION_SHOWN = 'gitzilla.onboarding.session';
+const sessionShown = () => { try { return sessionStorage.getItem(SESSION_SHOWN) === '1'; } catch { return false; } };
+const markSessionShown = () => { try { sessionStorage.setItem(SESSION_SHOWN, '1'); } catch { /* private mode */ } };
 
 export function configureSettings(next: SettingsContext) {
   const changed = ['classroom', 'host', 'connected', 'spectator'].some(key => context[key as keyof SettingsContext] !== next[key as keyof SettingsContext]);
@@ -74,7 +80,11 @@ function render() {
     };
     language.append(select);
   }
-  const children: (HTMLElement | null)[] = [title, intro, language];
+  const sound = h('section.settings-section', null, h('h3', null, 'Sound'),
+    h('label.settings-toggle', null,
+      h('input', { type: 'checkbox', 'data-testid': 'settings-sound', checked: !isMuted(), onchange: (e: Event) => setMuted(!(e.target as HTMLInputElement).checked) }),
+      h('span', null, 'music & sound effects')));
+  const children: (HTMLElement | null)[] = [title, intro, language, sound];
   if (!context.classroom && !context.spectator) {
     if (getMotionPermissionState().mobile) {
       const controls = createControlsCard(practice);
@@ -100,10 +110,13 @@ export function openSettings() {
   signal(true);
 }
 function maybeOnboard() {
-  if (!dialog || dismissed || dialog.open || training || context.spectator || context.classroom) return;
+  if (!dialog || dismissed || dialog.open || training || context.spectator || context.classroom || sessionShown()) return;
+  if (document.querySelector('.screen.whoami')) return; // never stack on top of the name prompt
+  if (document.querySelector('.screen.autopsy, .screen.game')) return; // not over results or a running fight
   const motion = getMotionPermissionState();
   if (store.get(COMPLETE) === '1' && (!motion.mobile || motion.ready && controlsTrained())) return;
   onboarding = true;
+  markSessionShown();
   render(); dialog.showModal(); signal(true);
 }
 export function placeSettingsButton(page?: HTMLElement) {
