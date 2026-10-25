@@ -17,6 +17,8 @@ import { fx } from "../arena/fx.ts";
 import { bossLookAt } from "../boss/index.ts";
 import { createCameraRig, getXRPlacement } from "./projection.ts";
 import { enterXR as xrEnter, exitXR as xrExit, xrSupported as xrIsSupported } from "./xr.ts";
+import { chooseSpatialMode, createSurfacePlacement, detectSpatialSupport, exportSpatialUSDZ, type SurfacePlacement } from "./spatial.ts";
+import type { SpatialSupport } from "./types.ts";
 import type { CameraRig, ProjectedPoint, StageView, XRHandle, XRScale, XRSelectInfo } from "./types.ts";
 import { StageLook, type LookExtras } from "./scene.ts";
 import { lift } from "./staging.ts";
@@ -32,6 +34,7 @@ export interface Stage25dExtras extends Omit<LookExtras, "theme"> {
 }
 
 export { xrSupported } from "./xr.ts";
+export { detectSpatialSupport, chooseSpatialMode, createModelPreview } from "./spatial.ts";
 
 export interface Stage25dOptions {
   /** headset spectator page (?view=xr) */
@@ -42,6 +45,14 @@ export interface Stage25dOptions {
   /** XR: tabletop diorama (default) or life-size. */
   scale?: XRScale;
   onXRChange?: (active: boolean) => void;
+  /** Volumetric (voxel-extruded) sprites. "auto" (default): on in XR and on full-arena screens, off (flat billboards)
+   *  on the phone follow camera, the LOD for small screens. */
+  voxels?: boolean | "auto";
+  /** debug/gallery: orbit the screen camera this many degrees around the arena centre (and zoom in by orbitZoom) */
+  debugOrbit?: number;
+  orbitZoom?: number;
+  /** voxel bullets (default true); false keeps bullets as flat glyph quads */
+  voxelBullets?: boolean;
   /** XR frame timing hook: ms since the previous XR frame, and ms spent updating the scene (CPU, before the GPU draw) */
   onXRFrame?: (dtMs: number, updateMs: number) => void;
 }
@@ -56,17 +67,30 @@ export interface Stage25d {
   screenToWorld(sx: number, sy: number): { x: number; y: number };
   worldToScreen(x: number, y: number, z?: number): { x: number; y: number; scale: number };
   xrSupported(): Promise<boolean>;
-  enterXR(): Promise<void>;
+  /** Call directly in the click/pinch handler (no awaits before it). mode "auto" = AR where the runtime truly
+   *  supports it (passthrough tabletop on a real surface), else VR (Vision Pro today). */
+  enterXR(mode?: "auto" | "immersive-vr" | "immersive-ar"): Promise<void>;
+  /** Native USDZ snapshot of the current scene (voxel columns baked), for <model> previews. */
+  exportUSDZ(): Promise<Blob>;
+  /** the immersive session mode in use, or null */
+  readonly xrMode: "immersive-vr" | "immersive-ar" | null;
   exitXR(): Promise<void>;
   readonly xrActive: boolean;
   /** debug (gallery): the 2D canvases behind the floor / sprite / bullet textures */
   readonly debugCanvases: { floor: HTMLCanvasElement; atlas: HTMLCanvasElement; bullets: HTMLCanvasElement; fx: HTMLCanvasElement };
   readonly debugScene: THREE.Scene;
+  readonly cpuMs: number;
+  readonly xrLodFlat: boolean;
+  /** debug: AR surface placement state (null outside AR) */
+  readonly debugPlacement: { status: string; source: string; pos: number[]; scale: number; cam: number[] } | null;
   destroy(): void;
 }
 
+const RETICLE_FLAT = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
+
 export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   const look = new StageLook();
+  look.voxBullets = opts.voxelBullets !== false;
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance", preserveDrawingBuffer: false });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   renderer.setPixelRatio(1);
@@ -76,6 +100,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   let xr: XRHandle | null = null;
   let xrScale: XRScale = opts.scale ?? "table";
   let follow: string | null = null;
+  let cpuMs = 0;
   let mounted = false; // resize() was called: the caller shows `canvas`, the stage doesn't blit into ctx
   let last: { state: MatchState; time: number; events?: GameEvent[]; extras?: Stage25dExtras } | null = null;
   const pp: ProjectedPoint = { x: 0, y: 0, scale: 1 };
@@ -131,10 +156,21 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     rig.camera.position.x -= shx; rig.camera.position.y += shy * 0.7;
 
     prepare(state);
-    look.update(state, time, { ...extras, theme: extras.theme as LookExtras["theme"] }, 0, rig.camera.quaternion, false);
+    let yaw = 0;
+    if (opts.debugOrbit) {
+      const cam = rig.camera, a = (opts.debugOrbit * Math.PI) / 180, z = opts.orbitZoom ?? 1;
+      const cx = W / 2, cz = H / 2, dx = (cam.position.x - cx) / z, dz = (cam.position.z - cz) / z;
+      cam.position.set(cx + dx * Math.cos(a) + dz * Math.sin(a), cam.position.y / z, cz - dx * Math.sin(a) + dz * Math.cos(a));
+      cam.lookAt(cx, 20, cz); cam.updateMatrixWorld(true);
+      yaw = a;
+    }
+    const vox = opts.voxels === undefined || opts.voxels === "auto" ? !phone : opts.voxels;
+    const c0 = performance.now();
+    look.update(state, time, { ...extras, theme: extras.theme as LookExtras["theme"] }, yaw, rig.camera.quaternion, false, vox);
     look.updateHud(state, time, false);
     look.table.visible = false;
     renderer.render(look.scene, rig.camera);
+    cpuMs = performance.now() - c0;
     rig.camera.position.x += shx; rig.camera.position.y -= shy * 0.7;
     if (!mounted) {
       const prevSmooth = ctx.imageSmoothingEnabled;
@@ -154,8 +190,26 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   let xrLast = -1;
   let xrHome: { x: number; y: number; z: number; scale: XRScale } | null = null;
   let xrUpd = 0;
-  function xrFrame(t: number) {
-    if (xrLast >= 0) opts.onXRFrame?.(t - xrLast, xrUpd);
+  let support: SpatialSupport | null = null;
+  void detectSpatialSupport().then((v) => (support = v), () => {});
+  let placement: SurfacePlacement | null = null;
+  const reticle = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.06, 32), new THREE.MeshBasicMaterial({ color: 0x2ee6c8, side: THREE.DoubleSide }));
+  reticle.matrixAutoUpdate = false; reticle.visible = false;
+  look.scene.add(reticle);
+  // adaptive LOD (voxels "auto" in XR): keep the headset at its refresh rate; if frames run long for ~1 s, drop to
+  // flat billboards for the rest of the session (one-way, so it can't oscillate).
+  let xrSlow = 0, xrFlat = false, xrEma = 0;
+  function xrFrame(t: number, frame?: XRFrame) {
+    if (xrLast >= 0) {
+      const dt = t - xrLast;
+      opts.onXRFrame?.(dt, xrUpd);
+      if (!xrFlat && (opts.voxels === undefined || opts.voxels === "auto")) {
+        // moving average (frames can arrive in bursts), judged after a 1 s warm-up
+        xrEma = xrSlow === 0 ? dt : xrEma * 0.95 + dt * 0.05;
+        xrSlow++;
+        if (xrSlow > 90 && xrEma > 12.5) { xrFlat = true; console.info("[stage25d] XR frames > 12.5 ms: switching to flat billboards (LOD)"); }
+      }
+    }
     xrLast = t;
     const u0 = performance.now();
     const src = opts.pull?.() ?? last;
@@ -165,6 +219,30 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const W = ex.world?.w ?? 480, H = ex.world?.h ?? 288;
     const fp = follow ? state.players.find((p) => p.id === follow) : null;
     const cam = renderer.xr.getCamera();
+    if (xr?.mode === "immersive-ar" && placement) {
+      // AR: the arena sits on a real surface (hit-test); until placed, show a reticle where it would go
+      if (frame) placement.update(frame);
+      // only "placed" has a valid root matrix; "manual" waits for a tap on an estimated plane, "candidate" has a live hit
+      const placed = placement.status === "placed";
+      reticle.visible = !placed && placement.status === "candidate";
+      if (reticle.visible) { reticle.matrix.copy(placement.surface).multiply(RETICLE_FLAT); }
+      look.root.visible = placed;
+      look.table.visible = false;
+      if (!placed) { renderer.render(look.scene, cam); return; }
+      look.root.matrixAutoUpdate = false;
+      look.root.matrix.copy(placement.matrix);
+      look.root.matrixWorldNeedsUpdate = true;
+      look.root.updateMatrixWorld(true);
+      cam.getWorldPosition(camPos);
+      look.root.worldToLocal(camPos);
+      const yawAR = Math.atan2(camPos.x - W / 2, camPos.z - H / 2);
+      prepare(state);
+      look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yawAR, cam.quaternion, true, opts.voxels !== false && !xrFlat);
+      look.updateHud(state, time, true);
+      xrUpd = performance.now() - u0;
+      renderer.render(look.scene, cam);
+      return;
+    }
     cam.getWorldPosition(camPos);
     // anchor the diorama to where the viewer's head was when the session (or a scale change) started
     // (wait for a tracked pose: before it the camera sits at the origin)
@@ -187,7 +265,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     look.root.worldToLocal(camPos);
     const yaw = Math.atan2(camPos.x - W / 2, camPos.z - H / 2);
     prepare(state);
-    look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yaw, cam.quaternion, true);
+    look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yaw, cam.quaternion, true, opts.voxels !== false && !xrFlat);
     look.updateHud(state, time, true);
     xrUpd = performance.now() - u0;
     renderer.render(look.scene, cam);
@@ -196,6 +274,8 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   const ray = new THREE.Raycaster();
   const rayM = new THREE.Matrix4();
   function onSelect(info: XRSelectInfo) {
+    // AR: a pinch while searching places the arena on the surface (consumed before any UI hit-test)
+    if (placement && placement.status !== "placed" && placement.select(info)) return;
     if (!info.pose) return;
     // UI only: the scale / follow / exit buttons (never gameplay input)
     rayM.fromArray(info.pose.transform.matrix);
@@ -205,7 +285,11 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const hit = ray.intersectObjects(look.buttons.filter((b) => b.visible), false)[0];
     if (!hit) return;
     const name = hit.object.name;
-    if (name === "scale") xrScale = xrScale === "table" ? "life" : "table";
+    if (name === "scale") {
+      xrScale = xrScale === "table" ? "life" : "table";
+      const W = last?.extras?.world?.w ?? 480;
+      placement?.setTableWidth(xrScale === "table" ? 1.2 : (W * 1.7) / 28);
+    }
     else if (name === "exit") void exitXR();
     else if (name === "follow") {
       const ids = (last?.state.players ?? []).filter((p) => !p.eliminated).map((p) => p.id);
@@ -214,19 +298,39 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     }
   }
 
-  async function enterXR() {
+  async function enterXR(mode: "auto" | "immersive-vr" | "immersive-ar" = "auto") {
     if (xr) return;
     xrLast = -1;
     xrHome = null;
+    xrSlow = 0; xrFlat = false;
+    // no awaits before requestSession (inside xrEnter): the click/pinch activation must still be live
+    const want = mode === "auto" ? (support ? chooseSpatialMode(support) ?? "immersive-vr" : "immersive-vr") : mode;
     xr = await xrEnter(renderer, {
+      mode: want,
+      fallbackToVR: true,
+      handTracking: true,
       onFrame: xrFrame,
       onSelect,
-      onEnd: () => { xr = null; look.setXR(false); resetRoot(); opts.onXRChange?.(false); },
+      onEnd: () => {
+        xr = null;
+        placement?.dispose(); placement = null;
+        reticle.visible = false;
+        look.setAR(false);
+        look.setXR(false); resetRoot(); opts.onXRChange?.(false);
+      },
     });
     look.setXR(true);
+    if (xr.mode === "immersive-ar") {
+      // passthrough: no void room, the arena goes on a real surface
+      look.setAR(true);
+      const W = last?.extras?.world?.w ?? 480, H = last?.extras?.world?.h ?? 288;
+      placement = await createSurfacePlacement(xr, { worldWidth: W, worldHeight: H, tableWidth: 1.2 });
+    }
     opts.onXRChange?.(true);
   }
   function resetRoot() {
+    look.root.matrixAutoUpdate = true;
+    look.root.visible = true;
     look.root.scale.setScalar(1);
     look.root.position.set(0, 0, 0);
     look.table.visible = false;
@@ -252,13 +356,25 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
       const o = rig.worldToScreen(x, y, z);
       return { x: o.x, y: o.y, scale: o.scale };
     },
-    xrSupported: xrIsSupported,
+    xrSupported: () => xrIsSupported(),
+    exportUSDZ: () => exportSpatialUSDZ(look.root, { metersPerPixel: 1.2 / (last?.extras?.world?.w ?? 480) }),
+    get xrMode() { return xr?.mode ?? null; },
+    /** debug: AR placement state */
+    get debugPlacement() {
+      if (!placement) return null;
+      const e = placement.matrix.elements, c = renderer.xr.getCamera().position;
+      return { status: placement.status, source: placement.source, pos: [e[12], e[13], e[14]].map((v) => +v.toFixed(3)), scale: +Math.hypot(e[0], e[1], e[2]).toFixed(5), cam: [c.x, c.y, c.z].map((v) => +v.toFixed(3)) };
+    },
     enterXR,
     exitXR,
     get xrActive() { return !!xr; },
     /** debug (gallery): the sprite/floor/bullet canvases behind the textures */
     get debugCanvases() { return look.debugCanvases; },
     get debugScene() { return look.scene; },
+    /** CPU ms of the last screen frame: scene update + draw submission */
+    get cpuMs() { return cpuMs; },
+    /** XR adaptive LOD has dropped to flat billboards */
+    get xrLodFlat() { return xrFlat; },
     destroy() {
       void exitXR();
       fx.project = null;

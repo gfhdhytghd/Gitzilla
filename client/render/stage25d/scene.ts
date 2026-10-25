@@ -14,6 +14,8 @@ import { drawText } from "../arena/font.ts";
 import { drawBoss } from "../boss/index.ts";
 import { drawPlayer } from "../player/index.ts";
 import { bossPlane, lift, type BossPlane } from "./staging.ts";
+import { DEPTH_STEP, DEPTH_ZERO, prepareVoxelAtlas, shadowMaterial, voxelBox, voxelInstancedBox, voxelMaterial } from "./voxel.ts";
+import { bossLayout } from "../boss/layout.ts";
 
 THREE.ColorManagement.enabled = false; // pixel art: texture colors pass through untouched
 
@@ -101,6 +103,17 @@ export class StageLook {
   private fxCanvas: HTMLCanvasElement; private fxCtx: CanvasRenderingContext2D; private fxTex: THREE.CanvasTexture;
   private fxMesh: THREE.InstancedMesh; private fxUv: THREE.InstancedBufferAttribute;
   private fxList: Particle[] = [];
+  // round 3: volumetric sprites
+  private depthCanvas: HTMLCanvasElement; private depthCtx: CanvasRenderingContext2D; private depthTex: THREE.CanvasTexture;
+  private depthKey = "";
+  private voxMat: THREE.ShaderMaterial; private bulVoxMat: THREE.ShaderMaterial; private shadowMat: THREE.ShaderMaterial;
+  private sprites = new Map<THREE.Mesh, { plane: THREE.BufferGeometry; box: THREE.BufferGeometry; shadow: THREE.Mesh }>();
+  private bulletsVox: THREE.InstancedMesh; private bulVoxSlots: THREE.InstancedBufferAttribute;
+  private glints: THREE.InstancedMesh;
+  private voxel = true;
+  /** bullets as voxel glyphs (+ floor glints); off = flat glyph quads even when sprites are volumetric */
+  voxBullets = true;
+  private heartW = new THREE.Vector3();
   private bulCanvas: HTMLCanvasElement; private bulCtx: CanvasRenderingContext2D; private bulTex: THREE.CanvasTexture;
   private bullets: THREE.InstancedMesh; private bulUv: THREE.InstancedBufferAttribute;
   private glows: THREE.InstancedMesh; private shadows: THREE.InstancedMesh;
@@ -142,6 +155,26 @@ export class StageLook {
     this.pickMeshes = PICK_SLOTS.map((s) => new THREE.Mesh(slotGeometry(s), this.atlasMat));
     for (const m of [this.bossMesh, ...this.heroMeshes, ...this.bugMeshes, ...this.obsMeshes, ...this.pickMeshes]) { m.visible = false; this.root.add(m); }
 
+    // volumetric sprites: a voxel box per slot (+ a planar silhouette shadow), switched in per frame (LOD)
+    [this.depthCanvas, this.depthCtx] = makeCanvas(ATLAS_W, ATLAS_H);
+    this.depthCtx.fillStyle = `rgb(${DEPTH_ZERO},${DEPTH_ZERO},${DEPTH_ZERO})`;
+    this.depthCtx.fillRect(0, 0, ATLAS_W, ATLAS_H);
+    this.depthTex = near(new THREE.CanvasTexture(this.depthCanvas));
+    prepareVoxelAtlas(this.atlasTex);
+    this.voxMat = voxelMaterial(this.atlasTex, this.depthTex, ATLAS_W, ATLAS_H);
+    this.shadowMat = shadowMaterial(this.atlasTex);
+    const vox = (meshes: THREE.Mesh[], slots: Slot[], depth: number, depthScale = 0) => meshes.forEach((m, i) => {
+      const shadowMesh = new THREE.Mesh(m.geometry, this.shadowMat);
+      shadowMesh.visible = false; shadowMesh.renderOrder = 1;
+      this.root.add(shadowMesh);
+      this.sprites.set(m, { plane: m.geometry, box: voxelBox(slots[i], depth, depthScale), shadow: shadowMesh });
+    });
+    vox([this.bossMesh], [BOSS_SLOT], 5, 1);
+    vox(this.heroMeshes, HERO_SLOTS, 2);
+    vox(this.bugMeshes, BUG_SLOTS, 2);
+    vox(this.obsMeshes, OBS_SLOTS, 6);
+    vox(this.pickMeshes, PICK_SLOTS, 2);
+
     // elevated laser beams (the floor keeps the telegraph lane): additive glow tube + white core
     const tube = new THREE.CylinderGeometry(1, 1, 1, 10, 1, true);
     for (let i = 0; i < 4; i++) {
@@ -174,7 +207,16 @@ export class StageLook {
     this.glows.frustumCulled = false; this.glows.count = 0;
     this.shadows = new THREE.InstancedMesh(new THREE.CircleGeometry(1, 14), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.38, depthWrite: false }), BUL_MAX + 64);
     this.shadows.frustumCulled = false; this.shadows.count = 0; this.shadows.renderOrder = 1;
-    this.root.add(this.shadows, this.bullets, this.glows);
+    const vb = voxelInstancedBox(CELL_W, CELL_H, 2, BUL_MAX);
+    prepareVoxelAtlas(this.bulTex);
+    this.bulVoxMat = voxelMaterial(this.bulTex, this.depthTex, BUL_W, BUL_H);
+    this.bulletsVox = new THREE.InstancedMesh(vb.geometry, this.bulVoxMat, BUL_MAX);
+    this.bulVoxSlots = vb.slots;
+    this.bulletsVox.frustumCulled = false; this.bulletsVox.count = 0;
+    // point-light glints: every shot lights the floor under it
+    this.glints = new THREE.InstancedMesh(quad, new THREE.MeshBasicMaterial({ map: radialTexture(), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }), BUL_MAX);
+    this.glints.frustumCulled = false; this.glints.count = 0;
+    this.root.add(this.shadows, this.glints, this.bullets, this.bulletsVox, this.glows);
 
     // GC zone: a translucent red wall ring
     this.zoneWall = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 72, 1, true), new THREE.MeshBasicMaterial({ color: 0xff2a5a, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -211,6 +253,12 @@ export class StageLook {
   /** debug: the 2D canvases behind the textures (gallery ?atlas=1) */
   get debugCanvases() { return { floor: this.floorCanvas, atlas: this.atlas, bullets: this.bulCanvas, fx: this.fxCanvas }; }
 
+  /** AR passthrough: transparent background, no void room (the real room is the backdrop) */
+  setAR(on: boolean) {
+    this.scene.background = on ? null : new THREE.Color(0x05030a);
+    this.grid.visible = !on;
+  }
+
   /** XR: the void-room grid lies on the real floor in meters (40 m, 0.5 m cells); screens: under the arena in px. */
   setXR(on: boolean) {
     if (on) { this.scene.add(this.grid); this.grid.scale.setScalar(0.01); this.grid.position.set(0, 0, 0); }
@@ -218,7 +266,9 @@ export class StageLook {
   }
 
   /** Rebuild per-frame content from the match state. yaw = camera yaw in root space (billboards face it). */
-  update(state: MatchState, time: number, ex: LookExtras, yaw: number, camQuat: THREE.Quaternion, decalFx: boolean) {
+  /** voxel: volumetric sprites + planar shadows + glints (false = flat billboards, the phone LOD). */
+  update(state: MatchState, time: number, ex: LookExtras, yaw: number, camQuat: THREE.Quaternion, decalFx: boolean, voxel = true) {
+    this.voxel = voxel;
     const W = Math.round(ex.world?.w ?? 480), H = Math.round(ex.world?.h ?? 288);
     if (W !== this.w || H !== this.h || this.floorCanvas.width !== W) {
       this.w = W; this.h = H;
@@ -264,7 +314,17 @@ export class StageLook {
       mesh.visible = true;
       mesh.position.set(wx, 0, wy);
       mesh.rotation.set(0, yaw, 0);
+      mesh.scale.setScalar(1);
+      const sp = this.sprites.get(mesh);
+      if (sp) {
+        mesh.geometry = voxel ? sp.box : sp.plane;
+        mesh.material = voxel ? this.voxMat : this.atlasMat;
+        sp.shadow.visible = voxel;
+        sp.shadow.position.copy(mesh.position); sp.shadow.rotation.copy(mesh.rotation); sp.shadow.scale.copy(mesh.scale);
+      }
     };
+    const rescale = (mesh: THREE.Mesh, k: number) => { mesh.scale.setScalar(k); this.sprites.get(mesh)?.shadow.scale.setScalar(k); };
+    for (const sp of this.sprites.values()) sp.shadow.visible = false;
     let shadowN = 0;
     const shadow = (x: number, z: number, rx: number, rz: number) => {
       if (shadowN >= this.shadows.instanceMatrix.count) return;
@@ -273,10 +333,25 @@ export class StageLook {
       this.shadows.setMatrixAt(shadowN++, this.tmpM);
     };
     this.bossMesh.visible = false;
+    if (!boss) for (const m of [this.voxMat, this.bulVoxMat]) m.uniforms.uHeart.value.w = 0;
+    // floor height of the planar shadows in world space (XR scales/moves the root)
+    this.root.updateMatrixWorld(true);
+    this.shadowMat.uniforms.uFloorY.value = this.root.position.y + 0.35 * this.root.scale.y;
     if (boss && this.plane) {
       const p = this.plane;
       // drawBoss draws around boss.y with its feet at boss.y + foot; the slot anchor is the feet (billboard origin)
       place(this.bossMesh, BOSS_SLOT, boss.x, p.feetY, () => drawBoss(a, boss, time));
+      if (voxel) this.paintBossDepth(boss, p.foot);
+      // the heart is a point light for every voxel side face nearby
+      const hl = bossLayout(boss.kit);
+      lift(p, boss.x + hl.heart.x, boss.y + hl.heart.y, 0, this.l3);
+      this.heartW.set(this.l3[0], this.l3[1], this.l3[2] + 6);
+      this.root.localToWorld(this.heartW);
+      const beat = 0.75 + 0.25 * Math.sin(time * (boss.phase === 3 ? 9 : boss.phase === 2 ? 6 : 4));
+      for (const m of [this.voxMat, this.bulVoxMat]) {
+        m.uniforms.uHeart.value.set(this.heartW.x, this.heartW.y, this.heartW.z, (boss.phase === 3 ? 1.6 : 1.1) * beat);
+        (m.uniforms.uHeartCol.value as THREE.Color).set(boss.kit.design ? boss.kit.palette[2] ?? "#ff3a5c" : boss.kit.palette[3] ?? "#ff3a5c");
+      }
       shadow(boss.x + 20, p.feetY, 70, 14);
     }
     let hi = 0;
@@ -288,7 +363,7 @@ export class StageLook {
       hi++;
       const scale = state.heroScale || 1;
       place(mesh, s, p.x, p.y + FOOT * scale, () => drawPlayer(a, p, time, p.id === ex.you, { softFlash: true }));
-      mesh.scale.setScalar(HERO_BOOST); // heroes read too small next to a towering kaiju at true scale (UI review UI-6)
+      rescale(mesh, HERO_BOOST); // heroes read too small next to a towering kaiju at true scale (UI review UI-6)
       shadow(p.x, p.y + FOOT * scale, 8 * scale, 3 * scale);
     }
     let bi = 0;
@@ -298,7 +373,7 @@ export class StageLook {
       if (!mesh) return;
       bi++;
       place(mesh, s, m.x, m.y + 5, draw);
-      mesh.scale.setScalar(1.2);
+      rescale(mesh, 1.2);
       shadow(m.x, m.y + 5, 6, 2);
     });
     let oi = 0;
@@ -317,7 +392,7 @@ export class StageLook {
       if (!mesh) return;
       pi++;
       place(mesh, s, pk.x, pk.y + 4, draw);
-      mesh.scale.setScalar(1.3);
+      rescale(mesh, 1.3);
       shadow(pk.x, pk.y + 4, 4, 1.5);
     });
     glowState.off = false;
@@ -399,18 +474,38 @@ export class StageLook {
       const [X, Y, Z] = lift(this.plane, b.x, b.y, CHEST, this.l3);
       this.tmpP.set(X, Y, Z); this.tmpS.set(CELL_W, CELL_H, 1);
       this.tmpM.compose(this.tmpP, camQuat, this.tmpS);
-      this.bullets.setMatrixAt(i, this.tmpM);
-      this.bulUv.setXYZW(i, cx / BUL_W, 1 - (cy + CELL_H) / BUL_H, CELL_W / BUL_W, CELL_H / BUL_H);
+      if (voxel && this.voxBullets) {
+        this.tmpS.set(1, 1, 1);
+        this.tmpM.compose(this.tmpP, camQuat, this.tmpS);
+        this.bulletsVox.setMatrixAt(i, this.tmpM);
+        this.bulVoxSlots.setXYZW(i, cx, cy, CELL_W, CELL_H);
+        // glint on the floor under the shot
+        this.tmpP.set(b.x, 0.6, b.y); this.tmpS.set(26, 18, 1);
+        this.tmpM.compose(this.tmpP, this.flatQ, this.tmpS);
+        this.glints.setMatrixAt(i, this.tmpM);
+        this.tmpP.set(X, Y, Z);
+      } else {
+        this.bullets.setMatrixAt(i, this.tmpM);
+        this.bulUv.setXYZW(i, cx / BUL_W, 1 - (cy + CELL_H) / BUL_H, CELL_W / BUL_W, CELL_H / BUL_H);
+      }
       const g = b.owner === "boss" ? (b.kind === "bug" ? 18 : 22) : 16;
       this.tmpS.set(g, g, 1);
       this.tmpM.compose(this.tmpP, camQuat, this.tmpS);
       this.glows.setMatrixAt(i, this.tmpM);
       this.col.set(b.owner === "boss" ? (b.kind === "bug" ? "#6aff2a" : "#ff2a4a") : heroColor(b.owner)).multiplyScalar(0.6);
       this.glows.setColorAt(i, this.col);
+      if (voxel && this.voxBullets) this.glints.setColorAt(i, this.col.multiplyScalar(0.8));
       shadow(b.x, b.y, Math.max(2, b.r), Math.max(1.2, b.r * 0.55));
     }
     glowState.off = false;
-    this.bullets.count = n; this.glows.count = n;
+    const vb = voxel && this.voxBullets;
+    this.bullets.count = vb ? 0 : n; this.glows.count = n;
+    this.bulletsVox.count = vb ? n : 0; this.glints.count = vb ? n : 0;
+    if (vb) {
+      this.bulletsVox.instanceMatrix.needsUpdate = true; this.bulVoxSlots.needsUpdate = true;
+      this.glints.instanceMatrix.needsUpdate = true;
+      if (this.glints.instanceColor) this.glints.instanceColor.needsUpdate = true;
+    }
     this.bullets.instanceMatrix.needsUpdate = true; this.bulUv.needsUpdate = true;
     this.glows.instanceMatrix.needsUpdate = true;
     if (this.glows.instanceColor) this.glows.instanceColor.needsUpdate = true;
@@ -426,6 +521,41 @@ export class StageLook {
       (this.zoneWall.material as THREE.MeshBasicMaterial).opacity = 0.12 + 0.06 * Math.sin(time * 4);
       this.zoneRing.scale.set(z.r, 1, z.r); this.zoneRing.position.set(z.cx, wallH, z.cy);
     }
+  }
+
+  /** Boss depth: per-texel z offsets in the boss slot from its layout lobes (limbs near/far, tail behind). */
+  private paintBossDepth(boss: NonNullable<MatchState["boss"]>, foot: number) {
+    const L = bossLayout(boss.kit);
+    const key = boss.kit.repo + "|" + boss.kit.seed + "|" + L.body + "|" + foot;
+    if (key === this.depthKey) return;
+    this.depthKey = key;
+    const g = this.depthCtx, S = BOSS_SLOT;
+    g.save();
+    g.beginPath(); g.rect(S.x, S.y, S.w, S.h); g.clip();
+    g.fillStyle = `rgb(${DEPTH_ZERO},${DEPTH_ZERO},${DEPTH_ZERO})`;
+    g.fillRect(S.x, S.y, S.w, S.h);
+    const slotNames = L.kaiju?.slots ?? [];
+    const OFF: Record<string, number> = {
+      arms: 9, "rocket-fist": 10, jaw: 5, head: 5, "head-0": 7, "head-1": 3, "head-2": 9, neck: 3, leg: 6, "leg-back": -6,
+      tail: -6, "tail-tip": -9, plates: -3, "neck-plates": -2, "back-armor": -3, "shoulder-cannon": 3, wing: -11,
+      crest: 1, coil: 0, "coil-front": 5, "coil-back": -5,
+    };
+    const lobes = L.lobes.map((o) => ({ o, off: o.owner >= 0 ? OFF[slotNames[o.owner]] ?? 0 : o.mat === "belly" ? 3 : 0 }))
+      .sort((a, b) => a.off - b.off);
+    const ox = S.x + S.ax, oy = S.y + S.ay - foot;
+    for (const { o, off } of lobes) {
+      const v = Math.max(0, Math.min(255, DEPTH_ZERO + Math.round(off * DEPTH_STEP)));
+      g.fillStyle = `rgb(${v},${v},${v})`;
+      g.beginPath();
+      g.ellipse(ox + o.x, oy + o.y, o.r + 3, (o.ry ?? o.r) + 3, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    // the chest/heart pushes forward a little more
+    const hv = DEPTH_ZERO + 4 * DEPTH_STEP;
+    g.fillStyle = `rgb(${hv},${hv},${hv})`;
+    g.beginPath(); g.arc(ox + L.heart.x, oy + L.heart.y, 14, 0, Math.PI * 2); g.fill();
+    g.restore();
+    this.depthTex.needsUpdate = true;
   }
 
   /** XR HUD panel above the far edge: boss HP, alive count, timer (redrawn ~4x/s). */
@@ -461,6 +591,7 @@ export class StageLook {
       const mat = m.material as THREE.Material | THREE.Material[] | undefined;
       if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose();
     });
-    for (const t of [this.floorTex, this.atlasTex, this.bulTex, this.hudTex, this.fxTex]) t.dispose();
+    for (const t of [this.floorTex, this.atlasTex, this.bulTex, this.hudTex, this.fxTex, this.depthTex]) t.dispose();
+    for (const sp of this.sprites.values()) sp.box.dispose();
   }
 }

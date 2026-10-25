@@ -64,7 +64,7 @@ async function main() {
   let state: MatchState = match.snapshot() as MatchState;
   let pending: MatchState["events"] = [];
   const xrDts: number[] = [], xrUps: number[] = [];
-  const stage = createStage25d({ xr: q.get("xr") !== null, onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state, time: performance.now() / 1000, events: pending, extras: extrasFor() }) });
+  const stage = createStage25d({ voxelBullets: q.get("voxbul") !== "0", debugOrbit: Number(q.get("orbit") ?? 0), orbitZoom: Number(q.get("zoom") ?? 1), xr: q.get("xr") !== null, voxels: q.get("vox") === "0" ? false : q.get("vox") === "1" ? true : "auto", onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state, time: performance.now() / 1000, events: pending, extras: extrasFor() }) });
   stage.canvas.style.position = "absolute"; stage.canvas.style.left = "0"; stage.canvas.style.top = "0";
   stage.canvas.style.width = cssW + "px"; stage.canvas.style.height = cssH + "px";
   stage.canvas.style.imageRendering = "pixelated";
@@ -89,10 +89,10 @@ async function main() {
   }
 
   // ---- loop ----
-  const stats = { fps: 0, frameMs: 0, renderMs: 0, frames: 0, xrFrames: 0, xrFps: 0, xrUpdateMs: 0 };
+  const stats = { fps: 0, frameMs: 0, renderMs: 0, frames: 0, xrFrames: 0, xrFps: 0, xrUpdateMs: 0, stageCpuMs: 0 };
   (globalThis as unknown as { __stats: typeof stats }).__stats = stats;
   let last = performance.now(), acc = 0, camX = 0, endAt = 0;
-  const intervals: number[] = [], renders: number[] = [];
+  const intervals: number[] = [], renders: number[] = [], cpus: number[] = [];
   function step(now: number) {
     acc += Math.min(0.1, (now - last) / 1000);
     last = now;
@@ -143,6 +143,8 @@ async function main() {
     pending = [];
     const dt = performance.now() - t0;
     renders.push(dt); if (renders.length > 120) renders.shift();
+    cpus.push(stage.cpuMs); if (cpus.length > 120) cpus.shift();
+    stats.stageCpuMs = cpus.reduce((x, y) => x + y, 0) / cpus.length;
     stats.frames++;
     stats.frameMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
     stats.fps = 1000 / stats.frameMs;

@@ -1,3 +1,40 @@
+DONE (3d stage round 3) — claude-boss
+
+## Round 3: volumetric sprites, lighting, boss depth, LOD + codex-input's spatial handoff wired
+- **Voxel-extruded sprites (new `stage25d/voxel.ts`):** each sprite is one box, and a fragment shader walks its texel grid (2D DDA through a height field). Every opaque texel is a voxel column: the front face shows the exact pixel; side and top faces are lit.
+  - No CPU meshing and no readbacks, so animated atlases (heroes and boss redrawn every frame) stay volumetric.
+  - Depths: heroes/bugs/pickups 2 px, obstacles 6 px (short blocks), boss 5 px plus per-texel offsets, bullets 2 px (voxel glyphs, instanced).
+  - Empty-space skip: the atlas carries mipmaps and mip level 2 = 4×4 occupancy, so empty blocks are crossed in one step (software-GL XR went 22 → 29 fps from this alone).
+- **Lighting:**
+  - Key light (upper left) shades side/top faces (front faces stay exact).
+  - The boss heart is a point light: a pulsing color, stronger in phase 3, that tints nearby voxel sides (heroes, bullets, boss).
+  - Planar silhouette shadows: each sprite plane is projected along the key light onto the floor (crisp pixel silhouettes; blob contact shadows kept).
+  - Every shot puts an additive colored glint on the floor under its true 2D position.
+- **Boss depth:** a depth atlas painted from the layout lobes, so the arms (+9…10), front leg (+6), head/jaw (+5), chest/heart (+4) stand forward, while the back leg (−6), tail (−6, tip −9), fins (−3) and hydra wing (−11) sit behind. Hydra heads are staggered; abyssal coils front/back. Repainted only when the boss changes.
+- **LOD (`createStage25d({ voxels })`):** "auto" (default) = voxels on full-arena screens and in XR, flat billboards on the phone follow camera. In XR, "auto" adds an adaptive guard: if the moving-average frame time exceeds 12.5 ms after a 1 s warm-up, it drops to flat billboards for the rest of the session (one-way, no flapping). `voxels: true|false` forces it; `voxelBullets: false` keeps flat bullets.
+- **Measurements:**
+
+  | Scene | fps | Stage CPU per frame (update + draw submit) |
+  |---|---|---|
+  | WebKit raid 1440, voxels | 62.2 | 6.0 ms |
+  | WebKit raid 1440, flat | 62.2 | 5.8 ms |
+  | WebKit raid 1440, orbit views | 62.1–62.2 | 5.9–6.4 ms |
+  | WebKit royale 1920 | 62.1 | 6.9 ms |
+  | WebKit royale 1920, orbit | 62.1 | 6.5 ms |
+  | WebKit iPhone 15, LOD flat | 62.2 | 6.1 ms |
+  | WebKit iPhone 15, voxels forced | 62.1 | 5.9 ms |
+
+  - XR (Chromium + IWER, software GL, two eyes): voxels 32–34 fps vs flat 48 fps; scene update 1.3–1.5 ms per frame. The CPU side has ample 90 Hz headroom; GPU cost on a real M2 is unmeasured here (software rasterizer), which is what the adaptive guard is for.
+- **Spatial handoff (codex-input, 4f727e6) wired in index.ts:**
+  - `stage.enterXR(mode = "auto")` picks AR only where the runtime supports it (cached `detectSpatialSupport()`, no awaits before requestSession), else VR. Vision Pro stays VR.
+  - AR: `scene.background = null` and the void grid hidden; `createSurfacePlacement` is fed from onFrame, and onSelect runs the placement first. The arena shows only at status "placed" (root matrix = placement.matrix); a reticle shows while "candidate". The SCALE button calls `setTableWidth(1.2 | W*1.7/28)`.
+  - `stage.exportUSDZ()` = `exportSpatialUSDZ(look.root, { metersPerPixel: 1.2 / W })`; `xrMode` getter. Re-exports: `detectSpatialSupport`, `chooseSpatialMode`, `createModelPreview`.
+  - Emulator check: AR mode negotiated, status manual → controller pinch at the floor → placed on the estimated plane (0.9 m, 0.0025 m/px), passthrough background, arena visible. USDZ export: `model/vnd.usdz+zip`, 26.8 MB, 655 ms.
+  - **Note for codex-input:** the USDZ is heavy for a `<model>` preview; one baked voxel geometry is 14 MB. Probably cap `maxVoxelPixels` or skip the void grid.
+- **Gallery:** `&orbit=<deg>&zoom=<k>` (debug orbit camera to inspect volume), `&vox=0|1`, `&voxbul=0`. `window.__stats.stageCpuMs`.
+- **Tests:** `voxel.test.ts` (box extents/attributes); full suite 1221 passed.
+- **Dev note:** codex-input edits files in stage25d concurrently, so Vite HMR reloads invalidated XR runs. Measurements use a no-HMR, no-watch scratch config (restart the server after every edit: it caches modules).
+
 DONE (3d stage v2) — claude-boss
 
 ## 3D stage fixes + finishes (coordinator review of the first shots)
