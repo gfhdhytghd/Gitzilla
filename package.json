@@ -20,6 +20,9 @@
     "vitest": "^5.0.5"
   },
   "dependencies": {
+    "@solana/kit": "^8.5.0",
+    "@solana/wallet-standard-features": "^1.5.0",
+    "@wallet-standard/app": "^1.1.1",
     "ws": "^8.22.0"
   }
 }

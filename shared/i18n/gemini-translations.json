@@ -18462,5 +18462,3263 @@
     "zh": "{0} · AI {1}",
     "es": "{0} · IA {1}",
     "fr": "{0} · IA {1}"
+  },
+  {
+    "id": "d941c858b46d274d",
+    "en": "Join this classroom",
+    "zh": "加入此课堂",
+    "es": "Unirse a esta clase",
+    "fr": "Rejoindre cette classe",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1ca5e5f6a733b754",
+    "en": "Keep scores, feedback and code off a mirrored screen until you choose to show them",
+    "zh": "在选择展示之前，不在投屏上显示得分、反馈和代码",
+    "es": "Mantén las puntuaciones, los comentarios y el código fuera de la pantalla duplicada hasta que decidas mostrarlos",
+    "fr": "Masquer les scores, les retours et le code sur l'écran dupliqué jusqu'à ce que vous choisissiez de les afficher",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4fd84cb3e29585d0",
+    "en": "Projecting: hide scores & feedback",
+    "zh": "投屏中：隐藏得分与反馈",
+    "es": "Proyectando: ocultar puntuaciones y comentarios",
+    "fr": "Projection : masquer les scores et retours",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "541db6ca80b322ad",
+    "en": "Submissions",
+    "zh": "提交记录",
+    "es": "Entregas",
+    "fr": "Soumissions",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4e959e888a60ec8c",
+    "en": "Who needs help first · tap a name to review",
+    "zh": "谁最需要帮助 · 点击姓名以审阅",
+    "es": "Quién necesita ayuda primero · toca un nombre para revisar",
+    "fr": "Qui a besoin d'aide en premier · appuyez sur un nom pour vérifier",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "77ed10a2d34bf99b",
+    "en": "Your code",
+    "zh": "你的代码",
+    "es": "Tu código",
+    "fr": "Votre code",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c5b6d23bb918a2c4",
+    "en": "Push to GitHub → Submit → read your feedback → improve and submit again.",
+    "zh": "推送至 GitHub → 提交 → 阅读反馈 → 改进并重新提交。",
+    "es": "Haz push a GitHub → Enviar → lee tus comentarios → mejora y envía de nuevo.",
+    "fr": "Poussez vers GitHub → Soumettez → lisez vos retours → améliorez et soumettez à nouveau.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "42936d4d43faaa3f",
+    "en": "or submit a GitHub repo instead",
+    "zh": "或改为提交 GitHub 仓库",
+    "es": "o envía un repositorio de GitHub en su lugar",
+    "fr": "ou soumettez un dépôt GitHub à la place",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5b10cfa7cd954546",
+    "en": "This big screen is not the teacher’s. The teacher controls the class from the screen that created the room.",
+    "zh": "此大屏幕不是教师端。教师通过创建房间的屏幕控制课堂。",
+    "es": "Esta pantalla grande no es la del profesor. El profesor controla la clase desde la pantalla que creó la sala.",
+    "fr": "Cet écran principal n'est pas celui de l'enseignant. L'enseignant contrôle la classe depuis l'écran qui a créé la salle.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3c2acbd684ab04fa",
+    "en": "Join as a student",
+    "zh": "以学生身份加入",
+    "es": "Unirse como estudiante",
+    "fr": "Rejoindre en tant qu'élève",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ef69c97189638eb5",
+    "en": "Students see this pause too.",
+    "zh": "学生也会看到此暂停。",
+    "es": "Los estudiantes también ven esta pausa.",
+    "fr": "Les élèves voient également cette pause.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b2bb7fa1522be8b3",
+    "en": "Your teacher will resume in a moment.",
+    "zh": "老师稍后将继续课程。",
+    "es": "Tu profesor reanudará la clase en un momento.",
+    "fr": "Votre enseignant reprendra dans un instant.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b5bea41b6c623f7c",
+    "en": "true",
+    "zh": "true",
+    "es": "true",
+    "fr": "true",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "53749b750c1e8ed8",
+    "en": "End the lesson for everyone? Students’ work is kept and you can still export the results.",
+    "zh": "为所有人结束本节课？学生的作品将被保留，你仍可导出结果。",
+    "es": "¿Terminar la lección para todos? El trabajo de los estudiantes se guardará y aún podrás exportar los resultados.",
+    "fr": "Terminer la leçon pour tout le monde ? Le travail des élèves est conservé et vous pouvez toujours exporter les résultats.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a0496b17ae218247",
+    "en": "Use this lesson",
+    "zh": "使用此课程",
+    "es": "Usar esta lección",
+    "fr": "Utiliser cette leçon",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7dfd2d38cd9df170",
+    "en": "classroom-preset-use",
+    "zh": "classroom-preset-use",
+    "es": "classroom-preset-use",
+    "fr": "classroom-preset-use",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d6b5e4ce297055c0",
+    "en": "Lesson ready. Open step 1 when the class has joined.",
+    "zh": "课程准备就绪。全班加入后开启第 1 步。",
+    "es": "Lección lista. Abre el paso 1 cuando la clase se haya unido.",
+    "fr": "Leçon prête. Ouvrez l'étape 1 lorsque la classe a rejoint.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ec57da0b21f082af",
+    "en": "Customize first",
+    "zh": "先自定义",
+    "es": "Personalizar primero",
+    "fr": "Personnaliser d'abord",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e23d738ef1e57bde",
+    "en": "How this step is scored (edit or upload a rubric)",
+    "zh": "此步骤评分方式（编辑或上传评分标准）",
+    "es": "Cómo se califica este paso (edita o sube una rúbrica)",
+    "fr": "Comment cette étape est notée (modifier ou téléverser une grille d'évaluation)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "104d5ccb1a957037",
+    "en": "Step {0} · {1} · {2} · {3} check{4}{5}",
+    "zh": "步骤 {0} · {1} · {2} · {3} 项检查{4}{5}",
+    "es": "Paso {0} · {1} · {2} · {3} comprobación{4}{5}",
+    "fr": "Étape {0} · {1} · {2} · {3} vérification{4}{5}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "96d15cf84b61a585",
+    "en": "{0} min",
+    "zh": "{0} 分钟",
+    "es": "{0} min",
+    "fr": "{0} min",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3175dd4d43613625",
+    "en": "teacher paced",
+    "zh": "教师控制节奏",
+    "es": "al ritmo del profesor",
+    "fr": "au rythme de l'enseignant",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "32bfb3659f6eec69",
+    "en": " · in-app editor",
+    "zh": " · 应用内编辑器",
+    "es": " · editor integrado",
+    "fr": " · éditeur intégré",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2cdd8f56c7e9a773",
+    "en": "Minutes (0: you decide when to stop)",
+    "zh": "分钟数（0：由你决定何时停止）",
+    "es": "Minutos (0: tú decides cuándo parar)",
+    "fr": "Minutes (0 : vous décidez quand arrêter)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "45e0b37a2ae29373",
+    "en": "How much the automatic checks count (%) · the rest is the rubric",
+    "zh": "自动检查所占权重 (%) · 其余为评分标准",
+    "es": "Cuánto cuentan las comprobaciones automáticas (%) · el resto es la rúbrica",
+    "fr": "Poids des vérifications automatiques (%) · le reste correspond à la grille d'évaluation",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a8d3ed382fa06c7b",
+    "en": "Automatic checks (optional), one per line",
+    "zh": "自动检查（可选），每行一项",
+    "es": "Comprobaciones automáticas (opcional), una por línea",
+    "fr": "Vérifications automatiques (facultatif), une par ligne",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "715a821132e01f76",
+    "en": "Add a check:",
+    "zh": "添加检查：",
+    "es": "Añadir una comprobación:",
+    "fr": "Ajouter une vérification :",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "223f89309d75bffc",
+    "en": "File contains text",
+    "zh": "文件包含文本",
+    "es": "El archivo contiene texto",
+    "fr": "Le fichier contient du texte",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "188efa6daf7cf4e0",
+    "en": "GitHub CI check",
+    "zh": "GitHub CI 检查",
+    "es": "Comprobación de CI de GitHub",
+    "fr": "Vérification CI GitHub",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "59494632b8124b29",
+    "en": "file: {0}",
+    "zh": "file: {0}",
+    "es": "file: {0}",
+    "fr": "file: {0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c97f5fff4dc391db",
+    "en": "contains: {0} :: print(",
+    "zh": "contains: {0} :: print(",
+    "es": "contains: {0} :: print(",
+    "fr": "contains: {0} :: print(",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "76fbe9eabe5dbc0c",
+    "en": "ci: unit-tests",
+    "zh": "ci: unit-tests",
+    "es": "ci: unit-tests",
+    "fr": "ci: unit-tests",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5c96e92d2696d031",
+    "en": "Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed). You can always override a score with ✓ / ✗ during class.",
+    "zh": "示例：“file: python/01_hello.py”（文件存在）· “contains: python/01_hello.py :: Hello, Python!”（文件包含此完全相同的文本；代码绝不会运行）· “ci: unit-tests”（同名的 GitHub 检查通过）。在课堂上，你随时可以使用 ✓ / ✗ 覆盖评分。",
+    "es": "Ejemplos: “file: python/01_hello.py” (el archivo existe) · “contains: python/01_hello.py :: Hello, Python!” (el archivo contiene exactamente este texto; el código nunca se ejecuta) · “ci: unit-tests” (se aprobó una comprobación de GitHub con ese nombre). Siempre puedes anular una puntuación con ✓ / ✗ durante la clase.",
+    "fr": "Exemples : « file: python/01_hello.py » (le fichier existe) · « contains: python/01_hello.py :: Hello, Python! » (le fichier contient exactement ce texte ; le code n'est jamais exécuté) · « ci: unit-tests » (une vérification GitHub de ce nom a été validée). Vous pouvez toujours remplacer une note par ✓ / ✗ pendant le cours.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2f53e6b1a2552c91",
+    "en": "Remove step {0} “{1}” and its instructions?",
+    "zh": "移除步骤 {0} “{1}” 及其说明？",
+    "es": "¿Eliminar el paso {0} “{1}” y sus instrucciones?",
+    "fr": "Supprimer l'étape {0} « {1} » et ses instructions ?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3a821707a228e1f8",
+    "en": "👁 Preview as a student",
+    "zh": "👁 以学生视角预览",
+    "es": "👁 Vista previa como estudiante",
+    "fr": "👁 Aperçu en tant qu'élève",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e4eb922d0b45f2eb",
+    "en": "classroom-preview",
+    "zh": "classroom-preview",
+    "es": "classroom-preview",
+    "fr": "classroom-preview",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2545c86fc86287e8",
+    "en": "Name of the class monster",
+    "zh": "班级怪兽的名称",
+    "es": "Nombre del monstruo de la clase",
+    "fr": "Nom du monstre de la classe",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c5a1b6a72f8880d4",
+    "en": "Submitted in the in-app editor.",
+    "zh": "已在应用内编辑器中提交。",
+    "es": "Enviado en el editor integrado.",
+    "fr": "Soumis dans l'éditeur intégré.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1f72aac9107abb6b",
+    "en": "submitted code (read only)",
+    "zh": "已提交的代码（只读）",
+    "es": "código enviado (solo lectura)",
+    "fr": "code soumis (lecture seule)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e29edf721940fe67",
+    "en": "View submitted code ({0} file{1})",
+    "zh": "查看已提交的代码（{0} 个文件{1}）",
+    "es": "Ver código enviado ({0} archivo{1})",
+    "fr": "Afficher le code soumis ({0} fichier{1})",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "29b97be518f7c229",
+    "en": "starter code (preview)",
+    "zh": "初始代码（预览）",
+    "es": "código inicial (vista previa)",
+    "fr": "code de départ (aperçu)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1d8397143ff1dbc3",
+    "en": "This step has no starter files: students submit a GitHub repository.",
+    "zh": "此步骤没有初始文件：学生需提交 GitHub 仓库。",
+    "es": "Este paso no tiene archivos iniciales: los estudiantes envían un repositorio de GitHub.",
+    "fr": "Cette étape n'a pas de fichiers de départ : les élèves soumettent un dépôt GitHub.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2472923671768aa6",
+    "en": "classroom-preview-prev",
+    "zh": "classroom-preview-prev",
+    "es": "classroom-preview-prev",
+    "fr": "classroom-preview-prev",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "92f19534d8c54115",
+    "en": "Step {0} of {1}",
+    "zh": "第 {0} 步，共 {1} 步",
+    "es": "Paso {0} de {1}",
+    "fr": "Étape {0} sur {1}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7b845bb1fff69a5f",
+    "en": "classroom-preview-next",
+    "zh": "classroom-preview-next",
+    "es": "classroom-preview-next",
+    "fr": "classroom-preview-next",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8ff597e095f5be6e",
+    "en": "Starter code",
+    "zh": "初始代码",
+    "es": "Código inicial",
+    "fr": "Code de départ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a6b8414056e6f622",
+    "en": "Student preview (not published yet)",
+    "zh": "学生预览（尚未发布）",
+    "es": "Vista previa del estudiante (aún no publicada)",
+    "fr": "Aperçu élève (pas encore publié)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "773b36762adada2a",
+    "en": "classroom-preview-close",
+    "zh": "classroom-preview-close",
+    "es": "classroom-preview-close",
+    "fr": "classroom-preview-close",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b011e6787e5aa55d",
+    "en": "🔒 Feedback, code and your notes for this student are hidden from the projector.",
+    "zh": "🔒 该学生的反馈、代码及您的备注已在投影仪上隐藏。",
+    "es": "🔒 Los comentarios, el código y tus notas de este estudiante están ocultos para el proyector.",
+    "fr": "🔒 Les retours, le code et vos notes pour cet élève sont masqués du projecteur.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1af77ee273cbdaae",
+    "en": "Show details",
+    "zh": "显示详情",
+    "es": "Mostrar detalles",
+    "fr": "Afficher les détails",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "679d5593a1281875",
+    "en": "classroom-reveal",
+    "zh": "classroom-reveal",
+    "es": "classroom-reveal",
+    "fr": "classroom-reveal",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ff7faba050788094",
+    "en": "Submit your code to receive measured feedback and a next step.",
+    "zh": "提交你的代码以获取量化反馈和下一步提示。",
+    "es": "Envía tu código para recibir comentarios detallados y el siguiente paso.",
+    "fr": "Soumettez votre code pour recevoir des retours précis et la prochaine étape.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8bb098eaafd019a7",
+    "en": "in-app code · {0}",
+    "zh": "应用内代码 · {0}",
+    "es": "código en la aplicación · {0}",
+    "fr": "code dans l'application · {0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "21be10abd17ed21a",
+    "en": "These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.",
+    "zh": "这些检查只会查看你的文件，而不是程序的输出内容。老师会确认它是否完成任务。",
+    "es": "Estas comprobaciones revisan tus archivos, no lo que imprime tu programa. Tu profesor confirmará que cumple con la tarea.",
+    "fr": "Ces vérifications examinent vos fichiers et non ce que votre programme affiche. Votre enseignant confirmera qu'il accomplit la tâche.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5cac97f9b1f7d1f4",
+    "en": "Pick a Python preset and press “Use this lesson”, or write your own steps below and press “Publish lesson”.",
+    "zh": "选择一个 Python 预设并点击“使用此课程”，或者在下方编写自定义步骤并点击“发布课程”。",
+    "es": "Elige un ajuste predeterminado de Python y presiona “Usar esta lección”, o escribe tus propios pasos a continuación y presiona “Publicar lección”.",
+    "fr": "Choisissez un modèle Python et appuyez sur « Utiliser cette leçon », ou rédigez vos propres étapes ci-dessous et appuyez sur « Publier la leçon ».",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2d8f3c423976bfda",
+    "en": "{0} student{1} connected. Open step 1 when the class is in; late joiners can still join.",
+    "zh": "已连接 {0} 位学生{1}。全班到齐后开启步骤 1；迟到的学生仍可加入。",
+    "es": "{0} estudiante{1} conectado(s). Abre el paso 1 cuando la clase esté lista; quienes lleguen tarde aún pueden unirse.",
+    "fr": "{0} élève{1} connecté(s). Ouvrez l'étape 1 quand la classe est prête ; les retardataires peuvent toujours rejoindre.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1aa7b90deca86867",
+    "en": "Waiting for the first student to join: show them the QR code above.",
+    "zh": "等待第一位学生加入：向他们展示上方的二维码。",
+    "es": "Esperando a que se una el primer estudiante: muéstrales el código QR de arriba.",
+    "fr": "En attente du premier élève : montrez-lui le code QR ci-dessus.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8217d3426558fb90",
+    "en": "Checking {0} submission{1}… the class attack unlocks when they finish.",
+    "zh": "正在检查 {0} 份提交{1}… 完成后将解锁全班进攻。",
+    "es": "Comprobando {0} entrega{1}… el ataque de la clase se desbloquea cuando terminen.",
+    "fr": "Vérification de {0} soumission{1}… l'attaque de classe se débloque lorsqu'ils ont terminé.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6f3ed9a83bcec9a2",
+    "en": "The class attack unlocks after the first submission (0 of {0} submitted).",
+    "zh": "全班进攻将在首次提交后解锁（已提交 0 / {0}）。",
+    "es": "El ataque de la clase se desbloquea tras la primera entrega (0 de {0} entregados).",
+    "fr": "L'attaque de classe se débloque après la première soumission (0 sur {0} soumis).",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "306f7cdcf67dbaf8",
+    "en": "{0} of {1} submitted. Launch the class attack when you’re ready; students who haven’t submitted just don’t add damage.",
+    "zh": "已提交 {0} / {1}。准备好后即可发起全班进攻；未提交的学生只是不会增加伤害。",
+    "es": "{0} de {1} entregados. Lanza el ataque de la clase cuando estés listo; los estudiantes que no hayan entregado simplemente no sumarán daño.",
+    "fr": "{0} sur {1} soumis. Lancez l'attaque de classe quand vous êtes prêt ; les élèves n'ayant pas soumis n'ajouteront simplement pas de dégâts.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "64e45b0252ac8d44",
+    "en": "The class attack is playing on the projector (about 10 seconds).",
+    "zh": "全班进攻正在投影仪上播放（约 10 秒）。",
+    "es": "El ataque de la clase se está reproduciendo en el proyector (unos 10 segundos).",
+    "fr": "L'attaque de classe est diffusée sur le projecteur (environ 10 secondes).",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4cb41c1c94d54a8b",
+    "en": "Say: “{0} of {1} of you submitted{2}.{3}” ",
+    "zh": "请说：“你们当中有 {0} / {1} 人提交了{2}。{3}” ",
+    "es": "Di: “{0} de {1} de ustedes han entregado{2}.{3}” ",
+    "fr": "Dites : « {0} sur {1} d'entre vous ont soumis{2}.{3} » ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b922a5a96c23a42b",
+    "en": ", and {0} improved the most",
+    "zh": "，并且 {0} 进步最大",
+    "es": ", y {0} mejoró más",
+    "fr": ", et {0} a le plus progressé",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4b1411cca04cd9b0",
+    "en": " Next: {0}.",
+    "zh": " 下一步：{0}。",
+    "es": " Siguiente: {0}.",
+    "fr": " Suivant : {0}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0730b9cd8f951b8b",
+    "en": "“Retry & improve” gives everyone another go at this step; “Complete lesson” ends it.",
+    "zh": "“重试并改进”让每个人都可以再次尝试这一步；“完成课程”则结束本课。",
+    "es": "“Reintentar y mejorar” les da a todos otra oportunidad en este paso; “Completar lección” la finaliza.",
+    "fr": "« Réessayer et améliorer » donne à chacun une nouvelle chance pour cette étape ; « Terminer la leçon » y met fin.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "61cd464a728dfd2b",
+    "en": "“Retry & improve” gives everyone another go at this step; “Open next step” starts step {0}.",
+    "zh": "“重试并改进”让每个人都可以再次尝试这一步；“开启下一步”将开始步骤 {0}。",
+    "es": "“Reintentar y mejorar” les da a todos otra oportunidad en este paso; “Abrir siguiente paso” inicia el paso {0}.",
+    "fr": "« Réessayer et améliorer » donne à chacun une nouvelle chance pour cette étape ; « Ouvrir l'étape suivante » commence l'étape {0}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "11e516dd70b7cf4a",
+    "en": "Lesson complete. Export the results for your records.",
+    "zh": "课程已完成。导出结果以供留存记录。",
+    "es": "Lección completada. Exporta los resultados para tu registro.",
+    "fr": "Leçon terminée. Exportez les résultats pour vos dossiers.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "74b3355a9f0a788c",
+    "en": "End lesson…",
+    "zh": "结束课程…",
+    "es": "Finalizar lección…",
+    "fr": "Terminer la leçon…",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4cf8a095560f481d",
+    "en": "Export results · end the lesson",
+    "zh": "导出结果 · 结束课程",
+    "es": "Exportar resultados · finalizar la lección",
+    "fr": "Exporter les résultats · terminer la leçon",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ed915e1452521e82",
+    "en": "Results for your records",
+    "zh": "留存记录的结果",
+    "es": "Resultados para tus registros",
+    "fr": "Résultats pour vos dossiers",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5767487ec49b9d3f",
+    "en": "⇩ Export CSV",
+    "zh": "⇩ 导出 CSV",
+    "es": "⇩ Exportar CSV",
+    "fr": "⇩ Exporter CSV",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1642ce1ffb24f024",
+    "en": "classroom-export-csv",
+    "zh": "classroom-export-csv",
+    "es": "classroom-export-csv",
+    "fr": "classroom-export-csv",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "451d9fb34c928dd1",
+    "en": "⇩ Export Markdown",
+    "zh": "⇩ 导出 Markdown",
+    "es": "⇩ Exportar Markdown",
+    "fr": "⇩ Exporter Markdown",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "41d3da8d81b43cf1",
+    "en": "classroom-export-md",
+    "zh": "classroom-export-md",
+    "es": "classroom-export-md",
+    "fr": "classroom-export-md",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2bf54805479cbb1b",
+    "en": "Coding time",
+    "zh": "编程时间",
+    "es": "Tiempo de programación",
+    "fr": "Temps de programmation",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7a78ff8f191d30c5",
+    "en": "Your GitHub version",
+    "zh": "你的 GitHub 版本",
+    "es": "Tu versión de GitHub",
+    "fr": "Votre version GitHub",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "afd51896b45c3383",
+    "en": "Step {0}/{1}",
+    "zh": "步骤 {0}/{1}",
+    "es": "Paso {0}/{1}",
+    "fr": "Étape {0}/{1}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "22ae62061bd2dc68",
+    "en": "{0} of {1} submitted{2}{3}{4}",
+    "zh": "已提交 {0} / {1}{2}{3}{4}",
+    "es": "{0} de {1} entregados{2}{3}{4}",
+    "fr": "{0} sur {1} soumis{2}{3}{4}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "809e50d79db093a6",
+    "en": " · {0} offline",
+    "zh": " · {0} 离线",
+    "es": " · {0} desconectado(s)",
+    "fr": " · {0} hors ligne",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5a7971cf605d265b",
+    "en": "checking code…",
+    "zh": "正在检查代码…",
+    "es": "comprobando código…",
+    "fr": "vérification du code…",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2979ee902346446a",
+    "en": "stuck: needs to resubmit",
+    "zh": "卡住了：需要重新提交",
+    "es": "atascado: necesita volver a enviar",
+    "fr": "bloqué : doit soumettre à nouveau",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4d4e1d6af3bf4b44",
+    "en": "reviewed by you",
+    "zh": "由你审核",
+    "es": "revisado por ti",
+    "fr": "vérifié par vous",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1f8361e53335929e",
+    "en": "submitted · needs your review",
+    "zh": "已提交 · 待你审核",
+    "es": "entregado · necesita tu revisión",
+    "fr": "soumis · attend votre révision",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f483300221ac555c",
+    "en": "your reviewed score",
+    "zh": "你的评分",
+    "es": "tu puntuación revisada",
+    "fr": "votre note attribuée",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "333865c54a9fc16e",
+    "en": "evidence checks passed (static, not run)",
+    "zh": "证据检查通过（静态，未运行）",
+    "es": "comprobaciones de evidencias superadas (estáticas, no ejecutadas)",
+    "fr": "vérifications de preuves réussies (statiques, non exécutées)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "24bec41e00d05996",
+    "en": "checks {0}/{1}",
+    "zh": "检查 {0}/{1}",
+    "es": "comprobaciones {0}/{1}",
+    "fr": "vérifications {0}/{1}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ce344c5e8efe7301",
+    "en": "no result yet",
+    "zh": "暂无结果",
+    "es": "sin resultado todavía",
+    "fr": "aucun résultat pour le moment",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "93f6e11d9ce3e407",
+    "en": "works",
+    "zh": "正常运行",
+    "es": "funciona",
+    "fr": "fonctionne",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8e45c9eccd72e7df",
+    "en": "Works: it does the task (100)",
+    "zh": "正常运行：已完成任务 (100)",
+    "es": "Funciona: cumple la tarea (100)",
+    "fr": "Fonctionne : la tâche est accomplie (100)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "24210be64c887afb",
+    "en": "Works ✓",
+    "zh": "正常运行 ✓",
+    "es": "Funciona ✓",
+    "fr": "Fonctionne ✓",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0fcda1403f0f1b1f",
+    "en": "Receipt unavailable. Try again.",
+    "zh": "收据不可用。请重试。",
+    "es": "Recibo no disponible. Inténtalo de nuevo.",
+    "fr": "Reçu indisponible. Réessayez.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3515ae5f8faa2748",
+    "en": "Open match receipt",
+    "zh": "打开对战收据",
+    "es": "Abrir recibo de la partida",
+    "fr": "Ouvrir le reçu de match",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7e735cacf7da52a4",
+    "en": "MATCH RECEIPT",
+    "zh": "对战收据",
+    "es": "RECIBO DE LA PARTIDA",
+    "fr": "REÇU DE MATCH",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "00e1174b1c19035d",
+    "en": "Save your signed PvP result. A wallet is optional.",
+    "zh": "保存已签名的 PvP 结果。钱包为可选项。",
+    "es": "Guarda tu resultado de PvP firmado. La billetera es opcional.",
+    "fr": "Enregistrez votre résultat PvP signé. Le portefeuille est facultatif.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c17594eb35b5184e",
+    "en": "Signing message",
+    "zh": "签名消息",
+    "es": "Mensaje de firma",
+    "fr": "Message de signature",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "002e433eb5003d2a",
+    "en": "Optional Devnet anchor: your wallet address and a salted result digest become public. Gitzilla pays the test-network fee. Sign a message only; no token transfer.",
+    "zh": "可选的 Devnet 锚定：您的钱包地址和加盐的结果摘要将公开。Gitzilla 支付测试网络费用。仅需签名消息；不进行代币转账。",
+    "es": "Anclaje opcional en Devnet: tu dirección de billetera y un resumen con sal del resultado se harán públicos. Gitzilla paga la tarifa de la red de prueba. Solo firma un mensaje; no hay transferencia de tokens.",
+    "fr": "Ancrage facultatif sur Devnet : votre adresse de portefeuille et un condensé salé du résultat deviennent publics. Gitzilla paie les frais du réseau de test. Signez uniquement un message ; aucun transfert de jetons.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7b1f118169bc487d",
+    "en": "Connect wallet",
+    "zh": "连接钱包",
+    "es": "Conectar billetera",
+    "fr": "Connecter le portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "345ccb3add4995d8",
+    "en": "Wallet connection cancelled. You can still download the receipt.",
+    "zh": "钱包连接已取消。您仍可以下载收据。",
+    "es": "Conexión de billetera cancelada. Aún puedes descargar el recibo.",
+    "fr": "Connexion au portefeuille annulée. Vous pouvez toujours télécharger le reçu.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f87251238674dde2",
+    "en": "Choose a wallet account that supports Devnet message signing.",
+    "zh": "选择一个支持 Devnet 消息签名的钱包账户。",
+    "es": "Elige una cuenta de billetera compatible con la firma de mensajes en Devnet.",
+    "fr": "Choisissez un compte de portefeuille prenant en charge la signature de messages sur Devnet.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "57ae4e061312b04b",
+    "en": "No compatible wallet detected. You can download the signed receipt without one.",
+    "zh": "未检测到兼容的钱包。没有钱包也可以下载已签名的收据。",
+    "es": "No se detectó ninguna billetera compatible. Puedes descargar el recibo firmado sin ella.",
+    "fr": "Aucun portefeuille compatible détecté. Vous pouvez télécharger le reçu signé sans portefeuille.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "111c1536ab193ab4",
+    "en": "Finalized on Solana Devnet.",
+    "zh": "已在 Solana Devnet 上最终确认。",
+    "es": "Finalizado en Solana Devnet.",
+    "fr": "Finalisé sur Solana Devnet.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3587fd6965596b19",
+    "en": "Anchor pending. Check its status before retrying.",
+    "zh": "锚定待处理。重试前请检查其状态。",
+    "es": "Anclaje pendiente. Comprueba su estado antes de volver a intentarlo.",
+    "fr": "Ancrage en attente. Vérifiez son statut avant de réessayer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7f87899c5437032e",
+    "en": "The transaction expired without finalizing. Sign again to retry.",
+    "zh": "交易已过期且未完成最终确认。请重新签名以重试。",
+    "es": "La transacción expiró sin finalizarse. Firma de nuevo para reintentar.",
+    "fr": "La transaction a expiré sans être finalisée. Signez à nouveau pour réessayer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "22b7bfeb7cb6c8c9",
+    "en": "The transaction failed. Sign again to retry.",
+    "zh": "交易失败。请重新签名以重试。",
+    "es": "La transacción falló. Firma de nuevo para reintentar.",
+    "fr": "La transaction a échoué. Signez à nouveau pour réessayer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "9a84598a3fb17017",
+    "en": "Signed by Gitzilla. Download it with or without a wallet.",
+    "zh": "已由 Gitzilla 签名。无论是否有钱包均可下载。",
+    "es": "Firmado por Gitzilla. Descárgalo con o sin billetera.",
+    "fr": "Signé par Gitzilla. Téléchargez-le avec ou sans portefeuille.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8a927311c2e61a94",
+    "en": "Download signed receipt",
+    "zh": "下载已签名的收据",
+    "es": "Descargar recibo firmado",
+    "fr": "Télécharger le reçu signé",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e88f2e30551e7fce",
+    "en": "View on Devnet explorer",
+    "zh": "在 Devnet 浏览器中查看",
+    "es": "Ver en el explorador de Devnet",
+    "fr": "Voir sur l'explorateur Devnet",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "aef62fa15a887773",
+    "en": "Check anchor status",
+    "zh": "检查锚定状态",
+    "es": "Comprobar estado del anclaje",
+    "fr": "Vérifier l'état de l'ancrage",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a69fe4290211848d",
+    "en": "Sign message and anchor",
+    "zh": "签名消息并锚定",
+    "es": "Firmar mensaje y anclar",
+    "fr": "Signer le message et ancrer",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "732f1d6a65926d58",
+    "en": "Signing cancelled. Your receipt is still available to download.",
+    "zh": "签名已取消。您的收据仍可供下载。",
+    "es": "Firma cancelada. Tu recibo aún está disponible para descargar.",
+    "fr": "Signature annulée. Votre reçu reste disponible au téléchargement.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "38ce7299b8ea12f9",
+    "en": "The wallet changed the signing message. Nothing was published.",
+    "zh": "钱包修改了签名消息。未发布任何内容。",
+    "es": "La billetera modificó el mensaje de firma. No se publicó nada.",
+    "fr": "Le portefeuille a modifié le message de signature. Rien n'a été publié.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "efa4878bd17ea385",
+    "en": "Prepare signing message",
+    "zh": "准备签名消息",
+    "es": "Preparar mensaje de firma",
+    "fr": "Préparer le message de signature",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2b17c7f5aefd4bda",
+    "en": "Change wallet",
+    "zh": "更改钱包",
+    "es": "Cambiar billetera",
+    "fr": "Changer de portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "73ca9e55a4d5faf3",
+    "en": "This receipt uses an archived signing key. Its signed download remains verifiable.",
+    "zh": "此收据使用已归档的签名密钥。其下载的签名文件仍可验证。",
+    "es": "Este recibo usa una clave de firma archivada. Su descarga firmada sigue siendo verificable.",
+    "fr": "Ce reçu utilise une clé de signature archivée. Son téléchargement signé reste vérifiable.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4e4ee86f4de6264c",
+    "en": "A server-attested match result, not proof of fair gameplay or an NFT. Devnet history may be reset. Save the signed download.",
+    "zh": "此为经服务器见证的比赛结果，并非公平游戏证明或 NFT。Devnet 历史记录可能会被重置。请保存下载的已签名文件。",
+    "es": "Un resultado de partida certificado por el servidor, no una prueba de juego limpio ni un NFT. El historial de Devnet puede restablecerse. Guarda la descarga firmada.",
+    "fr": "Un résultat de match attesté par le serveur, et non une preuve d'équité de jeu ou un NFT. L'historique de Devnet peut être réinitialisé. Enregistrez le téléchargement signé.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3ce5182429bc66c9",
+    "en": "Attestor key must be a private file",
+    "zh": "见证者密钥必须是私有文件",
+    "es": "La clave del atestiguador debe ser un archivo privado",
+    "fr": "La clé de l'attestateur doit être un fichier privé",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "da167e49ff31f92c",
+    "en": "Invalid attestor key",
+    "zh": "无效的见证者密钥",
+    "es": "Clave de atestiguador no válida",
+    "fr": "Clé d'attestateur non valide",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "527dad70792e7579",
+    "en": "Send JSON",
+    "zh": "发送 JSON",
+    "es": "Enviar JSON",
+    "fr": "Envoyer du JSON",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f3aa3600bd0951b2",
+    "en": "Receipt request is too large",
+    "zh": "收据请求过大",
+    "es": "La solicitud de recibo es demasiado grande",
+    "fr": "La requête de reçu est trop volumineuse",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2461f667d8fdfe43",
+    "en": "Receipt request timed out",
+    "zh": "收据请求超时",
+    "es": "La solicitud de recibo agotó el tiempo de espera",
+    "fr": "La demande de reçu a expiré",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c0a06acccb0030f4",
+    "en": "Invalid receipt request",
+    "zh": "无效的收据请求",
+    "es": "Solicitud de recibo no válida",
+    "fr": "Demande de reçu non valide",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e28093afc8f2ae0e",
+    "en": "Incomplete receipt request",
+    "zh": "收据请求不完整",
+    "es": "Solicitud de recibo incompleta",
+    "fr": "Demande de reçu incomplète",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e9b14d7b9cd21112",
+    "en": "Match receipts are temporarily unavailable",
+    "zh": "对战收据暂时不可用",
+    "es": "Los recibos de partidas no están disponibles temporalmente",
+    "fr": "Les reçus de match sont temporairement indisponibles",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8ce247482714b5a8",
+    "en": "Use the Gitzilla site to manage this receipt",
+    "zh": "请使用 Gitzilla 网站管理此收据",
+    "es": "Usa el sitio de Gitzilla para gestionar este recibo",
+    "fr": "Utilisez le site Gitzilla pour gérer ce reçu",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a3603794070bdea3",
+    "en": "Too many receipt requests; wait a minute",
+    "zh": "收据请求过多；请稍候一分钟",
+    "es": "Demasiadas solicitudes de recibo; espera un minuto",
+    "fr": "Trop de demandes de reçu ; attendez une minute",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4c8ce69e260c3130",
+    "en": "Choose a valid Solana wallet",
+    "zh": "选择一个有效的 Solana 钱包",
+    "es": "Elige una billetera de Solana válida",
+    "fr": "Choisissez un portefeuille Solana valide",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "aa98e4df617577df",
+    "en": "Provide the wallet signature",
+    "zh": "提供钱包签名",
+    "es": "Proporciona la firma de la billetera",
+    "fr": "Fournissez la signature du portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c14de4a671325287",
+    "en": "Devnet anchoring is temporarily unavailable. You can download the signed receipt.",
+    "zh": "Devnet 锚定暂时不可用。您可以下载已签名的收据。",
+    "es": "El anclaje en Devnet no está disponible temporalmente. Puedes descargar el recibo firmado.",
+    "fr": "L'ancrage sur Devnet est temporairement indisponible. Vous pouvez télécharger le reçu signé.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a34faa43f84ef8f9",
+    "en": "Use an HTTPS Devnet RPC",
+    "zh": "使用 HTTPS Devnet RPC",
+    "es": "Usa un RPC de Devnet con HTTPS",
+    "fr": "Utilisez un RPC Devnet en HTTPS",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "16f679a54ac515e1",
+    "en": "Solana Devnet is unavailable",
+    "zh": "Solana Devnet 不可用",
+    "es": "Solana Devnet no está disponible",
+    "fr": "Solana Devnet est indisponible",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3ed8c2808210a6bd",
+    "en": "Solana Devnet request failed",
+    "zh": "Solana Devnet 请求失败",
+    "es": "Falló la solicitud a Solana Devnet",
+    "fr": "La requête Solana Devnet a échoué",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a245b1db01ba5984",
+    "en": "Only Solana Devnet is supported",
+    "zh": "仅支持 Solana Devnet",
+    "es": "Solo se admite Solana Devnet",
+    "fr": "Seul Solana Devnet est pris en charge",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "95d5e04d94e6122b",
+    "en": "Receipt memo is too long",
+    "zh": "收据备忘录过长",
+    "es": "La nota del recibo es demasiado larga",
+    "fr": "Le mémo du reçu est trop long",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "40d77d353d9fe77e",
+    "en": "Configure a short application origin",
+    "zh": "配置较短的应用源",
+    "es": "Configura un origen de aplicación corto",
+    "fr": "Configurez une origine d'application courte",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e9ab8077b4ed21b8",
+    "en": "Receipt not found for this player",
+    "zh": "未找到该玩家的收据",
+    "es": "No se encontró el recibo para este jugador",
+    "fr": "Reçu introuvable pour ce joueur",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0e11940d44f05657",
+    "en": "This receipt uses an archived signing key; download the signed receipt",
+    "zh": "此收据使用已归档的签名密钥；请下载已签名的收据",
+    "es": "Este recibo usa una clave de firma archivada; descarga el recibo firmado",
+    "fr": "Ce reçu utilise une clé de signature archivée ; téléchargez le reçu signé",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e29160db76ffcb14",
+    "en": "This receipt is already bound to another wallet",
+    "zh": "此收据已绑定到另一个钱包",
+    "es": "Este recibo ya está vinculado a otra billetera",
+    "fr": "Ce reçu est déjà associé à un autre portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "393fdeaecede4eff",
+    "en": "The wallet changed; request a new signing message",
+    "zh": "钱包已更改；请请求新的签名消息",
+    "es": "La billetera cambió; solicita un nuevo mensaje de firma",
+    "fr": "Le portefeuille a changé ; demandez un nouveau message de signature",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "fea8cd207dbbcf54",
+    "en": "The signing message expired; try again",
+    "zh": "签名消息已过期；请重试",
+    "es": "El mensaje de firma expiró; inténtalo de nuevo",
+    "fr": "Le message de signature a expiré ; réessayez",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "61341b61f79489b7",
+    "en": "Wallet signature verification failed",
+    "zh": "钱包签名验证失败",
+    "es": "Falló la verificación de la firma de la billetera",
+    "fr": "Échec de la vérification de la signature du portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "eda00dc890b49835",
+    "en": "Unexpected transaction",
+    "zh": "意外的交易",
+    "es": "Transacción inesperada",
+    "fr": "Transaction inattendue",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c2adfea1d4ce42c7",
+    "en": "Attestor keys must not be tracked",
+    "zh": "证明者密钥不得被跟踪",
+    "es": "Las claves del atestiguador no deben rastrearse",
+    "fr": "Les clés d'attestation ne doivent pas être suivies",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ce0db55743062517",
+    "en": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner);",
+    "zh": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner);",
+    "es": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner);",
+    "fr": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner);",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "19f966d54916bc89",
+    "en": "SELECT value FROM receipts WHERE id=?",
+    "zh": "SELECT value FROM receipts WHERE id=?",
+    "es": "SELECT value FROM receipts WHERE id=?",
+    "fr": "SELECT value FROM receipts WHERE id=?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a3522ae2be7d73b8",
+    "en": "INSERT INTO receipts(id,owner,value) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value",
+    "zh": "INSERT INTO receipts(id,owner,value) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value",
+    "es": "INSERT INTO receipts(id,owner,value) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value",
+    "fr": "INSERT INTO receipts(id,owner,value) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e51efe6d90a949d6",
+    "en": "SELECT value FROM receipts",
+    "zh": "SELECT value FROM receipts",
+    "es": "SELECT value FROM receipts",
+    "fr": "SELECT value FROM receipts",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a209d8abc0d43687",
+    "en": "GITZILLA home",
+    "zh": "GITZILLA 首页",
+    "es": "Inicio de GITZILLA",
+    "fr": "Accueil GITZILLA",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6b898fb770458c45",
+    "en": "min(44vw, 190px)",
+    "zh": "min(44vw, 190px)",
+    "es": "min(44vw, 190px)",
+    "fr": "min(44vw, 190px)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "16c050a7da4ba9cd",
+    "en": "{0} KO · {1} dmg",
+    "zh": "{0} KO · {1} 伤害",
+    "es": "{0} KO · {1} daño",
+    "fr": "{0} KO · {1} dégâts",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2a10a1e628215323",
+    "en": "royale-underdog",
+    "zh": "royale-underdog",
+    "es": "royale-underdog",
+    "fr": "royale-underdog",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d5b79091c0c69fa0",
+    "en": "POWER {0}",
+    "zh": "力量 {0}",
+    "es": "PODER {0}",
+    "fr": "PUISSANCE {0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "290610b6930fa9ed",
+    "en": " AI",
+    "zh": " AI",
+    "es": " IA",
+    "fr": " IA",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4746029200cee1f6",
+    "en": "git checkout --detach",
+    "zh": "git checkout --detach",
+    "es": "git checkout --detach",
+    "fr": "git checkout --detach",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "be4a845f18c4ba69",
+    "en": " (left)",
+    "zh": " (已离开)",
+    "es": " (salió)",
+    "fr": " (a quitté)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5fb7b5ff03174801",
+    "en": "GC ",
+    "zh": "GC ",
+    "es": "GC ",
+    "fr": "GC ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3aa78388a06d8af1",
+    "en": "rm -rf",
+    "zh": "rm -rf",
+    "es": "rm -rf",
+    "fr": "rm -rf",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e404e6ecd71a6d84",
+    "en": "win:{0}",
+    "zh": "胜利:{0}",
+    "es": "victoria:{0}",
+    "fr": "victoire:{0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1de1b4e947afcfc0",
+    "en": "(HEAD -> main)",
+    "zh": "(HEAD -> main)",
+    "es": "(HEAD -> main)",
+    "fr": "(HEAD -> main)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "823a3180dad3c9c3",
+    "en": "win",
+    "zh": "胜利",
+    "es": "victoria",
+    "fr": "victoire",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "395edd31e7b290eb",
+    "en": "royale-log",
+    "zh": "royale-log",
+    "es": "royale-log",
+    "fr": "royale-log",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b55fc51aa78256f7",
+    "en": "$ git log --eliminations",
+    "zh": "$ git log --eliminations",
+    "es": "$ git log --eliminations",
+    "fr": "$ git log --eliminations",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "25ad680b1b31ecca",
+    "en": "GITZILLA classroom",
+    "zh": "GITZILLA 课堂",
+    "es": "Aula de GITZILLA",
+    "fr": "Classe GITZILLA",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1f75ef36aacc7a7f",
+    "en": "230px",
+    "zh": "230px",
+    "es": "230px",
+    "fr": "230px",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b8db09b9eb971094",
+    "en": "clamp(116px, 28vw, 168px)",
+    "zh": "clamp(116px, 28vw, 168px)",
+    "es": "clamp(116px, 28vw, 168px)",
+    "fr": "clamp(116px, 28vw, 168px)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d73f01fbe89001fd",
+    "en": "classroom-show-join",
+    "zh": "classroom-show-join",
+    "es": "classroom-show-join",
+    "fr": "classroom-show-join",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cefa64a90b03644e",
+    "en": "Show the QR code and join link",
+    "zh": "显示二维码和加入链接",
+    "es": "Mostrar el código QR y el enlace para unirse",
+    "fr": "Afficher le code QR et le lien pour rejoindre",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "bd94f9ed89ceafd8",
+    "en": "show QR",
+    "zh": "显示二维码",
+    "es": "mostrar QR",
+    "fr": "afficher le QR",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "56c09176fb0a6499",
+    "en": "Close the teacher screen? The lesson keeps running, and you can come back with the same link. To end it, use ⋯ → End lesson.",
+    "zh": "关闭教师屏幕？课程将继续运行，你可以使用相同链接返回。要结束课程，请使用 ⋯ → 结束课程。",
+    "es": "¿Cerrar la pantalla del profesor? La lección seguirá en curso y puedes volver con el mismo enlace. Para finalizarla, usa ⋯ → Finalizar lección.",
+    "fr": "Fermer l'écran de l'enseignant ? La leçon continue de tourner et vous pouvez revenir avec le même lien. Pour la terminer, utilisez ⋯ → Terminer la leçon.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c7099deab1358356",
+    "en": "show less",
+    "zh": "收起",
+    "es": "mostrar menos",
+    "fr": "afficher moins",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "178353189e5b5aca",
+    "en": "show all instructions",
+    "zh": "显示全部说明",
+    "es": "mostrar todas las instrucciones",
+    "fr": "afficher toutes les instructions",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f4599ae498c39990",
+    "en": "Read the full task",
+    "zh": "阅读完整任务",
+    "es": "Leer la tarea completa",
+    "fr": "Lire la tâche complète",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7c7a549fe4834917",
+    "en": "The full task is on your phone or laptop.",
+    "zh": "完整任务在你的手机或笔记本电脑上。",
+    "es": "La tarea completa está en tu teléfono o portátil.",
+    "fr": "La tâche complète est sur votre téléphone ou ordinateur portable.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0ddc3f7cc82c95e0",
+    "en": "Opens the class view (no names, scores or feedback) in a new window. Drag it to the projector screen.",
+    "zh": "在新窗口中打开班级视图（不含姓名、分数或反馈）。将其拖动到投影仪屏幕上。",
+    "es": "Abre la vista de la clase (sin nombres, puntuaciones ni comentarios) en una nueva ventana. Arrástrala a la pantalla del proyector.",
+    "fr": "Ouvre la vue de la classe (sans noms, scores ni commentaires) dans une nouvelle fenêtre. Faites-la glisser vers l'écran du projecteur.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "155eab270fd63692",
+    "en": "Open projector window ↗",
+    "zh": "打开投影仪窗口 ↗",
+    "es": "Abrir ventana del proyector ↗",
+    "fr": "Ouvrir la fenêtre du projecteur ↗",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "275fb71a0acf34e2",
+    "en": "img.cr-join-qr",
+    "zh": "img.cr-join-qr",
+    "es": "img.cr-join-qr",
+    "fr": "img.cr-join-qr",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "af24a9554434902e",
+    "en": "QR code to join this classroom",
+    "zh": "加入此课堂的二维码",
+    "es": "Código QR para unirse a esta aula",
+    "fr": "Code QR pour rejoindre cette classe",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "01d66b3216de121f",
+    "en": "1. Scan the code with your phone camera, or open",
+    "zh": "1. 用手机摄像头扫描二维码，或打开",
+    "es": "1. Escanea el código con la cámara de tu teléfono, o abre",
+    "fr": "1. Scannez le code avec l'appareil photo de votre téléphone, ou ouvrez",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "952feb66f0c39848",
+    "en": "2. Type your name. That’s it: no account or app needed.",
+    "zh": "2. 输入你的名字。这就完成了：无需账号或应用。",
+    "es": "2. Escribe tu nombre. Eso es todo: no se necesita cuenta ni aplicación.",
+    "fr": "2. Saisissez votre nom. C'est tout : aucun compte ni application requis.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "362c5966669d44ec",
+    "en": "Room code",
+    "zh": "房间代码",
+    "es": "Código de sala",
+    "fr": "Code de salle",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "de394248a984dec5",
+    "en": "Students: join on your phone or laptop",
+    "zh": "学生：请在手机或笔记本电脑上加入",
+    "es": "Estudiantes: únanse desde su teléfono o portátil",
+    "fr": "Élèves : rejoignez depuis votre téléphone ou ordinateur portable",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4ddf3eb12b63266b",
+    "en": "notyet",
+    "zh": "notyet",
+    "es": "notyet",
+    "fr": "notyet",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "ee256ea1b8d8a75f",
+    "en": "Not yet: it doesn’t do the task yet (max 40)",
+    "zh": "尚未完成：它还没有完成任务（最多40分）",
+    "es": "Aún no: todavía no hace la tarea (máx. 40)",
+    "fr": "Pas encore : il ne fait pas encore la tâche (max 40)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "608ca7f89534a95b",
+    "en": "Not yet: compare your output with the task.",
+    "zh": "尚未完成：请将你的输出与任务要求进行对比。",
+    "es": "Aún no: compara tu salida con la tarea.",
+    "fr": "Pas encore : comparez votre sortie avec la tâche.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "2f2fc7f2e9ce13b0",
+    "en": "ask",
+    "zh": "ask",
+    "es": "ask",
+    "fr": "ask",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d2baf0cfd36b619e",
+    "en": "Ask me: let’s talk about it (score unchanged)",
+    "zh": "问我：我们聊聊这个（分数不变）",
+    "es": "Pregúntame: hablemos de esto (puntuación sin cambios)",
+    "fr": "Demande-moi : parlons-en (score inchangé)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "8f59367aaa1efae7",
+    "en": "Ask me about this one.",
+    "zh": "问我关于这一个的问题。",
+    "es": "Pregúntame sobre este.",
+    "fr": "Demande-moi à propos de celui-ci.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "51aecbb1840eb3c2",
+    "en": "{0} students contributed. Only improvements add extra damage.",
+    "zh": "{0} 名学生已贡献。只有改进才能造成额外伤害。",
+    "es": "{0} estudiantes contribuyeron. Solo las mejoras añaden daño extra.",
+    "fr": "{0} élèves ont contribué. Seules les améliorations ajoutent des dégâts supplémentaires.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "bdf375b2286eb026",
+    "en": "Checking your code…",
+    "zh": "正在检查你的代码…",
+    "es": "Comprobando tu código…",
+    "fr": "Vérification de votre code…",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "151c5db601f45011",
+    "en": "Submit improved code",
+    "zh": "提交改进后的代码",
+    "es": "Enviar código mejorado",
+    "fr": "Soumettre le code amélioré",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "294fa5b3c1b9f0ee",
+    "en": "Submit my code",
+    "zh": "提交我的代码",
+    "es": "Enviar mi código",
+    "fr": "Soumettre mon code",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "ff492a6379e67643",
+    "en": "Scored your code ({0}). Keep improving until the teacher closes submissions.",
+    "zh": "已为你的代码评分（{0}）。继续改进，直到老师关闭提交。",
+    "es": "Se puntuó tu código ({0}). Sigue mejorando hasta que el profesor cierre los envíos.",
+    "fr": "Votre code a été noté ({0}). Continuez à vous améliorer jusqu'à ce que l'enseignant clôture les soumissions.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "eb3168f9e7c8a4fd",
+    "en": "Your code saves on this device as you type. Submit when you are ready.",
+    "zh": "你的代码会在你输入时保存在此设备上。准备好后即可提交。",
+    "es": "Tu código se guarda en este dispositivo mientras escribes. Envía cuando estés listo.",
+    "fr": "Votre code est enregistré sur cet appareil au fur et à mesure. Soumettez quand vous êtes prêt.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9a631b0ae1199cb7",
+    "en": "120px",
+    "zh": "120px",
+    "es": "120px",
+    "fr": "120px",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "84ee257fbb97502b",
+    "en": "$ make royale ROOM={0}",
+    "zh": "$ make royale ROOM={0}",
+    "es": "$ make royale ROOM={0}",
+    "fr": "$ make royale ROOM={0}",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9908adbb4b6f533e",
+    "en": "$ ./royale --last-one-standing",
+    "zh": "$ ./royale --last-one-standing",
+    "es": "$ ./royale --last-one-standing",
+    "fr": "$ ./royale --last-one-standing",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "abb7c17238b90e16",
+    "en": "countdown-touch-only",
+    "zh": "countdown-touch-only",
+    "es": "countdown-touch-only",
+    "fr": "countdown-touch-only",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "f0a560ea7d1aff68",
+    "en": "$ ./royale ",
+    "zh": "$ ./royale ",
+    "es": "$ ./royale ",
+    "fr": "$ ./royale ",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "11fb682be0a0233d",
+    "en": "AI",
+    "zh": "AI",
+    "es": "AI",
+    "fr": "AI",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "fb39cc75f7baa1b6",
+    "en": "min(86vw, 420px)",
+    "zh": "min(86vw, 420px)",
+    "es": "min(86vw, 420px)",
+    "fr": "min(86vw, 420px)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "b94cc1bd818a8e7f",
+    "en": "min(56vw, 600px)",
+    "zh": "min(56vw, 600px)",
+    "es": "min(56vw, 600px)",
+    "fr": "min(56vw, 600px)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "a106104d27c90adb",
+    "en": "min(100%, 300px)",
+    "zh": "min(100%, 300px)",
+    "es": "min(100%, 300px)",
+    "fr": "min(100%, 300px)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "302d0a2e645f67da",
+    "en": "strongest-repo",
+    "zh": "strongest-repo",
+    "es": "strongest-repo",
+    "fr": "strongest-repo",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9f41b90c55a3b21c",
+    "en": "b.zone-word",
+    "zh": "b.zone-word",
+    "es": "b.zone-word",
+    "fr": "b.zone-word",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "272615fb1adef68b",
+    "en": "Reconnected. Everything is saved.",
+    "zh": "已重新连接。一切均已保存。",
+    "es": "Reconectado. Todo está guardado.",
+    "fr": "Reconnecté. Tout est enregistré.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "81ccc14623d138de",
+    "en": "resume-match",
+    "zh": "resume-match",
+    "es": "resume-match",
+    "fr": "resume-match",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "556ee8e0e3078fef",
+    "en": "▶ Resume (P)",
+    "zh": "▶ 继续 (P)",
+    "es": "▶ Reanudar (P)",
+    "fr": "▶ Reprendre (P)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "141c4c95190cfa33",
+    "en": "pause-leave",
+    "zh": "pause-leave",
+    "es": "pause-leave",
+    "fr": "pause-leave",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d4d8e1651621346c",
+    "en": "pause-new-room",
+    "zh": "pause-new-room",
+    "es": "pause-new-room",
+    "fr": "pause-new-room",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9bbd830d2cb86334",
+    "en": " gitzilla",
+    "zh": " gitzilla",
+    "es": " gitzilla",
+    "fr": " gitzilla",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "a038e3fb2ec9153b",
+    "en": "⏸ Paused by your teacher",
+    "zh": "⏸ 已被老师暂停",
+    "es": "⏸ Pausado por tu profesor",
+    "fr": "⏸ Mis en pause par votre enseignant",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "e9605a9a1308775d",
+    "en": "kill -STOP gitzilla",
+    "zh": "kill -STOP gitzilla",
+    "es": "kill -STOP gitzilla",
+    "fr": "kill -STOP gitzilla",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "25c28a4a09c9ad8b",
+    "en": "^Z",
+    "zh": "^Z",
+    "es": "^Z",
+    "fr": "^Z",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "158b1421d459d2c6",
+    "en": "The clock is frozen for the whole class.",
+    "zh": "整个班级的计时已冻结。",
+    "es": "El reloj está congelado para toda la clase.",
+    "fr": "Le chronomètre est gelé pour toute la classe.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "fd659ca63efccd6a",
+    "en": "Resuming in {0}…",
+    "zh": "将在 {0} 后继续…",
+    "es": "Reanudando en {0}…",
+    "fr": "Reprise dans {0}…",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "33fe735b692a7026",
+    "en": "$ fg %1   {0}",
+    "zh": "$ fg %1   {0}",
+    "es": "$ fg %1   {0}",
+    "fr": "$ fg %1   {0}",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "c09332a3e73c0df7",
+    "en": "$ fg %1",
+    "zh": "$ fg %1",
+    "es": "$ fg %1",
+    "fr": "$ fg %1",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9ae816716fdd5670",
+    "en": "GC",
+    "zh": "GC",
+    "es": "GC",
+    "fr": "GC",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "bc79d47e6871823a",
+    "en": "spectate-prev",
+    "zh": "spectate-prev",
+    "es": "spectate-prev",
+    "fr": "spectate-prev",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "3e650d6cd6535a83",
+    "en": "spectate-next",
+    "zh": "spectate-next",
+    "es": "spectate-next",
+    "fr": "spectate-next",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "edc00d4db80ddc3e",
+    "en": "'s",
+    "zh": "'s",
+    "es": "'s",
+    "fr": "'s",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "7d6cf12b9c60391a",
+    "en": "pvp-ai-why",
+    "zh": "pvp-ai-why",
+    "es": "pvp-ai-why",
+    "fr": "pvp-ai-why",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "db98b598d8b324ec",
+    "en": "b.pw-part-v",
+    "zh": "b.pw-part-v",
+    "es": "b.pw-part-v",
+    "fr": "b.pw-part-v",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "7a5b98dfbfc43695",
+    "en": "b.pw-num",
+    "zh": "b.pw-num",
+    "es": "b.pw-num",
+    "fr": "b.pw-num",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d9812bf618216f95",
+    "en": "pvp-ai-handicap",
+    "zh": "pvp-ai-handicap",
+    "es": "pvp-ai-handicap",
+    "fr": "pvp-ai-handicap",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "6fe9eb8f468b5843",
+    "en": "checkbox",
+    "zh": "checkbox",
+    "es": "checkbox",
+    "fr": "checkbox",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "2e8a5c6e4c2bcba6",
+    "en": "settings-sound",
+    "zh": "settings-sound",
+    "es": "settings-sound",
+    "fr": "settings-sound",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "12d942acfa6900c7",
+    "en": ".lobby-scroll, .ap-scroll",
+    "zh": ".lobby-scroll, .ap-scroll",
+    "es": ".lobby-scroll, .ap-scroll",
+    "fr": ".lobby-scroll, .ap-scroll",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "0a808b75b0412b29",
+    "en": "cr-boss-art cr-boss-sprite",
+    "zh": "cr-boss-art cr-boss-sprite",
+    "es": "cr-boss-art cr-boss-sprite",
+    "fr": "cr-boss-art cr-boss-sprite",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "e0b469e88b4cb358",
+    "en": "stagger",
+    "zh": "stagger",
+    "es": "stagger",
+    "fr": "stagger",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "0b3092a30b0f3f16",
+    "en": "enrage",
+    "zh": "enrage",
+    "es": "enrage",
+    "fr": "enrage",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "c2b644a1f2f11fd8",
+    "en": "roar",
+    "zh": "roar",
+    "es": "roar",
+    "fr": "roar",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "5ca1b735ed825f72",
+    "en": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
+    "zh": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
+    "es": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
+    "fr": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "7017de5ace6a361b",
+    "en": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
+    "zh": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
+    "es": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
+    "fr": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "e4f8e3e03d442a4d",
+    "en": " ce-ro",
+    "zh": " ce-ro",
+    "es": " ce-ro",
+    "fr": " ce-ro",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "64390236910fb5c5",
+    "en": "code editor",
+    "zh": "代码编辑器",
+    "es": "editor de código",
+    "fr": "éditeur de code",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "582bfe13a7480822",
+    "en": " on",
+    "zh": " 开启",
+    "es": " activado",
+    "fr": " activé",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "4d19f436842e9bda",
+    "en": "one line per input() call",
+    "zh": "每次调用 input() 一行",
+    "es": "una línea por cada llamada a input()",
+    "fr": "une ligne par appel à input()",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "a4de9c8f3379d74f",
+    "en": "input lines",
+    "zh": "输入行",
+    "es": "líneas de entrada",
+    "fr": "lignes d'entrée",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "deb9023e073fd083",
+    "en": "$ python output",
+    "zh": "$ python output",
+    "es": "$ python output",
+    "fr": "$ python output",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "f63124e67b48faf3",
+    "en": "input() lines",
+    "zh": "input() 行",
+    "es": "líneas de input()",
+    "fr": "lignes input()",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "763674d07e2a79d8",
+    "en": "Runs only in your browser. It doesn't change your score.",
+    "zh": "仅在浏览器中运行，不会改变你的分数。",
+    "es": "Se ejecuta solo en tu navegador. No cambia tu puntuación.",
+    "fr": "S'exécute uniquement dans votre navigateur. Cela ne change pas votre score.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "b0f0b76f485c58b4",
+    "en": "▶ Run",
+    "zh": "▶ 运行",
+    "es": "▶ Ejecutar",
+    "fr": "▶ Exécuter",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "15f637f29da9b7c7",
+    "en": "reset to starter",
+    "zh": "重置为初始代码",
+    "es": "restablecer al código inicial",
+    "fr": "réinitialiser au code de départ",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "92eeb63b63fa07ae",
+    "en": "Write → ▶ Run to try it (only in your browser, never scored) → Submit → read your feedback → improve and submit again.",
+    "zh": "编写 → ▶ 运行试试（仅在浏览器中，不计分）→ 提交 → 查看反馈 → 改进后再次提交。",
+    "es": "Escribe → ▶ Ejecutar para probarlo (solo en tu navegador, nunca se puntúa) → Enviar → lee tus comentarios → mejora y envía de nuevo.",
+    "fr": "Écrivez → ▶ Exécuter pour essayer (uniquement dans votre navigateur, jamais noté) → Soumettre → lisez vos commentaires → améliorez et soumettez à nouveau.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9bf80a70f6d88a5f",
+    "en": "running {0}…",
+    "zh": "正在运行 {0}…",
+    "es": "ejecutando {0}…",
+    "fr": "exécution de {0}…",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "1f2d81b4a8c91900",
+    "en": "loading Python… (the first run downloads ~10 MB)",
+    "zh": "正在加载 Python…（首次运行会下载约 10 MB）",
+    "es": "cargando Python… (la primera ejecución descarga ~10 MB)",
+    "fr": "chargement de Python… (la première exécution télécharge ~10 Mo)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "a778ab518733de3a",
+    "en": "(no output: add a print() to see something)",
+    "zh": "（无输出：添加 print() 才能看到内容）",
+    "es": "(sin salida: añade un print() para ver algo)",
+    "fr": "(aucune sortie : ajoutez un print() pour voir quelque chose)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "a9777d3da3e929e3",
+    "en": "{0} · {1} ms",
+    "zh": "{0} · {1} ms",
+    "es": "{0} · {1} ms",
+    "fr": "{0} · {1} ms",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "5684fc83d71ec7a8",
+    "en": "Reset to the starter code? Your changes to this step will be lost.",
+    "zh": "重置为初始代码？你对本步骤的更改将会丢失。",
+    "es": "¿Restablecer al código inicial? Tus cambios en este paso se perderán.",
+    "fr": "Réinitialiser au code de départ ? Vos modifications de cette étape seront perdues.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "7ce1dc21786b58c2",
+    "en": "code for {0}",
+    "zh": "{0} 的代码",
+    "es": "código para {0}",
+    "fr": "code pour {0}",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "437733cbd1160e64",
+    "en": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
+    "zh": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
+    "es": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
+    "fr": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "cdd1ee34d2f39df5",
+    "en": "Python couldn't load in this browser.",
+    "zh": "此浏览器无法加载 Python。",
+    "es": "No se pudo cargar Python en este navegador.",
+    "fr": "Python n'a pas pu se charger dans ce navigateur.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "9009fc96acf6ba62",
+    "en": "Stopped after {0}s: is there a loop that never ends?",
+    "zh": "已在 {0} 秒后停止：是否有永远不会结束的循环？",
+    "es": "Detenido tras {0}s: ¿hay un bucle que nunca termina?",
+    "fr": "Arrêté après {0}s : y a-t-il une boucle qui ne se termine jamais ?",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "a96583044eba7ad6",
+    "en": "HOW THIS STEP IS SCORED",
+    "zh": "本步骤如何计分",
+    "es": "CÓMO SE PUNTÚA ESTE PASO",
+    "fr": "COMMENT CETTE ÉTAPE EST NOTÉE",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "1b261341cb00768e",
+    "en": "edited for this step",
+    "zh": "已针对本步骤修改",
+    "es": "editado para este paso",
+    "fr": "modifié pour cette étape",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "ef1b0cae2943a564",
+    "en": "lesson default",
+    "zh": "课程默认",
+    "es": "predeterminado de la lección",
+    "fr": "par défaut de la leçon",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "20260eac0b1027e1",
+    "en": "Students see these criteria under “How this task is scored”.",
+    "zh": "学生会在“本任务如何计分”下看到这些标准。",
+    "es": "Los estudiantes ven estos criterios en «Cómo se puntúa esta tarea».",
+    "fr": "Les élèves voient ces critères sous « Comment cette tâche est notée ».",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "57c94ebf8986981a",
+    "en": "`{0}` is in your submission",
+    "zh": "你的提交中包含 `{0}`",
+    "es": "`{0}` está en tu envío",
+    "fr": "`{0}` figure dans votre soumission",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "7dc744e69d13a30e",
+    "en": "`{0}` contains `{1}`",
+    "zh": "`{0}` 包含 `{1}`",
+    "es": "`{0}` contiene `{1}`",
+    "fr": "`{0}` contient `{1}`",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "675dc08056179386",
+    "en": "The GitHub check `{0}` passes",
+    "zh": "GitHub 检查 `{0}` 通过",
+    "es": "La comprobación de GitHub `{0}` pasa",
+    "fr": "La vérification GitHub `{0}` réussit",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d516f3bd7df25807",
+    "en": "found in your files",
+    "zh": "在你的文件中找到",
+    "es": "encontrado en tus archivos",
+    "fr": "trouvé dans vos fichiers",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "bbda6d5a98649615",
+    "en": "not found yet",
+    "zh": "尚未找到",
+    "es": "aún no encontrado",
+    "fr": "pas encore trouvé",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "03a714cf65787a6b",
+    "en": "check this yourself",
+    "zh": "请自行检查",
+    "es": "compruébalo tú mismo",
+    "fr": "vérifiez-le vous-même",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d99cbe3f85e93a42",
+    "en": "{0} of {1} done",
+    "zh": "已完成 {0}/{1}",
+    "es": "{0} de {1} hechos",
+    "fr": "{0} sur {1} fait(s)",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "1aca80e8b55c802f",
+    "en": "label",
+    "zh": "标签",
+    "es": "etiqueta",
+    "fr": "étiquette",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "100ec1bc78a4cc83",
+    "en": "To do",
+    "zh": "待办",
+    "es": "Por hacer",
+    "fr": "À faire",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "1328e4416e66d88c",
+    "en": "ol.tc-todo",
+    "zh": "ol.tc-todo",
+    "es": "ol.tc-todo",
+    "fr": "ol.tc-todo",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "83f873f14955cf06",
+    "en": "Check these yourself before you submit. After you submit, the ones the computer can check turn ✓ or ✗.",
+    "zh": "提交前请自行检查这些内容。提交后，计算机能检查的项目会显示 ✓ 或 ✗。",
+    "es": "Compruébalos tú mismo antes de enviar. Tras enviar, los que la computadora puede comprobar se marcan ✓ o ✗.",
+    "fr": "Vérifiez-les vous-même avant de soumettre. Après la soumission, ceux que l'ordinateur peut vérifier passent à ✓ ou ✗.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d5ef11a819843d84",
+    "en": "From your last submission: {0} still missing. Fix {1} and submit again.",
+    "zh": "根据你上次的提交：仍缺少 {0}。修正 {1} 后再次提交。",
+    "es": "Según tu último envío: aún faltan {0}. Corrige {1} y envía de nuevo.",
+    "fr": "D'après votre dernière soumission : {0} manque(nt) encore. Corrigez {1} et soumettez à nouveau.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "88504f75accabbd1",
+    "en": "From your last submission. The computer only reads your files; your teacher checks what it prints.",
+    "zh": "根据你上次的提交。计算机只读取你的文件；打印内容由老师检查。",
+    "es": "Según tu último envío. La computadora solo lee tus archivos; tu profesor revisa lo que imprime.",
+    "fr": "D'après votre dernière soumission. L'ordinateur lit seulement vos fichiers ; votre professeur vérifie ce qu'il affiche.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "e8a4b7e1658b2196",
+    "en": "An immutable live GitHub commit or in-app content hash is required; fallback data is not graded",
+    "zh": "需要不可变的 GitHub 实时提交或应用内内容哈希；后备数据不计分",
+    "es": "Se requiere una confirmación de GitHub activa e inmutable o un hash de contenido en la app; los datos de reserva no se califican",
+    "fr": "Un commit GitHub actif et immuable ou un hachage de contenu intégré est requis ; les données de secours ne sont pas notées",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "fcaa5a7bdb058f92",
+    "en": "Use 1–20 editor files",
+    "zh": "使用 1–20 个编辑器文件",
+    "es": "Usa de 1 a 20 archivos de editor",
+    "fr": "Utilisez de 1 à 20 fichiers d'éditeur",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a1191a927f3667d5",
+    "en": "Editor files must contain UTF-8 paths and text",
+    "zh": "编辑器文件必须包含 UTF-8 路径和文本",
+    "es": "Los archivos del editor deben contener rutas y texto en UTF-8",
+    "fr": "Les fichiers de l'éditeur doivent contenir des chemins et du texte en UTF-8",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "fda81fff76f33e41",
+    "en": "Use safe relative editor file paths",
+    "zh": "使用安全的相对编辑器文件路径",
+    "es": "Usa rutas relativas seguras para los archivos del editor",
+    "fr": "Utilisez des chemins relatifs sécurisés pour les fichiers de l'éditeur",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "634f90bbb24e4d5b",
+    "en": "Editor file paths must be unique",
+    "zh": "编辑器文件路径必须唯一",
+    "es": "Las rutas de los archivos del editor deben ser únicas",
+    "fr": "Les chemins des fichiers de l'éditeur doivent être uniques",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "595d86f20b3bb793",
+    "en": "Editor files must total at most 200 KB",
+    "zh": "编辑器文件总大小最多为 200 KB",
+    "es": "Los archivos del editor deben sumar como máximo 200 KB",
+    "fr": "Les fichiers de l'éditeur doivent totaliser au maximum 200 KB",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3bae871649db12d4",
+    "en": "Match receipts are unavailable; gameplay continues.",
+    "zh": "比赛收据不可用；游戏继续进行。",
+    "es": "Los recibos de la partida no están disponibles; la partida continúa.",
+    "fr": "Les reçus de match ne sont pas disponibles ; la partie continue.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ad3ad78c7a90916d",
+    "en": "Room message is too large",
+    "zh": "房间消息过大",
+    "es": "El mensaje de la sala es demasiado grande",
+    "fr": "Le message de la salle est trop volumineux",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ea31fe65e8c6c7ad",
+    "en": "Only the room owner can pause or resume",
+    "zh": "只有房主可以暂停或继续",
+    "es": "Solo el propietario de la sala puede pausar o reanudar",
+    "fr": "Seul le propriétaire de la salle peut mettre en pause ou reprendre",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6c8d5cdfdee80c03",
+    "en": "Choose pause or resume",
+    "zh": "选择暂停或继续",
+    "es": "Elige pausar o reanudar",
+    "fr": "Choisissez de mettre en pause ou de reprendre",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2fd645434e08406d",
+    "en": "Pause is available during a match",
+    "zh": "比赛期间可以暂停",
+    "es": "La pausa está disponible durante una partida",
+    "fr": "La pause est disponible pendant un match",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "22f126a9574d5cbc",
+    "en": "PvP needs different GitHub accounts.",
+    "zh": "PvP 需要不同的 GitHub 账号。",
+    "es": "PvP necesita diferentes cuentas de GitHub.",
+    "fr": "PvP nécessite des comptes GitHub différents.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2b2bd21359548cb6",
+    "en": "PvP supports up to eight players.",
+    "zh": "PvP 最多支持八名玩家。",
+    "es": "PvP admite hasta ocho jugadores.",
+    "fr": "PvP prend en charge jusqu'à huit joueurs.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c97602b8c1d1f904",
+    "en": "PvP is waiting for repository analysis: {0}.",
+    "zh": "PvP 正在等待仓库分析：{0}。",
+    "es": "PvP está esperando el análisis del repositorio: {0}.",
+    "fr": "PvP attend l'analyse du dépôt : {0}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "279479c1dc58ae8a",
+    "en": "PvP AI rivals are not ready: {0}. Remove and add them again.",
+    "zh": "PvP AI 对手未就绪：{0}。请移除并重新添加他们。",
+    "es": "Los rivales de IA para PvP no están listos: {0}. Elimínalos y vuelve a agregarlos.",
+    "fr": "Les rivaux IA de PvP ne sont pas prêts : {0}. Supprimez-les et ajoutez-les à nouveau.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "68bfd7e7b8db468c",
+    "en": "PvP repository eligibility must be verified for: {0}. Reconnect GitHub and reselect an eligible repository.",
+    "zh": "必须验证以下对象的 PvP 仓库资格：{0}。请重新连接 GitHub 并重新选择符合资格的仓库。",
+    "es": "Debe verificarse la elegibilidad del repositorio de PvP para: {0}. Vuelve a conectar GitHub y selecciona un repositorio apto.",
+    "fr": "L'éligibilité du dépôt PvP doit être vérifiée pour : {0}. Reconnectez GitHub et resélectionnez un dépôt éligible.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d55514d5b16dcd5c",
+    "en": "PvP needs at least 2 ready fighters; found {0} eligible human{1} and {2} AI rival{3}. Add AI rivals or invite eligible players. A host without an eligible repository spectates.",
+    "zh": "PvP 需要至少 2 名就绪的对战者；找到 {0} 位符合资格的真人{1}和 {2} 位 AI 对手{3}。添加 AI 对手或邀请符合资格的玩家。没有合资格仓库的房主只能观战。",
+    "es": "PvP necesita al menos 2 luchadores listos; se encontraron {0} humano{1} elegible y {2} rival{3} de IA. Añade rivales de IA o invita a jugadores aptos. Un anfitrión sin un repositorio apto será espectador.",
+    "fr": "PvP nécessite au moins 2 combattants prêts ; {0} humain{1} éligible et {2} rival{3} IA trouvé(s). Ajoutez des rivaux IA ou invitez des joueurs éligibles. Un hôte sans dépôt éligible sera spectateur.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8265f6ade5b09333",
+    "en": "PvP supports at most 8 fighters; {0} are ready. Remove AI rivals or reduce the roster.",
+    "zh": "PvP 最多支持 8 位对战者；已有 {0} 位就绪。请移除 AI 对手或减少名单人数。",
+    "es": "PvP admite como máximo 8 luchadores; {0} están listos. Elimina rivales de IA o reduce la lista.",
+    "fr": "PvP prend en charge au maximum 8 combattants ; {0} sont prêts. Supprimez des rivaux IA ou réduisez l'effectif.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ca20f6b403ff57f1",
+    "en": "PvP needs different GitHub accounts for every human fighter.",
+    "zh": "PvP 需要每位真人对战者使用不同的 GitHub 账号。",
+    "es": "PvP necesita cuentas de GitHub diferentes para cada luchador humano.",
+    "fr": "PvP nécessite des comptes GitHub différents pour chaque combattant humain.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7091c941336651ac",
+    "en": "Reconnect GitHub and reselect an eligible repository.",
+    "zh": "重新连接 GitHub 并重新选择符合资格的仓库。",
+    "es": "Vuelve a conectar GitHub y selecciona de nuevo un repositorio apto.",
+    "fr": "Reconnectez GitHub et resélectionnez un dépôt éligible.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "231f1e6b029c2eff",
+    "en": "PvP cannot start: {0}: {1}",
+    "zh": "PvP 无法开始：{0}：{1}",
+    "es": "PvP no puede comenzar: {0}: {1}",
+    "fr": "Impossible de démarrer PvP : {0} : {1}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "58e9bc8c7de144a0",
+    "en": "GitHub eligibility verification failed.",
+    "zh": "GitHub 资格验证失败。",
+    "es": "Falló la verificación de elegibilidad de GitHub.",
+    "fr": "Échec de la vérification d'éligibilité GitHub.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "59bccab35fbd5577",
+    "en": "Match receipt could not be saved; gameplay results remain available.",
+    "zh": "无法保存比赛收据；游戏结果依然可用。",
+    "es": "No se pudo guardar el recibo de la partida; los resultados del juego siguen disponibles.",
+    "fr": "Le reçu de match n'a pas pu être enregistré ; les résultats de jeu restent disponibles.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "37f0f373fbf7de9c",
+    "en": "Royale Hall persistence failed.",
+    "zh": "Royale Hall 持久化失败。",
+    "es": "Falló la persistencia de Royale Hall.",
+    "fr": "Échec de la persistance de Royale Hall.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "34b92cbac433d037",
+    "en": "In-app classroom analysis is unavailable",
+    "zh": "应用内课堂分析不可用",
+    "es": "El análisis del aula en la aplicación no está disponible",
+    "fr": "L'analyse de classe dans l'application est indisponible",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "92869608db7c3e56",
+    "en": "Could not grade these editor files. Check the files and retry. No code was executed.",
+    "zh": "无法对这些编辑器文件评分。请检查文件并重试。未执行任何代码。",
+    "es": "No se pudieron calificar estos archivos del editor. Revisa los archivos e inténtalo de nuevo. No se ejecutó código.",
+    "fr": "Impossible de noter ces fichiers de l'éditeur. Vérifiez les fichiers et réessayez. Aucun code n'a été exécuté.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e56f8924ed10fecc",
+    "en": "Choose a classroom submission",
+    "zh": "选择一份课堂提交",
+    "es": "Elige una entrega del aula",
+    "fr": "Choisissez un devoir de classe",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "093626b5889431cd",
+    "en": "GitHub could not verify your identity. Reconnect GitHub and retry.",
+    "zh": "GitHub 无法验证您的身份。请重新连接 GitHub 并重试。",
+    "es": "GitHub no pudo verificar tu identidad. Vuelve a conectar GitHub e inténtalo de nuevo.",
+    "fr": "GitHub n'a pas pu vérifier votre identité. Reconnectez GitHub et réessayez.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e82d90375dcb346e",
+    "en": "PvP royale needs 2–8 players",
+    "zh": "PvP royale 需要 2–8 名玩家",
+    "es": "PvP royale necesita de 2 a 8 jugadores",
+    "fr": "PvP royale nécessite 2 à 8 joueurs",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c649571deef6f89a",
+    "en": "GC sweep: enter the safe circle",
+    "zh": "GC 清理：进入安全圈",
+    "es": "Barrido de GC: entra en el círculo seguro",
+    "fr": "Balayage GC : entrez dans le cercle de sécurité",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "05fe76fd2288c1ca",
+    "en": "No prerequisites; able to enter and submit code in the classroom editor.",
+    "zh": "零基础；能在课堂编辑器输入并提交代码。",
+    "es": "Sin requisitos previos; capaz de introducir y enviar código en el editor del aula.",
+    "fr": "Sans prérequis ; capable de saisir et de soumettre du code dans l'éditeur de classe.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "38d4a37a02b647a7",
+    "en": "name = \"Ada\"\nage = 12\n",
+    "zh": "name = \"Ada\"\nage = 12\n",
+    "es": "name = \"Ada\"\nage = 12\n",
+    "fr": "name = \"Ada\"\nage = 12\n",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0fd1f62ab30cae41",
+    "en": "message = \"  Hello PYTHON  \"\n",
+    "zh": "message = \"  Hello PYTHON  \"\n",
+    "es": "message = \"  Hello PYTHON  \"\n",
+    "fr": "message = \"  Hello PYTHON  \"\n",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "612cbbee52dd00c4",
+    "en": "score = 85\n",
+    "zh": "score = 85\n",
+    "es": "score = 85\n",
+    "fr": "score = 85\n",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b56e90e8c773908a",
+    "en": "n = 5\n",
+    "zh": "n = 5\n",
+    "es": "n = 5\n",
+    "fr": "n = 5\n",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "67d7f0e105cc526a",
+    "en": "remaining = 3\n",
+    "zh": "remaining = 3\n",
+    "es": "remaining = 3\n",
+    "fr": "remaining = 3\n",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "97eeab54174cbd0b",
+    "en": "{file}",
+    "zh": "{file}",
+    "es": "{file}",
+    "fr": "{file}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c7af7354ceeb71f9",
+    "en": "# TODO: {0}\n{1}",
+    "zh": "# TODO: {0}\n{1}",
+    "es": "# TODO: {0}\n{1}",
+    "fr": "# TODO: {0}\n{1}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "51e8f92f46e3a74b",
+    "en": "{n}",
+    "zh": "{n}",
+    "es": "{n}",
+    "fr": "{n}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7d4225e4edc40196",
+    "en": "## {0}\n\n| {1} | {2} | {3} |\n| --- | --- | --- |\n| TODO | TODO | TODO |\n| TODO | TODO | TODO |",
+    "zh": "## {0}\n\n| {1} | {2} | {3} |\n| --- | --- | --- |\n| TODO | TODO | TODO |\n| TODO | TODO | TODO |",
+    "es": "## {0}\n\n| {1} | {2} | {3} |\n| --- | --- | --- |\n| TODO | TODO | TODO |\n| TODO | TODO | TODO |",
+    "fr": "## {0}\n\n| {1} | {2} | {3} |\n| --- | --- | --- |\n| TODO | TODO | TODO |\n| TODO | TODO | TODO |",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ede625e69c019f7f",
+    "en": "## {0}\n\nTODO\n",
+    "zh": "## {0}\n\nTODO\n",
+    "es": "## {0}\n\nTODO\n",
+    "fr": "## {0}\n\nTODO\n",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ada0db1bcc3bb7d1",
+    "en": "{text}",
+    "zh": "{text}",
+    "es": "{text}",
+    "fr": "{text}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "11a4a60b518bf249",
+    "en": "python",
+    "zh": "python",
+    "es": "python",
+    "fr": "python",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "dbd3a49d0d906b4e",
+    "en": "en",
+    "zh": "en",
+    "es": "en",
+    "fr": "en",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0eaed704010ffa66",
+    "en": "Done when",
+    "zh": "完成条件",
+    "es": "Completado cuando",
+    "fr": "Terminé quand",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "088032739eab448b",
+    "en": "ul.tc-done",
+    "zh": "ul.tc-done",
+    "es": "ul.tc-done",
+    "fr": "ul.tc-done",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6d9bc36b5995008c",
+    "en": "classroom-done-note",
+    "zh": "classroom-done-note",
+    "es": "classroom-done-note",
+    "fr": "classroom-done-note",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1a822fae620b0182",
+    "en": "Expected output",
+    "zh": "预期输出",
+    "es": "Salida esperada",
+    "fr": "Sortie attendue",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "985b22c49fc1634c",
+    "en": "Next hint ({0}/{1})",
+    "zh": "下一个提示 ({0}/{1})",
+    "es": "Siguiente pista ({0}/{1})",
+    "fr": "Indice suivant ({0}/{1})",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "41bb97a5662eec48",
+    "en": "💡 Need a hint? ({0})",
+    "zh": "💡 需要提示吗？({0})",
+    "es": "💡 ¿Necesitas una pista? ({0})",
+    "fr": "💡 Besoin d'un indice ? ({0})",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0d0a8c6df3ace225",
+    "en": "Concepts",
+    "zh": "概念",
+    "es": "Conceptos",
+    "fr": "Concepts",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "08b4feca116578cc",
+    "en": "tc tc-{0}",
+    "zh": "tc tc-{0}",
+    "es": "tc tc-{0}",
+    "fr": "tc tc-{0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "796131eb3bafca18",
+    "en": "Student task card · {0} to-dos · {1} done-when{2}",
+    "zh": "学生任务卡 · {0} 项待办 · {1} 项完成条件{2}",
+    "es": "Tarjeta de tarea del estudiante · {0} tareas pendientes · {1} criterio{2} de finalización",
+    "fr": "Fiche de tâche de l'élève · {0} tâches à faire · {1} critère{2} de validation",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "261d613db0b08c8f",
+    "en": " · {0} hints",
+    "zh": " · {0} 个提示",
+    "es": " · {0} pistas",
+    "fr": " · {0} indices",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "991d0a23d8a603da",
+    "en": "font:16px \"VT323\",ui-monospace,monospace;color:#7fbf9a;letter-spacing:0.5px;",
+    "zh": "font:16px \"VT323\",ui-monospace,monospace;color:#7fbf9a;letter-spacing:0.5px;",
+    "es": "font:16px \"VT323\",ui-monospace,monospace;color:#7fbf9a;letter-spacing:0.5px;",
+    "fr": "font:16px \"VT323\",ui-monospace,monospace;color:#7fbf9a;letter-spacing:0.5px;",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c51bca49c54dbdc3",
+    "en": "still analyzing {0}…",
+    "zh": "仍在分析 {0}…",
+    "es": "aún analizando {0}…",
+    "fr": "analyse de {0} toujours en cours…",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "daec74b7a515a79c",
+    "en": "the repo",
+    "zh": "代码仓库",
+    "es": "el repositorio",
+    "fr": "le dépôt",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4e6cf24b120b8bbb",
+    "en": "repo strength",
+    "zh": "仓库实力",
+    "es": "fuerza del repositorio",
+    "fr": "force du dépôt",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "80f1db4a39e64816",
+    "en": "stats: scaled by repo power",
+    "zh": "属性：按仓库战力缩放",
+    "es": "estadísticas: según el poder del repositorio",
+    "fr": "stats : ajustées selon la puissance du dépôt",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5a755c3ed60c5776",
+    "en": "stats: POWER {0}",
+    "zh": "属性：战力 {0}",
+    "es": "estadísticas: PODER {0}",
+    "fr": "stats : PUISSANCE {0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "54582e6259443fa0",
+    "en": "{0} {1}/100 · {2}% of power",
+    "zh": "{0} {1}/100 · 占战力的 {2}%",
+    "es": "{0} {1}/100 · {2}% de poder",
+    "fr": "{0} {1}/100 · {2} % de puissance",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c877dce1d269275a",
+    "en": "repo power {0} (stronger repo, stronger hero)",
+    "zh": "仓库战力 {0}（仓库越强，英雄越强）",
+    "es": "poder del repositorio {0} (repositorio más fuerte, héroe más fuerte)",
+    "fr": "puissance du dépôt {0} (dépôt plus fort, héros plus fort)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "eefe28237dbd55eb",
+    "en": "BY @",
+    "zh": "来自 @",
+    "es": "POR @",
+    "fr": "PAR @",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "33b2eee97c789164",
+    "en": "FIREWALL UP",
+    "zh": "防火墙启动",
+    "es": "CORTAFUEGOS ACTIVO",
+    "fr": "PARE-FEU ACTIVÉ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f5ea3af1c24fd712",
+    "en": "GIT FORK",
+    "zh": "GIT FORK",
+    "es": "GIT FORK",
+    "fr": "GIT FORK",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "439b465a800b6a1c",
+    "en": "SUDO -O3",
+    "zh": "SUDO -O3",
+    "es": "SUDO -O3",
+    "fr": "SUDO -O3",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "36ef71cef35c1c0c",
+    "en": "GIT REVERT",
+    "zh": "GIT REVERT",
+    "es": "GIT REVERT",
+    "fr": "GIT REVERT",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cd1b3eaea8699abe",
+    "en": "+HP COMMIT",
+    "zh": "+HP COMMIT",
+    "es": "+HP COMMIT",
+    "fr": "+HP COMMIT",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "76c4a11e590f8132",
+    "en": "+ARMOR TESTS✓",
+    "zh": "+护甲 测试✓",
+    "es": "+ARMADURA PRUEBAS✓",
+    "fr": "+ARMURE TESTS✓",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8d1a7ae4171df6c2",
+    "en": "+ENERGY COFFEE",
+    "zh": "+能量 咖啡",
+    "es": "+ENERGÍA CAFÉ",
+    "fr": "+ÉNERGIE CAFÉ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "323a2d8c4f04d234",
+    "en": "RM -RF ",
+    "zh": "RM -RF ",
+    "es": "RM -RF ",
+    "fr": "RM -RF ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8bbcb0e2683415fc",
+    "en": "GC SWEEP IN ",
+    "zh": "GC 清理倒计时 ",
+    "es": "BARRIDO GC EN ",
+    "fr": "BALAYAGE GC DANS ",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5ea179af08b6d1b3",
+    "en": "GC SWEEP!",
+    "zh": "GC 清理！",
+    "es": "¡BARRIDO GC!",
+    "fr": "BALAYAGE GC !",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d249a0852c914dd4",
+    "en": "Source unmeasured · neutral power",
+    "zh": "源码未评测 · 中立战力",
+    "es": "Fuente no evaluada · poder neutral",
+    "fr": "Source non mesurée · puissance neutre",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "77f90c91a6f258cd",
+    "en": "{0} stars · {1} tests",
+    "zh": "{0} 颗星 · {1} 项测试",
+    "es": "{0} estrellas · {1} pruebas",
+    "fr": "{0} étoiles · {1} tests",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e5cc1bb570f9941e",
+    "en": "REPO POWER {0}",
+    "zh": "仓库战力 {0}",
+    "es": "PODER DEL REPOSITORIO {0}",
+    "fr": "PUISSANCE DU DÉPÔT {0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cdb1433f8a52c1ec",
+    "en": "AI rival · {0} of repo power",
+    "zh": "AI 对手 · 仓库战力的 {0}",
+    "es": "Rival IA · {0} del poder del repositorio",
+    "fr": "Rival IA · {0} de la puissance du dépôt",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cfa0f4558d0078f0",
+    "en": "{0} HP · {1}% damage",
+    "zh": "{0} HP · {1}% 伤害",
+    "es": "{0} HP · {1}% de daño",
+    "fr": "{0} HP · {1} % de dégâts",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "fcfc2cc19a563dad",
+    "en": "{0} HP · {1}× damage",
+    "zh": "{0} HP · {1}× 伤害",
+    "es": "{0} HP · {1}× de daño",
+    "fr": "{0} HP · {1} × de dégâts",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f336b2a864202ccf",
+    "en": "{0} armor · {1} speed · {2} energy",
+    "zh": "{0} 护甲 · {1} 速度 · {2} 能量",
+    "es": "{0} armadura · {1} velocidad · {2} energía",
+    "fr": "{0} armure · {1} vitesse · {2} énergie",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "bd72938b58f0e080",
+    "en": "{0}/100 · {1} influence",
+    "zh": "{0}/100 · {1} 影响力",
+    "es": "{0}/100 · {1} influencia",
+    "fr": "{0}/100 · {1} influence",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "09e70cff9ef73fc3",
+    "en": "Invalid step brief",
+    "zh": "步骤简介无效",
+    "es": "Resumen del paso no válido",
+    "fr": "Consigne d'étape non valide",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "645eeddecab3be72",
+    "en": "Invalid brief {0}: use {1}–{2} items",
+    "zh": "简介 {0} 无效：请使用 {1}–{2} 项",
+    "es": "Resumen {0} no válido: usa {1}–{2} elementos",
+    "fr": "Consigne {0} non valide : utilisez {1}–{2} éléments",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ab5e8a71f2092ce9",
+    "en": "brief {0} item",
+    "zh": "简介 {0} 项",
+    "es": "elemento {0} del resumen",
+    "fr": "élément {0} de la consigne",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5aaa063b1bd89322",
+    "en": "Brief doneWhen must have one row per check, in check order",
+    "zh": "简介中的 doneWhen 必须按检查顺序为每项检查提供一行",
+    "es": "El doneWhen del resumen debe tener una fila por comprobación, en el orden de comprobación",
+    "fr": "Le doneWhen de la consigne doit comporter une ligne par vérification, dans l'ordre des vérifications",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "b8133fe0377601c5",
+    "en": "Invalid brief example output (maximum 2000 characters)",
+    "zh": "简介示例输出无效（最多 2000 个字符）",
+    "es": "Salida de ejemplo del resumen no válida (máximo 2000 caracteres)",
+    "fr": "Sortie d'exemple de la consigne non valide (maximum 2000 caractères)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1d64f579efdda0cc",
+    "en": "brief example title",
+    "zh": "简介示例标题",
+    "es": "título de ejemplo del resumen",
+    "fr": "titre d'exemple de la consigne",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "24f2c0e92ad851bf",
+    "en": "brief goal",
+    "zh": "简介目标",
+    "es": "objetivo del resumen",
+    "fr": "objectif de la consigne",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "afb2221af4276080",
+    "en": "Choose Python for the editor language",
+    "zh": "选择 Python 作为编辑器语言",
+    "es": "Elige Python como lenguaje del editor",
+    "fr": "Choisissez Python comme langage de l'éditeur",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7672e5e5522738f6",
+    "en": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "zh": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "es": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "fr": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2a400b0b770abfaf",
+    "en": "INSERT OR IGNORE INTO attestors(key) VALUES(?)",
+    "zh": "INSERT OR IGNORE INTO attestors(key) VALUES(?)",
+    "es": "INSERT OR IGNORE INTO attestors(key) VALUES(?)",
+    "fr": "INSERT OR IGNORE INTO attestors(key) VALUES(?)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "4534fa45e7ad98aa",
+    "en": "SELECT key FROM attestors",
+    "zh": "SELECT key FROM attestors",
+    "es": "SELECT key FROM attestors",
+    "fr": "SELECT key FROM attestors",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
   }
 ]

@@ -1684,16 +1684,19 @@ describe('PvP royale authority and isolation', () => {
     expect(snapshot.state.players).toHaveLength(8); expect(snapshot.state.boss).toBeNull();
   });
   it.each([false, true])('admits one human plus seven bots and only publishes public-source royale wins (private: %s)', async privateRepo => {
+    const recordReceipts=vi.fn((_input:import('./receipts/service').FinishedReceiptMatch) => ({receiptOwner:'receipt-id'}));
     const analyze = vi.fn(async (_repo: string, options?: { token?: string }) => {
       expect(options?.token).toBe(privateRepo ? 'alice' : undefined); return offlineProfile('pallets/flask');
     });
-    const f = await setup(0.1, { ...genesisServices, analyzeRepo: analyze, getGithubToken: async req => req.headers.cookie ?? null,
+    const f = await setup(0.1, { ...genesisServices, recordReceipts, analyzeRepo: analyze, getGithubToken: async req => req.headers.cookie ?? null,
       verifyPvpAccess: async repo => ({ repo, userId: 1, login: 'alice', private: privateRepo }) }, {}, undefined, 'pvp');
     const a = await f.connect('player', undefined, 'Alice', 'alice');
     a.send({ t: 'setRepo', repo: 'pallets/flask' }); a.send({ t: 'setBots', count: 7 });
     await until(() => a.lobby()?.players.length === 8 && a.lobby()?.players.every(p => p.status === 'ready'));
     a.send({ t: 'start' }); await until(() => a.messages.find(m => m.t === 'autopsy'));
     expect(f.royaleRecorded).toHaveLength(privateRepo ? 0 : 1); expect(f.recorded).toHaveLength(0);
+    expect(recordReceipts).toHaveBeenCalledTimes(privateRepo ? 0 : 1);
+    if(!privateRepo){const snapshot=recordReceipts.mock.calls[0] as unknown as [import('./receipts/service').FinishedReceiptMatch]; expect(snapshot[0].participants).toEqual([{id:a.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(a.welcome.token)}]);expect(snapshot[0].result.mode).toBe('pvp');}
     if (!privateRepo) expect(f.royaleRecorded[0]).toMatchObject({ name: 'Alice', repo: 'pallets/flask' });
   });
   it('keeps eliminated clients spectating, ignores their inputs, and retains leavers in royale results', async () => {

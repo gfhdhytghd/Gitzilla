@@ -125,6 +125,16 @@
     "context": "client/app/autopsy.ts"
   },
   {
+    "id": "a209d8abc0d43687",
+    "source": "GITZILLA home",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "6b898fb770458c45",
+    "source": "min(44vw, 190px)",
+    "context": "client/app/autopsy.ts"
+  },
+  {
     "id": "873a54f972283888",
     "source": "BOSS DELETED",
     "context": "client/app/autopsy.ts"
@@ -162,12 +172,12 @@
   {
     "id": "b084246de98f7c30",
     "source": "GIT",
-    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts"
+    "context": "client/app/autopsy.ts"
   },
   {
     "id": "c2c0e7a82a255ab4",
     "source": "ZILLA",
-    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts"
+    "context": "client/app/autopsy.ts"
   },
   {
     "id": "789a22f8b25fb061",
@@ -247,7 +257,7 @@
   {
     "id": "81db8ebbbbc69c6c",
     "source": "small",
-    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts"
+    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts, client/edu/task-card.ts"
   },
   {
     "id": "8fd45de323edb232",
@@ -312,7 +322,7 @@
   {
     "id": "9b89087788ce6a4e",
     "source": "width:{0}%",
-    "context": "client/app/autopsy.ts"
+    "context": "client/app/autopsy.ts, client/app/royale.ts"
   },
   {
     "id": "498bfdfc26987407",
@@ -337,7 +347,7 @@
   {
     "id": "9390298f3fb0c5b1",
     "source": "no",
-    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/hall.ts, client/app/lobby.ts"
+    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts, client/app/hall.ts, client/app/lobby.ts, client/app/royale.ts, client/edu/task-card.ts"
   },
   {
     "id": "9d58d099bbdd310c",
@@ -412,7 +422,7 @@
   {
     "id": "4cd6c2914887dd4a",
     "source": "screen",
-    "context": "client/app/autopsy.ts, client/edu/feed.ts, client/edu/feedback-view.ts, client/edu/quiz.ts, client/edu/report.ts"
+    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/edu/feed.ts, client/edu/feedback-view.ts, client/edu/quiz.ts, client/edu/report.ts"
   },
   {
     "id": "5b3f3a3200368e3a",
@@ -515,43 +525,173 @@
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "b387387245819e5b",
-    "source": "PVP RESULTS",
+    "id": "aa948f79d1d47bef",
+    "source": "★ LAST ONE STANDING",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "ba569d96437965bc",
-    "source": "Winner: {0}",
+    "id": "bb0347a468d97e98",
+    "source": "you",
+    "context": "client/app/autopsy.ts, client/app/game.ts, client/app/royale.ts, client/edu/feed.ts"
+  },
+  {
+    "id": "37a0025aa1f2e29f",
+    "source": "span",
+    "context": "client/app/autopsy.ts, client/app/classroom.ts, client/app/game.ts, client/app/github.ts, client/app/hud.ts, client/app/lobby.ts, client/app/settings.ts, client/app/training.ts, client/edu/feedback-view.ts, client/edu/inapp-panel.ts, client/edu/report.ts, client/edu/rubric.ts"
+  },
+  {
+    "id": "c6a3796d97bf16cd",
+    "source": "survived the merge",
+    "context": "client/app/autopsy.ts, client/app/game.ts"
+  },
+  {
+    "id": "16c050a7da4ba9cd",
+    "source": "{0} KO · {1} dmg",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "64aee8c6cbd026d9",
-    "source": "Player",
+    "id": "2a10a1e628215323",
+    "source": "royale-underdog",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "61517c08b3bf84b4",
-    "source": "Draw",
+    "id": "c9698322353a723f",
+    "source": "underdog win:",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "ae3ac57aeccb2fcb",
-    "source": "Round wins, then KOs, then damage decide the ranking.",
+    "id": "d5b79091c0c69fa0",
+    "source": "POWER {0}",
+    "context": "client/app/autopsy.ts, genesis/index.ts"
+  },
+  {
+    "id": "f9eeb63bf773f4b0",
+    "source": "beat",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "5e60c464bd4b75f3",
-    "source": "#{0} {1} · {2} · {3} round wins · {4} KOs · {5} damage",
+    "id": "b439845b8d965018",
+    "source": "no survivors · the GC took everyone",
+    "context": "client/app/autopsy.ts, client/app/game.ts"
+  },
+  {
+    "id": "07d715edb696fb5f",
+    "source": "power",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "a972619313f31faf",
-    "source": "Rematch",
+    "id": "ced5103bf1a4663a",
+    "source": "KOs",
+    "context": "client/app/autopsy.ts, client/edu/feedback-view.ts, client/edu/report.ts"
+  },
+  {
+    "id": "483905ef24ceeed9",
+    "source": "eliminated by",
     "context": "client/app/autopsy.ts"
   },
   {
-    "id": "c9dc210d3220feab",
-    "source": "Waiting for the host to start a rematch",
+    "id": "d5659f1b4ff3ee29",
+    "source": "repo power {0}",
+    "context": "client/app/autopsy.ts, client/app/hud.ts, client/genesis/scene.ts"
+  },
+  {
+    "id": "290610b6930fa9ed",
+    "source": " AI",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "21a08b49895943d5",
+    "source": "★ winner",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "360f84035942243c",
+    "source": "left",
+    "context": "client/app/autopsy.ts, client/app/royale.ts"
+  },
+  {
+    "id": "40b0e4de15d0018d",
+    "source": "GC sweep",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "4746029200cee1f6",
+    "source": "git checkout --detach",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "be4a845f18c4ba69",
+    "source": " (left)",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "5fb7b5ff03174801",
+    "source": "GC ",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "3aa78388a06d8af1",
+    "source": "rm -rf",
+    "context": "client/app/autopsy.ts, client/app/royale.ts"
+  },
+  {
+    "id": "e404e6ecd71a6d84",
+    "source": "win:{0}",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "1de1b4e947afcfc0",
+    "source": "(HEAD -> main)",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "823a3180dad3c9c3",
+    "source": "win",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "2f73214d42603d6d",
+    "source": "LAST ONE STANDING",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "af4edea7121c56e5",
+    "source": "PVP ROYALE",
+    "context": "client/app/autopsy.ts, client/app/game.ts, client/app/lobby.ts"
+  },
+  {
+    "id": "0b9a6d8ac7afd062",
+    "source": "$ git log --royale · {0} heroes · {1}",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "493c86ee8d64e3cf",
+    "source": "you placed",
+    "context": "client/app/autopsy.ts, client/app/game.ts, client/app/royale.ts"
+  },
+  {
+    "id": "96f93056988dd5fa",
+    "source": "killed by",
+    "context": "client/app/autopsy.ts, client/app/royale.ts"
+  },
+  {
+    "id": "f2629554fa641100",
+    "source": "swept by the garbage collector",
+    "context": "client/app/autopsy.ts, client/app/royale.ts"
+  },
+  {
+    "id": "20e7d53fb45e51b0",
+    "source": "PLACEMENTS",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "395edd31e7b290eb",
+    "source": "royale-log",
+    "context": "client/app/autopsy.ts"
+  },
+  {
+    "id": "b55fc51aa78256f7",
+    "source": "$ git log --eliminations",
     "context": "client/app/autopsy.ts"
   },
   {
@@ -585,11 +725,6 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "37a0025aa1f2e29f",
-    "source": "span",
-    "context": "client/app/classroom.ts, client/app/game.ts, client/app/github.ts, client/app/hud.ts, client/app/lobby.ts, client/app/settings.ts, client/app/training.ts, client/edu/feedback-view.ts, client/edu/report.ts, client/edu/rubric.ts"
-  },
-  {
     "id": "29cbc8ebd3f8ae78",
     "source": "Use file: path, contains: path :: text, or ci: check name",
     "context": "client/app/classroom.ts"
@@ -620,8 +755,38 @@
     "context": "client/app/classroom.ts, shared/classroom-defaults.ts"
   },
   {
+    "id": "25ad680b1b31ecca",
+    "source": "GITZILLA classroom",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "1f75ef36aacc7a7f",
+    "source": "230px",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "b8db09b9eb971094",
+    "source": "clamp(116px, 28vw, 168px)",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "83d82a74a67aebde",
     "source": "classroom",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "c3e2d78f3ff33572",
+    "source": "button",
+    "context": "client/app/classroom.ts, client/edu/rubric.ts"
+  },
+  {
+    "id": "d73f01fbe89001fd",
+    "source": "classroom-show-join",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "cefa64a90b03644e",
+    "source": "Show the QR code and join link",
     "context": "client/app/classroom.ts"
   },
   {
@@ -635,6 +800,11 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "bd94f9ed89ceafd8",
+    "source": "show QR",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "fc6e4a408d56be96",
     "source": "Leave",
     "context": "client/app/classroom.ts, i18n-explicit"
@@ -645,8 +815,8 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "96ec28e655e3397f",
-    "source": "End this lesson and leave?",
+    "id": "56c09176fb0a6499",
+    "source": "Close the teacher screen? The lesson keeps running, and you can come back with the same link. To end it, use ⋯ → End lesson.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -665,18 +835,98 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "c7099deab1358356",
+    "source": "show less",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "178353189e5b5aca",
+    "source": "show all instructions",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "f4599ae498c39990",
+    "source": "Read the full task",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "7c7a549fe4834917",
+    "source": "The full task is on your phone or laptop.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "0ddc3f7cc82c95e0",
+    "source": "Opens the class view (no names, scores or feedback) in a new window. Drag it to the projector screen.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "155eab270fd63692",
+    "source": "Open projector window ↗",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "275fb71a0acf34e2",
+    "source": "img.cr-join-qr",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "af24a9554434902e",
+    "source": "QR code to join this classroom",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "01d66b3216de121f",
+    "source": "1. Scan the code with your phone camera, or open",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "952feb66f0c39848",
+    "source": "2. Type your name. That’s it: no account or app needed.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "362c5966669d44ec",
+    "source": "Room code",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "f998fe06afa0cfbe",
     "source": "h2",
     "context": "client/app/classroom.ts, client/app/game.ts"
   },
   {
-    "id": "96055065475c655b",
-    "source": "Class ranking",
+    "id": "de394248a984dec5",
+    "source": "Students: join on your phone or laptop",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "7f718ecbbe58e46c",
-    "source": "Current task · score /100",
+    "id": "d941c858b46d274d",
+    "source": "Join this classroom",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "7d9eb7acb13e2462",
+    "source": "Close",
+    "context": "client/app/classroom.ts, client/app/settings.ts, i18n-explicit"
+  },
+  {
+    "id": "1ca5e5f6a733b754",
+    "source": "Keep scores, feedback and code off a mirrored screen until you choose to show them",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "4fd84cb3e29585d0",
+    "source": "Projecting: hide scores & feedback",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "541db6ca80b322ad",
+    "source": "Submissions",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "4e959e888a60ec8c",
+    "source": "Who needs help first · tap a name to review",
     "context": "client/app/classroom.ts"
   },
   {
@@ -695,28 +945,8 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "659eea1642058983",
-    "source": "Your next commit",
-    "context": "client/app/classroom.ts"
-  },
-  {
-    "id": "8cf8eae41aa0e6ea",
-    "source": "ol.cr-workflow",
-    "context": "client/app/classroom.ts"
-  },
-  {
-    "id": "040812a6489f6e72",
-    "source": "Build in your editor.",
-    "context": "client/app/classroom.ts"
-  },
-  {
-    "id": "fd7bb6b579711536",
-    "source": "Push your changes to GitHub.",
-    "context": "client/app/classroom.ts"
-  },
-  {
-    "id": "2d1a319283fa3e95",
-    "source": "Submit, read feedback, improve.",
+    "id": "77ed10a2d34bf99b",
+    "source": "Your code",
     "context": "client/app/classroom.ts"
   },
   {
@@ -730,8 +960,58 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "c5b6d23bb918a2c4",
+    "source": "Push to GitHub → Submit → read your feedback → improve and submit again.",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "75115788056e4ad9",
     "source": "Each score is tied to an exact commit. Static evidence checks do not execute your code. GitHub checks report the CI result for that commit; your teacher can review functionality.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "761b7ad8ad439b28",
+    "source": "summary",
+    "context": "client/app/classroom.ts, client/edu/inapp-panel.ts, client/edu/report.ts, client/edu/task-card.ts, client/receipts/panel.ts"
+  },
+  {
+    "id": "42936d4d43faaa3f",
+    "source": "or submit a GitHub repo instead",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "5b10cfa7cd954546",
+    "source": "This big screen is not the teacher’s. The teacher controls the class from the screen that created the room.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "3c2acbd684ab04fa",
+    "source": "Join as a student",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "96ec28e655e3397f",
+    "source": "End this lesson and leave?",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "ef69c97189638eb5",
+    "source": "Students see this pause too.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "b2bb7fa1522be8b3",
+    "source": "Your teacher will resume in a moment.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "b5bea41b6c623f7c",
+    "source": "true",
+    "context": "client/app/classroom.ts, client/edu/task-card.ts"
+  },
+  {
+    "id": "53749b750c1e8ed8",
+    "source": "End the lesson for everyone? Students’ work is kept and you can still export the results.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -757,7 +1037,7 @@
   {
     "id": "97fb5f8538b89f6c",
     "source": "h3",
-    "context": "client/app/classroom.ts, client/app/settings.ts, client/edu/report.ts"
+    "context": "client/app/classroom.ts, client/app/settings.ts, client/edu/report.ts, client/edu/task-card.ts"
   },
   {
     "id": "5604fe7299c038af",
@@ -770,18 +1050,33 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "34b946a517761df6",
-    "source": "载入这节课",
+    "id": "a0496b17ae218247",
+    "source": "Use this lesson",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "892f55bdf01d7cda",
-    "source": "classroom-preset-load",
+    "id": "7dfd2d38cd9df170",
+    "source": "classroom-preset-use",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "d6b5e4ce297055c0",
+    "source": "Lesson ready. Open step 1 when the class has joined.",
     "context": "client/app/classroom.ts"
   },
   {
     "id": "d98d4c4364dd7dae",
     "source": "btn-primary",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "ec57da0b21f082af",
+    "source": "Customize first",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "892f55bdf01d7cda",
+    "source": "classroom-preset-load",
     "context": "client/app/classroom.ts"
   },
   {
@@ -805,11 +1100,6 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "761b7ad8ad439b28",
-    "source": "summary",
-    "context": "client/app/classroom.ts, client/edu/report.ts"
-  },
-  {
     "id": "ea1001d3bdf7642f",
     "source": "教师备课与复核说明",
     "context": "client/app/classroom.ts"
@@ -825,18 +1115,28 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "d44c555b203fe0f0",
-    "source": "Edit / upload this step’s rubric",
+    "id": "e23d738ef1e57bde",
+    "source": "How this step is scored (edit or upload a rubric)",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "ba29297b6c4f8486",
-    "source": "legend",
+    "id": "104d5ccb1a957037",
+    "source": "Step {0} · {1} · {2} · {3} check{4}{5}",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "4f219e72ce39859d",
-    "source": "Step {0}",
+    "id": "96d15cf84b61a585",
+    "source": "{0} min",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "3175dd4d43613625",
+    "source": "teacher paced",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "32bfb3659f6eec69",
+    "source": " · in-app editor",
     "context": "client/app/classroom.ts"
   },
   {
@@ -850,23 +1150,53 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "973d24bfb1208306",
-    "source": "Minutes · 0 = manual",
+    "id": "2cdd8f56c7e9a773",
+    "source": "Minutes (0: you decide when to stop)",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "dae872b62dfba7b0",
-    "source": "Evidence-check weight %",
+    "id": "45e0b37a2ae29373",
+    "source": "How much the automatic checks count (%) · the rest is the rubric",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "e46e67cbb39112c9",
-    "source": "Optional evidence checks · one per line",
+    "id": "a8d3ed382fa06c7b",
+    "source": "Automatic checks (optional), one per line",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "818be891d1e1d8e4",
-    "source": "file = file exists · contains = literal text, not behavior · ci = exact GitHub check name. Functional requirements can receive a teacher review score.",
+    "id": "715a821132e01f76",
+    "source": "Add a check:",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "223f89309d75bffc",
+    "source": "File contains text",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "188efa6daf7cf4e0",
+    "source": "GitHub CI check",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "59494632b8124b29",
+    "source": "file: {0}",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "c97f5fff4dc391db",
+    "source": "contains: {0} :: print(",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "76fbe9eabe5dbc0c",
+    "source": "ci: unit-tests",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "5c96e92d2696d031",
+    "source": "Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed). You can always override a score with ✓ / ✗ during class.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -900,6 +1230,11 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "2f53e6b1a2552c91",
+    "source": "Remove step {0} “{1}” and its instructions?",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "2668e626dcbda4d4",
     "source": "Build the lesson",
     "context": "client/app/classroom.ts"
@@ -910,13 +1245,23 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "3a821707a228e1f8",
+    "source": "👁 Preview as a student",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "e4eb922d0b45f2eb",
+    "source": "classroom-preview",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "214d093ade5a8063",
     "source": "Lesson title",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "069da1158a67e96f",
-    "source": "Boss name",
+    "id": "2545c86fc86287e8",
+    "source": "Name of the class monster",
     "context": "client/app/classroom.ts"
   },
   {
@@ -950,6 +1295,86 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "c5a1b6a72f8880d4",
+    "source": "Submitted in the in-app editor.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "1f72aac9107abb6b",
+    "source": "submitted code (read only)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "e29edf721940fe67",
+    "source": "View submitted code ({0} file{1})",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "29b97be518f7c229",
+    "source": "starter code (preview)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "1d8397143ff1dbc3",
+    "source": "This step has no starter files: students submit a GitHub repository.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "2472923671768aa6",
+    "source": "classroom-preview-prev",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "92f19534d8c54115",
+    "source": "Step {0} of {1}",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "7b845bb1fff69a5f",
+    "source": "classroom-preview-next",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "8ff597e095f5be6e",
+    "source": "Starter code",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "f36cd38961778ec1",
+    "source": "How this task is scored",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "a6b8414056e6f622",
+    "source": "Student preview (not published yet)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "773b36762adada2a",
+    "source": "classroom-preview-close",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "78102065f4f88fe7",
+    "source": "{0} · review",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "b011e6787e5aa55d",
+    "source": "🔒 Feedback, code and your notes for this student are hidden from the projector.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "1af77ee273cbdaae",
+    "source": "Show details",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "679d5593a1281875",
+    "source": "classroom-reveal",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "3d2006711d4cf001",
     "source": "Code review",
     "context": "client/app/classroom.ts"
@@ -965,6 +1390,11 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "ff7faba050788094",
+    "source": "Submit your code to receive measured feedback and a next step.",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "f99abbb5cb843deb",
     "source": "Submit your GitHub version to receive measured feedback and a next step.",
     "context": "client/app/classroom.ts"
@@ -975,18 +1405,23 @@
     "context": "client/app/classroom.ts, server/classroom.ts"
   },
   {
-    "id": "78102065f4f88fe7",
-    "source": "{0} · review",
-    "context": "client/app/classroom.ts"
-  },
-  {
     "id": "3d912abc9c6ae0ec",
     "source": "classroom-own-score",
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "8bb098eaafd019a7",
+    "source": "in-app code · {0}",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "ec0f84cc9ffe5f58",
     "source": "noopener noreferrer",
+    "context": "client/app/classroom.ts, client/receipts/panel.ts"
+  },
+  {
+    "id": "21be10abd17ed21a",
+    "source": "These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1055,6 +1490,71 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "5cac97f9b1f7d1f4",
+    "source": "Pick a Python preset and press “Use this lesson”, or write your own steps below and press “Publish lesson”.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "2d8f3c423976bfda",
+    "source": "{0} student{1} connected. Open step 1 when the class is in; late joiners can still join.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "1aa7b90deca86867",
+    "source": "Waiting for the first student to join: show them the QR code above.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "8217d3426558fb90",
+    "source": "Checking {0} submission{1}… the class attack unlocks when they finish.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "6f3ed9a83bcec9a2",
+    "source": "The class attack unlocks after the first submission (0 of {0} submitted).",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "306f7cdcf67dbaf8",
+    "source": "{0} of {1} submitted. Launch the class attack when you’re ready; students who haven’t submitted just don’t add damage.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "64e45b0252ac8d44",
+    "source": "The class attack is playing on the projector (about 10 seconds).",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "4cb41c1c94d54a8b",
+    "source": "Say: “{0} of {1} of you submitted{2}.{3}” ",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "b922a5a96c23a42b",
+    "source": ", and {0} improved the most",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "4b1411cca04cd9b0",
+    "source": " Next: {0}.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "0730b9cd8f951b8b",
+    "source": "“Retry & improve” gives everyone another go at this step; “Complete lesson” ends it.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "61cd464a728dfd2b",
+    "source": "“Retry & improve” gives everyone another go at this step; “Open next step” starts step {0}.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "11e516dd70b7cf4a",
+    "source": "Lesson complete. Export the results for your records.",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "d09b8a90cc8b085f",
     "source": "Open step 1",
     "context": "client/app/classroom.ts"
@@ -1095,18 +1595,48 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "27d5f7d32f8659d1",
-    "source": "End lesson",
+    "id": "399ac54413a80592",
+    "source": "▶ Resume raid",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "91f71c14c8d6cc64",
-    "source": "Export CSV",
+    "id": "fe84d9a1c0bc6a0f",
+    "source": "⏸ Pause raid (P)",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "f93cda430095d243",
-    "source": "Export Markdown",
+    "id": "74b3355a9f0a788c",
+    "source": "End lesson…",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "4cf8a095560f481d",
+    "source": "Export results · end the lesson",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "ed915e1452521e82",
+    "source": "Results for your records",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "5767487ec49b9d3f",
+    "source": "⇩ Export CSV",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "1642ce1ffb24f024",
+    "source": "classroom-export-csv",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "451d9fb34c928dd1",
+    "source": "⇩ Export Markdown",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "41d3da8d81b43cf1",
+    "source": "classroom-export-md",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1125,8 +1655,18 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "2bf54805479cbb1b",
+    "source": "Coding time",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "aaa1a84469e6e24a",
     "source": "Waiting for your teacher",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "7a78ff8f191d30c5",
+    "source": "Your GitHub version",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1140,13 +1680,13 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "9265d1d6ab6d113b",
-    "source": "Work in your own editor, push to GitHub, and bring each new version back here. Your class will attack the Boss together.",
+    "id": "afd51896b45c3383",
+    "source": "Step {0}/{1}",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "f36cd38961778ec1",
-    "source": "How this task is scored",
+    "id": "9265d1d6ab6d113b",
+    "source": "Work in your own editor, push to GitHub, and bring each new version back here. Your class will attack the Boss together.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1160,8 +1700,8 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "56994eba8bfc3aab",
-    "source": "{0} / {1} submitted{2}{3}",
+    "id": "22ae62061bd2dc68",
+    "source": "{0} of {1} submitted{2}{3}{4}",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1170,44 +1710,109 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "809e50d79db093a6",
+    "source": " · {0} offline",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "482fd1d2dc1a5fee",
     "source": " · attempt {0}",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "a59a61f8f91c2228",
-    "source": " cr-you",
+    "id": "30319afe0b21e92f",
+    "source": "the teacher",
+    "context": "client/app/classroom.ts, client/app/lobby.ts, client/app/pause.ts"
+  },
+  {
+    "id": "5a7971cf605d265b",
+    "source": "checking code…",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "8e2c7ac508139a02",
-    "source": "offline",
-    "context": "client/app/classroom.ts, i18n-explicit"
-  },
-  {
-    "id": "d36be6494248ee06",
-    "source": "queued",
+    "id": "2979ee902346446a",
+    "source": "stuck: needs to resubmit",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "1f75065786e9c581",
-    "source": "checking commit…",
-    "context": "client/app/classroom.ts, i18n-explicit"
-  },
-  {
-    "id": "e06f8cfc39f12aa9",
-    "source": "submitted",
+    "id": "4d4e1d6af3bf4b44",
+    "source": "reviewed by you",
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "6fd4d00dbad534bc",
-    "source": "needs resubmission",
-    "context": "client/app/classroom.ts, i18n-explicit"
+    "id": "1f8361e53335929e",
+    "source": "submitted · needs your review",
+    "context": "client/app/classroom.ts"
   },
   {
     "id": "10d43718ef5d9557",
     "source": "writing code",
     "context": "client/app/classroom.ts, i18n-explicit"
+  },
+  {
+    "id": "f483300221ac555c",
+    "source": "your reviewed score",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "333865c54a9fc16e",
+    "source": "evidence checks passed (static, not run)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "24bec41e00d05996",
+    "source": "checks {0}/{1}",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "ce344c5e8efe7301",
+    "source": "no result yet",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "93f6e11d9ce3e407",
+    "source": "works",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "8e45c9eccd72e7df",
+    "source": "Works: it does the task (100)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "24210be64c887afb",
+    "source": "Works ✓",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "4ddf3eb12b63266b",
+    "source": "notyet",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "ee256ea1b8d8a75f",
+    "source": "Not yet: it doesn’t do the task yet (max 40)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "608ca7f89534a95b",
+    "source": "Not yet: compare your output with the task.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "2f2fc7f2e9ce13b0",
+    "source": "ask",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "d2baf0cfd36b619e",
+    "source": "Ask me: let’s talk about it (score unchanged)",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "8f59367aaa1efae7",
+    "source": "Ask me about this one.",
+    "context": "client/app/classroom.ts"
   },
   {
     "id": "fc07713472a40691",
@@ -1255,8 +1860,8 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "49efefa60544c00a",
-    "source": "{0} students contributed. Retrying unchanged scores does not farm extra damage.",
+    "id": "51aecbb1840eb3c2",
+    "source": "{0} students contributed. Only improvements add extra damage.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1275,8 +1880,33 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "bdf375b2286eb026",
+    "source": "Checking your code…",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "151c5db601f45011",
+    "source": "Submit improved code",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "294fa5b3c1b9f0ee",
+    "source": "Submit my code",
+    "context": "client/app/classroom.ts, client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "ff492a6379e67643",
+    "source": "Scored your code ({0}). Keep improving until the teacher closes submissions.",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "e9cdfa899e015e99",
     "source": "Scored commit {0}. You can keep coding until the teacher closes submissions.",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "eb3168f9e7c8a4fd",
+    "source": "Your code saves on this device as you type. Submit when you are ready.",
     "context": "client/app/classroom.ts"
   },
   {
@@ -1470,13 +2100,8 @@
     "context": "client/app/game.ts"
   },
   {
-    "id": "fc5a22e19bc7c156",
-    "source": "b.g",
-    "context": "client/app/game.ts"
-  },
-  {
-    "id": "d55b1134d40767ff",
-    "source": "b.z",
+    "id": "9a631b0ae1199cb7",
+    "source": "120px",
     "context": "client/app/game.ts"
   },
   {
@@ -1493,6 +2118,26 @@
     "id": "f51e78373507d2e3",
     "source": "join: {0}",
     "context": "client/app/game.ts"
+  },
+  {
+    "id": "315224b32223c2d6",
+    "source": "⏸ pause match (everyone)",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "89f05e21c81ea6ef",
+    "source": "pause (P / Esc)",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "3023955c9f035c58",
+    "source": "⏸ pause",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "39e3f7ae911c8f00",
+    "source": "the host",
+    "context": "client/app/game.ts, client/app/lobby.ts, client/app/pause.ts"
   },
   {
     "id": "97d575a6f7c6350d",
@@ -1512,6 +2157,16 @@
   {
     "id": "8bc2e36dbf3ec55e",
     "source": "the match keeps running for everyone else.",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "86b1c1aa96112666",
+    "source": "pvp",
+    "context": "client/app/game.ts, client/app/lobby.ts"
+  },
+  {
+    "id": "13b02bd801084d6b",
+    "source": "leaving counts as an elimination.",
     "context": "client/app/game.ts"
   },
   {
@@ -1582,7 +2237,7 @@
   {
     "id": "fce63bfb9ebaba3d",
     "source": "(prefers-reduced-motion: reduce)",
-    "context": "client/app/game.ts, client/edu/diagrams.ts, client/genesis/index.ts"
+    "context": "client/app/game.ts, client/edu/class-boss.ts, client/edu/diagrams.ts, client/genesis/index.ts"
   },
   {
     "id": "36c573b27ddc06b0",
@@ -1615,13 +2270,8 @@
     "context": "client/app/game.ts"
   },
   {
-    "id": "86b1c1aa96112666",
-    "source": "pvp",
-    "context": "client/app/game.ts, client/app/lobby.ts"
-  },
-  {
-    "id": "9225ca3a342fa9d7",
-    "source": "$ make duel ROOM={0}",
+    "id": "84ee257fbb97502b",
+    "source": "$ make royale ROOM={0}",
     "context": "client/app/game.ts"
   },
   {
@@ -1630,8 +2280,8 @@
     "context": "client/app/game.ts"
   },
   {
-    "id": "85be56737e96bc16",
-    "source": "Two repositories compiled into balanced heroes",
+    "id": "a5d960becaef3d1b",
+    "source": "{0} repositories compiled · stats from repo power",
     "context": "client/app/game.ts"
   },
   {
@@ -1640,14 +2290,14 @@
     "context": "client/app/game.ts"
   },
   {
-    "id": "65c677c0849d57d5",
-    "source": "PVP DUEL",
-    "context": "client/app/game.ts, client/app/lobby.ts"
-  },
-  {
     "id": "b240ce16d3c10283",
     "source": "CLASSROOM BRAWL",
     "context": "client/app/game.ts, client/app/lobby.ts"
+  },
+  {
+    "id": "cce151c4d2016ef4",
+    "source": "last hero standing · no respawns",
+    "context": "client/app/game.ts"
   },
   {
     "id": "1adc5070af4028cd",
@@ -1660,8 +2310,28 @@
     "context": "client/app/game.ts"
   },
   {
+    "id": "9908adbb4b6f533e",
+    "source": "$ ./royale --last-one-standing",
+    "context": "client/app/game.ts"
+  },
+  {
     "id": "875ffac2fc095fb6",
     "source": "$ ./fight --pvp",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "7f481071be5155ab",
+    "source": "LAST PROCESS RUNNING",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "b40a32f7a71501e0",
+    "source": "MERGE COMPLETE",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "9c1ae675c2703bff",
+    "source": "loading results…",
     "context": "client/app/game.ts"
   },
   {
@@ -1910,9 +2580,9 @@
     "context": "client/app/game.ts"
   },
   {
-    "id": "a0d4a6737a54383f",
-    "source": "YOU",
-    "context": "client/app/game.ts, client/app/lobby.ts"
+    "id": "abb7c17238b90e16",
+    "source": "countdown-touch-only",
+    "context": "client/app/game.ts"
   },
   {
     "id": "0dc05e77cb1df4db",
@@ -1922,6 +2592,11 @@
   {
     "id": "b7f53e7b149c32d3",
     "source": "BOSS ✈",
+    "context": "client/app/game.ts"
+  },
+  {
+    "id": "3ca66b99bb8187de",
+    "source": "GC ZONE",
     "context": "client/app/game.ts"
   },
   {
@@ -2015,6 +2690,11 @@
     "context": "client/app/github.ts"
   },
   {
+    "id": "9d9eb3d2ba6fe144",
+    "source": " fight with a repo you own (forks don't count) 🔒",
+    "context": "client/app/github.ts"
+  },
+  {
     "id": "b32e7959b36aaec0",
     "source": " pick from your own repos, private too 🔒",
     "context": "client/app/github.ts"
@@ -2052,6 +2732,11 @@
   {
     "id": "9bc94ab9b39bfff4",
     "source": "no match",
+    "context": "client/app/github.ts"
+  },
+  {
+    "id": "d8bea84a803d07c0",
+    "source": "no eligible repos — PvP needs a repo you own (forks don't count)",
     "context": "client/app/github.ts"
   },
   {
@@ -2125,6 +2810,11 @@
     "context": "client/app/hall.ts"
   },
   {
+    "id": "2d2467cf1ec51d26",
+    "source": "$ royale wins",
+    "context": "client/app/hall.ts"
+  },
+  {
     "id": "0b41cc4e3ad7ab76",
     "source": "your weapon",
     "context": "client/app/hud.ts"
@@ -2167,6 +2857,51 @@
   {
     "id": "cf5d17bea235d0ac",
     "source": "$ ./brawl ",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "f0a560ea7d1aff68",
+    "source": "$ ./royale ",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "9a49f9088fa34a25",
+    "source": "{0}/{1} alive",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "fa59b80cf41eed6f",
+    "source": "⚠ outside the GC zone · -{0}♥/s",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "90d8b091ed1d4b56",
+    "source": "⚠ outside the GC zone",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "bd83946fcd8be80b",
+    "source": "★ you survived the merge",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "ae55fb99f39e5f5d",
+    "source": "★ {0} survived the merge",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "4acea2c0311053a1",
+    "source": "★ most KOs: {0} · {1} KO",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "5fc4e7380b87a2d0",
+    "source": "you: alive · {0} KO · {1} dmg",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "23ccd11df7dac1a7",
+    "source": "you: #{0} · {1} KO · spectating",
     "context": "client/app/hud.ts"
   },
   {
@@ -2262,6 +2997,21 @@
   {
     "id": "dcdbfbce63884198",
     "source": "target: {0}",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "11fb682be0a0233d",
+    "source": "AI",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "4cfbd7f204e3ef28",
+    "source": "eliminated by {0}",
+    "context": "client/app/hud.ts"
+  },
+  {
+    "id": "4fb33f47845560dd",
+    "source": "eliminated by the GC sweep",
     "context": "client/app/hud.ts"
   },
   {
@@ -2400,6 +3150,16 @@
     "context": "client/app/landing.ts"
   },
   {
+    "id": "fb39cc75f7baa1b6",
+    "source": "min(86vw, 420px)",
+    "context": "client/app/landing.ts"
+  },
+  {
+    "id": "b94cc1bd818a8e7f",
+    "source": "min(56vw, 600px)",
+    "context": "client/app/landing.ts"
+  },
+  {
     "id": "bc02b28e940de25b",
     "source": "could not create room: {0}",
     "context": "client/app/landing.ts"
@@ -2490,8 +3250,8 @@
     "context": "client/app/landing.ts"
   },
   {
-    "id": "9b0683baa3b5cab7",
-    "source": "[ PvP: challenge a friend ]",
+    "id": "8fa1aae58ab556d9",
+    "source": "[ PvP royale: up to 8 ]",
     "context": "client/app/landing.ts"
   },
   {
@@ -2825,6 +3585,51 @@
     "context": "client/app/lobby.ts"
   },
   {
+    "id": "4e28b1b82fce684d",
+    "source": "waiting for {0} to finish verifying",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "eea9093987ece134",
+    "source": "need at least 2 fighters — invite friends or add AI rivals",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "153ef12c20ae4b57",
+    "source": "need at least 2 fighters — add AI rivals, or connect GitHub and pick a repo you own to fight",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "e12a48d9bfcd4d21",
+    "source": "max 8 fighters — remove AI rivals",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "8848aa40dffbad09",
+    "source": "▶ START ROYALE ({0} fighters)",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "f2e055cbb9508333",
+    "source": "▶ START ROYALE · you'll spectate ({0} fighters)",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "10e821a29c1a9bed",
+    "source": "{0}/8 fighters ready. Last one standing wins.",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "5f923ae51c0c30d8",
+    "source": "no eligible repo: you'll watch. Connect GitHub and pick a repo you own to fight.",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "d9b690976a0ec230",
+    "source": "{0} will spectate.",
+    "context": "client/app/lobby.ts"
+  },
+  {
     "id": "6621b70886371c17",
     "source": "{0} still cloning… press again to start anyway",
     "context": "client/app/lobby.ts"
@@ -2900,8 +3705,8 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "7f0c4f23ef06f7c9",
-    "source": "PvP duel",
+    "id": "c4f4afbc475d72ed",
+    "source": "☠ PvP royale",
     "context": "client/app/lobby.ts"
   },
   {
@@ -2950,6 +3755,11 @@
     "context": "client/app/lobby.ts"
   },
   {
+    "id": "a106104d27c90adb",
+    "source": "min(100%, 300px)",
+    "context": "client/app/lobby.ts"
+  },
+  {
     "id": "21739ab3d29ac72d",
     "source": "img.qr",
     "context": "client/app/lobby.ts"
@@ -2975,8 +3785,43 @@
     "context": "client/app/lobby.ts"
   },
   {
+    "id": "a0d4a6737a54383f",
+    "source": "YOU",
+    "context": "client/app/lobby.ts"
+  },
+  {
     "id": "fb000cedf5e9c32e",
     "source": "BOT",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "302d0a2e645f67da",
+    "source": "strongest-repo",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "ca5c8915605a345c",
+    "source": "strongest repo in this room (highest power)",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "6f1f1c8e01856e8b",
+    "source": "👑 STRONGEST",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "11e4f7f7f4cf5934",
+    "source": "verifying repo ownership…",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "f9f63bb8571c11b8",
+    "source": "spectating · pick a repo you own to fight",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "9a53224f4cd7a2a0",
+    "source": "spectating",
     "context": "client/app/lobby.ts"
   },
   {
@@ -3045,6 +3890,11 @@
     "context": "client/app/lobby.ts"
   },
   {
+    "id": "fe996b78ea44a8f4",
+    "source": "AI rivals: ",
+    "context": "client/app/lobby.ts"
+  },
+  {
     "id": "27d2499cb518eeff",
     "source": "students: scan to join · hold your phone upright",
     "context": "client/app/lobby.ts"
@@ -3075,8 +3925,18 @@
     "context": "client/app/lobby.ts"
   },
   {
+    "id": "1bc8cadbfd889f71",
+    "source": "checking that this repo is yours…",
+    "context": "client/app/lobby.ts"
+  },
+  {
     "id": "f0c4172c54ae46b0",
     "source": "analyzing repo…",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "109ba41960e1162d",
+    "source": "👁 spectating · pick a repo you own to fight",
     "context": "client/app/lobby.ts"
   },
   {
@@ -3093,6 +3953,16 @@
     "id": "21262a3cb5337627",
     "source": "md",
     "context": "client/app/lobby.ts, client/edu/feedback-view.ts"
+  },
+  {
+    "id": "b371cd185c08893a",
+    "source": "👑 strongest repo in this room",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "85c2dea25d69bd82",
+    "source": "stats scale with power",
+    "context": "client/app/lobby.ts"
   },
   {
     "id": "c68fef1abac63a83",
@@ -3155,28 +4025,43 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "6c349aaed1e4c16a",
-    "source": "Two players. Best of three rounds. Most KOs wins; damage breaks ties.",
+    "id": "a09e8f232e7ae0dc",
+    "source": "2–8 heroes · free-for-all · no respawns.",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "c8ed03b60973f770",
+    "source": "A knockout is final; the last hero standing wins.",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "9f41b90c55a3b21c",
+    "source": "b.zone-word",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "226af09665b248ef",
+    "source": "GC sweep:",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "24a4fc03f64f2801",
+    "source": "the safe circle starts shrinking after 0:45–1:40 (more heroes, later). Outside it the garbage collector eats your HP.",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "c1de3a09f7ffc2ad",
+    "source": "Stronger repos make stronger heroes: POWER comes from tests, modularity, docs, stars and contributors. No one-shots.",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "852494f8d03835a1",
+    "source": "Knockouts drop a heart and energy.",
     "context": "client/app/lobby.ts"
   },
   {
     "id": "0210ef99229ef44d",
     "source": "Connect GitHub. Use your own non-fork repository, or a public repository you maintain or administer. Your own forks are not eligible.",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "f33cfa6f5726ea7c",
-    "source": "START PVP DUEL",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "c4f3806df8fb2b01",
-    "source": "Both repositories verified. Ready to fight.",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "e0222df85b5c8ef9",
-    "source": "Invite a friend and verify both repositories.",
     "context": "client/app/lobby.ts"
   },
   {
@@ -3290,11 +4175,6 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "30319afe0b21e92f",
-    "source": "the teacher",
-    "context": "client/app/lobby.ts"
-  },
-  {
     "id": "cbe4ff2c0d174f88",
     "source": "★ you own this room",
     "context": "client/app/lobby.ts"
@@ -3315,8 +4195,13 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "39e3f7ae911c8f00",
-    "source": "the host",
+    "id": "09c63bce7007c0f4",
+    "source": "👁 you'll spectate — pick a repo you own to fight",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "aba51af91208bc92",
+    "source": "next-bar {0}",
     "context": "client/app/lobby.ts"
   },
   {
@@ -3360,13 +4245,18 @@
     "context": "client/app/lobby.ts"
   },
   {
-    "id": "547542456fcfd720",
-    "source": "Waiting for two verified GitHub repositories",
+    "id": "abe743e82b484722",
+    "source": "waiting for a 2nd hero — invite friends or add AI rivals",
     "context": "client/app/lobby.ts"
   },
   {
     "id": "03bdd72b4be69111",
     "source": "waiting for classmates ({0} ready) — or add AI teammates",
+    "context": "client/app/lobby.ts"
+  },
+  {
+    "id": "8efb0323d1adaca2",
+    "source": "▶ START ROYALE ({0} heroes)",
     "context": "client/app/lobby.ts"
   },
   {
@@ -3378,16 +4268,6 @@
     "id": "1981dffdfd3514ac",
     "source": "▶ START FIGHT ({0} hero{1})",
     "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "aba51af91208bc92",
-    "source": "next-bar {0}",
-    "context": "client/app/lobby.ts"
-  },
-  {
-    "id": "a2b64130588c1b04",
-    "source": "{0}px \"Press Start 2P\", monospace",
-    "context": "client/app/logo.ts"
   },
   {
     "id": "d0f3e29d16a6aa4e",
@@ -3510,6 +4390,11 @@
     "context": "client/app/main.ts"
   },
   {
+    "id": "272615fb1adef68b",
+    "source": "Reconnected. Everything is saved.",
+    "context": "client/app/main.ts"
+  },
+  {
     "id": "30a6b08d09550705",
     "source": "ROTATE TO PORTRAIT ↻",
     "context": "client/app/main.ts"
@@ -3523,6 +4408,101 @@
     "id": "25bcf8339b953aab",
     "source": "\n....................\n.......GGGGGG.......\n.....GGGGGGGGGG.....\n....GGGGGGGKKKGG....\n....GGGGGGWWGGGGG...\n...GGGGGGGWPGGGGGG..\n...GGGGGGGGGGGGGGGGG\n...GgGGGGGGGGGGGGGGG\n...GgGGGGGGGGGWGWGWG\n...GgGGGGGGGGG......\n...GgGGGGGGGG.......\n...GgGGGGGGGGG......\n...GgGGGGGGGGGWGWGWG\n...GgGGGGGGGGGGGGGG.\n...GgGbbbGGGGGGGGG..\n...GgbbbbbGGGGGGG...\n...Ggbbbbbbbb.......\n...Ggbbbbbbb........\n...GgGbbbbbG........\n...GgGGGGGGG........\n",
     "context": "client/app/mark.ts"
+  },
+  {
+    "id": "81ccc14623d138de",
+    "source": "resume-match",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "556ee8e0e3078fef",
+    "source": "▶ Resume (P)",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "cbe2e787189dd0ed",
+    "source": "▶ RESUME",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "141c4c95190cfa33",
+    "source": "pause-leave",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "037509bdea93da2a",
+    "source": "⏏ leave",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "d4d8e1651621346c",
+    "source": "pause-new-room",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "46eb9e6cff6e3071",
+    "source": "end match · new room",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "9bbd830d2cb86334",
+    "source": " gitzilla",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "a038e3fb2ec9153b",
+    "source": "⏸ Paused by your teacher",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "e9605a9a1308775d",
+    "source": "kill -STOP gitzilla",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "25c28a4a09c9ad8b",
+    "source": "^Z",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "158b1421d459d2c6",
+    "source": "The clock is frozen for the whole class.",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "75eb47b948665da0",
+    "source": "[1]+  Stopped    gitzilla    (suspended by you)",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "ff483dc3afa68682",
+    "source": "[1]+  Stopped    gitzilla    (suspended by {0})",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "b168a640221ca51a",
+    "source": "everyone is frozen · nothing can hit you",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "e540517cc865318c",
+    "source": "waiting for the host to resume…",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "fd659ca63efccd6a",
+    "source": "Resuming in {0}…",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "33fe735b692a7026",
+    "source": "$ fg %1   {0}",
+    "context": "client/app/pause.ts"
+  },
+  {
+    "id": "c09332a3e73c0df7",
+    "source": "$ fg %1",
+    "context": "client/app/pause.ts"
   },
   {
     "id": "943bdd3ae0fd1e04",
@@ -3570,6 +4550,121 @@
     "context": "client/app/report.ts"
   },
   {
+    "id": "dd9c8bf1d0dc4915",
+    "source": "GC idle",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "55459ff091c5ae19",
+    "source": "GC sweep in {0}",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "52564ab41692b1df",
+    "source": "GC sweeping {0}",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "9ccafa8ec6a547d4",
+    "source": "GC final sweep",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "9ae816716fdd5670",
+    "source": "GC",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "bc79d47e6871823a",
+    "source": "spectate-prev",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "ca2e14ad0000cd1f",
+    "source": "previous player",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "19bda4aa00eaf9a1",
+    "source": "watching",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "3e650d6cd6535a83",
+    "source": "spectate-next",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "623e61b1b1ac2e1e",
+    "source": "next player",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "61aaf0ef6ebe389c",
+    "source": "👁 spectating",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "891cf063003ae0fe",
+    "source": "· no hero in this match",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "1c5b9cc9c4e67d85",
+    "source": "left:",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "508600c7181f5fd4",
+    "source": "segfault",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "edc00d4db80ddc3e",
+    "source": "'s",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "7bb5113348244406",
+    "source": "repo power {0}, AI handicap {1}",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "7d6cf12b9c60391a",
+    "source": "pvp-ai-why",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "db98b598d8b324ec",
+    "source": "b.pw-part-v",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "f9d581920a0bbc78",
+    "source": "repo power: code quality + stars, contributors and size · tap for what counts most",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "10149aa571ab7f5f",
+    "source": "POWER",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "7a5b98dfbfc43695",
+    "source": "b.pw-num",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "d9812bf618216f95",
+    "source": "pvp-ai-handicap",
+    "context": "client/app/royale.ts"
+  },
+  {
+    "id": "57f4eb2e69ccc815",
+    "source": "· AI {0}",
+    "context": "client/app/royale.ts"
+  },
+  {
     "id": "2764b4c1b7b57015",
     "source": "Before you play",
     "context": "client/app/settings.ts"
@@ -3598,6 +4693,31 @@
     "id": "b2a9fdfbdf75de4f",
     "source": "Classroom language",
     "context": "client/app/settings.ts, i18n-explicit"
+  },
+  {
+    "id": "46124e023603420f",
+    "source": "Sound",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "c96c6d5be8d08a12",
+    "source": "input",
+    "context": "client/app/settings.ts, client/edu/rubric.ts"
+  },
+  {
+    "id": "6fe9eb8f468b5843",
+    "source": "checkbox",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "2e8a5c6e4c2bcba6",
+    "source": "settings-sound",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "f65ca2fabca96679",
+    "source": "music & sound effects",
+    "context": "client/app/settings.ts"
   },
   {
     "id": "799c269135742a36",
@@ -3635,9 +4755,9 @@
     "context": "client/app/settings.ts, i18n-explicit"
   },
   {
-    "id": "7d9eb7acb13e2462",
-    "source": "Close",
-    "context": "client/app/settings.ts, i18n-explicit"
+    "id": "12d942acfa6900c7",
+    "source": ".lobby-scroll, .ap-scroll",
+    "context": "client/app/settings.ts"
   },
   {
     "id": "728dbd5001b172d8",
@@ -3835,9 +4955,74 @@
     "context": "client/app/training.ts"
   },
   {
+    "id": "c1f687d470f1bd76",
+    "source": "{0} top-level files",
+    "context": "client/app/util.ts"
+  },
+  {
+    "id": "11468275661c36e9",
+    "source": "top-level files",
+    "context": "client/app/util.ts"
+  },
+  {
     "id": "9e132cb0a3ece12d",
     "source": "(pointer: coarse)",
     "context": "client/app/util.ts, client/input/index.ts, client/input/permission.ts, client/input/training-trace.ts"
+  },
+  {
+    "id": "41cf6794ba4200b8",
+    "source": "source",
+    "context": "client/app/wordmark.ts, shared/classroom-presets.ts"
+  },
+  {
+    "id": "0a808b75b0412b29",
+    "source": "cr-boss-art cr-boss-sprite",
+    "context": "client/edu/class-boss.ts"
+  },
+  {
+    "id": "4fb62348858c2f6f",
+    "source": "idle",
+    "context": "client/edu/class-boss.ts, client/genesis/scene.ts"
+  },
+  {
+    "id": "e0b469e88b4cb358",
+    "source": "stagger",
+    "context": "client/edu/class-boss.ts"
+  },
+  {
+    "id": "0b3092a30b0f3f16",
+    "source": "enrage",
+    "context": "client/edu/class-boss.ts"
+  },
+  {
+    "id": "c2b644a1f2f11fd8",
+    "source": "roar",
+    "context": "client/edu/class-boss.ts"
+  },
+  {
+    "id": "5ca1b735ed825f72",
+    "source": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
+    "context": "client/edu/code-editor.ts"
+  },
+  {
+    "id": "7017de5ace6a361b",
+    "source": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
+    "context": "client/edu/code-editor.ts"
+  },
+  {
+    "id": "e4f8e3e03d442a4d",
+    "source": " ce-ro",
+    "context": "client/edu/code-editor.ts"
+  },
+  {
+    "id": "64390236910fb5c5",
+    "source": "code editor",
+    "context": "client/edu/code-editor.ts"
+  },
+  {
+    "id": "582bfe13a7480822",
+    "source": " on",
+    "context": "client/edu/code-editor.ts"
   },
   {
     "id": "ca9a9cd253c42f6d",
@@ -4790,11 +5975,6 @@
     "context": "client/edu/explain.ts"
   },
   {
-    "id": "bb0347a468d97e98",
-    "source": "you",
-    "context": "client/edu/feed.ts"
-  },
-  {
     "id": "7abe8cd76a85fe94",
     "source": "for you",
     "context": "client/edu/feed.ts"
@@ -4893,11 +6073,6 @@
     "id": "5a8460f6b1bf96a8",
     "source": "rank",
     "context": "client/edu/feedback-view.ts"
-  },
-  {
-    "id": "ced5103bf1a4663a",
-    "source": "KOs",
-    "context": "client/edu/feedback-view.ts, client/edu/report.ts"
   },
   {
     "id": "7a65b9bb5f32c3fd",
@@ -5203,6 +6378,91 @@
     "id": "9956ed4065694fcc",
     "source": "Ready to fight. Every move it makes comes from the code you just watched.",
     "context": "client/edu/genesis.ts"
+  },
+  {
+    "id": "4d19f436842e9bda",
+    "source": "one line per input() call",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "a4de9c8f3379d74f",
+    "source": "input lines",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "deb9023e073fd083",
+    "source": "$ python output",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "f63124e67b48faf3",
+    "source": "input() lines",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "763674d07e2a79d8",
+    "source": "Runs only in your browser. It doesn't change your score.",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "b0f0b76f485c58b4",
+    "source": "▶ Run",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "15f637f29da9b7c7",
+    "source": "reset to starter",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "92eeb63b63fa07ae",
+    "source": "Write → ▶ Run to try it (only in your browser, never scored) → Submit → read your feedback → improve and submit again.",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "9bf80a70f6d88a5f",
+    "source": "running {0}…",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "1f2d81b4a8c91900",
+    "source": "loading Python… (the first run downloads ~10 MB)",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "a778ab518733de3a",
+    "source": "(no output: add a print() to see something)",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "a9777d3da3e929e3",
+    "source": "{0} · {1} ms",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "5684fc83d71ec7a8",
+    "source": "Reset to the starter code? Your changes to this step will be lost.",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "7ce1dc21786b58c2",
+    "source": "code for {0}",
+    "context": "client/edu/inapp-panel.ts"
+  },
+  {
+    "id": "437733cbd1160e64",
+    "source": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
+    "context": "client/edu/py-run.ts"
+  },
+  {
+    "id": "cdd1ee34d2f39df5",
+    "source": "Python couldn't load in this browser.",
+    "context": "client/edu/py-run.ts"
+  },
+  {
+    "id": "9009fc96acf6ba62",
+    "source": "Stopped after {0}s: is there a loop that never ends?",
+    "context": "client/edu/py-run.ts"
   },
   {
     "id": "1a26ac067d8c8f18",
@@ -5725,11 +6985,6 @@
     "context": "client/edu/rubric.ts"
   },
   {
-    "id": "c3e2d78f3ff33572",
-    "source": "button",
-    "context": "client/edu/rubric.ts"
-  },
-  {
     "id": "daffbef33c9912a1",
     "source": "choose a file",
     "context": "client/edu/rubric.ts"
@@ -5745,6 +7000,11 @@
     "context": "client/edu/rubric.ts"
   },
   {
+    "id": "a96583044eba7ad6",
+    "source": "HOW THIS STEP IS SCORED",
+    "context": "client/edu/rubric.ts"
+  },
+  {
     "id": "1d837e48249359d9",
     "source": "HOW REPOS ARE JUDGED",
     "context": "client/edu/rubric.ts"
@@ -5757,6 +7017,16 @@
   {
     "id": "139d544b821b13eb",
     "source": "doc",
+    "context": "client/edu/rubric.ts"
+  },
+  {
+    "id": "1b261341cb00768e",
+    "source": "edited for this step",
+    "context": "client/edu/rubric.ts"
+  },
+  {
+    "id": "ef1b0cae2943a564",
+    "source": "lesson default",
     "context": "client/edu/rubric.ts"
   },
   {
@@ -5805,6 +7075,11 @@
     "context": "client/edu/rubric.ts"
   },
   {
+    "id": "20260eac0b1027e1",
+    "source": "Students see these criteria under “How this task is scored”.",
+    "context": "client/edu/rubric.ts"
+  },
+  {
     "id": "55ebac681e35f049",
     "source": "Students see this on their lobby card as “how you'll be judged”.",
     "context": "client/edu/rubric.ts"
@@ -5842,11 +7117,6 @@
   {
     "id": "7c51bfc4180def89",
     "source": "target ",
-    "context": "client/edu/rubric.ts"
-  },
-  {
-    "id": "c96c6d5be8d08a12",
-    "source": "input",
     "context": "client/edu/rubric.ts"
   },
   {
@@ -5960,6 +7230,121 @@
     "context": "client/edu/summary.ts"
   },
   {
+    "id": "57c94ebf8986981a",
+    "source": "`{0}` is in your submission",
+    "context": "client/edu/task-brief.ts"
+  },
+  {
+    "id": "7dc744e69d13a30e",
+    "source": "`{0}` contains `{1}`",
+    "context": "client/edu/task-brief.ts"
+  },
+  {
+    "id": "675dc08056179386",
+    "source": "The GitHub check `{0}` passes",
+    "context": "client/edu/task-brief.ts"
+  },
+  {
+    "id": "d516f3bd7df25807",
+    "source": "found in your files",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "bbda6d5a98649615",
+    "source": "not found yet",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "03a714cf65787a6b",
+    "source": "check this yourself",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "d99cbe3f85e93a42",
+    "source": "{0} of {1} done",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "1aca80e8b55c802f",
+    "source": "label",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "100ec1bc78a4cc83",
+    "source": "To do",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "1328e4416e66d88c",
+    "source": "ol.tc-todo",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "83f873f14955cf06",
+    "source": "Check these yourself before you submit. After you submit, the ones the computer can check turn ✓ or ✗.",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "d5ef11a819843d84",
+    "source": "From your last submission: {0} still missing. Fix {1} and submit again.",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "88504f75accabbd1",
+    "source": "From your last submission. The computer only reads your files; your teacher checks what it prints.",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "0eaed704010ffa66",
+    "source": "Done when",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "088032739eab448b",
+    "source": "ul.tc-done",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "6d9bc36b5995008c",
+    "source": "classroom-done-note",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "1a822fae620b0182",
+    "source": "Expected output",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "985b22c49fc1634c",
+    "source": "Next hint ({0}/{1})",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "41bb97a5662eec48",
+    "source": "💡 Need a hint? ({0})",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "0d0a8c6df3ace225",
+    "source": "Concepts",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "08b4feca116578cc",
+    "source": "tc tc-{0}",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "796131eb3bafca18",
+    "source": "Student task card · {0} to-dos · {1} done-when{2}",
+    "context": "client/edu/task-card.ts"
+  },
+  {
+    "id": "261d613db0b08c8f",
+    "source": " · {0} hints",
+    "context": "client/edu/task-card.ts"
+  },
+  {
     "id": "8e8cf911ea3995fd",
     "source": "Request failed ({0})",
     "context": "client/edu/transport.ts"
@@ -6048,6 +7433,21 @@
     "id": "87a6defcea1841fe",
     "source": "Trace upload HTTP {0}",
     "context": "client/input/trace.ts"
+  },
+  {
+    "id": "991d0a23d8a603da",
+    "source": "font:16px \"VT323\",ui-monospace,monospace;color:#7fbf9a;letter-spacing:0.5px;",
+    "context": "client/genesis/index.ts"
+  },
+  {
+    "id": "c51bca49c54dbdc3",
+    "source": "still analyzing {0}…",
+    "context": "client/genesis/index.ts"
+  },
+  {
+    "id": "daec74b7a515a79c",
+    "source": "the repo",
+    "context": "client/genesis/index.ts"
   },
   {
     "id": "75d862f3796096f9",
@@ -6180,6 +7580,26 @@
     "context": "client/genesis/local.ts"
   },
   {
+    "id": "4e6cf24b120b8bbb",
+    "source": "repo strength",
+    "context": "client/genesis/local.ts"
+  },
+  {
+    "id": "80f1db4a39e64816",
+    "source": "stats: scaled by repo power",
+    "context": "client/genesis/local.ts"
+  },
+  {
+    "id": "5a755c3ed60c5776",
+    "source": "stats: POWER {0}",
+    "context": "client/genesis/local.ts"
+  },
+  {
+    "id": "54582e6259443fa0",
+    "source": "{0} {1}/100 · {2}% of power",
+    "context": "client/genesis/local.ts"
+  },
+  {
     "id": "e5c2dbf2b8e38651",
     "source": "{0} components",
     "context": "client/genesis/local.ts"
@@ -6288,11 +7708,6 @@
     "id": "ab4075e1e74f5df8",
     "source": "burrows · crystal eruptions · emerge strike",
     "context": "client/genesis/palette.ts"
-  },
-  {
-    "id": "4fb62348858c2f6f",
-    "source": "idle",
-    "context": "client/genesis/scene.ts"
   },
   {
     "id": "35decfecf768e1d5",
@@ -6420,6 +7835,11 @@
     "context": "client/genesis/scene.ts"
   },
   {
+    "id": "c877dce1d269275a",
+    "source": "repo power {0} (stronger repo, stronger hero)",
+    "context": "client/genesis/scene.ts"
+  },
+  {
     "id": "31d8443fb35ccea0",
     "source": "tap to continue ▸",
     "context": "client/genesis/scene.ts"
@@ -6495,28 +7915,33 @@
     "context": "client/render/arena/bullets.ts"
   },
   {
-    "id": "4b7562d711ad933a",
-    "source": "$ IPTABLES -A BOSS -J DROP",
+    "id": "abb6c05d4bca3757",
+    "source": "AT ",
+    "context": "client/render/arena/events.ts, client/render/arena/hazards.ts"
+  },
+  {
+    "id": "eefe28237dbd55eb",
+    "source": "BY @",
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "8b9898cd7a4bb51d",
-    "source": "$ GIT FORK --DECOY",
+    "id": "33b2eee97c789164",
+    "source": "FIREWALL UP",
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "077fc53d640694f5",
-    "source": "$ HOTFIX --DEPLOY --NOW",
+    "id": "f5ea3af1c24fd712",
+    "source": "GIT FORK",
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "94ca4a3be1e03380",
-    "source": "$ CFLAGS=-O3 MAKE",
+    "id": "439b465a800b6a1c",
+    "source": "SUDO -O3",
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "cdf4c901575fc503",
-    "source": "$ GIT RESET --HARD HEAD@{2S}",
+    "id": "36ef71cef35c1c0c",
+    "source": "GIT REVERT",
     "context": "client/render/arena/events.ts"
   },
   {
@@ -6565,18 +7990,18 @@
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "33b6f796ce86f011",
-    "source": "+1 COMMIT (HP)",
+    "id": "cd1b3eaea8699abe",
+    "source": "+HP COMMIT",
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "5a55d23ed815d9b9",
-    "source": "TESTS PASSED (ARMOR)",
+    "id": "76c4a11e590f8132",
+    "source": "+ARMOR TESTS✓",
     "context": "client/render/arena/events.ts"
   },
   {
-    "id": "383a727681bde3e3",
-    "source": "+COFFEE (ENERGY)",
+    "id": "8d1a7ae4171df6c2",
+    "source": "+ENERGY COFFEE",
     "context": "client/render/arena/events.ts"
   },
   {
@@ -6597,11 +8022,6 @@
   {
     "id": "8e0860436a554c35",
     "source": "STACK OVERFLOW",
-    "context": "client/render/arena/hazards.ts"
-  },
-  {
-    "id": "abb6c05d4bca3757",
-    "source": "AT ",
     "context": "client/render/arena/hazards.ts"
   },
   {
@@ -6733,6 +8153,21 @@
     "id": "c177bf8cd51c061e",
     "source": "✗ WRONG",
     "context": "client/render/arena/props.ts"
+  },
+  {
+    "id": "323a2d8c4f04d234",
+    "source": "RM -RF ",
+    "context": "client/render/arena/royale.ts"
+  },
+  {
+    "id": "8bbcb0e2683415fc",
+    "source": "GC SWEEP IN ",
+    "context": "client/render/arena/royale.ts"
+  },
+  {
+    "id": "5ea179af08b6d1b3",
+    "source": "GC SWEEP!",
+    "context": "client/render/arena/royale.ts"
   },
   {
     "id": "18cf559bc03086aa",
@@ -6882,6 +8317,46 @@
   {
     "id": "3e4e6c0e5874b19e",
     "source": "[source omitted]",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "d249a0852c914dd4",
+    "source": "Source unmeasured · neutral power",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "77f90c91a6f258cd",
+    "source": "{0} stars · {1} tests",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "e5cc1bb570f9941e",
+    "source": "REPO POWER {0}",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "cdb1433f8a52c1ec",
+    "source": "AI rival · {0} of repo power",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "cfa0f4558d0078f0",
+    "source": "{0} HP · {1}% damage",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "fcfc2cc19a563dad",
+    "source": "{0} HP · {1}× damage",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "f336b2a864202ccf",
+    "source": "{0} armor · {1} speed · {2} energy",
+    "context": "genesis/index.ts"
+  },
+  {
+    "id": "bd72938b58f0e080",
+    "source": "{0}/100 · {1} influence",
     "context": "genesis/index.ts"
   },
   {
@@ -7725,6 +9200,41 @@
     "context": "server/classroom.ts"
   },
   {
+    "id": "09e70cff9ef73fc3",
+    "source": "Invalid step brief",
+    "context": "server/classroom.ts"
+  },
+  {
+    "id": "645eeddecab3be72",
+    "source": "Invalid brief {0}: use {1}–{2} items",
+    "context": "server/classroom.ts"
+  },
+  {
+    "id": "ab5e8a71f2092ce9",
+    "source": "brief {0} item",
+    "context": "server/classroom.ts"
+  },
+  {
+    "id": "5aaa063b1bd89322",
+    "source": "Brief doneWhen must have one row per check, in check order",
+    "context": "server/classroom.ts"
+  },
+  {
+    "id": "b8133fe0377601c5",
+    "source": "Invalid brief example output (maximum 2000 characters)",
+    "context": "server/classroom.ts"
+  },
+  {
+    "id": "1d64f579efdda0cc",
+    "source": "brief example title",
+    "context": "server/classroom.ts"
+  },
+  {
+    "id": "24f2c0e92ad851bf",
+    "source": "brief goal",
+    "context": "server/classroom.ts"
+  },
+  {
     "id": "0d74b637f4168236",
     "source": "A lesson needs 1–12 steps",
     "context": "server/classroom.ts"
@@ -7780,6 +9290,11 @@
     "context": "server/classroom.ts"
   },
   {
+    "id": "afb2221af4276080",
+    "source": "Choose Python for the editor language",
+    "context": "server/classroom.ts"
+  },
+  {
     "id": "d43dfffd7a037e6d",
     "source": "step title",
     "context": "server/classroom.ts"
@@ -7815,8 +9330,8 @@
     "context": "server/classroom.ts"
   },
   {
-    "id": "c7d0c19484a8cbb7",
-    "source": "An immutable live GitHub commit is required; fallback data is not graded",
+    "id": "e8a4b7e1658b2196",
+    "source": "An immutable live GitHub commit or in-app content hash is required; fallback data is not graded",
     "context": "server/classroom.ts"
   },
   {
@@ -7932,7 +9447,7 @@
   {
     "id": "371b26886bee5e55",
     "source": "Method not allowed",
-    "context": "server/edu-http.ts, server/main.ts, server/traces.ts"
+    "context": "server/edu-http.ts, server/main.ts, server/traces.ts, server/receipts/http.ts"
   },
   {
     "id": "00f2f150f76c6902",
@@ -7988,6 +9503,36 @@
     "id": "ff8209367306d20a",
     "source": "Could not parse this rubric. Try Markdown or plain text.",
     "context": "server/edu-http.ts"
+  },
+  {
+    "id": "fcaa5a7bdb058f92",
+    "source": "Use 1–20 editor files",
+    "context": "server/in-app.ts"
+  },
+  {
+    "id": "a1191a927f3667d5",
+    "source": "Editor files must contain UTF-8 paths and text",
+    "context": "server/in-app.ts"
+  },
+  {
+    "id": "fda81fff76f33e41",
+    "source": "Use safe relative editor file paths",
+    "context": "server/in-app.ts"
+  },
+  {
+    "id": "634f90bbb24e4d5b",
+    "source": "Editor file paths must be unique",
+    "context": "server/in-app.ts"
+  },
+  {
+    "id": "595d86f20b3bb793",
+    "source": "Editor files must total at most 200 KB",
+    "context": "server/in-app.ts"
+  },
+  {
+    "id": "3bae871649db12d4",
+    "source": "Match receipts are unavailable; gameplay continues.",
+    "context": "server/main.ts"
   },
   {
     "id": "e7ddbddf89478ade",
@@ -8107,7 +9652,7 @@
   {
     "id": "3217cae27d9007a4",
     "source": "GitHub returned incomplete repository eligibility.",
-    "context": "server/pvp-access.ts"
+    "context": "server/pvp-access.ts, auth/index.ts"
   },
   {
     "id": "b135c8485d135113",
@@ -8220,8 +9765,8 @@
     "context": "server/rooms.ts"
   },
   {
-    "id": "79d714321e7ddc45",
-    "source": "Room message exceeds 256 KB",
+    "id": "ad3ad78c7a90916d",
+    "source": "Room message is too large",
     "context": "server/rooms.ts"
   },
   {
@@ -8242,6 +9787,21 @@
   {
     "id": "8879c0e8bdba5153",
     "source": "Send hello first",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "ea31fe65e8c6c7ad",
+    "source": "Only the room owner can pause or resume",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "6c8d5cdfdee80c03",
+    "source": "Choose pause or resume",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "2fd645434e08406d",
+    "source": "Pause is available during a match",
     "context": "server/rooms.ts"
   },
   {
@@ -8285,8 +9845,8 @@
     "context": "server/rooms.ts"
   },
   {
-    "id": "4be346d0f6521958",
-    "source": "PvP needs two different GitHub accounts.",
+    "id": "22f126a9574d5cbc",
+    "source": "PvP needs different GitHub accounts.",
     "context": "server/rooms.ts"
   },
   {
@@ -8335,13 +9895,8 @@
     "context": "server/rooms.ts"
   },
   {
-    "id": "f85fc61a7377b5ca",
-    "source": "PvP supports exactly two players.",
-    "context": "server/rooms.ts"
-  },
-  {
-    "id": "a2d94832a79b30f6",
-    "source": "PvP requires two human players; bots are disabled.",
+    "id": "2b2bd21359548cb6",
+    "source": "PvP supports up to eight players.",
     "context": "server/rooms.ts"
   },
   {
@@ -8405,13 +9960,48 @@
     "context": "server/rooms.ts"
   },
   {
-    "id": "e2368f3338598ce3",
-    "source": "PvP requires exactly two verified human players.",
+    "id": "c97602b8c1d1f904",
+    "source": "PvP is waiting for repository analysis: {0}.",
     "context": "server/rooms.ts"
   },
   {
-    "id": "b83f33abad0a728c",
-    "source": "Reconnect GitHub before starting PvP.",
+    "id": "279479c1dc58ae8a",
+    "source": "PvP AI rivals are not ready: {0}. Remove and add them again.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "68bfd7e7b8db468c",
+    "source": "PvP repository eligibility must be verified for: {0}. Reconnect GitHub and reselect an eligible repository.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "d55514d5b16dcd5c",
+    "source": "PvP needs at least 2 ready fighters; found {0} eligible human{1} and {2} AI rival{3}. Add AI rivals or invite eligible players. A host without an eligible repository spectates.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "8265f6ade5b09333",
+    "source": "PvP supports at most 8 fighters; {0} are ready. Remove AI rivals or reduce the roster.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "ca20f6b403ff57f1",
+    "source": "PvP needs different GitHub accounts for every human fighter.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "7091c941336651ac",
+    "source": "Reconnect GitHub and reselect an eligible repository.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "231f1e6b029c2eff",
+    "source": "PvP cannot start: {0}: {1}",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "58e9bc8c7de144a0",
+    "source": "GitHub eligibility verification failed.",
     "context": "server/rooms.ts"
   },
   {
@@ -8422,16 +10012,6 @@
   {
     "id": "90764c1ebc507987",
     "source": "Wait for AI teammates to finish loading",
-    "context": "server/rooms.ts"
-  },
-  {
-    "id": "a8896c49997b291a",
-    "source": "PvP requires exactly two ready human players.",
-    "context": "server/rooms.ts"
-  },
-  {
-    "id": "a90ea413ffd0368b",
-    "source": "Both players must verify an eligible repository with different GitHub accounts.",
     "context": "server/rooms.ts"
   },
   {
@@ -8480,8 +10060,18 @@
     "context": "server/rooms.ts"
   },
   {
+    "id": "59bccab35fbd5577",
+    "source": "Match receipt could not be saved; gameplay results remain available.",
+    "context": "server/rooms.ts"
+  },
+  {
     "id": "9c2d5f2b6ab30b78",
     "source": "Hall persistence failed:",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "37f0f373fbf7de9c",
+    "source": "Royale Hall persistence failed.",
     "context": "server/rooms.ts"
   },
   {
@@ -8542,6 +10132,21 @@
   {
     "id": "79ef39297604488e",
     "source": "Join as a student to submit code",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "34b92cbac433d037",
+    "source": "In-app classroom analysis is unavailable",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "92869608db7c3e56",
+    "source": "Could not grade these editor files. Check the files and retry. No code was executed.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "e56f8924ed10fecc",
+    "source": "Choose a classroom submission",
     "context": "server/rooms.ts"
   },
   {
@@ -8715,6 +10320,11 @@
     "context": "auth/index.ts"
   },
   {
+    "id": "093626b5889431cd",
+    "source": "GitHub could not verify your identity. Reconnect GitHub and retry.",
+    "context": "auth/index.ts"
+  },
+  {
     "id": "43266583f5692339",
     "source": "GitHub /user/repos {0}",
     "context": "auth/index.ts"
@@ -8815,8 +10425,8 @@
     "context": "sim/archetypes.ts"
   },
   {
-    "id": "a5a4f54dace4fb0f",
-    "source": "PvP requires exactly two players",
+    "id": "e82d90375dcb346e",
+    "source": "PvP royale needs 2–8 players",
     "context": "sim/pvp.ts"
   },
   {
@@ -8877,6 +10487,11 @@
   {
     "id": "717ae28ad2101652",
     "source": "Check the advisory for upgrade guidance.",
+    "context": "sim/pvp.ts"
+  },
+  {
+    "id": "c649571deef6f89a",
+    "source": "GC sweep: enter the safe circle",
     "context": "sim/pvp.ts"
   },
   {
@@ -9085,6 +10700,291 @@
     "context": "analysis/index.ts"
   },
   {
+    "id": "0fcda1403f0f1b1f",
+    "source": "Receipt unavailable. Try again.",
+    "context": "client/receipts/entry.ts, client/receipts/panel.ts"
+  },
+  {
+    "id": "3515ae5f8faa2748",
+    "source": "Open match receipt",
+    "context": "client/receipts/entry.ts"
+  },
+  {
+    "id": "7e735cacf7da52a4",
+    "source": "MATCH RECEIPT",
+    "context": "client/receipts/entry.ts, client/receipts/panel.ts"
+  },
+  {
+    "id": "00e1174b1c19035d",
+    "source": "Save your signed PvP result. A wallet is optional.",
+    "context": "client/receipts/entry.ts"
+  },
+  {
+    "id": "c17594eb35b5184e",
+    "source": "Signing message",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "002e433eb5003d2a",
+    "source": "Optional Devnet anchor: your wallet address and a salted result digest become public. Gitzilla pays the test-network fee. Sign a message only; no token transfer.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "7b1f118169bc487d",
+    "source": "Connect wallet",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "345ccb3add4995d8",
+    "source": "Wallet connection cancelled. You can still download the receipt.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "f87251238674dde2",
+    "source": "Choose a wallet account that supports Devnet message signing.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "57ae4e061312b04b",
+    "source": "No compatible wallet detected. You can download the signed receipt without one.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "111c1536ab193ab4",
+    "source": "Finalized on Solana Devnet.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "3587fd6965596b19",
+    "source": "Anchor pending. Check its status before retrying.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "7f87899c5437032e",
+    "source": "The transaction expired without finalizing. Sign again to retry.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "22b7bfeb7cb6c8c9",
+    "source": "The transaction failed. Sign again to retry.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "9a84598a3fb17017",
+    "source": "Signed by Gitzilla. Download it with or without a wallet.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "8a927311c2e61a94",
+    "source": "Download signed receipt",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "e88f2e30551e7fce",
+    "source": "View on Devnet explorer",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "aef62fa15a887773",
+    "source": "Check anchor status",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "a69fe4290211848d",
+    "source": "Sign message and anchor",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "732f1d6a65926d58",
+    "source": "Signing cancelled. Your receipt is still available to download.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "38ce7299b8ea12f9",
+    "source": "The wallet changed the signing message. Nothing was published.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "efa4878bd17ea385",
+    "source": "Prepare signing message",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "2b17c7f5aefd4bda",
+    "source": "Change wallet",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "73ca9e55a4d5faf3",
+    "source": "This receipt uses an archived signing key. Its signed download remains verifiable.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "4e4ee86f4de6264c",
+    "source": "A server-attested match result, not proof of fair gameplay or an NFT. Devnet history may be reset. Save the signed download.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "3ce5182429bc66c9",
+    "source": "Attestor key must be a private file",
+    "context": "server/receipts/crypto.ts"
+  },
+  {
+    "id": "da167e49ff31f92c",
+    "source": "Invalid attestor key",
+    "context": "server/receipts/crypto.ts"
+  },
+  {
+    "id": "527dad70792e7579",
+    "source": "Send JSON",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "f3aa3600bd0951b2",
+    "source": "Receipt request is too large",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "2461f667d8fdfe43",
+    "source": "Receipt request timed out",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "c0a06acccb0030f4",
+    "source": "Invalid receipt request",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "e28093afc8f2ae0e",
+    "source": "Incomplete receipt request",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "e9b14d7b9cd21112",
+    "source": "Match receipts are temporarily unavailable",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "8ce247482714b5a8",
+    "source": "Use the Gitzilla site to manage this receipt",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "a3603794070bdea3",
+    "source": "Too many receipt requests; wait a minute",
+    "context": "server/receipts/http.ts, server/receipts/service.ts"
+  },
+  {
+    "id": "4c8ce69e260c3130",
+    "source": "Choose a valid Solana wallet",
+    "context": "server/receipts/http.ts, server/receipts/service.ts"
+  },
+  {
+    "id": "aa98e4df617577df",
+    "source": "Provide the wallet signature",
+    "context": "server/receipts/http.ts"
+  },
+  {
+    "id": "c14de4a671325287",
+    "source": "Devnet anchoring is temporarily unavailable. You can download the signed receipt.",
+    "context": "server/receipts/http.ts, server/receipts/service.ts"
+  },
+  {
+    "id": "a34faa43f84ef8f9",
+    "source": "Use an HTTPS Devnet RPC",
+    "context": "server/receipts/rpc.ts"
+  },
+  {
+    "id": "16f679a54ac515e1",
+    "source": "Solana Devnet is unavailable",
+    "context": "server/receipts/rpc.ts"
+  },
+  {
+    "id": "3ed8c2808210a6bd",
+    "source": "Solana Devnet request failed",
+    "context": "server/receipts/rpc.ts"
+  },
+  {
+    "id": "a245b1db01ba5984",
+    "source": "Only Solana Devnet is supported",
+    "context": "server/receipts/rpc.ts"
+  },
+  {
+    "id": "95d5e04d94e6122b",
+    "source": "Receipt memo is too long",
+    "context": "server/receipts/rpc.ts"
+  },
+  {
+    "id": "40d77d353d9fe77e",
+    "source": "Configure a short application origin",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "e9ab8077b4ed21b8",
+    "source": "Receipt not found for this player",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "0e11940d44f05657",
+    "source": "This receipt uses an archived signing key; download the signed receipt",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "e29160db76ffcb14",
+    "source": "This receipt is already bound to another wallet",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "393fdeaecede4eff",
+    "source": "The wallet changed; request a new signing message",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "fea8cd207dbbcf54",
+    "source": "The signing message expired; try again",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "61341b61f79489b7",
+    "source": "Wallet signature verification failed",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "eda00dc890b49835",
+    "source": "Unexpected transaction",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "c2adfea1d4ce42c7",
+    "source": "Attestor keys must not be tracked",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "7672e5e5522738f6",
+    "source": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "19f966d54916bc89",
+    "source": "SELECT value FROM receipts WHERE id=?",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "2a400b0b770abfaf",
+    "source": "INSERT OR IGNORE INTO attestors(key) VALUES(?)",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "a3522ae2be7d73b8",
+    "source": "INSERT INTO receipts(id,owner,value) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "4534fa45e7ad98aa",
+    "source": "SELECT key FROM attestors",
+    "context": "server/receipts/store.ts"
+  },
+  {
     "id": "501ee593cb7771a0",
     "source": "01-hello",
     "context": "shared/classroom-presets.ts"
@@ -9100,8 +11000,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "d703078cc99df7c8",
-    "source": "零基础；能打开编辑器、运行 Python 3，并提交到 GitHub。",
+    "id": "05fe76fd2288c1ca",
+    "source": "零基础；能在课堂编辑器输入并提交代码。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9110,23 +11010,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "37394337f4b36e14",
-    "source": "name = \"Ada\"\nage = 12\n\n# 在下面完成课堂任务。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "42df9bc38f25c78c",
-    "source": "让程序开口",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "0741827ad84ccc76",
-    "source": "输出两行文字：第一行 Hello, Python!，第二行写一句你自己的介绍。先在终端运行成功，再提交代码。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "0f5a76ae08bf20dc",
-    "source": "第一行必须是 Hello, Python!；第二行由你决定。说明一对引号和一对括号分别做什么。",
+    "id": "38d4a37a02b647a7",
+    "source": "name = \"Ada\"\nage = 12\n",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9135,38 +11020,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "807abacafedfece5",
-    "source": "把信息放进变量",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "14d0713fc8eba8b7",
-    "source": "使用 name 和 age 保存姓名与年龄，再输出它们。将姓名改成 Lin、年龄改成 15，只改变量赋值，不改输出语句。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "463782640358b2d9",
-    "source": "name=\"Lin\", age=15 时，输出应包含 Lin 和 15。解释变量名与字符串 \"name\" 的区别。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "013f54400c82da08",
     "source": "age",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "56eb1337408705ce",
-    "source": "升级介绍卡",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "02404c1e328ad5d6",
-    "source": "增加 hobby 变量，用 f-string 输出一条完整介绍。输出明年的年龄 age + 1。记录修改变量前后的两次结果，并解释为什么数字不需要引号。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "c802d897dcf142aa",
-    "source": "name=\"Lin\", age=15, hobby=\"coding\"：介绍包含 Lin、15、coding；明年年龄为 16。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9210,26 +11065,6 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "c82ca52b802ef318",
-    "source": "# 接收用户输入，完成秒数转换器。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "aa54e031c2267d75",
-    "source": "读入一个数字",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "82a8c33afb1f2c56",
-    "source": "用 input 读取非负整数秒数，用 int 转换类型，再输出秒数加 1。暂时只处理合法整数输入。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "7763ac7aaf6e0ad6",
-    "source": "输入 59 → 输出 60；输入 0 → 输出 1。说明为什么不能直接给 input 的结果加整数 1。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "e7ed056de2c6d190",
     "source": "input(",
     "context": "shared/classroom-presets.ts"
@@ -9237,36 +11072,6 @@
   {
     "id": "1da290a0d91dc657",
     "source": "int(",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "a0d6b1ac9b88819d",
-    "source": "拆成分钟与秒",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "9cde61a10cd2f614",
-    "source": "使用 // 和 % 把总秒数拆成分钟和剩余秒数。输出“2 分 5 秒”这样的结果。不要用小数近似余数。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "caccdf85f4d8d193",
-    "source": "125 → 2 分 5 秒；60 → 1 分 0 秒；59 → 0 分 59 秒。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "09382c31988334c1",
-    "source": "检查边界",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "0687e2a8477a8751",
-    "source": "测试 0、59、60、125、3600，核对“分钟 * 60 + 余秒”等于原始输入。把支持非负整数的输入约定写入自测记录；字母输入的处理留到条件或异常课程。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "5b62a30ec47b6e9f",
-    "source": "0 → 0 分 0 秒；3600 → 60 分 0 秒。记录每个输入的预期与实际输出。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9300,23 +11105,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "73c1f741308365e6",
-    "source": "message = \"  Hello PYTHON  \"\n\n# 整理 message，并输出处理结果。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "abd67aa9a7b740cb",
-    "source": "去掉首尾空白",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "1d153161b858ff32",
-    "source": "对 message 使用 strip，输出清理后的文字与长度。保留中间空格。不要把处理结果只打印出来而忘记保存。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "c5de74b22f6dfe3f",
-    "source": "\"  Hello PYTHON  \" → \"Hello PYTHON\"，长度 12；\"   \" → 空字符串，长度 0。",
+    "id": "0fd1f62ab30cae41",
+    "source": "message = \"  Hello PYTHON  \"\n",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9330,21 +11120,6 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "679cb2f62583cbd4",
-    "source": "统一和替换",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "3879f4264cc0bbcc",
-    "source": "把清理后的文字转成小写，再把 python 替换成 world。保留原始 message，分别输出原文和处理结果，观察字符串方法不会原地修改原文。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "3cffb4168721bd95",
-    "source": "\"  Hello PYTHON  \" → \"hello world\"；\"PYTHON python\" → \"world world\"。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "36ad7dbfb41bd8a7",
     "source": ".lower(",
     "context": "shared/classroom-presets.ts"
@@ -9352,21 +11127,6 @@
   {
     "id": "4e45a5a18ecf599f",
     "source": ".replace(",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "d6de00816bb5c4e3",
-    "source": "做一个安全预览",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "26b47aa1f6b2ff38",
-    "source": "用切片显示处理结果的前 3 个字符。测试空字符串、1 个字符和较长字符串；不要直接读取第 3 个字符，以免短字符串越界。记录切片与索引的差别。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "f8034b5c9235c93e",
-    "source": "\"hello world\" → \"hel\"；\"A\" 经处理后预览为 \"a\"；空字符串的预览仍为空。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9400,23 +11160,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "d544b98b4bea6e27",
-    "source": "score = 85\n\n# 根据 score 输出对应结果。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "12112f4e413289f8",
-    "source": "判断是否通过",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "2d4ee3a98557a6f5",
-    "source": "使用 if / else：分数至少 60 输出 Pass，否则输出 Retry。先使用 score 变量，不要求交互输入。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "c15bb4103fadee6e",
-    "source": "59 → Retry；60 → Pass；100 → Pass。必须测试 59 和 60 两侧的边界。",
+    "id": "612cbbee52dd00c4",
+    "source": "score = 85\n",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9430,38 +11175,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "aae032748fdd2b5e",
-    "source": "加入多个等级",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "330d6578524d7557",
-    "source": "使用 if / elif / else：90–100 为 A，80–89 为 B，60–79 为 C，0–59 为 Retry。从较高分开始判断，保证每次只输出一个等级。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "787f1e522cf3bd23",
-    "source": "90 → A；89 → B；80 → B；79 → C；60 → C；59 → Retry。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "ca24352541fa2183",
     "source": "elif ",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "5eedd023a61190e2",
-    "source": "拒绝范围外的分数",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "20bef6b4c0bb7fca",
-    "source": "在等级判断之前检查范围。小于 0 或大于 100 输出 Invalid score，不再输出等级。使用 or 或等价的比较逻辑。记录 -1、0、100、101 的结果。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "6c3a475eab9b4a2b",
-    "source": "-1、101 → Invalid score；0 → Retry；100 → A。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9500,23 +11215,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "0a855108fefea2a4",
-    "source": "n = 5\n\n# 用循环完成计数与统计。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "83d19e64015a8dd0",
-    "source": "重复而不复制",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "aec1eaab1fde4660",
-    "source": "使用 for 和 range，依次输出从 1 到 n 的整数。n=0 时不输出数字。不要手写多条 print 模拟循环。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "6910005c4b906ee4",
-    "source": "n=3 → 三行 1、2、3；n=0 → 没有数字行。注意 range 的结束值不包含在循环里。",
+    "id": "b56e90e8c773908a",
+    "source": "n = 5\n",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9530,38 +11230,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "cc7cb6c91ef3acb7",
-    "source": "累加训练得分",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "bfdafaf19fe76b6c",
-    "source": "在循环前创建 total=0，每轮加入当前数字，最后只输出总和。不能在循环内部把 total 重置为 0。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "30dec79320b68c84",
-    "source": "n=5 → 15；n=1 → 1；n=0 → 0。先手算，再比较程序结果。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "11239872d178729a",
     "source": "total",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "f912cbcb79b26a61",
-    "source": "只累计偶数",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "ceeb77c24c600400",
-    "source": "在循环中用条件判断只累计偶数，输出 even_total。使用取余判断偶数；测试不同大小的 n，并记录为什么空循环的总和仍然是 0。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "071d69669a7a38cf",
-    "source": "n=6 → 12；n=5 → 6；n=1 或 0 → 0。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9600,23 +11270,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "db26f3b38dad020f",
-    "source": "remaining = 3\n\n# 保证每一轮都朝终止条件前进。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "dedd9c2a686b0201",
-    "source": "可终止的倒计时",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "7f81336533effc82",
-    "source": "当 remaining 大于 0 时输出它，每轮减少 1；循环结束后输出 Launch!。运行前先指出哪个语句保证循环结束。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "9a5442d11e7ccb06",
-    "source": "remaining=3 → 3、2、1、Launch!；remaining=0 → 只输出 Launch!。",
+    "id": "67d7f0e105cc526a",
+    "source": "remaining = 3\n",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9635,38 +11290,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "428aa7ae428bdfc8",
-    "source": "重复读取直到停止",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "41314e57910838a1",
-    "source": "改成持续读取非负整数，输入 -1 时用 break 结束。其他输入加进 total。终止值 -1 不计入总和。只要求处理整数输入。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "432a3166fbd42f2e",
-    "source": "依次输入 2、3、-1 → 总和 5；第一次输入 -1 → 总和 0。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "14ebe56a5008e7c2",
     "source": "break",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "162b66d8ca6e06bb",
-    "source": "给程序加护栏",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "30443ff326af2463",
-    "source": "增加最多 5 次输入的限制，用 attempts 统计实际读取次数。到达限制或输入 -1 都停止。输出总和与次数；测试一直不输入 -1 的情况。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "a241eab0c395c6ab",
-    "source": "输入 1、1、1、1、1 → 总和 5，次数 5；输入 -1 → 总和 0，次数 1。约定终止输入也算一次读取。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9705,26 +11330,6 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "47bdcb324de1c3ee",
-    "source": "# 建立并管理自己的物品列表。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "0074f84566966d39",
-    "source": "建立与修改背包",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "e0c2dd15db4c80de",
-    "source": "创建名为 items 的列表，包含 apple 和 book。用 append 加入 pen，然后输出列表与长度。观察列表在添加前后的变化。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "e3d2749dd5e72064",
-    "source": "初始长度 2；添加后长度 3，顺序仍然是 apple、book、pen。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "5f3c4f8580d392e4",
     "source": "items",
     "context": "shared/classroom-presets.ts"
@@ -9735,38 +11340,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "a9dd501ba1ab288a",
-    "source": "逐个展示物品",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "37e254e133f503eb",
-    "source": "使用 for 遍历 items，每行显示一个物品。再用 count 统计 apple 出现的次数，保留重复物品。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "011d6d04b29ed6dd",
-    "source": "[\"apple\", \"book\", \"apple\"] → apple 出现 2 次，遍历仍输出三行；[] → 0 次且没有物品行。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "e5f071f9beaca78d",
     "source": ".count(",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "be961f5821f2f77c",
-    "source": "空背包也能用",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "c3d9eb76a0339c2c",
-    "source": "取第一个物品之前先检查列表是否为空；空列表输出 Empty bag。创建 tuple(items) 作为只读序列快照，向原列表追加新物品后比较两者长度。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "c561c6a785e20c29",
-    "source": "items=[] → Empty bag；快照来自两个物品，原列表追加后长度 3，快照长度仍为 2。解释列表与元组的区别。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9810,26 +11385,6 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "069696e6732b2326",
-    "source": "# 在这里定义函数，并在定义后调用验证。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "2fe0c9ce3ab9d03c",
-    "source": "传入参数，拿回结果",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "ba2f5b36c5057019",
-    "source": "定义 greet(name)，返回字符串 Hello, 后接姓名。调用者负责 print 结果。不要只在函数内部打印而没有返回值。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "4800fe7dfba887d3",
-    "source": "greet(\"Ada\") → \"Hello, Ada\"；greet(\"Lin\") → \"Hello, Lin\"。把结果保存到变量后再打印。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "89fe482b5f79782f",
     "source": "def greet(",
     "context": "shared/classroom-presets.ts"
@@ -9840,38 +11395,8 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "f1228b6eb814ad25",
-    "source": "封装列表求和",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "1a33acd84faa77b2",
-    "source": "定义 total(numbers)，用循环累加列表元素并返回总和。调用两次，确认第二次不会保留第一次的累加结果。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "9e59316b94e9f3a9",
-    "source": "total([2, 3]) → 5；total([]) → 0；再次 total([1]) → 1。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "7642cb68b5b1ef04",
     "source": "def total(",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "d8a91e540f9ceb94",
-    "source": "用断言防止改坏",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "0ea5daef6ece3f0a",
-    "source": "写至少三条 assert 检查 total 的正常输入、空列表和负数；增加 greet 的一条断言。运行全部断言，再将结果记录到自测文件。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "d3aa6b3441d6e15f",
-    "source": "total([-1, 2]) → 1；所有断言通过时程序正常退出。故意改坏一个预期值，观察 AssertionError，再修复。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -9920,26 +11445,6 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "69850bda6bb88666",
-    "source": "# 使用 inventory 管理物品名称和数量。\n",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "e08c06e11452e433",
-    "source": "从列表升级为键值对",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "27c594e8d65264b4",
-    "source": "创建 inventory 字典，apple 对应 3，book 对应 2。用 inventory[\"apple\"] 读取数量，再将 apple 更新为 5。添加 pen=1。说明键和值分别表示什么。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "dd52ee00409468d2",
-    "source": "更新后 apple=5、book=2、pen=1；相同的键更新后只保留一个对应项。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "38c2f428dab1a6aa",
     "source": "inventory[",
     "context": "shared/classroom-presets.ts"
@@ -9950,21 +11455,6 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "2515f88b3dfc3e58",
-    "source": "安全查询与入库",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "24e05bc844e71419",
-    "source": "定义 add_stock(inventory, name, amount)，使用 get(name, 0) 读取旧数量，再写回增加后的数量。amount 小于 0 时不修改库存，返回 False；成功时返回 True。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "943e1beeaa873bfb",
-    "source": "初始 {\"apple\":3}，增加 apple 2 → 5；增加 pen 1 → 新建 pen=1；增加 apple -1 → 库存不变并返回 False。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "0d6d1f1f455c44a4",
     "source": "def add_stock(",
     "context": "shared/classroom-presets.ts"
@@ -9972,21 +11462,6 @@
   {
     "id": "55466625e9cc230d",
     "source": ".get(",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "cad88397624018e7",
-    "source": "生成报告并自测",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "0851e714192806d5",
-    "source": "使用 items() 遍历并输出物品与数量，计算总数量。为已有键、新键、空字典和负数入库写 assert。列表中位置相同与字典中键相同有什么不同？写入反思。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "ad765ac34f6dc2a7",
-    "source": "{\"apple\":5,\"book\":2,\"pen\":1} → 总数量 8；{} → 总数量 0。报告的行顺序不作为评分要求。",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -10020,9 +11495,29 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "7d66d50ec07525f5",
-    "source": "Python 3 · 运行：python3 {0}",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
+    "id": "97eeab54174cbd0b",
+    "source": "{file}",
+    "context": "shared/classroom-presets.ts"
+  },
+  {
+    "id": "c7af7354ceeb71f9",
+    "source": "# TODO: {0}\n{1}",
+    "context": "shared/classroom-presets.ts"
+  },
+  {
+    "id": "51e8f92f46e3a74b",
+    "source": "{n}",
+    "context": "shared/classroom-presets.ts"
+  },
+  {
+    "id": "7d4225e4edc40196",
+    "source": "## {0}\n\n| {1} | {2} | {3} |\n| --- | --- | --- |\n| TODO | TODO | TODO |\n| TODO | TODO | TODO |",
+    "context": "shared/classroom-presets.ts"
+  },
+  {
+    "id": "ede625e69c019f7f",
+    "source": "## {0}\n\nTODO\n",
+    "context": "shared/classroom-presets.ts"
   },
   {
     "id": "faf2cfa911fa3258",
@@ -10043,11 +11538,6 @@
     "id": "d9530ba3ea643dad",
     "source": "检查范围：预设只检查文件、源码片段与自测记录。文本片段可能出现在注释中，检查通过不代表程序正确。请让学生运行示例并解释结果，再用教师复核记录最终功能分数。接受正确的等价实现；可删除不适用的文本检查，或添加自己仓库的 GitHub CI 检查。",
     "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "ef60907ac3fca2aa",
-    "source": "第 {0} 步 · {1}",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
   },
   {
     "id": "c67b770ecc579621",
@@ -10090,18 +11580,8 @@
     "context": "shared/classroom-presets.ts, i18n-explicit"
   },
   {
-    "id": "41cf6794ba4200b8",
-    "source": "source",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
     "id": "3b9c358f36f0a31b",
     "source": "file",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "80fee3c042020ba4",
-    "source": "本课 Python 文件已提交",
     "context": "shared/classroom-presets.ts"
   },
   {
@@ -10115,9 +11595,9 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "64f71e1f9ae8566f",
-    "source": "源码片段：{0}（不是运行结果）",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
+    "id": "ada0db1bcc3bb7d1",
+    "source": "{text}",
+    "context": "shared/classroom-presets.ts"
   },
   {
     "id": "70ce871f8a3d3fb4",
@@ -10125,74 +11605,14 @@
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "b9cf7eb549558153",
-    "source": "自测与改进记录已提交",
+    "id": "11a4a60b518bf249",
+    "source": "python",
     "context": "shared/classroom-presets.ts"
   },
   {
-    "id": "5147ba16701d05e7",
-    "source": "学习目标",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "039c36bead15244b",
-    "source": "本步任务",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "327d3ee78c6c9570",
-    "source": "文件与运行",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "14afa45f502e35f7",
-    "source": "在仓库创建 {0}，使用 Python 3。运行：python3 {1}。",
-    "context": "shared/classroom-presets.ts"
-  },
-  {
-    "id": "ba76226b309cc380",
-    "source": "可以从下面的起始代码开始：",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "39896e3918af1ed3",
-    "source": "继续修改同一个文件，保留前一步仍需要的功能。",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "2f0ed24138759f4c",
-    "source": "自测示例",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "af4dfc5de3d66413",
-    "source": "记录与提交",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "f29d2385eb58abb2",
-    "source": "运行成功后，",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "80b0ecce541aefcb",
-    "source": "在仓库根目录的 {0} 中添加本课标题，并记录至少两个案例，每个写“输入 / 预期 / 实际”，再写一句你改进了什么。然后",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "9f4c682ca5d8725c",
-    "source": "保存、commit、push 到 GitHub，回课堂提交最新分支。",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "582fdebc68d834b9",
-    "source": "评分说明",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
-  },
-  {
-    "id": "7ed0b3fd78c70cc5",
-    "source": "当前分数是静态提交证据分，不是程序正确率。源码片段和记录通过后，仍需运行上面的示例并请教师复核。正确的等价写法可由教师调整检查。",
-    "context": "shared/classroom-presets.ts, i18n-explicit"
+    "id": "dbd3a49d0d906b4e",
+    "source": "en",
+    "context": "shared/classroom-defaults.ts"
   },
   {
     "id": "16b62eb0a2f50d68",
@@ -10205,43 +11625,13 @@
     "context": "shared/classroom-defaults.ts"
   },
   {
-    "id": "37372911d51e9bf3",
-    "source": "Make it work",
-    "context": "shared/classroom-defaults.ts"
-  },
-  {
-    "id": "307898f6b9a4a647",
-    "source": "Implement the feature your teacher assigns. Push your changes to GitHub, then submit your branch here. Read the feedback before the class attacks.",
-    "context": "shared/classroom-defaults.ts"
-  },
-  {
     "id": "9f86d081884c7d65",
     "source": "test",
     "context": "shared/classroom-defaults.ts"
   },
   {
-    "id": "7beccdbad2c939a7",
-    "source": "Handle the edges",
-    "context": "shared/classroom-defaults.ts"
-  },
-  {
-    "id": "232ada772055386b",
-    "source": "Add tests for a normal case, an invalid input and a boundary case. Run them locally or in GitHub Actions. Submit the improved version.",
-    "context": "shared/classroom-defaults.ts"
-  },
-  {
     "id": "2b35ed6944dd2e8f",
     "source": "improve",
-    "context": "shared/classroom-defaults.ts"
-  },
-  {
-    "id": "ad38e2b61a6fcc35",
-    "source": "Ship the improvement",
-    "context": "shared/classroom-defaults.ts"
-  },
-  {
-    "id": "1307df93de64a24b",
-    "source": "Use your previous feedback to improve one part of your code. Explain the new behavior in the README and submit your final commit.",
     "context": "shared/classroom-defaults.ts"
   },
   {
@@ -10325,8 +11715,98 @@
     "context": "i18n-explicit"
   },
   {
+    "id": "8e2c7ac508139a02",
+    "source": "offline",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "1f75065786e9c581",
+    "source": "checking commit…",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "6fd4d00dbad534bc",
+    "source": "needs resubmission",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "5147ba16701d05e7",
+    "source": "学习目标",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "039c36bead15244b",
+    "source": "本步任务",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "327d3ee78c6c9570",
+    "source": "文件与运行",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "2f0ed24138759f4c",
+    "source": "自测示例",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "af4dfc5de3d66413",
+    "source": "记录与提交",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "582fdebc68d834b9",
+    "source": "评分说明",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "ba76226b309cc380",
+    "source": "可以从下面的起始代码开始：",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "39896e3918af1ed3",
+    "source": "继续修改同一个文件，保留前一步仍需要的功能。",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "f29d2385eb58abb2",
+    "source": "运行成功后，",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "9f4c682ca5d8725c",
+    "source": "保存、commit、push 到 GitHub，回课堂提交最新分支。",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "7ed0b3fd78c70cc5",
+    "source": "当前分数是静态提交证据分，不是程序正确率。源码片段和记录通过后，仍需运行上面的示例并请教师复核。正确的等价写法可由教师调整检查。",
+    "context": "i18n-explicit"
+  },
+  {
     "id": "864db81bb451d216",
     "source": "在仓库创建 {0}，使用 Python 3。运行：python3 {0}。",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "80b0ecce541aefcb",
+    "source": "在仓库根目录的 {0} 中添加本课标题，并记录至少两个案例，每个写“输入 / 预期 / 实际”，再写一句你改进了什么。然后",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "7d66d50ec07525f5",
+    "source": "Python 3 · 运行：python3 {0}",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "ef60907ac3fca2aa",
+    "source": "第 {0} 步 · {1}",
+    "context": "i18n-explicit"
+  },
+  {
+    "id": "64f71e1f9ae8566f",
+    "source": "源码片段：{0}（不是运行结果）",
     "context": "i18n-explicit"
   },
   {
@@ -10338,645 +11818,5 @@
     "id": "43cab8cdd40e89b0",
     "source": "Required evidence not found in the analyzed archive",
     "context": "i18n-explicit"
-  },
-  {
-    "id": "46124e023603420f",
-    "source": "Sound",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f65ca2fabca96679",
-    "source": "music & sound effects",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "3023955c9f035c58",
-    "source": "⏸ pause",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "89f05e21c81ea6ef",
-    "source": "pause (P / Esc)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "315224b32223c2d6",
-    "source": "⏸ pause match (everyone)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "cbe2e787189dd0ed",
-    "source": "▶ RESUME",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "037509bdea93da2a",
-    "source": "⏏ leave",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "46eb9e6cff6e3071",
-    "source": "end match · new room",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "b168a640221ca51a",
-    "source": "everyone is frozen · nothing can hit you",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "e540517cc865318c",
-    "source": "waiting for the host to resume…",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "0866b6868d81ca8d",
-    "source": "the raid clock is frozen for the whole class",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "a85c5b4cb6f4daed",
-    "source": "your teacher paused the class attack…",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "fe84d9a1c0bc6a0f",
-    "source": "⏸ Pause raid (P)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "399ac54413a80592",
-    "source": "▶ Resume raid",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "75eb47b948665da0",
-    "source": "[1]+  Stopped    gitzilla    (suspended by you)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "ff483dc3afa68682",
-    "source": "[1]+  Stopped    gitzilla    (suspended by {0})",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c1f687d470f1bd76",
-    "source": "{0} top-level files",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "11468275661c36e9",
-    "source": "top-level files",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "69dc8996414fad56",
-    "source": "summon one of your own repos as the boss 🔒",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "dd9c8bf1d0dc4915",
-    "source": "GC idle",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "9ccafa8ec6a547d4",
-    "source": "GC final sweep",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "55459ff091c5ae19",
-    "source": "GC sweep in {0}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "52564ab41692b1df",
-    "source": "GC sweeping {0}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "360f84035942243c",
-    "source": "left",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "508600c7181f5fd4",
-    "source": "segfault",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "493c86ee8d64e3cf",
-    "source": "you placed",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "96f93056988dd5fa",
-    "source": "killed by",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f2629554fa641100",
-    "source": "swept by the garbage collector",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "19bda4aa00eaf9a1",
-    "source": "watching",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "1c5b9cc9c4e67d85",
-    "source": "left:",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "ca2e14ad0000cd1f",
-    "source": "previous player",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "623e61b1b1ac2e1e",
-    "source": "next player",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "9a49f9088fa34a25",
-    "source": "{0}/{1} alive",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "fa59b80cf41eed6f",
-    "source": "⚠ outside the GC zone · -{0}♥/s",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "90d8b091ed1d4b56",
-    "source": "⚠ outside the GC zone",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "ae55fb99f39e5f5d",
-    "source": "★ {0} survived the merge",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "bd83946fcd8be80b",
-    "source": "★ you survived the merge",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "4acea2c0311053a1",
-    "source": "★ most KOs: {0} · {1} KO",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "5a7fc5984f9fb8a4",
-    "source": "★ most KOs: you · {0} KO",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "5fc4e7380b87a2d0",
-    "source": "you: alive · {0} KO · {1} dmg",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "23ccd11df7dac1a7",
-    "source": "you: #{0} · {1} KO · spectating",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "4cfbd7f204e3ef28",
-    "source": "eliminated by {0}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "4fb33f47845560dd",
-    "source": "eliminated by the GC sweep",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "af4edea7121c56e5",
-    "source": "PVP ROYALE",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f89eb97a2c5382b4",
-    "source": "{0} repositories compiled · equal stat budget",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "cce151c4d2016ef4",
-    "source": "last hero standing · no respawns",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "7f481071be5155ab",
-    "source": "LAST PROCESS RUNNING",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "b40a32f7a71501e0",
-    "source": "MERGE COMPLETE",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c6a3796d97bf16cd",
-    "source": "survived the merge",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "b439845b8d965018",
-    "source": "no survivors · the GC took everyone",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "9c1ae675c2703bff",
-    "source": "loading results…",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "13b02bd801084d6b",
-    "source": "leaving counts as an elimination.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "3ca66b99bb8187de",
-    "source": "GC ZONE",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c4f4afbc475d72ed",
-    "source": "☠ PvP royale",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "fe996b78ea44a8f4",
-    "source": "AI rivals: ",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "a09e8f232e7ae0dc",
-    "source": "2–8 heroes · free-for-all · no respawns.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c8ed03b60973f770",
-    "source": "A knockout is final; the last hero standing wins.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "226af09665b248ef",
-    "source": "GC sweep:",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "24a4fc03f64f2801",
-    "source": "the safe circle starts shrinking after 0:45–1:40 (more heroes, later). Outside it the garbage collector eats your HP.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "518145b443818e61",
-    "source": "Everyone gets the same stat budget. Knockouts drop a heart and energy.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "8efb0323d1adaca2",
-    "source": "▶ START ROYALE ({0} heroes)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "2b08f826e5133346",
-    "source": "▶ START ROYALE",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f63da6b0dfb9620a",
-    "source": "{0}/8 heroes ready. Last one standing wins.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "673755eddeadb5c2",
-    "source": "Invite up to 7 friends (or add AI rivals) — at least 2 heroes.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "abe743e82b484722",
-    "source": "waiting for a 2nd hero — invite friends or add AI rivals",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "8fa1aae58ab556d9",
-    "source": "[ PvP royale: up to 8 ]",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "2f73214d42603d6d",
-    "source": "LAST ONE STANDING",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "aa948f79d1d47bef",
-    "source": "★ LAST ONE STANDING",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "20e7d53fb45e51b0",
-    "source": "PLACEMENTS",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "483905ef24ceeed9",
-    "source": "eliminated by",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "21a08b49895943d5",
-    "source": "★ winner",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "40b0e4de15d0018d",
-    "source": "GC sweep",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "0b9a6d8ac7afd062",
-    "source": "$ git log --royale · {0} heroes · {1}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "fa11aaec1d069d72",
-    "source": "(left)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "2d2467cf1ec51d26",
-    "source": "$ royale wins",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c437f8439909e9a3",
-    "source": "{0}× #1",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "8848aa40dffbad09",
-    "source": "▶ START ROYALE ({0} fighters)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f2e055cbb9508333",
-    "source": "▶ START ROYALE · you'll spectate ({0} fighters)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "4e28b1b82fce684d",
-    "source": "waiting for {0} to finish verifying",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "eea9093987ece134",
-    "source": "need at least 2 fighters — invite friends or add AI rivals",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "153ef12c20ae4b57",
-    "source": "need at least 2 fighters — add AI rivals, or connect GitHub and pick a repo you own to fight",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "e12a48d9bfcd4d21",
-    "source": "max 8 fighters — remove AI rivals",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "10e821a29c1a9bed",
-    "source": "{0}/8 fighters ready. Last one standing wins.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "5f923ae51c0c30d8",
-    "source": "no eligible repo: you'll watch. Connect GitHub and pick a repo you own to fight.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "d9b690976a0ec230",
-    "source": "{0} will spectate.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "11e4f7f7f4cf5934",
-    "source": "verifying repo ownership…",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f9f63bb8571c11b8",
-    "source": "spectating · pick a repo you own to fight",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "9a53224f4cd7a2a0",
-    "source": "spectating",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "1bc8cadbfd889f71",
-    "source": "checking that this repo is yours…",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "109ba41960e1162d",
-    "source": "👁 spectating · pick a repo you own to fight",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "09c63bce7007c0f4",
-    "source": "👁 you'll spectate — pick a repo you own to fight",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "9d9eb3d2ba6fe144",
-    "source": " fight with a repo you own (forks don't count) 🔒",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "d8bea84a803d07c0",
-    "source": "no eligible repos — PvP needs a repo you own (forks don't count)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "61aaf0ef6ebe389c",
-    "source": "👁 spectating",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "891cf063003ae0fe",
-    "source": "· no hero in this match",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "10149aa571ab7f5f",
-    "source": "POWER",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "6f1f1c8e01856e8b",
-    "source": "👑 STRONGEST",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "ca5c8915605a345c",
-    "source": "strongest repo in this room (highest power)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "b371cd185c08893a",
-    "source": "👑 strongest repo in this room",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "85c2dea25d69bd82",
-    "source": "stats scale with power",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c9698322353a723f",
-    "source": "underdog win:",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f9eeb63bf773f4b0",
-    "source": "beat",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "07d715edb696fb5f",
-    "source": "power",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "d5659f1b4ff3ee29",
-    "source": "repo power {0}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f9d581920a0bbc78",
-    "source": "repo power: code quality + stars, contributors and size · tap for what counts most",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "8c334a6fdbc04a01",
-    "source": "Tests ({0}% files)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "d37593510d939955",
-    "source": "Modularity (fan-out {0}, depth {1})",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "ed45855d916fba7c",
-    "source": "Cohesion (unmeasured; neutral)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "afda5726f96cce2f",
-    "source": "Cohesion ({0} definitions/file)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "bbcd70400ebbb806",
-    "source": "Docs (README present; comments {0}%)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c5b699d039816051",
-    "source": "Docs (README not found; comments {0}%)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f87af5b5fb06ce90",
-    "source": "Docs (README present; comments unmeasured)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "668ea7fe01d90a0e",
-    "source": "Docs (README not found; comments unmeasured)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "82bdd104a820d991",
-    "source": "Debt hygiene ({0} cycles; {1} TODO/kLOC)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "0f0bbceb804eed01",
-    "source": "Debt hygiene ({0} cycles; TODOs unmeasured)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "27550b0398d943cf",
-    "source": "Stars ({0})",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "647ee21f0173d849",
-    "source": "Contributors ({0})",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "42bc900eb99bbee3",
-    "source": "Analyzed LOC ({0})",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "5ad02ced0afd69cd",
-    "source": "Commit activity ({0} commits/{1} days)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "83f957dffbb4b0c1",
-    "source": "Commit activity (unmeasured; neutral)",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "32ead88f776ab97e",
-    "source": "Source analysis unavailable; neutral",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "c1de3a09f7ffc2ad",
-    "source": "Stronger repos make stronger heroes: POWER comes from tests, modularity, docs, stars and contributors. No one-shots.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "852494f8d03835a1",
-    "source": "Knockouts drop a heart and energy.",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "a5d960becaef3d1b",
-    "source": "{0} repositories compiled · stats from repo power",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "7bb5113348244406",
-    "source": "repo power {0}, AI handicap {1}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "57f4eb2e69ccc815",
-    "source": "· AI {0}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "cfd09e95c215cbc8",
-    "source": "AI {0}",
-    "context": "client/app (claude-ui, hand-translated)"
-  },
-  {
-    "id": "f5ead2c7faa5bdb4",
-    "source": "{0} · AI {1}",
-    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

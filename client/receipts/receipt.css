@@ -1,0 +1,7 @@
+.ap-receipt { grid-column: 1 / -1; min-width: 0; }
+.ap-receipt p { line-height: 1.5; margin: .7rem 0; }
+.receipt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin: .8rem 0; }
+.receipt-actions[hidden] { display: none; }
+.receipt-actions code { overflow-wrap: anywhere; max-width: 100%; }
+.receipt-message { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: .8rem; border: 1px solid #49645a; }
+.ap-receipt .btn { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

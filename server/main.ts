@@ -1,3 +1,5 @@
+import { createReceiptService, type ReceiptService } from './receipts/service';
+import { handleReceiptRoute } from './receipts/http';
 import { verifyPvpAccess } from './pvp-access.ts';
 import { analyzeClassroomSubmission } from '../analysis/classroom.ts';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
@@ -33,6 +35,9 @@ const tls = !!certificate;
 const server = certificate ? https.createServer(certificate) : http.createServer();
 let redirect: http.Server | undefined;
 let publicBase = '';
+let receiptService: ReceiptService | undefined;
+if(process.env.SOLANA_RECEIPTS_ENABLED !== '0')try { receiptService=createReceiptService(root,new URL(process.env.PUBLIC_URL||`http://localhost:${port}`).origin); }
+catch { console.warn('Match receipts are unavailable; gameplay continues.'); }
 function printRoomQr(room: string) {
   const url = `${publicBase}/r/${room}`;
   console.log(`\n  Join room ${room}: ${url}`);
@@ -47,6 +52,7 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
+  recordReceipts: input => receiptService?.record(input) ?? {},
   analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
@@ -114,6 +120,7 @@ server.on('request', (req, res) => {
     if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
       json(res, 404, { error: 'Not found' }); return;
     }
+    if (await handleReceiptRoute(req, res, url, receiptService)) return;
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
     if (await handleEduRoute(req, res, url, rooms)) return;
     if (url.pathname === '/api/room' && req.method === 'POST') {

@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { deepseekJson, readProviderSetting, DEEPSEEK_MODEL } from '../design/provider';
 import { parseGeneratedJSON } from './i18n-json';
-const folders=['client/app','client/edu','client/input','client/genesis','client/render/arena','genesis','rubric','server','auth','sim','analysis'];
+const folders=['client/app','client/edu','client/input','client/genesis','client/render/arena','genesis','rubric','server','auth','sim','analysis','client/receipts','server/receipts'];
 const sources=new Map<string,Set<string>>();
 function add(source:string,file:string,visible=false){
  // Font declarations and stored control IDs are implementation values, not interface copy.
