@@ -546,3 +546,41 @@ export interface RepoSuggestion {
   fallback?: boolean;                 // pre-analyzed offline profile exists (instant summon)
 }
 export interface SuggestionsResponse { repos: RepoSuggestion[]; trendingAt: number | null }  // trendingAt = when the live list was fetched
+
+// ---------- Tamper-evident leaderboard (Merkle root anchored on Solana devnet) ----------
+// Server snapshots the PvP boards from qualifying royales (>=2 humans, public repos), hashes every entry into a
+// Merkle tree and anchors the root in one Solana devnet Memo. Clients can verify any row against the root.
+// Leaf = SHA-256(UTF-8 canonical JSON of the entry with recursively sorted keys); internal node =
+// SHA-256(left || right) over raw 32-byte digests, odd node promoted unchanged. All hashes are lowercase hex.
+export interface ChainBoardEntry {
+  kind: "player" | "project";
+  key: string;              // player: stable public id (e.g. github login or display name); project: owner/name
+  name: string;             // display name (player) or repo slug (project)
+  repo?: string;            // player: their public repo
+  wins: number;
+  matches: number;
+  bestPlacement: number;    // 1 = won
+  avgPlacement: number;     // rounded to 2 decimals
+  anchoredReceipts: number; // how many of these results also have a wallet-anchored receipt
+}
+export interface ChainBoardSnapshot {
+  id: string;
+  at: number;               // epoch ms
+  root: string;             // hex Merkle root over all entries (players then projects, sorted by kind,key)
+  entries: ChainBoardEntry[];
+  status: "pending" | "finalized" | "unavailable";
+  tx?: string;              // Solana devnet signature of the Memo carrying the root
+  slot?: number;
+}
+// GET /api/chain-board -> ChainBoardResponse
+export interface ChainBoardResponse {
+  latest: ChainBoardSnapshot | null;
+  history: { id: string; at: number; root: string; status: ChainBoardSnapshot["status"]; tx?: string }[];
+  explorer: string;         // base explorer URL incl. cluster, e.g. "https://explorer.solana.com/tx/{tx}?cluster=devnet"
+}
+// GET /api/chain-board/proof?snapshot=<id>&kind=<kind>&key=<key> -> ChainBoardProof
+export interface ChainBoardProof {
+  snapshot: string; root: string; leaf: string; entry: ChainBoardEntry;
+  path: { hash: string; side: "left" | "right" }[];   // sibling hashes from leaf to root
+  tx?: string; status: ChainBoardSnapshot["status"];
+}
