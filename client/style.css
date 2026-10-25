@@ -1733,3 +1733,12 @@ body.bigscreen .spectate { display: none; }
 .ap-brand .wm-img { filter: drop-shadow(0 3px 0 rgba(0,0,0,.6)); }
 .qr-lockup .bl-mark .logo-mark { max-width: 40%; }
 .lq-brand .wm { width: 96px; } /* white card: the wordmark keeps its own outline */
+/* PvP AI rivals: power is shown after the −20% handicap */
+.pw-ai { font-family: var(--pix); font-size: 8px; color: #8fd6ff; white-space: nowrap; }
+.pw-ai-why { color: #8fd6ff; font-size: 13px; margin-bottom: 2px; }
+.ry-ai { color: #8fd6ff; font-size: .75em; white-space: nowrap; }
+.tm-ai { margin-left: 3px; padding: 0 2px; font-size: .78em; color: #8fd6ff; box-shadow: inset 0 0 0 1px #2c5f7a; }
+.tm-ai[hidden] { display: none; }
+/* narrow rosters (desktop side dock, phone 2-column strip): just "AI" */
+.screen.game.dock-narrow .tm-ai-cut, .deck .tm-ai-cut { display: none; }
+@media (max-width: 480px) { .ry-ai-cut { display: none; } }

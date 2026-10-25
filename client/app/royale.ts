@@ -208,6 +208,12 @@ export function royaleAutopsy(a0: Autopsy, log: Elim[] | undefined) {
 export type PvpPower = NonNullable<PlayerKit["pvpPower"]>;
 export const powerOf = (kit: PlayerKit | null | undefined): PvpPower | null => kit?.pvpPower ?? null;
 export const powerScore = (p: PvpPower) => Math.round(p.score);
+/** PvP AI rivals: pvpPower.score is already handicapped; baseScore is the real repo power. */
+export type PvpAi = NonNullable<PlayerKit["pvpAi"]>;
+export const aiOf = (kit: PlayerKit | null | undefined): PvpAi | null => kit?.pvpAi ?? null;
+/** "−20%" for powerMultiplier 0.8 */
+export const aiCut = (ai: PvpAi) => `−${Math.round((1 - ai.powerMultiplier) * 100)}%`;
+export const aiTitle = (ai: PvpAi) => `repo power ${Math.round(ai.baseScore)}, AI handicap ${aiCut(ai)}`;
 /** The parts that add the most to the score (value × weight). */
 export const topParts = (p: PvpPower, n = 3) => [...p.parts].sort((a, b) => b.value * b.weight - a.value * a.weight).slice(0, n);
 /** Ids holding the room's highest power (ties share the crown); empty unless at least two heroes have a power. */
@@ -218,17 +224,20 @@ export function strongestIds(players: { id: string; kit?: PlayerKit | null }[]):
   return new Set(rated.filter((p) => powerScore(p.kit!.pvpPower!) === best).map((p) => p.id));
 }
 
-/** "POWER 78" + bar; tap → the top 3 contributing parts (label · value). `open` keeps the state across re-renders. */
-export function powerBadge(p: PvpPower, opts: { open?: boolean; onToggle?(open: boolean): void; compact?: boolean } = {}): HTMLElement {
+/** "POWER 78" + bar; tap → the top 3 contributing parts (label · value). `open` keeps the state across re-renders.
+ *  AI rivals (`ai`): "POWER 70 · AI −20%", and the parts open with "repo power 87, AI handicap −20%". */
+export function powerBadge(p: PvpPower, opts: { open?: boolean; onToggle?(open: boolean): void; compact?: boolean; ai?: PvpAi | null } = {}): HTMLElement {
   const score = powerScore(p);
+  const ai = opts.ai ?? null;
   const parts = h(
     "div.pw-parts",
     { hidden: !opts.open, "data-testid": "pvp-power-parts" },
+    ai ? h("div.pw-ai-why", { "data-testid": "pvp-ai-why" }, aiTitle(ai)) : null,
     ...topParts(p).map((x) => h("div.pw-part", null, h("span.pw-part-l", null, x.label), h("b.pw-part-v", null, String(Math.round(x.value))))),
   );
   const head = h(
     "button.pw-head",
-    { type: "button", "aria-expanded": String(!!opts.open), title: "repo power: code quality + stars, contributors and size · tap for what counts most",
+    { type: "button", "aria-expanded": String(!!opts.open), title: ai ? aiTitle(ai) : "repo power: code quality + stars, contributors and size · tap for what counts most",
       onclick: (e: Event) => {
         e.stopPropagation();
         parts.hidden = !parts.hidden;
@@ -237,6 +246,7 @@ export function powerBadge(p: PvpPower, opts: { open?: boolean; onToggle?(open: 
       } },
     h("span.pw-lbl", null, "POWER"),
     h("b.pw-num", null, String(score)),
+    ai ? h("span.pw-ai", { "data-testid": "pvp-ai-handicap", title: aiTitle(ai) }, `· AI ${aiCut(ai).replace("−", "-")}`) : null, // the pixel font has no U+2212
     h("span.pw-bar", null, h("i", { style: `width:${Math.max(0, Math.min(100, score))}%` })),
     opts.compact ? null : h("span.pw-more", null, "▾"),
   );

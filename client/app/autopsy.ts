@@ -12,7 +12,7 @@ import { reportCard } from "./report";
 import { createFeedbackView, createClassFeedback, localDefaultRubric, createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
 import { fmtTime, fontsReady, h, isPhone, shortRepo, humanComponent, hash32 } from "./util";
-import { handle, powerBadge, powerOf, powerScore, royaleAutopsy, strongestIds } from "./royale";
+import { aiCut, aiOf, aiTitle, handle, powerBadge, powerOf, powerScore, royaleAutopsy, strongestIds } from "./royale";
 
 function brag(a: Autopsy, pid: string, bossRepo: string): string {
   const p = a.players.find((x) => x.id === pid);
@@ -473,7 +473,7 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
           h("div.mvp-name", { translate: "no" }, w.id === app.you ? t("you") : handle(w.name)),
           h("div.mvp-brag", null, h("span", null, "survived the merge"), " · ", h("span", { translate: "no" }, shortRepo(w.repo)), wKit?.code?.weapon?.name ? h("span", null, " · ", codeSpan(wKit.code.weapon.name)) : null),
           h("div.dim", null, `${w.kos} KO · ${Math.round(w.damage)} dmg`),
-          wPow ? powerBadge(wPow) : null,
+          wPow ? powerBadge(wPow, { ai: aiOf(wKit) }) : null,
           underdog
             ? h("div.pw-upset", { "data-testid": "royale-underdog" }, h("span", null, "underdog win:"), " ", h("b", null, `POWER ${powerScore(wPow!)}`), " ", h("span", null, "beat"), " ",
                 h("b", { translate: "no" }, `${strongestRow!.name} 👑 ${powerScore(sPow!)}`))
@@ -492,8 +492,8 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
       kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
       h("span.ap-name", { translate: "no" }, r.name, h("small", null, ` ${shortRepo(r.repo)}`)),
       (() => {
-        const pw = powerFor(r.id);
-        return h("span.ry-pow", { title: pw ? `repo power ${powerScore(pw)}` : "" }, pw ? `${crown.has(r.id) ? "👑" : ""}${powerScore(pw)}` : "—");
+        const pw = powerFor(r.id), ai = aiOf(kit);
+        return h("span.ry-pow", { title: ai ? aiTitle(ai) : pw ? `repo power ${powerScore(pw)}` : "" }, pw ? `${crown.has(r.id) ? "👑" : ""}${powerScore(pw)}` : "—", ai && pw ? h("small.ry-ai", null, " AI", h("span.ry-ai-cut", null, ` ${aiCut(ai)}`)) : null);
       })(),
       h("span.ry-ko", null, String(r.kos)),
       h("span.ry-dmg", null, String(Math.round(r.damage))),

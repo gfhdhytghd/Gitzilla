@@ -5,7 +5,7 @@ import type { BossKit, LobbyPlayer, LobbyState, PlayerKit, ServerMsg } from "../
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
-import { powerBadge, powerOf, powerScore, strongestIds } from "./royale";
+import { aiOf, powerBadge, powerOf, powerScore, strongestIds } from "./royale";
 import { codeSpan } from "./codefmt";
 import { ARCH, archetypeWhy } from "./archetype";
 import { createGenesisMount } from "./genesisMount";
@@ -618,7 +618,7 @@ export function createLobby(app: AppCtx): Screen {
       const pw = lobby.mode === "pvp" ? powerOf(p.kit) : null;
       info.append(
         h("div.pcard-title", null, p.kit.design?.title ?? p.kit.title),
-        ...(pw ? [powerBadge(pw, { open: powerOpen.has(p.id), onToggle: (on) => (on ? powerOpen.add(p.id) : powerOpen.delete(p.id)) })] : []),
+        ...(pw ? [powerBadge(pw, { ai: aiOf(p.kit), open: powerOpen.has(p.id), onToggle: (on) => (on ? powerOpen.add(p.id) : powerOpen.delete(p.id)) })] : []),
         ...(p.kit.design?.catchphrase ? [h("div.pcard-quote", null, `“${p.kit.design.catchphrase}”`)] : []),
         h("div.pcard-kit", null, h("span.tag.tag-weapon", { title: `weapon (${p.kit.weapon})` }, `${WEAPON_ICON[p.kit.weapon] ?? ""} `, codeSpan(p.kit.code?.weapon?.name ?? p.kit.weapon)), h("span.tag.tag-skill", { title: "skill" }, `⚡ ${p.kit.skill}`)),
         lobby.mode === "edu" && p.kit.quality?.length
@@ -655,7 +655,7 @@ export function createLobby(app: AppCtx): Screen {
     strongest = lobby.mode === "pvp" ? strongestIds(lobby.players.filter((p) => p.status === "ready")) : new Set();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
+      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", p.kit?.pvpAi?.baseScore ?? "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
@@ -730,7 +730,7 @@ export function createLobby(app: AppCtx): Screen {
             h("div.you-title", null, k.design?.title ?? k.title),
             k.design?.catchphrase ? h("div.pcard-quote", null, `“${k.design.catchphrase}”`) : null,
             // PvP: your repo's power decides your stats; your own card shows what counts most right away
-            ...(myPower ? [powerBadge(myPower, { open: true }), strongest.has(me.id) ? h("div.pw-crown", null, "👑 strongest repo in this room") : h("div.dim.pw-why", null, "stats scale with power")] : []),
+            ...(myPower ? [powerBadge(myPower, { open: true, ai: aiOf(me.kit) }), strongest.has(me.id) ? h("div.pw-crown", null, "👑 strongest repo in this room") : h("div.dim.pw-why", null, "stats scale with power")] : []),
             h("div.kv", null, h("span", null, "weapon"), h("b.kv-weapon", null, `${WEAPON_ICON[k.weapon] ?? ""} `, codeSpan(k.code?.weapon?.name ?? k.weapon))),
             ...(k.code?.weapon
               ? [h("div.kv.dim", null, `a ${k.weapon} · fires ${k.code.weapon.projectiles.map((x) => `"${x}"`).join(" ")} · hits go ${k.code.weapon.impact}`)]

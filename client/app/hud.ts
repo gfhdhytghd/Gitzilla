@@ -3,7 +3,7 @@ import type { BossKit, GameEvent, MatchState, PlayerState } from "../../shared/t
 import { fmtTime, h, shortRepo, humanComponent } from "./util";
 import { codeSpan } from "./codefmt";
 import { ARCH, bossStateHint } from "./archetype";
-import { powerOf, powerScore, royaleOf, royaleRank, strongestIds, zoneLine } from "./royale";
+import { aiCut, aiOf, aiTitle, powerOf, powerScore, royaleOf, royaleRank, strongestIds, zoneLine } from "./royale";
 import { t } from "../i18n";
 
 const setText = (el: HTMLElement, s: string) => {
@@ -145,7 +145,7 @@ export function createHud(spectator: boolean): Hud {
   // --- misc ---
   const timer = h("div.hud-timer.term");
   const team = h("div.hud-team.term");
-  const teamRows = new Map<string, { row: HTMLElement; name: HTMLElement; bar: HTMLElement; st: HTMLElement; pow: HTMLElement }>();
+  const teamRows = new Map<string, { row: HTMLElement; name: HTMLElement; bar: HTMLElement; st: HTMLElement; pow: HTMLElement; powNum: HTMLElement; ai: HTMLElement; aiCut: HTMLElement }>();
   const skillBox = h("div.hud-skill");
   const skillKey = h("span.key"), skillName = h("span.sk-name"), skillState = h("span.sk-state"), skillFill = h("div.sk-fill");
   const dashKey = h("span.key"), dashState = h("span.sk-state"), dashFill = h("div.sk-fill");
@@ -335,8 +335,10 @@ export function createHud(spectator: boolean): Hud {
         seen.add(p.id);
         let r = teamRows.get(p.id);
         if (!r) {
-          const name = h("span.tm-name", { translate: "no" }), bar = h("div.tm-bar", null, h("i")), st = h("span.tm-st"), pow = h("span.tm-pow", { hidden: true });
-          r = { row: h("div.tm-row", null, name, pow, bar, st), name, bar, st, pow };
+          const name = h("span.tm-name", { translate: "no" }), bar = h("div.tm-bar", null, h("i")), st = h("span.tm-st");
+          // AI rivals: "⚡70 AI −20%"; tight rosters drop the "−20%" (it stays in the tooltip)
+          const powNum = h("span"), aiCut = h("span.tm-ai-cut"), ai = h("small.tm-ai", { hidden: true }, "AI", aiCut), pow = h("span.tm-pow", { hidden: true }, powNum, ai);
+          r = { row: h("div.tm-row", null, name, pow, bar, st), name, bar, st, pow, powNum, ai, aiCut };
           teamRows.set(p.id, r);
           team.append(r.row);
         }
@@ -346,8 +348,12 @@ export function createHud(spectator: boolean): Hud {
         toggle(r.row, "has-pow", !!pw);
         r.pow.hidden = !pw;
         if (pw) {
-          setText(r.pow, `${crown?.has(p.id) ? "👑" : "⚡"}${powerScore(pw)}`);
-          r.pow.title = `repo power ${powerScore(pw)}`;
+          // AI rivals: the score is already handicapped, say so ("⚡70 · AI −20%")
+          const ai = aiOf(p.kit);
+          setText(r.powNum, `${crown?.has(p.id) ? "👑" : "⚡"}${powerScore(pw)}`);
+          r.ai.hidden = !ai;
+          if (ai) setText(r.aiCut, ` ${aiCut(ai).replace("−", "-")}`);
+          r.pow.title = ai ? aiTitle(ai) : `repo power ${powerScore(pw)}`;
         }
         setText(r.name, rank ? `${rank}. ${p.name}` : `${p.name}`);
         r.name.title = shortRepo(p.kit.repo);

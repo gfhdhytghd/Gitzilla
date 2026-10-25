@@ -112,10 +112,15 @@ export function createMockConn(opts: ConnOpts): Conn {
   };
   const bkit0 = (slug: string, n: number) => { try { return sim ? sim.bossKitFromProfile(profile(slug), n) : fakeBossKit(profile(slug), n); } catch { return fakeBossKit(profile(slug), n); } };
   // until analysis produces CodeDNA, give mock kits some plausible code so the UI can be exercised
-  const pkit = (slug: string): PlayerKit => {
+  // ai: a PvP AI rival (like the server's bot kits): pvpPower.score ×0.8 + kit.pvpAi {baseScore, powerMultiplier}
+  const pkit = (slug: string, ai = false): PlayerKit => {
     const k = pkit0(slug);
     if (lobby.mode === "edu" && !k.quality?.length) k.quality = fakeQuality(k.seed);
     if (lobby.mode === "pvp" && !k.pvpPower) k.pvpPower = fakePower(k.seed);
+    if (lobby.mode === "pvp" && ai && !k.pvpAi) {
+      k.pvpAi = { baseScore: k.pvpPower!.score, powerMultiplier: 0.8 };
+      k.pvpPower = { ...k.pvpPower!, score: Math.round(k.pvpPower!.score * 0.8 * 10) / 10 };
+    }
     const EXPR = ["for { go serve() }", "yield from app()", "unsafe { search() }", "await Promise.all(render())", "try { parse() }"];
     if (k.code?.weapon && !/[({]/.test(k.code.weapon.name)) k.code.weapon = { ...k.code.weapon, name: EXPR[k.seed % EXPR.length] };
     if (!k.code?.signature) k.code = { weapon: k.code?.weapon, tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
@@ -304,7 +309,7 @@ export function createMockConn(opts: ConnOpts): Conn {
           setTimeout(async () => {
             await ready;
             if (opts.role === "player") Object.assign(lobby.players[0], { repo: "golang/go", status: "ready", kit: pkit("golang/go") });
-            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo) });
+            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo, p.bot) });
             if (mode === "edu-autopsy") {
               lobby.phase = "autopsy";
               pushLobby();
@@ -322,7 +327,7 @@ export function createMockConn(opts: ConnOpts): Conn {
             await ready;
             // &norepo=1: the host has no eligible repo -> they spectate (the server allows a 2+ fighter royale without them)
             if (opts.role === "player" && !new URLSearchParams(location.search).has("norepo")) Object.assign(lobby.players[0], { repo: "octocat/hackpsu-kaiju", status: "ready", kit: pkit("octocat/hackpsu-kaiju") });
-            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo) });
+            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo, p.bot) });
             if (mode === "royale-autopsy") {
               const r = mockRoyale(lobby.players.map((p) => ({ id: p.id, name: p.name, repo: p.repo!, kit: p.kit! })), true);
               lobby.phase = "autopsy";
@@ -336,7 +341,7 @@ export function createMockConn(opts: ConnOpts): Conn {
           setTimeout(async () => {
             await ready;
             if (opts.role === "player") Object.assign(lobby.players[0], { repo: "golang/go", status: "ready", kit: pkit("golang/go") });
-            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo) });
+            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo, p.bot) });
             const bk = bkit("lodash/lodash", lobby.players.length);
             lobby.boss = { repo: "lodash/lodash", status: "ready", kit: bk, genesis: safeGenesis("lodash/lodash", bk) };
             if (mode === "autopsy") {
@@ -396,7 +401,7 @@ export function createMockConn(opts: ConnOpts): Conn {
         break;
       case "setMode":
         lobby.mode = m.mode;
-        for (const p of lobby.players) if (p.kit && p.repo) p.kit = pkit(p.repo); // kits are mode-specific (edu quality, pvp power)
+        for (const p of lobby.players) if (p.kit && p.repo) p.kit = pkit(p.repo, p.bot); // kits are mode-specific (edu quality, pvp power)
         for (const p of lobby.players) if (p.kit) p.kit.quality = m.mode === "edu" ? fakeQuality(p.kit.seed) : undefined;
         pushLobby();
         break;
@@ -404,7 +409,7 @@ export function createMockConn(opts: ConnOpts): Conn {
         lobby.players = lobby.players.filter((p) => !p.bot);
         for (let i = 0; i < m.count; i++) {
           const repo = MOCK_REPOS[(i + 3) % MOCK_REPOS.length];
-          lobby.players.push({ id: `bot${i}`, name: `bot-${i + 1}`, repo, status: "ready", kit: pkit(repo), bot: true });
+          lobby.players.push({ id: `bot${i}`, name: `bot-${i + 1}`, repo, status: "ready", kit: pkit(repo, true), bot: true });
         }
         pushLobby();
         break;

@@ -1,4 +1,12 @@
-DONE (wordmark) · DONE (pvp power ui) · DONE (pvp eligible) · DONE (royale start) · DONE (royale) · DONE (i18n gap) · DONE (pause ui) · DONE (ui review) · DONE (safari autopsy) · DONE (archetypes) · DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+DONE (pvp ai handicap) · DONE (wordmark) · DONE (pvp power ui) · DONE (pvp eligible) · DONE (royale start) · DONE (royale) · DONE (i18n gap) · DONE (pause ui) · DONE (ui review) · DONE (safari autopsy) · DONE (archetypes) · DONE (ux pass 2) · DONE (boss picker) · DONE (weapon code) · DONE (motion v3 ui) · DONE (logo) · DONE (edu mount) · DONE (genesis mount) · DONE (leave) · DONE (edu pvp) · DONE (qa fixes) · DONE (ux p1) · DONE (ux p0) · DONE (code flavor) · DONE (portrait) · DONE (round 2)
+
+## PvP AI handicap badge (kit.pvpAi) — done, verified in Playwright WebKit (desktop 1280, iPhone 15, iPhone SE) with ?mock=royale-lobby / royale / royale-autopsy
+- `royale.ts`: `aiOf(kit)`, `aiCut(ai)` ("−20%" from powerMultiplier), `aiTitle(ai)` ("repo power 87, AI handicap −20%"); `powerBadge(p, { ai })` shows "POWER 70 · AI -20%" (`pvp-ai-handicap`, ASCII hyphen because the pixel font has no U+2212), tooltip = aiTitle, and the tap panel opens with the aiTitle line (`pvp-ai-why`). Bots only: humans have no `pvpAi`.
+- Lobby cards + own card pass `ai: aiOf(kit)` (card sig includes baseScore). Autopsy: winner badge + power column ("68 AI −20%", just "AI" under 480px; tooltip has the full line).
+- HUD royale roster: "⚡70 [AI]" tag (`.tm-ai`); the "-20%" shows only in wide rosters (hidden under `.dock-narrow` / `.deck`), full line in the tooltip. No name truncation added on SE / desktop dock.
+- Mock: bot kits get `pvpAi {baseScore, powerMultiplier:.8}` + score ×0.8 like the server's `asPvpAiKit` (`pkit(slug, ai)`).
+- i18n: "repo power {0}, AI handicap {1}" (placed before "repo power {0}" in messages.generated.json so it matches first), "· AI {0}", "AI {0}", "{0} · AI {1}" (es/fr "IA").
+- tsc clean, vitest client/app+shared/i18n 9/9, audit-i18n 0/0, safari-autopsy pass.
 
 ## Hand-drawn wordmark — done, verified in Playwright WebKit (iPhone 15, iPhone SE, desktop 1280, projector screens)
 - New `client/app/wordmark.ts`: `wordmark({width, enter?, sparkle?})` = `<picture>` (webp 833w + png srcset 416w/833w, sizes = laid-out width, width/height attrs so no layout shift); `.wm-enter` drop-in bounce, `.wm-spark` twinkles over the drawn pixel sparkle (i of ZILLA) and the skull (i of GIT); both off under prefers-reduced-motion. `wordmarkImage()` = decoded PNG for canvas.
