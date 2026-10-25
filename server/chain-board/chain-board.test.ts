@@ -65,10 +65,11 @@ describe('durable qualifying boards', () => {
   });
   it('aggregates stable players, projects and joins finalized receipt badges across restart', async () => {
     const path = temp(), receiptStore = new ReceiptStore(':memory:'); receipts.push(receiptStore);
+    const f = fixture(path, false, receiptStore);
     const receiptService = new ReceiptService(receiptStore, randomBytes(32), 'https://example.test');
     const match = input(), ids = receiptService.record(match), row = receiptStore.get(ids.a)!;
     row.status = 'finalized'; receiptStore.put(row);
-    const f = fixture(path, false, receiptStore); f.service.record(match, ids); await f.service.tick();
+    f.service.record(match, ids); await f.service.tick();
     await f.service.close(); services.splice(services.indexOf(f.service), 1);
     const next = fixture(path, false, receiptStore); next.setNow(1_800_000_120_000);
     const second = input(); second.result.players[0].name = 'New Name'; second.winner = 'b'; second.placements = { a: 2, b: 1 };

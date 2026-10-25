@@ -4,6 +4,7 @@ import type { FinishedReceiptMatch } from '../receipts/service';
 import type { ReceiptStore } from '../receipts/store';
 import { ChainBoardStore, type StoredSnapshot } from './store';
 import { buildTree, makeProof } from './tree';
+import { receiptBackfillMatches } from './backfill';
 export interface BoardAnchor {
   attestor: string;
   balance(): Promise<number>;
@@ -17,6 +18,7 @@ export class ChainBoardService {
   private timer?: ReturnType<typeof setInterval>;
   private running?: Promise<void>;
   constructor(readonly store: ChainBoardStore, private receipts?: ReceiptStore, private anchor?: BoardAnchor, private now: () => number = Date.now, autoStart = true) {
+    if (receipts && store.needsReceiptBackfill()) store.backfillIfEmpty(receiptBackfillMatches(receipts.boardBackfillReceipts()));
     if (autoStart) {
       void this.tick().catch(() => {});
       this.timer = setInterval(() => { void this.tick().catch(() => {}); }, 10000);
@@ -39,9 +41,10 @@ export class ChainBoardService {
     for (const match of this.store.matches()) for (const p of match.players) {
       const anchored = p.receipt && this.receipts?.get(p.receipt)?.status === 'finalized' ? 1 : 0;
       for (const kind of ['player', 'project'] as const) {
-        const key = kind === 'player' ? p.key : p.repo, mapKey = kind + ':' + key;
-        const entry = entries.get(mapKey) ?? { kind, key, name: kind === 'player' ? p.name : p.repo, ...(kind === 'player' ? { repo: p.repo } : {}), wins: 0, matches: 0, bestPlacement: p.placement, avgPlacement: 0, anchoredReceipts: 0, total: 0 };
-        entry.name = kind === 'player' ? p.name : p.repo;
+        if (kind === 'player' && !p.key) continue;
+        const key = kind === 'player' ? p.key! : p.repo, mapKey = kind + ':' + key;
+        const entry = entries.get(mapKey) ?? { kind, key, name: kind === 'player' ? p.name ?? key : p.repo, ...(kind === 'player' ? { repo: p.repo } : {}), wins: 0, matches: 0, bestPlacement: p.placement, avgPlacement: 0, anchoredReceipts: 0, total: 0 };
+        entry.name = kind === 'player' ? p.name ?? key : p.repo;
         if (kind === 'player') entry.repo = p.repo;
         entry.wins += Number(p.win); entry.matches++; entry.total += p.placement;
         entry.bestPlacement = Math.min(entry.bestPlacement, p.placement); entry.anchoredReceipts += anchored;

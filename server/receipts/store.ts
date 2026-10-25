@@ -23,6 +23,17 @@ export class ReceiptStore {
     const row=this.db.prepare('SELECT value FROM receipts WHERE id=?').get(id) as {value:string}|undefined;
     return row ? JSON.parse(row.value) as ReceiptRecord : undefined;
   }
+  /** Server-only migration projection. Never includes owner hashes, wallets or claim credentials. */
+  boardBackfillReceipts(): { receipt: SignedReceipt; status: AnchorStatus }[] {
+    const result: { receipt: SignedReceipt; status: AnchorStatus }[] = [];
+    for (const row of this.db.prepare('SELECT id,value FROM receipts ORDER BY id').all() as { id: string; value: string }[]) {
+      try {
+        const record = JSON.parse(row.value) as ReceiptRecord;
+        if (record.receipt?.payload?.id === row.id) result.push({ receipt: record.receipt, status: record.status });
+      } catch { /* A malformed row cannot establish a historical result. */ }
+    }
+    return result;
+  }
   put(record: ReceiptRecord) {
     this.db.prepare('INSERT OR IGNORE INTO attestors(key) VALUES(?)').run(record.receipt.attestor);
     this.db.prepare('INSERT INTO receipts(id,owner,value) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value').run(record.id,record.ownerHash,JSON.stringify(record));
