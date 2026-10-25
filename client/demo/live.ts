@@ -1,8 +1,10 @@
-// The demo's one live room: created through the same POST /api/room the landing page uses, joined as the spectator
-// big screen (net.ts stores the screen token, so /r/CODE?screen=1 later resumes this exact seat). It outlives scene
-// changes on purpose (people keep joining while the presenter talks) and is reused across reloads of /demo.
+// The demo's one live room: POST /api/room?host=screen reserves the host seat for this screen and returns its
+// hostToken, which is stored where net.ts keeps the screen resume token (never in a URL). The hello then resumes that
+// seat, so the stage owns the room even if a phone joins first, and /r/CODE?screen=1 later resumes the same seat.
+// It outlives scene changes on purpose (people keep joining while the presenter talks) and is reused across reloads.
 import type { LobbyPlayer, LobbyState, ServerMsg } from "../../shared/types.ts";
 import { connect, type Conn } from "../app/net.ts";
+import { store } from "../app/util.ts";
 
 // offline = no room could be created (Wi-Fi down); reconnecting = the socket dropped and net.ts is retrying
 export type LiveStatus = "idle" | "creating" | "open" | "reconnecting" | "offline" | "starting";
@@ -42,20 +44,27 @@ export function createLiveRoom(): LiveRoom {
       const prev = ss.get(KEY);
       if (prev && (await reuse(prev))) room = prev;
       else {
-        const r = await fetch("/api/room?mode=battle", { method: "POST" });
+        const r = await fetch("/api/room?mode=battle&host=screen", { method: "POST" });
         if (!r.ok) throw new Error(`room service said ${r.status}`);
-        room = ((await r.json()) as { room: string }).room;
+        const j = (await r.json()) as { room: string; hostToken?: string };
+        room = j.room;
+        if (j.hostToken) store.set(`kaiju.screenToken.${room}`, j.hostToken);
         ss.set(KEY, room);
       }
     } catch {
       return set("offline", "Wi-Fi down: no live room");
     }
-    conn = connect({ room, role: "screen", name: "stage" });
+    conn = connect({ room, role: "screen", name: "Demo stage" });
     conn.onStatus((s) => { if (s === "open" && status !== "starting") set("open", null); else if (s === "closed" && status === "open") set("reconnecting", "reconnecting…"); });
     conn.onMessage((m: ServerMsg) => {
       if (m.t === "welcome") { you = m.you; lobby = m.lobby; set("open", null); }
-      else if (m.t === "lobby") { lobby = m.lobby; if (startedFor && lobby.boss.repo === startedFor && lobby.boss.status === "ready" && lobby.phase === "lobby") conn?.send({ t: "start" }); emit(); }
-      else if (m.t === "error") { error = m.message; emit(); }
+      else if (m.t === "lobby") {
+        lobby = m.lobby;
+        if (status === "starting" && startedFor && lobby.boss.repo === startedFor && lobby.boss.status === "ready" && lobby.phase === "lobby") { startedFor = null; conn?.send({ t: "start" }); }
+        emit();
+      }
+      // a refused start (e.g. "waiting for controls: leo") keeps the wall up with the reason; START retries
+      else if (m.t === "error") { error = m.message; if (status === "starting") { status = "open"; startedFor = null; } emit(); }
       if (status === "starting" && (m.t === "snapshot" || (m.t === "lobby" && m.lobby.phase === "match"))) bigScreen();
     });
   }
@@ -78,12 +87,11 @@ export function createLiveRoom(): LiveRoom {
       status = "starting"; emit();
       if (this.owner) {
         // the boss must be analyzed before start; the lobby handler starts once it reports ready
-        startedFor = boss;
+        startedFor = boss; error = null;
         if (lobby?.boss.repo === boss && lobby.boss.status === "ready") conn.send({ t: "start" });
         else conn.send({ t: "setBoss", repo: boss });
-        setTimeout(() => status === "starting" && bigScreen(), 8000);
       } else {
-        // battle rooms are owned by the first phone: the stage just becomes the big screen and the host phone starts
+        // only if the server didn't grant the host seat (older server): become the big screen, the host phone starts
         bigScreen();
       }
     },

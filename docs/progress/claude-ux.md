@@ -1,4 +1,4 @@
-DONE (demo stage) — /demo live-demo slide page: client/demo/ (10 scenes, 13 beats) + one route line in client/app/main.ts. Verified in Chromium + WebKit at 1920 and 1280, Playwright run-through video, fps per scene, live join with 3 simulated phones on :5175. Artifacts in docs/ux-shots/demo/. tsc clean for demo files; vitest 1218 pass. No commits.
+DONE (demo stage) — /demo live-demo slide page: client/demo/ (10 scenes, 13 beats) + one route line in client/app/main.ts. Verified in Chromium + WebKit at 1920 and 1280, Playwright run-through video, fps per scene, live join with 3 simulated phones on :5175. Artifacts in docs/ux-shots/demo/. root tsc clean; vitest 1218 pass. No commits.
 
 ## Demo stage (docs/tasks/demo-stage.md)
 - **Open:** `https://gitzilla.wilflin.me/demo` (deep link `?scene=N&beat=B`). Keys: → Space PageDown Enter next ·
@@ -23,17 +23,20 @@ DONE (demo stage) — /demo live-demo slide page: client/demo/ (10 scenes, 13 be
   - Reduced motion: no shake, confetti, glitch or typing; entrances land instantly.
 - **fps** (Chromium headless on the real GPU, 1920): 60 on every scene except Genesis 46–53 (the existing cinematic)
   and a one-off 110–160 ms hitch entering Vision Pro (3D shader compile). WebKit headless (software): 49–62.
-- **Live join on :5175:** 3 WebKit iPhones joined room UCVG/XIJW, wall showed "Ripgrep Scout", "Gin-Gopher
-  Router-Knight", "Nano-GPT Scout"; START handed the stage to `/r/CODE?screen=1&view=25d` (same screen seat).
-  Not exercised: the match start itself. The lobby waits for every phone to enable motion or pick touch, and the
-  simulated phones couldn't.
-- **Request for coordinator → codex-net (server):** battle rooms are owned by the first *phone*, so the stage's
-  START can't start a co-op match itself. Today START opens the big screen and the host phone starts. If wanted:
-  let the screen that created the room host it, e.g. `POST /api/room?host=screen` or `hello.host`.
-  The client already sends `setBoss` + `start` when it is the owner.
+- **Live join on :5175** (with codex-net's screen host, `POST /api/room?mode=battle&host=screen` → `{room, hostToken}`;
+  the token goes only into the local screen-token slot, never into a URL):
+  - 3 phones joined *before* any action and the stage still hosts ("this screen hosts · ▶ START picks the boss and
+    starts the fight"). The wall showed the real heroes.
+  - START from the stage → setBoss (featured repo) → start → the stage becomes `/r/CODE?screen=1&view=25d`, running
+    the 3D fight (desktop players; `join/5-bigscreen-fight.png`, about 4 s from click to fight).
+  - Simulated iPhones (no sensors): the server refuses start. The stage stays on the wall and shows the reason
+    ("3 phones need to tap enable motion: maya, leo, sam · press START again"); START retries.
+  - Ownership moves to the first player if the stage's socket closes, so the stage only leaves /demo after the
+    match has started. Reloading /demo with phones in the room gives the host to the first phone.
+- **For claude-ui:** the big-screen lobby still says the first phone is host ("waiting for MAYA to start") even when
+  the screen owns the room.
 - **Note:** after START the big-screen page uses the laptop's own language (the English pin is per page).
-- **Not mine:** the root tsc currently reports 2 errors in `client/render/stage25d/spatial.ts`, which someone is
-  editing right now.
+- **Checks:** root tsc passes; vitest 1218 passed.
 
 DONE (task text) — 27 preset steps × en/zh/es/fr have a StepBrief, a new title and summary instructions, per-step starter TODO comments and a README; the default lesson is rewritten; check labels are cleaned up. Proposed rewrites for student copy owned by other agents are in docs/classroom-copy.md. Full suite 998 pass, tsc clean, take-edu's 108-case brief validation passes. No commits.
 

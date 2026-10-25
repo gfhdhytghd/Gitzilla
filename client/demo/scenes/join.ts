@@ -62,8 +62,8 @@ export const join: Scene = {
       start.toggleAttribute("disabled", !live.room || live.status === "starting");
       start.textContent = live.status === "starting" ? "starting…" : "▶ START";
       status.textContent = live.status === "starting" ? "opening the 3D big screen…"
-        : live.error ? live.error
-        : live.owner ? "this screen hosts the room" : humans ? "host = the first phone: it picks the boss and starts · ▶ opens the big screen" : "scan the code · no app, no account";
+        : live.error ? `${live.error} · press START again`
+        : live.owner ? "this screen hosts · ▶ START picks the boss and starts the fight" : humans ? "host = the first phone: it picks the boss and starts · ▶ opens the big screen" : "scan the code · no app, no account";
     }
     function offline() {
       if (replay) return;
