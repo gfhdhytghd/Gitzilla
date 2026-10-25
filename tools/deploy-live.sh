@@ -4,6 +4,8 @@
 # Fails loudly unless a process started by THIS deploy ends up listening on :5173 (an old server
 # holding the port used to make the restart silently no-op while the client files changed).
 set -euo pipefail
+# production moved to Vultr: refuse local deploys while this marker exists
+if [ -f "$HOME/.config/gitzilla/FREEZE_LOCAL_DEPLOY" ]; then echo "local deploy FROZEN: $(cat "$HOME/.config/gitzilla/FREEZE_LOCAL_DEPLOY")" >&2; exit 3; fi
 REF=${1:-main}
 LIVE=$(cd "$(dirname "$0")/../../gitzilla-live" && pwd)
 LIVE_PANE=${LIVE_PANE:-wQ:pS}
