@@ -51,3 +51,12 @@ your seat while the computer or Vision Pro shows the game.
     - "Look at your big screen 👀" and "disconnect"
   - Reuse the existing phone deck pieces.
 - Localize en/zh/es/fr. Verify in WebKit with a desktop display and an iPhone 15 controller, using the mock/fixture Auth0 identity the server tests use.
+
+## Split (coordinator): logic → Codex, look → Claude
+- **codex-net** also adds `GET /api/rooms/:code/my-seat`. With an Auth0 session it returns `{ seatId, name, paired }` for the seat this GitHub user owns on another device, or 404. The phone uses this to decide whether to offer controller mode.
+- **take-ui (Codex)** owns the client logic:
+  - `client/app/controller-link.ts`: the my-seat lookup, hello `role:"controller"`, controller resume-token storage (separate key from the player token), and reconnect/unlink.
+  - The routing decision in `main.ts`, i.e. when to show the controller offer and controller screen. Keep that edit minimal.
+  - Handling for `welcome.controller`, and the errors "Another phone took over the controls" and kicked.
+  - Unit tests.
+- **claude-auth (Claude)** owns only the visuals in `client/app/pair.ts` + css: the display panel, the phone offer card, and the controller screen layout and feel. It calls take-ui's `controller-link.ts` API.

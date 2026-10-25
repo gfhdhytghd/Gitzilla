@@ -70,3 +70,16 @@ User request: "go 2.5D: a flat map, standing avatars, 3D bullets flying at a hei
   - The HUD and minimap stay 2D overlays.
   - Default: off until the coordinator reviews it; then it may become the default for the projector/desktop.
 - Verify everything in WebKit: desktop 1440, projector 1920, iPhone 15 portrait. Cover a raid with a boss, a royale with 8 bots and the zone closing, and classroom mode is unaffected. Report fps (rAF timing) for each.
+
+## Split (coordinator, after the Codex quota reset): logic → Codex, look → Claude
+- **codex-input (Codex)** owns the non-visual plumbing in `client/render/stage25d/`:
+  - `projection.ts`: camera rigs (screen 2.5D tilt, phone follow, tabletop and life-size XR placement transforms), `worldToScreen` and `screenToWorld` (ray to the floor plane). Pure, with unit tests.
+  - `xr.ts`:
+    - `xrSupported()` and `enterXR(renderer, opts)` / `exitXR()`.
+    - An `immersive-vr` session with a `local-floor` reference space (falling back to `local`).
+    - `setAnimationLoop`, and `transient-pointer` / select events → callbacks.
+    - Session end/visibility handling.
+  - `pool.ts`: a texture cache keyed by sprite frame signature (update only on change), an InstancedMesh pool for bullets and shadows, and zero per-frame allocation helpers.
+  - `tools/xr-check.ts`: Playwright Chromium with a WebXR emulator/polyfill (e.g. `iwer`, pinned). It enters the session, renders N frames, and reports frame times and errors.
+- **claude-boss (Claude)** owns the scene's look: floor texture composition, billboard sprites and anchoring, boss staging, bullets/shadows visuals, the zone wall, the floating HUD panel, the void room, and the gallery. It also owns `index.ts`, which wires the pieces into `createStage25d`.
+- **Interface between them:** codex-input publishes types and exports first, in `client/render/stage25d/types.ts`. claude-boss consumes them. Neither edits the other's files.
