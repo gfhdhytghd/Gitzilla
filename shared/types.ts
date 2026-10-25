@@ -426,7 +426,7 @@ export interface MatchState {
 
 // ---------- Network protocol (server/ <-> client/app) ----------
 
-export type Role = "player" | "screen";   // screen = spectator big screen
+export type Role = "player" | "screen" | "controller";   // screen = spectator big screen; controller = a phone paired to another device's player seat
 
 // ---------- Genesis: the visible code -> character pipeline ----------
 // Streamed while a repo is analyzed, then kept so the client can replay the "compile" cinematic.
@@ -467,6 +467,7 @@ export interface LobbyPlayer {
   id: string; name: string; repo: string | null;
   bot?: boolean;
   controlsReady?: boolean;     // false = a phone that still has to tap "enable motion" this session
+  paired?: boolean;            // a phone controller is attached to this seat (display + phone = one player)
   progress?: GenesisProgress;  // while status === "analyzing"
   genesis?: Genesis;           // once ready
   rubricPreview?: CriterionResult[]; // edu: measured pre-fight scores for the current teacher rubric
@@ -495,7 +496,7 @@ export type ClientMsg =
   | { t: "classroomSubmit"; repo: string; ref?: string }
   | { t: "classroomSubmitCode"; files: InAppFile[] }   // in-app editor submission (≤ 20 files, ≤ 200 KB total)
   | { t: "classroomReview"; playerId: string; score: number; note: string }
-  | { t: "hello"; room: string; role: Role; name: string; resume?: string }
+  | { t: "hello"; room: string; role: Role; name: string; resume?: string; pair?: string }  // controller: pair = QR secret or typed short code (room may be "")
   | { t: "setRepo"; repo: string }
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
@@ -504,6 +505,8 @@ export type ClientMsg =
   | { t: "setRubric"; rubric: Rubric }      // owner only, edu, lobby (after previewing POST /api/rubric/parse)
   | { t: "pause"; paused: boolean }        // owner only, during a match: true = pause now, false = resume after 3s
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
+  | { t: "pairStart" }                     // a player on a display device (computer / Vision Pro) asks for a phone pairing code
+  | { t: "pairEnd" }                       // detach the paired phone
   | { t: "kick"; playerId: string }         // owner only: remove a member (human or bot) and ban that seat from rejoining this room
   | { t: "transferOwner"; playerId: string } // owner only, battle/pvp lobby: hand the room to another connected human
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
@@ -512,13 +515,14 @@ export type ClientMsg =
 
 export type ServerMsg =
   | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string> }
-  | { t: "welcome"; you: string; token: string; lobby: LobbyState }
+  | { t: "welcome"; you: string; token: string; lobby: LobbyState; controller?: boolean }  // controller: you = the seat this phone drives
   | { t: "lobby"; lobby: LobbyState }
   | { t: "snapshot"; state: MatchState; ack: number }
   | { t: "autopsy"; result: Autopsy }
   | { t: "feedback"; items: StudentFeedback[] }  // edu, after the match: a student gets only their own; owner/screen get all
   | { t: "error"; message: string }
-  | { t: "kicked"; by: string };                  // sent to a removed member just before the server closes its socket; by = owner name
+  | { t: "kicked"; by: string }
+  | { t: "pairing"; code: string; secret: string; expiresAt: number };  // to the display: show QR (/pair#secret) + short code; single-use                  // sent to a removed member just before the server closes its socket; by = owner name
 
 export interface Autopsy {
   mode: GameMode;
