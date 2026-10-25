@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 
 // Anchor ignores to this checkout: **/data/** also matches /home/wilf/data/,
@@ -15,5 +15,7 @@ export default defineConfig({
     // Agents rewrite data/docs/qa artifacts constantly; don't full-reload every client for them.
     watch: { ignored },
   },
+  // Agent artifact copies under qa/ and docs/ (soak snapshots etc.) are evidence, not the test suite.
+  test: { exclude: ["**/node_modules/**", "**/dist/**", "qa/**", "docs/**", ".cache/**"] },
   build: { outDir: "dist", target: "es2022", rollupOptions: { input: { main: "index.html", receipt: "receipt.html" } } },
 });
