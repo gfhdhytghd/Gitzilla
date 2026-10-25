@@ -24,11 +24,12 @@ export class Life {
   }
 }
 
-export type Track = "grand" | "gemini" | "auth0" | "mystery" | "nittany";
+export type Track = "grand" | "gemini" | "auth0" | "solana" | "mystery" | "nittany";
 export const TRACKS: Record<Track, string> = {
   grand: "Grand Prize",
   gemini: "Best Use of Gemini API",
   auth0: "Best Use of Auth0",
+  solana: "Solana",
   mystery: "Mystery Stack",
   nittany: "Nittany AI Challenge",
 };
