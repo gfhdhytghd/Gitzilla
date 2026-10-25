@@ -394,6 +394,9 @@ export type MotionProfile = "standard" | "seated" | "tap-only"; // seated = smal
 export interface MatchState {
   t: number;                 // seconds since fight start
   status: "countdown" | "fighting" | "victory" | "defeat";
+  // Host pause: while set, the server does not step the match (every timer freezes). resumeAt = server time (ms epoch)
+  // when a requested resume takes effect (3s countdown), null while fully paused.
+  paused?: { by: string; since: number; resumeAt: number | null } | null;
   mode: GameMode;
   players: PlayerState[];
   boss: BossState | null;    // null in edu (classroom PvP): heroes fight each other
@@ -485,6 +488,7 @@ export type ClientMsg =
   | { t: "setMode"; mode: GameMode }        // owner only, lobby only
   | { t: "controls"; ready: boolean; mode: MotionProfile }  // phone reports: motion permission granted & sensors live (or touch chosen)
   | { t: "setRubric"; rubric: Rubric }      // owner only, edu, lobby (after previewing POST /api/rubric/parse)
+  | { t: "pause"; paused: boolean }        // owner only, during a match: true = pause now, false = resume after 3s
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
