@@ -13,12 +13,12 @@ import { createMockConn } from "./mock";
 import { KICKED_REJOIN, connect } from "./net";
 import { loadModules } from "./renderers";
 import { getMotionPermissionState, subscribeMotionPermission } from "../input";
+import { detectDevice, isHeadset, usesLocalControls } from "./device";
 import { h, isPhone, store } from "./util";
 import { controllerTokenKey, createControllerLink, lookupControllerSeat } from "./controller-link";
 import { createControllerOffer, createControllerScreen } from "./pair";
 
 installLanguageUi();
-installSettings();
 const root = document.getElementById("app")!;
 const params = new URLSearchParams(location.search);
 const mock = params.has("mock");
@@ -60,6 +60,7 @@ function route() {
     }
     return enterRoom(code);
   }
+  if (/^\/demo\/?$/.test(location.pathname)) return void import("../demo/index.ts").then((m) => m.mountDemo(root));
   if (location.pathname !== "/") history.replaceState(null, "", "/" + location.search);
   modulesReady.finally(showLanding);
 }
@@ -184,10 +185,14 @@ function startRoom(room: string, role: Role, name: string) {
 
   const reportControls = () => {
     if (role === "screen" || app.lobby?.mode === "edu" || !app.you || app.status !== "open") return;
+    if (isHeadset()) {
+      app.conn.send({ t: "controls", ready: false, mode: "standard", needsController: true });
+      return;
+    }
     const state = getMotionPermissionState();
     app.conn.send({ t: "controls", ready: state.ready, mode: state.profile });
   };
-  stopControls = subscribeMotionPermission(reportControls);
+  if (usesLocalControls()) stopControls = subscribeMotionPermission(reportControls);
 
   const show = (kind: typeof screenKind) => {
     if (kind === screenKind) return;
@@ -323,6 +328,26 @@ function startRoom(room: string, role: Role, name: string) {
           app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {};
           break;
         case "welcome":
+          // The room mode is known only after welcome; release the transient student slot before spectator entry.
+          if (isHeadset() && role === "player" && m.lobby.mode === "edu") {
+            stopControls();
+            const spectatorUrl = new URL(location.href); spectatorUrl.searchParams.set("screen", "1"); spectatorUrl.searchParams.set("view", "projector");
+            // Join the projector before leaving: the last player's explicit leave deletes an otherwise empty room.
+            // Its welcome stores the separate projector token, so navigation resumes this seat rather than adding one.
+            history.replaceState(null, "", spectatorUrl.href);
+            const projector = connect({ room, role: "screen", name });
+            let releasingPlayer = false;
+            projector.onMessage(message => {
+              if (message.t === "welcome") {
+                releasingPlayer = true;
+                app.conn.send({ t: "leave" }); app.conn.close();
+              } else if (releasingPlayer && message.t === "lobby" && !message.lobby.players.some(player => player.id === m.you)) {
+                // The server has removed the player while this projector is still connected.
+                projector.close(); link.remove(); location.replace(spectatorUrl.href);
+              }
+            });
+            return;
+          }
           app.you = m.you;
           app.token = m.token;
           noticeLobbyChange(app.lobby, m.lobby);
@@ -374,4 +399,4 @@ addEventListener("popstate", () => location.reload());
 consumeAuthError();
 // phones play in portrait; a sideways phone gets a full-screen guard (the game keeps running underneath)
 document.body.append(h("div.rotate-guard", null, h("div.rg-phone"), h("div", null, "ROTATE TO PORTRAIT ↻"), h("div.rg-sub", null, "gitzilla is played with the phone upright")));
-route();
+void detectDevice().then(() => { installSettings(); route(); });

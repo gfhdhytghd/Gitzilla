@@ -31,6 +31,50 @@
 .pair-panel.compact { max-width: 420px; margin: 10px auto 0; background: rgba(3, 8, 6, .92); }
 .pair-panel.compact .pp-code { font-size: 20px; letter-spacing: 4px; }
 
+/* ---------- headset (required) variant: Vision Pro Safari ----------
+   Read at arm's length through a headset: integer-scaled bitmap fonts (Unifont 2x = 32px, Press Start 3x = 24px),
+   near-white on near-black, no dim grey for anything you must read, >= 64px gaze/pinch targets, lots of air. */
+.pair-panel.required {
+  --hi: #f4fff8; --now: #ffc53d; --done: #4dff9a;
+  max-width: 1180px; margin: 10px auto 22px; padding: 32px 36px 34px; border: 4px solid var(--now); background: #05080a;
+  box-shadow: 0 0 0 4px #000, 0 0 48px rgba(255, 197, 61, .28); color: var(--hi); font-size: 32px; line-height: 1.35;
+}
+.pair-panel.required[data-state="paired"] { border-color: var(--done); box-shadow: 0 0 0 4px #000, 0 0 48px rgba(77, 255, 154, .28); }
+.pair-panel.required .pr-head { font-family: var(--pix); font-size: 24px; line-height: 1.5; color: var(--now); }
+.pair-panel.required[data-state="paired"] .pr-head { color: var(--done); }
+.pair-panel.required .pr-why { margin-top: 10px; color: #cfe9dc; }
+.pair-panel.required .pr-steps { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.pair-panel.required .pr-step { display: grid; grid-template-columns: 64px 1fr; gap: 22px; align-items: center; padding: 16px 22px; background: #0b1214; box-shadow: inset 0 0 0 2px #24343a; }
+.pair-panel.required .pr-num {
+  width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-family: var(--pix); font-size: 24px;
+  color: #05080a; background: #8fa7a0; box-shadow: 0 0 0 3px #000;
+}
+.pair-panel.required .pr-step[data-s="now"] { background: #1a1504; box-shadow: inset 0 0 0 3px var(--now); }
+.pair-panel.required .pr-step[data-s="now"] .pr-num { background: var(--now); animation: pr-pulse 1.6s ease-in-out infinite; }
+.pair-panel.required .pr-step[data-s="next"] .pr-num { background: #d9e6e1; }
+.pair-panel.required .pr-step[data-s="done"] .pr-num { background: var(--done); }
+.pair-panel.required .pr-step[data-s="done"] .pr-body { color: #bfe8d2; }
+.pair-panel.required .pr-step[data-s="todo"] { opacity: .78; }
+@keyframes pr-pulse { 50% { box-shadow: 0 0 0 3px #000, 0 0 26px var(--now); } }
+/* one wide row per step: text, then the URL / code / button inline, wrapping only when the window is narrow */
+.pair-panel.required .pr-body { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; overflow-wrap: anywhere; }
+.pair-panel.required .pr-login { color: #7fe7ff; font-weight: normal; }
+.pair-panel.required .pr-url { font-size: 32px; line-height: 1.2; color: #ffffff; letter-spacing: 1px; padding: 8px 14px; background: #10202a; box-shadow: inset 0 0 0 2px #2e5566; }
+.pair-panel.required .pr-code { margin-left: auto; display: flex; align-items: baseline; gap: 16px; font-family: var(--pix); font-size: 40px; letter-spacing: 8px; color: #05080a; background: var(--now); padding: 14px 22px; box-shadow: 0 0 0 4px #000; }
+.pair-panel.required .pr-code small { font-family: var(--small); font-size: 16px; letter-spacing: 3px; text-transform: uppercase; }
+.pair-panel.required .pr-btn, .pair-panel.required .pr-unlink { min-height: 72px; padding: 14px 28px; font-size: 20px; margin: 0; }
+.pair-panel.required .pr-btn { margin-left: auto; }
+.pair-panel.required .pr-status {
+  margin-top: 20px; padding: 20px 24px; display: flex; align-items: center; gap: 18px; font-size: 32px;
+  background: #1a1504; color: var(--now); box-shadow: inset 0 0 0 3px var(--now);
+}
+.pair-panel.required .pr-status[data-s="paired"] { background: #071a10; color: var(--done); box-shadow: inset 0 0 0 3px var(--done); }
+.pair-panel.required .pr-status[data-s="ready"] { background: var(--done); color: #04120a; box-shadow: 0 0 0 4px #000, 0 0 32px rgba(77, 255, 154, .45); }
+.pair-panel.required .pr-spin { width: 28px; height: 28px; flex: 0 0 auto; border: 5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: pr-spin 1s linear infinite; }
+@keyframes pr-spin { to { transform: rotate(360deg); } }
+.pair-panel.required .pr-unlink { margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { .pair-panel.required .pr-spin, .pair-panel.required .pr-step[data-s="now"] .pr-num { animation: none; } }
+
 /* ---------- phone: offer card ---------- */
 .screen.controller-offer {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;

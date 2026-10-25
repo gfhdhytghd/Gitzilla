@@ -36,11 +36,26 @@ function portrait(kit: PlayerKit | null | undefined, size: number): HTMLElement 
 
 export interface PairPanel { el: HTMLElement; update(app: AppCtx): void; destroy(): void }
 
+/** Default for `required`: device.ts's playtest hook, or the ?device=headset override (until take-ui passes it). */
+const headsetHint = () => (globalThis as { __kaijuDevice?: string }).__kaijuDevice === 'headset'
+  || new URLSearchParams(location.search).get('device') === 'headset';
+
+export interface PairPanelOpts {
+  onUnlink?: () => void;
+  compact?: boolean;
+  /**
+   * Headset mode: the phone controller is REQUIRED. Renders a big 3-step card (sign in here → open the room on your phone
+   * as @login → tap "Use this phone as the controller") with live status, styled for Vision Pro Safari. In the lobby it
+   * moves itself above the panel grid (full width); elsewhere to the top of its parent. Default: `__kaijuDevice === "headset"` or `?device=headset`.
+   */
+  required?: boolean | (() => boolean);
+}
+
 /**
  * "📱 Use your phone as the controller" for the display device's own player seat. Hidden on phones, for spectator screens,
  * in the classroom, and when GitHub sign-in is disabled. `onUnlink` defaults to sending `pairEnd` on the room socket.
  */
-export function pairPanel(app: AppCtx, opts: { onUnlink?: () => void; compact?: boolean } = {}): PairPanel {
+export function pairPanel(app: AppCtx, opts: PairPanelOpts = {}): PairPanel {
   const el = h('section.pair-panel', { 'data-testid': 'pair-panel', hidden: true });
   if (opts.compact) el.classList.add('compact');
   let me: { enabled: boolean; user: GhUser | null } | null = null;
@@ -65,12 +80,15 @@ export function pairPanel(app: AppCtx, opts: { onUnlink?: () => void; compact?: 
     // only a signed-in player seat can bind a phone (spectator screens can't)
     const show = !!me?.enabled && !!seat && !seat.bot && ctx.role === 'player' && lobby?.mode !== 'edu' && !isPhone();
     const state = !show ? 'hidden' : seat!.paired ? 'paired' : me!.user ? 'signed' : 'signin';
-    const next = [state, locale(), lobby?.room, me?.user?.login, Date.now() < copiedUntil].join('|');
+    const required = typeof opts.required === 'function' ? opts.required() : opts.required ?? headsetHint();
+    const next = [state, required, seat?.controlsReady, locale(), lobby?.room, me?.user?.login, Date.now() < copiedUntil].join('|');
     if (!force && next === sig) return;
     sig = next;
     el.hidden = !show; el.dataset.state = state;
+    el.classList.toggle('required', required);
     if (!show) { el.replaceChildren(); return; }
     const room = lobby!.room;
+    if (required) return renderRequired(state, room, !!seat!.controlsReady);
     if (state === 'paired') {
       el.replaceChildren(
         h('div.pp-head.ok', { 'data-testid': 'pair-connected' }, tr('connected')),
@@ -99,6 +117,44 @@ export function pairPanel(app: AppCtx, opts: { onUnlink?: () => void; compact?: 
           h('button.btn.btn-tiny.pp-copy', { 'data-testid': 'pair-copy-link', class: copied ? 'copied' : undefined, onclick: () => void copyLink(room) }, copied ? tr('copied') : tr('copy')))),
       h('div.pp-sub.dim', null, tr('stays')),
     );
+  }
+
+  /** Headset: the big 3-step card. Large type, high contrast, ≥64 px targets for gaze + pinch. */
+  function renderRequired(state: string, room: string, controlsReady: boolean) {
+    // prominent: in the lobby, full width above the three panels; elsewhere, first thing under the parent's title
+    const grid = el.closest('.lobby-grid');
+    if (grid && !opts.compact) grid.before(el);
+    else {
+      const parent = el.parentElement, first = parent?.firstElementChild;
+      if (parent && first && first !== el && first.nextElementSibling !== el && !opts.compact && !parent.classList.contains('lobby-scroll')) first.after(el);
+    }
+    const user = me!.user;
+    const paired = state === 'paired';
+    const stepState = (n: 1 | 2 | 3) => paired ? 'done' : n === 1 ? (user ? 'done' : 'now') : !user ? 'todo' : n === 2 ? 'now' : 'next';
+    // "{0}" in the copy becomes a highlighted @login
+    const withLogin = (text: string, login: string): (Node | string)[] =>
+      text.split('\u0000').flatMap((t, i) => (i ? [h('b.pr-login', { translate: 'no' }, `@${login}`), t] : [t]));
+    const step = (n: 1 | 2 | 3, ...body: (Node | null)[]) =>
+      h('li.pr-step', { 'data-step': n, 'data-s': stepState(n), 'data-testid': `pair-step-${n}` },
+        h('span.pr-num', { 'aria-hidden': 'true' }, stepState(n) === 'done' ? '✓' : String(n)), h('div.pr-body', null, ...body));
+    const url = `${location.host}/r/${room}`;
+    const status = paired ? (controlsReady ? tr('pairedReady') : tr('pairedChoose')) : user ? tr('waitPhone') : tr('waitSignIn');
+    el.replaceChildren(
+      h('div.pr-head', null, tr('reqHead')),
+      h('div.pr-why', null, tr('reqWhy')),
+      h('ol.pr-steps', null,
+        step(1, user ? h('div.pr-line', null, ...withLogin(tr('step1Done', '\u0000'), user.login)) : h('div.pr-line', null, tr('step1')),
+          user ? null : h('button.btn.btn-primary.pr-btn', { 'data-testid': 'pair-connect-github', onclick: signInHere }, h('span.gh-mark', { 'aria-hidden': 'true' }, '◉'), ' ', tr('connect'))),
+        step(2, h('div.pr-line', null, tr('step2')),
+          h('div.pr-url', { translate: 'no', 'data-testid': 'pair-room-url' }, url),
+          h('div.pr-line.pr-as', null, ...(user ? withLogin(tr('step2As', '\u0000'), user.login) : [tr('step2Same')])),
+          h('div.pr-code', { translate: 'no', 'data-testid': 'pair-room-code', 'aria-label': `${tr('room')} ${room}` }, h('small', null, tr('room')), room)),
+        step(3, h('div.pr-line', null, tr('step3', tr('offerUse'))))),
+      h('div.pr-status', { 'data-testid': 'pair-status', role: 'status', 'aria-live': 'polite', 'data-s': paired ? (controlsReady ? 'ready' : 'paired') : 'waiting' },
+        paired ? null : h('span.pr-spin', { 'aria-hidden': 'true' }), status),
+      ...(paired ? [h('button.btn.pr-unlink', { 'data-testid': 'pair-unlink', onclick: () => (opts.onUnlink ?? (() => ctx.conn.send({ t: 'pairEnd' })))() }, tr('disconnect'))] : []),
+    );
+    if (paired) el.querySelector('.pr-status')!.setAttribute('data-testid', 'pair-connected');
   }
 
   const stopLocale = onLocaleChange(() => render(true));

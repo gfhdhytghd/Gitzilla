@@ -6,6 +6,7 @@
 import type { MatchState } from "../../shared/types";
 import type { View } from "./renderers";
 import { store } from "./util";
+import { isHeadset } from "./device";
 
 /** What game.ts hands the stage each frame besides the interpolated state (all optional for the stage to use). */
 export interface Stage25dExtras {
@@ -50,7 +51,7 @@ const forced = (): boolean | null => {
   return v === "25d" || v === "xr" ? true : v === "2d" ? false : null;
 };
 /** The player asked for 2.5D (URL wins over the saved switch). */
-export const view25dWanted = () => forced() ?? store.get(KEY) === "1";
+export const view25dWanted = () => forced() ?? (isHeadset() || store.get(KEY) === "1");
 /** Headset spectator page (?screen=1&view=xr). */
 export const xrView = () => new URLSearchParams(location.search).get("view") === "xr";
 /** The URL pins the view, so the Settings switch only shows what's in effect. */

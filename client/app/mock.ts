@@ -198,6 +198,13 @@ export function createMockConn(opts: ConnOpts): Conn {
 
   // ---------- match ----------
   let loop: ReturnType<typeof setInterval> | null = null;
+  // &lat=60-120: like the server (30 Hz sim, its own 20 Hz snapshot timer) through a jittery tunnel: each snapshot
+  // arrives LO..HI ms later, in order (one WebSocket). For smoothness playtests.
+  const jitter = (() => {
+    const m = /^(\d+)-(\d+)$/.exec(new URLSearchParams(location.search).get("lat") ?? "");
+    return m ? { lo: +m[1], hi: +m[2] } : null;
+  })();
+  let deliverAt = 0;
   let lastInput: InputFrame | null = null;
   let paused: MatchState["paused"] = null;
   const startMatch = async () => {
@@ -241,6 +248,17 @@ export function createMockConn(opts: ConnOpts): Conn {
     let tick = 0;
     let seq = 0;
     let evBuf: GameEvent[] = [];
+    let latestSnap: (() => MatchState) | null = null;
+    if (jitter) {
+      const pub = setInterval(() => {
+        if (!loop) return clearInterval(pub);
+        if (!latestSnap) return;
+        const msg: ServerMsg = { t: "snapshot", state: { ...latestSnap(), events: evBuf }, ack: lastInput?.seq ?? 0 };
+        evBuf = [];
+        deliverAt = Math.max(deliverAt, performance.now() + jitter.lo + Math.random() * (jitter.hi - jitter.lo));
+        setTimeout(() => msgFns.forEach((f) => f(structuredClone(msg))), deliverAt - performance.now());
+      }, 1000 / 20);
+    }
     loop = setInterval(() => {
       const inputs = new Map<string, InputFrame>();
       for (const p of ps) {
@@ -258,11 +276,12 @@ export function createMockConn(opts: ConnOpts): Conn {
       tick++;
       const snap = { ...match.snapshot(), paused };
       evBuf.push(...snap.events);
+      // edu mock: dress the fake boss match as a classroom brawl (no boss, PvP scoreboard, 2x heroes)
+      const dress = () => (royale ? royale.dress(snap) : edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap);
+      if (jitter) latestSnap = dress;
       // 20 Hz: send 2 of every 3 ticks
-      if (tick % 3 !== 2) {
-        // edu mock: dress the fake boss match as a classroom brawl (no boss, PvP scoreboard, 2x heroes)
-        const st = royale ? royale.dress(snap) : edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap;
-        emit({ t: "snapshot", state: { ...st, events: evBuf }, ack: lastInput?.seq ?? 0 });
+      else if (tick % 3 !== 2) {
+        emit({ t: "snapshot", state: { ...dress(), events: evBuf }, ack: lastInput?.seq ?? 0 });
         evBuf = [];
       }
       if (royale?.winner && !royaleEnded) {

@@ -1809,3 +1809,6 @@ body.bigscreen .spectate { display: none; }
 .pair-panel.compact.in-fight[data-state="paired"] > :not(.pp-head) { display: none; }
 .pair-panel.compact.in-fight .pp-head { font-size: 8px; }
 .xr-panel > .pair-panel.compact { margin: 0; max-width: none; }
+/* headset seat: the Vision Pro panel is the main action (immersive sessions need a tap, so it can't auto-enter) */
+.xr-panel.prominent { top: 92px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 20px)); padding: 14px 16px; } /* under the boss bar */
+.xr-panel.prominent .xr-enter { min-height: 64px; font-size: 16px; }

@@ -4,6 +4,7 @@ import { getMotionPermissionState, loadMotionProfile, saveMotionProfile, subscri
 import { createControlsCard } from './controls';
 import { controlsTrained, openControlTraining } from './training';
 import { h, store } from './util';
+import { usesLocalControls } from './device';
 import { isMuted, setMuted } from './sound';
 import { setView25d, view25dPinned, view25dWanted } from './view25d';
 
@@ -92,7 +93,7 @@ function render() {
       h('span', null, '3D view (beta)')),
     view25dPinned() ? h('p.settings-status', null, 'Set by this link.') : null);
   const children: (HTMLElement | null)[] = [title, intro, language, sound, view];
-  if (!context.classroom && !context.spectator) {
+  if (!context.classroom && !context.spectator && usesLocalControls()) {
     if (getMotionPermissionState().mobile) {
       const controls = createControlsCard(practice);
       disposeContent = controls.dispose;
@@ -103,8 +104,8 @@ function render() {
         h('p', null, 'WASD / arrows: move · mouse: aim · J / click: attack · Space: dash · E: skill')));
     }
   }
-  const motion = getMotionPermissionState();
-  const needsSetup = onboarding && !context.classroom && !context.spectator && motion.mobile && (!motion.ready || !controlsTrained());
+  const motion = usesLocalControls() ? getMotionPermissionState() : null;
+  const needsSetup = onboarding && !context.classroom && !context.spectator && motion?.mobile && (!motion.ready || !controlsTrained());
   children.push(h('div.settings-actions', null,
     h('button.btn.btn-primary', { 'data-testid': 'settings-close', onclick: close }, needsSetup ? 'Continue without practice' : onboarding ? 'Continue' : 'Close')));
   dialog.replaceChildren(...children.filter((x): x is HTMLElement => !!x));
@@ -117,7 +118,7 @@ export function openSettings() {
   signal(true);
 }
 function maybeOnboard() {
-  if (!dialog || dismissed || dialog.open || training || context.spectator || context.classroom || sessionShown()) return;
+  if (!usesLocalControls() || !dialog || dismissed || dialog.open || training || context.spectator || context.classroom || sessionShown()) return;
   if (document.querySelector('.screen.whoami')) return; // never stack on top of the name prompt
   if (document.querySelector('.screen.autopsy, .screen.game')) return; // not over results or a running fight
   const motion = getMotionPermissionState();
@@ -145,5 +146,5 @@ export function installSettings() {
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   document.body.append(button, dialog);
   onLocaleChange(() => { if (dialog.open) render(); button.setAttribute('aria-label', t('Settings')); });
-  subscribeMotionPermission(() => { if (dialog.open && !training) render(); });
+  if (usesLocalControls()) subscribeMotionPermission(() => { if (dialog.open && !training) render(); });
 }

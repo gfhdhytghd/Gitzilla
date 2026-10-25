@@ -19,6 +19,7 @@ import { R, X } from "./renderers";
 import { createRubricEditor, createJudgedCard, localDefaultRubric, type RubricEditor, createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
 import { pairPanel } from "./pair";
+import { requiresPhoneController, usesLocalControls } from "./device";
 import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo, store, humanComponent } from "./util";
 
 const WEAPON_ICON: Record<string, string> = { blaster: "⌐╦", smg: "≡╤", shotgun: "═╦═", cannon: "▄█▀", staff: "─o", laser: "═══►", blade: "─┼══" };
@@ -292,7 +293,7 @@ export function createLobby(app: AppCtx): Screen {
     h("button.btn-link", { "data-testid": "player-repo-change", onclick: () => ((changingRepo = true), render(), repoInput.focus()) }, "change"),
   );
   // display device: link a signed-in phone as this seat's controller (claude-auth pair.ts)
-  const pair = pairPanel(app);
+  const pair = pairPanel(app, { required: requiresPhoneController(app.lobby?.mode) });
   const youPanel = h(
     "section.panel.you-panel",
     null,
@@ -448,7 +449,7 @@ export function createLobby(app: AppCtx): Screen {
       if (!ready) out.push({ text: "need ≥1 ready hero", act: toTop });
       if (lobby.boss.status !== "ready") out.push(lobby.boss.status === "analyzing" ? { text: "⟳ summoning the boss…" } : { text: "② pick the BOSS repo ↓", act: toBoss });
     }
-    const local = !screen && !getMotionPermissionState().ready && !(lobby.mode === "pvp" && !pvpStart(lobby).hostFights);
+    const local = !screen && usesLocalControls() && !getMotionPermissionState().ready && !(lobby.mode === "pvp" && !pvpStart(lobby).hostFights);
     const others = pendingControls().filter((p) => !(local && p.id === app.you));
     if (others.length) out.push({ text: `waiting for controls: ${others.map((p) => p.name).join(", ")}` });
     if (local) out.push({ text: "📱 tap to enable motion or choose touch only", act: openSettings });
@@ -1093,7 +1094,7 @@ export function createLobby(app: AppCtx): Screen {
       nextBar.dataset.testid = phoneLobby() ? "start-match" : "next-step";
       startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
       return;
-    } else if (!getMotionPermissionState().ready) {
+    } else if (usesLocalControls() && !getMotionPermissionState().ready) {
       text = "📱 open settings to enable motion or choose touch only";
       act = openSettings;
     } else {
@@ -1145,7 +1146,7 @@ export function createLobby(app: AppCtx): Screen {
   // the start control's test id follows the layout (phone bar vs panel button)
   const onResize = () => render();
   addEventListener("resize", onResize);
-  const stopPermission = subscribeMotionPermission(() => render());
+  const stopPermission = usesLocalControls() ? subscribeMotionPermission(() => render()) : () => {};
   render();
   return {
     el,

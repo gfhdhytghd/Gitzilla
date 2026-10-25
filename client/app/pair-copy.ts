@@ -55,6 +55,19 @@ const COPY = {
   kicked: ['You were removed from this room by the host.', '你已被房主移出这个房间。', 'El anfitrión te quitó de esta sala.', 'L\'hôte vous a retiré de ce salon.'],
   relink: ['link this phone again', '重新连接这台手机', 'vincular este móvil otra vez', 'relier ce téléphone à nouveau'],
   home: ['back to start', '返回首页', 'volver al inicio', 'retour à l\'accueil'],
+  // headset (required) variant
+  reqHead: ['🥽 Connect your phone to play', '🥽 连接手机后才能开始', '🥽 Conecta tu móvil para jugar', '🥽 Connectez votre téléphone pour jouer'],
+  reqWhy: ['Your headset shows the fight. Your phone is the controller.', '头显负责显示战斗，手机就是你的手柄。', 'El visor muestra la pelea. Tu móvil es el mando.', 'Le casque affiche le combat. Votre téléphone sert de manette.'],
+  step1: ['Sign in with GitHub here', '在这里用 GitHub 登录', 'Inicia sesión con GitHub aquí', 'Connectez-vous avec GitHub ici'],
+  step1Done: ['Signed in as {0}', '已登录为 {0}', 'Sesión iniciada como {0}', 'Connecté en tant que {0}'],
+  step2: ['On your phone, open', '在手机上打开', 'En tu móvil, abre', 'Sur votre téléphone, ouvrez'],
+  step2As: ['signed in as {0}', '并以 {0} 登录', 'con la sesión de {0}', 'connecté en tant que {0}'],
+  step2Same: ['signed in with the same GitHub account', '并用同一个 GitHub 账号登录', 'con la misma cuenta de GitHub', 'avec le même compte GitHub'],
+  step3: ['Tap “{0}”', '点按“{0}”', 'Toca «{0}»', 'Touchez « {0} »'],
+  waitSignIn: ['Sign in first, then link your phone', '请先登录，再连接手机', 'Primero inicia sesión y luego vincula tu móvil', 'Connectez-vous d\'abord, puis reliez votre téléphone'],
+  waitPhone: ['Waiting for your phone…', '正在等待你的手机…', 'Esperando tu móvil…', 'En attente de votre téléphone…'],
+  pairedChoose: ['📱 Phone connected ✓ · choose controls on your phone', '📱 手机已连接 ✓ · 请在手机上选择操作方式', '📱 Móvil conectado ✓ · elige los controles en tu móvil', '📱 Téléphone connecté ✓ · choisissez les commandes sur le téléphone'],
+  pairedReady: ['📱 Phone connected ✓ · ready to fight', '📱 手机已连接 ✓ · 准备战斗', '📱 Móvil conectado ✓ · listo para pelear', '📱 Téléphone connecté ✓ · prêt au combat'],
 } as const satisfies Record<string, readonly [string, string, string, string]>;
 type CopyKey = keyof typeof COPY;
 /** Localized copy; {0}, {1} are filled from args. */

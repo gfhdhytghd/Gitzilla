@@ -19,12 +19,14 @@ import { requestMotionPermission, saveMotionProfile, subscribeMotionPermission }
 import { audio, muteBtn } from "./sound";
 import { createPauseOverlay } from "./pause";
 import { pairPanel } from "./pair";
+import { isHeadset, usesLocalControls } from "./device";
 import { type Stage25d, createStage, emulateXrIfAsked, floorAffine, onView25dChange, view25dWanted, xrSupported, xrView } from "./view25d";
 import { bossPortraitCanvas } from "./lobby";
 import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
 import { asciiBar, clamp, fmtTime, h, isPhone, isTouchDevice, lerp, vibrate } from "./util";
 
-const BUFFER = 0.1; // seconds of interpolation delay
+// interpolation delay: snapshot spacing + measured network jitter, between these bounds (seconds)
+const BUFFER_MIN = 0.07, BUFFER_MAX = 0.35;
 const RES = 1; // internal render scale (logical px -> canvas px)
 
 // Avoid replacing text nodes (and invalidating phone layout) when status is unchanged.
@@ -149,7 +151,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // ---------------- 3D view (client/render/stage25d through ./view25d; 2D whenever it's missing or off) ----------------
   // The WebGL stage canvas + a transparent 2D overlay (YOU ring, zone pointer, edge arrows, postfx) sit under the game
   // canvas, which stays on top at opacity 0 so mouse/touch input keeps landing on it. Classroom raids stay 2D.
-  const isXr = spectator && xrView();
+  // the Vision Pro panel: the headset spectator page, or any seat on a headset (shown prominently there)
+  const headset = isHeadset();
+  const isXr = (spectator && xrView()) || headset;
   let st3d: Stage25d | null = null;
   let ov3d: HTMLCanvasElement | null = null;
   let octx: CanvasRenderingContext2D | null = null;
@@ -168,7 +172,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       xr: isXr, spectator, scale: xrScale,
       pull: () => {
         if (offset === null) return null;
-        const state = interp(performance.now() / 1000 - offset - BUFFER - lag);
+        const now = performance.now() / 1000;
+        const state = interp(now - clockOffset(now) - delay - lag);
         return state ? { state, time: visTime, extras: extras3d(state) } : null;
       },
       onXRChange: (active: boolean) => {
@@ -214,12 +219,13 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // headset spectator (?screen=1&view=xr): DOM controls before entering XR (follow a hero, tabletop / life-size)
   const xrStatus = h("div.xr-status", { role: "status" });
   const xrEnter = h("button.btn.btn-primary.xr-enter", { "data-testid": "xr-enter", hidden: true, onclick: () => toggleXr() }, "Enter Vision Pro") as HTMLButtonElement;
-  const xrFollow = h("select.xr-follow", { "data-testid": "xr-follow", "aria-label": "follow a hero", onchange: () => st3d?.setFollow?.(xrFollow.value || null) }, h("option", { value: "" }, "overview")) as HTMLSelectElement;
+  let followPicked = false;
+  const xrFollow = h("select.xr-follow", { "data-testid": "xr-follow", "aria-label": "follow a hero", onchange: () => { followPicked = true; st3d?.setFollow?.(xrFollow.value || null); } }, h("option", { value: "" }, "overview")) as HTMLSelectElement;
   let xrScale: "table" | "life" = "table";
   const scaleBtn = (v: "table" | "life", label: string) =>
     h("button.btn.btn-tiny.xr-scale", { "data-testid": `xr-scale-${v}`, "aria-pressed": String(v === xrScale), onclick: () => { xrScale = v; st3d?.setScale?.(v); syncXrPanel(); } }, label);
   const xrScaleRow = h("div.xr-row", null, h("span.dim", null, "scale"), scaleBtn("table", "tabletop"), scaleBtn("life", "life-size"));
-  const xrPanel = isXr ? h("div.xr-panel", { "data-testid": "xr-panel" }, h("div.xr-title", null, "Vision Pro"), xrEnter,
+  const xrPanel = isXr ? h(`div.xr-panel${headset ? ".prominent" : ""}`, { "data-testid": "xr-panel" }, h("div.xr-title", null, "Vision Pro"), xrEnter,
     h("label.xr-row", null, h("span.dim", null, "follow"), xrFollow), xrScaleRow, xrStatus) : null;
   let inXr = false;
   const toggleXr = async () => {
@@ -249,6 +255,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const cur = xrFollow.value;
     xrFollow.replaceChildren(h("option", { value: "" }, "overview"), ...players.map((p) => h("option", { value: p.id, translate: "no" }, p.name)));
     xrFollow.value = players.some((p) => p.id === cur) ? cur : "";
+    // on a headset your own hero is the default viewpoint (until you pick another)
+    if (headset && !followPicked && app.you && players.some((p) => p.id === app.you) && xrFollow.value !== app.you) {
+      xrFollow.value = app.you;
+      st3d?.setFollow?.(app.you);
+    }
   };
   // display device: "use your phone as the controller" (claude-auth pair.ts) over the waiting / countdown screen and in the
   // XR pre-entry panel; while fighting only a paired seat keeps the small "Phone connected ✓" line (CSS .in-fight)
@@ -382,7 +393,15 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // ---------------- snapshots / timeline ----------------
   const snaps: Snap[] = [];
   const pendingEvents: { t: number; e: GameEvent }[] = [];
-  let offset: number | null = null; // local seconds - server t
+  let offset: number | null = null; // local seconds - server t (fastest arrivals), at local time offsetAt
+  // Playout clock. A sim whose clock runs a little slower/faster than ours (timer drift, a busy server) made the old
+  // "min + 2% creep" offset run ahead of the data: the hero froze on the newest snapshot and stepped. Now: a line fit
+  // of arrival offset over the last 3 s gives the drift rate; the offset is that line shifted to its fastest packets
+  // and carried forward continuously. delay = snapshot spacing + p90 jitter around the line, smoothed, so 20 Hz
+  // through a 60–120 ms jittery tunnel still always has the next snapshot in hand.
+  const arrivals: { at: number; o: number; t: number }[] = [];
+  let delay = 0.1, drift = 0, offsetAt = 0;
+  const clockOffset = (now: number) => offset! + drift * (now - offsetAt);
   let lag = 0; // extra delay accumulated by hit-stop / slow-mo
   let latest: MatchState | null = null;
   let ownBullets = new Set<number>();
@@ -396,6 +415,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       snaps.length = 0;
       pendingEvents.length = 0;
       offset = null;
+      arrivals.length = 0;
       introStarted = false;
       outro = null;
       elims.reset();
@@ -422,8 +442,32 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (!outro && latest && (royaleOf(s)!.winner || s.status === "victory" || s.status === "defeat")) setTimeout(() => startOutro(true), 0);
     }
     const o = now - s.t;
-    if (offset === null || o < offset) offset = o;
-    else offset += (o - offset) * 0.02;
+    arrivals.push({ at: now, o, t: s.t });
+    while (arrivals.length > 2 && now - arrivals[0].at > 3) arrivals.shift();
+    // least-squares drift (d offset / d local time), clamped to a sane sim speed (±15%)
+    const n = arrivals.length;
+    let ma = 0, mo = 0;
+    for (const a of arrivals) (ma += a.at), (mo += a.o);
+    ma /= n; mo /= n;
+    let sxx = 0, sxy = 0;
+    for (const a of arrivals) (sxx += (a.at - ma) ** 2), (sxy += (a.at - ma) * (a.o - mo));
+    const slope = n >= 8 && sxx > 0 ? clamp(sxy / sxx, -0.15, 0.15) : 0;
+    const res = arrivals.map((a) => a.o - (mo + slope * (a.at - ma))).sort((x, y) => x - y);
+    const line = mo + slope * (now - ma) + res[0]; // fastest-packet offset, now
+    const jitter = res[Math.floor((n - 1) * 0.9)] - res[0];
+    const gaps: number[] = [];
+    for (let i = 1; i < n; i++) gaps.push(arrivals[i].t - arrivals[i - 1].t);
+    gaps.sort((x, y) => x - y);
+    const gap = gaps.length ? gaps[gaps.length >> 1] : 0.05;
+    const want = clamp(gap + jitter + 0.015, BUFFER_MIN, BUFFER_MAX);
+    if (offset === null) (offset = line), (delay = want), (drift = 0);
+    else {
+      const cur = clockOffset(now);
+      offset = cur + (line - cur) * 0.15; // ease, never jump the timeline
+      drift += (slope - drift) * 0.2;
+      delay += (want - delay) * (want > delay ? 0.2 : 0.03); // grow fast on bad links, shrink slowly
+    }
+    offsetAt = now;
     if (snaps.length && snaps[snaps.length - 1].t >= s.t) snaps[snaps.length - 1] = { t: s.t, s };
     else snaps.push({ t: s.t, s });
     if (snaps.length > 30) snaps.shift();
@@ -845,7 +889,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
   const setupInput = async () => {
     void loadModules(); // Optional art must not delay sensor listeners or the input sender.
-    if (destroyed || spectator) return;
+    if (destroyed || spectator || !usesLocalControls()) return; // a headset is a display: its phone controller plays
     if (!loaded.input) {
       console.error("[kaiju] PHONE INPUT FAILURE: real input unavailable; refusing placeholder");
       return;
@@ -863,11 +907,21 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     let lastNoticeAt = 0;
     let wasFiring = false, lastAttackToast = 0;
+    let localActive = false;
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
       if (pausedNow()) return;
       if (watchingRoyale(latest)) return; // spectating
       const frame = input.sample();
+      // Paired seat: the phone controller drives this hero. This display only sends while its own keys/buttons are in
+      // use (mouse aim alone doesn't count, it would zero the phone's movement), plus one release frame when they stop;
+      // otherwise its 30 Hz neutral frames fight the phone's. (No local prediction here: the hero is always drawn
+      // from interpolated server snapshots.)
+      if (app.lobby?.players.find((p) => p.id === app.you)?.paired) {
+        const active = !!(frame.move[0] || frame.move[1] || frame.fire || frame.dash || frame.skill);
+        if (!active && !localActive) return;
+        localActive = active;
+      }
       app.conn.send({ t: "input", frame });
       if (el.dataset.input !== input.mode) el.dataset.input = input.mode;
       const notice = input.lastGesture;
@@ -1032,7 +1086,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // Rejoined phones can arrive directly in countdown; gate them before the first snapshot.
   let touchChosen = false; // "touch only" answers the gate for this page even if the permission state stays pending
   const stopPermission = subscribeMotionPermission(state => {
-    if (spectator || watchingRoyale(latest)) return;
+    if (spectator || watchingRoyale(latest) || !usesLocalControls()) return;
     if (state.ready || touchChosen) { motionOverlay?.remove(); motionOverlay = null; return; }
     if (!motionOverlay) {
       motionOverlay = h("div.motion-gate", { "data-testid": "motion-gate", role: "dialog", "aria-label": "enable controls" },
@@ -1293,7 +1347,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const span = b.t - a.t;
     const f = span > 0 ? clamp((rt - a.t) / span, 0, 1) : 1;
     const S = b.s, A = a.s;
+    // ran past the newest snapshot (late packet): keep heroes moving on their velocity for up to 100 ms instead of freezing
+    const ahead = a === b && rt > b.t ? Math.min(rt - b.t, 0.1) : 0;
     const players: PlayerState[] = S.players.map((p) => {
+      if (ahead) return p.alive && (p.vx || p.vy) ? { ...p, x: clamp(p.x + p.vx * ahead, 0, WW), y: clamp(p.y + p.vy * ahead, 0, WH) } : p;
       const q = A.players.find((x) => x.id === p.id);
       if (!q || Math.hypot(p.x - q.x, p.y - q.y) > 80) return p;
       return { ...p, x: lerp(q.x, p.x, f), y: lerp(q.y, p.y, f) };
@@ -1361,7 +1418,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     // Bound sustained phone CPU/GPU work instead of running the elaborate pixel
     // effects at the display's maximum refresh rate. The independent 30 Hz input
     // sender and authoritative snapshot stream are never throttled here.
-    if (phoneLayout && nowMs - last < 1000 / 30 - 1) return;
+    // 4 ms tolerance: every 2nd frame at 60 Hz / 4th at 120 Hz. (With 1 ms, normal rAF timestamp jitter made a 33 ms
+    // gap read as 32.x, skipped it, and the phone alternated 33/50 ms frames: ~22 fps judder.)
+    if (phoneLayout && nowMs - last < 1000 / 30 - 4) return;
     const dtReal = Math.min(0.1, (nowMs - last) / 1000);
     last = nowMs;
     const now = nowMs / 1000;
@@ -1388,7 +1447,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       drawWaiting(now);
       return;
     }
-    const rt = now - offset - BUFFER - lag;
+    const rt = now - clockOffset(now) - delay - lag;
     while (pendingEvents.length && pendingEvents[0].t <= rt) releasedEvents.push(pendingEvents.shift()!.e);
     const s = interp(rt);
     if (!s) return;
@@ -1396,6 +1455,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
     const me = s.players.find((p) => p.id === app.you);
     selfPos = me ? { x: me.x, y: me.y } : null;
+    // smoothness playtests: a page that defines globalThis.__kaijuTrace gets your hero per drawn frame
+    const tg = globalThis as { __kaijuTrace?: number[][]; __kaijuTraceId?: string };
+    const traced = tg.__kaijuTrace && (tg.__kaijuTraceId ? s.players.find((p) => p.id === tg.__kaijuTraceId) : me);
+    if (traced) tg.__kaijuTrace!.push([nowMs, traced.x, traced.y, rt - snaps[snaps.length - 1].t, rate]); // + how far past the newest snapshot, time rate
     // royale: an eliminated player's camera follows the hero they're watching (killer / leader, cycle with ◀ ▶ / arrows)
     const roy = royaleOf(s);
     const watching = watchingRoyale(s);
