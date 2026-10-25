@@ -35,13 +35,16 @@ function dna(): CodeDNA {
 }
 
 describe('code-backed kits and cover', () => {
-  it('copies actual DNA into kits and attack names without increasing combat stats', () => {
+  it('copies actual DNA into kits and attack names without increasing battle combat stats', () => {
     const p = syntheticProfile(4), beforeP = playerKitFromProfile(p), beforeB = bossKitFromProfile(p, 4);
     p.dna = dna(); const hero = playerKitFromProfile(p), boss = bossKitFromProfile(p, 4);
     expect(hero.code).toMatchObject({ signature: 'parse_args()', snippet: 'def parse_args(argv):', tokens: ['def', 'return', ':'] });
     expect(boss.code).toMatchObject({ heartLines: ['return parse_args(argv)'], todos: ['TODO: handle empty argv'], commits: ['Fix empty input'], limbSymbols: { 'limb-0': ['parse_args'] } });
     expect(boss.attacks.some(a => a.name.includes('parse_args()'))).toBe(true);
-    expect({ ...hero, code: undefined, classroom: undefined }).toEqual({ ...beforeP, code: undefined, classroom: undefined });
+    expect({ ...hero, code: undefined, classroom: undefined, powerSource: undefined }).toEqual({ ...beforeP, code: undefined, classroom: undefined, powerSource: undefined });
+    const source = (hero as import('./quality.ts').ClassroomKit).powerSource!, beforeSource = (beforeP as import('./quality.ts').ClassroomKit).powerSource!;
+    expect({ ...source, todoMeasured: undefined }).toEqual({ ...beforeSource, todoMeasured: undefined });
+    expect(source.todoMeasured).toBe(true); expect(beforeSource.todoMeasured).toBe(false);
     expect({ ...boss, code: undefined, attacks: boss.attacks.map(a => ({ ...a, name: '' })) }).toEqual({ ...beforeB, code: undefined, attacks: beforeB.attacks.map(a => ({ ...a, name: '' })) });
     hero.code!.tokens.push('changed'); expect(p.dna.tokens).not.toContain('changed');
   });

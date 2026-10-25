@@ -1,5 +1,6 @@
 import type { CriterionResult, KnownVuln, PlayerKit, QualityStat, RepoProfile, Rubric, RubricSignal } from '../shared/types.ts';
 import { clamp } from './math.ts';
+import type { PvpPower, PowerScaleFacts } from './pvpPower.ts';
 
 export interface ClassroomFacts {
   heart: string; heartFanIn: number; files: string[];
@@ -10,7 +11,7 @@ export interface ClassroomFacts {
   todoCount: number; todoDensity: number; vulns: Pick<KnownVuln, 'id' | 'pkg' | 'fixed'>[];
 }
 type BattleStats = Pick<PlayerKit, 'maxHp' | 'maxArmor' | 'maxEnergy' | 'speed' | 'damageMul'>;
-export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] }; battleStats?: BattleStats };
+export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] }; battleStats?: BattleStats; pvpPower?: PvpPower; powerSource?: PowerScaleFacts };
 export interface ScoredRubric { rubric: Rubric; results: CriterionResult[] }
 type ExtraSignals = { commentRatio?: number; readmeLength?: number; avgFunctionLength?: number; functionsPerFile?: number; hasTestDir?: boolean };
 const grade = (score: number): QualityStat['grade'] => score >= 0.82 ? 'A' : score >= 0.64 ? 'B' : score >= 0.43 ? 'C' : score >= 0.23 ? 'D' : 'F';
@@ -39,7 +40,7 @@ export function classroomFacts(p: RepoProfile): ClassroomFacts {
   };
 }
 
-export function qualityRows(f: ClassroomFacts): QualityStat[] {
+export function qualitySignals(f: ClassroomFacts) {
   const testing = clamp(f.testRatio / 0.3 + (f.hasTests ? 0.1 : 0), 0, 1);
   const size = clamp((Math.log10(Math.max(1, f.loc)) - 2) / 4, 0, 1) * 0.7 + (f.hasReadme ? 0.3 : 0);
   const modularity = 1 - clamp(f.avgFanOut / 8 * 0.6 + f.maxDepth / 16 * 0.4, 0, 1);
@@ -51,6 +52,11 @@ export function qualityRows(f: ClassroomFacts): QualityStat[] {
   const documentation = clamp((f.commentRatio === null ? 0.25 : clamp(f.commentRatio / 0.2, 0, 1) * 0.65) +
     (f.readmeLength === null ? f.hasReadme ? 0.15 : 0 : clamp(f.readmeLength / 1500, 0, 1) * 0.35), 0, 1);
   const weakness = clamp(f.cycles.length * 0.04 + Math.min(0.08, f.todoDensity * 0.01), 0, 0.2);
+  return { testing, size, modularity, cohesion, documentation, weakness };
+}
+
+export function qualityRows(f: ClassroomFacts): QualityStat[] {
+  const { testing, size, modularity, cohesion, documentation, weakness } = qualitySignals(f), density = f.functionsPerFile;
   const file = f.files[0] ?? f.heart;
   const row = (stat: QualityStat['stat'], value: number, score: number, signal: string, tip: string): QualityStat => ({ stat, value, grade: grade(score), signal, tip });
   return [
@@ -65,8 +71,8 @@ export function qualityRows(f: ClassroomFacts): QualityStat[] {
 }
 
 export function asClassroomKit(kit: PlayerKit): ClassroomKit {
-  const input = kit as ClassroomKit;
-  const source = { ...input, battleStats: input.battleStats ?? { maxHp: kit.maxHp, maxArmor: kit.maxArmor, maxEnergy: kit.maxEnergy, speed: kit.speed, damageMul: kit.damageMul } };
+  const input = ((kit as ClassroomKit).pvpPower ? asBattleKit(kit) : kit) as ClassroomKit;
+  const source = { ...input, battleStats: input.battleStats ?? { maxHp: input.maxHp, maxArmor: input.maxArmor, maxEnergy: input.maxEnergy, speed: input.speed, damageMul: input.damageMul } };
   if (source.rubricQuality) return withQuality(source, source.rubricQuality.rows);
   if (!source.classroom) {
     // Custom/mocked callers can still play, but never get fabricated source-based grades.
@@ -80,7 +86,7 @@ export function asClassroomKit(kit: PlayerKit): ClassroomKit {
 
 /** Mode switches restore the original equal-budget stats rather than keeping earned edu bonuses. */
 export function asBattleKit(kit: PlayerKit): PlayerKit {
-  const { quality: _quality, rubricQuality: _rubric, battleStats, ...identity } = structuredClone(kit as ClassroomKit);
+  const { quality: _quality, rubricQuality: _rubric, pvpPower: _power, battleStats, ...identity } = structuredClone(kit as ClassroomKit);
   return { ...identity, ...battleStats };
 }
 

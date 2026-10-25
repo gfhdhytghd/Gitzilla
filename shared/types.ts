@@ -179,6 +179,7 @@ export interface PlayerKit {
   seed: number;
   design?: HeroDesign;       // Gemini look; when present its title/palette override the defaults
   quality?: QualityStat[];   // edu mode only: stats come from code quality (not equal budget), each with its reason
+  pvpPower?: { score: number; parts: { label: string; value: number; weight: number }[] }; // PvP royale: repo power 0–100 (parts 0–100, weights sum 1)
   code?: {                   // from CodeDNA, cosmetic only
     tokens: string[];        // projectile glyphs come from these (real keywords of the repo's language)
     signature: string;       // signature move name, a real identifier, e.g. "parse_args()"

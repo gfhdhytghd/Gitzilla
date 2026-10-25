@@ -1,4 +1,30 @@
-IN PROGRESS — repo power (ordinary PvP only)
+DONE (repo power)
+
+## Repo Power final delivery
+- Ordinary PvP now uses a0–100 real-source power score: exact edu tests/modularity/cohesion/docs/cycle-debt signals60%, logarithmic stars/contributors/analyzed LOC/lifetime commit activity40%. Absolute score→stat mapping replaces PvP's5-point allocation. Battle retains its equal budget; edu/default-rubric report-card stats are unchanged. Source/code/design identity does not buy extra score.
+- Exported sim-owned `PvpPower`, `pvpPowerFromProfile`, `asPvpKit`, `statsFromPower`; exact pending optional shared contract is below. Both lobby factory and match constructor compute/reapply idempotently. Battle/edu→PvP and PvP→battle/edu round-trips tested; missing analysis remains explicitly neutral, missing commit timing never invents activity. Coordinator can merge PlayerKit.pvpPower from the request without changing scoring.
+- Stats score0→100:6→9HP,4→6armor,1→1.75damage,85→95speed,185→245RAM; all monotone. Effective vitality×damage×speed max/weakest2.934×. Bonuses are relative to score0 neutral baseline, not added to the battle kit. Spawn shields retained. Weapon and environmental GC-cleanup impacts both capped at40% of target maxHP; deadline cleanup uses multiple bounded ticks instead of a huge hit.
+- Final `sim/royale-results.json`:90 actual public-profile games (30 each2/4/8) plus120 counterbalanced actual-profile blaster/firewall control duels. Normal bots only; no HP/outcome/source override in the field sweep. Mean durations73.86/102.54/131.46s, all within1–3min; maxima103.5/124.93/147.73s. Every repo cycles every spawn slot equally each15 trials; quartiles use global score ranks, ties ordered by slug.
+- Stronger heroes win clearly more often: highest-vs-lowest quartile16/20=80% in equal-controller/weapon/skill duels. Across all strict-score cross-quartile control pairs, higher power wins59.3% (equal-score ties excluded); controlled global quartile win rates31.7%/51.7%/58.3%/58.3%. Field weapons/skills remain meaningful and Q3 outperformsQ4 in this finite sample; do not claim a perfectly monotone field win rate or guaranteed strongest-wins.
+- **939 full workspace tests PASS /83 files,9 optional skips. Root typecheck PASS; scoped sim typecheck PASS; production build PASS; owned diff check PASS.**7 power tests cover real signal weights, score invariance to cosmetic identity, improving signals, unavailable activity labels, monotone/bounded stats, all15 mode round-trips, spawn shield and40% weapon/GC cap. Previous equal-PvP assertion replaced; depth.test now explicitly separates TODO-measurement metadata from actual battle fields. No test failures remain in that snapshot.
+- Genesis owner independently completed data-only traces against supplied PvpPower+statsFromPower(0),80 tests including15 real profiles; no UI algorithm duplication. Shared contract merge / UI POWER presentation stay with their owners. Build retains the mock's existing Node/fallback externalization and chunk warnings; no live/phone/visual proof claimed by headless tests.
+- Onlysim/ and this log edited; no commits/pushes, shared edits, credentials/provider calls, service controls or stable LIVE5173 access.
+
+| Power quartile | Field wins / entries | Field win rate | Controlled wins / entries | Controlled win rate |
+| --- | ---: | ---: | ---: | ---: |
+| Q1 | 14/112 | 12.5% | 19/60 | 31.7% |
+| Q2 | 20/112 | 17.9% | 31/60 | 51.7% |
+| Q3 | 34/112 | 30.4% | 35/60 | 58.3% |
+| Q4 | 22/84 | 26.2% | 35/60 | 58.3% |
+
+## Repo power mechanics / verification update
+- Implementation is live in sim/pvpPower.ts; type PvpPower and helpers pvpPowerFromProfile/asPvpKit/statsFromPower exported. qualitySignals() is now a shared internal extraction of the exact existing edu formulas; edu qualityRows values unchanged. Factories populate a small structural powerSource measurement packet so a battle/edu kit entering a PvP match can recompute the right power without re-analysis. Constructors reapply once; battleStats restores the original equal allocation on mode exit.
+- All15 actual fallback scores64.2–87.9, reflecting a mature/popular set; no per-slug boost or forced score stretching. Score0..100 endpoints produce the promised2.934× vitality×damage×speed ratio. Source labels show measured values or explicit unavailable activity; no invented recent commits.
+- Superseded equal-PvP mode-switch assertion updated. Fixed a real return-to-edu metadata bug: restored battleStats now reads the restored input, not the still-powered original argument. Mode round-trips preserve edu/default-rubric stats and code/design identity exactly.
+- Pilot90 ordinary matches (30 each2/4/8, every repo evenly rotated through slots) means73.86/102.54/131.46s. Global Q1/Q2/Q3/Q4 wins14/112=12.5%,20/112=17.9%,34/112=30.4%,22/84=26.2%. Real weapons/skills causeQ3>Q4; do not claim a perfectly monotone field result.
+- Separate120 equal-controller/blaster/firewall, slot-counterbalanced real-repo duels: Q1/Q2/Q3/Q4 wins19/60=31.7%,31/60=51.7%,35/60=58.3%,35/60=58.3%; highest-vs-lowest quartile16/20=80%. Final report also separates equal-score ties from strictly-higher-score wins. Fresh final run is writing sim/royale-results.json.
+- Spawn shields and≤40% maxHP weapon impacts remain. Also capped GC cleanup ticks to40% (previous custom-health deadline could emit one huge environmental hit); hard cleanup now resolves in a few capped ticks rather than one-shotting. Normal measured matches end before deadline, so this does not change their outcomes/timings.
+- Focused power tests cover weights/real evidence, default mode stats, exact endpoints, monotonic stats/3× bound, idempotent conversion and shield/cap behavior. Latest full suite by Genesis had only owned depth.test metadata equality; updated it to compare actual battle fields while explicitly checking the new TODO-measurement flag. Full tests/typecheck/build recheck running.
 
 ## Exact contract request / genesis handoff
 - Coordinator: add optional `PlayerKit.pvpPower?: { score:number; parts:{label:string;value:number;weight:number}[] }`. Both score and each part.value are normalized0–100; weights are normalized fractions summing1. `score = sum(part.value * part.weight)` (one decimal). No duplicate scoring algorithm needed in genesis/UI.

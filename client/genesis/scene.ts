@@ -14,7 +14,7 @@ import { textSprite } from "../render/arena/font.ts";
 import { drawGlow, disc, ring, line } from "../render/arena/pix.ts";
 import { playerPortraitFrame } from "../render/player/index.ts";
 import { bezierPts, clamp01, componentOf, cycleEdges, ease, forceLayout, longestChain, rng, type Pt } from "./graph.ts";
-import { archetypeOf, archetypeStep, isBossKit, isFormStep } from "./local.ts";
+import { archetypeOf, archetypeStep, isBossKit, isFormStep, kitPower, powerName, topPowerParts } from "./local.ts";
 import { ARCH_LOOK, PART_COLOR, UI, brighten, langColor, langOfPath } from "./palette.ts";
 import { bossSprite, heroSprite, type CharSprite } from "./sprites.ts";
 import type { TextLayer } from "./text.ts";
@@ -1493,6 +1493,8 @@ export class Scene {
       });
       return;
     }
+    const power = kitPower(this.kit);
+    if (power) { this.drawPower(ctx, tx, rk, power, r); return; }
     // hero: pips fly from the hero into bars; total budget is the same 5 points for everyone
     const head = `stat budget: ${sum} pts (equal for all)`;
     tx.text(head, r.x, r.y, { size: 5.5, min: 9, color: UI.dim, maxW: r.w });
@@ -1522,6 +1524,29 @@ export class Scene {
       }
     });
     void now;
+  }
+
+  /** PvP: stats scale with repo power, so the reveal shows the score and the parts that earned it (0..100 bars). */
+  private drawPower(ctx: CanvasRenderingContext2D, tx: TextLayer, rk: number, power: NonNullable<ReturnType<typeof kitPower>>, r: Rect) {
+    const score = Math.round(power.score * 10) / 10;
+    let head = `repo power ${score} (stronger repo, stronger hero)`;
+    if (tx.measure(head, 5.5, "term", 9) > r.w) head = `repo power ${score}`;
+    tx.text(head, r.x, r.y, { size: 5.5, min: 9, color: UI.amber, maxW: r.w });
+    const lh = Math.max(7, tx.lineH(5.5, "term", 9));
+    const parts = topPowerParts(power);
+    const labW = Math.min(r.w * 0.42, Math.max(...parts.map((p) => tx.measure(powerName(p.label), 5.5, "term", 9))) + 4);
+    const bw = Math.max(10, r.w - labW - 2);
+    parts.forEach((p, i) => {
+      const y = r.y + lh * (i + 1) + 1;
+      if (y + lh > r.y + r.h + 6) return;
+      const f = clamp01(rk * parts.length - i);
+      if (f <= 0) return;
+      tx.text(powerName(p.label), r.x, y - 1, { size: 5.5, min: 9, color: UI.text, alpha: f, maxW: labW - 2 });
+      ctx.fillStyle = "#1a2a22";
+      ctx.fillRect(Math.round(r.x + labW), Math.round(y + 1), Math.round(bw), 4);
+      ctx.fillStyle = UI.amber;
+      ctx.fillRect(Math.round(r.x + labW), Math.round(y + 1), Math.max(1, Math.round(bw * (p.value / 100) * ease.out(f))), 4);
+    });
   }
 
   /** Edu pause points: the cinematic holds at the end of each stage while the narration is read. */

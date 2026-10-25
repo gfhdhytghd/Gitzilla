@@ -67,10 +67,44 @@ export function buildGenesisLocal(p: RepoProfile, kit: PlayerKit | BossKit): Gen
   return g;
 }
 
+/** PvP repo power (sim/pvpPower.ts, carried on the kit; not in the shared contract). The score is authoritative. */
+export interface KitPower { score: number; parts: { label: string; value: number; weight: number }[] }
+export function kitPower(kit: PlayerKit | BossKit | null | undefined): KitPower | null {
+  const p = (kit as { pvpPower?: KitPower } | null | undefined)?.pvpPower;
+  return p && Number.isFinite(p.score) && Array.isArray(p.parts) ? p : null;
+}
+/** The parts that contribute most to the score (value x weight), strongest first. */
+export function topPowerParts(power: KitPower, n = 3): KitPower["parts"] {
+  return [...power.parts].sort((a, b) => b.value * b.weight - a.value * a.weight).slice(0, n);
+}
+/** "Tests (12.0% files)" -> "Tests" */
+export const powerName = (label: string) => label.split(" (")[0].split(";")[0].trim();
+const n1 = (v: number) => String(Math.round(v * 10) / 10);
+
+function powerTrace(kit: PlayerKit): TraceStep[] {
+  const power = kitPower(kit);
+  // PvP before the sim attached a score: say what decides the stats, invent nothing
+  if (!power) return [{ from: "repo strength", to: "stats: scaled by repo power", part: "stats", ref: "pvp-power" }];
+  return [
+    { from: "repo strength", to: `stats: POWER ${n1(power.score)}`, part: "stats", ref: "pvp-power" },
+    ...topPowerParts(power).map((p, i): TraceStep => ({
+      from: p.label, to: `${powerName(p.label)} ${n1(p.value)}/100 · ${Math.round(p.weight * 100)}% of power`, part: "stats", ref: `pvp-power:part:${i}`,
+    })),
+  ];
+}
+
+/** PvP: the top power parts as 0..100 bars (empty until the sim attaches a score). */
+function powerBudget(kit: PlayerKit): Genesis["budget"] {
+  const power = kitPower(kit);
+  return power ? topPowerParts(power).map((p) => ({ label: powerName(p.label), value: Math.round(p.value) })) : [];
+}
+
 /** Thin genesis from a kit alone (no profile): enough for a short replay when the server sent none. */
 export function genesisFromKit(kit: PlayerKit | BossKit, mode?: "battle" | "edu" | "pvp"): Genesis {
   const boss = isBossKit(kit);
   const edu = !boss && (mode === "edu" || kit.quality !== undefined);
+  // PvP heroes are not equal: their stats scale with repo power (score + the parts that earned it)
+  const pvp = !boss && !edu && (mode === "pvp" || !!kitPower(kit));
   // A kit knows its organ names, not analyzed file/LOC counts. Never invent them.
   const comps = boss ? kit.limbs.map(l => ({ name: l.component, loc: 0, files: 0 })) : [];
   const trace: TraceStep[] = boss
@@ -87,7 +121,7 @@ export function genesisFromKit(kit: PlayerKit | BossKit, mode?: "battle" | "edu"
         ...(edu ? [
           { from: "code quality", to: "stats: see your report card", part: "stats" as const },
           ...qualityTrace(kit.quality ?? []),
-        ] : [{ from: "repo shape", to: "stats: same 5-pt budget", part: "stats" as const }]),
+        ] : pvp ? powerTrace(kit) : [{ from: "repo shape", to: "stats: same 5-pt budget", part: "stats" as const }]),
       ];
   const code = boss ? [...(kit.code?.heartLines ?? []), ...(kit.code?.snippets ?? [])] : [kit.code?.snippet ?? ""];
   return {
@@ -95,6 +129,6 @@ export function genesisFromKit(kit: PlayerKit | BossKit, mode?: "battle" | "edu"
     components: comps, edges: [], cycles: [], heart: boss ? kit.heart : "", heartFanIn: 0,
     sampleFiles: boss ? [kit.heart, ...(kit.code as { bigFiles?: { path: string }[] } | undefined)?.bigFiles?.map((f) => f.path) ?? []] : [],
     snippets: code.filter(Boolean),
-    trace, budget: boss ? bossBudget(kit) : edu ? [] : heroBudget(kit),
+    trace, budget: boss ? bossBudget(kit) : edu ? [] : pvp ? powerBudget(kit) : heroBudget(kit),
   };
 }

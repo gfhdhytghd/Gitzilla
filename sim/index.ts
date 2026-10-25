@@ -16,3 +16,5 @@ export type { ClassroomState, ClassroomPvpState, ClassroomAutopsy, ClassroomRank
 export { qualityFromRubric } from './quality.ts';
 export type { ClassroomFacts, ClassroomKit, ScoredRubric } from './quality.ts';
 export type { SocialBossKit } from './social.ts';
+export { asPvpKit, pvpPowerFromProfile, statsFromPower } from './pvpPower.ts';
+export type { PvpPower } from './pvpPower.ts';

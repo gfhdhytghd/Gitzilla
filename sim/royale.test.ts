@@ -5,7 +5,8 @@ import { createMatch, type Match } from './match.ts';
 import { pvpArenaSize, type ClassroomState } from './pvp.ts';
 import { createBot, syntheticProfile } from './bots.ts';
 import { playerKitFromProfile } from './kits.ts';
-import { asClassroomKit, qualityFromRubric } from './quality.ts';
+import { asBattleKit, asClassroomKit, qualityFromRubric, type ClassroomKit } from './quality.ts';
+import { asPvpKit } from './pvpPower.ts';
 import { royaleTimeline } from './royale-balance.ts';
 
 const roster = (n = 4) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `Hero ${i}`, kit: playerKitFromProfile(syntheticProfile(i + 1)) }));
@@ -38,15 +39,15 @@ describe('last-one-standing PvP royale', () => {
     advance(m, 8, new Map(s.players.map(p => [p.id, frame({ move: [1, 1] })])));
     expect(m.snapshot().players.every(p => p.x <= arena.width - 32 && p.y <= arena.height - 32)).toBe(true);
   });
-  it('accepts 2–8 only, restores equal-budget stats on edu/rubric mode switches, and preserves code identity', () => {
+  it('accepts 2–8 only, applies repo power on edu/rubric mode switches, and preserves battle/code identity', () => {
     expect(() => match(1)).toThrow('2–8'); expect(() => match(9)).toThrow('2–8');
     const players = roster(4), original = structuredClone(players);
     players[0].kit = asClassroomKit(players[0].kit);
     players[1].kit = qualityFromRubric(players[1].kit, { rubric: { title: 'Tests', source: 'doc', criteria: [{ id: 'tests', name: 'Tests', weight: 1, signal: 'tests', description: 'Tests' }] }, results: [{ criterionId: 'tests', score: 1, evidence: '10 test files' }] });
     const m = createMatch(players, null, { mode: 'pvp' }), s = m.snapshot();
-    expect(s.players.map(p => p.kit)).toEqual(original.map(p => p.kit));
-    expect(s.players.every(p => !p.kit.quality)).toBe(true);
-    for (const p of s.players) expect((p.kit.maxHp - 5) + (p.kit.maxArmor - 3) + (p.kit.maxEnergy - 150) / 35 + (p.kit.speed - 77) / 8 + (p.kit.damageMul - 0.9) / 0.1).toBeCloseTo(5);
+    expect(s.players.map(p => p.kit)).toEqual(original.map(p => asPvpKit(p.kit)));
+    expect(s.players.every(p => !p.kit.quality && !!(p.kit as ClassroomKit).pvpPower)).toBe(true);
+    expect(s.players.map(p => asBattleKit(p.kit))).toEqual(original.map(p => p.kit));
   });
   it('permits moving and firing, hits only opponents and permanently eliminates with kill attribution', () => {
     const m = match(), r = raw(m); advance(m, 4.1); const [a, b] = r.state.players;

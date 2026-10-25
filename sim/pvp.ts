@@ -3,7 +3,8 @@ import { ARENA_W, ARENA_H } from '../shared/types.ts';
 import type { Match } from './match.ts';
 import { clamp, distance, random, unit } from './math.ts';
 import { safeInput } from './input.ts';
-import { asBattleKit, asClassroomKit, qualityValue, type ClassroomKit } from './quality.ts';
+import { asClassroomKit, qualityValue, type ClassroomKit } from './quality.ts';
+import { asPvpKit } from './pvpPower.ts';
 import { LessonQueue } from './lessons.ts';
 import { classroomQuiz, type ClassroomQuiz } from './quiz.ts';
 import { WEAPONS } from './weapons.ts';
@@ -83,7 +84,7 @@ export class ClassroomMatch implements Match {
     this.state = {
       t: 0, status: 'countdown', mode: royale ? 'pvp' : 'edu', boss: null, heroScale: 2,
       players: students.map(student => {
-        const kit = royale ? asBattleKit(student.kit) : asClassroomKit(student.kit);
+        const kit = royale ? asPvpKit(student.kit) : asClassroomKit(student.kit);
         return { id: student.id, name: student.name, kit, x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0], hp: kit.maxHp, armor: kit.maxArmor, energy: kit.maxEnergy,
           alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 2, buffs: [], perks: [],
           stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false } };
@@ -371,7 +372,7 @@ export class ClassroomMatch implements Match {
       .sort((a, b) => (a.hp + a.armor) - (b.hp + b.armor) || this.zoneOrder.get(a.id)! - this.zoneOrder.get(b.id)!);
     for (const p of outside) {
       if (this.over) break;
-      const amount = Math.min(p.hp + p.armor, deadline ? p.hp + p.armor : zone.dps * dt);
+      const amount = Math.min(p.hp + p.armor, p.kit.maxHp * 0.4, deadline ? p.hp + p.armor : zone.dps * dt);
       const armor = Math.min(p.armor, amount); p.armor -= armor; p.hp = Math.max(0, p.hp - amount + armor);
       const r = this.runtime.get(p.id)!; r.lastHit = s.t; r.armor = 0;
       // GC is environmental damage: no killer credit and no dash/rollback invulnerability exploit.

@@ -1,4 +1,11 @@
-DONE (genesis stall) + DONE (archetypes) + DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+DONE (pvp power fallback) + DONE (genesis stall) + DONE (archetypes) + DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+
+## PvP power in the kit-only fallback (coordinator / take-genesis)
+- `genesisFromKit(kit, mode)` in `client/genesis/local.ts`: PvP heroes (`mode === "pvp"` or a kit carrying `pvpPower`) no longer say "same 5-pt budget". The trace now shows `repo strength -> stats: POWER <score>`, then the top 3 parts by contribution (value x weight), e.g. `Tests (54.4% files) -> Tests 100/100 · 16% of power`. The budget is those parts as 0..100 bars.
+  - PvP before the sim attaches a score: `stats: scaled by repo power` with an empty budget, so no numbers are invented. Battle kits keep the equal 5-point budget text and bars; edu is unchanged.
+- The hero reveal (`scene.ts`) draws `repo power <score> (stronger repo, stronger hero)` plus amber part bars whenever the kit carries `pvpPower`, instead of "stat budget: N pts (equal for all)". This covers server genesis too, whose PvP budget is still the battle split.
+- Helpers `kitPower`, `topPowerParts` and `powerName` read `pvpPower` structurally, since it lives in `sim/pvpPower.ts` and not in `shared/`.
+- New test: PvP fallback shows POWER and the top parts with no "5-pt"/"equal" text; bare PvP invents nothing; battle keeps the 5-pt line. `npx vitest run client/genesis` passes 10 tests and genesis files typecheck clean. Checked the PvP reveal in a WebKit screenshot (react: POWER 87; Testing / Stars / Contributors bars).
 
 ## Genesis stall fix (coordinator bug: boss overlay stuck at "0 files seen · 0%")
 - Cause: live mode only left on a genesis or on `progress.stage === "ready"`. With no progress events (mock, cached repo, fast analysis) plus `ready` carrying a kit but no genesis (mock `safeGenesis` returns undefined when the local builder throws), it waited forever.

@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { RepoProfile } from "../../shared/types.ts";
 import { bossKitFromProfile, playerKitFromProfile } from "../../sim/kits.ts";
+import { asPvpKit } from "../../sim/pvpPower.ts";
 import { componentOf, cycleEdges, forceLayout, longestChain } from "./graph.ts";
 import { archetypeStep, buildGenesisLocal, genesisFromKit, heroBudget, isFormStep } from "./local.ts";
 import { TextLayer } from "./text.ts";
@@ -87,6 +88,23 @@ describe("local genesis", () => {
     expect(isFormStep({ from: "5 modules · 0 cycles", to: "Kaiju · crystal-backed titan", part: "class", ref: "archetype" })).toBe(true);
   });
 
+  it("kit-only PvP stories describe repo power, battle stories keep the equal budget", () => {
+    const p = profiles[0];
+    const pvp = asPvpKit(playerKitFromProfile(p));
+    const g = genesisFromKit(pvp, "pvp");
+    const text = g.trace.map((s) => `${s.from} ${s.to}`).join("\n");
+    expect(text).not.toMatch(/5-pt|equal/i);
+    expect(g.trace.find((s) => s.ref === "pvp-power")?.to).toBe(`stats: POWER ${Math.round(pvp.pvpPower!.score * 10) / 10}`);
+    expect(g.trace.filter((s) => s.ref?.startsWith("pvp-power:part:"))).toHaveLength(Math.min(3, pvp.pvpPower!.parts.length));
+    expect(g.budget.length).toBeGreaterThan(0);
+    expect(g.budget.every((b) => b.value >= 0 && b.value <= 100)).toBe(true);
+    // pvp mode before the sim attached a score: no invented numbers
+    const bare = genesisFromKit(playerKitFromProfile(p), "pvp");
+    expect(bare.trace.find((s) => s.ref === "pvp-power")?.to).toBe("stats: scaled by repo power");
+    expect(bare.budget).toEqual([]);
+    const battle = genesisFromKit(playerKitFromProfile(p), "battle");
+    expect(battle.trace.some((s) => s.to === "stats: same 5-pt budget")).toBe(true);
+  });
   it("kit-only edu stories never claim equal budgets or invent source metrics", () => {
     const p = profiles[0];
     const kit = playerKitFromProfile(p, { mode: "edu" });

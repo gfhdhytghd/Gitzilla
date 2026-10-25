@@ -5,6 +5,7 @@ import { attackFlavorPicker, weaponCode } from './flavor.ts';
 import { asClassroomKit, classroomFacts, type ClassroomKit } from './quality.ts';
 import { bossSocial, fragileComponents, type SocialBossKit } from './social.ts';
 import { ARCHETYPE_DECKS, bossArchetypeFromProfile } from './archetypes.ts';
+import { asPvpKit } from './pvpPower.ts';
 
 const languages: Record<string, [WeaponKind, string, string, ArenaTheme]> = {
   rust: ['cannon', 'Paladin', '#e69b64', 'kernel'], c: ['shotgun', 'Vanguard', '#b8c4d8', 'kernel'],
@@ -32,10 +33,11 @@ export function playerKitFromProfile(p: RepoProfile, options: { mode?: GameMode 
     speed: 77 + points[3] * 8, damageMul: 0.9 + points[4] * 0.1,
     palette: ['#172131', color, (p.seed & 1) ? '#ffe2ac' : '#d5f5ff', '#f4faf7'], seed: p.seed, code: heroCode(p),
     classroom: classroomFacts(p),
+    powerSource: { stars: p.stars, contributors: p.contributors, commits: p.commits, ageDays: p.ageDays, todoMeasured: !!p.dna },
   };
   kit.code!.weapon = weaponCode(weapon, p.primaryLanguage, p.seed, p.dna?.tokens,
     [kit.code!.signature, ...(p.dna?.identifiers ?? []), ...Object.values(p.dna?.componentSymbols ?? {}).flat()]);
-  return options.mode === 'edu' ? asClassroomKit(kit) : kit;
+  return options.mode === 'edu' ? asClassroomKit(kit) : options.mode === 'pvp' ? asPvpKit(kit) : kit;
 }
 
 export function bossKitFromProfile(p: RepoProfile, playerCount: number): BossKit {
