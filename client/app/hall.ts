@@ -1,4 +1,5 @@
 // "Hall of Monsters": event-wide leaderboard from GET /api/hall (server records each autopsy once).
+import { createChainBoard } from "./chain-board";
 import { fmtTime, h, shortRepo } from "./util";
 
 interface Hall {
@@ -39,7 +40,19 @@ export async function fetchHall(mock: boolean): Promise<Hall | null> {
 export function createHallBoard(mock: boolean, opts: { rows?: number; highlight?: string[] } = {}): HTMLElement {
   const n = opts.rows ?? 5;
   const body = h("div.hall-body", null, h("div.dim.blink", null, "querying hall…"));
-  const el = h("section.panel.hall", null, h("h2.panel-title", null, "☠ HALL OF MONSTERS"), body);
+  // Second tab: the Solana-anchored PvP board, built on first open.
+  let chain: HTMLElement | null = null;
+  const tabs = [
+    h("button.hall-tab", { role: "tab", "aria-selected": "true", "data-testid": "hall-tab-monsters", onclick: () => pick(0) }, "☠ HALL OF MONSTERS"),
+    h("button.hall-tab", { role: "tab", "aria-selected": "false", "data-testid": "hall-tab-chain", onclick: () => pick(1) }, "⛓ VERIFIED ON SOLANA"),
+  ];
+  const pick = (i: number) => {
+    tabs.forEach((t, j) => t.setAttribute("aria-selected", String(i === j)));
+    if (i === 1 && !chain) el.append((chain = createChainBoard(mock, opts)));
+    body.hidden = i === 1;
+    if (chain) chain.hidden = i === 0;
+  };
+  const el = h("section.panel.hall", null, h("h2.panel-title.hall-tabs", { role: "tablist" }, ...tabs), body);
   fetchHall(mock).then((hall) => {
     if (!hall || (!hall.fastestKills?.length && !hall.topDamage?.length && !hall.royaleWins?.length)) {
       body.replaceChildren(h("div.dim", null, "no kills recorded yet. be the first."));

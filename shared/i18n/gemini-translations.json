@@ -23213,5 +23213,257 @@
     "zh": "⚡ 滑动",
     "es": "⚡ deslizar",
     "fr": "⚡ glisser"
+  },
+  {
+    "id": "bb3e597ba0796f57",
+    "en": "⛓ VERIFIED ON SOLANA",
+    "zh": "⛓ SOLANA 链上验证",
+    "es": "⛓ VERIFICADO EN SOLANA",
+    "fr": "⛓ VÉRIFIÉ SUR SOLANA"
+  },
+  {
+    "id": "168274782cad6157",
+    "en": "Last anchored:",
+    "zh": "最近上链：",
+    "es": "Último anclaje:",
+    "fr": "Dernier ancrage :"
+  },
+  {
+    "id": "23975f8916545b83",
+    "en": "slot {0}",
+    "zh": "槽位 {0}",
+    "es": "slot {0}",
+    "fr": "slot {0}"
+  },
+  {
+    "id": "28469e816d3efb98",
+    "en": "Explorer ↗",
+    "zh": "区块浏览器 ↗",
+    "es": "Explorador ↗",
+    "fr": "Explorateur ↗"
+  },
+  {
+    "id": "31359f88fb833e43",
+    "en": "anchoring on Solana devnet…",
+    "zh": "正在锚定到 Solana devnet…",
+    "es": "anclando en Solana devnet…",
+    "fr": "ancrage sur Solana devnet…"
+  },
+  {
+    "id": "9476cd5cbf8ac839",
+    "en": "waiting for confirmation",
+    "zh": "等待确认",
+    "es": "esperando confirmación",
+    "fr": "en attente de confirmation"
+  },
+  {
+    "id": "fa659995ae52e230",
+    "en": "not anchored:",
+    "zh": "未上链：",
+    "es": "sin anclar:",
+    "fr": "non ancré :"
+  },
+  {
+    "id": "bb99d5d0068e2e75",
+    "en": "Solana anchoring is unavailable on this server.",
+    "zh": "此服务器无法使用 Solana 锚定。",
+    "es": "El anclaje en Solana no está disponible en este servidor.",
+    "fr": "L'ancrage Solana n'est pas disponible sur ce serveur."
+  },
+  {
+    "id": "cdb59355f3ba2939",
+    "en": "player",
+    "zh": "玩家",
+    "es": "jugador",
+    "fr": "joueur"
+  },
+  {
+    "id": "071ca22277547058",
+    "en": "repo",
+    "zh": "仓库",
+    "es": "repo",
+    "fr": "dépôt"
+  },
+  {
+    "id": "a962826d4641c07e",
+    "en": "wins",
+    "zh": "胜场",
+    "es": "victorias",
+    "fr": "victoires"
+  },
+  {
+    "id": "8000dce068b164c2",
+    "en": "played",
+    "zh": "场次",
+    "es": "jugadas",
+    "fr": "jouées"
+  },
+  {
+    "id": "8f4375ec65c2c409",
+    "en": "best",
+    "zh": "最佳",
+    "es": "mejor",
+    "fr": "meilleur"
+  },
+  {
+    "id": "cd545969552fef52",
+    "en": "anchored receipts",
+    "zh": "已上链凭证",
+    "es": "recibos anclados",
+    "fr": "reçus ancrés"
+  },
+  {
+    "id": "17521eeba1f341b8",
+    "en": "verify {0}",
+    "zh": "验证 {0}",
+    "es": "verificar {0}",
+    "fr": "vérifier {0}"
+  },
+  {
+    "id": "a12dd3a7fd3203a4",
+    "en": "verify",
+    "zh": "验证",
+    "es": "verificar",
+    "fr": "vérifier"
+  },
+  {
+    "id": "f6d042c322edfa59",
+    "en": "checking proof in your browser…",
+    "zh": "正在你的浏览器中校验证明…",
+    "es": "comprobando la prueba en tu navegador…",
+    "fr": "vérification de la preuve dans votre navigateur…"
+  },
+  {
+    "id": "31d4ab5724eb52aa",
+    "en": "✓ this row is in snapshot {0} anchored on Solana devnet",
+    "zh": "✓ 这一行在已锚定到 Solana devnet 的快照 {0} 中",
+    "es": "✓ esta fila está en la instantánea {0} anclada en Solana devnet",
+    "fr": "✓ cette ligne figure dans l'instantané {0} ancré sur Solana devnet"
+  },
+  {
+    "id": "c1d26fe970bf73d3",
+    "en": "✓ this row is in snapshot {0}; anchoring is pending",
+    "zh": "✓ 这一行在快照 {0} 中；锚定仍在等待确认",
+    "es": "✓ esta fila está en la instantánea {0}; el anclaje está pendiente",
+    "fr": "✓ cette ligne figure dans l'instantané {0} ; l'ancrage est en attente"
+  },
+  {
+    "id": "6ded9043368b7103",
+    "en": "✓ this row is in snapshot {0}, which is not anchored",
+    "zh": "✓ 这一行在快照 {0} 中，但该快照未上链",
+    "es": "✓ esta fila está en la instantánea {0}, que no está anclada",
+    "fr": "✓ cette ligne figure dans l'instantané {0}, qui n'est pas ancré"
+  },
+  {
+    "id": "7a7a1b5b2409f2f7",
+    "en": "tx ↗",
+    "zh": "交易 ↗",
+    "es": "tx ↗",
+    "fr": "tx ↗"
+  },
+  {
+    "id": "5b9d21943196f145",
+    "en": "✗ couldn't fetch the proof",
+    "zh": "✗ 无法获取证明",
+    "es": "✗ no se pudo obtener la prueba",
+    "fr": "✗ impossible de récupérer la preuve"
+  },
+  {
+    "id": "134acaeb642ca8f1",
+    "en": "✗ proof failed: this row doesn't match snapshot {0}",
+    "zh": "✗ 校验失败：这一行与快照 {0} 不符",
+    "es": "✗ la prueba falló: esta fila no coincide con la instantánea {0}",
+    "fr": "✗ échec de la preuve : cette ligne ne correspond pas à l'instantané {0}"
+  },
+  {
+    "id": "8090b913947d2863",
+    "en": "{0} results with a wallet-anchored receipt",
+    "zh": "{0} 场结果有钱包上链凭证",
+    "es": "{0} resultados con recibo anclado por billetera",
+    "fr": "{0} résultats avec un reçu ancré par portefeuille"
+  },
+  {
+    "id": "1cb52ecbd84bfaab",
+    "en": "{0} earlier roots",
+    "zh": "{0} 个更早的根",
+    "es": "{0} raíces anteriores",
+    "fr": "{0} racines précédentes"
+  },
+  {
+    "id": "724155e945df4222",
+    "en": "finalized",
+    "zh": "已确认",
+    "es": "confirmado",
+    "fr": "finalisé"
+  },
+  {
+    "id": "62a2fed3d6e08c44",
+    "en": "pending",
+    "zh": "待确认",
+    "es": "pendiente",
+    "fr": "en attente"
+  },
+  {
+    "id": "ba691ba042bcedd9",
+    "en": "unavailable",
+    "zh": "不可用",
+    "es": "no disponible",
+    "fr": "indisponible"
+  },
+  {
+    "id": "f2cf571a8ba17412",
+    "en": "loading chain board…",
+    "zh": "正在加载链上排行榜…",
+    "es": "cargando la tabla on-chain…",
+    "fr": "chargement du classement on-chain…"
+  },
+  {
+    "id": "77cb9173394b103d",
+    "en": "Tamper-evident history: we can't rewrite it after anchoring. Results are attested by the game server.",
+    "zh": "篡改可被发现：上链之后我们无法改写历史。结果由游戏服务器认证。",
+    "es": "Historial con detección de manipulaciones: no podemos reescribirlo tras el anclaje. Los resultados los certifica el servidor del juego.",
+    "fr": "Historique où toute falsification se voit : nous ne pouvons pas le réécrire après l'ancrage. Les résultats sont attestés par le serveur de jeu."
+  },
+  {
+    "id": "565f9eef8a49f4a4",
+    "en": "chain board offline.",
+    "zh": "链上排行榜离线。",
+    "es": "tabla on-chain sin conexión.",
+    "fr": "classement on-chain hors ligne."
+  },
+  {
+    "id": "c25fd23f0ab57b5c",
+    "en": "no qualifying PvP matches yet: play a royale with 2+ humans and public repos.",
+    "zh": "还没有符合条件的 PvP 对局：用公开仓库、2 名以上真人玩一局大逃杀吧。",
+    "es": "aún no hay partidas PvP válidas: juega un royale con 2+ personas y repos públicos.",
+    "fr": "aucun match PvP éligible pour l'instant : jouez un royale avec 2+ humains et des dépôts publics."
+  },
+  {
+    "id": "afc0d772a2bbe700",
+    "en": "players",
+    "zh": "玩家",
+    "es": "jugadores",
+    "fr": "joueurs"
+  },
+  {
+    "id": "2577c0f557b2e4b5",
+    "en": "projects",
+    "zh": "项目",
+    "es": "proyectos",
+    "fr": "projets"
+  },
+  {
+    "id": "4813494d137e1631",
+    "en": "root",
+    "zh": "根",
+    "es": "raíz",
+    "fr": "racine"
+  },
+  {
+    "id": "12dafdfd0547c3c7",
+    "en": "{0} entries",
+    "zh": "{0} 条记录",
+    "es": "{0} entradas",
+    "fr": "{0} entrées"
   }
 ]

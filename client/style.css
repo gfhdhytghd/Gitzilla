@@ -1878,3 +1878,48 @@ body:has(.screen.game) .game-toolbar > .mute-btn { font-size: 12px; }
 .seg-switch[aria-disabled="true"] { opacity: .6; }
 .seg-switch[aria-disabled="true"] .seg-opt { cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { .seg-thumb { transition: none; } }
+
+/* ⛓ verified on Solana: second tab of the hall panel (chain-board.ts) */
+.hall-tabs { gap: 4px 12px; }
+.hall-tab { font: inherit; font-size: 10px; letter-spacing: inherit; background: none; border: 0; padding: 4px 0; cursor: pointer; color: var(--dim); border-bottom: 2px solid transparent; min-height: 32px; }
+.hall-tab[aria-selected="true"] { color: var(--green); border-bottom-color: var(--green); }
+.hall-tab:hover { color: var(--text); }
+.hall-tab:focus-visible, .cb-tab:focus-visible, .cb-verify:focus-visible, .cb-ext:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.hall-body[hidden], .chain-board[hidden], .cb-result[hidden] { display: none; }
+.chain-board { font-size: 17px; line-height: 1.2; }
+.cb-anchor { margin-bottom: 6px; overflow-wrap: anywhere; }
+.cb-amber { color: var(--amber); }
+.cb-ext { color: var(--cyan); }
+.cb-tabs { display: flex; gap: 6px; margin: 6px 0; }
+.cb-tab { font: inherit; background: none; color: var(--dim); border: 1px solid var(--line); padding: 2px 10px; cursor: pointer; min-height: 32px; }
+.cb-tab[aria-selected="true"] { color: #04120a; background: var(--green); border-color: var(--green); }
+.cb-table { max-height: 330px; overflow: auto; overscroll-behavior: contain; }
+.cb-list { display: grid; grid-template-columns: auto minmax(0, 1fr) repeat(4, auto) 1.1em auto; align-items: center; }
+.cb-row { display: contents; }
+.cb-row > * { padding: 2px 4px; align-self: stretch; display: flex; align-items: center; }
+.cb-row > .cb-n { justify-content: flex-end; }
+.cb-row.hi > * { background: rgba(255,210,61,.12); }
+.cb-head > * { color: var(--dim); font-size: 14px; }
+/* long localized labels (victoires, meilleur) must not squeeze the name column */
+.cb-head > .cb-n { display: block; text-align: right; max-width: 7.5ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-n { text-align: right; font-variant-numeric: tabular-nums; }
+.cb-wins { color: var(--yellow); }
+.cb-row > .cb-who { min-width: 0; flex-direction: column; align-items: stretch; justify-content: center; }
+.cb-name, .cb-repo { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-repo { color: var(--dim); font-size: 14px; }
+.cb-row > .cb-badge { color: var(--cyan); justify-content: center; cursor: help; }
+.cb-verify { font: inherit; font-size: 14px; color: var(--green); background: none; border: 1px solid var(--green-d); padding: 1px 6px; cursor: pointer; min-height: 28px; }
+.cb-row > .cb-verify { align-self: center; padding: 1px 6px; margin: 2px 0 2px 4px; }
+.cb-verify:hover { background: #0f2a19; }
+.cb-verify:disabled { opacity: .5; cursor: progress; }
+.cb-result { grid-column: 1 / -1; font-size: 15px; padding: 2px 0 6px 12px; overflow-wrap: anywhere; }
+.cb-result.ok { color: var(--green); }
+.cb-result.bad { color: var(--red); }
+.cb-meta { margin-top: 6px; font-size: 14px; }
+.cb-root { font-variant-numeric: tabular-nums; }
+.cb-history { margin-top: 4px; font-size: 14px; color: var(--dim); }
+.cb-history summary { cursor: pointer; min-height: 28px; }
+.cb-hist-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; }
+.cb-note { margin: 8px 0 0; font-size: 14px; color: var(--dim); }
+@media (max-width: 420px) { .hall-tab { font-size: 9px; } .cb-best { display: none !important; } .cb-list { grid-template-columns: auto minmax(0, 1fr) repeat(3, auto) 1.1em auto; } }
+@media (pointer: coarse) { .hall-tab, .cb-tab { min-height: 44px; } .cb-verify { min-height: 40px; min-width: 52px; } }

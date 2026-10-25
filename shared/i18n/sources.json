@@ -13933,5 +13933,185 @@
     "id": "62b18c0d4db7040b",
     "source": "⚡ swipe",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "bb3e597ba0796f57",
+    "source": "⛓ VERIFIED ON SOLANA",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "168274782cad6157",
+    "source": "Last anchored:",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "23975f8916545b83",
+    "source": "slot {0}",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "28469e816d3efb98",
+    "source": "Explorer ↗",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "31359f88fb833e43",
+    "source": "anchoring on Solana devnet…",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "9476cd5cbf8ac839",
+    "source": "waiting for confirmation",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "fa659995ae52e230",
+    "source": "not anchored:",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "bb99d5d0068e2e75",
+    "source": "Solana anchoring is unavailable on this server.",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "cdb59355f3ba2939",
+    "source": "player",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "071ca22277547058",
+    "source": "repo",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "a962826d4641c07e",
+    "source": "wins",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "8000dce068b164c2",
+    "source": "played",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "8f4375ec65c2c409",
+    "source": "best",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "cd545969552fef52",
+    "source": "anchored receipts",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "17521eeba1f341b8",
+    "source": "verify {0}",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "a12dd3a7fd3203a4",
+    "source": "verify",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "f6d042c322edfa59",
+    "source": "checking proof in your browser…",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "31d4ab5724eb52aa",
+    "source": "✓ this row is in snapshot {0} anchored on Solana devnet",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "c1d26fe970bf73d3",
+    "source": "✓ this row is in snapshot {0}; anchoring is pending",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "6ded9043368b7103",
+    "source": "✓ this row is in snapshot {0}, which is not anchored",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "7a7a1b5b2409f2f7",
+    "source": "tx ↗",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "5b9d21943196f145",
+    "source": "✗ couldn't fetch the proof",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "134acaeb642ca8f1",
+    "source": "✗ proof failed: this row doesn't match snapshot {0}",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "8090b913947d2863",
+    "source": "{0} results with a wallet-anchored receipt",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "1cb52ecbd84bfaab",
+    "source": "{0} earlier roots",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "724155e945df4222",
+    "source": "finalized",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "62a2fed3d6e08c44",
+    "source": "pending",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "ba691ba042bcedd9",
+    "source": "unavailable",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "f2cf571a8ba17412",
+    "source": "loading chain board…",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "77cb9173394b103d",
+    "source": "Tamper-evident history: we can't rewrite it after anchoring. Results are attested by the game server.",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "565f9eef8a49f4a4",
+    "source": "chain board offline.",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "c25fd23f0ab57b5c",
+    "source": "no qualifying PvP matches yet: play a royale with 2+ humans and public repos.",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "afc0d772a2bbe700",
+    "source": "players",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "2577c0f557b2e4b5",
+    "source": "projects",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "4813494d137e1631",
+    "source": "root",
+    "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "12dafdfd0547c3c7",
+    "source": "{0} entries",
+    "context": "client/app (claude-board, hand-translated)"
   }
 ]
