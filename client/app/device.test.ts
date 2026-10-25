@@ -57,7 +57,7 @@ describe("device detection uses UA candidate AND actual immersive support", () =
 
 describe("headset view default and device overrides", () => {
   it.each([
-    ["headset", "", "0", true], ["headset", "&view=2d", "1", false],
+    ["headset", "", null, true], ["headset", "", "0", false], ["headset", "&view=2d", "1", false],
     ["headset", "&view=25d", "0", true], ["headset", "&view=xr", "0", true],
     ["desktop", "", "0", false], ["desktop", "", "1", true],
     ["phone", "", null, false], ["phone", "&view=2d", "1", false],

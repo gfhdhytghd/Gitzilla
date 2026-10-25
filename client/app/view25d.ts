@@ -2,7 +2,7 @@
 // scene, a fixed tilted camera on screens (?view=25d / Settings switch) and WebXR on Vision Pro (?screen=1&view=xr).
 // Presentation only: the sim stays 2D, the stage projects world x/y. Until that module exists (or if it fails to
 // load / throws) everything falls back to the 2D renderer.
-// Off by default; on with ?view=25d|xr or the Settings switch (remembered in localStorage). ?view=2d forces it off.
+// Off by default (on by default on headsets); on with ?view=25d|xr or the Settings switch (remembered in localStorage). ?view=2d forces it off.
 import type { MatchState } from "../../shared/types";
 import type { View } from "./renderers";
 import { store } from "./util";
@@ -51,7 +51,8 @@ const forced = (): boolean | null => {
   return v === "25d" || v === "xr" ? true : v === "2d" ? false : null;
 };
 /** The player asked for 2.5D (URL wins over the saved switch). */
-export const view25dWanted = () => forced() ?? (isHeadset() || store.get(KEY) === "1");
+// headsets default to 3D until the player picks a view
+export const view25dWanted = () => forced() ?? (store.get(KEY) !== null ? store.get(KEY) === "1" : isHeadset());
 /** Headset spectator page (?screen=1&view=xr). */
 export const xrView = () => new URLSearchParams(location.search).get("view") === "xr";
 /** The URL pins the view, so the Settings switch only shows what's in effect. */

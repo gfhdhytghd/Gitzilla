@@ -86,12 +86,9 @@ function render() {
     h('label.settings-toggle', null,
       h('input', { type: 'checkbox', 'data-testid': 'settings-sound', checked: !isMuted(), onchange: (e: Event) => setMuted(!(e.target as HTMLInputElement).checked) }),
       h('span', null, 'music & sound effects')));
-  // 3D view (beta, off by default): the fight in the three.js stage; a ?view=… link pins it
-  const view = context.classroom || onboarding ? null : h('section.settings-section', null, h('h3', null, 'View'),
-    h('label.settings-toggle', null,
-      h('input', { type: 'checkbox', 'data-testid': 'settings-view3d', checked: view25dWanted(), disabled: view25dPinned(), onchange: (e: Event) => setView25d((e.target as HTMLInputElement).checked) }),
-      h('span', null, '3D view (beta)')),
-    view25dPinned() ? h('p.settings-status', null, 'Set by this link.') : null);
+  // View: [ 2D | 3D ] segmented switch (the fight in the three.js stage); a ?view=… link pins it
+  const view = context.classroom || onboarding ? null : h('section.settings-section', null, h('h3', { id: 'settings-view-label' }, 'View'),
+    viewSwitch(), view25dPinned() ? h('p.settings-status', null, 'Set by this link.') : null);
   const children: (HTMLElement | null)[] = [title, intro, language, sound, view];
   if (!context.classroom && !context.spectator && usesLocalControls()) {
     if (getMotionPermissionState().mobile) {
@@ -110,6 +107,41 @@ function render() {
     h('button.btn.btn-primary', { 'data-testid': 'settings-close', onclick: close }, needsSetup ? 'Continue without practice' : onboarding ? 'Continue' : 'Close')));
   dialog.replaceChildren(...children.filter((x): x is HTMLElement => !!x));
 }
+/** [ 2D | 3D ] with a sliding thumb: role=radiogroup, roving tabindex, ←/→ (and Home/End) select, disabled when pinned. */
+function viewSwitch(): HTMLElement {
+  const pinned = view25dPinned();
+  const opts = [['2d', '2D'], ['3d', '3D']] as const;
+  const group = h('div.seg-switch', { role: 'radiogroup', 'aria-labelledby': 'settings-view-label', 'data-testid': 'settings-view', 'aria-disabled': String(pinned) });
+  const thumb = h('span.seg-thumb', { 'aria-hidden': 'true' });
+  const btns = opts.map(([v, label]) => h('button.seg-opt', { type: 'button', role: 'radio', 'data-testid': `settings-view-${v}`, 'data-v': v, disabled: pinned,
+    onclick: () => pick(v === '3d', true) }, label) as HTMLButtonElement);
+  const sync = () => {
+    const on3d = view25dWanted();
+    group.dataset.value = on3d ? '3d' : '2d';
+    btns.forEach((b) => {
+      const sel = (b.dataset.v === '3d') === on3d;
+      b.setAttribute('aria-checked', String(sel));
+      b.tabIndex = sel ? 0 : -1;
+    });
+  };
+  const pick = (on3d: boolean, focus: boolean) => {
+    if (pinned) return;
+    setView25d(on3d);
+    sync();
+    if (focus) btns[on3d ? 1 : 0].focus();
+  };
+  group.addEventListener('keydown', (e) => {
+    const k = (e as KeyboardEvent).key;
+    const to = k === 'ArrowRight' || k === 'ArrowDown' || k === 'End' ? true : k === 'ArrowLeft' || k === 'ArrowUp' || k === 'Home' ? false : null;
+    if (to === null) return;
+    e.preventDefault();
+    pick(to, true);
+  });
+  group.append(thumb, ...btns);
+  sync();
+  return group;
+}
+
 export function openSettings() {
   if (!dialog || training) return;
   onboarding = false;
