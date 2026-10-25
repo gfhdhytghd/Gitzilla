@@ -1,3 +1,19 @@
+DONE (hero variety comparison)
+
+## Hero-only AFTER measurement — complete
+- Coordinator confirmed hero variety committed at4ba4f40. Captured current working-tree hero source (git HEAD62d5388, includes4ba4f40) using the exact45 baseline profiles/kits, same Chromium154 and unchanged protocol/thresholds. No product edits, provider calls, commits or shared service actions.
+- Added --kind heroes|bosses|all: capture/import only the selected renderer and scope source fingerprints accordingly. Partial reports do not replace the full baseline/latest summary. Verified no boss source file was loaded; all baseline files and boss sheets are byte-for-byte unchanged from HEAD. Boss rerun remains pending claude-boss completion.
+- **Before→after (all45 /990 pairs):**
+
+| View | Min distance | Mean distance | Look-alike pairs / clusters | Shape-only pairs | Pooled palette entropy bits |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| heroes-portraits | 0.01410→0.21770 | 0.44753→0.49137 | 10 / 10→0 / 0 | 43→1 | 5.4861→6.1825 |
+| heroes-fight | 0.01917→0.18753 | 0.36255→0.39550 | 11 / 9→0 / 0 | 55→35 | 5.3256→5.8117 |
+
+- Fallback-only15: portrait min0.17747→0.27344; fight min0.11084→0.21483. Combined look-alike pairs remain0 for that subset. All90 hero images reproduced pixel-for-pixel in a second fresh Chromium context, browser errors0. Viewed both sheets; pre-existing S16 portrait edge touch remains, no new edge touches.
+- Output: docs/variety/after-heroes/{heroes-portraits.png,heroes-fight.png,summary.json,fixtures.json}; comparison/commands added to docs/variety/README.md. Original frozen source67cb5a9 and fixture SHA0c7618… remain unchanged.
+- **6/6 metric/selection tests PASS; workspace npx tsc --noEmit PASS; owned diff check PASS.** No boss capture or product changes. Run `--label after-bosses --kind bosses --fixtures docs/variety/baseline/fixtures.json --compare docs/variety/baseline/summary.json` only after its owner is finished.
+
 DONE (variety baseline)
 
 ## Variety measurement tooling — baseline complete

@@ -24,6 +24,27 @@ Art owners started modifying the shared renderers while the tool was being built
 | bosses-portraits | 0.07916 | 8 | 4 |
 | bosses-fight | 0.07206 | 10 | 4 |
 
+## Hero AFTER — committed variety pass4ba4f40
+
+Measured current hero renderer source with the exact45 frozen inputs and unchanged metric protocol. Boss modules were not imported or measured; all frozen baseline files, boss sheets and the latest full summary remain byte-for-byte unchanged.
+
+| View | Min distance before→after | Mean distance before→after | Look-alike pairs before→after | Clusters before→after | Shape-only pairs before→after | Pooled palette bits before→after |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| [heroes-portraits](after-heroes/heroes-portraits.png) | 0.01410→0.21770 | 0.44753→0.49137 | 10→0 | 10→0 | 43→1 | 5.4861→6.1825 |
+| [heroes-fight](after-heroes/heroes-fight.png) | 0.01917→0.18753 | 0.36255→0.39550 | 11→0 | 9→0 | 55→35 | 5.3256→5.8117 |
+
+Fallback-only15 minima also improved: portraits0.17747→0.27344, fight0.11084→0.21483. Both had zero combined look-alike pairs before and after. All90 hero pixel hashes matched in a second fresh Chromium context; no browser errors. S16 still touches its portrait edge as in baseline. The remaining35 fight shape-only matches show that palette differences can distinguish heroes which retain related silhouettes; this is not a human-perception or animation acceptance claim.
+
+[Hero comparison JSON](after-heroes/summary.json). Exact command:
+
+```sh
+npx tsx tools/variety-sheet.ts --label after-heroes --kind heroes \
+  --fixtures docs/variety/baseline/fixtures.json \
+  --compare docs/variety/baseline/summary.json
+```
+
+`--kind heroes|bosses|all` selects which renderer is imported/captured (default all). Partial runs write their own run summary and leave the latest full `docs/variety/summary.json` intact. After claude-boss finishes, use the same command with `--label after-bosses --kind bosses`.
+
 ## Metric definitions
 
 - Foreground bounds: alpha≥128; normalize the bounding box into 60×60 pixels centered in 64×64. dHash compares luminance horizontally on 9×8 pixels (64 bits), composited on a fixed neutral matte. RGB histogram uses 8 bins per channel (512 bins), counting only foreground pixels. No contact-sheet label/background enters the scores.

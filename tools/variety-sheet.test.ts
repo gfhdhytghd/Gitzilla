@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { bossKitFromProfile } from '../sim/kits.ts';
-import { distance, entropy, score, syntheticProfiles, type Feature } from './variety-sheet.ts';
+import { distance, entropy, score, selectedKinds, syntheticProfiles, type Feature } from './variety-sheet.ts';
 
 const feature = (id: string, dHash: string, histogram: number[], group = 'mage'): Feature => ({
   id, dHash: dHash.padStart(16, '0'), histogram, entropyBits: entropy(histogram), group, origin: 'synthetic',
   base: group, palette: [], foregroundPixels: 1, bounds: [0, 0, 1, 1], touchesEdge: false, pixelHash: id,
 });
 describe('variety measurement', () => {
+  it('isolates hero/boss measurements without changing the metric protocol', () => {
+    expect(selectedKinds('heroes')).toEqual(['heroes']); expect(selectedKinds('bosses')).toEqual(['bosses']);
+    expect(selectedKinds('all')).toEqual(['heroes', 'bosses']); expect(() => selectedKinds('bad')).toThrow('--kind');
+  });
   it('uses normalized Hamming and histogram total variation with known endpoints', () => {
     const a = feature('a', '0', [1, 0]), b = feature('b', 'ffffffffffffffff', [0, 1]);
     expect(distance(a, a)).toEqual({ dHash: 0, histogram: 0, combined: 0 });

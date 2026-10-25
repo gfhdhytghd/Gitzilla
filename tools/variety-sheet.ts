@@ -29,6 +29,10 @@ export interface Feature {
   dHash: string; histogram: number[]; entropyBits: number; foregroundPixels: number;
   bounds: number[]; touchesEdge: boolean; pixelHash: string;
 }
+export function selectedKinds(value: string): Array<'heroes' | 'bosses'> {
+  assert(['all', 'heroes', 'bosses'].includes(value), '--kind must be all, heroes or bosses');
+  return value === 'all' ? ['heroes', 'bosses'] : [value as 'heroes' | 'bosses'];
+}
 export const entropy = (histogram: number[]) => histogram.reduce((sum, p) => p > 0 ? sum - p * Math.log2(p) : sum, 0);
 export function distance(a: Pick<Feature, 'dHash' | 'histogram'>, b: Pick<Feature, 'dHash' | 'histogram'>) {
   assert.equal(a.histogram.length, b.histogram.length);
@@ -106,24 +110,25 @@ function fixtures(): Fixture[] {
       hero: designed ? applyHeroDesign(hero, fallbackHero(p, hero)) : hero, boss: designed ? applyBossDesign(boss, fallbackBoss(p, boss)) : boss };
   }));
 }
-function sources(ref?: string) {
+function sources(ref?: string, kind = 'all') {
   const dirs = ['client/render', 'shared'];
   const paths = (ref ? execFileSync('git', ['ls-tree', '-r', '--name-only', ref, '--', ...dirs], { cwd: ROOT, encoding: 'utf8' }).trim().split('\n')
     : dirs.flatMap(dir => readdirSync(join(ROOT, dir), { recursive: true }).map(name => join(dir, String(name)))))
-    .filter(f => /\.(ts|json)$/.test(f) && !/\.(test|spec)\.ts$|(?:^|\/)gallery\.ts$|client\/render\/stage25d\//.test(f)).sort();
+    .filter(f => /\.(ts|json)$/.test(f) && !/\.(test|spec)\.ts$|(?:^|\/)gallery\.ts$|client\/render\/stage25d\//.test(f))
+    .filter(f => !(kind === 'heroes' && f.startsWith('client/render/boss/')) && !(kind === 'bosses' && f.startsWith('client/render/player/'))).sort();
   const contents = Object.fromEntries(paths.map(path => [path, ref ? execFileSync('git', ['show', `${ref}:${path}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }) : readFileSync(join(ROOT, path), 'utf8')]));
   const files = Object.fromEntries(Object.entries(contents).map(([path, content]) => [path, sha(content)]));
   return { hash: sha(JSON.stringify(files)), files, contents, sourceRef: ref ?? 'working-tree' };
 }
 
-async function render(page: Page, input: Fixture[], revision: string) {
-  return page.evaluate(async ({ input, revision, protocol }) => {
-    const player = await import(/* @vite-ignore */ `/client/render/player/index.ts?variety=${revision}`) as typeof import('../client/render/player/index.ts');
-    const boss = await import(/* @vite-ignore */ `/client/render/boss/index.ts?variety=${revision}`) as typeof import('../client/render/boss/index.ts');
+async function render(page: Page, input: Fixture[], revision: string, kinds: Array<'heroes' | 'bosses'>) {
+  return page.evaluate(async ({ input, revision, protocol, kinds }) => {
+    const player = (kinds.includes('heroes') ? await import(/* @vite-ignore */ `/client/render/player/index.ts?variety=${revision}`) : null) as typeof import('../client/render/player/index.ts');
+    const boss = (kinds.includes('bosses') ? await import(/* @vite-ignore */ `/client/render/boss/index.ts?variety=${revision}`) : null) as typeof import('../client/render/boss/index.ts');
     const { fx } = await import(/* @vite-ignore */ `/client/render/arena/fx.ts?variety=${revision}`) as typeof import('../client/render/arena/fx.ts');
     const canvas = (size: number) => { const c = document.createElement('canvas'); c.width = c.height = size; return c; };
     const views: Record<string, { sheet: string; features: Feature[] }> = {};
-    for (const kind of ['heroes', 'bosses'] as const) for (const view of ['portraits', 'fight'] as const) {
+    for (const kind of kinds) for (const view of ['portraits', 'fight'] as const) {
       const sheet = document.createElement('canvas'); sheet.width = 9 * 256; sheet.height = 68 + Math.ceil(input.length / 9) * 284;
       const g = sheet.getContext('2d')!; g.fillStyle = '#0c111b'; g.fillRect(0, 0, sheet.width, sheet.height); g.imageSmoothingEnabled = false;
       g.font = 'bold 22px monospace'; g.fillStyle = '#e6edf3'; g.fillText(`Gitzilla · ${kind} ${view} · ${input.length} inputs`, 16, 29);
@@ -187,12 +192,13 @@ async function render(page: Page, input: Fixture[], revision: string) {
       views[`${kind}-${view}`] = { sheet: sheet.toDataURL('image/png'), features };
     }
     return views;
-  }, { input, revision, protocol: PROTOCOL });
+  }, { input, revision, protocol: PROTOCOL, kinds });
 }
 
 export async function main() {
   const args = process.argv.slice(2), option = (name: string, fallback?: string) => { const i = args.indexOf(name); return i < 0 ? fallback : args[i + 1]; };
   const label = option('--label', 'baseline')!; assert(/^[a-z0-9_-]+$/i.test(label), 'Use a simple --label');
+  const kind = option('--kind', 'all')!, kinds = selectedKinds(kind);
   const base = new URL(option('--base', process.env.VARIETY_URL ?? 'http://localhost:5175')!);
   assert(['localhost', '127.0.0.1', '[::1]'].includes(base.hostname) && base.port === '5175', 'Only the existing DEV5175 server is allowed');
   const out = resolve(ROOT, option('--out', 'docs/variety')!), run = join(out, label); mkdirSync(run, { recursive: true });
@@ -200,7 +206,7 @@ export async function main() {
   assert.equal(input.length, 45); assert.equal(new Set(input.map(f => f.id)).size, 45);
   const sourceArg = option('--source-ref');
   const sourceRef = sourceArg ? execFileSync('git', ['rev-parse', '--verify', `${sourceArg}^{commit}`], { cwd: ROOT, encoding: 'utf8' }).trim() : undefined;
-  const fixtureHash = sha(JSON.stringify(input)), before = sources(sourceRef), errors: string[] = [];
+  const fixtureHash = sha(JSON.stringify(input)), before = sources(sourceRef, kind), errors: string[] = [];
   // Snapshot unchanged renderer sources into the browser fixture, not into product files.
   // This supports a committed BEFORE revision while owners edit the shared worktree.
   const modules = Object.fromEntries(await Promise.all(Object.entries(before.contents).map(async ([path, content]) => {
@@ -231,21 +237,21 @@ export async function main() {
       });
       await page.routeWebSocket('**/*', socket => socket.close());
       await page.goto(new URL('/__variety-sheet', base).toString());
-      try { return await render(page, input, before.hash); }
+      try { return await render(page, input, before.hash, kinds); }
       catch (error) { throw new Error(`${String(error)}\n${errors.join('\n')}`); }
       finally { await context.close(); }
     };
     const first = await capture(), second = await capture();
     assert.deepEqual(errors, [], 'Browser renderer errors');
     for (const key of Object.keys(first)) assert.deepEqual(first[key].features.map(f => f.pixelHash), second[key].features.map(f => f.pixelHash), `Non-deterministic ${key}`);
-    assert.equal(before.hash, sources(sourceRef).hash, 'Render sources changed during capture; repeat on a stable revision');
+    assert.equal(before.hash, sources(sourceRef, kind).hash, 'Render sources changed during capture; repeat on a stable revision');
     const views = Object.fromEntries(Object.entries(first).map(([key, value]) => {
       const sheet = join(run, key + '.png'); writeFileSync(sheet, Buffer.from(value.sheet.split(',')[1], 'base64'));
       const features = value.features;
       return [key, { sheet: relative(ROOT, sheet), all: score(features), fallback: score(features.filter(f => f.origin === 'fallback')), synthetic: score(features.filter(f => f.origin === 'synthetic')),
         groups: Object.fromEntries([...new Set(features.map(f => f.group))].sort().map(group => [group, score(features.filter(f => f.group === group))])), features }];
     }));
-    const summary: Record<string, unknown> = { schemaVersion: 1, label, createdAt: new Date().toISOString(), baseURL: base.origin, chromium: browser.version(), node: process.version,
+    const summary: Record<string, unknown> = { schemaVersion: 1, label, selectedKinds: kinds, createdAt: new Date().toISOString(), baseURL: base.origin, chromium: browser.version(), node: process.version,
       gitHead: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(), rendererSources: { hash: before.hash, files: before.files, sourceRef: before.sourceRef }, fixtureHash,
       fixturePath: relative(ROOT, join(run, 'fixtures.json')), protocol: PROTOCOL, repeatPixelHashesMatch: true, browserErrors: errors, views };
     const compare = option('--compare');
@@ -262,8 +268,9 @@ export async function main() {
     }
     writeFileSync(join(run, 'fixtures.json'), JSON.stringify({ schemaVersion: 1, fixtureHash, fixtures: input }, null, 2) + '\n');
     writeFileSync(join(run, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
-    writeFileSync(join(out, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
-    console.log(JSON.stringify({ label, fixtureHash, summary: relative(ROOT, join(out, 'summary.json')), views: Object.fromEntries(Object.entries(views).map(([key, value]) => [key, {
+    // Partial runs have their own summary and never replace the full baseline/latest report.
+    if (kind === 'all') writeFileSync(join(out, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
+    console.log(JSON.stringify({ label, fixtureHash, summary: relative(ROOT, join(run, 'summary.json')), views: Object.fromEntries(Object.entries(views).map(([key, value]) => [key, {
       sheet: value.sheet, ...value.all, nearestPairs: undefined, clusters: value.all.clusters.length,
       shapeLookalikes: { ...value.all.shapeLookalikes, clusters: value.all.shapeLookalikes.clusters.length },
     }])) }, null, 2));
