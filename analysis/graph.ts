@@ -42,7 +42,7 @@ export function buildImportGraph(input: SourceFile[]): Map<string, Set<string>> 
   const aliases: { base: string; prefix: string; suffix: string; targets: string[]; wildcard: boolean }[] = [];
   for (const file of input) {
     if (path.basename(file.path) === 'go.mod') {
-      const name = file.text.match(/^\s*module\s+["']?([^\s"']+)/m)?.[1];
+      const name = file.text.match(/^[ \t]*module[ \t]+["']?([^\s"']+)/m)?.[1];
       if (name) goModules.set(name, path.dirname(file.path));
     }
     if (path.basename(file.path) === 'Cargo.toml') {
@@ -50,7 +50,7 @@ export function buildImportGraph(input: SourceFile[]): Map<string, Set<string>> 
       cargoRoots.push(dir);
       const pkg = file.text.match(/\[package\]([\s\S]*?)(?=\n\[|$)/)?.[1];
       const lib = file.text.match(/\[lib\]([\s\S]*?)(?=\n\[|$)/)?.[1];
-      const name = (lib?.match(/^\s*name\s*=\s*["']([^"']+)/m) ?? pkg?.match(/^\s*name\s*=\s*["']([^"']+)/m))?.[1];
+      const name = (lib?.match(/^[ \t]*name[ \t]*=[ \t]*["']([^"']+)/m) ?? pkg?.match(/^[ \t]*name[ \t]*=[ \t]*["']([^"']+)/m))?.[1];
       if (name) rustCrates.set(name.replace(/-/g, '_'), path.join(dir, 'src'));
     }
     if (path.basename(file.path) === 'package.json') {
@@ -61,7 +61,7 @@ export function buildImportGraph(input: SourceFile[]): Map<string, Set<string>> 
     }
     if (/^(?:tsconfig(?:\..+)?|jsconfig)\.json$/.test(path.basename(file.path))) {
       try {
-        const config = JSON.parse(file.text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1'));
+        const config = JSON.parse(file.text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '').replace(/,\s*([}\]])/g, '$1'));
         const base = path.join(path.dirname(file.path), config.compilerOptions?.baseUrl ?? '.');
         for (const [pattern, targets] of Object.entries(config.compilerOptions?.paths ?? {})) {
           if (!Array.isArray(targets)) continue;
@@ -78,7 +78,7 @@ export function buildImportGraph(input: SourceFile[]): Map<string, Set<string>> 
   };
   for (const file of sources) {
     if (/\.(?:java|kt|kts)$/.test(file.path)) {
-      const pkg = file.text.match(/^\s*package\s+([\w.]+)/m)?.[1] ?? '';
+      const pkg = file.text.match(/^[ \t]*package[ \t]+([\w.]+)/m)?.[1] ?? '';
       register(symbols, `${pkg ? pkg + '.' : ''}${path.basename(file.path).replace(/\.[^.]+$/, '')}`, file.path);
       for (const name of matches(file.text, /\b(?:class|interface|object|enum|record)\s+(\w+)/g)) register(symbols, `${pkg ? pkg + '.' : ''}${name}`, file.path);
       register(namespaces, pkg, file.path);
@@ -151,16 +151,17 @@ export function buildImportGraph(input: SourceFile[]): Map<string, Set<string>> 
     const add = (target: string | undefined) => { if (target && target !== file.path) out.add(target); };
     const addAll = (targets: Iterable<string> | undefined) => { for (const target of targets ?? []) add(target); };
     const ext = path.extname(file.path);
+    // Indentation must stay on one line: ^\s* with /m retries whole blank-line suffixes quadratically.
     // Remove comment-only lines to keep examples in comments out of the graph.
-    const text = file.text.replace(/^\s*(?:\/\/|#(?!\s*include)|\*).*$/gm, '');
+    const text = file.text.replace(/^[ \t]*(?:\/\/|#(?![ \t]*include)|\*).*$/gm, '');
     if (JS_EXTS.includes(ext)) {
       for (const spec of matches(text, /\b(?:import|export)\s+(?:type\s+)?(?:[^;"'`]*?\s+from\s*)?["']([^"']+)["']/g)) add(resolveJs(spec, file.path));
       for (const spec of matches(text, /\b(?:require|import)\s*\(\s*["']([^"']+)["']\s*\)/g)) add(resolveJs(spec, file.path));
     } else if (ext === '.py' || ext === '.pyi') {
-      for (const statement of matches(text, /^\s*import\s+([^\n;#]+)/gm)) {
+      for (const statement of matches(text, /^[ \t]*import[ \t]+([^\r\n;#]+)/gm)) {
         for (const item of statement.split(',')) add(resolvePython(item.trim().split(/\s+/)[0], file.path));
       }
-      for (const match of text.matchAll(/^\s*from\s+([.\w]+)\s+import\s+(\([^)]*\)|[^\n;#]+)/gm)) {
+      for (const match of text.matchAll(/^[ \t]*from[ \t]+([.\w]+)[ \t]+import[ \t]+(\([^)]*\)|[^\r\n;#]+)/gm)) {
         add(resolvePython(match[1], file.path));
         for (const item of match[2].replace(/[()\n]/g, '').split(',')) {
           const name = item.trim().split(/\s+/)[0];
@@ -211,7 +212,7 @@ export function buildImportGraph(input: SourceFile[]): Map<string, Set<string>> 
         }
       }
     } else if (['.c', '.h', '.cpp', '.hpp', '.cc', '.cxx', '.hh', '.m', '.mm'].includes(ext)) {
-      for (const spec of matches(text, /^\s*#\s*include\s*"([^"]+)"/gm)) {
+      for (const spec of matches(text, /^[ \t]*#[ \t]*include[ \t]*"([^"]+)"/gm)) {
         for (const root of [path.dirname(file.path), '', 'include', 'src']) {
           const found = resolve(path.join(root, spec)); if (found) { add(found); break; }
         }

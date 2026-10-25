@@ -49,6 +49,7 @@ export function createBot(seed: number, skill = 0.72) {
   const rng = random(seed);
   const perkRng = random(seed ^ 0x50414453);
   let review = -1, selectedPad = '';
+  let retreating = false;
   const reaction = 0.13 + (1 - skill) * 0.35;
   let nextThink = 0;
   let seq = 0;
@@ -74,7 +75,11 @@ export function createBot(seed: number, skill = 0.72) {
       const weapon = WEAPONS[p.kit.weapon], arena = pvpArenaSize(state.players.length, state.mode === 'pvp' ? 'pvp' : 'edu');
       const toward = target ? unit(target.x - p.x, target.y - p.y) : [0, 0] as [number, number];
       const d = target ? distance(p, target) : 0, preferred = Math.min(160, weapon.speed * weapon.life * 0.65);
-      const radial = d > preferred + 18 ? 1 : d < preferred - 20 ? -0.65 : 0;
+      if (state.mode === 'pvp') {
+        if (p.armor <= p.kit.maxArmor * 0.25) retreating = true;
+        if (p.armor >= p.kit.maxArmor * 0.9) retreating = false;
+      }
+      const radial = state.mode === 'pvp' && retreating ? -1.5 : d > preferred + 18 ? 1 : d < preferred - 20 ? -0.65 : 0;
       const orbit = (seed & 1 ? 1 : -1) * 0.35;
       let mx = toward[0] * radial - toward[1] * orbit, my = toward[1] * radial + toward[0] * orbit, danger = false;
       for (const bullet of state.bullets) {
@@ -88,6 +93,11 @@ export function createBot(seed: number, skill = 0.72) {
       if (p.x < 70) mx += 0.8; if (p.x > arena.width - 70) mx -= 0.8;
       if (p.y < 70) my += 0.8; if (p.y > arena.height - 70) my -= 0.8;
       if (state.pvp?.royale) {
+        // Wall projection keeps a retreat from pinning itself to a corner while shots catch up.
+        if (p.x < 55 && mx < 0) { mx = 0.3; if (Math.abs(my) < 0.5) my = p.y < arena.height / 2 ? 1 : -1; }
+        if (p.x > arena.width - 55 && mx > 0) { mx = -0.3; if (Math.abs(my) < 0.5) my = p.y < arena.height / 2 ? 1 : -1; }
+        if (p.y < 55 && my < 0) { my = 0.3; if (Math.abs(mx) < 0.5) mx = p.x < arena.width / 2 ? 1 : -1; }
+        if (p.y > arena.height - 55 && my > 0) { my = -0.3; if (Math.abs(mx) < 0.5) mx = p.x < arena.width / 2 ? 1 : -1; }
         const zone = state.pvp.royale.zone;
         if (zone && state.t >= zone.shrinkStart - 4 && distance(p, { x: zone.cx, y: zone.cy }) > Math.max(0, zone.r - 26)) {
           const inward = unit(zone.cx - p.x, zone.cy - p.y); mx = inward[0] * 3; my = inward[1] * 3; danger = true;

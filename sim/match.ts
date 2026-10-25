@@ -3,7 +3,7 @@ import type { Autopsy, BossAttack, BossKit, BossState, Bullet, GameEvent, GameMo
 import { BossAi } from './bossAi.ts';
 import { clamp, distance, random, unit } from './math.ts';
 import { activeBossRegions, bossMouth, bossRegions } from './regions.ts';
-import { archetypeContactCost, ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
+import { archetypeContactCost, BATTLE_DIFFICULTY, ENCOUNTER_SEED, squadBudget, type HitFeedback } from './balance.ts';
 import { createObstacles, segmentRect } from './arena.ts';
 import { createPerkOffer, hasPerk } from './perks.ts';
 import { safeInput } from './input.ts';
@@ -48,7 +48,7 @@ class ArenaMatch implements BattleMatch {
   private minionShot = 0;
   private pending: { t: number; angle: number; speed: number; damage: number; x: number; y: number; kind: string }[] = [];
   private decoys = new Map<string, { x: number; y: number; until: number }>();
-  private pressureCd = 3;
+  private pressureCd = 3 / BATTLE_DIFFICULTY.attackFrequency;
   private pressureRound = 0;
   private pressure: { t: number; x: number; y: number; angle: number; targetPlayer: string; hazardId: number }[] = [];
   private dropExpiry = new Map<number, number>();
@@ -539,10 +539,10 @@ class ArenaMatch implements BattleMatch {
       if (!target) continue;
       const [x, y] = unit(target.x - m.x, target.y - m.y);
       m.x += x * 22 * dt; m.y += y * 22 * dt;
-      if (distance(m, target) < 12) this.hurtPlayer(target, 1);
-      if (this.minionShot <= 0) this.bullet('boss', 'bug', m.x, m.y, x * 42, y * 42, 2.5, 1, 5);
+      if (distance(m, target) < 12) this.hurtPlayer(target, BATTLE_DIFFICULTY.damage);
+      if (this.minionShot <= 0) this.bullet('boss', 'bug', m.x, m.y, x * 42, y * 42, 2.5, BATTLE_DIFFICULTY.damage, 5);
     }
-    if (this.minionShot <= 0) this.minionShot = 3;
+    if (this.minionShot <= 0) this.minionShot = 3 / BATTLE_DIFFICULTY.attackFrequency;
     this.state.minions = this.state.minions.filter(m => m.hp > 0);
   }
 

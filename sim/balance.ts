@@ -1,4 +1,4 @@
-import type { BossArchetype, BossAttackKind } from '../shared/types.ts';
+import type { BossArchetype, BossAttack, BossAttackKind, BossState } from '../shared/types.ts';
 import { clamp } from './math.ts';
 
 /** Central playtest knobs. Odd-sized squads interpolate neighboring budgets. */
@@ -8,6 +8,8 @@ export const SQUAD_TUNING = {
   8: { pressurePeriod: 3.2, hitDamage: 4 },
 };
 export const MATCH_TUNING = { bossBaseHp: 11600, bossReferencePlayers: 4, bossHealthDivisor: 3 };
+/** Battle raids only: preserve current health/telegraphs, spend two thirds of previous damage/cast rate. */
+export const BATTLE_DIFFICULTY = { damage: 2 / 3, attackFrequency: 2 / 3 };
 
 /** One room-wide budget; repo anatomy never adds HP, casts or pressure lanes. */
 export function squadBudget(playerCount: number) {
@@ -19,9 +21,9 @@ export function squadBudget(playerCount: number) {
     // Equal HP per combatant, at one third of the previous encounter health.
     hp: Math.round(MATCH_TUNING.bossBaseHp * 2.2 * n / MATCH_TUNING.bossReferencePlayers / MATCH_TUNING.bossHealthDivisor),
     pressureLanes: n >= 8 ? 4 : n >= 6 ? 2 : n >= 4 ? 1 : 0,
-    pressurePeriod: lo.pressurePeriod + (hi.pressurePeriod - lo.pressurePeriod) * t,
-    recoveryScale: 1 / (1 + Math.max(0, n - 4) * 0.065),
-    hitDamage: n === 1 ? 2 : lo.hitDamage + (hi.hitDamage - lo.hitDamage) * t,
+    pressurePeriod: (lo.pressurePeriod + (hi.pressurePeriod - lo.pressurePeriod) * t) / BATTLE_DIFFICULTY.attackFrequency,
+    recoveryScale: 1 / (1 + Math.max(0, n - 4) * 0.065) / BATTLE_DIFFICULTY.attackFrequency,
+    hitDamage: (n === 1 ? 2 : lo.hitDamage + (hi.hitDamage - lo.hitDamage) * t) * BATTLE_DIFFICULTY.damage,
   };
 }
 
@@ -49,6 +51,12 @@ export const ATTACK_COST: Record<BossAttackKind, number> = {
   // Cascade warns up to four different positions; it must pay more than one slam.
   cascade: 1.2,
 };
+
+/** Scale the entire pre-change cycle, including the old minimum recovery floor. Telegraph stays fixed. */
+export function bossCastPeriod(boss: Pick<BossState, 'phase' | 'enraged'>, count: number, attack: Pick<BossAttack, 'kind' | 'telegraph'>) {
+  const period = (boss.phase === 3 ? 1.8 : boss.enraged ? 2.15 : 2.65) * squadBudget(count).recoveryScale * ATTACK_COST[attack.kind];
+  return Math.max(period, (attack.telegraph + 0.2) / BATTLE_DIFFICULTY.attackFrequency);
+}
 
 /** These optional fields are emitted today without requiring a shared/ edit. */
 export interface HitFeedback {

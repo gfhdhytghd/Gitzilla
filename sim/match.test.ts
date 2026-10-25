@@ -6,7 +6,7 @@ import { bossRegions } from './regions.ts';
 import { kaijuAnchors } from '../shared/kaiju-anatomy.ts';
 import { balanceTable, loadBalanceProfiles, runBalance, syntheticProfile } from './bots.ts';
 import { BossAi } from './bossAi.ts';
-import { ATTACK_COST, squadBudget, type HitFeedback } from './balance.ts';
+import { ATTACK_COST, BATTLE_DIFFICULTY, squadBudget, type HitFeedback } from './balance.ts';
 
 const frame = (patch: Partial<InputFrame> = {}): InputFrame => ({ seq: 1, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard', ...patch });
 const internals = (match: Match) => (match as unknown as { state: BattleState }).state;
@@ -113,7 +113,7 @@ describe('authoritative arena', () => {
     for (const count of [4, 6, 8]) {
       const m = fixture(count), s = internals(m);
       s.boss.casting = { attackId: s.boss.kit.attacks[0].id, t: 0, total: 99, target: [100, 100] };
-      advance(m, 3);
+      advance(m, 3 / BATTLE_DIFFICULTY.attackFrequency);
       const lanes = m.snapshot().events.filter(e => e.type === 'telegraph' && e.attackId.startsWith('pressure-'));
       expect(lanes).toHaveLength(squadBudget(count).pressureLanes);
       expect(new Set(lanes.map(e => e.type === 'telegraph' ? e.targetPlayer : null)).size).toBe(lanes.length);

@@ -6,6 +6,7 @@ import { pvpArenaSize, type ClassroomState } from './pvp.ts';
 import { createBot, syntheticProfile } from './bots.ts';
 import { playerKitFromProfile } from './kits.ts';
 import { asClassroomKit, qualityFromRubric } from './quality.ts';
+import { royaleTimeline } from './royale-balance.ts';
 
 const roster = (n = 4) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `Hero ${i}`, kit: playerKitFromProfile(syntheticProfile(i + 1)) }));
 const frame = (patch: Partial<InputFrame> = {}): InputFrame => ({ seq: 1, move: [0, 0], aim: null, fire: false, skill: false, dash: false, source: 'keyboard', ...patch });
@@ -100,9 +101,10 @@ describe('last-one-standing PvP royale', () => {
   });
   it('previews the GC circle, warns before shrinking and bypasses shields outside it', () => {
     const m = match(), r = raw(m), initial = m.snapshot().pvp.royale!.zone!;
-    expect(initial.dps).toBe(0); expect(initial.targetR).toBeLessThan(initial.r); expect(initial.shrinkStart).toBe(47);
-    advance(m, 42.1); expect(m.snapshot().events.some(e => e.type === 'telegraph' && e.attackId === 'gc-sweep')).toBe(true);
-    advance(m, 40); const zone = r.state.pvp.royale!.zone!, p = r.state.players.find(p => p.alive)!;
+    expect(initial.dps).toBe(0); expect(initial.targetR).toBeLessThan(initial.r); expect(initial.shrinkStart).toBe(royaleTimeline(4).start);
+    advance(m, initial.shrinkStart - 4.9); expect(m.snapshot().events.some(e => e.type === 'telegraph' && e.attackId === 'gc-sweep')).toBe(true);
+    for (const player of r.state.players) { player.x = initial.cx; player.y = initial.cy; }
+    advance(m, initial.shrinkEnd - 10 - r.state.t); const zone = r.state.pvp.royale!.zone!, p = r.state.players.find(p => p.alive)!;
     p.x = 32; p.y = 32; p.invuln = 999; const resources = p.hp + p.armor, before = zone.r;
     advance(m, 0.3); expect(p.hp + p.armor).toBeLessThan(resources); expect(zone.r).toBeLessThan(before); expect(zone.dps).toBeGreaterThan(0);
     expect(p.killedBy).toBeNull();
@@ -114,8 +116,8 @@ describe('last-one-standing PvP royale', () => {
     expect(input.move[0]).toBeLessThan(-0.8); expect(Math.abs(input.move[1])).toBeLessThan(0.1);
   });
   it.each([2, 4, 8])('ends a %ip stationary stall with exactly one survivor, unique placements and no quizzes', count => {
-    const m = match(count); advance(m, 153); const s = m.snapshot();
-    expect(m.over).toBe(true); expect(s.t).toBeLessThanOrEqual(152 + 1e-6);
+    const m = match(count), deadline = royaleTimeline(count).limit; advance(m, deadline + 1); const s = m.snapshot();
+    expect(m.over).toBe(true); expect(s.t).toBeLessThanOrEqual(deadline + 1e-6);
     expect(s.players.filter(p => p.alive)).toHaveLength(1); expect(s.pvp.royale!.alive).toHaveLength(1);
     expect(Object.values(s.pvp.royale!.placements).sort((a, b) => a - b)).toEqual(Array.from({ length: count }, (_, i) => i + 1));
     expect(s.pvp.round).toBe(1); expect(s.perkOffer).toBeNull(); expect(s.events.some(e => e.type === 'lesson' || e.type === 'revived')).toBe(false);
@@ -125,7 +127,7 @@ describe('last-one-standing PvP royale', () => {
   it('finishes camping at the exact zone center, including equal-health simultaneous GC deaths', () => {
     const m = match(8), r = raw(m), zone = r.state.pvp.royale!.zone!;
     for (const p of r.state.players) { p.x = zone.cx; p.y = zone.cy; p.hp = 7; p.armor = 0; p.kit.maxHp = 7; p.kit.maxArmor = 0; }
-    advance(m, 153); expect(m.over).toBe(true); expect(m.snapshot().players.filter(p => p.alive)).toHaveLength(1);
+    advance(m, royaleTimeline(8).limit + 1); expect(m.over).toBe(true); expect(m.snapshot().players.filter(p => p.alive)).toHaveLength(1);
     expect(m.snapshot().t).toBeGreaterThan(zone.shrinkEnd); expect(m.snapshot().pvp.royale!.winner).toBeTruthy();
   });
   it('enforces the final cleanup deadline even for custom huge-health kits', () => {

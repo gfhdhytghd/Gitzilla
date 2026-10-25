@@ -4,7 +4,7 @@ export type { Match, BattleMatch, BattleState, BattleAutopsy } from './match.ts'
 export { bossRegions, bossMouth, BOSS_HIT_RADII } from './regions.ts';
 export { bossArchetypeFromProfile } from './archetypes.ts';
 export type { ArchetypeSelection } from './archetypes.ts';
-export { squadBudget, ATTACK_COST, MATCH_TUNING, ARCHETYPE_CONTACT_COST, archetypeContactCost } from './balance.ts';
+export { squadBudget, ATTACK_COST, MATCH_TUNING, BATTLE_DIFFICULTY, ARCHETYPE_CONTACT_COST, archetypeContactCost } from './balance.ts';
 export type { HitFeedback } from './balance.ts';
 export { PERKS, createPerkOffer } from './perks.ts';
 export { weaponCode, SKILL_FLAVOR, ATTACK_FLAVOR, ATTACK_FLAVOR_POOLS, attackFlavorPicker } from './flavor.ts';

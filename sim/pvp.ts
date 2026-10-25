@@ -8,6 +8,7 @@ import { LessonQueue } from './lessons.ts';
 import { classroomQuiz, type ClassroomQuiz } from './quiz.ts';
 import { WEAPONS } from './weapons.ts';
 import { forgetPlayer } from './departure.ts';
+import { ROYALE_TUNING, royaleTimeline } from './royale-balance.ts';
 
 export interface ClassroomPvpState extends PvpState {
   arenaW: number; arenaH: number;
@@ -99,9 +100,10 @@ export class ClassroomMatch implements Match {
     if (royale) {
       const cx = this.width * (0.46 + this.rng() * 0.08), cy = this.height * (0.46 + this.rng() * 0.08);
       this.zoneRadius = Math.hypot(Math.max(cx, this.width - cx), Math.max(cy, this.height - cy)) + 16;
-      this.state.pvp.rounds = 1; this.state.pvp.roundEndsAt = 152;
+      const timeline = royaleTimeline(students.length);
+      this.state.pvp.rounds = 1; this.state.pvp.roundEndsAt = timeline.limit;
       this.state.pvp.royale = { alive: students.map(p => p.id), placements: {}, winner: null, eliminations: [],
-        zone: { cx, cy, r: this.zoneRadius, targetR: 24, shrinkStart: 47, shrinkEnd: 107, dps: 0 } };
+        zone: { cx, cy, r: this.zoneRadius, targetR: 24, shrinkStart: timeline.start, shrinkEnd: timeline.end, dps: 0 } };
       for (const p of this.state.players) { this.zoneOrder.set(p.id, this.rng()); p.eliminated = false; p.killedBy = null; }
     }
     this.state.players.forEach((p, i) => this.resetPlayer(p, this.spawnPoints()[i]));
@@ -199,16 +201,17 @@ export class ClassroomMatch implements Match {
     }
     if (r.buff <= 0) p.buffs = p.buffs.filter(b => b === 'tech-debt');
     p.energy = Math.min(p.kit.maxEnergy, p.energy + dt * (this.royale ? 10 : qualityValue(p.kit, 'regen', 6)) * (p.perks.includes('quiz-boost') ? 1.1 : 1));
-    if (this.state.t - r.lastHit >= 3 && p.armor < p.kit.maxArmor) {
+    if (this.state.t - r.lastHit >= (this.royale ? ROYALE_TUNING.armorDelay : 3) && p.armor < p.kit.maxArmor) {
       r.armor += dt;
-      if (r.armor >= 1.5) { p.armor = Math.min(p.kit.maxArmor, p.armor + 1); r.armor = 0; }
+      if (r.armor >= (this.royale ? ROYALE_TUNING.armorInterval : 1.5)) { p.armor = Math.min(p.kit.maxArmor, p.armor + 1); r.armor = 0; }
     }
     r.history.push({ t: this.state.t, x: p.x, y: p.y });
     while (r.history.length && r.history[0].t < this.state.t - 2) r.history.shift();
     const foe = this.target(p), aim = input?.aim ?? (foe ? unit(foe.x - p.x, foe.y - p.y) : p.facing);
     p.facing = aim;
     const [mx, my] = input?.move ?? [0, 0];
-    if (input?.dash && p.dashCd <= 0) { r.direction = Math.hypot(mx, my) > 0.1 ? unit(mx, my) : aim; r.dash = 0.19; p.dashCd = 1.7; p.invuln = Math.max(p.invuln, 0.24); }
+    if (input?.dash && p.dashCd <= 0) { r.direction = Math.hypot(mx, my) > 0.1 ? unit(mx, my) : aim; r.dash = 0.19;
+      p.dashCd = this.royale ? ROYALE_TUNING.dashCooldown : 1.7; p.invuln = Math.max(p.invuln, this.royale ? ROYALE_TUNING.dashShield : 0.24); }
     const facts = this.royale ? undefined : (p.kit as ClassroomKit).classroom;
     const slow = active && (facts?.todoDensity ?? 0) > 0 && (this.state.t + (p.kit.seed >>> 0) % 120 / 10) % 12 < 1.5;
     if (slow && !r.slow) this.lessons.offer('tech-debt', p.id, { player: p.name, repo: p.kit.repo, todos: facts!.todoCount, density: facts!.todoDensity.toFixed(1),
@@ -248,7 +251,7 @@ export class ClassroomMatch implements Match {
       const id = this.id++;
       this.state.bullets.push({ id, owner: p.id, kind: p.kit.weapon, x: p.x + Math.cos(a) * 15, y: p.y + Math.sin(a) * 15,
         vx: Math.cos(a) * w.speed * 1.35, vy: Math.sin(a) * w.speed * 1.35, r: w.r * 1.35 });
-      this.shots.set(id, { damage: w.damage * p.kit.damageMul * 0.14 * (p.perks.includes('quiz-boost') ? 1.1 : 1), life: w.life });
+      this.shots.set(id, { damage: w.damage * p.kit.damageMul * (this.royale ? ROYALE_TUNING.weaponDamage : 0.14) * (p.perks.includes('quiz-boost') ? 1.1 : 1), life: w.life });
     }
   }
   private updateBullets(dt: number) {
@@ -259,15 +262,21 @@ export class ClassroomMatch implements Match {
       const shot = this.shots.get(b.id)!; shot.life -= dt;
       if (b.kind === 'staff') {
         const foe = this.state.players.filter(p => p.alive && p.id !== b.owner).sort((a, c) => distance(b, a) - distance(b, c))[0];
-        if (foe) { const [x, y] = unit(foe.x - b.x, foe.y - b.y); b.vx += (x * 216 - b.vx) * dt * 4; b.vy += (y * 216 - b.vy) * dt * 4; }
+        if (foe) { const [x, y] = unit(foe.x - b.x, foe.y - b.y), turn = this.royale ? ROYALE_TUNING.homingTurn : 4;
+          b.vx += (x * 216 - b.vx) * dt * turn; b.vy += (y * 216 - b.vy) * dt * turn; }
       }
       const x0 = b.x, y0 = b.y; b.x += b.vx * dt; b.y += b.vy * dt;
-      let victim: PlayerState | undefined, first = Infinity;
+      let victim: PlayerState | undefined, first = Infinity, shielded = false;
       for (const p of this.state.players) {
-        if (!p.alive || p.id === b.owner || p.invuln > 0) continue;
-        const t = segmentCircle(b, x0, y0, p); if (t !== null && t < first) { first = t; victim = p; }
+        if (!p.alive || p.id === b.owner || (!this.royale && p.invuln > 0)) continue;
+        const t = segmentCircle(b, x0, y0, p); if (t !== null && t < first) { first = t; victim = p; shielded = p.invuln > 0; }
       }
-      if (victim) this.hurt(victim, this.byId.get(b.owner)!, shot.damage, unit(b.vx, b.vy));
+      if (victim && !shielded) this.hurt(victim, this.byId.get(b.owner)!, shot.damage, unit(b.vx, b.vy));
+      else if (victim && shielded) {
+        // Recharge requires actual disengagement; standing in a projectile stream behind i-frames
+        // must not regenerate a whole shield between slow cannon shots.
+        const r = this.runtime.get(victim.id)!; r.lastHit = this.state.t; r.armor = 0;
+      }
       if (!victim && shot.life > 0 && b.x > 12 && b.x < this.width - 12 && b.y > 12 && b.y < this.height - 12) live.push(b);
       else this.shots.delete(b.id);
     }
@@ -278,6 +287,7 @@ export class ClassroomMatch implements Match {
     const weakness = this.royale ? 0 : qualityValue(target.kit, 'weakness', 0);
     const amount = Math.min(target.hp + target.armor, target.kit.maxHp * 0.4, base * (1 + weakness) * (target.buffs.includes('firewall') ? 0.65 : target.buffs.includes('fork') ? 0.75 : 1));
     const armor = Math.min(target.armor, amount); target.armor -= armor; target.hp = Math.max(0, target.hp - amount + armor);
+    if (this.royale && armor > 0 && target.armor <= 1e-8) target.invuln = Math.max(target.invuln, ROYALE_TUNING.armorBreakShield);
     const r = this.runtime.get(target.id)!; r.lastHit = this.state.t; r.armor = 0;
     source.stats.damage += amount; this.state.pvp.scores[source.id].damage += amount; this.roundScores.get(source.id)!.damage += amount;
     this.emit({ type: 'hit', target: target.id, source: source.id, amount, x: target.x, y: target.y, direction, crit: weakness > 0, impact: clamp(amount / 4, 0.1, 1), hitStop: amount >= 3 ? 40 : 0 });
@@ -353,7 +363,7 @@ export class ClassroomMatch implements Match {
     const progress = clamp((s.t - zone.shrinkStart) / (zone.shrinkEnd - zone.shrinkStart), 0, 1);
     // Preview the24px final circle from countdown; then collapse it fully over30s so camping also ends.
     zone.r = s.t <= zone.shrinkEnd ? this.zoneRadius + (zone.targetR - this.zoneRadius) * progress
-      : Math.max(0, zone.targetR * (1 - (s.t - zone.shrinkEnd) / 30));
+      : Math.max(0, zone.targetR * (1 - (s.t - zone.shrinkEnd) / Math.min(30, s.pvp.roundEndsAt - zone.shrinkEnd - 3)));
     zone.dps = 0.6 + progress * 2.4 + Math.max(0, s.t - zone.shrinkEnd) * 0.35;
     const deadline = s.t >= s.pvp.roundEndsAt;
     // Resolve a genuinely simultaneous zone death by a seeded tie order, independent of roster iteration.

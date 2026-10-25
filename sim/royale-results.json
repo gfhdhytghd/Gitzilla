@@ -3,41 +3,148 @@
   "mode": "pvp",
   "royale": true,
   "publicFallbacksOnly": true,
-  "trials": 5,
-  "controls": "Actual equal-budget public kits, normal-input bots, paired seeds1009+trial401+slot37, skills0.55/0.67/0.79. No source/health/outcome overrides.",
+  "trials": 10,
+  "controls": "Actual equal-budget public kits, normal-input bots, paired seeds1009+trial401+slot37, skills0.55/0.67/0.79. No source/health/outcome overrides. PvP bots retreat to recharge, project movement off walls and obey the zone; edu/battle controllers unchanged.",
+  "tuning": {
+    "weaponDamage": 0.03,
+    "armorDelay": 1.5,
+    "armorInterval": 0.25,
+    "dashCooldown": 1.1,
+    "dashShield": 0.38,
+    "armorBreakShield": 2.4,
+    "homingTurn": 1.4,
+    "timelines": [
+      {
+        "players": 2,
+        "start": 47,
+        "end": 107,
+        "limit": 132
+      },
+      {
+        "players": 4,
+        "start": 67,
+        "end": 127,
+        "limit": 152
+      },
+      {
+        "players": 8,
+        "start": 102,
+        "end": 147,
+        "limit": 162
+      }
+    ]
+  },
+  "focusedFire": [
+    {
+      "weapon": "blaster",
+      "seconds": 14.400000000000084,
+      "impacts": 42,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    },
+    {
+      "weapon": "smg",
+      "seconds": 14.533333333333417,
+      "impacts": 112,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    },
+    {
+      "weapon": "shotgun",
+      "seconds": 13.000000000000007,
+      "impacts": 84,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    },
+    {
+      "weapon": "cannon",
+      "seconds": 13.600000000000065,
+      "impacts": 15,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    },
+    {
+      "weapon": "staff",
+      "seconds": 14.500000000000085,
+      "impacts": 26,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    },
+    {
+      "weapon": "laser",
+      "seconds": 14.533333333333424,
+      "impacts": 88,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    },
+    {
+      "weapon": "blade",
+      "seconds": 13.666666666666721,
+      "impacts": 31,
+      "eliminated": true,
+      "fixture": "Neutral five-point budget,6HP+4armor,185RAM,85speed,1damage;40px range; no defender actions"
+    }
+  ],
   "summary": [
     {
       "players": 2,
-      "matches": 5,
-      "meanDuration": 7.560000000000029,
-      "maxDuration": 18.933333333333533,
-      "weaponKOs": 5,
-      "gcKOs": 0,
-      "maxBullets": 14,
+      "matches": 10,
+      "meanDuration": 67.7599999999986,
+      "target": [
+        60,
+        90
+      ],
+      "durationTargetMet": true,
+      "maxDuration": 94.49999999999709,
+      "weaponKOs": 7,
+      "gcKOs": 3,
+      "maxBullets": 16,
       "pickups": 0,
-      "uniqueWinners": 2
+      "uniqueWinners": 2,
+      "zoneReachedMatches": 7,
+      "zoneDecidedMatches": 3,
+      "zonePhaseKOs": 7,
+      "closingPhaseFraction": 0.3832152695788911
     },
     {
       "players": 4,
-      "matches": 5,
-      "meanDuration": 10.113333333333301,
-      "maxDuration": 13.266666666666623,
-      "weaponKOs": 15,
-      "gcKOs": 0,
-      "maxBullets": 22,
-      "pickups": 6,
-      "uniqueWinners": 2
+      "matches": 10,
+      "meanDuration": 111.41333333332946,
+      "target": [
+        90,
+        130
+      ],
+      "durationTargetMet": true,
+      "maxDuration": 126.66666666666194,
+      "weaponKOs": 25,
+      "gcKOs": 5,
+      "maxBullets": 23,
+      "pickups": 31,
+      "uniqueWinners": 4,
+      "zoneReachedMatches": 10,
+      "zoneDecidedMatches": 3,
+      "zonePhaseKOs": 22,
+      "closingPhaseFraction": 0.4165868836763799
     },
     {
       "players": 8,
-      "matches": 5,
-      "meanDuration": 9.633333333333303,
-      "maxDuration": 10.866666666666632,
-      "weaponKOs": 35,
-      "gcKOs": 0,
-      "maxBullets": 32,
-      "pickups": 24,
-      "uniqueWinners": 4
+      "matches": 10,
+      "meanDuration": 138.7099999999946,
+      "target": [
+        120,
+        160
+      ],
+      "durationTargetMet": true,
+      "maxDuration": 147.2999999999941,
+      "weaponKOs": 62,
+      "gcKOs": 8,
+      "maxBullets": 30,
+      "pickups": 93,
+      "uniqueWinners": 6,
+      "zoneReachedMatches": 10,
+      "zoneDecidedMatches": 6,
+      "zonePhaseKOs": 24,
+      "closingPhaseFraction": 0.2790714440198694
     }
   ],
   "runs": [
@@ -48,19 +155,23 @@
         "width": 432,
         "height": 256
       },
-      "duration": 5.233333333333317,
+      "duration": 74.76666666666488,
       "winner": "p1",
       "maxBullets": 7,
       "pickups": 0,
-      "weaponKOs": 1,
-      "gcKOs": 0,
+      "weaponKOs": 0,
+      "gcKOs": 1,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 29.766666666664875,
+      "gcDecided": true,
       "eliminations": [
         {
           "player": "p0",
-          "by": "p1",
+          "by": null,
           "placement": 2,
-          "at": 7.233333333333317,
-          "reason": "weapon"
+          "at": 76.76666666666488,
+          "reason": "zone"
         }
       ],
       "ranking": [
@@ -68,8 +179,8 @@
           "id": "p1",
           "name": "Bot 2",
           "repo": "django/django",
-          "kos": 1,
-          "damage": 10.999999999999998,
+          "kos": 0,
+          "damage": 32.95500000000001,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -80,11 +191,11 @@
           "name": "Bot 1",
           "repo": "burntsushi/ripgrep",
           "kos": 0,
-          "damage": 4.800000000000001,
+          "damage": 23.460000000000004,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
-          "killedBy": "p1"
+          "killedBy": null
         }
       ]
     },
@@ -95,18 +206,22 @@
         "width": 432,
         "height": 256
       },
-      "duration": 3.8333333333333224,
+      "duration": 87.46666666666415,
       "winner": "p1",
-      "maxBullets": 8,
+      "maxBullets": 9,
       "pickups": 0,
       "weaponKOs": 1,
       "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 42.46666666666415,
+      "gcDecided": false,
       "eliminations": [
         {
           "player": "p0",
           "by": "p1",
           "placement": 2,
-          "at": 5.833333333333322,
+          "at": 89.46666666666415,
           "reason": "weapon"
         }
       ],
@@ -116,7 +231,7 @@
           "name": "Bot 2",
           "repo": "fastapi/fastapi",
           "kos": 1,
-          "damage": 12,
+          "damage": 35.63262222222229,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -127,7 +242,7 @@
           "name": "Bot 1",
           "repo": "facebook/react",
           "kos": 0,
-          "damage": 0,
+          "damage": 19.43999999999999,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
@@ -142,43 +257,47 @@
         "width": 432,
         "height": 256
       },
-      "duration": 18.933333333333533,
-      "winner": "p1",
-      "maxBullets": 14,
+      "duration": 94.49999999999709,
+      "winner": "p0",
+      "maxBullets": 16,
       "pickups": 0,
-      "weaponKOs": 1,
-      "gcKOs": 0,
+      "weaponKOs": 0,
+      "gcKOs": 1,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 49.49999999999709,
+      "gcDecided": true,
       "eliminations": [
         {
-          "player": "p0",
-          "by": "p1",
+          "player": "p1",
+          "by": null,
           "placement": 2,
-          "at": 20.933333333333533,
-          "reason": "weapon"
+          "at": 96.49999999999709,
+          "reason": "zone"
         }
       ],
       "ranking": [
         {
-          "id": "p1",
-          "name": "Bot 2",
-          "repo": "jquery/jquery",
-          "kos": 1,
-          "damage": 15.000000000000004,
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "golang/example",
+          "kos": 0,
+          "damage": 16.64999999999998,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
           "killedBy": null
         },
         {
-          "id": "p0",
-          "name": "Bot 1",
-          "repo": "golang/example",
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "jquery/jquery",
           "kos": 0,
-          "damage": 10.08,
+          "damage": 25.199999999999953,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
-          "killedBy": "p1"
+          "killedBy": null
         }
       ]
     },
@@ -189,18 +308,22 @@
         "width": 432,
         "height": 256
       },
-      "duration": 4.1666666666666545,
+      "duration": 28.73333333333402,
       "winner": "p1",
       "maxBullets": 8,
       "pickups": 0,
       "weaponKOs": 1,
       "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 0,
+      "zonePhaseSeconds": 0,
+      "gcDecided": false,
       "eliminations": [
         {
           "player": "p0",
           "by": "p1",
           "placement": 2,
-          "at": 6.1666666666666545,
+          "at": 30.73333333333402,
           "reason": "weapon"
         }
       ],
@@ -210,7 +333,7 @@
           "name": "Bot 2",
           "repo": "pallets/flask",
           "kos": 1,
-          "damage": 14,
+          "damage": 15.170000000000009,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -221,7 +344,7 @@
           "name": "Bot 1",
           "repo": "lodash/lodash",
           "kos": 0,
-          "damage": 3.3600000000000003,
+          "damage": 8.400000000000006,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
@@ -236,18 +359,175 @@
         "width": 432,
         "height": 256
       },
-      "duration": 5.633333333333316,
-      "winner": "p0",
-      "maxBullets": 6,
+      "duration": 31.200000000000678,
+      "winner": "p1",
+      "maxBullets": 5,
       "pickups": 0,
       "weaponKOs": 1,
       "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 0,
+      "zonePhaseSeconds": 0,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 2,
+          "at": 33.20000000000068,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 1,
+          "damage": 11.000000000000002,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 11.039999999999996,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "trial": 5,
+      "arena": {
+        "width": 432,
+        "height": 256
+      },
+      "duration": 80.63333333333121,
+      "winner": "p1",
+      "maxBullets": 7,
+      "pickups": 0,
+      "weaponKOs": 0,
+      "gcKOs": 1,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 35.63333333333121,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": null,
+          "placement": 2,
+          "at": 82.63333333333121,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "django/django",
+          "kos": 0,
+          "damage": 30.615000000000013,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "burntsushi/ripgrep",
+          "kos": 0,
+          "damage": 26.22000000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "trial": 6,
+      "arena": {
+        "width": 432,
+        "height": 256
+      },
+      "duration": 72.83333333333165,
+      "winner": "p1",
+      "maxBullets": 9,
+      "pickups": 0,
+      "weaponKOs": 1,
+      "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 27.83333333333165,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 2,
+          "at": 74.83333333333165,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "fastapi/fastapi",
+          "kos": 1,
+          "damage": 31.755333333333407,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 18.479999999999997,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "trial": 7,
+      "arena": {
+        "width": 432,
+        "height": 256
+      },
+      "duration": 91.4333333333306,
+      "winner": "p0",
+      "maxBullets": 14,
+      "pickups": 0,
+      "weaponKOs": 1,
+      "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 46.433333333330594,
+      "gcDecided": false,
       "eliminations": [
         {
           "player": "p1",
           "by": "p0",
           "placement": 2,
-          "at": 7.633333333333316,
+          "at": 93.4333333333306,
           "reason": "weapon"
         }
       ],
@@ -255,9 +535,9 @@
         {
           "id": "p0",
           "name": "Bot 1",
-          "repo": "rust-lang/rustlings",
+          "repo": "golang/example",
           "kos": 1,
-          "damage": 12,
+          "damage": 17.99342222222244,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -266,13 +546,115 @@
         {
           "id": "p1",
           "name": "Bot 2",
-          "repo": "spring-projects/spring-petclinic",
+          "repo": "jquery/jquery",
           "kos": 0,
-          "damage": 4.681600000000002,
+          "damage": 24.23999999999996,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
           "killedBy": "p0"
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "trial": 8,
+      "arena": {
+        "width": 432,
+        "height": 256
+      },
+      "duration": 73.03333333333164,
+      "winner": "p1",
+      "maxBullets": 9,
+      "pickups": 0,
+      "weaponKOs": 1,
+      "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 28.03333333333164,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 2,
+          "at": 75.03333333333164,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "pallets/flask",
+          "kos": 1,
+          "damage": 29.505644444444567,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 16.56000000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 2,
+      "trial": 9,
+      "arena": {
+        "width": 432,
+        "height": 256
+      },
+      "duration": 43.00000000000001,
+      "winner": "p1",
+      "maxBullets": 6,
+      "pickups": 0,
+      "weaponKOs": 1,
+      "gcKOs": 0,
+      "zoneStartedAt": 45,
+      "zonePhaseKOs": 0,
+      "zonePhaseSeconds": 0,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 2,
+          "at": 45.00000000000001,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 1,
+          "damage": 12.000000000000007,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 15.179999999999993,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p1"
         }
       ]
     },
@@ -283,32 +665,36 @@
         "width": 448,
         "height": 256
       },
-      "duration": 8.599999999999973,
+      "duration": 96.5333333333303,
       "winner": "p1",
       "maxBullets": 11,
       "pickups": 2,
       "weaponKOs": 3,
       "gcKOs": 0,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 31.533333333330305,
+      "gcDecided": false,
       "eliminations": [
         {
           "player": "p3",
           "by": "p1",
           "placement": 4,
-          "at": 6.833333333333319,
+          "at": 29.93333333333398,
           "reason": "weapon"
         },
         {
           "player": "p2",
           "by": "p1",
           "placement": 3,
-          "at": 7.899999999999982,
+          "at": 79.53333333333138,
           "reason": "weapon"
         },
         {
           "player": "p0",
           "by": "p1",
           "placement": 2,
-          "at": 10.599999999999973,
+          "at": 98.5333333333303,
           "reason": "weapon"
         }
       ],
@@ -318,7 +704,7 @@
           "name": "Bot 2",
           "repo": "django/django",
           "kos": 3,
-          "damage": 28.82,
+          "damage": 51.97190000000018,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -329,7 +715,7 @@
           "name": "Bot 1",
           "repo": "burntsushi/ripgrep",
           "kos": 0,
-          "damage": 10.8,
+          "damage": 28.980000000000015,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
@@ -340,7 +726,7 @@
           "name": "Bot 3",
           "repo": "expressjs/express",
           "kos": 0,
-          "damage": 3.3600000000000003,
+          "damage": 19.63199999999999,
           "roundWins": 0,
           "quality": [],
           "placement": 3,
@@ -351,7 +737,7 @@
           "name": "Bot 4",
           "repo": "facebook/react",
           "kos": 0,
-          "damage": 4.424000000000001,
+          "damage": 7.512000000000004,
           "roundWins": 0,
           "quality": [],
           "placement": 4,
@@ -366,32 +752,36 @@
         "width": 448,
         "height": 256
       },
-      "duration": 7.999999999999975,
+      "duration": 119.49999999999567,
       "winner": "p1",
       "maxBullets": 22,
-      "pickups": 2,
+      "pickups": 4,
       "weaponKOs": 3,
       "gcKOs": 0,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 54.499999999995666,
+      "gcDecided": false,
       "eliminations": [
         {
-          "player": "p0",
+          "player": "p3",
           "by": "p1",
           "placement": 4,
-          "at": 6.366666666666654,
+          "at": 45.49999999999998,
           "reason": "weapon"
         },
         {
-          "player": "p3",
-          "by": "p2",
+          "player": "p0",
+          "by": "p1",
           "placement": 3,
-          "at": 7.599999999999983,
+          "at": 108.66666666666306,
           "reason": "weapon"
         },
         {
           "player": "p2",
           "by": "p1",
           "placement": 2,
-          "at": 9.999999999999975,
+          "at": 121.49999999999567,
           "reason": "weapon"
         }
       ],
@@ -400,8 +790,8 @@
           "id": "p1",
           "name": "Bot 2",
           "repo": "fastapi/fastapi",
-          "kos": 2,
-          "damage": 28.202,
+          "kos": 3,
+          "damage": 62.23102222222261,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -411,11 +801,22 @@
           "id": "p2",
           "name": "Bot 3",
           "repo": "gin-gonic/gin",
-          "kos": 1,
-          "damage": 6.789999999999998,
+          "kos": 0,
+          "damage": 22.436999999999934,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 26.879999999999942,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
           "killedBy": "p1"
         },
         {
@@ -423,18 +824,7 @@
           "name": "Bot 4",
           "repo": "golang/example",
           "kos": 0,
-          "damage": 4.62,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 3,
-          "killedBy": "p2"
-        },
-        {
-          "id": "p0",
-          "name": "Bot 1",
-          "repo": "facebook/react",
-          "kos": 0,
-          "damage": 5.6000000000000005,
+          "damage": 7.5599999999999925,
           "roundWins": 0,
           "quality": [],
           "placement": 4,
@@ -449,75 +839,79 @@
         "width": 448,
         "height": 256
       },
-      "duration": 9.999999999999968,
-      "winner": "p2",
-      "maxBullets": 15,
-      "pickups": 0,
-      "weaponKOs": 3,
-      "gcKOs": 0,
+      "duration": 120.53333333332894,
+      "winner": "p0",
+      "maxBullets": 18,
+      "pickups": 4,
+      "weaponKOs": 2,
+      "gcKOs": 1,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 55.53333333332894,
+      "gcDecided": false,
       "eliminations": [
         {
           "player": "p1",
           "by": "p2",
           "placement": 4,
-          "at": 5.966666666666655,
+          "at": 30.433333333334005,
           "reason": "weapon"
         },
         {
           "player": "p3",
-          "by": "p2",
+          "by": null,
           "placement": 3,
-          "at": 9.099999999999978,
-          "reason": "weapon"
+          "at": 112.1999999999962,
+          "reason": "zone"
         },
         {
-          "player": "p0",
-          "by": "p2",
+          "player": "p2",
+          "by": "p0",
           "placement": 2,
-          "at": 11.999999999999968,
+          "at": 122.53333333332894,
           "reason": "weapon"
         }
       ],
       "ranking": [
         {
-          "id": "p2",
-          "name": "Bot 3",
-          "repo": "karpathy/nanogpt",
-          "kos": 3,
-          "damage": 30.659999999999997,
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "golang/example",
+          "kos": 1,
+          "damage": 22.546411111111244,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
           "killedBy": null
         },
         {
-          "id": "p0",
-          "name": "Bot 1",
-          "repo": "golang/example",
-          "kos": 0,
-          "damage": 5.46,
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "karpathy/nanogpt",
+          "kos": 1,
+          "damage": 56.180000000000064,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
-          "killedBy": "p2"
+          "killedBy": "p0"
         },
         {
           "id": "p3",
           "name": "Bot 4",
           "repo": "lodash/lodash",
           "kos": 0,
-          "damage": 7.840000000000001,
+          "damage": 22.739999999999974,
           "roundWins": 0,
           "quality": [],
           "placement": 3,
-          "killedBy": "p2"
+          "killedBy": null
         },
         {
           "id": "p1",
           "name": "Bot 2",
           "repo": "jquery/jquery",
           "kos": 0,
-          "damage": 0.8400000000000001,
+          "damage": 5.94,
           "roundWins": 0,
           "quality": [],
           "placement": 4,
@@ -532,79 +926,83 @@
         "width": 448,
         "height": 256
       },
-      "duration": 10.699999999999966,
-      "winner": "p2",
-      "maxBullets": 18,
+      "duration": 115.26666666666257,
+      "winner": "p1",
+      "maxBullets": 15,
       "pickups": 2,
       "weaponKOs": 3,
       "gcKOs": 0,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 50.26666666666257,
+      "gcDecided": false,
       "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 4,
+          "at": 38.03333333333374,
+          "reason": "weapon"
+        },
         {
           "player": "p3",
           "by": "p2",
-          "placement": 4,
-          "at": 5.033333333333325,
-          "reason": "weapon"
-        },
-        {
-          "player": "p1",
-          "by": "p0",
           "placement": 3,
-          "at": 9.833333333333309,
+          "at": 98.49999999999697,
           "reason": "weapon"
         },
         {
-          "player": "p0",
-          "by": "p2",
+          "player": "p2",
+          "by": "p1",
           "placement": 2,
-          "at": 12.699999999999966,
+          "at": 117.26666666666257,
           "reason": "weapon"
         }
       ],
       "ranking": [
         {
-          "id": "p2",
-          "name": "Bot 3",
-          "repo": "redis/redis",
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "pallets/flask",
           "kos": 2,
-          "damage": 12.610000000000003,
+          "damage": 63.118966666666765,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
           "killedBy": null
         },
         {
-          "id": "p0",
-          "name": "Bot 1",
-          "repo": "lodash/lodash",
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "redis/redis",
           "kos": 1,
-          "damage": 14.000000000000004,
+          "damage": 25.84225555555572,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
-          "killedBy": "p2"
-        },
-        {
-          "id": "p1",
-          "name": "Bot 2",
-          "repo": "pallets/flask",
-          "kos": 0,
-          "damage": 24.570000000000004,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 3,
-          "killedBy": "p0"
+          "killedBy": "p1"
         },
         {
           "id": "p3",
           "name": "Bot 4",
           "repo": "rust-lang/rustlings",
           "kos": 0,
-          "damage": 2.4000000000000004,
+          "damage": 26.91000000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 10.200000000000006,
           "roundWins": 0,
           "quality": [],
           "placement": 4,
-          "killedBy": "p2"
+          "killedBy": "p1"
         }
       ]
     },
@@ -615,32 +1013,36 @@
         "width": 448,
         "height": 256
       },
-      "duration": 13.266666666666623,
+      "duration": 121.2333333333289,
       "winner": "p2",
       "maxBullets": 9,
-      "pickups": 0,
+      "pickups": 4,
       "weaponKOs": 3,
       "gcKOs": 0,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 3,
+      "zonePhaseSeconds": 56.2333333333289,
+      "gcDecided": false,
       "eliminations": [
-        {
-          "player": "p1",
-          "by": "p2",
-          "placement": 4,
-          "at": 10.099999999999975,
-          "reason": "weapon"
-        },
         {
           "player": "p3",
           "by": "p2",
+          "placement": 4,
+          "at": 99.83333333333023,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p0",
           "placement": 3,
-          "at": 12.299999999999967,
+          "at": 120.9999999999957,
           "reason": "weapon"
         },
         {
           "player": "p0",
           "by": "p2",
           "placement": 2,
-          "at": 15.266666666666623,
+          "at": 123.2333333333289,
           "reason": "weapon"
         }
       ],
@@ -649,8 +1051,8 @@
           "id": "p2",
           "name": "Bot 3",
           "repo": "vuejs/core",
-          "kos": 3,
-          "damage": 16.616499999999995,
+          "kos": 2,
+          "damage": 32.200227777777904,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -660,22 +1062,11 @@
           "id": "p0",
           "name": "Bot 1",
           "repo": "rust-lang/rustlings",
-          "kos": 0,
-          "damage": 5.200000000000001,
+          "kos": 1,
+          "damage": 38.649044444444655,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
-          "killedBy": "p2"
-        },
-        {
-          "id": "p3",
-          "name": "Bot 4",
-          "repo": "burntsushi/ripgrep",
-          "kos": 0,
-          "damage": 5.6000000000000005,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 3,
           "killedBy": "p2"
         },
         {
@@ -683,7 +1074,18 @@
           "name": "Bot 2",
           "repo": "spring-projects/spring-petclinic",
           "kos": 0,
-          "damage": 13.020700000000007,
+          "damage": 45.74591999999994,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "burntsushi/ripgrep",
+          "kos": 0,
+          "damage": 27.600000000000012,
           "roundWins": 0,
           "quality": [],
           "placement": 4,
@@ -692,300 +1094,164 @@
       ]
     },
     {
-      "players": 8,
-      "trial": 0,
+      "players": 4,
+      "trial": 5,
       "arena": {
-        "width": 480,
-        "height": 288
+        "width": 448,
+        "height": 256
       },
-      "duration": 10.399999999999967,
-      "winner": "p4",
-      "maxBullets": 29,
-      "pickups": 2,
-      "weaponKOs": 7,
-      "gcKOs": 0,
+      "duration": 126.66666666666194,
+      "winner": "p2",
+      "maxBullets": 12,
+      "pickups": 4,
+      "weaponKOs": 1,
+      "gcKOs": 2,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 3,
+      "zonePhaseSeconds": 61.66666666666194,
+      "gcDecided": true,
       "eliminations": [
         {
-          "player": "p0",
-          "by": "p1",
-          "placement": 8,
-          "at": 6.399999999999987,
-          "reason": "weapon"
-        },
-        {
           "player": "p3",
-          "by": "p4",
-          "placement": 7,
-          "at": 6.599999999999986,
-          "reason": "weapon"
-        },
-        {
-          "player": "p5",
-          "by": "p4",
-          "placement": 6,
-          "at": 8.39999999999998,
-          "reason": "weapon"
-        },
-        {
-          "player": "p6",
           "by": "p1",
-          "placement": 5,
-          "at": 9.499999999999977,
-          "reason": "weapon"
-        },
-        {
-          "player": "p2",
-          "by": "p4",
           "placement": 4,
-          "at": 10.066666666666642,
+          "at": 107.03333333332982,
           "reason": "weapon"
         },
         {
           "player": "p1",
-          "by": "p4",
+          "by": null,
           "placement": 3,
-          "at": 11.266666666666637,
-          "reason": "weapon"
+          "at": 127.73333333332864,
+          "reason": "zone"
         },
         {
-          "player": "p7",
-          "by": "p4",
+          "player": "p0",
+          "by": null,
           "placement": 2,
-          "at": 12.399999999999967,
-          "reason": "weapon"
+          "at": 128.66666666666194,
+          "reason": "zone"
         }
       ],
       "ranking": [
-        {
-          "id": "p4",
-          "name": "Bot 5",
-          "repo": "fastapi/fastapi",
-          "kos": 5,
-          "damage": 32.98,
-          "roundWins": 1,
-          "quality": [],
-          "placement": 1,
-          "killedBy": null
-        },
-        {
-          "id": "p7",
-          "name": "Bot 8",
-          "repo": "jquery/jquery",
-          "kos": 0,
-          "damage": 8.176000000000002,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 2,
-          "killedBy": "p4"
-        },
-        {
-          "id": "p1",
-          "name": "Bot 2",
-          "repo": "django/django",
-          "kos": 2,
-          "damage": 27.167199999999998,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 3,
-          "killedBy": "p4"
-        },
         {
           "id": "p2",
           "name": "Bot 3",
           "repo": "expressjs/express",
           "kos": 0,
-          "damage": 9.688000000000002,
-          "roundWins": 0,
+          "damage": 31.30799999999991,
+          "roundWins": 1,
           "quality": [],
-          "placement": 4,
-          "killedBy": "p4"
-        },
-        {
-          "id": "p6",
-          "name": "Bot 7",
-          "repo": "golang/example",
-          "kos": 0,
-          "damage": 10.206,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 5,
-          "killedBy": "p1"
-        },
-        {
-          "id": "p5",
-          "name": "Bot 6",
-          "repo": "gin-gonic/gin",
-          "kos": 0,
-          "damage": 8.164800000000001,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 6,
-          "killedBy": "p4"
-        },
-        {
-          "id": "p3",
-          "name": "Bot 4",
-          "repo": "facebook/react",
-          "kos": 0,
-          "damage": 4.48,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 7,
-          "killedBy": "p4"
+          "placement": 1,
+          "killedBy": null
         },
         {
           "id": "p0",
           "name": "Bot 1",
           "repo": "burntsushi/ripgrep",
           "kos": 0,
-          "damage": 5.200000000000001,
+          "damage": 39.33,
           "roundWins": 0,
           "quality": [],
-          "placement": 8,
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "django/django",
+          "kos": 1,
+          "damage": 60.208155555555706,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": null
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 23.89199999999996,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
           "killedBy": "p1"
         }
       ]
     },
     {
-      "players": 8,
-      "trial": 1,
+      "players": 4,
+      "trial": 6,
       "arena": {
-        "width": 480,
-        "height": 288
+        "width": 448,
+        "height": 256
       },
-      "duration": 8.433333333333307,
-      "winner": "p5",
-      "maxBullets": 32,
-      "pickups": 3,
-      "weaponKOs": 7,
+      "duration": 113.03333333332937,
+      "winner": "p3",
+      "maxBullets": 23,
+      "pickups": 4,
+      "weaponKOs": 3,
       "gcKOs": 0,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 3,
+      "zonePhaseSeconds": 48.03333333332937,
+      "gcDecided": false,
       "eliminations": [
         {
           "player": "p0",
           "by": "p1",
-          "placement": 8,
-          "at": 4.2999999999999945,
-          "reason": "weapon"
-        },
-        {
-          "player": "p4",
-          "by": "p3",
-          "placement": 7,
-          "at": 5.566666666666657,
-          "reason": "weapon"
-        },
-        {
-          "player": "p2",
-          "by": "p7",
-          "placement": 6,
-          "at": 7.066666666666651,
-          "reason": "weapon"
-        },
-        {
-          "player": "p6",
-          "by": "p5",
-          "placement": 5,
-          "at": 8.099999999999982,
-          "reason": "weapon"
-        },
-        {
-          "player": "p7",
-          "by": "p1",
           "placement": 4,
-          "at": 8.199999999999982,
-          "reason": "weapon"
-        },
-        {
-          "player": "p3",
-          "by": "p5",
-          "placement": 3,
-          "at": 9.599999999999977,
+          "at": 77.46666666666484,
           "reason": "weapon"
         },
         {
           "player": "p1",
-          "by": "p5",
+          "by": "p3",
+          "placement": 3,
+          "at": 107.29999999999647,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p3",
           "placement": 2,
-          "at": 10.433333333333307,
+          "at": 115.03333333332937,
           "reason": "weapon"
         }
       ],
       "ranking": [
         {
-          "id": "p5",
-          "name": "Bot 6",
-          "repo": "karpathy/nanogpt",
-          "kos": 3,
-          "damage": 27.375999999999998,
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "golang/example",
+          "kos": 2,
+          "damage": 25.097511111111537,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
           "killedBy": null
         },
         {
-          "id": "p1",
-          "name": "Bot 2",
-          "repo": "fastapi/fastapi",
-          "kos": 2,
-          "damage": 24.68,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 2,
-          "killedBy": "p5"
-        },
-        {
-          "id": "p3",
-          "name": "Bot 4",
-          "repo": "golang/example",
-          "kos": 1,
-          "damage": 8.399999999999999,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 3,
-          "killedBy": "p5"
-        },
-        {
-          "id": "p7",
-          "name": "Bot 8",
-          "repo": "pallets/flask",
-          "kos": 1,
-          "damage": 20.14,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 4,
-          "killedBy": "p1"
-        },
-        {
-          "id": "p6",
-          "name": "Bot 7",
-          "repo": "lodash/lodash",
-          "kos": 0,
-          "damage": 6.720000000000001,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 5,
-          "killedBy": "p5"
-        },
-        {
           "id": "p2",
           "name": "Bot 3",
           "repo": "gin-gonic/gin",
           "kos": 0,
-          "damage": 3.0240000000000005,
+          "damage": 27.377999999999904,
           "roundWins": 0,
           "quality": [],
-          "placement": 6,
-          "killedBy": "p7"
+          "placement": 2,
+          "killedBy": "p3"
         },
         {
-          "id": "p4",
-          "name": "Bot 5",
-          "repo": "jquery/jquery",
-          "kos": 0,
-          "damage": 3.6400000000000006,
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "fastapi/fastapi",
+          "kos": 1,
+          "damage": 56.41600000000007,
           "roundWins": 0,
           "quality": [],
-          "placement": 7,
+          "placement": 3,
           "killedBy": "p3"
         },
         {
@@ -993,11 +1259,590 @@
           "name": "Bot 1",
           "repo": "facebook/react",
           "kos": 0,
-          "damage": 2.24,
+          "damage": 19.67999999999999,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 4,
+      "trial": 7,
+      "arena": {
+        "width": 448,
+        "height": 256
+      },
+      "duration": 85.89999999999758,
+      "winner": "p2",
+      "maxBullets": 18,
+      "pickups": 2,
+      "weaponKOs": 3,
+      "gcKOs": 0,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 20.899999999997576,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p3",
+          "by": "p2",
+          "placement": 4,
+          "at": 32.56666666666738,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p0",
+          "placement": 3,
+          "at": 36.90000000000047,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p2",
+          "placement": 2,
+          "at": 87.89999999999758,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "karpathy/nanogpt",
+          "kos": 2,
+          "damage": 40.530000000000044,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "golang/example",
+          "kos": 1,
+          "damage": 14.427500000000009,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "jquery/jquery",
+          "kos": 0,
+          "damage": 9.600000000000007,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 8.640000000000004,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p2"
+        }
+      ]
+    },
+    {
+      "players": 4,
+      "trial": 8,
+      "arena": {
+        "width": 448,
+        "height": 256
+      },
+      "duration": 110.26666666666286,
+      "winner": "p1",
+      "maxBullets": 17,
+      "pickups": 3,
+      "weaponKOs": 2,
+      "gcKOs": 1,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 45.26666666666286,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 4,
+          "at": 34.13333333333396,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p1",
+          "placement": 3,
+          "at": 81.99999999999791,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": null,
+          "placement": 2,
+          "at": 112.26666666666286,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "pallets/flask",
+          "kos": 2,
+          "damage": 53.59000000000005,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "redis/redis",
+          "kos": 0,
+          "damage": 23.280000000000015,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 23.460000000000004,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 7.200000000000004,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 4,
+      "trial": 9,
+      "arena": {
+        "width": 448,
+        "height": 256
+      },
+      "duration": 105.19999999999648,
+      "winner": "p2",
+      "maxBullets": 9,
+      "pickups": 2,
+      "weaponKOs": 2,
+      "gcKOs": 1,
+      "zoneStartedAt": 65,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 40.19999999999648,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 4,
+          "at": 34.300000000000615,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p2",
+          "placement": 3,
+          "at": 94.56666666666386,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": null,
+          "placement": 2,
+          "at": 107.19999999999648,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "vuejs/core",
+          "kos": 1,
+          "damage": 32.45599999999997,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "burntsushi/ripgrep",
+          "kos": 0,
+          "damage": 28.980000000000015,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 1,
+          "damage": 35.95990999999997,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 12.419999999999995,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 0,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 145.43333333332754,
+      "winner": "p7",
+      "maxBullets": 26,
+      "pickups": 10,
+      "weaponKOs": 6,
+      "gcKOs": 1,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 3,
+      "zonePhaseSeconds": 45.43333333332754,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p5",
+          "by": "p1",
+          "placement": 8,
+          "at": 30.53333333333401,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p4",
+          "placement": 7,
+          "at": 35.06666666666724,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p0",
+          "placement": 6,
+          "at": 46.66666666666658,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p4",
+          "placement": 5,
+          "at": 92.59999999999731,
+          "reason": "weapon"
+        },
+        {
+          "player": "p6",
+          "by": "p7",
+          "placement": 4,
+          "at": 125.33333333332878,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": "p0",
+          "placement": 3,
+          "at": 140.73333333332792,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": null,
+          "placement": 2,
+          "at": 147.43333333332754,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "jquery/jquery",
+          "kos": 1,
+          "damage": 45.55399999999999,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "burntsushi/ripgrep",
+          "kos": 2,
+          "damage": 48.09482962963006,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "fastapi/fastapi",
+          "kos": 2,
+          "damage": 75.1345000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "golang/example",
+          "kos": 0,
+          "damage": 25.44299999999996,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 26.207999999999945,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "django/django",
+          "kos": 1,
+          "damage": 24.187000000000022,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "expressjs/express",
+          "kos": 0,
+          "damage": 10.956000000000007,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "gin-gonic/gin",
+          "kos": 0,
+          "damage": 8.225550000000018,
           "roundWins": 0,
           "quality": [],
           "placement": 8,
           "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 1,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 126.7333333333286,
+      "winner": "p1",
+      "maxBullets": 29,
+      "pickups": 7,
+      "weaponKOs": 7,
+      "gcKOs": 0,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 26.733333333328602,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p6",
+          "by": "p4",
+          "placement": 8,
+          "at": 25.566666666667096,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p3",
+          "placement": 7,
+          "at": 30.60000000000068,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p7",
+          "placement": 6,
+          "at": 31.20000000000071,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": "p7",
+          "placement": 5,
+          "at": 46.73333333333324,
+          "reason": "weapon"
+        },
+        {
+          "player": "p7",
+          "by": "p1",
+          "placement": 4,
+          "at": 58.73333333333256,
+          "reason": "weapon"
+        },
+        {
+          "player": "p5",
+          "by": "p1",
+          "placement": 3,
+          "at": 63.8666666666656,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 2,
+          "at": 128.7333333333286,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "fastapi/fastapi",
+          "kos": 3,
+          "damage": 60.024455555555825,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 34.85999999999993,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "karpathy/nanogpt",
+          "kos": 0,
+          "damage": 33.540000000000035,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "pallets/flask",
+          "kos": 2,
+          "damage": 30.104000000000028,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "jquery/jquery",
+          "kos": 1,
+          "damage": 13.553000000000011,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "golang/example",
+          "kos": 1,
+          "damage": 7.059999999999993,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "gin-gonic/gin",
+          "kos": 0,
+          "damage": 5.629500000000005,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p3"
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 7.860000000000005,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 8,
+          "killedBy": "p4"
         }
       ]
     },
@@ -1008,60 +1853,64 @@
         "width": 480,
         "height": 288
       },
-      "duration": 10.866666666666632,
+      "duration": 127.63333333332855,
       "winner": "p4",
-      "maxBullets": 25,
-      "pickups": 11,
+      "maxBullets": 30,
+      "pickups": 10,
       "weaponKOs": 7,
       "gcKOs": 0,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 1,
+      "zonePhaseSeconds": 27.63333333332855,
+      "gcDecided": false,
       "eliminations": [
         {
-          "player": "p3",
-          "by": "p4",
+          "player": "p1",
+          "by": "p7",
           "placement": 8,
-          "at": 5.2333333333333245,
-          "reason": "weapon"
-        },
-        {
-          "player": "p0",
-          "by": "p1",
-          "placement": 7,
-          "at": 6.9333333333333185,
-          "reason": "weapon"
-        },
-        {
-          "player": "p2",
-          "by": "p1",
-          "placement": 6,
-          "at": 7.766666666666649,
-          "reason": "weapon"
-        },
-        {
-          "player": "p6",
-          "by": "p5",
-          "placement": 5,
-          "at": 8.099999999999982,
+          "at": 35.666666666667204,
           "reason": "weapon"
         },
         {
           "player": "p5",
           "by": "p4",
-          "placement": 4,
-          "at": 8.933333333333312,
+          "placement": 7,
+          "at": 37.93333333333374,
           "reason": "weapon"
         },
         {
-          "player": "p1",
-          "by": "p7",
-          "placement": 3,
-          "at": 9.199999999999978,
+          "player": "p3",
+          "by": "p2",
+          "placement": 6,
+          "at": 58.26666666666592,
+          "reason": "weapon"
+        },
+        {
+          "player": "p6",
+          "by": "p2",
+          "placement": 5,
+          "at": 59.7333333333325,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p4",
+          "placement": 4,
+          "at": 66.89999999999877,
           "reason": "weapon"
         },
         {
           "player": "p7",
           "by": "p4",
+          "placement": 3,
+          "at": 75.99999999999825,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p4",
           "placement": 2,
-          "at": 12.866666666666632,
+          "at": 129.63333333332855,
           "reason": "weapon"
         }
       ],
@@ -1070,41 +1919,41 @@
           "id": "p4",
           "name": "Bot 5",
           "repo": "pallets/flask",
-          "kos": 3,
-          "damage": 34.0748,
+          "kos": 4,
+          "damage": 57.74102407407425,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
           "killedBy": null
         },
         {
-          "id": "p7",
-          "name": "Bot 8",
-          "repo": "spring-projects/spring-petclinic",
-          "kos": 1,
-          "damage": 21.28420000000001,
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "karpathy/nanogpt",
+          "kos": 2,
+          "damage": 55.88440000000006,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
           "killedBy": "p4"
         },
         {
-          "id": "p1",
-          "name": "Bot 2",
-          "repo": "jquery/jquery",
-          "kos": 2,
-          "damage": 6.632999999999999,
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 1,
+          "damage": 34.159999999999926,
           "roundWins": 0,
           "quality": [],
           "placement": 3,
-          "killedBy": "p7"
+          "killedBy": "p4"
         },
         {
-          "id": "p5",
-          "name": "Bot 6",
-          "repo": "redis/redis",
-          "kos": 1,
-          "damage": 8.985400000000002,
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "golang/example",
+          "kos": 0,
+          "damage": 13.252499999999989,
           "roundWins": 0,
           "quality": [],
           "placement": 4,
@@ -1115,44 +1964,44 @@
           "name": "Bot 7",
           "repo": "rust-lang/rustlings",
           "kos": 0,
-          "damage": 7.200000000000001,
+          "damage": 18.457499999999996,
           "roundWins": 0,
           "quality": [],
           "placement": 5,
-          "killedBy": "p5"
-        },
-        {
-          "id": "p2",
-          "name": "Bot 3",
-          "repo": "karpathy/nanogpt",
-          "kos": 0,
-          "damage": 15.470000000000002,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 6,
-          "killedBy": "p1"
-        },
-        {
-          "id": "p0",
-          "name": "Bot 1",
-          "repo": "golang/example",
-          "kos": 0,
-          "damage": 4.935,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 7,
-          "killedBy": "p1"
+          "killedBy": "p2"
         },
         {
           "id": "p3",
           "name": "Bot 4",
           "repo": "lodash/lodash",
           "kos": 0,
-          "damage": 4.2,
+          "damage": 14.700000000000008,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "redis/redis",
+          "kos": 0,
+          "damage": 8.280000000000003,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "jquery/jquery",
+          "kos": 0,
+          "damage": 7.980000000000002,
           "roundWins": 0,
           "quality": [],
           "placement": 8,
-          "killedBy": "p4"
+          "killedBy": "p7"
         }
       ]
     },
@@ -1163,114 +2012,118 @@
         "width": 480,
         "height": 288
       },
-      "duration": 8.699999999999973,
-      "winner": "p1",
-      "maxBullets": 24,
-      "pickups": 4,
-      "weaponKOs": 7,
-      "gcKOs": 0,
+      "duration": 135.36666666666144,
+      "winner": "p0",
+      "maxBullets": 22,
+      "pickups": 8,
+      "weaponKOs": 6,
+      "gcKOs": 1,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 35.366666666661445,
+      "gcDecided": false,
       "eliminations": [
         {
-          "player": "p0",
-          "by": "p1",
+          "player": "p1",
+          "by": "p6",
           "placement": 8,
-          "at": 3.9666666666666623,
+          "at": 20.066666666666823,
           "reason": "weapon"
         },
         {
           "player": "p6",
-          "by": "p7",
+          "by": "p4",
           "placement": 7,
-          "at": 7.899999999999982,
+          "at": 38.50000000000038,
           "reason": "weapon"
         },
         {
           "player": "p7",
-          "by": "p1",
+          "by": "p4",
           "placement": 6,
-          "at": 7.999999999999981,
+          "at": 65.6666666666655,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p4",
+          "placement": 5,
+          "at": 72.16666666666514,
           "reason": "weapon"
         },
         {
           "player": "p3",
           "by": "p4",
-          "placement": 5,
-          "at": 8.366666666666648,
-          "reason": "weapon"
-        },
-        {
-          "player": "p5",
-          "by": "p4",
           "placement": 4,
-          "at": 8.79999999999998,
-          "reason": "weapon"
-        },
-        {
-          "player": "p2",
-          "by": "p1",
-          "placement": 3,
-          "at": 9.499999999999977,
+          "at": 98.76666666666362,
           "reason": "weapon"
         },
         {
           "player": "p4",
-          "by": "p1",
+          "by": null,
+          "placement": 3,
+          "at": 128.36666666666196,
+          "reason": "zone"
+        },
+        {
+          "player": "p5",
+          "by": "p0",
           "placement": 2,
-          "at": 10.699999999999973,
+          "at": 137.36666666666144,
           "reason": "weapon"
         }
       ],
       "ranking": [
         {
-          "id": "p1",
-          "name": "Bot 2",
-          "repo": "pallets/flask",
-          "kos": 4,
-          "damage": 24.278799999999997,
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "lodash/lodash",
+          "kos": 1,
+          "damage": 37.24191111111136,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
           "killedBy": null
         },
         {
-          "id": "p4",
-          "name": "Bot 5",
-          "repo": "spring-projects/spring-petclinic",
-          "kos": 2,
-          "damage": 19.961600000000004,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 2,
-          "killedBy": "p1"
-        },
-        {
-          "id": "p2",
-          "name": "Bot 3",
-          "repo": "redis/redis",
-          "kos": 0,
-          "damage": 6.440000000000003,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 3,
-          "killedBy": "p1"
-        },
-        {
           "id": "p5",
           "name": "Bot 6",
           "repo": "vuejs/core",
           "kos": 0,
-          "damage": 10.6568,
+          "damage": 41.83080000000005,
           "roundWins": 0,
           "quality": [],
-          "placement": 4,
-          "killedBy": "p4"
+          "placement": 2,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 4,
+          "damage": 49.00402999999981,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": null
         },
         {
           "id": "p3",
           "name": "Bot 4",
           "repo": "rust-lang/rustlings",
           "kos": 0,
-          "damage": 7.200000000000001,
+          "damage": 33.568500000000014,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "redis/redis",
+          "kos": 0,
+          "damage": 19.001999999999978,
           "roundWins": 0,
           "quality": [],
           "placement": 5,
@@ -1280,34 +2133,34 @@
           "id": "p7",
           "name": "Bot 8",
           "repo": "django/django",
-          "kos": 1,
-          "damage": 19.2992,
+          "kos": 0,
+          "damage": 34.33950000000004,
           "roundWins": 0,
           "quality": [],
           "placement": 6,
-          "killedBy": "p1"
+          "killedBy": "p4"
         },
         {
           "id": "p6",
           "name": "Bot 7",
           "repo": "burntsushi/ripgrep",
-          "kos": 0,
-          "damage": 7.600000000000001,
+          "kos": 1,
+          "damage": 16.09519999999999,
           "roundWins": 0,
           "quality": [],
           "placement": 7,
-          "killedBy": "p7"
+          "killedBy": "p4"
         },
         {
-          "id": "p0",
-          "name": "Bot 1",
-          "repo": "lodash/lodash",
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "pallets/flask",
           "kos": 0,
-          "damage": 0,
+          "damage": 9.4965,
           "roundWins": 0,
           "quality": [],
           "placement": 8,
-          "killedBy": "p1"
+          "killedBy": "p6"
         }
       ]
     },
@@ -1318,61 +2171,65 @@
         "width": 480,
         "height": 288
       },
-      "duration": 9.766666666666636,
+      "duration": 137.26666666666134,
       "winner": "p7",
-      "maxBullets": 21,
-      "pickups": 4,
-      "weaponKOs": 7,
-      "gcKOs": 0,
+      "maxBullets": 19,
+      "pickups": 11,
+      "weaponKOs": 6,
+      "gcKOs": 1,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 3,
+      "zonePhaseSeconds": 37.26666666666134,
+      "gcDecided": true,
       "eliminations": [
         {
-          "player": "p0",
-          "by": "p1",
+          "player": "p5",
+          "by": "p7",
           "placement": 8,
-          "at": 6.399999999999987,
+          "at": 59.8333333333325,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p4",
+          "placement": 7,
+          "at": 59.93333333333249,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": "p2",
+          "placement": 6,
+          "at": 74.69999999999833,
           "reason": "weapon"
         },
         {
           "player": "p3",
-          "by": "p4",
-          "placement": 7,
-          "at": 7.3999999999999835,
-          "reason": "weapon"
-        },
-        {
-          "player": "p5",
-          "by": "p6",
-          "placement": 6,
-          "at": 7.599999999999983,
-          "reason": "weapon"
-        },
-        {
-          "player": "p6",
-          "by": "p4",
+          "by": "p7",
           "placement": 5,
-          "at": 8.39999999999998,
+          "at": 74.99999999999831,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p7",
+          "placement": 4,
+          "at": 114.19999999999608,
           "reason": "weapon"
         },
         {
           "player": "p1",
           "by": "p7",
-          "placement": 4,
-          "at": 9.999999999999975,
-          "reason": "weapon"
-        },
-        {
-          "player": "p2",
-          "by": "p4",
           "placement": 3,
-          "at": 10.999999999999972,
+          "at": 130.0999999999952,
           "reason": "weapon"
         },
         {
-          "player": "p4",
-          "by": "p7",
+          "player": "p6",
+          "by": null,
           "placement": 2,
-          "at": 11.766666666666636,
-          "reason": "weapon"
+          "at": 139.26666666666134,
+          "reason": "zone"
         }
       ],
       "ranking": [
@@ -1380,8 +2237,803 @@
           "id": "p7",
           "name": "Bot 8",
           "repo": "fastapi/fastapi",
+          "kos": 4,
+          "damage": 66.08549925925936,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 35.795999999999935,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 0,
+          "damage": 49.80260999999981,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "vuejs/core",
+          "kos": 1,
+          "damage": 35.146199999999986,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "burntsushi/ripgrep",
+          "kos": 0,
+          "damage": 19.147499999999997,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "django/django",
+          "kos": 1,
+          "damage": 38.57445000000004,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 16.55999999999999,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "expressjs/express",
+          "kos": 0,
+          "damage": 15.288000000000013,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 8,
+          "killedBy": "p7"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 5,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 147.2999999999941,
+      "winner": "p0",
+      "maxBullets": 26,
+      "pickups": 10,
+      "weaponKOs": 5,
+      "gcKOs": 2,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 5,
+      "zonePhaseSeconds": 47.2999999999941,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p6",
+          "by": "p0",
+          "placement": 8,
+          "at": 52.39999999999959,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": "p3",
+          "placement": 7,
+          "at": 65.53333333333218,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p0",
+          "placement": 6,
+          "at": 141.39999999999455,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p2",
+          "placement": 5,
+          "at": 142.99999999999446,
+          "reason": "weapon"
+        },
+        {
+          "player": "p7",
+          "by": null,
+          "placement": 4,
+          "at": 144.4333333333277,
+          "reason": "zone"
+        },
+        {
+          "player": "p2",
+          "by": "p0",
+          "placement": 3,
+          "at": 145.63333333332764,
+          "reason": "weapon"
+        },
+        {
+          "player": "p5",
+          "by": null,
+          "placement": 2,
+          "at": 149.2999999999941,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "burntsushi/ripgrep",
+          "kos": 3,
+          "damage": 44.00269629629663,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "gin-gonic/gin",
+          "kos": 0,
+          "damage": 32.29469999999988,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "expressjs/express",
+          "kos": 1,
+          "damage": 37.16502962962999,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "jquery/jquery",
+          "kos": 0,
+          "damage": 40.06799999999998,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": null
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "django/django",
+          "kos": 0,
+          "damage": 69.94650000000007,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "facebook/react",
+          "kos": 1,
+          "damage": 38.461999999999954,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "fastapi/fastapi",
+          "kos": 0,
+          "damage": 30.790500000000026,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p3"
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "golang/example",
+          "kos": 0,
+          "damage": 9.65699999999999,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 8,
+          "killedBy": "p0"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 6,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 140.69999999999447,
+      "winner": "p3",
+      "maxBullets": 25,
+      "pickups": 10,
+      "weaponKOs": 7,
+      "gcKOs": 0,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 40.699999999994475,
+      "gcDecided": false,
+      "eliminations": [
+        {
+          "player": "p2",
+          "by": "p0",
+          "placement": 8,
+          "at": 22.333333333333602,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": "p5",
+          "placement": 7,
+          "at": 30.300000000000665,
+          "reason": "weapon"
+        },
+        {
+          "player": "p7",
+          "by": "p1",
+          "placement": 6,
+          "at": 32.8000000000007,
+          "reason": "weapon"
+        },
+        {
+          "player": "p5",
+          "by": "p6",
+          "placement": 5,
+          "at": 45.866666666666625,
+          "reason": "weapon"
+        },
+        {
+          "player": "p6",
+          "by": "p1",
+          "placement": 4,
+          "at": 79.06666666666474,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p3",
+          "placement": 3,
+          "at": 141.19999999999456,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p3",
+          "placement": 2,
+          "at": 142.69999999999447,
+          "reason": "weapon"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "golang/example",
           "kos": 2,
-          "damage": 29.331,
+          "damage": 30.670711111111842,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "fastapi/fastapi",
+          "kos": 2,
+          "damage": 78.9665000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": "p3"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "facebook/react",
+          "kos": 1,
+          "damage": 38.469999999999956,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p3"
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "lodash/lodash",
+          "kos": 1,
+          "damage": 20.50824999999998,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "karpathy/nanogpt",
+          "kos": 1,
+          "damage": 22.970000000000017,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p6"
+        },
+        {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "pallets/flask",
+          "kos": 0,
+          "damage": 16.86750000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "jquery/jquery",
+          "kos": 0,
+          "damage": 9.660000000000005,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p5"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "gin-gonic/gin",
+          "kos": 0,
+          "damage": 5.568750000000007,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 8,
+          "killedBy": "p0"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 7,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 142.5333333333277,
+      "winner": "p0",
+      "maxBullets": 27,
+      "pickups": 7,
+      "weaponKOs": 6,
+      "gcKOs": 1,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 42.533333333327704,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p6",
+          "by": "p5",
+          "placement": 8,
+          "at": 24.500000000000377,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p2",
+          "placement": 7,
+          "at": 27.40000000000052,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p5",
+          "placement": 6,
+          "at": 30.06666666666732,
+          "reason": "weapon"
+        },
+        {
+          "player": "p7",
+          "by": "p4",
+          "placement": 5,
+          "at": 38.06666666666707,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p4",
+          "placement": 4,
+          "at": 68.53333333333201,
+          "reason": "weapon"
+        },
+        {
+          "player": "p5",
+          "by": "p0",
+          "placement": 3,
+          "at": 143.6666666666611,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": null,
+          "placement": 2,
+          "at": 144.5333333333277,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "golang/example",
+          "kos": 1,
+          "damage": 33.79406666666686,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "pallets/flask",
+          "kos": 2,
+          "damage": 77.38300000000011,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "redis/redis",
+          "kos": 2,
+          "damage": 35.57780000000001,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p0"
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "jquery/jquery",
+          "kos": 0,
+          "damage": 20.57999999999998,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 0,
+          "damage": 14.170200000000028,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "karpathy/nanogpt",
+          "kos": 1,
+          "damage": 14.256800000000005,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p5"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 7.920000000000004,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p2"
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 8.279999999999998,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 8,
+          "killedBy": "p5"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 8,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 141.53333333332776,
+      "winner": "p7",
+      "maxBullets": 24,
+      "pickups": 10,
+      "weaponKOs": 6,
+      "gcKOs": 1,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 3,
+      "zonePhaseSeconds": 41.53333333332776,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p5",
+          "by": "p1",
+          "placement": 8,
+          "at": 30.900000000000695,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p4",
+          "placement": 7,
+          "at": 40.066666666666954,
+          "reason": "weapon"
+        },
+        {
+          "player": "p2",
+          "by": "p4",
+          "placement": 6,
+          "at": 42.866666666666795,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p7",
+          "placement": 5,
+          "at": 73.56666666666506,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p4",
+          "placement": 4,
+          "at": 136.33333333332817,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": "p6",
+          "placement": 3,
+          "at": 137.36666666666144,
+          "reason": "weapon"
+        },
+        {
+          "player": "p6",
+          "by": null,
+          "placement": 2,
+          "at": 143.53333333332776,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "django/django",
+          "kos": 1,
+          "damage": 67.21815000000011,
+          "roundWins": 1,
+          "quality": [],
+          "placement": 1,
+          "killedBy": null
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "burntsushi/ripgrep",
+          "kos": 1,
+          "damage": 37.83864444444468,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 2,
+          "killedBy": null
+        },
+        {
+          "id": "p4",
+          "name": "Bot 5",
+          "repo": "spring-projects/spring-petclinic",
+          "kos": 3,
+          "damage": 54.112239259259276,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 3,
+          "killedBy": "p6"
+        },
+        {
+          "id": "p0",
+          "name": "Bot 1",
+          "repo": "lodash/lodash",
+          "kos": 0,
+          "damage": 33.383999999999915,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "rust-lang/rustlings",
+          "kos": 0,
+          "damage": 18.836999999999993,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 5,
+          "killedBy": "p7"
+        },
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "redis/redis",
+          "kos": 0,
+          "damage": 10.29599999999999,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 6,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p1",
+          "name": "Bot 2",
+          "repo": "pallets/flask",
+          "kos": 1,
+          "damage": 20.121600000000015,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p4"
+        },
+        {
+          "id": "p5",
+          "name": "Bot 6",
+          "repo": "vuejs/core",
+          "kos": 0,
+          "damage": 9.556800000000004,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 8,
+          "killedBy": "p1"
+        }
+      ]
+    },
+    {
+      "players": 8,
+      "trial": 9,
+      "arena": {
+        "width": 480,
+        "height": 288
+      },
+      "duration": 142.59999999999437,
+      "winner": "p2",
+      "maxBullets": 20,
+      "pickups": 10,
+      "weaponKOs": 6,
+      "gcKOs": 1,
+      "zoneStartedAt": 100,
+      "zonePhaseKOs": 2,
+      "zonePhaseSeconds": 42.59999999999437,
+      "gcDecided": true,
+      "eliminations": [
+        {
+          "player": "p6",
+          "by": "p7",
+          "placement": 8,
+          "at": 27.833333333333876,
+          "reason": "weapon"
+        },
+        {
+          "player": "p0",
+          "by": "p1",
+          "placement": 7,
+          "at": 39.50000000000032,
+          "reason": "weapon"
+        },
+        {
+          "player": "p5",
+          "by": "p7",
+          "placement": 6,
+          "at": 60.63333333333245,
+          "reason": "weapon"
+        },
+        {
+          "player": "p1",
+          "by": "p4",
+          "placement": 5,
+          "at": 71.49999999999851,
+          "reason": "weapon"
+        },
+        {
+          "player": "p7",
+          "by": "p2",
+          "placement": 4,
+          "at": 87.59999999999759,
+          "reason": "weapon"
+        },
+        {
+          "player": "p3",
+          "by": "p4",
+          "placement": 3,
+          "at": 137.3333333333281,
+          "reason": "weapon"
+        },
+        {
+          "player": "p4",
+          "by": null,
+          "placement": 2,
+          "at": 144.59999999999437,
+          "reason": "zone"
+        }
+      ],
+      "ranking": [
+        {
+          "id": "p2",
+          "name": "Bot 3",
+          "repo": "vuejs/core",
+          "kos": 1,
+          "damage": 47.68020000000011,
           "roundWins": 1,
           "quality": [],
           "placement": 1,
@@ -1391,41 +3043,41 @@
           "id": "p4",
           "name": "Bot 5",
           "repo": "django/django",
-          "kos": 3,
-          "damage": 26.892059999999994,
+          "kos": 2,
+          "damage": 71.78714259259279,
           "roundWins": 0,
           "quality": [],
           "placement": 2,
-          "killedBy": "p7"
+          "killedBy": null
         },
         {
-          "id": "p2",
-          "name": "Bot 3",
-          "repo": "vuejs/core",
+          "id": "p3",
+          "name": "Bot 4",
+          "repo": "burntsushi/ripgrep",
           "kos": 0,
-          "damage": 4.4968,
+          "damage": 41.39999999999999,
           "roundWins": 0,
           "quality": [],
           "placement": 3,
           "killedBy": "p4"
         },
         {
+          "id": "p7",
+          "name": "Bot 8",
+          "repo": "fastapi/fastapi",
+          "kos": 2,
+          "damage": 50.092400000000055,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 4,
+          "killedBy": "p2"
+        },
+        {
           "id": "p1",
           "name": "Bot 2",
           "repo": "spring-projects/spring-petclinic",
           "kos": 1,
-          "damage": 10.193740000000002,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 4,
-          "killedBy": "p7"
-        },
-        {
-          "id": "p6",
-          "name": "Bot 7",
-          "repo": "facebook/react",
-          "kos": 1,
-          "damage": 7.727999999999999,
+          "damage": 26.90844999999998,
           "roundWins": 0,
           "quality": [],
           "placement": 5,
@@ -1436,33 +3088,33 @@
           "name": "Bot 6",
           "repo": "expressjs/express",
           "kos": 0,
-          "damage": 10.080000000000002,
+          "damage": 15.348000000000011,
           "roundWins": 0,
           "quality": [],
           "placement": 6,
-          "killedBy": "p6"
-        },
-        {
-          "id": "p3",
-          "name": "Bot 4",
-          "repo": "burntsushi/ripgrep",
-          "kos": 0,
-          "damage": 4.800000000000001,
-          "roundWins": 0,
-          "quality": [],
-          "placement": 7,
-          "killedBy": "p4"
+          "killedBy": "p7"
         },
         {
           "id": "p0",
           "name": "Bot 1",
           "repo": "rust-lang/rustlings",
           "kos": 0,
-          "damage": 2.4000000000000004,
+          "damage": 12.419999999999995,
+          "roundWins": 0,
+          "quality": [],
+          "placement": 7,
+          "killedBy": "p1"
+        },
+        {
+          "id": "p6",
+          "name": "Bot 7",
+          "repo": "facebook/react",
+          "kos": 0,
+          "damage": 6.816000000000004,
           "roundWins": 0,
           "quality": [],
           "placement": 8,
-          "killedBy": "p1"
+          "killedBy": "p7"
         }
       ]
     }

@@ -2,7 +2,7 @@ import type { BossAttack, BossPose, BossState, PlayerState } from '../shared/typ
 import { ARENA_H, ARENA_W } from '../shared/types.ts';
 import { bossAnchors } from '../shared/kaiju-anatomy.ts';
 import { clamp, distance, unit } from './math.ts';
-import { ATTACK_COST, squadBudget } from './balance.ts';
+import { bossCastPeriod } from './balance.ts';
 
 /** Authoritative animation/locomotion. Movement never creates an unbudgeted damage source. */
 export class BossMotion {
@@ -45,7 +45,7 @@ export class BossMotion {
     this.pose(a.kind === 'charge' && arch === 'hydra' ? 'dive' : a.kind === 'charge' && arch === 'abyssal' ? 'emerge' : 'attack', 0.25, arch === 'hydra' ? Math.max(0, this.head) : undefined);
     if (a.kind === 'charge' && arch === 'hydra') { this.boss.airborne = false; this.travel = 0; }
     const b = this.boss;
-    const period = (b.phase === 3 ? 1.8 : b.enraged ? 2.15 : 2.65) * squadBudget(this.playerCount).recoveryScale * ATTACK_COST[a.kind];
+    const period = bossCastPeriod(b, this.playerCount, a);
     if (arch === 'abyssal' && period - a.telegraph > 1.05 && this.clock - this.burrowAt >= 8 && players.length) {
       const target = players[this.boss.phase % players.length];
       this.destination = { x: target.x + 125, y: target.y + Math.sin(this.clock) * 45, targetPlayer: target.id };

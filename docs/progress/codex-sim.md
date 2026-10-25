@@ -1,3 +1,41 @@
+DONE (boss easier)
+DONE (royale balance)
+
+## Final validation — both balance cards complete
+- **879 tests PASS /79 files;9 optional skips. Full root typecheck PASS; independent sim typecheck PASS; production build PASS; owned diff check PASS.** Includes11 focused PvP balance tests (7 sustained-fire kinds, dash absorption/cooldown, escape+recharge, and complete battle/edu replay isolation) and7 boss reduction tests covering all3 phases, all4 archetypes,4/6/8, pressure streams, minion damage/cadence, unchanged health/telegraphs and complete PvP/edu replay isolation.
+- Both requested reports are saved: `sim/royale-results.json` (30 normal-input matches +7 focused controls) and `sim/boss-easier-results.json` (225 prior +225 easier matches, identical current HP). No commits/pushes, shared edits, dependencies, credentials/provider calls, deployment or server lifecycle controls. Onlysim/ and this progress log changed. DEV/live not accessed for these headless balance cards.
+
+## Boss easier final result / handoff
+- Explicit `BATTLE_DIFFICULTY={damage:2/3,attackFrequency:2/3}`. Generated anatomical and heart damage plus parallel-pressure damage scale once; bug contact/projectiles also scale. Whole cast cycles (including the old minimum recovery floor) and source/heart cooldowns scale×1.5, preserving .95s warnings. Shared bossCastPeriod keeps motion recovery synchronized. Opening AI/pressure delay and minion shot intervals also scale. Primary/pressure measured rates are within0.035 of the requested2/3 ratio across all phases/archetypes/squad sizes.
+- Existing one-third, linear-per-combatant HP is untouched:4p8507,6p12760,8p17013; limb HP/anatomy unchanged. No battle→PvP/edu crossover: mutation replay tests produce identical complete states for those modes. Royale remains at the independently verified target timing.
+- Five trials per repo/cell across15 public fallbacks,4/6/8 players, paired bot seeds/skills. Baseline already used the current reduced HP; all differences below are only the requested damage/cadence changes. New wins are100% in this finite bot sample; the previous55–70%/150–210s archetype targets are historical and superseded by the user's explicit easier-boss requests. No compensating HP/difficulty increase was made to restore them.
+- Full45-cell before/after data, budgets, configuration and input/source hashes: `sim/boss-easier-results.json`. Reproduce450 paired matches with `npx tsx sim/boss-easier-report.ts` (or combine3 baseline +3 easier row JSONs as argv). Existing balance-report.ts no longer asserts superseded archetype win/time bands against the newly reduced raid preset.
+
+| Players | HP unchanged | Prior wins | New wins | Prior mean | New mean |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 4 | 8507 | 70/75 (93.3%) | 75/75 (100.0%) | 65.3s | 63.6s |
+| 6 | 12760 | 75/75 (100.0%) | 75/75 (100.0%) | 58.4s | 56.6s |
+| 8 | 17013 | 73/75 (97.3%) | 75/75 (100.0%) | 60.0s | 54.6s |
+
+## Royale balance final result / handoff
+- Saved fresh30-match normal-input sweep to sim/royale-results.json:10 matches each at2/4/8, mean67.76s /111.41s /138.71s (targets60–90 /90–130 /120–160 all PASS). Seven neutral equal-budget sustained-fire controls require13.0–14.53s from first damage to elimination, all8–15s PASS, with>8 damaging impacts each; no two-hit kills.
+- PvP-only .03 weapon damage (was.14),1.5s disengage delay then1armor/.25s,1.1s dash cooldown/.38s shield,2.4s armor-break escape shield, weaker1.4 staff homing turn. PvP shields consume incoming shots; a blocked projectile resets recharge, so standing in fire behind i-frames cannot indefinitely recharge against a slow cannon. GC still ignores shields and suppresses recharge outside.
+- Zone starts45/65/100s of active combat for2/4/8, closes its first stage at105/125/145s, with hard caps130/150/160s. Preview and5s warning remain; telegraph state carries actual roster-dependent times. Bots disengage on low armor and steer along walls; these branches cannot affect battle/edu.
+- Closing-circle phase accounts for38.3% /41.7% /27.9% of aggregate match time; GC directly decides3/10,3/10,6/10 endings. Separately,7/10,22/30,24/70 eliminations occur after shrinking starts. These distinguish zone pressure from literal environmental kills. No victory/HP/source overrides in the sweep.
+-30 focused royale/balance tests PASS; targeted edu/rubric regressions and standalone sim tsc PASS. Full merged879-test/typecheck/build checks PASS with the separate battle-only easier card. No battle/edu tuning changed for royale: a replay test mutates every royale knob and proves both other modes produce identical complete snapshots.
+
+## Boss easier original request (fulfilled)
+- New user instruction: battle boss damage×2/3 and attack frequency×2/3, keep current HP (already reduced to1/3 and linear per combatant) and .95s telegraphs. Taking a paired current-HP baseline, then applying explicit battle-only factors and sweeping4/6/8,5 trials per repo/cell. No royale/edu or shared/service changes for this card.
+
+
+## Current PvP-only tuning
+- .03 weapon multiplier (edu remains.14),2s armor recharge delay/.4s per armor,1.1s dash cooldown/.38s shield, armor-break escape window, staff turn1.4 vs edu4. Shield contacts consume PvP shots, preventing homing orbs from repeatedly circling through a dash shield. Bots disengage on low armor and steer along walls instead of retreating into corners; every branch is gated to ordinary pvp.
+- Focused stationary neutral-budget weapon tests at the current damage rate give11.7–13.5s across all7 kinds before the final escape-window adjustment; preserves the8–15s requirement without multiplying health. Early tuning only reduced damage and produced25–40s bots, so that was insufficient.
+- GC phase now scales to roster, preserving final-survivor pressure rather than compressing8 heroes as early as a duel:2/4/8 shrink starts45/65/100s active, finishes105/125/145s; hard caps130/150/160s. Existing state.zone carries those times to renderer; no new contract or duplicated client clock. Final collapse fits before each cap. Latest pre-final10-run sweep was53.0/94.0/112.5s; final shield/recharge calibration running.
+
+## Balance follow-up
+- Prior7–10s bot matches are too short; that initial implementation evidence is historical, not acceptable balance. Retuning PvP-only weapon damage/survivability; preserving battle and edu mechanics/controllers. Will measure focused-fire TTK and run10 normal-input matches per2/4/8 size, recording weapon/GC elimination shares and zone-decided endings. No shared/service changes.
+
 DONE (royale)
 
 ## Royale final delivery

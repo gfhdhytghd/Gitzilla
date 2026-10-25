@@ -26,16 +26,16 @@ Kaiju stomp toward the squad; hydras fly arcs with alternating head beams, wing 
 
 - Players redistribute five normalized stat points across health, armor, energy, speed and damage.
 - `balance.ts` owns the room budget: HP, simultaneous warning lanes, volley interval, and cast recovery scaling. Repo identity never adds another budget.
-- Boss HP is `11600 * (0.6 + 0.4*n) * (1 + max(0,n-4)*0.085)`.
+- Boss HP remains the already-reduced linear budget: `round(6380*n/3)` for1–8 players (4p8507,6p12760,8p17013). The easier damage/cadence request does not change it.
 - Total limb durability, after weak-point multipliers, is 36% of core HP for every repo. Allocation follows component LOC plus a flat component share. Cycles keep their tactical weak-point damage without granting free extra core DPS.
 - Anatomical attack shares sum to one. Weighted fair selection prevents duplicate component attacks from increasing their type's frequency. Per-kind occupancy costs price the **whole** cast cycle (telegraph plus recovery). Cheap telegraphed styles cast more often; room-wide bullet patterns recover longer. The headless scheduled-budget audit allows at most 8% spread across repo styles and squad sizes, including tick/deck rounding.
 - Repo seeds direct art/anatomy. Encounter AI uses a common deterministic seed and restarts its heart-pattern stream when the heart wakes, avoiding seed-dependent difficulty bias.
-- Four/six/eight-player rooms add one/two/four independently warned projectile streams aimed at distinct heroes, overlapping the primary anatomical cast. Their base intervals are 3.6/3.4/3.2 seconds; enrage shortens these by 10%. Primary recovery also shortens with squad size. Hit strength is 5 / 4.3 / 4 for four/six/eight players; the extra lanes and their cadence increase total pressure as squads grow. Every added stream has a 0.95s visible warning.
+- Four/six/eight-player rooms add one/two/four independently warned projectile streams aimed at distinct heroes, overlapping the primary anatomical cast. Their current intervals are5.4/5.1/4.8 seconds (original3.6/3.4/3.2 divided by2/3); enrage shortens these by 10%. Primary recovery also shortens with squad size. Raw hit strength is3.333 /2.867 /2.667 for four/six/eight players, before the existing archetype contact cost; the extra lanes and their cadence increase total pressure as squads grow. Every added stream has a 0.95s visible warning.
 - Generated bullets travel 58–65 px/s (parallel streams 60 px/s). Generated main telegraphs are 0.95s. Shared `params.threatShare` and `params.threatCost` are numeric hints, not new contract fields.
 
 Armor recovers after three seconds without damage, then restores one point each 1.5s. Energy restores 10/s. Dash grants 0.24s invulnerability on a 1.7s cooldown. Standing within 24px of a downed teammate for two seconds revives them at half HP with two seconds of invulnerability. Hotfix restores two HP within 76px every 22s.
 
-Hits on the same region by teammates within 0.5s add 14% damage per additional attacker, capped at +56%. Heart/cyclic regions take 1.5x direct damage. Limb hits chip the core. Phase two starts at 50% HP, phase three at 15%; surviving limbs shield the heart. Breaking a casting limb cancels its pending hazard and disables future source attacks. The exposed heart retains ring, spiral, laser and slam patterns. Solo heroes retain the 1.65x damage assist and boss hits of two.
+Hits on the same region by teammates within 0.5s add 14% damage per additional attacker, capped at +56%. Heart/cyclic regions take 1.5x direct damage. Limb hits chip the core. Phase two starts at 50% HP, phase three at 15%; surviving limbs shield the heart. Breaking a casting limb cancels its pending hazard and disables future source attacks. The exposed heart retains ring, spiral, laser and slam patterns. Solo heroes retain the 1.65x damage assist and boss hits of4/3 under the current2/3 damage factor.
 
 ## Round 2: real code and room depth
 
@@ -147,3 +147,17 @@ The seeded GC center stays within4% of the arena center. The final24px circle is
 Autopsy ranks by `placement`, with KOs, damage, `killedBy` and departed `left` flags. Structural `.royale` carries winner, all placements and a chronological `eliminations` log (player/by/at/placement/reason); the same log lives at `pvp.royale.eliminations` for HUD/kill feed. Exported `RoyaleReport`, `RoyaleRankingRow` and `RoyaleElimination` describe these optional additions pending shared-contract declaration. GC/leave eliminations have null killer and award no KO. Hall/room/UI transport are owned elsewhere.
 
 `npx tsx sim/royale-bots.ts 5` runs five normal-input public-repo trials each at2/4/8 players; `sim/royale-results.json` stores the full rankings/kill logs and summary. Deterministic mechanics tests separately cover stationary/camping/hard-deadline stalls. These headless tests do not claim phone/visual acceptance.
+
+## Royale balance follow-up
+
+PvP tuning lives in `royale-balance.ts` and never enters battle or edu. Weapon damage uses.03 (edu remains.14), giving13.0–14.53s point-blank sustained-fire elimination across7 weapon kinds in a neutral five-point fixture. After1.5s without projectile contact, armor recharges1point/.25s. Dash cooldown1.1s with.38s invulnerability; armor breaking grants a2.4s escape window. Shield contact consumes projectiles and delays recharge; staff turns less tightly. This rewards actual disengagement and makes dashes useful without letting stationary shields recharge under continuous cannon fire.
+
+Roster-dependent GC timing uses `royaleTimeline`:2/4/8-player shrink starts45/65/100s of active combat, first closure105/125/145s, hard cap130/150/160s. The target circle is still visible from countdown with a5s start warning. Bots retreat at low armor, project movement off walls and obey the circle; every new controller branch is PvP-only.
+
+`npx tsx sim/royale-bots.ts 10` records10 normal-input public-kit games per size plus7 separate focused-fire controls. Final means67.76/111.41/138.71s; `royale-results.json` separates zone phase duration, eliminations under zone pressure, and direct GC-decided finishes. The earlier5-run7–10s report above is superseded.
+
+## Battle boss difficulty follow-up
+
+`BATTLE_DIFFICULTY` multiplies battle damage and attack frequency independently by2/3. Health and telegraphs stay fixed. Source/heart cooldowns, full primary attack cycles, pressure cadence and bug shot intervals become1.5× longer; bug contact/projectiles receive the damage factor too. `bossCastPeriod` scales the old complete cycle including its minimum-recovery floor, so short phase3 attacks cannot escape the requested cadence reduction. PvP/edu replays are independent of these knobs.
+
+`npx tsx sim/boss-easier-report.ts` reproduces the paired15-repo ×4/6/8 ×5-trial baseline/easier report with the same already-reduced HP on both sides. `boss-easier-results.json` records450 matches. New win rates100% /100% /100%, means63.6/56.6/54.6s; these explicit user-requested reductions supersede the older archetype55–70% win /150–210s targets. The original archetype report remains historical evidence.

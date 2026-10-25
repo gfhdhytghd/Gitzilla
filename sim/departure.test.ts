@@ -56,7 +56,7 @@ describe('battle explicit player departure', () => {
   });
   it('removes only the departed player’s pressure lane and secondary cascade target', () => {
     const m = battle(6), raw = m as unknown as BattleRaw, s = raw.state;
-    raw.updatePressure(4, s.players);
+    raw.updatePressure(4.6, s.players);
     expect(raw.pressure).toHaveLength(2); const keep = raw.pressure.find(p => p.targetPlayer !== 'p0')!.hazardId;
     s.boss.targetPlayer = 'p1'; const a = { ...s.boss.kit.attacks[0], kind: 'cascade' as const };
     raw.telegraph(a, [450, 250]);

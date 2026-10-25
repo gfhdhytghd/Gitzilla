@@ -25,7 +25,7 @@ function uncommentToml(line: string): string {
   }
   return line;
 }
-const assignment = (body: string, field: string) => body.match(new RegExp(`^\\s*${field}\\s*=\\s*["']([^"']+)["']`, 'm'))?.[1];
+const assignment = (body: string, field: string) => body.match(new RegExp(`^[ \\t]*${field}[ \\t]*=[ \\t]*["']([^"']+)["']`, 'm'))?.[1];
 
 /** Only exact/pinned declarations are queried: ranges are not evidence of an installed vulnerable version. */
 export function declaredDependencies(files: SourceFile[], profile: RepoProfile, limit = 100): DeclaredDependency[] {
@@ -93,7 +93,7 @@ export function declaredDependencies(files: SourceFile[], profile: RepoProfile, 
         }
       }
     } else if (base === 'go.mod') {
-      const replaced = new Set(Array.from(file.text.matchAll(/^\s*(?:replace\s+)?([\w./-]+)(?:\s+v[^\s]+)?\s+=>/gm), match => match[1]));
+      const replaced = new Set(Array.from(file.text.matchAll(/^[ \t]*(?:replace[ \t]+)?([\w./-]+)(?:\s+v[^\s]+)?\s+=>/gm), match => match[1]));
       let requireBlock = false;
       for (const rawLine of file.text.split(/\r?\n/)) {
         const line = rawLine.replace(/\/\/.*$/, '').trim();

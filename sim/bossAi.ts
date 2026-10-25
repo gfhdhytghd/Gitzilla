@@ -1,6 +1,6 @@
 import type { BossAttack, BossState, PlayerState } from '../shared/types.ts';
 import { distance, random } from './math.ts';
-import { ATTACK_COST, squadBudget } from './balance.ts';
+import { ATTACK_COST, BATTLE_DIFFICULTY, bossCastPeriod, squadBudget } from './balance.ts';
 import { attackFlavorPicker } from './flavor.ts';
 import type { BossCode } from './code.ts';
 
@@ -14,7 +14,7 @@ export class BossAi {
   private rng: () => number;
   private credit = new Map<string, number>();
   private heartAwake = false;
-  constructor(private seed: number, private playerCount = 4) { this.rng = random(seed); }
+  constructor(private seed: number, private playerCount = 4) { this.rng = random(seed); this.recovery /= BATTLE_DIFFICULTY.attackFrequency; }
 
   step(dt: number, boss: BossState, players: PlayerState[], allowStart = true): AiDecision {
     this.recovery -= dt;
@@ -29,8 +29,7 @@ export class BossAi {
         this.cooldowns.set(attack.id, attack.cooldown * (boss.enraged ? 0.76 : 1));
         // Price the entire cast cycle, including its fixed wind-up, in threat units.
         // Otherwise cheap telegraphed styles silently lose budget to their wind-up.
-        const period = (boss.phase === 3 ? 1.8 : boss.enraged ? 2.15 : 2.65) *
-          squadBudget(this.playerCount).recoveryScale * ATTACK_COST[attack.kind];
+        const period = bossCastPeriod(boss, this.playerCount, attack);
         this.recovery = Math.max(0.2, period - attack.telegraph);
         return { fired: attack, target: cast.target ?? undefined };
       }

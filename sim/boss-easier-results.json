@@ -1,0 +1,2082 @@
+{
+  "game": "Gitzilla",
+  "change": "battle bosses one third less damage and one third fewer attacks",
+  "mode": "battle",
+  "trialsPerCell": 5,
+  "counts": [
+    4,
+    6,
+    8
+  ],
+  "profiles": 15,
+  "matches": {
+    "before": 225,
+    "after": 225
+  },
+  "publicFallbacksOnly": true,
+  "controls": "Same normal-input squads, paired seeds1009+trial401+slot37, skills0.55/0.67/0.79. Both arms use the current already-reduced linear HP. No health/outcome overrides. User requested easier bosses; historical55–70% wins/150–210s archetype bands are superseded.",
+  "difficulty": {
+    "before": {
+      "damage": 1,
+      "attackFrequency": 1
+    },
+    "after": {
+      "damage": 0.6666666666666666,
+      "attackFrequency": 0.6666666666666666
+    }
+  },
+  "healthTuningUnchanged": {
+    "bossBaseHp": 11600,
+    "bossReferencePlayers": 4,
+    "bossHealthDivisor": 3
+  },
+  "budgets": [
+    {
+      "players": 4,
+      "hp": 8507,
+      "pressureLanes": 1,
+      "pressurePeriod": 5.4,
+      "recoveryScale": 1.5,
+      "hitDamage": 3.333333333333333
+    },
+    {
+      "players": 6,
+      "hp": 12760,
+      "pressureLanes": 2,
+      "pressurePeriod": 5.1000000000000005,
+      "recoveryScale": 1.3274336283185841,
+      "hitDamage": 2.8666666666666663
+    },
+    {
+      "players": 8,
+      "hp": 17013,
+      "pressureLanes": 4,
+      "pressurePeriod": 4.800000000000001,
+      "recoveryScale": 1.1904761904761905,
+      "hitDamage": 2.6666666666666665
+    }
+  ],
+  "telegraph": "Unchanged .95s generated/heart attacks and pressure warnings",
+  "summary": [
+    {
+      "players": 4,
+      "hp": 8507,
+      "before": {
+        "wins": 70,
+        "runs": 75,
+        "winRate": 0.9333333333333333,
+        "meanDuration": 65.2706666666654,
+        "meanVictory": 65.95857142857014
+      },
+      "after": {
+        "wins": 75,
+        "runs": 75,
+        "winRate": 1,
+        "meanDuration": 63.60088888888774,
+        "meanVictory": 63.60088888888774
+      }
+    },
+    {
+      "players": 6,
+      "hp": 12760,
+      "before": {
+        "wins": 75,
+        "runs": 75,
+        "winRate": 1,
+        "meanDuration": 58.37199999999913,
+        "meanVictory": 58.37199999999913
+      },
+      "after": {
+        "wins": 75,
+        "runs": 75,
+        "winRate": 1,
+        "meanDuration": 56.5635555555548,
+        "meanVictory": 56.5635555555548
+      }
+    },
+    {
+      "players": 8,
+      "hp": 17013,
+      "before": {
+        "wins": 73,
+        "runs": 75,
+        "winRate": 0.9733333333333334,
+        "meanDuration": 59.9715555555546,
+        "meanVictory": 59.268493150684016
+      },
+      "after": {
+        "wins": 75,
+        "runs": 75,
+        "winRate": 1,
+        "meanDuration": 54.63022222222156,
+        "meanVictory": 54.63022222222156
+      }
+    }
+  ],
+  "before": [
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 68.32666666666525,
+      "winDuration": 67.76666666666527,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "pair-programming": 5,
+        "no-verify": 9,
+        "lint-fix": 6
+      },
+      "pickupsCollected": {
+        "heart": 30,
+        "energy": 42,
+        "armor": 8
+      }
+    },
+    {
+      "boss": "django/django",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 58.67999999999912,
+      "winDuration": 64.42499999999879,
+      "reviews": 4,
+      "blocksBroken": 28,
+      "perksPicked": {
+        "no-verify": 8,
+        "pair-programming": 2,
+        "lint-fix": 6
+      },
+      "pickupsCollected": {
+        "energy": 41,
+        "heart": 29,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 71.45333333333173,
+      "winDuration": 71.45333333333173,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 32,
+        "heart": 17,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "facebook/react",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 65.4066666666654,
+      "winDuration": 65.4066666666654,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "lint-fix": 7,
+        "pair-programming": 5,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 46,
+        "heart": 30,
+        "armor": 5
+      }
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 4,
+      "runs": 5,
+      "wins": 3,
+      "winRate": 0.6,
+      "duration": 61.773333333332275,
+      "winDuration": 67.94444444444304,
+      "reviews": 4,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "pair-programming": 4,
+        "lint-fix": 4,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 43,
+        "heart": 30,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 64.11333333333215,
+      "winDuration": 64.11333333333215,
+      "reviews": 5,
+      "blocksBroken": 24,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 37,
+        "heart": 28,
+        "armor": 8
+      }
+    },
+    {
+      "boss": "golang/example",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 63.46666666666552,
+      "winDuration": 63.46666666666552,
+      "reviews": 5,
+      "blocksBroken": 24,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 42,
+        "heart": 29,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 69.36666666666518,
+      "winDuration": 69.36666666666518,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "heart": 35,
+        "energy": 51,
+        "armor": 8
+      }
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.63999999999889,
+      "winDuration": 62.63999999999889,
+      "reviews": 5,
+      "blocksBroken": 22,
+      "perksPicked": {
+        "lint-fix": 7,
+        "pair-programming": 5,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 23,
+        "armor": 6,
+        "heart": 12
+      }
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.733333333332226,
+      "winDuration": 62.733333333332226,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "heart": 23,
+        "energy": 37,
+        "armor": 9
+      }
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 67.17999999999864,
+      "winDuration": 67.17999999999864,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 35,
+        "heart": 23,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "redis/redis",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 64.38666666666546,
+      "winDuration": 64.38666666666546,
+      "reviews": 5,
+      "blocksBroken": 22,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 44,
+        "armor": 6,
+        "heart": 25
+      }
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 68.78666666666523,
+      "winDuration": 68.78666666666523,
+      "reviews": 5,
+      "blocksBroken": 28,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 51,
+        "heart": 39,
+        "armor": 7
+      }
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 63.95999999999882,
+      "winDuration": 63.95999999999882,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 22,
+        "armor": 5,
+        "heart": 8
+      }
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 4,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 66.78666666666533,
+      "winDuration": 66.75833333333199,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 44,
+        "heart": 35,
+        "armor": 9
+      }
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.64666666666578,
+      "winDuration": 58.64666666666578,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "hotfix-plus": 5,
+        "force": 12,
+        "tail-call": 13
+      },
+      "pickupsCollected": {
+        "energy": 51,
+        "armor": 11,
+        "heart": 38
+      }
+    },
+    {
+      "boss": "django/django",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.04666666666587,
+      "winDuration": 57.04666666666587,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "tail-call": 12,
+        "hotfix-plus": 6,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "heart": 38,
+        "energy": 56,
+        "armor": 11
+      }
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 59.36666666666574,
+      "winDuration": 59.36666666666574,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "hotfix-plus": 7,
+        "force": 11,
+        "tail-call": 12
+      },
+      "pickupsCollected": {
+        "energy": 39,
+        "heart": 17,
+        "armor": 13
+      }
+    },
+    {
+      "boss": "facebook/react",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.67333333333251,
+      "winDuration": 57.67333333333251,
+      "reviews": 5,
+      "blocksBroken": 28,
+      "perksPicked": {
+        "tail-call": 12,
+        "hotfix-plus": 6,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 47,
+        "armor": 11,
+        "heart": 36
+      }
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.473333333332526,
+      "winDuration": 57.473333333332526,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "tail-call": 12,
+        "hotfix-plus": 6,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 52,
+        "heart": 40,
+        "armor": 14
+      }
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.713333333332514,
+      "winDuration": 57.713333333332514,
+      "reviews": 5,
+      "blocksBroken": 21,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "heart": 30,
+        "energy": 40,
+        "armor": 12
+      }
+    },
+    {
+      "boss": "golang/example",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.273333333332474,
+      "winDuration": 58.273333333332474,
+      "reviews": 5,
+      "blocksBroken": 21,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 35,
+        "armor": 11,
+        "heart": 22
+      }
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 59.88666666666571,
+      "winDuration": 59.88666666666571,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "tail-call": 12,
+        "hotfix-plus": 6,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 49,
+        "armor": 13,
+        "heart": 27
+      }
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.12666666666598,
+      "winDuration": 55.12666666666598,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "tail-call": 12,
+        "hotfix-plus": 6,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "armor": 9,
+        "energy": 25,
+        "heart": 13
+      }
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 59.239999999999085,
+      "winDuration": 59.239999999999085,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "hotfix-plus": 7,
+        "force": 12,
+        "tail-call": 11
+      },
+      "pickupsCollected": {
+        "armor": 14,
+        "energy": 39,
+        "heart": 20
+      }
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.01333333333226,
+      "winDuration": 62.01333333333226,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 13,
+        "force": 11
+      },
+      "pickupsCollected": {
+        "energy": 41,
+        "heart": 22,
+        "armor": 13
+      }
+    },
+    {
+      "boss": "redis/redis",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.24666666666586,
+      "winDuration": 57.24666666666586,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 44,
+        "armor": 13,
+        "heart": 31
+      }
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 61.83999999999894,
+      "winDuration": 61.83999999999894,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "tail-call": 13,
+        "hotfix-plus": 5,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 53,
+        "armor": 12,
+        "heart": 31
+      }
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.553333333332624,
+      "winDuration": 55.553333333332624,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 27,
+        "armor": 12,
+        "heart": 7
+      }
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.47999999999913,
+      "winDuration": 58.47999999999913,
+      "reviews": 5,
+      "blocksBroken": 29,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 53,
+        "heart": 34,
+        "armor": 9
+      }
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.66666666666579,
+      "winDuration": 58.66666666666579,
+      "reviews": 5,
+      "blocksBroken": 29,
+      "perksPicked": {
+        "force": 9,
+        "no-verify": 16,
+        "lint-fix": 15
+      },
+      "pickupsCollected": {
+        "energy": 51,
+        "armor": 12,
+        "heart": 35
+      }
+    },
+    {
+      "boss": "django/django",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 65.86666666666538,
+      "winDuration": 65.86666666666538,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "lint-fix": 12,
+        "no-verify": 14,
+        "force": 14
+      },
+      "pickupsCollected": {
+        "energy": 48,
+        "heart": 33,
+        "armor": 12
+      }
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 63.26666666666553,
+      "winDuration": 61.57499999999895,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "no-verify": 16,
+        "force": 8,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 37,
+        "armor": 15,
+        "heart": 14
+      }
+    },
+    {
+      "boss": "facebook/react",
+      "players": 8,
+      "runs": 5,
+      "wins": 4,
+      "winRate": 0.8,
+      "duration": 68.4133333333319,
+      "winDuration": 60.20833333333237,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "force": 9,
+        "no-verify": 15,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 52,
+        "heart": 36,
+        "armor": 11
+      }
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 56.079999999999266,
+      "winDuration": 56.079999999999266,
+      "reviews": 5,
+      "blocksBroken": 29,
+      "perksPicked": {
+        "lint-fix": 16,
+        "no-verify": 16,
+        "force": 8
+      },
+      "pickupsCollected": {
+        "armor": 14,
+        "energy": 52,
+        "heart": 38
+      }
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.50666666666585,
+      "winDuration": 57.50666666666585,
+      "reviews": 5,
+      "blocksBroken": 27,
+      "perksPicked": {
+        "no-verify": 16,
+        "force": 9,
+        "lint-fix": 15
+      },
+      "pickupsCollected": {
+        "energy": 43,
+        "heart": 30,
+        "armor": 11
+      }
+    },
+    {
+      "boss": "golang/example",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 61.57999999999895,
+      "winDuration": 61.57999999999895,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "force": 7,
+        "no-verify": 15,
+        "lint-fix": 18
+      },
+      "pickupsCollected": {
+        "energy": 49,
+        "armor": 13,
+        "heart": 37
+      }
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.086666666665586,
+      "winDuration": 62.086666666665586,
+      "reviews": 5,
+      "blocksBroken": 29,
+      "perksPicked": {
+        "no-verify": 15,
+        "force": 9,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 53,
+        "armor": 13,
+        "heart": 32
+      }
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.17333333333271,
+      "winDuration": 54.17333333333271,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 17,
+        "lint-fix": 15
+      },
+      "pickupsCollected": {
+        "energy": 29,
+        "armor": 13,
+        "heart": 14
+      }
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.05333333333266,
+      "winDuration": 55.05333333333266,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 17,
+        "lint-fix": 15
+      },
+      "pickupsCollected": {
+        "energy": 34,
+        "armor": 14,
+        "heart": 23
+      }
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 61.97999999999894,
+      "winDuration": 61.97999999999894,
+      "reviews": 5,
+      "blocksBroken": 29,
+      "perksPicked": {
+        "no-verify": 16,
+        "force": 8,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 44,
+        "armor": 13,
+        "heart": 18
+      }
+    },
+    {
+      "boss": "redis/redis",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.03999999999921,
+      "winDuration": 57.03999999999921,
+      "reviews": 5,
+      "blocksBroken": 29,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 46,
+        "armor": 12,
+        "heart": 24
+      }
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.76666666666578,
+      "winDuration": 58.76666666666578,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 18,
+        "lint-fix": 14
+      },
+      "pickupsCollected": {
+        "energy": 53,
+        "armor": 10,
+        "heart": 32
+      }
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.566666666666016,
+      "winDuration": 54.566666666666016,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "force": 8,
+        "lint-fix": 16,
+        "no-verify": 16
+      },
+      "pickupsCollected": {
+        "energy": 31,
+        "armor": 13,
+        "heart": 8
+      }
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 64.52666666666545,
+      "winDuration": 64.52666666666545,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "no-verify": 16,
+        "force": 13,
+        "lint-fix": 11
+      },
+      "pickupsCollected": {
+        "energy": 50,
+        "armor": 11,
+        "heart": 31
+      }
+    }
+  ],
+  "after": [
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 63.03333333333221,
+      "winDuration": 63.03333333333221,
+      "reviews": 5,
+      "blocksBroken": 18,
+      "perksPicked": {
+        "pair-programming": 4,
+        "lint-fix": 7,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 35,
+        "heart": 12,
+        "armor": 7
+      }
+    },
+    {
+      "boss": "django/django",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 61.9266666666656,
+      "winDuration": 61.9266666666656,
+      "reviews": 5,
+      "blocksBroken": 22,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 32,
+        "heart": 8,
+        "armor": 4
+      }
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 65.4266666666654,
+      "winDuration": 65.4266666666654,
+      "reviews": 5,
+      "blocksBroken": 21,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 5,
+        "no-verify": 10
+      },
+      "pickupsCollected": {
+        "energy": 31,
+        "armor": 5,
+        "heart": 9
+      }
+    },
+    {
+      "boss": "facebook/react",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 61.70666666666561,
+      "winDuration": 61.70666666666561,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 39,
+        "armor": 6,
+        "heart": 20
+      }
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.166666666665584,
+      "winDuration": 62.166666666665584,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 33,
+        "heart": 9,
+        "armor": 5
+      }
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 64.33333333333213,
+      "winDuration": 64.33333333333213,
+      "reviews": 5,
+      "blocksBroken": 18,
+      "perksPicked": {
+        "pair-programming": 4,
+        "lint-fix": 6,
+        "no-verify": 10
+      },
+      "pickupsCollected": {
+        "energy": 19,
+        "heart": 8,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "golang/example",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.39999999999891,
+      "winDuration": 62.39999999999891,
+      "reviews": 5,
+      "blocksBroken": 14,
+      "perksPicked": {
+        "pair-programming": 5,
+        "no-verify": 10,
+        "lint-fix": 5
+      },
+      "pickupsCollected": {
+        "energy": 28,
+        "heart": 8,
+        "armor": 4
+      }
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 65.78666666666538,
+      "winDuration": 65.78666666666538,
+      "reviews": 5,
+      "blocksBroken": 20,
+      "perksPicked": {
+        "pair-programming": 4,
+        "lint-fix": 7,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 40,
+        "heart": 20,
+        "armor": 7
+      }
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 61.55333333333228,
+      "winDuration": 61.55333333333228,
+      "reviews": 5,
+      "blocksBroken": 11,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 9,
+        "armor": 3,
+        "heart": 4
+      }
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.033333333332266,
+      "winDuration": 62.033333333332266,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 15,
+        "heart": 5,
+        "armor": 6
+      }
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 65.96666666666538,
+      "winDuration": 65.96666666666538,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 29,
+        "armor": 6,
+        "heart": 16
+      }
+    },
+    {
+      "boss": "redis/redis",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.5999999999989,
+      "winDuration": 62.5999999999989,
+      "reviews": 5,
+      "blocksBroken": 15,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 21,
+        "heart": 6,
+        "armor": 5
+      }
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 66.39999999999868,
+      "winDuration": 66.39999999999868,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 41,
+        "heart": 21,
+        "armor": 5
+      }
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 62.426666666665575,
+      "winDuration": 62.426666666665575,
+      "reviews": 5,
+      "blocksBroken": 21,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 7,
+        "no-verify": 8
+      },
+      "pickupsCollected": {
+        "energy": 18,
+        "armor": 4,
+        "heart": 4
+      }
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 4,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 66.25333333333202,
+      "winDuration": 66.25333333333202,
+      "reviews": 5,
+      "blocksBroken": 22,
+      "perksPicked": {
+        "pair-programming": 5,
+        "lint-fix": 6,
+        "no-verify": 9
+      },
+      "pickupsCollected": {
+        "energy": 37,
+        "armor": 5,
+        "heart": 20
+      }
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 56.61333333333257,
+      "winDuration": 56.61333333333257,
+      "reviews": 5,
+      "blocksBroken": 18,
+      "perksPicked": {
+        "tail-call": 14,
+        "hotfix-plus": 6,
+        "force": 10
+      },
+      "pickupsCollected": {
+        "energy": 33,
+        "armor": 11,
+        "heart": 20
+      }
+    },
+    {
+      "boss": "django/django",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.11999999999932,
+      "winDuration": 55.11999999999932,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "tail-call": 12,
+        "force": 12,
+        "hotfix-plus": 6
+      },
+      "pickupsCollected": {
+        "armor": 11,
+        "energy": 36,
+        "heart": 8
+      }
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.446666666665806,
+      "winDuration": 58.446666666665806,
+      "reviews": 5,
+      "blocksBroken": 22,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 13,
+        "force": 11
+      },
+      "pickupsCollected": {
+        "energy": 29,
+        "armor": 10,
+        "heart": 8
+      }
+    },
+    {
+      "boss": "facebook/react",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.60666666666596,
+      "winDuration": 55.60666666666596,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "tail-call": 12,
+        "hotfix-plus": 6,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 42,
+        "heart": 23,
+        "armor": 9
+      }
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.579999999999345,
+      "winDuration": 54.579999999999345,
+      "reviews": 5,
+      "blocksBroken": 17,
+      "perksPicked": {
+        "hotfix-plus": 5,
+        "tail-call": 13,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "heart": 13,
+        "energy": 32,
+        "armor": 7
+      }
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 56.55333333333257,
+      "winDuration": 56.55333333333257,
+      "reviews": 5,
+      "blocksBroken": 13,
+      "perksPicked": {
+        "tail-call": 15,
+        "hotfix-plus": 6,
+        "force": 9
+      },
+      "pickupsCollected": {
+        "energy": 24,
+        "armor": 6,
+        "heart": 11
+      }
+    },
+    {
+      "boss": "golang/example",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.25999999999931,
+      "winDuration": 55.25999999999931,
+      "reviews": 5,
+      "blocksBroken": 15,
+      "perksPicked": {
+        "tail-call": 12,
+        "force": 12,
+        "hotfix-plus": 6
+      },
+      "pickupsCollected": {
+        "energy": 26,
+        "armor": 4,
+        "heart": 2
+      }
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.41999999999913,
+      "winDuration": 58.41999999999913,
+      "reviews": 5,
+      "blocksBroken": 21,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 32,
+        "heart": 6,
+        "armor": 10
+      }
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.70666666666601,
+      "winDuration": 54.70666666666601,
+      "reviews": 5,
+      "blocksBroken": 14,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "armor": 6,
+        "energy": 16,
+        "heart": 3
+      }
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.07999999999932,
+      "winDuration": 55.07999999999932,
+      "reviews": 5,
+      "blocksBroken": 18,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 24,
+        "armor": 9,
+        "heart": 7
+      }
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.339999999999144,
+      "winDuration": 58.339999999999144,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 14,
+        "force": 10
+      },
+      "pickupsCollected": {
+        "energy": 33,
+        "heart": 7,
+        "armor": 9
+      }
+    },
+    {
+      "boss": "redis/redis",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.87333333333261,
+      "winDuration": 55.87333333333261,
+      "reviews": 5,
+      "blocksBroken": 13,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 15,
+        "force": 9
+      },
+      "pickupsCollected": {
+        "energy": 31,
+        "heart": 12,
+        "armor": 3
+      }
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 59.6733333333324,
+      "winDuration": 59.6733333333324,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "hotfix-plus": 5,
+        "tail-call": 14,
+        "force": 11
+      },
+      "pickupsCollected": {
+        "energy": 37,
+        "armor": 7,
+        "heart": 6
+      }
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.59333333333262,
+      "winDuration": 55.59333333333262,
+      "reviews": 5,
+      "blocksBroken": 19,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 13,
+        "force": 11
+      },
+      "pickupsCollected": {
+        "energy": 18,
+        "armor": 10,
+        "heart": 4
+      }
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 6,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 58.58666666666579,
+      "winDuration": 58.58666666666579,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "hotfix-plus": 6,
+        "tail-call": 12,
+        "force": 12
+      },
+      "pickupsCollected": {
+        "energy": 37,
+        "armor": 11,
+        "heart": 6
+      }
+    },
+    {
+      "boss": "burntsushi/ripgrep",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.61333333333268,
+      "winDuration": 54.61333333333268,
+      "reviews": 5,
+      "blocksBroken": 24,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "armor": 12,
+        "energy": 40,
+        "heart": 20
+      }
+    },
+    {
+      "boss": "django/django",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 53.73333333333274,
+      "winDuration": 53.73333333333274,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "heart": 31,
+        "energy": 52,
+        "armor": 15
+      }
+    },
+    {
+      "boss": "expressjs/express",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 55.92666666666594,
+      "winDuration": 55.92666666666594,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 30,
+        "heart": 10,
+        "armor": 12
+      }
+    },
+    {
+      "boss": "facebook/react",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 53.666666666666075,
+      "winDuration": 53.666666666666075,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 52,
+        "heart": 38,
+        "armor": 14
+      }
+    },
+    {
+      "boss": "fastapi/fastapi",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 53.49333333333275,
+      "winDuration": 53.49333333333275,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "force": 8,
+        "lint-fix": 15,
+        "no-verify": 17
+      },
+      "pickupsCollected": {
+        "armor": 11,
+        "energy": 43,
+        "heart": 24
+      }
+    },
+    {
+      "boss": "gin-gonic/gin",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.27999999999937,
+      "winDuration": 54.27999999999937,
+      "reviews": 5,
+      "blocksBroken": 25,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 35,
+        "heart": 14,
+        "armor": 12
+      }
+    },
+    {
+      "boss": "golang/example",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 54.68666666666601,
+      "winDuration": 54.68666666666601,
+      "reviews": 5,
+      "blocksBroken": 20,
+      "perksPicked": {
+        "lint-fix": 14,
+        "force": 8,
+        "no-verify": 18
+      },
+      "pickupsCollected": {
+        "energy": 38,
+        "heart": 11,
+        "armor": 9
+      }
+    },
+    {
+      "boss": "jquery/jquery",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.12666666666587,
+      "winDuration": 57.12666666666587,
+      "reviews": 5,
+      "blocksBroken": 28,
+      "perksPicked": {
+        "no-verify": 16,
+        "force": 8,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 46,
+        "armor": 13,
+        "heart": 25
+      }
+    },
+    {
+      "boss": "karpathy/nanogpt",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 52.83333333333278,
+      "winDuration": 52.83333333333278,
+      "reviews": 5,
+      "blocksBroken": 18,
+      "perksPicked": {
+        "no-verify": 19,
+        "force": 7,
+        "lint-fix": 14
+      },
+      "pickupsCollected": {
+        "energy": 18,
+        "armor": 8,
+        "heart": 3
+      }
+    },
+    {
+      "boss": "lodash/lodash",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 53.09999999999943,
+      "winDuration": 53.09999999999943,
+      "reviews": 5,
+      "blocksBroken": 21,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "armor": 12,
+        "energy": 23,
+        "heart": 5
+      }
+    },
+    {
+      "boss": "pallets/flask",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 56.53999999999924,
+      "winDuration": 56.53999999999924,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 16,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 38,
+        "armor": 12,
+        "heart": 14
+      }
+    },
+    {
+      "boss": "redis/redis",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 53.45333333333275,
+      "winDuration": 53.45333333333275,
+      "reviews": 5,
+      "blocksBroken": 22,
+      "perksPicked": {
+        "force": 8,
+        "lint-fix": 16,
+        "no-verify": 16
+      },
+      "pickupsCollected": {
+        "energy": 36,
+        "heart": 15,
+        "armor": 10
+      }
+    },
+    {
+      "boss": "rust-lang/rustlings",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 57.00666666666588,
+      "winDuration": 57.00666666666588,
+      "reviews": 5,
+      "blocksBroken": 26,
+      "perksPicked": {
+        "force": 8,
+        "no-verify": 18,
+        "lint-fix": 14
+      },
+      "pickupsCollected": {
+        "energy": 42,
+        "armor": 10,
+        "heart": 23
+      }
+    },
+    {
+      "boss": "spring-projects/spring-petclinic",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 52.819999999999446,
+      "winDuration": 52.819999999999446,
+      "reviews": 5,
+      "blocksBroken": 23,
+      "perksPicked": {
+        "lint-fix": 16,
+        "force": 8,
+        "no-verify": 16
+      },
+      "pickupsCollected": {
+        "energy": 24,
+        "armor": 11,
+        "heart": 4
+      }
+    },
+    {
+      "boss": "vuejs/core",
+      "players": 8,
+      "runs": 5,
+      "wins": 5,
+      "winRate": 1,
+      "duration": 56.17333333333259,
+      "winDuration": 56.17333333333259,
+      "reviews": 5,
+      "blocksBroken": 30,
+      "perksPicked": {
+        "no-verify": 16,
+        "force": 8,
+        "lint-fix": 16
+      },
+      "pickupsCollected": {
+        "energy": 44,
+        "armor": 10,
+        "heart": 22
+      }
+    }
+  ],
+  "sourceHashes": {
+    "sim/balance.ts": "355751599bbdcc8ac07f349021c731d857ab20941bf232fd4a552e52dbba52cd",
+    "sim/bossAi.ts": "a92f5d6be5b1acbe14083c3474ebfd9af074f4555284bd2f37cf15396b145017",
+    "sim/bossMotion.ts": "d9619ae0f659fab900e9428e2deb05be58cc50f0e6fa15964c21e4d740377b9d",
+    "sim/match.ts": "d518a00fe8f4a08d290cfe2df0162073d1e454e9afe765c441ba282cbb5e37c7",
+    "sim/kits.ts": "93704ce4bd2bc47acbd76e535215269c3c66d6a3498ad351fb9f3a35b3de8cb1",
+    "sim/bots.ts": "85ae4acc1159bf8808934d6aadbefacb70903d7b68659a59e196e561f843125b",
+    "sim/weapons.ts": "ca515d72797d1edf9753bd7cb5fbfc8824cfc417d214fc50bdbca02699c8ef8a",
+    "shared/kaiju-anatomy.ts": "ff1c7a3e321619746b2e650b76f6627079322a3d4cf75bf8c86c145c36bb6d8d"
+  },
+  "publicProfiles": [
+    {
+      "repo": "burntsushi/ripgrep",
+      "sha256": "98dbf60a66d30b5b6676644e4616412ee9532e21d36c26f987434caa5a92187b"
+    },
+    {
+      "repo": "django/django",
+      "sha256": "afddb19dd62a4d15eaa83d35f3e9813ab5ec675b1476c3777203fe927261b033"
+    },
+    {
+      "repo": "expressjs/express",
+      "sha256": "140b6237154dd26e9b632ce170907a672d5f86d1b20993ddbafa90e324304bde"
+    },
+    {
+      "repo": "facebook/react",
+      "sha256": "2957397b618afa2dda609abaff10ecd565e2464757c1b7de0b71cad7c24524d4"
+    },
+    {
+      "repo": "fastapi/fastapi",
+      "sha256": "fb4820374673fb3819e498dc4391b779115ad2444a0493c7e75694938fcc0116"
+    },
+    {
+      "repo": "gin-gonic/gin",
+      "sha256": "901a23c5e74064165dd84e56acac23f8afc9ebf9132dd456a1499dda5173e702"
+    },
+    {
+      "repo": "golang/example",
+      "sha256": "506db52698904b9ba19b4ed8a3939272627613cfa923e37b3f0c8a70295144e1"
+    },
+    {
+      "repo": "jquery/jquery",
+      "sha256": "c3668adad886ba98a807bd5d09ecff9e064ee9a502dda504c9db4e471c3dabc3"
+    },
+    {
+      "repo": "karpathy/nanogpt",
+      "sha256": "e392ebadaf3b49d99a2f2cf4c3b2eb8b01e3866b92acd6b04ad2761773421acc"
+    },
+    {
+      "repo": "lodash/lodash",
+      "sha256": "4edb917770d015b0d9b32d7ea2b7fff4aa69333040dc2c990b59ef0103d955cc"
+    },
+    {
+      "repo": "pallets/flask",
+      "sha256": "1fddd85214ee5bbbe46b5b440fb263909a55f96b5e06eb35c555d8140ee26bfb"
+    },
+    {
+      "repo": "redis/redis",
+      "sha256": "57d7f85362f70246ba9ab582287fa0ab04ed1c93ac81a2a49a454bfd763b0cbe"
+    },
+    {
+      "repo": "rust-lang/rustlings",
+      "sha256": "f6f4184fad91ae614d8efa55af2ca35cb8baffc453f7ec5e8aa26de9744cac8e"
+    },
+    {
+      "repo": "spring-projects/spring-petclinic",
+      "sha256": "5eac3fa1fb535cb0c84fccfae34a12e7e0132a82db79a3498ef176f9763e172b"
+    },
+    {
+      "repo": "vuejs/core",
+      "sha256": "5802872ce98f7406fea1f737ab679cccf871621f1331812d94156068298cf494"
+    }
+  ]
+}

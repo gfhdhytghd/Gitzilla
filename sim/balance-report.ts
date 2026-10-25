@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { loadBalanceProfiles, runBalance, type BalanceRow } from './bots.ts';
 import { ARCHETYPE_DECKS, bossArchetypeFromProfile } from './archetypes.ts';
-import { ARCHETYPE_CONTACT_COST, ATTACK_COST, MATCH_TUNING, SQUAD_TUNING, squadBudget } from './balance.ts';
+import { ARCHETYPE_CONTACT_COST, ATTACK_COST, BATTLE_DIFFICULTY, MATCH_TUNING, SQUAD_TUNING, squadBudget } from './balance.ts';
 import { BOSS_HIT_RADII } from './regions.ts';
 
 const profiles = loadBalanceProfiles(), counts = [1, 4, 6, 8];
@@ -28,9 +28,8 @@ function summary(rs: typeof rows) {
 }
 const archetypeSummary = counts.filter(n => n >= 4).flatMap(players => Object.keys(ARCHETYPE_DECKS).map(archetype => {
   const result = { players, archetype, ...summary(rows.filter(r => r.players === players && r.archetype === archetype)) };
-  assert.ok(result.winRate >= 0.55 && result.winRate <= 0.7, `${players}p ${archetype}: win target`);
-  assert.ok(result.meanDuration >= 150 && result.meanDuration <= 210, `${players}p ${archetype}: duration target`);
-  assert.ok(result.meanWin >= 150 && result.meanWin <= 210, `${players}p ${archetype}: victory duration target`);
+  // Later user requests reduce HP to1/3 and damage/cast rate to2/3. The original archetype
+  // calibration bands remain historical evidence, not assertions for the easier raid preset.
   return result;
 }));
 const sha = (file: string) => createHash('sha256').update(readFileSync(new URL(`../${file}`, import.meta.url))).digest('hex');
@@ -39,7 +38,7 @@ const report = {
   game: 'Gitzilla', round: 'archetypes', codeFlavor: true, socialImpact: true, correctedIdleCooldown: true, publicFallbacksOnly: true,
   trialsPerCell: 5, counts, pairedBotSeedBase: 1009, botSkills: [0.55, 0.67, 0.79, 0.55, 0.67],
   method: 'Five deterministic paired trials per repo and squad size; identical normal-input bots face every repo. Archetype cohorts contain 3–5 repos (15–25 trials); these are calibration observations, not human or population win-rate estimates.',
-  reproduce: 'npx tsx sim/balance-report.ts', defaults: { ...MATCH_TUNING, squads: SQUAD_TUNING, contactCosts: ARCHETYPE_CONTACT_COST },
+  reproduce: 'npx tsx sim/balance-report.ts', defaults: { ...MATCH_TUNING, difficulty: BATTLE_DIFFICULTY, squads: SQUAD_TUNING, contactCosts: ARCHETYPE_CONTACT_COST },
   budgets: counts.map(players => ({ players, ...squadBudget(players) })), attackCosts: ATTACK_COST, decks: ARCHETYPE_DECKS,
   selection: profiles.map(p => ({ repo: p.slug, ...bossArchetypeFromProfile(p) })),
   summary: counts.map(players => ({ players, ...summary(rows.filter(r => r.players === players)) })), archetypeSummary, rows,
