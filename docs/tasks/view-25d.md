@@ -1,4 +1,30 @@
-# 2.5D view: a tilted floor, standing heroes, shots in the air. The game logic stays 2D.
+# Real 3D view (Vision Pro WebXR + 2.5D on screens). The game logic stays 2D.
+
+**REVISED (user): "I want it real 3D view in a Vision Pro."** One three.js (WebGL) scene serves both cases:
+- On ordinary screens it renders into a normal canvas: the 2.5D view below.
+- On Apple Vision Pro Safari it enters a WebXR `immersive-vr` session (visionOS 2+, HTTPS: https://gitzilla.wilflin.me).
+
+Mode 7 / Canvas2D is dropped. Use `three` pinned to an exact version, as an npm dependency.
+
+## XR specifics
+- **Who wears the headset.** The headset joins the room as a spectator (`?screen=1&view=xr`), and players keep using their phones as controllers. Optional: "follow <player>" to sit the viewpoint near one hero.
+- **Scale.** Default is a tabletop diorama: the arena about 1.2 m wide on a floating table, about 0.9 m high, in a dark terminal "void" room with a faint grid. A pinch on the "scale" button toggles life-size, where you stand at the arena's edge.
+- **Input.** visionOS uses `transient-pointer` (gaze + pinch). Use it only for UI: an Enter/Exit button, scale and follow. No gameplay input from the headset.
+- **3D content.**
+  - Floor: a textured plane from the world canvas.
+  - Sprites: heroes, the boss, minions and pickups are camera-facing billboards with pixel-art textures (NearestFilter), anchored at their feet, with blob shadows.
+  - Bullets: small emissive quads or spheres at chest height, with shadows under their true 2D position.
+  - The boss towers. AoE telegraphs stay on the floor. The GC zone is a translucent wall ring.
+  - Damage numbers and taunts are billboard text.
+  - HUD: a floating panel above the table showing boss HP, alive count and timer.
+- **Performance.** A steady 90 fps in XR: update textures only when they change, use instancing for bullets, avoid per-frame allocations.
+- **Fallbacks.**
+  - Outside a headset, `view=xr` shows the same scene in the canvas with an "Enter Vision Pro" button, offered only if `navigator.xr?.isSessionSupported('immersive-vr')`.
+  - Desktop and phone `view=25d` use the same scene with a fixed tilted camera, as described below.
+- **Testing.** Desktop/WebKit for the canvas fallback. For XR: the Immersive Web Emulator, or three's XR test hooks, in Chromium. The final on-device check is the user's, on Vision Pro.
+
+---
+
 
 User request: "go 2.5D: a flat map, standing avatars, 3D bullets flying at a height. Fight logic stays fully 2D."
 
