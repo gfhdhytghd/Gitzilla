@@ -1,7 +1,7 @@
 /** Presentation-only table height. Never move the tracked camera. */
-export const TABLE_HEIGHT_OFFSET_KEY = 'kaiju.xr.tableHeightOffset.v2';
+export const TABLE_HEIGHT_OFFSET_KEY = 'kaiju.xr.tableHeightOffset.v3';
 export const TABLE_HEIGHT_STEP = 0.1;
-export const TABLE_HEIGHT_METERS = 0.8;
+export const TABLE_HEIGHT_METERS = 0.5;
 export const FALLBACK_EYE_HEIGHT = 1.6;
 export interface TableHeightOptions {
   referenceSpaceType: 'local-floor' | 'local';

@@ -47,15 +47,22 @@ describe('screen camera/floor projection', () => {
   });
 });
 
-it('places a 1.2m table at0.8m and life-size arena ahead of the viewer; follow moves the root only', () => {
+it('places a 1.2m table at0.5m and life-size arena ahead of the viewer; follow moves the root only', () => {
   const table = getXRPlacement({ worldWidth: 480, worldHeight: 288 });
-  expect(table.scale * 480).toBeCloseTo(1.2); expect(table.position.y).toBe(0.8);
+  expect(table.scale * 480).toBeCloseTo(1.2); expect(table.position.y).toBe(0.5);
   expect(table.position.x + 240 * table.scale).toBeCloseTo(0);
-  expect(table.position.z + 144 * table.scale).toBeCloseTo(-1.3);
+  expect(table.position.z + 144 * table.scale).toBeCloseTo(-1.6);
   const life = getXRPlacement({ worldWidth: 480, worldHeight: 288, mode: 'life' });
   expect(life.scale * 28).toBeCloseTo(1.7); expect(life.position.y).toBe(0);
   expect(life.position.z + 288 * life.scale).toBeCloseTo(-0.5);
   const follow = getXRPlacement({ worldWidth: 480, worldHeight: 288, mode: 'life', follow: { x: 80, y: 50 } });
   expect(follow.position.x + 80 * follow.scale).toBeCloseTo(0);
   expect(follow.position.z + 50 * follow.scale).toBeCloseTo(-0.5);
+});
+
+it('honors the XR session distance override of1.0m and leaves custom/life distances exact', () => {
+  const table = getXRPlacement({ worldWidth: 480, worldHeight: 288, distance: 1.0 });
+  expect(table.position.z + 144 * table.scale).toBeCloseTo(-1.0);
+  const life = getXRPlacement({ worldWidth: 480, worldHeight: 288, mode: 'life', distance: 0.5 });
+  expect(life.position.z + 288 * life.scale).toBeCloseTo(-0.5);
 });

@@ -78,7 +78,7 @@ export function getXRPlacement(options: XRPlacementOptions): XRPlacement {
   const centerX = options.follow?.x ?? w / 2;
   const centerY = options.follow?.y ?? (life ? h : h / 2);
   return { scale, position: { x: -centerX * scale, y: life ? 0 : options.tableHeight ?? TABLE_HEIGHT_METERS,
-    z: -centerY * scale - (options.distance ?? (life ? 0.5 : 1.3)) } };
+    z: -centerY * scale - (options.distance ?? (life ? 0.5 : 1.6)) } };
 }
 
 /** Center the arena on an actual meter-space surface pose. Uniform scale and

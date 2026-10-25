@@ -272,7 +272,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     // World-locked: the arena root + table are placed when the session starts and again only on an explicit change
     // (scale button, table height, arena size). Never per frame from the head or the followed hero (follow is a marker).
     // The head pose is read once (xrHome); the root lives in reference-space coordinates, so head motion can't drag it.
-    // table height (take-ui's height.ts): 0.80 m above the floor, calibrated from the raw head y captured ONCE per session
+    // table height (take-ui's height.ts): 0.50 m above the floor, calibrated from the raw head y captured ONCE per session
     if (xrInitialRawY === undefined) xrInitialRawY = xr!.debug.rawHeadY;
     const hp = table ? getTableHeightPlacement({ referenceSpaceType: xr!.debug.referenceSpaceType, initialHeadY: xrInitialRawY,
       referenceOffsetY: xr!.debug.referenceOffsetY, userOffset: tableHeightOffset }) : null;
@@ -281,7 +281,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     if (placeKey !== xrPlaceKey) {
       xrPlaceKey = placeKey;
       const place = getXRPlacement({ mode: xrScale, worldWidth: W, worldHeight: H, follow: null,
-        tableWidth: 1.2, tableHeight, distance: table ? 0.7 : undefined });
+        tableWidth: 1.2, tableHeight, distance: table ? 1.0 : undefined });
       place.position.x += xrHome.x;
       place.position.z += xrHome.z;
       look.root.scale.setScalar(place.scale);

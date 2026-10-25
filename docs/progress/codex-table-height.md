@@ -1,3 +1,20 @@
+# 2026-10-25 real Vision Pro adjustment — DONE / SOURCE FROZEN
+
+Latest requested base:0.50m (previous0.80m); session table center distance1.00m (previous0.70m), world-pinned. New offset key `kaiju.xr.tableHeightOffset.v3` ignores both prior unversioned and v2 adjustments. Projection fallback distance1.30→1.60m; actual XR session override in index.ts must change0.70→1.00m (claude-boss owner, coordinator notified). No index.ts edits by Codex.
+
+Owned implementation/tests updated. Stage25d277 PASS /36files (`/tmp/table-lower-tests.log`), final merged root tsc PASS (`/tmp/table-lower-tsc-final.log`). claude-boss changed actual session distance override to1.00m; Codex made no index.ts edits. World-pinning retained.
+
+All three default180-frame xr-check runs PASS, zero errors:
+- `--height`: `docs/shots/2026-10-25T09-41-25-276Z-xr-check/summary.json`
+- `--height --vision-pro`: `docs/shots/2026-10-25T09-41-25-267Z-xr-check/summary.json`
+- `--height --local-only`: `docs/shots/2026-10-25T09-41-25-266Z-xr-check/summary.json`
+
+Each run measures actual table mesh center1.00m ahead of initial head pose, tableY0.50m, and unchanged arena/table placement after head x/y/z movement. Local fallback raw base-1.10m plus existing reference-space conversion yields0.50m effective height. Old unversioned+v2 offsets are ignored; new v3+0.10m yields0.60m and survives reload. `height-debug.png` in each evidence directory; reviewed synthetic Vision Pro screenshot. Browser logs `/tmp/table-lower-xr.log`, `/tmp/table-lower-vision.log`, `/tmp/table-lower-local.log`.
+
+No commits or shared/live service controls. IWER emulation with synthetic Safari UA; hardware acceptance remains separate. The earlier0.80m/v2 evidence below is historical and superseded by this section.
+
+---
+
 # Floor-based VR tabletop — DONE / SOURCE FROZEN
 
 Owned deltas: height.ts + height.test.ts, projection.ts + projection.test.ts, height-debug.ts, optional XRDebugState calibration fields in types.ts, tools/xr-check.ts height assertions. No index.ts edits by Codex; claude-boss owns world-pinning and the helper callsite.
