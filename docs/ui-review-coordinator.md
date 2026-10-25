@@ -1,0 +1,14 @@
+# Coordinator UI review of the Codex takeover build (live 4ebd403), real WebKit (iPhone 15 / SE, desktop 1280x800)
+Screens checked: landing, settings/onboarding, lobby (battle), fight (?mock=match), code review (?mock=review), autopsy,
+classroom. No horizontal overflow and 0 page errors anywhere (good — Safari autopsy fix holds).
+
+| id | sev | where | problem | owner |
+|---|---|---|---|---|
+| UI-1 | P1 | "Before you play" sheet | Language `<select>` is unreadable on WebKit: light-grey text on a white native control. Style it for the dark theme (appearance:none, bg/fg/border/arrow), check every select in the app | claude-ui |
+| UI-2 | P1 | same sheet, phones | Reappears right after the name prompt on every room load; "Continue without practice" is below the fold with no scroll cue (iPhone SE: ~430px below). Make the sheet's actions a sticky footer, show onboarding at most once per session, and don't stack it after the name prompt when it was just shown on landing (the per-page motion permission is handled by the lobby/fight gate) | claude-ui |
+| UI-3 | P1 | phone: landing, lobby, autopsy | Floating "♪ ON" mute button overlaps content (landing facts line, "Connect GitHub … private too" hint, Adopt-an-Organ card). Move mute into Settings (or dock it in the header bar) on phones | claude-ui |
+| UI-4 | P2 | landing phone | "[ PvP: challenge a friend ]" wraps the closing "]" onto its own line — no-wrap or shorter label | claude-ui |
+| UI-5 | P1 | fight (desktop+phone) | Too much floating text over the arena: raw advisory IDs ("GHSA-29MW-WPGM-H"), "2 MAINTAINERS", long callouts ("$ HOTFIX --DEPLOY --NOW", "LINUX_MAIN() GIT FORK --DECOY"), ERR/EXC glyph stacks on the boss. Rules: max ~4 floating texts at once, merge per target, advisory IDs only in autopsy (in-arena show a small parasite icon), maintainer counts only on hover/close-up/autopsy, callouts ≤ 14 chars, fade fast | claude-boss (arena/events) + claude-player (hero callouts) |
+| UI-6 | P1 | fight desktop | Heroes read tiny next to the kaiju; scale heroes up (or zoom the desktop camera) so a hero is ~1/4 of the boss height, and make "YOU" unmistakable | claude-player + claude-ui |
+| UI-7 | P2 | autopsy | Adopt-an-Organ shows the organ as "root" — map root/misc components to a human label (repo name core / "top-level files"); the MVP sentence is clipped at the bottom on desktop | claude-ui (+ codex-sim if the name comes from the kit) |
+| UI-8 | P1 | classroom (all screens) | Visually a different product (plain navy web form) — restyle to Gitzilla's terminal/neon pixel look (same fonts/colors/borders/backdrop as lobby) while keeping its clarity. Also the room owner lands on the student view saying "Waiting for your teacher": the owner should land on the teacher screen (students on the student view) | claude-ui + claude-edu |
