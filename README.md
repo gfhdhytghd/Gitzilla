@@ -1,4 +1,4 @@
-<p align="center"><img src="brand/gitzilla-lockup.svg" alt="Gitzilla" width="720"></p>
+<p align="center"><img src="brand/gitzilla-lockup.png" alt="Gitzilla" width="720"></p>
 
 # Gitzilla
 

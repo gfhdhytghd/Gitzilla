@@ -1,4 +1,4 @@
-DONE (godzilla refs)
+DONE (logo fetch)
 
 Completed `docs/tasks/codex-ideas.md` as ideation/specification work only.
 
@@ -64,3 +64,13 @@ Only `docs/ideas/fun-and-codebase.md` and this progress file were authored in th
 - Direction: compact boss-4 Godzilla blockout + boss-1 charged dorsal ridge; optional boss-2 multi-head/wing, boss-3 mechanical and boss-5 segmented-dragon variants. Clearly distinguishes screenshot/UI artifacts and observed still-image details from proposed animations.
 - Temporary downloads and image-only manifests: `/tmp/gitzilla-boss-refs-codex-ideas/`; no raw chat history or unrelated attachments added to the repo.
 - Follow-up scope: five reference assets, `BOSS-README.md`, and this progress update only. **No messages/reactions sent, no external writes, no product code changes, no commits.** Final checks passed for all seven source/file mappings, image integrity, each requested visual attribute, local links, formatting and the DONE marker. No remaining work on this follow-up.
+
+
+## DONE (logo fetch)
+
+- Downloaded the newest image message from the specified user in the same codex bot p2p chat using `lark-cli` with explicit **`--as bot`** and both notifier environment variables disabled. Read-only listing/download only; no messages or reactions sent.
+- Source: [message position 377](https://applink.feishu.cn/client/chat/open?openChatId=oc_e0decba894219dffa8d4868c05aad646&position=377), message `om_x100b62e2133c4cacc0ef02b19f9a101`, sender `ou_3db23cf05c03b4942c355797cc88e8f9`, CLI creation time **2026-10-24 22:13** (New York local time). It was **1.76 minutes old** when selected from descending message history, within the requested last ~30 minutes.
+- Saved the original image-resource bytes to [brand/gitzilla-logo.png](../../brand/gitzilla-logo.png). **PNG, 833 × 299 pixels, RGBA, 328,855 bytes.** Viewed the saved image and confirmed the GITZILLA wordmark. No resizing, re-encoding, cropping or recoloring; source and saved bytes match exactly. The resource is already PNG, so no additional original-extension file is needed.
+- **Transparency: yes.** Alpha range **0–255**; **69,173 fully transparent pixels**, **9,264 partially transparent pixels**, **170,630 opaque pixels**. This is actual transparent image content, not merely an unused alpha channel.
+- SHA-256: `7167dfcc4c1b05b3a8ee7a82b97394fad02fb96715278695ce5f3cc502e3267d`.
+- Verification passed: PNG decoding/integrity, original dimensions, byte-for-byte equality, SHA-256 and alpha histogram. Changes for this fetch are the logo asset and this progress entry only; no product code or commits.
