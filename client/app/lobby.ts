@@ -5,6 +5,7 @@ import type { BossKit, LobbyPlayer, LobbyState, PlayerKit, ServerMsg } from "../
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
+import { powerBadge, powerOf, powerScore, strongestIds } from "./royale";
 import { codeSpan } from "./codefmt";
 import { ARCH, archetypeWhy } from "./archetype";
 import { createGenesisMount } from "./genesisMount";
@@ -198,6 +199,9 @@ export function createLobby(app: AppCtx): Screen {
   const analyzingSince = new Map<string, number>();
   const cardSig = new Map<string, string>();
   const cardEls = new Map<string, HTMLElement>();
+  // PvP repo power: whose parts list is open (survives card re-renders) and who holds the crown
+  const powerOpen = new Set<string>();
+  let strongest = new Set<string>();
   const noiseEls = new Set<{ c: HTMLCanvasElement; hue: string }>();
   let bossSig = "";
   let revealedRepo: string | null = null;
@@ -593,7 +597,9 @@ export function createLobby(app: AppCtx): Screen {
     const owner = p.id === lobby.ownerId;
     const portrait = h("div.pcard-portrait");
     const info = h("div.pcard-info");
-    const name = h("div.pcard-name", null, h("span", { translate: "no" }, p.name), owner ? h("span.badge.owner", null, "★ OWNER") : null, you ? h("span.badge.you", null, "YOU") : null, p.bot ? h("span.badge.bot", null, "BOT") : null);
+    const crown = lobby.mode === "pvp" && p.status === "ready" && strongest.has(p.id);
+    const name = h("div.pcard-name", null, h("span", { translate: "no" }, p.name), owner ? h("span.badge.owner", null, "★ OWNER") : null, you ? h("span.badge.you", null, "YOU") : null, p.bot ? h("span.badge.bot", null, "BOT") : null,
+      crown ? h("span.badge.crown", { "data-testid": "strongest-repo", title: "strongest repo in this room (highest power)" }, "👑 STRONGEST") : null);
     const pvp = lobby.mode === "pvp";
     // PvP: never show a card for a repo that isn't (yet) verified as yours; those players spectate
     if (pvp && !p.bot && (p.status === "empty" || p.status === "error" || pvpVerifying(p, lobby))) {
@@ -607,8 +613,10 @@ export function createLobby(app: AppCtx): Screen {
     if (!p.bot) info.append(h("div.controls-state", { "data-testid": "player-controls", "data-ready": p.controlsReady !== false }, p.controlsReady === false ? "📱 waiting for controls" : "✓ controls ready"));
     if (p.status === "ready" && p.kit) {
       portrait.append(heroPortrait(p.kit, 64));
+      const pw = lobby.mode === "pvp" ? powerOf(p.kit) : null;
       info.append(
         h("div.pcard-title", null, p.kit.design?.title ?? p.kit.title),
+        ...(pw ? [powerBadge(pw, { open: powerOpen.has(p.id), onToggle: (on) => (on ? powerOpen.add(p.id) : powerOpen.delete(p.id)) })] : []),
         ...(p.kit.design?.catchphrase ? [h("div.pcard-quote", null, `“${p.kit.design.catchphrase}”`)] : []),
         h("div.pcard-kit", null, h("span.tag.tag-weapon", { title: `weapon (${p.kit.weapon})` }, `${WEAPON_ICON[p.kit.weapon] ?? ""} `, codeSpan(p.kit.code?.weapon?.name ?? p.kit.weapon)), h("span.tag.tag-skill", { title: "skill" }, `⚡ ${p.kit.skill}`)),
         lobby.mode === "edu" && p.kit.quality?.length
@@ -628,7 +636,7 @@ export function createLobby(app: AppCtx): Screen {
       portrait.append(h("div.portrait-empty", null, "?"));
       info.append(h("div.dim.blink", null, you ? "← paste your repo" : "typing…"));
     }
-    return h(`div.pcard.st-${p.status}${you ? ".is-you" : ""}${p.status === "ready" ? ".reveal" : ""}`, null, portrait, info);
+    return h(`div.pcard.st-${p.status}${you ? ".is-you" : ""}${p.status === "ready" ? ".reveal" : ""}${crown ? ".strongest" : ""}`, null, portrait, info);
   }
 
   function renderSquad(lobby: LobbyState) {
@@ -642,9 +650,10 @@ export function createLobby(app: AppCtx): Screen {
     classCounter.hidden = !(screen && edu);
     classCounter.textContent = `${lobby.players.filter((p) => !p.bot).length} / 30 joined · ${nReady} ready`;
     const seen = new Set<string>();
+    strongest = lobby.mode === "pvp" ? strongestIds(lobby.players.filter((p) => p.status === "ready")) : new Set();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
+      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
@@ -697,7 +706,8 @@ export function createLobby(app: AppCtx): Screen {
       : pvp ? "👁 spectating · pick a repo you own to fight" : st === "error" ? `✗ ${me.error ?? "error"}` : "no repo yet";
     youStatus.replaceChildren(statusMarker("player-ready", st, label));
     const edu = lobby.mode === "edu";
-    const sig = `${st}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}|${edu}|${me.kit?.quality?.map((q) => q.grade).join("")}`;
+    const myPower = pvp ? powerOf(me.kit) : null;
+    const sig = `${st}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}|${edu}|${me.kit?.quality?.map((q) => q.grade).join("")}|${myPower ? powerScore(myPower) : ""}|${strongest.has(me.id)}`;
     if (youCard.dataset.sig !== sig) {
       youCard.dataset.sig = sig;
       if (me.kit && st === "ready" && edu && me.kit.quality?.length) {
@@ -717,6 +727,8 @@ export function createLobby(app: AppCtx): Screen {
             null,
             h("div.you-title", null, k.design?.title ?? k.title),
             k.design?.catchphrase ? h("div.pcard-quote", null, `“${k.design.catchphrase}”`) : null,
+            // PvP: your repo's power decides your stats; your own card shows what counts most right away
+            ...(myPower ? [powerBadge(myPower, { open: true }), strongest.has(me.id) ? h("div.pw-crown", null, "👑 strongest repo in this room") : h("div.dim.pw-why", null, "stats scale with power")] : []),
             h("div.kv", null, h("span", null, "weapon"), h("b.kv-weapon", null, `${WEAPON_ICON[k.weapon] ?? ""} `, codeSpan(k.code?.weapon?.name ?? k.weapon))),
             ...(k.code?.weapon
               ? [h("div.kv.dim", null, `a ${k.weapon} · fires ${k.code.weapon.projectiles.map((x) => `"${x}"`).join(" ")} · hits go ${k.code.weapon.impact}`)]

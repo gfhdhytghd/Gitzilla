@@ -11,7 +11,7 @@ import { reportCard } from "./report";
 import { createFeedbackView, createClassFeedback, localDefaultRubric, createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
 import { fmtTime, fontsReady, h, isPhone, shortRepo, humanComponent, hash32 } from "./util";
-import { handle, royaleAutopsy } from "./royale";
+import { handle, powerBadge, powerOf, powerScore, royaleAutopsy, strongestIds } from "./royale";
 
 function brag(a: Autopsy, pid: string, bossRepo: string): string {
   const p = a.players.find((x) => x.id === pid);
@@ -439,6 +439,13 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
   const mine = rows.find((r) => r.id === app.you);
   const owner = isOwner(app);
   const sha = (s: string) => (hash32(s) >>> 0).toString(16).padStart(8, "0").slice(0, 7);
+  // repo power (kit.pvpPower) from the lobby kits; the autopsy itself doesn't carry it
+  const powerFor = (id: string) => powerOf(kitOf(id));
+  const crown = strongestIds(rows.map((r) => ({ id: r.id, kit: kitOf(r.id) })));
+  const wPow = winner ? powerFor(winner) : null;
+  const strongestRow = rows.find((r) => crown.has(r.id));
+  const sPow = strongestRow ? powerFor(strongestRow.id) : null;
+  const underdog = !!wPow && !!sPow && !!strongestRow && !crown.has(winner ?? "") && powerScore(sPow) > powerScore(wPow);
 
   const winCard = w
     ? h(
@@ -452,11 +459,16 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
           h("div.mvp-name", { translate: "no" }, w.id === app.you ? t("you") : handle(w.name)),
           h("div.mvp-brag", null, h("span", null, "survived the merge"), " · ", h("span", { translate: "no" }, shortRepo(w.repo)), wKit?.code?.weapon?.name ? h("span", null, " · ", codeSpan(wKit.code.weapon.name)) : null),
           h("div.dim", null, `${w.kos} KO · ${Math.round(w.damage)} dmg`),
+          wPow ? powerBadge(wPow) : null,
+          underdog
+            ? h("div.pw-upset", { "data-testid": "royale-underdog" }, h("span", null, "underdog win:"), " ", h("b", null, `POWER ${powerScore(wPow!)}`), " ", h("span", null, "beat"), " ",
+                h("b", { translate: "no" }, `${strongestRow!.name} 👑 ${powerScore(sPow!)}`))
+            : null,
         ),
       )
     : h("div.mvp-card", null, h("div.mvp-label", null, "no survivors · the GC took everyone"));
 
-  const header = h("div.ap-row.ap-header.ry-row", null, h("span.rank", null, "#"), h("span.ap-port"), h("span.ap-name", null, "dev"), h("span.ry-ko", null, "KOs"), h("span.ry-dmg", null, "damage"), h("span.ry-by", null, "eliminated by"));
+  const header = h("div.ap-row.ap-header.ry-row", null, h("span.rank", null, "#"), h("span.ap-port"), h("span.ap-name", null, "dev"), h("span.ry-pow", null, "power"), h("span.ry-ko", null, "KOs"), h("span.ry-dmg", null, "damage"), h("span.ry-by", null, "eliminated by"));
   const table = rows.map((r, i) => {
     const kit = kitOf(r.id);
     return h(
@@ -465,6 +477,10 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
       h("span.rank", null, `#${r.place}`),
       kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
       h("span.ap-name", { translate: "no" }, r.name, h("small", null, ` ${shortRepo(r.repo)}`)),
+      (() => {
+        const pw = powerFor(r.id);
+        return h("span.ry-pow", { title: pw ? `repo power ${powerScore(pw)}` : "" }, pw ? `${crown.has(r.id) ? "👑" : ""}${powerScore(pw)}` : "—");
+      })(),
       h("span.ry-ko", null, String(r.kos)),
       h("span.ry-dmg", null, String(Math.round(r.damage))),
       h("span.ry-by", { translate: r.killedBy ? "no" : undefined }, r.id === winner ? "★ winner" : r.left ? "left" : r.killedBy ? nameOf(r.killedBy) : "GC sweep"),

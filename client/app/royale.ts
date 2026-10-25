@@ -1,7 +1,7 @@
 // PvP royale (mode "pvp" + PvpState.royale): 2–8 heroes, no respawns, last one standing, "GC sweep" shrinking zone.
 // Client-only helpers shared by the HUD, the fight screen (kill feed, spectate banner, zone pointer) and the autopsy.
 // Static copy lives in its own text nodes (names/numbers in child spans) so the DOM-wide i18n can translate it.
-import type { Autopsy, MatchState, PlayerState } from "../../shared/types";
+import type { Autopsy, MatchState, PlayerKit, PlayerState } from "../../shared/types";
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import { codeSpan } from "./codefmt";
 import { fmtTime, h } from "./util";
@@ -202,4 +202,43 @@ export function royaleAutopsy(a0: Autopsy, log: Elim[] | undefined) {
       : rows.filter((r) => r.id !== winner).map((r) => ({ id: r.id, name: r.name, by: r.killedBy, byName: nameOf(r.killedBy), weapon: null, t: 0, place: r.place })).sort((x, y) => (y.place ?? 0) - (x.place ?? 0))
   ) as Elim[];
   return { rows, winner, elims };
+}
+
+// ---------------- repo power (kit.pvpPower: 0–100 from code quality + stars/contributors/size) ----------------
+export type PvpPower = NonNullable<PlayerKit["pvpPower"]>;
+export const powerOf = (kit: PlayerKit | null | undefined): PvpPower | null => kit?.pvpPower ?? null;
+export const powerScore = (p: PvpPower) => Math.round(p.score);
+/** The parts that add the most to the score (value × weight). */
+export const topParts = (p: PvpPower, n = 3) => [...p.parts].sort((a, b) => b.value * b.weight - a.value * a.weight).slice(0, n);
+/** Ids holding the room's highest power (ties share the crown); empty unless at least two heroes have a power. */
+export function strongestIds(players: { id: string; kit?: PlayerKit | null }[]): Set<string> {
+  const rated = players.filter((p) => p.kit?.pvpPower);
+  if (rated.length < 2) return new Set();
+  const best = Math.max(...rated.map((p) => powerScore(p.kit!.pvpPower!)));
+  return new Set(rated.filter((p) => powerScore(p.kit!.pvpPower!) === best).map((p) => p.id));
+}
+
+/** "POWER 78" + bar; tap → the top 3 contributing parts (label · value). `open` keeps the state across re-renders. */
+export function powerBadge(p: PvpPower, opts: { open?: boolean; onToggle?(open: boolean): void; compact?: boolean } = {}): HTMLElement {
+  const score = powerScore(p);
+  const parts = h(
+    "div.pw-parts",
+    { hidden: !opts.open, "data-testid": "pvp-power-parts" },
+    ...topParts(p).map((x) => h("div.pw-part", null, h("span.pw-part-l", null, x.label), h("b.pw-part-v", null, String(Math.round(x.value))))),
+  );
+  const head = h(
+    "button.pw-head",
+    { type: "button", "aria-expanded": String(!!opts.open), title: "repo power: code quality + stars, contributors and size · tap for what counts most",
+      onclick: (e: Event) => {
+        e.stopPropagation();
+        parts.hidden = !parts.hidden;
+        head.setAttribute("aria-expanded", String(!parts.hidden));
+        opts.onToggle?.(!parts.hidden);
+      } },
+    h("span.pw-lbl", null, "POWER"),
+    h("b.pw-num", null, String(score)),
+    h("span.pw-bar", null, h("i", { style: `width:${Math.max(0, Math.min(100, score))}%` })),
+    opts.compact ? null : h("span.pw-more", null, "▾"),
+  );
+  return h(`div.pw${score >= 70 ? ".hi" : score < 40 ? ".lo" : ""}`, { "data-testid": "pvp-power" }, head, parts);
 }

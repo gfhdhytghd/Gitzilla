@@ -1314,6 +1314,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     danger.classList.toggle("on", inDanger);
     spectate.update(s, me ?? null, watchId, watching);
     el.classList.toggle("spectating", watching);
+    el.classList.toggle("royale", !!roy);
     if (watching && motionOverlay) (motionOverlay.remove(), (motionOverlay = null)); // knocked out: no controls to enable
     stage.classList.toggle("enraged", !!s.boss && (s.boss.enraged || s.boss.phase >= 2));
 

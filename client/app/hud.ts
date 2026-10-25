@@ -3,7 +3,7 @@ import type { BossKit, GameEvent, MatchState, PlayerState } from "../../shared/t
 import { fmtTime, h, shortRepo, humanComponent } from "./util";
 import { codeSpan } from "./codefmt";
 import { ARCH, bossStateHint } from "./archetype";
-import { royaleOf, royaleRank, zoneLine } from "./royale";
+import { powerOf, powerScore, royaleOf, royaleRank, strongestIds, zoneLine } from "./royale";
 import { t } from "../i18n";
 
 const setText = (el: HTMLElement, s: string) => {
@@ -145,7 +145,7 @@ export function createHud(spectator: boolean): Hud {
   // --- misc ---
   const timer = h("div.hud-timer.term");
   const team = h("div.hud-team.term");
-  const teamRows = new Map<string, { row: HTMLElement; name: HTMLElement; bar: HTMLElement; st: HTMLElement }>();
+  const teamRows = new Map<string, { row: HTMLElement; name: HTMLElement; bar: HTMLElement; st: HTMLElement; pow: HTMLElement }>();
   const skillBox = h("div.hud-skill");
   const skillKey = h("span.key"), skillName = h("span.sk-name"), skillState = h("span.sk-state"), skillFill = h("div.sk-fill");
   const dashKey = h("span.key"), dashState = h("span.sk-state"), dashFill = h("div.sk-fill");
@@ -329,16 +329,26 @@ export function createHud(spectator: boolean): Hud {
         ? rankPvp(s).slice(0, spectator || royaleOf(s) ? 10 : 6).map((r) => s.players.find((p) => p.id === r.id)!).filter(Boolean)
         : s.players.filter((p) => spectator || p.id !== you);
       const seen = new Set<string>();
+      const royale = royaleOf(s);
+      const crown = royale ? strongestIds(s.players) : null;
       for (const p of others) {
         seen.add(p.id);
         let r = teamRows.get(p.id);
         if (!r) {
-          const name = h("span.tm-name", { translate: "no" }), bar = h("div.tm-bar", null, h("i")), st = h("span.tm-st");
-          r = { row: h("div.tm-row", null, name, bar, st), name, bar, st };
+          const name = h("span.tm-name", { translate: "no" }), bar = h("div.tm-bar", null, h("i")), st = h("span.tm-st"), pow = h("span.tm-pow", { hidden: true });
+          r = { row: h("div.tm-row", null, name, pow, bar, st), name, bar, st, pow };
           teamRows.set(p.id, r);
           team.append(r.row);
         }
         const rank = s.pvp ? others.indexOf(p) + 1 : 0;
+        // royale: repo power next to the name (👑 = strongest repo in the match)
+        const pw = royale ? powerOf(p.kit) : null;
+        toggle(r.row, "has-pow", !!pw);
+        r.pow.hidden = !pw;
+        if (pw) {
+          setText(r.pow, `${crown?.has(p.id) ? "👑" : "⚡"}${powerScore(pw)}`);
+          r.pow.title = `repo power ${powerScore(pw)}`;
+        }
         setText(r.name, rank ? `${rank}. ${p.name}` : `${p.name}`);
         r.name.title = shortRepo(p.kit.repo);
         setStyle(r.bar.firstElementChild as HTMLElement, "width", `${Math.max(0, (p.hp / p.kit.maxHp) * 100).toFixed(0)}%`);

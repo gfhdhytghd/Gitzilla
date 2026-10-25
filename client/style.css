@@ -1641,7 +1641,7 @@ body.bigscreen .spectate { display: none; }
 .royale-rules { margin: 0 0 6px; }
 .royale-rules .zone-word { color: var(--magenta); }
 
-.royale-autopsy .ry-row { grid-template-columns: 34px 36px minmax(0, 1fr) 44px 64px minmax(0, 150px); }
+.royale-autopsy .ry-row { grid-template-columns: 34px 36px minmax(0, 1fr) 54px 40px 60px minmax(0, 140px); }
 .royale-autopsy .ry-by { padding-left: 6px; }
 .royale-autopsy .ry-ko, .royale-autopsy .ry-dmg { text-align: right; }
 .royale-autopsy .ry-by { color: #ff8fa0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1659,8 +1659,44 @@ body.bigscreen .spectate { display: none; }
 .gl-w { font-size: 13px; }
 .gl-place { margin-left: auto; color: var(--dim); }
 @media (max-width: 600px) {
-  .royale-autopsy .ry-row { grid-template-columns: 28px 30px minmax(0, 1fr) 30px 44px minmax(0, 84px); font-size: 15px; }
+  .royale-autopsy .ry-row { grid-template-columns: 24px 28px minmax(0, 1fr) 40px 26px 38px minmax(0, 70px); font-size: 14px; gap: 4px; }
   .ap-gitlog { font-size: 14px; }
 }
 .royale-autopsy .ap-name { text-align: left; }
 .screen.game.spectating .key-hint { display: none; }
+
+/* ---------------- PvP repo power (claude-ui) ---------------- */
+.pw { margin: 4px 0; }
+.pw-head { display: flex; align-items: center; gap: 6px; width: 100%; max-width: 260px; padding: 2px 4px; background: rgba(0,0,0,.35); border: 1px solid var(--line); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+.pw-head:hover, .pw-head[aria-expanded="true"] { border-color: var(--yellow); }
+.pw-lbl { font-family: var(--pix); font-size: 8px; color: var(--dim); letter-spacing: 1px; }
+.pw-num { font-family: var(--pix); font-size: 11px; color: var(--yellow); min-width: 2.2em; }
+.pw.hi .pw-num { color: var(--green); }
+.pw.lo .pw-num { color: #ff8fa0; }
+.pw-bar { flex: 1; height: 6px; background: #0b1410; box-shadow: inset 0 0 0 1px #1d3b2b; min-width: 40px; }
+.pw-bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--yellow) 0 4px, #c99a00 4px 5px); }
+.pw.hi .pw-bar i { background: repeating-linear-gradient(90deg, var(--green) 0 4px, #1f9b55 4px 5px); }
+.pw.lo .pw-bar i { background: repeating-linear-gradient(90deg, #ff8fa0 0 4px, #b5505f 4px 5px); }
+.pw-more { color: var(--dim); font-size: 12px; }
+.pw-parts { margin-top: 3px; padding: 3px 6px; background: rgba(0,0,0,.4); box-shadow: inset 2px 0 0 var(--yellow); max-width: 320px; }
+.pw-parts[hidden] { display: none; }
+.pw-part { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; line-height: 1.25; }
+.pw-part-l { color: var(--text); min-width: 0; overflow-wrap: anywhere; }
+.pw-part-v { color: var(--yellow); }
+.badge.crown { background: linear-gradient(#ffe56b, #d4a300); color: #2a1a00; }
+.pcard.strongest { box-shadow: inset 3px 0 0 #ffd23d, 0 0 0 1px rgba(255,210,61,.35); }
+.pw-crown { color: var(--yellow); font-size: 15px; }
+.pw-why { font-size: 14px; }
+.pw-upset { margin-top: 4px; color: #ffd0d8; font-size: 15px; }
+.pw-upset b { color: var(--yellow); }
+.tm-row.has-pow { grid-template-columns: 1fr auto 44px auto; }
+.tm-pow { color: var(--yellow); font-size: .85em; white-space: nowrap; }
+.royale-autopsy .ry-pow { text-align: right; color: var(--yellow); white-space: nowrap; }
+@media (max-width: 600px) { .tm-row.has-pow { grid-template-columns: 1fr auto 30px auto; } }
+/* royale on phones: the standings (with power) stay visible even in the compact deck, as a 2-column strip */
+.screen.game.phone-portrait.royale .deck-mid { display: flex; }
+.screen.game.phone-portrait.royale .deck .hud-team { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; row-gap: 2px; padding: 2px 6px; }
+.screen.game.phone-portrait.royale .deck .tm-row { font-size: 12px; }
+.screen.game.phone-portrait.royale .deck .tm-row.has-pow { grid-template-columns: minmax(0, 1fr) auto 22px auto; gap: 3px; }
+.screen.game.phone-portrait.royale .deck .tm-st { font-size: 11px; }
+.screen.game.phone-portrait.royale .deck .hud-combo { display: none; } /* co-op sync combos mean nothing in a free-for-all */

@@ -11,7 +11,7 @@ import { buildGenesisLocal } from "../genesis";
 import { defaultClassroomPlan } from "../../shared/classroom-defaults";
 
 interface SimMod {
-  playerKitFromProfile(p: RepoProfile): PlayerKit;
+  playerKitFromProfile(p: RepoProfile, options?: { mode?: "battle" | "edu" | "pvp" }): PlayerKit;
   bossKitFromProfile(p: RepoProfile, n: number): BossKit;
   createMatch(players: { id: string; name: string; kit: PlayerKit }[], boss: BossKit | null, options?: { mode?: "battle" | "edu" | "pvp" }): {
     step(dt: number, inputs: Map<string, InputFrame>): void;
@@ -106,12 +106,16 @@ export function createMockConn(opts: ConnOpts): Conn {
       return undefined;
     }
   };
-  const pkit0 = (slug: string) => { try { return sim ? sim.playerKitFromProfile(profile(slug)) : fakePlayerKit(profile(slug)); } catch { return fakePlayerKit(profile(slug)); } };
+  // PvP kits come from the sim's pvp mode (kit.pvpPower + power-scaled stats)
+  const pkit0 = (slug: string) => {
+    try { return sim ? sim.playerKitFromProfile(profile(slug), lobby.mode === "pvp" ? { mode: "pvp" } : undefined) : fakePlayerKit(profile(slug)); } catch { return fakePlayerKit(profile(slug)); }
+  };
   const bkit0 = (slug: string, n: number) => { try { return sim ? sim.bossKitFromProfile(profile(slug), n) : fakeBossKit(profile(slug), n); } catch { return fakeBossKit(profile(slug), n); } };
   // until analysis produces CodeDNA, give mock kits some plausible code so the UI can be exercised
   const pkit = (slug: string): PlayerKit => {
     const k = pkit0(slug);
     if (lobby.mode === "edu" && !k.quality?.length) k.quality = fakeQuality(k.seed);
+    if (lobby.mode === "pvp" && !k.pvpPower) k.pvpPower = fakePower(k.seed);
     const EXPR = ["for { go serve() }", "yield from app()", "unsafe { search() }", "await Promise.all(render())", "try { parse() }"];
     if (k.code?.weapon && !/[({]/.test(k.code.weapon.name)) k.code.weapon = { ...k.code.weapon, name: EXPR[k.seed % EXPR.length] };
     if (!k.code?.signature) k.code = { weapon: k.code?.weapon, tokens: ["fn", "=>", "::", "let"], signature: `${slug.split("/")[1].replace(/\W/g, "_")}_main()`, snippet: "fn parse(args: &[String]) -> Result<Config> {", identifiers: ["parse", "Config", "run"] };
@@ -392,6 +396,7 @@ export function createMockConn(opts: ConnOpts): Conn {
         break;
       case "setMode":
         lobby.mode = m.mode;
+        for (const p of lobby.players) if (p.kit && p.repo) p.kit = pkit(p.repo); // kits are mode-specific (edu quality, pvp power)
         for (const p of lobby.players) if (p.kit) p.kit.quality = m.mode === "edu" ? fakeQuality(p.kit.seed) : undefined;
         pushLobby();
         break;
@@ -426,6 +431,12 @@ export function createMockConn(opts: ConnOpts): Conn {
   };
 }
 
+function fakePower(seed: number): NonNullable<PlayerKit["pvpPower"]> {
+  const r = mulberry32(seed ^ 0x9e37);
+  const parts = [["Tests", 0.16], ["Modularity", 0.12], ["Cohesion", 0.12], ["Docs", 0.12], ["Debt hygiene", 0.08], ["Stars", 0.12], ["Contributors", 0.1], ["Analyzed LOC", 0.1], ["Commit activity", 0.08]] as const;
+  const rows = parts.map(([label, weight]) => ({ label, value: Math.round(r() * 1000) / 10, weight }));
+  return { score: Math.round(rows.reduce((s, x) => s + x.value * x.weight, 0) * 10) / 10, parts: rows };
+}
 const GR = ["A", "B", "C", "D", "F"] as const;
 function fakeQuality(seed: number): QualityStat[] {
   const r = mulberry32(seed);
