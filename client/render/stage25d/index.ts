@@ -13,7 +13,7 @@
 import * as THREE from "three";
 import type { GameEvent, MatchState } from "../../../shared/types.ts";
 import { drawEvents, trackPlayers } from "../arena/index.ts";
-import { fx } from "../arena/fx.ts";
+import { fx, fxMatchTime } from "../arena/fx.ts";
 import { bossLookAt } from "../boss/index.ts";
 import { createCameraRig, getXRPlacement } from "./projection.ts";
 import { enterXR as xrEnter, exitXR as xrExit, xrSupported as xrIsSupported } from "./xr.ts";
@@ -57,6 +57,11 @@ export interface Stage25dOptions {
   voxelBullets?: boolean;
   /** XR frame timing hook: ms since the previous XR frame, and ms spent updating the scene (CPU, before the GPU draw) */
   onXRFrame?: (dtMs: number, updateMs: number) => void;
+  /** XR end screen (victory BSOD / defeat KERNEL PANIC on the table): the player pinched anywhere to continue.
+   *  claude-ui: exit XR and show the autopsy, like the 2D BSOD's press-any-key. */
+  onContinue?: () => void;
+  /** debug (gallery): also play the XR end screen on the screen view */
+  debugEnding?: boolean;
 }
 
 export interface Stage25d {
@@ -87,6 +92,8 @@ export interface Stage25d {
   readonly xrLodFlat: boolean;
   /** debug: the XR session's tracking/height debug info (null outside XR) */
   readonly debugXR: XRHandle["debug"] | null;
+  /** debug: the XR end screen (null when none is playing) */
+  readonly debugEnding: { kind: string; ready: boolean } | null;
   /** debug: AR surface placement state (null outside AR) */
   readonly debugPlacement: { status: string; source: string; pos: number[]; scale: number; cam: number[] } | null;
   destroy(): void;
@@ -96,6 +103,8 @@ const RETICLE_FLAT = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
 export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   const look = new StageLook();
+  look.endingOnScreen = !!opts.debugEnding;
+  let lookTime = 0; // the time of the last look.update (XR clock in a session)
   // Input-owned comfort/debug plumbing; scene and UI buttons remain look/UI-owned.
   const heightReadout = createXRHeightReadout(look.scene);
   let tableHeightOffset = getTableHeightOffset();
@@ -111,6 +120,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   let follow: string | null = null;
   let cpuMs = 0;
   let mounted = false; // resize() was called: the caller shows `canvas`, the stage doesn't blit into ctx
+  let destroyed = false;
   let last: { state: MatchState; time: number; events?: GameEvent[]; extras?: Stage25dExtras } | null = null;
   const pp: ProjectedPoint = { x: 0, y: 0, scale: 1 };
   const l3: [number, number, number] = [0, 0, 0];
@@ -139,6 +149,9 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   }
 
   function render(ctx: CanvasRenderingContext2D, state: MatchState, time: number, view?: StageView, extras: Stage25dExtras = {}) {
+    if (destroyed) return;
+    // a rewound match clock is a rematch: drop end-of-match FX / per-match renderer state (arena/fx.ts)
+    fxMatchTime(state.t);
     last = { state, time, events: extras.events, extras };
     const W = extras.world?.w ?? 480, H = extras.world?.h ?? 288;
     outW = Math.max(16, Math.round(view?.w ?? W));
@@ -175,6 +188,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     }
     const vox = opts.voxels === undefined || opts.voxels === "auto" ? !phone : opts.voxels;
     const c0 = performance.now();
+    lookTime = time;
     look.update(state, time, { ...extras, theme: extras.theme as LookExtras["theme"] }, yaw, rig.camera.quaternion, false, vox);
     look.updateHud(state, false);
     look.table.visible = false;
@@ -191,8 +205,8 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     // 2D overlay in screen space: particles, damage numbers, banners (projected), then post FX on the composite
     const screen = { x: 0, y: 0, w: outW, h: outH };
     fx.project = project;
-    drawEvents(ctx, extras.events ?? state.events, time, screen);
-    fx.project = null;
+    // never leave the 3D projection installed for the flat 2D renderers if an FX draw throws
+    try { drawEvents(ctx, extras.events ?? state.events, time, screen); } finally { fx.project = null; }
   }
 
   // ---------------- XR ----------------
@@ -232,9 +246,11 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const src = opts.pull?.() ?? last;
     if (!src) return;
     const { state } = src;
+    fxMatchTime(state.t);
     if (src.time !== xrSrcTime) { xrSrcTime = src.time; xrClock = Math.max(xrClock, src.time); }
     else xrClock += dtS;
     const time = xrClock;
+    lookTime = time;
     const ex = src.extras ?? last?.extras ?? {};
     const W = ex.world?.w ?? 480, H = ex.world?.h ?? 288;
     const cam = renderer.xr.getCamera();
@@ -312,6 +328,8 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   function onSelect(info: XRSelectInfo) {
     // AR: a pinch while searching places the arena on the surface (consumed before any UI hit-test)
     if (placement && placement.status !== "placed" && placement.select(info)) return;
+    // end screen: a pinch anywhere (transient pointer or controller, no aiming) continues once it has played
+    if (look.ending.ready(lookTime)) { opts.onContinue?.(); return; }
     if (!info.pose) return;
     // UI only: the scale / follow / exit buttons (never gameplay input)
     rayM.fromArray(info.pose.transform.matrix);
@@ -403,6 +421,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     exportUSDZ: () => exportSpatialUSDZ(look.root, { metersPerPixel: 1.2 / (last?.extras?.world?.w ?? 480) }),
     get xrMode() { return xr?.mode ?? null; },
     get debugXR() { return xr?.debug ?? null; },
+    get debugEnding() { return look.ending.kind ? { kind: look.ending.kind, ready: look.ending.ready(lookTime) } : null; },
     /** debug: AR placement state */
     get debugPlacement() {
       if (!placement) return null;
@@ -420,11 +439,19 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     /** XR adaptive LOD has dropped to flat billboards */
     get xrLodFlat() { return xrFlat; },
     destroy() {
+      // idempotent; releases the GPU context right away (rematch soak: detached, unlost contexts grew 1 -> 8 per
+      // document, since renderer.dispose() alone frees three's resources but leaves the WebGL context to the GC)
+      if (destroyed) return;
+      destroyed = true;
       heightReadout.dispose();
       void exitXR();
       fx.project = null;
+      renderer.setAnimationLoop(null);
       look.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
+      const c = renderer.domElement;
+      c.width = c.height = 1;
     },
   };
   return api;

@@ -2,11 +2,12 @@
 import type { Minion } from "../../../shared/types.ts";
 import { disc, drawGlow, line } from "./pix.ts";
 import { drawTextRaw } from "./font.ts";
-import { burst, emit, fx } from "./fx.ts";
+import { burst, emit, fx, onFxReset } from "./fx.ts";
 import { drawText } from "./font.ts";
 
 interface Track { x: number; y: number; fx: number; fy: number; hp: number; flash: number; born: number }
 const tracks = new Map<number, Track>();
+onFxReset(() => tracks.clear()); // minion ids restart every match
 
 type Variant = "todo" | "fixme" | "hack" | "xxx";
 const STYLE: Record<Variant, { shell: [string, string, string]; mark: string; label: string; legs: number; spots: boolean; antenna: number }> = {

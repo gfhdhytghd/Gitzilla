@@ -1,6 +1,9 @@
 // 3D stage gallery: the real sim (raid with bot heroes, or an 8-bot royale) rendered through createStage25d.
 //   ?scene=raid|royale  &boss=<slug> &form=<body plan>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset) &xrmode=vr|ar
 // window.__stats = { fps, frameMs, renderMs } for automated checks.
+// ?end=victory|defeat &endat=<s> (default 4): freeze the sim then and declare the result (the XR end screen; screen view
+//   too with &endscreen=1). window.__continued counts onContinue (a pinch on the ready end screen). &slowend=N plays
+//   everything after the end N times slower (frame-by-frame captures of the dissolve on software GL).
 // ?hudcheck=1 (with xr=emulate): the XR HUD panel check. The pull() time is frozen (like game.ts while a headset pauses
 //   the page rAF) and the boss steps through scripted HP levels / a limb break / phases 2-3; each settled level logs the
 //   panel's drawn bar width (read back from its canvas) next to hudInfo() and the 2D bar's numbers: window.__hudCheck.
@@ -69,7 +72,7 @@ async function main() {
   let state: MatchState = match.snapshot() as MatchState;
   let pending: MatchState["events"] = [];
   const xrDts: number[] = [], xrUps: number[] = [];
-  const stage = createStage25d({ voxelBullets: q.get("voxbul") !== "0", debugOrbit: Number(q.get("orbit") ?? 0), orbitZoom: Number(q.get("zoom") ?? 1), xr: q.get("xr") !== null, voxels: q.get("vox") === "0" ? false : q.get("vox") === "1" ? true : "auto", onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state: hudCheck ? hudCheck.apply(state) : state, time: hudCheck ? 12.34 : performance.now() / 1000, events: pending, extras: extrasFor() }) });
+  const stage = createStage25d({ voxelBullets: q.get("voxbul") !== "0", debugOrbit: Number(q.get("orbit") ?? 0), orbitZoom: Number(q.get("zoom") ?? 1), xr: q.get("xr") !== null, voxels: q.get("vox") === "0" ? false : q.get("vox") === "1" ? true : "auto", debugEnding: q.get("endscreen") === "1", onContinue: () => { const g = globalThis as unknown as { __continued?: number }; g.__continued = (g.__continued ?? 0) + 1; }, onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state: hudCheck ? hudCheck.apply(state) : state, time: hudCheck ? 12.34 : galleryTime(performance.now()), events: pending, extras: extrasFor() }) });
   stage.canvas.style.position = "absolute"; stage.canvas.style.left = "0"; stage.canvas.style.top = "0";
   stage.canvas.style.width = cssW + "px"; stage.canvas.style.height = cssH + "px";
   stage.canvas.style.imageRendering = "pixelated";
@@ -99,9 +102,32 @@ async function main() {
   (globalThis as unknown as { __stats: typeof stats }).__stats = stats;
   let last = performance.now(), acc = 0, camX = 0, endAt = 0;
   const intervals: number[] = [], renders: number[] = [], cpus: number[] = [];
+  const endKind = q.get("end") as "victory" | "defeat" | null, forceEndMs = Number(q.get("endat") ?? 4) * 1000;
+  let started = -1, ended = false, endedMs = 0;
+  const slow = Math.max(1, Number(q.get("slowend") ?? 1));
+  // the time the stage sees: real time, slowed down after a forced end (&slowend)
+  function galleryTime(nowMs: number) { return (ended && slow > 1 ? endedMs + (nowMs - endedMs) / slow : nowMs) / 1000; }
   function step(now: number) {
     acc += Math.min(0.1, (now - last) / 1000);
     last = now;
+    if (endKind && scene !== "royale") {
+      if (started < 0) started = now;
+      if (ended) return;
+      if (now - started > forceEndMs) {
+        // the result is in: freeze the fight as it stood and declare it (with its event, like the server)
+        ended = true;
+        endedMs = now;
+        const s = structuredClone(state) as MatchState;
+        s.status = endKind;
+        if (endKind === "victory" && s.boss) s.boss.hp = 0;
+        if (endKind === "defeat") s.players.forEach((p) => (p.alive = false));
+        s.bullets = []; s.hazards = [];
+        s.events = [{ type: endKind }];
+        pending = pending.concat(s.events);
+        state = s;
+        return;
+      }
+    }
     while (acc >= 1 / 30) {
       const inputs = new Map<string, InputFrame>();
       state.players.forEach((p, i) => inputs.set(p.id, bots[i](state, p)));
@@ -137,7 +163,7 @@ async function main() {
       camX = Math.max(0, Math.min(world.w - vw, camX));
       view = { x: camX, y: 0, w: vw, h: vh };
     }
-    const time = now / 1000;
+    const time = galleryTime(now);
     if (q.get("laser") && state.boss && time % 3 < 1) {
       // gallery-only: a synthetic armed laser from the boss's mouth sweeping toward the heroes
       const m = kaijuAnchors(state.boss.kit).mouth;

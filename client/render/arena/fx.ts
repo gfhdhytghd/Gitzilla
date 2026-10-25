@@ -24,7 +24,7 @@ export const fx = {
   shake: 0,                             // suggested camera shake (px), decays
   hitStop: 0,                           // suggested freeze until this time
   slowmoUntil: 0,
-  flash: 0,                             // full-screen white flash amount, decays
+  flash: 0,                             // edge-glow amount (never a full-screen flash: WCAG 2.3.1), decays; set via flashEdge()
   danger: 0,                            // screen-edge danger vignette, decays
   view: { x: 0, y: 0, w: 480, h: 288 },  // visible logical window (camera); landscape default = whole arena
   textScale: 1,                         // floating-text upscale when the effective CSS zoom is small (portrait phones)
@@ -32,6 +32,34 @@ export const fx = {
 };
 
 export type View = { x: number; y: number; w: number; h: number; cssScale?: number };
+
+// ---------- match lifecycle (rematch soak: stale victory / defeat FX came back in later fights) ----------
+const resetHooks: (() => void)[] = [];
+/** Renderer modules register their per-match state (tracks, timers keyed by render time) to be dropped on reset. */
+export function onFxReset(fn: () => void) { resetHooks.push(fn); }
+/** A new match or a new game screen: drop every end-of-match / timing state, particles and emit gates. */
+export function resetFx() {
+  Object.assign(fx, { boss: null, bossSeenAt: -10, bossKind: "", bossTint: null, bossFlash: -10, look: null, lookAt: -10, phaseGlitch: -10, limbBreak: -10,
+    victoryAt: -1, defeatAt: -1, shake: 0, hitStop: 0, slowmoUntil: 0, flash: 0, danger: 0 });
+  fx.limbFlash.clear();
+  while (live.length) pool.push(live.pop()!);
+  lastStep = -1;
+  gates.clear();
+  lastFlashAt = -10;
+  for (const h of resetHooks) h();
+}
+/** Render clock: running back to ~0 (a new game screen restarts its visual time) is a new match. Sets fx.now.
+ *  (A smaller step back, e.g. the screen clock behind the 3D stage's XR clock after leaving a headset, is not.) */
+export function fxClock(time: number) {
+  if (time < fx.now - 1 && time < 2) resetFx();
+  fx.now = time;
+}
+let matchT = -1;
+/** Match clock (MatchState.t): rewinding means a rematch started (same screen, render time keeps running). */
+export function fxMatchTime(t: number) {
+  if (t < matchT - 1) resetFx();
+  matchT = t;
+}
 
 /** Update the visible window + text scale from the caller's view and current transform. */
 export function setView(ctx: CanvasRenderingContext2D, view?: View) {
@@ -48,7 +76,17 @@ export function setView(ctx: CanvasRenderingContext2D, view?: View) {
   fx.textScale = cssPerLogical < 2.2 ? 2 : 1;
 }
 
-export function addShake(px: number) { fx.shake = Math.min(10, Math.max(fx.shake, px)); }
+/** camera shake, kept modest (photosensitivity / motion comfort on big screens) */
+export function addShake(px: number) { fx.shake = Math.min(6, Math.max(fx.shake, px * 0.6)); }
+
+// Photosensitivity (WCAG 2.3.1): big moments get a soft edge glow (drawPostFx) plus a localized burst at the event,
+// never a full-screen white / red flash; at most one edge glow per 0.4 s (< 3 flashes per second).
+let lastFlashAt = -10;
+export function flashEdge(a: number) {
+  if (fx.now - lastFlashAt < 0.4 && fx.now >= lastFlashAt) return;
+  lastFlashAt = fx.now;
+  fx.flash = Math.max(fx.flash, Math.min(1, a));
+}
 
 // ---------- particles ----------
 export type PKind = "px" | "spark" | "smoke" | "glyph" | "ring" | "shard" | "glitch" | "boom" | "bold" | "trace";

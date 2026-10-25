@@ -3,12 +3,14 @@ import type { Hazard } from "../../../shared/types.ts";
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bayer, disc, drawGlow, hash2, line, TAU } from "./pix.ts";
 import { boldSprite, drawText, textSprite } from "./font.ts";
-import { addShake, burst, emit, fx } from "./fx.ts";
+import { addShake, burst, emit, fx, onFxReset } from "./fx.ts";
 
 const eruptions: { x: number; y: number; r: number; at: number; seed: number }[] = [];
 const names = new Map<number, string>();      // hazard id -> attack name (from latest telegraph event)
 const firstSeen = new Map<number, number>();
 const armedAt = new Map<number, number>();
+// hazard ids restart every match; their render-time stamps must not carry over (fx.ts resetFx)
+onFxReset(() => { firstSeen.clear(); armedAt.clear(); });
 let lastSeen = new Set<number>();
 
 /** set by drawEvents when a telegraph event arrives */

@@ -1,6 +1,6 @@
 // Arena renderer public API (see docs/BRIEF.md "Renderer interfaces"). All coords are logical arena px.
 import type { ArenaTheme } from "../../../shared/types.ts";
-import { fx } from "./fx.ts";
+import { fx, fxClock } from "./fx.ts";
 import { drawAmbient, getArena, type Theme } from "./themes.ts";
 
 export { drawBullets } from "./bullets.ts";
@@ -11,7 +11,7 @@ export { drawPostFx, glitchAmount, caAmount } from "./postfx.ts";
 export { drawObstacles, drawPickups, drawPerkPads } from "./props.ts";
 export { registerPlayerGlyphs } from "./bullets.ts";
 export { drawText, textWidth } from "./font.ts";
-export { playerColor } from "./fx.ts";
+export { playerColor, resetFx, fxMatchTime } from "./fx.ts";
 export { drawRoyaleZone } from "./royale.ts";
 
 /**
@@ -19,7 +19,7 @@ export { drawRoyaleZone } from "./royale.ts";
  * Omit it for the battle arena of the boss theme.
  */
 export function drawArenaBackground(ctx: CanvasRenderingContext2D, theme: ArenaTheme, seed: number, time: number, variant?: "classroom" | "royale", size?: { w: number; h: number }): void {
-  fx.now = time;
+  fxClock(time);
   fx.pvp = variant === "classroom" || variant === "royale"; // per-player bullet colors, no boss FX
   // a boss that hasn't been drawn recently is gone (edu has none): don't let stale state drive FX
   if (fx.boss && (fx.pvp || time - fx.bossSeenAt > 0.5 || time < fx.bossSeenAt)) fx.boss = null;

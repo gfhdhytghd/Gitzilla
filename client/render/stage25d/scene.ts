@@ -17,6 +17,7 @@ import { bossPlane, lift, type BossPlane } from "./staging.ts";
 import { DEPTH_STEP, DEPTH_ZERO, prepareVoxelAtlas, shadowMaterial, voxelBox, voxelInstancedBox, voxelMaterial } from "./voxel.ts";
 import { bossLayout } from "../boss/layout.ts";
 import { HUD_BAR_W, HUD_PIP_GAP, hudInfo, type HudInfo } from "./hud.ts";
+import { XREnding, type EndKind } from "./ending.ts";
 
 THREE.ColorManagement.enabled = false; // pixel art: texture colors pass through untouched
 
@@ -128,6 +129,11 @@ export class StageLook {
   readonly hud: THREE.Mesh; private hudCanvas: HTMLCanvasElement; private hudCtx: CanvasRenderingContext2D; private hudTex: THREE.CanvasTexture;
   readonly buttons: THREE.Mesh[] = [];
   private followMarker: THREE.Sprite;
+  /** XR end screen: boss disintegration + BSOD / KERNEL PANIC on the table (ending.ts) */
+  readonly ending = new XREnding();
+  private xrOn = false;
+  /** debug (gallery): play the end screen outside XR too */
+  endingOnScreen = false;
   private w = 480; private h = 288;
   plane: BossPlane | null = null;
   private tmpM = new THREE.Matrix4(); private tmpQ = new THREE.Quaternion(); private tmpP = new THREE.Vector3(); private tmpS = new THREE.Vector3();
@@ -256,6 +262,7 @@ export class StageLook {
     this.hud = new THREE.Mesh(new THREE.PlaneGeometry(256, 48), new THREE.MeshBasicMaterial({ map: this.hudTex, transparent: true }));
     this.hud.visible = false;
     this.root.add(this.hud);
+    this.root.add(this.ending.group);
     // SCALE / FOLLOW / EXIT, then table height ▲ / ▼ (tabletop only)
     for (const [name, label, w] of [["scale", "SCALE", 64], ["follow", "FOLLOW", 64], ["exit", "EXIT", 64], ["up", "▲", 24], ["down", "▼", 24]] as const) {
       const [c, g] = makeCanvas(w, 16);
@@ -284,6 +291,8 @@ export class StageLook {
 
   /** XR: the void-room grid lies on the real floor in meters (40 m, 0.5 m cells); screens: under the arena in px. */
   setXR(on: boolean) {
+    this.xrOn = on;
+    if (!on) this.ending.stop();
     if (on) { this.scene.add(this.grid); this.grid.scale.setScalar(0.01); this.grid.position.set(0, 0, 0); }
     else { this.root.add(this.grid); this.grid.scale.setScalar(1); this.grid.position.set(this.w / 2, -2, this.h / 2); }
   }
@@ -376,6 +385,27 @@ export class StageLook {
         (m.uniforms.uHeartCol.value as THREE.Color).set(boss.kit.design ? boss.kit.palette[2] ?? "#ff3a5c" : boss.kit.palette[3] ?? "#ff3a5c");
       }
       shadow(boss.x + 20, p.feetY, 70, 14);
+    }
+    // ---- end screen (XR): the boss raid ended -> disintegrate / wipe; a new fight (rematch) clears it ----
+    const endKind: EndKind | null = boss && !state.pvp && (state.status === "victory" || state.status === "defeat") ? state.status : null;
+    if (endKind && (this.xrOn || this.endingOnScreen) && this.ending.kind !== endKind) {
+      const p = this.plane;
+      this.ending.start({
+        kind: endKind, time, name: boss!.kit.name, repo: boss!.kit.repo, w: W, h: H,
+        origin: p ? { x: boss!.x, y: p.feetY } : { x: W / 2, y: H / 2 },
+        // the boss was just drawn into its atlas slot this frame (the 2D death sequence has barely begun)
+        boss: endKind === "victory" && p && this.bossMesh.visible ? { atlas: this.atlas, slot: BOSS_SLOT, x: boss!.x, z: p.feetY, yaw, scale: this.bossMesh.scale.x } : undefined,
+      });
+    } else if (!endKind && this.ending.active) this.ending.stop();
+    if (this.ending.active) {
+      this.ending.update(time);
+      if (this.ending.kind === "victory") {
+        // the boss is its voxels now: no billboard, shadow or heart light
+        this.bossMesh.visible = false;
+        const sp = this.sprites.get(this.bossMesh);
+        if (sp) sp.shadow.visible = false;
+        for (const m of [this.voxMat, this.bulVoxMat]) m.uniforms.uHeart.value.w = 0;
+      }
     }
     let hi = 0;
     for (const m of this.heroMeshes) m.visible = false;
@@ -589,6 +619,8 @@ export class StageLook {
    *  Redrawn when what it shows changes (hudInfo().key), at most ~15x/s by the wall clock. Never keyed on the caller's
    *  `time`: in a headset session the page rAF that advances it can pause, which froze the panel (round 4 fix). */
   updateHud(state: MatchState, show: boolean, heightButtons = false) {
+    // the end screen's panel takes the HUD's place (and any pinch continues)
+    if (this.ending.active) show = false;
     this.hud.visible = show;
     for (const b of this.buttons) b.visible = show && (heightButtons || (b.name !== "up" && b.name !== "down"));
     if (!show) return;
@@ -642,6 +674,7 @@ export class StageLook {
       if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose();
     });
     for (const t of [this.floorTex, this.atlasTex, this.bulTex, this.hudTex, this.fxTex, this.depthTex]) t.dispose();
+    this.ending.dispose();
     for (const sp of this.sprites.values()) sp.box.dispose();
   }
 }

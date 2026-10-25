@@ -1,3 +1,69 @@
+DONE (XR victory BSOD / defeat KERNEL PANIC) — claude-boss
+
+## Round 9: XR end screen (Vision Pro)
+- **New `stage25d/ending.ts` (`XREnding`)**, driven by `StageLook.update`. It plays in XR when a boss raid's `state.status` turns victory or defeat; a new fight (rematch) clears it.
+- **Victory:**
+  - **Disintegration:** on the first victory frame the boss's atlas slot is captured, before the 2D death sequence distorts it. Every 2nd opaque texel becomes an instanced voxel cube (at most 4000) at its exact spot on the billboard, with the billboard's yaw and scale.
+  - A dissolve front sweeps head → tail. Cubes break off, scatter outward and up, fall under gravity, spin, shrink to nothing and cool toward the BSOD blue. About 1.8 s; the boss billboard, its shadow and the heart light are hidden.
+  - **Floor:** a smooth blue wipe (`#0a3fb0`) spreads from the death spot over 1.4 s (smoothstep edge, no flash). The table shows a large `:(` and STOP CODE: SQUAD_DIFF.
+  - **Floating panel** above the far edge in the HUD's place: `:(`, "<NAME> HAS STOPPED RESPONDING.", SEGMENTATION FAULT (CORE DUMPED), STOP CODE: SQUAD_DIFF, COLLECTING AUTOPSY DATA… n%. Lines appear one by one; scale-2 pixel font at about 0.75 m wide.
+- **Defeat:** a calmer dark red/grey wipe from the boss with KERNEL PANIC / NOT SYNCING on the table, and a panel with KERNEL PANIC (no blinking), NOT SYNCING… and the call trace. The boss stays.
+- **Continue:**
+  - "PINCH ANYWHERE TO CONTINUE" appears after 2.2 s and breathes at 0.6 Hz between 60% and 100% opacity.
+  - Any select then (transient pointer or controller, no aiming; handled before the HUD hit-test) calls the new `Stage25dOptions.onContinue()`. Earlier pinches are ignored.
+  - **claude-ui:** wire `onContinue` to exit XR and show the autopsy, like the 2D BSOD's press-any-key.
+- **Localized text:** the BSOD copy goes through `drawText`'s i18n. Native-font lines (localized) are stacked by their own height and drop to scale 1, and lines shrink to fit. A non-ASCII boss name falls back to the repo name.
+- **Photosensitivity:** no flashes. The wipe is gradual and the blue is as dark as the arena. Measured over the emulator frames: max mean-luminance step 0.0015, near-white at most 0.02%.
+- **Debug:**
+  - `Stage25d.debugEnding` ({kind, ready}), `opts.debugEnding` (play outside XR).
+  - Stage gallery `&end=victory|defeat&endat=<s>&slowend=<N>&endscreen=1`; `window.__continued` counts `onContinue`.
+- **Verified in IWER (Chromium, software GL):**
+  - The ending starts on the forced result.
+  - A pinch before ready → 0 continues; after ready → exactly 1.
+  - Scene update CPU stays about 6.8 ms during the dissolve, 4.3 ms after.
+  - Screenshots are in the scratchpad `shots/end/`: `victory_sheet.png` (dissolve → wipe → blue table → panel), `panels.png` (zh-CN victory panel and en defeat panel close-ups), `victory_00..39.png` (the slow-motion series).
+- tsc clean; vitest 1389 passed / 8 skipped; build OK. Not verified on a real Vision Pro (GPU cost of 4000 cubes, panel legibility at true resolution).
+
+DONE (photosensitivity: no full-screen flashes) — claude-boss
+DONE (rematch: stale FX, canvas save leak, WebGL contexts) — claude-boss
+
+## Round 8: photosensitivity (WCAG 2.3.1), applied always (not only under reduced motion)
+- **Full-screen white flash removed.** `fx.flash` used to draw a white `fillRect` over the whole view at up to 80% (limb break, phase, obstacle break, victory boom). It is now a soft warm edge glow (vignette, at most 16% alpha). The bright burst is a localized particle at the event (phase: a bloom on the boss).
+- **Rate limit:** every flash source goes through `flashEdge()` (fx.ts): at most one per 0.4 s (under 3/s).
+- **Boss crit body flash:** rate-limited to 2.5/s (was 4/s), alpha 0.3/0.45 (was 0.4/0.75), boss sprite only.
+- **Death strobe** (8 Hz white on the whole boss for 1.65 s) is now a steady brighter glow; death jitter is reduced.
+- **Red danger vignette:** gentler and slower (0.22 ± 0.05 at 1.4 Hz, was 0.3 ± 0.12 at 2.2 Hz).
+- **Glitch slices:** tints 0.14 (was 0.35). The defeat glitch is a smooth 1.2 s fade instead of random 10 Hz toggling.
+- **Shake:** `addShake` scales by 0.6 and caps at 6 px (was 10).
+- **Test `arena/photosensitivity.test.ts`:**
+  - Bundles the real arena, boss, events and postfx with esbuild and renders an 8.5 s crit storm at 30 fps in headless Chromium: 3 heavy crits per frame, hero hits, limb breaks, two phase changes, obstacle breaks.
+  - Asserts every frame-to-frame mean-luminance step is at most 0.10 and the near-white share is at most 25%. A positive control (a full-screen white flash) must fail.
+  - The pre-fix renderer (HEAD, temporary worktree) fails it with a 0.148 step; the fixed one passes. It skips itself if no Chromium launches.
+- **For claude-ui:** `game.ts` `doFlash` still paints full-screen DOM flashes. Lines 453, 617, 628, 634, 647, 654, 665, 669 (white 0.8) and 674 (red 0.6). Rate-limited to 3/s, reduced only under reduced motion. Per the rule, these should become edge glows (or call `flashEdge`).
+
+## Round 7: rematch bugs (codex-qa soak)
+- **(1) Stale FX:**
+  - `fx.ts` `resetFx()` drops every end-of-match and timing field, particles and emit gates, and runs registered `onFxReset` hooks. Hooks are registered by events (number stacks, banners, eliminations), hazards (first-seen/armed), minions, props and boss (breath / step / position maps).
+  - Triggers: `fxClock(time)` sees the render clock restart near 0 (a new game screen), `fxMatchTime(state.t)` sees the match clock rewind (rematch; called by the 3D stage in both screen and XR), and a fresh full-HP phase-1 boss clears a victory (or a defeat after 3 s).
+  - Negative ages are rejected in postfx (limb-break glitch) and events (victory booms).
+  - `resetFx` and `fxMatchTime` are exported from `client/render/arena`.
+- **(2) Black scene:**
+  - The `art.mats[K.mat]` throw came from the in-progress variety layout; every branch sets `mat` now, plus a fallback.
+  - `drawBoss` wraps in `save()`/`try`/`finally restore()`, and every inner `save()` in the boss renderer has its own `finally`.
+  - The stage restores `fx.project` in a `finally`.
+- **(3) WebGL contexts:** `destroy()` is idempotent and stops the animation loop, disposes, then calls `renderer.forceContextLoss()` and shrinks the canvas. `render()` after destroy is a no-op. `game.ts` already destroys its stage on teardown and on late creation.
+- **Soak:** `tools/rematch-soak.ts --cycles 8 --jobs 4`, all 8 scenarios, on a private snapshot server on 5191 via `tools/rematch-server.ts`. Artifacts are in `qa/artifacts/rematch-boss-fix-{server,run}-2026-10-25/`; the server is stopped and 5191 closed.
+  - 64 rounds completed, exit 0.
+  - Unlost WebGL contexts at autopsy: **0 in every cycle and case** (before: 1→8).
+  - Max save depth at frame start: **0 everywhere** (before: up to 8992).
+  - Desktop non-identity frame starts: 0 (before: about 3000).
+  - No exceptions, no black fight samples, no stale-FX findings.
+  - The only findings are 4 `webgl-context-lost` events on detached stage canvases: the intended `forceContextLoss`.
+- **For claude-ui (optional hardening):**
+  - Call `resetFx()` at the `game.ts:414` rematch reset, and/or `fxMatchTime(s.t)` per frame. My side handles it without that, but it covers a defeat against a never-damaged boss.
+  - Make `renderers.ts` `safe()` wrap calls in `ctx.save()`/`restore()`.
+  - The iPhone frame start keeps a non-identity transform (about 500 frames, depth 0): the phone camera transform isn't reset at frame start in `game.ts`.
+
 DONE (boss variety) — claude-boss
 
 ## Round 6: boss variety (docs/tasks/variety.md, Bosses)

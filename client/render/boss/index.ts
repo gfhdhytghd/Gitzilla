@@ -2,7 +2,7 @@
 import type { BossKit, BossState } from "../../../shared/types.ts";
 import { disc, drawGlow, hash2, line, makeCanvas, outlineSprite, TAU } from "../arena/pix.ts";
 import { drawText, drawTextRaw, textSprite } from "../arena/font.ts";
-import { addShake, burst, emit, every, fx } from "../arena/fx.ts";
+import { addShake, burst, emit, every, fx, fxClock, onFxReset } from "../arena/fx.ts";
 import { bossArt, type BossArt } from "./art.ts";
 import { bossLayout, type Anchor, type BossLayout, type LegLayout, type PlateLayout, type TentacleLayout } from "./layout.ts";
 import { BREATH_FRAMES, getBodySprite, stumpOf, whiteOf } from "./sprite.ts";
@@ -23,6 +23,8 @@ interface DrawOpts { portrait?: boolean }
 const lastLayout = new Map<string, { anchors: Anchor[]; L: BossLayout }>();
 const lastPos = new Map<string, { x: number; y: number; t: number }>();
 const kaijuBreathUntil = new Map<string, number>();
+// render-time keyed state must not leak into the next match (fx.ts resetFx)
+onFxReset(() => { lastPos.clear(); kaijuBreathUntil.clear(); stepSeen.clear(); });
 
 function layoutFor(b: BossState): BossLayout {
   const regs = b.regions;
@@ -39,11 +41,13 @@ function layoutFor(b: BossState): BossLayout {
 }
 
 export function drawBoss(ctx: CanvasRenderingContext2D, b: BossState | null, time: number): void {
-  fx.now = time;
+  fxClock(time);
   if (!b) { fx.boss = null; return; }
   fx.boss = b;
   fx.bossSeenAt = time;
-  drawBossAt(ctx, b, time, {});
+  // the caller's context state is always handed back intact, even if a draw throws (rematch soak: save depth 649)
+  ctx.save();
+  try { drawBossAt(ctx, b, time, {}); } finally { ctx.restore(); }
 }
 
 function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, opts: DrawOpts) {
@@ -71,7 +75,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   let jx = 0, jy = 0;
   if (castP > 0.6) { jx = Math.round((hash2(Math.floor(time * 30), 1) - 0.5) * 2 * castP); jy = Math.round((hash2(Math.floor(time * 30), 2) - 0.5) * 2 * castP); }
   if (tint === 2 && hash2(Math.floor(time * 12), 7) < 0.15) jx += hash2(Math.floor(time * 12), 8) < 0.5 ? -2 : 2;
-  if (dying >= 0) { jx += Math.round((Math.random() - 0.5) * 8 * dying); jy += Math.round((Math.random() - 0.5) * 6 * dying); }
+  if (dying >= 0) { jx += Math.round((Math.random() - 0.5) * 3 * dying); jy += Math.round((Math.random() - 0.5) * 2 * dying); }
   const lift = atk?.kind === "slam" ? -Math.round(Math.sin(castP * Math.PI * 0.5) * 6) : 0;
   // death: topple, then the victory explosion (events) takes over; nothing is left standing
   if (b.pose?.name === "death" && b.pose.t >= b.pose.total * 0.97 && !opts.portrait) return;
@@ -86,8 +90,10 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
     if (L.kaiju) drawShadow(ctx, Math.round(b.x + pm.dx * 0.5) + 22, Math.round(b.y) + (L.kaiju.kind === "abyssal" ? 40 : 58), Math.round((66 - lift) * sh), Math.max(3, Math.round(8 * sh)));
     else drawShadow(ctx, Math.round(b.x), Math.round(b.y) + 46, 46 - lift, 9);
   }
-  // pose transform for the whole body (death topple / burrow clip); restored at the end of the body block
+  // pose transform for the whole body (death topple / burrow clip); restored at the end of the body block, also when a
+  // draw throws (an unbalanced save() would leave every later frame under a stale clip / transform)
   ctx.save();
+  try {
   if (pm.clipY !== null) { ctx.beginPath(); ctx.rect(-4000, -4000, 8000, Math.round(b.y) + pm.clipY + 4000); ctx.clip(); }
   if (pm.rot) { const px = bx + 14, py = by + 58; ctx.translate(px, py); ctx.rotate(pm.rot); ctx.translate(-px, -py); }
   if (pm.alpha < 1) ctx.globalAlpha = Math.max(0, pm.alpha);
@@ -224,8 +230,10 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
 
   // ---- hit flash (whole body, then per region) ----
   const since = fx.now - fx.bossFlash;
-  if (!opts.portrait && ((since >= 0 && since < 0.07) || (dying >= 0 && Math.floor(time * 16) % 2 === 0))) {
-    ctx.globalAlpha = L.kaiju && dying < 0 ? 0.4 : 0.75;
+  // photosensitivity: a short dim flash on the boss only (heavy hits are rate-limited in events.ts); dying glows steadily
+  // brighter instead of strobing
+  if (!opts.portrait && ((since >= 0 && since < 0.07) || dying >= 0)) {
+    ctx.globalAlpha = dying >= 0 ? Math.min(0.45, 0.15 + dying * 0.2) : L.kaiju ? 0.3 : 0.45;
     ctx.drawImage(whiteOf(body), sx, sy);
     ctx.globalAlpha = 1;
   }
@@ -235,14 +243,15 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
       const t = fx.now - (fx.limbFlash.get(sp.id) ?? -10);
       if (t < 0 || t > 0.07) continue;
       ctx.save();
-      ctx.beginPath(); ctx.arc(bx + sp.x, by + sp.y, sp.r, 0, TAU); ctx.clip();
-      ctx.globalAlpha = 0.55;
-      ctx.drawImage(whiteOf(body), sx, sy);
-      ctx.restore();
+      try {
+        ctx.beginPath(); ctx.arc(bx + sp.x, by + sp.y, sp.r, 0, TAU); ctx.clip();
+        ctx.globalAlpha = 0.55;
+        ctx.drawImage(whiteOf(body), sx, sy);
+      } finally { ctx.restore(); }
     }
   }
 
-  ctx.restore(); // end of the pose transform
+  } finally { ctx.restore(); } // end of the pose transform
 
   // ---- archetype pose FX (stomps, roars, steam, jets, vein pulses) ----
   if (L.kaiju) drawPoseFx(ctx, b, L, art, bx, by, time, pm, tint, !!opts.portrait);
@@ -776,6 +785,7 @@ function drawHeartCode(ctx: CanvasRenderingContext2D, x: number, y: number, r: n
   const first = Math.floor(scrollY / rowH);
   const sub = Math.round(scrollY % rowH);
   ctx.save();
+  try {
   ctx.beginPath();
   ctx.arc(Math.round(x) + 0.5, Math.round(y) + 0.5, ri + 0.5, 0, TAU);
   ctx.clip();
@@ -789,7 +799,7 @@ function drawHeartCode(ctx: CanvasRenderingContext2D, x: number, y: number, r: n
     const col = k === 0 ? "#ffffff" : art.dangerRamp[3];
     drawText(ctx, text, mx, ry - 2, col, { outline: null });
   }
-  ctx.restore();
+  } finally { ctx.restore(); }
 }
 
 /** A tiny tick-like parasite (a CVE) with wiggling legs. */
@@ -931,7 +941,7 @@ function drawKaijuPlates(ctx: CanvasRenderingContext2D, L: BossLayout, kit: Boss
 
 function drawKaijuFront(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, broken: boolean[], bx: number, by: number, time: number, charge: number, castP: number, tint: number, portrait?: boolean, headIdx = 0) {
   const K = L.kaiju!;
-  const ramp = art.mats[K.mat].map((c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
+  const ramp = (art.mats[K.mat] ?? art.mats.obsidian).map((c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
   // the element's breath (mecha keeps its hot red visor laser; enraged abyssal goes red)
   const breathCol = K.kind === "mecha" ? "#ff4a3a" : K.kind === "abyssal" && tint ? "#ff2a3a" : art.el.breath;
   K.jaws.forEach((J, ji) => {

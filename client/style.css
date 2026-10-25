@@ -1866,3 +1866,4 @@ body:has(.screen.game) .game-toolbar > .mute-btn { font-size: 12px; }
 .screen.game.phone-portrait .deck-sensors > :is(.settings-button, .mute-btn, .menu-btn) {
   height: 36px; min-height: 36px; min-width: 44px; padding: 0 10px; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
   opacity: 1; white-space: nowrap; font-family: var(--term); font-size: 16px; line-height: 1; color: var(--text); background: #08100c; border: 2px solid #2b5a40; box-shadow: none; }
+.bsod[hidden] { display: none; }

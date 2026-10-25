@@ -3,10 +3,11 @@
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bayer, hash2, makeCanvas } from "./pix.ts";
 import { drawText, textWidth } from "./font.ts";
-import { fx, setView, type View } from "./fx.ts";
+import { fx, fxClock, setView, type View } from "./fx.ts";
 
 let vignette: HTMLCanvasElement | null = null;
 let dangerVig: HTMLCanvasElement | null = null;
+let edgeGlow: HTMLCanvasElement | null = null;
 let scratch: [HTMLCanvasElement, CanvasRenderingContext2D] | null = null;
 const scanCache = new Map<number, HTMLCanvasElement>();
 
@@ -60,7 +61,7 @@ export const glitchAmount = () => lastGlitch;
 export const caAmount = () => lastCa;
 
 export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number, view?: View, opts: { overlay?: boolean } = {}) {
-  fx.now = time;
+  fxClock(time);
   setView(ctx, view);
   const m = ctx.getTransform();
   const sx = m.a || 1, sy = m.d || 1;
@@ -80,7 +81,7 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
 
   const sh = Math.max(shake, fx.shake);
   const sincePhase = time - fx.phaseGlitch;
-  const glitch = sincePhase >= 0 && sincePhase < 0.7 ? 1 - sincePhase / 0.7 : time - fx.limbBreak < 0.15 ? 0.4 : !fx.pvp && fx.defeatAt > 0 && hash2(Math.floor(time * 10), 3) < 0.2 ? 0.5 : 0;
+  const glitch = sincePhase >= 0 && sincePhase < 0.7 ? 1 - sincePhase / 0.7 : time - fx.limbBreak >= 0 && time - fx.limbBreak < 0.15 ? 0.4 : !fx.pvp && fx.defeatAt > 0 && time - fx.defeatAt >= 0 && time - fx.defeatAt < 1.2 ? 0.35 * (1 - (time - fx.defeatAt) / 1.2) : 0;
 
   // ---- glitch slices (phase change, limb break, defeat) ----
   lastGlitch = glitch;
@@ -97,7 +98,7 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
       const off = Math.round((hash2(Math.floor(time * 24), i, 3) - 0.5) * 40 * sx * glitch);
       ctx.drawImage(sc, 0, yy, W, hh, x0 + off, y0 + yy, W, hh);
       if (r < 0.08) {
-        ctx.fillStyle = r < 0.04 ? "rgba(255,0,80,0.35)" : "rgba(0,229,255,0.35)";
+        ctx.fillStyle = r < 0.04 ? "rgba(255,0,80,0.14)" : "rgba(0,229,255,0.14)";
         ctx.fillRect(x0, y0 + yy, W, hh);
       }
     }
@@ -127,16 +128,19 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
   // ---- danger vignette (red edges) ----
   if (fx.danger > 0.05) {
     if (!dangerVig) dangerVig = buildVignette("#c0002a", 1.1, 1.5, 0.85);
-    ctx.globalAlpha = Math.min(1, fx.danger) * (0.3 + 0.12 * Math.sin(time * 14));
+    // gentle and slow (< 2 Hz): a red edge, never a red flash
+    ctx.globalAlpha = Math.min(1, fx.danger) * (0.22 + 0.05 * Math.sin(time * 9));
     ctx.drawImage(dangerVig, x0, y0, W, H);
     ctx.globalAlpha = 1;
   }
 
-  // ---- white flash ----
+  // ---- edge glow (photosensitivity, WCAG 2.3.1): big moments never flash the whole screen. A soft warm glow on the
+  //      edges at low intensity (flashEdge rate-limits it below 3 per second); the bright burst is a particle at the
+  //      event itself (events.ts) ----
   if (fx.flash > 0.02) {
-    ctx.globalAlpha = Math.min(0.8, fx.flash * 0.6);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(x0, y0, W, H);
+    if (!edgeGlow) edgeGlow = buildVignette("#fff1d8", 1.15, 1.7, 0.85);
+    ctx.globalAlpha = Math.min(1, fx.flash) * 0.16;
+    ctx.drawImage(edgeGlow, x0, y0, W, H);
     ctx.globalAlpha = 1;
   }
 

@@ -185,7 +185,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       onXRChange: (active: boolean) => {
         inXr = active;
         syncXrPanel();
+        // the session ended some other way (system gesture) while the victory BSOD waits: the 2D prompt takes over
+        if (!active && bsodWait && bsodCard) bsodCard.hidden = false;
       },
+      // claude-boss's in-headset victory BSOD: a pinch anywhere continues like a key press on the 2D one
+      onContinue: () => continueOutro(),
       // XR frame counter for playtests (fps in the headset loop, where the page rAF may be paused)
       onXRFrame: () => {
         const g = globalThis as { __kaijuXrFrames?: number };
@@ -829,11 +833,14 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const finishOutro = () => {
     if (result.outroDone) return;
     result.outroDone = true;
-    app.refresh();
+    // leave an immersive session cleanly before the autopsy replaces this screen
+    if (st3d?.xrActive) void (st3d.exitXR?.() ?? Promise.resolve()).catch(() => {}).finally(() => app.refresh());
+    else app.refresh();
   };
   // Boss-raid victory BSOD: a real "press any key". It waits for a key / tap / click / gamepad button (a projector or
   // spectator screen gives up after 60 s); defeat, royale and classroom endings keep their short auto-advance.
   let bsodWait = false, bsodReadyAt = 0, padWasDown = true;
+  let bsodCard: HTMLElement | null = null; // hidden while the headset shows its own 3D BSOD (no double prompt)
   const continueOutro = (e?: KeyboardEvent) => {
     if (!outro) return;
     if (bsodWait) {
@@ -911,6 +918,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
           );
       overlay.append(card);
       if (bsod) {
+        bsodCard = card;
+        if (inXr) card.hidden = true;
         bsodWait = true;
         bsodReadyAt = performance.now() + 600;
         padWasDown = true; // a button already held doesn't count until it's released

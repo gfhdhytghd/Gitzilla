@@ -2,7 +2,7 @@
 import type { GameEvent, PlayerState, PvpState, SkillKind } from "../../../shared/types.ts";
 import { drawGlow, hash2, TAU } from "./pix.ts";
 import { drawText, textWidth } from "./font.ts";
-import { addShake, burst, drawParticles, emit, every, fx, setView, stepParticles, type Particle, type View } from "./fx.ts";
+import { addShake, burst, drawParticles, emit, every, flashEdge, fx, fxClock, onFxReset, setView, stepParticles, type Particle, type View } from "./fx.ts";
 import { telegraphInfo } from "./hazards.ts";
 import { drawPerkCards } from "./props.ts";
 import { heroColor, playerGlyphs, playerWeapons, registerHeroColor, registerPlayerGlyphs, registerPlayerWeapon } from "./bullets.ts";
@@ -28,6 +28,8 @@ let avgHit = 8;
 
 interface Banner { text: string; sub: string; color: string; at: number; dur: number; scale: number; y: number }
 const banners: Banner[] = [];
+// per-match state (keyed by render time / player): dropped on a new match (fx.ts resetFx)
+onFxReset(() => { numbers.clear(); banners.length = 0; eliminatedSeen.clear(); players.clear(); numberTimes.length = 0; avgHit = 8; });
 
 /** Optional: give the FX layer player positions (for downed/revived/skill effects). Call once per frame. */
 const eliminatedSeen = new Set<string>();
@@ -108,7 +110,8 @@ function ingest(e: GameEvent, time: number) {
       const toPlayer = !toBoss && (x.source === "boss" || players.has(e.target));
       if (toBoss) {
         // full-body flash only on heavy hits (and rate-limited); light hits flash the limb
-        if ((x.crit || (x.impact ?? 0) >= 0.5 || e.amount > avgHit * 2) && time - fx.bossFlash > 0.25) fx.bossFlash = time;
+        // (rate-limited to 2.5 / s: photosensitivity)
+        if ((x.crit || (x.impact ?? 0) >= 0.5 || e.amount > avgHit * 2) && (time - fx.bossFlash > 0.4 || time < fx.bossFlash)) fx.bossFlash = time;
         const lf = fx.limbFlash.get(e.limb ?? "heart") ?? -10;
         if (time - lf > 0.14) fx.limbFlash.set(e.limb ?? "heart", time);
       }
@@ -197,8 +200,8 @@ function ingest(e: GameEvent, time: number) {
       fx.limbBreak = time;
       fx.slowmoUntil = time + 0.45;
       fx.hitStop = time + 0.06;
-      fx.flash = Math.max(fx.flash, 0.5);
-      addShake(9);
+      flashEdge(0.5);
+      addShake(6);
       if (pos) {
         const [x, y] = pos;
         emit({ kind: "boom", x, y, size: 14, max: 0.6, color: "#ff7a2a", color2: "#3a2a30" });
@@ -242,8 +245,10 @@ function ingest(e: GameEvent, time: number) {
     }
     case "phase": {
       fx.phaseGlitch = time;
-      fx.flash = Math.max(fx.flash, 0.7);
-      addShake(10);
+      flashEdge(0.7);
+      addShake(6);
+      // the bloom is local to the boss (no full-screen flash)
+      if (fx.boss) emit({ kind: "boom", x: fx.boss.x, y: fx.boss.y, size: 30, max: 0.5, color: "#fff4e0", color2: "#4a3a5a" });
       fx.hitStop = time + 0.08;
       const b = fx.boss;
       if (b) {
@@ -264,7 +269,7 @@ function ingest(e: GameEvent, time: number) {
       break;
     }
     case "obstacleBroken": {
-      fx.flash = Math.max(fx.flash, 0.15);
+      flashEdge(0.15);
       break;
     }
     case "perk": {
@@ -294,22 +299,24 @@ function ingest(e: GameEvent, time: number) {
 /** view: visible logical window under a camera (portrait phones). Omit for the full landscape arena. */
 /** opts.draw = false (3D stage in XR): ingest events and step particles only; the stage draws them as billboards. */
 export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number, view?: View, opts: { draw?: boolean } = {}) {
-  fx.now = time;
+  fxClock(time);
   setView(ctx, view);
   for (const e of events) {
     if (seen.has(e)) continue;
     seen.add(e);
     ingest(e, time);
   }
-  // reset end-of-match state on rematch (boss alive again long after)
-  if (fx.victoryAt > 0 && time - fx.victoryAt > 10 && fx.boss && fx.boss.hp > 0) fx.victoryAt = -1;
-  if (fx.defeatAt > 0 && time - fx.defeatAt > 10) fx.defeatAt = -1;
+  // reset end-of-match state on rematch: a fresh boss again (full HP, phase 1) is the next match (game.ts / the 3D stage
+  // also report the match clock through fxMatchTime, and a rewound render clock resets everything: fxClock)
+  const fresh = !!fx.boss && fx.boss.hp >= fx.boss.maxHp * 0.999 && fx.boss.phase === 1;
+  if (fx.victoryAt > 0 && (fresh || (time - fx.victoryAt > 10 && fx.boss && fx.boss.hp > 0))) fx.victoryAt = -1;
+  if (fx.defeatAt > 0 && ((fresh && time - fx.defeatAt > 3) || time - fx.defeatAt > 10)) fx.defeatAt = -1;
 
   // victory: the boss segfaults - chain of explosions over ~1.6 s
   const b = fx.boss;
   if (b && fx.victoryAt > 0) {
     const t = time - fx.victoryAt;
-    if (t < 1.7 && every("vboom", 0.07, time)) {
+    if (t >= 0 && t < 1.7 && every("vboom", 0.07, time)) {
       const a = Math.random() * TAU, d = Math.random() * 50;
       emit({ kind: "boom", x: b.x + Math.cos(a) * d, y: b.y + Math.sin(a) * d * 0.8, size: 6 + Math.random() * 10, max: 0.5, color: Math.random() < 0.5 ? "#ff7a2a" : dangerColor(), color2: "#3a2a30" });
       burst(b.x + Math.cos(a) * d, b.y + Math.sin(a) * d, 4, { kind: "shard", speed: 120, max: 1, text: "SEGFAULT01{}#", spin: 14, colors: ["#ffffff", "#ffd23f"], color2: "#5a4a50", grav: 150 });
@@ -318,8 +325,8 @@ export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], t
     if (t >= 1.6 && t < 1.7 && every("vfinal", 5, time)) {
       emit({ kind: "boom", x: b.x, y: b.y, size: 50, max: 0.9, color: "#ffffff", color2: "#4a4a6a" });
       burst(b.x, b.y, 60, { kind: "shard", speed: 220, max: 1.6, text: "0x0000DEAD{}();#*01", spin: 10, colors: ["#ffffff", "#ffd23f", dangerColor(), "#5ad8ff"], color2: "#5a4a50", grav: 90, drag: 0.6 });
-      fx.flash = 1;
-      addShake(10);
+      flashEdge(1);
+      addShake(6);
     }
   }
 

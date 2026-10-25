@@ -3,7 +3,7 @@ import type { Obstacle, PerkOffer, Pickup, PlayerState } from "../../../shared/t
 import { ARENA_W } from "../../../shared/types.ts";
 import { disc, drawGlow, hash2, line, makeCanvas, TAU } from "./pix.ts";
 import { drawText, drawTextRaw, textWidth } from "./font.ts";
-import { addShake, burst, emit, fx } from "./fx.ts";
+import { addShake, burst, emit, fx, onFxReset } from "./fx.ts";
 
 // ---------------- obstacles: files of the boss repo as cover ----------------
 
@@ -238,6 +238,8 @@ let offerSeenAt = 0;
 const PLAYER_COLS = ["#5ad8ff", "#ffd23f", "#7dff9a", "#ff7ad8", "#ff9a3a", "#b48aff", "#ffffff", "#ff5a5a"];
 
 let lastOffer: { offer: PerkOffer; players: PlayerState[]; best: Map<string, number>; at: number } | null = null;
+// obstacle / pickup ids and perk offers restart every match (fx.ts resetFx)
+onFxReset(() => { obsTracks.clear(); pickTracks.clear(); padState.clear(); offerKey = ""; offerSeenAt = 0; lastOffer = null; });
 
 export function drawPerkPads(ctx: CanvasRenderingContext2D, offer: PerkOffer | null, players: PlayerState[], time: number) {
   if (!offer || !offer.pads.length) { offerKey = ""; lastOffer = null; return; }
