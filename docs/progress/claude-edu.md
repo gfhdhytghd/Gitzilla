@@ -1,3 +1,32 @@
+# DONE (editor sideways scroll)
+
+Coordinator follow-up. Only `client/edu/code-editor.ts` changed. Not committed.
+- **Cause:** the textarea is as wide as the longest line. When it gets focus without a tap on a visible spot
+  (Playwright's element-centre click, which aims offscreen; also programmatic or keyboard focus, and iOS revealing
+  a focused field), WebKit scrolls `.ce-scroll` sideways to show the element. On phones that hid the first
+  characters next to the gutter (`scrollLeft` 25). A finger tap on a visible spot didn't do it.
+- **Fix:** `pinSoon()` runs on focus, pointerup, keyup and input, once on the next frame and again at 150 ms (after
+  the browser's own reveal).
+  - It measures the caret's x position with canvas measureText in the editor font, so CJK widths count.
+  - If the caret fits in the first screen (scroller width minus the gutter, with a 16px margin), it sets
+    `scrollLeft` to 0.
+  - On a really long line it does nothing, so the browser keeps following the caret.
+  - A sideways swipe to read a line has no caret event, so it's left alone.
+
+**Verified:**
+- **WebKit:** iPhone SE, iPhone 15 and desktop 1280, a real student editor on :5175. Script:
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/hscroll-shots.mts
+  (output in hscroll2/; before the fix, hscroll1/ showed 25 after the element click on both phones). Results on all
+  three:
+  - `scrollLeft` is 0 after the element-centre click, focus(), a real tap, Ctrl+End, and typing short lines;
+  - a 100+ character line scrolls and the caret stays visible;
+  - back on a short line it returns to 0 with the caret visible;
+  - a manual sideways scroll to 200 is kept;
+  - 0 page errors.
+- **Screenshots:** in hscroll2/ — iphone15-short.png, iphone15-long.png, iphoneSE-short.png, desk-short.png
+  (plus *-long and *-end).
+- **Checks:** tsc clean; `vitest client/edu` 79 passed.
+
 # DONE (backspace dedent)
 
 User request via the coordinator. `client/edu/code-editor.ts` + `code-editor.test.ts`. Not committed.

@@ -319,6 +319,24 @@ export function createCodeEditor(opts: CodeEditorOpts): CodeEditor {
       if (e) { ev.preventDefault(); apply(e); }
     }
   });
+  // Focusing the textarea (as wide as the longest line) can make the browser scroll it sideways to reveal the element
+  // itself, hiding the first columns next to the gutter (seen on iPhone). While the caret fits in the first screen,
+  // keep the scroller at the left edge; on really long lines the browser keeps following the caret, and a sideways
+  // swipe to read a line is left alone (no caret event).
+  let measure: CanvasRenderingContext2D | null | undefined;
+  const caretX = () => {
+    measure ??= document.createElement("canvas").getContext("2d");
+    if (!measure) return Infinity;
+    const cs = getComputedStyle(ta);
+    measure.font = cs.font;
+    return parseFloat(cs.paddingLeft) + measure.measureText(ta.value.slice(lineStart(ta.value, ta.selectionEnd), ta.selectionEnd)).width;
+  };
+  const pinLeft = () => {
+    if (!scroller.scrollLeft || document.activeElement !== ta) return;
+    if (caretX() + 16 <= scroller.clientWidth - gutter.offsetWidth) scroller.scrollLeft = 0;
+  };
+  const pinSoon = () => { requestAnimationFrame(pinLeft); setTimeout(pinLeft, 150); };   // after the browser's own reveal
+  for (const type of ["focus", "pointerup", "keyup", "input"]) ta.addEventListener(type, pinSoon);
   // soft keyboards (Android reports key "Unidentified"; iOS may skip keydown): the same dedent from beforeinput.
   // A keydown that already handled Backspace was prevented, so this doesn't fire twice.
   ta.addEventListener("beforeinput", (ev) => {
