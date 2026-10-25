@@ -45,6 +45,9 @@ export interface ClassroomAttack {
 export interface ClassroomRound {
   stepId: string; attempt: number; at: number; bossBefore: number; bossAfter: number;
   attacks: ClassroomAttack[];
+  // Anonymous class-level aggregates frozen at attack time (safe for the projector; no names).
+  roster?: number;                 // students in the room when the attack ran
+  checkStats?: { label: string; passed: number; total: number }[];   // one per step check, same order; total = scored submissions
 }
 export interface ClassroomReport {
   stepId: string; attempt: number; repo: string; commit: string; submittedAt: number;
