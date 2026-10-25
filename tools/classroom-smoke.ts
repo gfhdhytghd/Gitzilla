@@ -8,6 +8,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { RoomServer } from '../server/rooms';
 import { handleEduRoute } from '../server/edu-http';
+import { handleControllerRoute } from '../server/controller-http';
 import { profileFromFiles } from '../analysis/graph';
 import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim';
 import { defaultRubric, parseRubric } from '../rubric';
@@ -22,12 +23,17 @@ const rooms=new RoomServer(wss,{
 const vite=await createServer({server:{middlewareMode:true,hmr:{server}},appType:'spa'});
 server.on('request',(req,res)=>{void (async()=>{
   if(req.method==='POST' && req.url==='/api/room?mode=edu'){res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify({room:rooms.createRoom(undefined,'edu')}));return;}
-  if(await handleEduRoute(req,res,new URL(req.url!,'http://localhost'),rooms))return;
+  const url=new URL(req.url!,'http://localhost');
+  if(await handleControllerRoute(req,res,url,rooms))return;
+  if(await handleEduRoute(req,res,url,rooms))return;
+  if(url.pathname==='/api/me'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({enabled:false,user:null}));return;}
   if(req.url?.startsWith('/auth/')){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({authenticated:false}));return;}
   vite.middlewares(req,res);
 })();});
 server.listen(0,'127.0.0.1');await once(server,'listening');const base=`http://127.0.0.1:${(server.address() as {port:number}).port}`;
 const room=rooms.createRoom(undefined,'edu');
+const seatProbe=await fetch(`${base}/api/rooms/${room}/my-seat`);
+if(seatProbe.status!==401 || !(await seatProbe.json()).error)throw new Error('Smoke controller route must return JSON401 for unsigned identity');
 const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'});
 const errors:string[]=[];const sockets:WebSocket[]=[];
 try {

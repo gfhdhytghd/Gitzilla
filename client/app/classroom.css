@@ -186,7 +186,6 @@ body.classroom-active .rotate-guard, body.classroom-active .mute-btn { display:n
 .cr-verdict { width:34px; height:34px; display:grid; place-items:center; font:15px/1 var(--pix); color:var(--cr-text); background:#07140d; border:0; box-shadow:0 0 0 2px var(--cr-line); cursor:pointer; }
 .cr-verdict:hover, .cr-verdict:focus-visible { box-shadow:0 0 0 2px var(--cr-green); color:var(--cr-green); outline:none; }
 .cr-verdicts .cr-verdict:nth-child(2):hover { box-shadow:0 0 0 2px var(--cr-red); color:var(--cr-red); }
-.cr-safe-on .cr-student .cr-points, .cr-safe-on .cr-student .cr-checks-chip { filter:blur(6px); }
 .cr-dense .cr-student { height:auto; padding:0 8px 0 0; grid-template-columns:minmax(0,1fr) auto auto; }
 .cr-dense .cr-row-pick { padding:3px 4px 3px 12px; }
 .cr-dense .cr-verdict { width:26px; height:26px; font-size:11px; }
@@ -287,3 +286,47 @@ details.cr-step-editor:not([open]) { gap:0; }
 /* feedback check rows: the step's own "Done when" words, with `code` styled like the task card */
 .cr-checks code { font:.92em/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:#ffe27a; background:rgba(255,210,61,.1); border:1px solid rgba(255,210,61,.25); border-radius:4px; padding:0 .3em; overflow-wrap:anywhere; }
 .cr-checks .missing small { color:var(--cr-amber); }
+/* teacher console: remove a student (⋯ on the row, inline confirm under it). Never on the projector window. */
+.cr-student { grid-template-columns:minmax(0,1fr) auto auto auto; }
+.cr-row-more { grid-column:4; width:40px; height:40px; display:grid; place-items:center; font:18px/1 var(--term); color:var(--cr-muted); background:transparent; border:0; cursor:pointer; }
+.cr-row-more:hover, .cr-row-more:focus-visible, .cr-row-more[aria-expanded="true"] { color:var(--cr-text); background:rgba(255,255,255,.06); outline:none; }
+.cr-remove-confirm { grid-column:1 / -1; display:grid; gap:8px; margin:0 0 10px 14px; padding:10px 12px; background:rgba(255,51,85,.08); border-left:3px solid var(--cr-red); font:15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif; }
+.cr-remove-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.cr-remove-buttons .btn { min-height:40px; }
+.cr-dense .cr-student.cr-removing { height:auto; }
+.cr-pv .cr-row-more, .cr-class-facing .cr-row-more, .cr-pv .cr-remove-confirm, .cr-class-facing .cr-remove-confirm { display:none!important; }
+.classroom-screen.cr-kicked { display:grid; grid-template-rows:auto 1fr; }
+.cr-dense .cr-student { grid-template-columns:minmax(0,1fr) auto auto auto; }
+/* roster rows wrap (name/status first, then result · verdicts · ⋯) so long translations never squeeze the name */
+.cr-student, .cr-dense .cr-student { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+.cr-student > .cr-row-pick { flex:1 1 11em; min-width:0; }
+.cr-student > .cr-checks-chip, .cr-student > .cr-points, .cr-student > .cr-none, .cr-student > .cr-verdicts { flex:none; }
+.cr-student > .cr-row-more { flex:none; margin-left:auto; }
+.cr-student > .cr-remove-confirm { flex:1 1 100%; }
+.cr-person small { overflow-wrap:normal; word-break:normal; }
+/* debrief card position: projector column 1 under the task; console above the roster */
+.cr-pv > .db { grid-column:1; min-width:0; overflow:auto; }
+.cr-projector:not(.cr-pv) > .db, .cr-console-bar ~ .db { max-width:1400px; }
+.cr-pv > .db { align-self:start; }
+/* phone-width teacher console: the control bar scrolls with the page (sticky, it covered ~40% of the screen) */
+@media(max-width:600px) { .classroom-screen .cr-console-bar { position:static; } }
+/* scores on the teacher console: a clear "hidden" chip (press and hold / focus to peek), and the mode toggle by the list */
+.cr-hidden-chip { position:relative; display:inline-grid; place-items:center; min-height:34px; padding:0 10px; font:14px/1 var(--term); color:var(--cr-muted); background:#07140d; border:1px dashed var(--cr-line); border-radius:999px; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none; }
+.cr-hidden-chip > span { grid-area:1 / 1; }
+.cr-hidden-chip .cr-hidden-value { visibility:hidden; }
+.cr-hidden-chip.peek { border-style:solid; border-color:var(--cr-amber); color:var(--cr-text); }
+.cr-hidden-chip.peek .cr-hidden-label { visibility:hidden; }
+.cr-hidden-chip.peek .cr-hidden-value { visibility:visible; }
+.cr-hidden-chip:focus-visible { outline:2px solid var(--cr-amber); outline-offset:2px; }
+.cr-score-box { display:grid; gap:4px; margin-top:8px; }
+.cr-score-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.cr-score-toggle { min-height:40px; padding:6px 12px; font:15px/1.2 var(--term); color:var(--cr-green); background:rgba(57,255,136,.08); border:2px solid var(--cr-green); border-radius:4px; cursor:pointer; }
+.cr-score-toggle.on { color:var(--cr-amber); background:rgba(255,210,61,.08); border-color:var(--cr-amber); }
+.cr-score-auto { min-height:40px; padding:6px 10px; font:14px/1 var(--term); color:var(--cr-cyan); background:none; border:0; text-decoration:underline dotted; cursor:pointer; }
+.cr-roster-heading .cr-score-why { font-size:14px; line-height:1.35; }
+.cr-hidden-chip:focus-visible { border-style:solid; border-color:var(--cr-amber); color:var(--cr-text); }
+.cr-hidden-chip:focus-visible .cr-hidden-label { visibility:hidden; }
+.cr-hidden-chip:focus-visible .cr-hidden-value { visibility:visible; }
+/* the sticky console bar is opaque and jumps (scrollIntoView) stop below it */
+.cr-console-bar { background:#040a08; }
+.classroom-screen { scroll-padding-top:calc(var(--cr-bar-h, 0px) + 8px); }

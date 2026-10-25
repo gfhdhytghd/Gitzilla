@@ -3,6 +3,7 @@
 // as the alternative in the classroom screen.
 import type { ClassroomStep, InAppFile } from "../../shared/classroom.ts";
 import { h } from "../app/util.ts";
+import { onLocaleChange, t } from "../i18n/index.ts";
 import { type CodeEditor, createCodeEditor, savedDraft } from "./code-editor.ts";
 import { runAvailable, runPython } from "./py-run.ts";
 
@@ -26,7 +27,9 @@ export function createInAppPanel(opts: { room: string; onSubmit(files: InAppFile
   const host = h("div.cr-inapp-editor");
   const out = h("pre.cr-console-out", { "data-testid": "classroom-run-output", "aria-live": "polite" });
   const meta = h("small.cr-console-meta");
-  const stdin = h("textarea.cr-stdin", { rows: 2, spellcheck: "false", placeholder: "one line per input() call", "aria-label": "input lines" }) as HTMLTextAreaElement;
+  const stdin = h("textarea.cr-stdin", { rows: 2, spellcheck: "false", placeholder: t("one line per input() call"), "aria-label": "input lines" }) as HTMLTextAreaElement;
+  // textarea placeholders are skipped by the page translator, so follow the classroom language here
+  const stopLocale = onLocaleChange(() => { stdin.placeholder = t("one line per input() call"); });
   const consolePanel = h("div.cr-console", { hidden: true, "data-testid": "classroom-console" },
     h("div.cr-console-head", null, h("span", null, "$ python output"), meta),
     out,
@@ -94,6 +97,6 @@ export function createInAppPanel(opts: { room: string; onSubmit(files: InAppFile
       if (submit.textContent !== label) submit.textContent = label;
     },
     files: () => ed?.files() ?? [],
-    dispose() { ed?.dispose(); el.remove(); },
+    dispose() { stopLocale(); ed?.dispose(); el.remove(); },
   };
 }

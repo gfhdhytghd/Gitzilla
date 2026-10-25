@@ -7,6 +7,7 @@ import { WebSocketServer } from 'ws';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { RoomServer } from '../server/rooms';
+import { handleControllerRoute } from '../server/controller-http';
 import { profileFromFiles } from '../analysis/graph';
 import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim';
 let fast = false;
@@ -20,15 +21,18 @@ const rooms = new RoomServer(wss, {
   createMatch: (players, boss, opts) => { const match = createMatch(players, boss, opts); return { step: (dt, inputs) => { for (let i = 0; i < (fast ? 30 : 1); i++) match.step(dt, inputs); }, snapshot: () => match.snapshot(), autopsy: () => match.autopsy(), removePlayer: id => match.removePlayer(id), get over() { return match.over; } }; },
 });
 const vite = await createServer({ server: { middlewareMode: true, hmr: { server } }, appType: 'spa' });
-server.on('request', (req, res) => {
+server.on('request', (req, res) => { void (async () => {
+  if (await handleControllerRoute(req, res, new URL(req.url!, 'http://localhost'), rooms)) return;
   if (req.url === '/api/fallbacks') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(['facebook/react','pallets/flask'])); return; }
   if (req.url === '/api/me') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ enabled: true, user: { login: 'fixture' } })); return; }
   if (req.url === '/api/me/repos') { res.setHeader('Content-Type', 'application/json'); res.end('[]'); return; }
   vite.middlewares(req, res);
-});
+})(); });
 server.listen(0, '127.0.0.1'); await once(server, 'listening');
 const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
 const room = rooms.createRoom(undefined, 'pvp');
+const seatProbe = await fetch(`${base}/api/rooms/${room}/my-seat`);
+if (seatProbe.status !== 401 || !(await seatProbe.json()).error) throw new Error('Smoke controller route must return JSON401 for unsigned identity');
 const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true });
 const errors: string[] = [], out = resolve('docs/shots/pvp'); mkdirSync(out, { recursive: true });
 try {

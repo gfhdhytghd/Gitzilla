@@ -8,7 +8,9 @@ export const fx = {
   boss: null as BossState | null,
   bossSeenAt: -10,                      // drawBoss refreshes this; a stale boss (edu PvP has none) is dropped
   pvp: false,
-  bossKind: "" as string,               // archetype of the boss being drawn ("kaiju" = atomic breath lasers)                           // edu classroom PvP: no boss, bullets colored per player
+  bossKind: "" as string,
+  /** 3D stage: maps a world point + height to screen (logical px of the current ctx space) and a scale. Null = flat 2D. */
+  project: null as ((x: number, y: number, z: number) => { x: number; y: number; scale: number } | null) | null,               // archetype of the boss being drawn ("kaiju" = atomic breath lasers)                           // edu classroom PvP: no boss, bullets colored per player
   bossFlash: -10,                       // time of last hit on the boss
   limbFlash: new Map<string, number>(), // limb id -> time of last hit
   look: null as [number, number] | null,
@@ -125,101 +127,129 @@ export function stepParticles(now: number) {
   fx.danger = Math.max(0, fx.danger - dt * 1.2);
 }
 
+// height (world px above the floor) each particle kind floats at in the 3D stage
+const P_Z: Partial<Record<PKind, number>> = { glyph: 18, bold: 14, trace: 20, spark: 10, px: 8, smoke: 10, shard: 10, glitch: 12, boom: 8, ring: 1 };
+
 export function drawParticles(ctx: CanvasRenderingContext2D) {
+  const proj = fx.project;
+  const base = proj ? ctx.getTransform() : null;
   for (const p of live) {
-    const t = p.life / p.max;
-    const x = Math.round(p.x), y = Math.round(p.y);
-    switch (p.kind) {
-      case "px":
-        ctx.fillStyle = t < 0.5 ? p.color : p.color2;
-        ctx.fillRect(x, y, p.size, p.size);
-        if (p.glow) drawGlow(ctx, x, y, p.color, 3 + p.size, 1 - t);
-        break;
-      case "spark": {
-        ctx.fillStyle = t < 0.4 ? "#ffffff" : t < 0.7 ? p.color : p.color2;
-        const len = Math.min(5, Math.hypot(p.vx, p.vy) * 0.04);
-        const a = Math.atan2(p.vy, p.vx);
-        for (let k = 0; k <= len; k++) ctx.fillRect(Math.round(p.x - Math.cos(a) * k), Math.round(p.y - Math.sin(a) * k), 1, 1);
-        if (p.glow) drawGlow(ctx, x, y, p.color, 4, 1 - t);
-        break;
+    if (proj && base) {
+      const s = proj(p.x, p.y, P_Z[p.kind] ?? 8);
+      if (!s) continue;
+      // texts stay at least 1:1 (readable); keep art pixels on whole device pixels
+      const dev = Math.abs(base.a) || 1;
+      let k = isText(p.kind) || p.kind === "trace" ? Math.max(1, s.scale) : s.scale;
+      k = Math.max(1 / dev, Math.round(k * dev) / dev);
+      ctx.setTransform(base);
+      ctx.translate(s.x, s.y);
+      ctx.scale(k, k);
+      ctx.translate(-Math.round(p.x), -Math.round(p.y));
+    }
+    drawParticle(ctx, p);
+  }
+  if (base) ctx.setTransform(base);
+}
+
+/** Visit live particles (3D stage: XR draws each into its own billboard cell). */
+export function forEachParticle(cb: (p: Particle) => void) { for (const p of live) cb(p); }
+export const particleHeight = (k: PKind) => P_Z[k] ?? 8;
+export const isTextParticle = (k: PKind) => isText(k) || k === "trace";
+
+/** Draw one particle at its own world position in the current transform. */
+export function drawParticle(ctx: CanvasRenderingContext2D, p: Particle) {
+  const t = p.life / p.max;
+  const x = Math.round(p.x), y = Math.round(p.y);
+  switch (p.kind) {
+    case "px":
+      ctx.fillStyle = t < 0.5 ? p.color : p.color2;
+      ctx.fillRect(x, y, p.size, p.size);
+      if (p.glow) drawGlow(ctx, x, y, p.color, 3 + p.size, 1 - t);
+      break;
+    case "spark": {
+      ctx.fillStyle = t < 0.4 ? "#ffffff" : t < 0.7 ? p.color : p.color2;
+      const len = Math.min(5, Math.hypot(p.vx, p.vy) * 0.04);
+      const a = Math.atan2(p.vy, p.vx);
+      for (let k = 0; k <= len; k++) ctx.fillRect(Math.round(p.x - Math.cos(a) * k), Math.round(p.y - Math.sin(a) * k), 1, 1);
+      if (p.glow) drawGlow(ctx, x, y, p.color, 4, 1 - t);
+      break;
+    }
+    case "smoke": {
+      const r = p.size * (0.6 + t * 1.2);
+      ctx.globalAlpha = (1 - t) * 0.55;
+      ctx.fillStyle = t < 0.3 ? p.color : p.color2;
+      disc(ctx, x, y, r);
+      ctx.globalAlpha = 1;
+      break;
+    }
+    case "glyph": {
+      const s = textSprite(p.text, t < 0.15 ? "#ffffff" : p.color, "#07040c", Math.min(3, p.size + fx.textScale - 1));
+      if (t > 0.75 && Math.floor(p.life * 30) % 2) break; // flicker out
+      ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
+      break;
+    }
+    case "trace": {
+      // an eliminated hero dissolving into its stack trace: lines peel off upward one by one, glitching out
+      const lines = p.text.split("\n");
+      lines.forEach((ln, i) => {
+        const start = i * 0.12;
+        const lt = Math.max(0, (p.life - start) / Math.max(0.1, p.max - start));
+        if (lt >= 1) return;
+        const yy = Math.round(p.y - i * 7 - lt * 22);
+        const jx = Math.round(Math.sin((p.life + i) * 40) * 2 * lt);
+        if (lt > 0.6 && Math.floor(p.life * 30 + i) % 2) return;
+        const s = textSprite(ln, i === 0 ? "#ff3a5c" : lt < 0.2 ? "#ffffff" : p.color, "#07040c", 1);
+        // keep the trace inside the camera view (phones show only part of the arena)
+        const tx = Math.max(fx.view.x + 2, Math.min(fx.view.x + fx.view.w - s.width - 2, Math.round(p.x - s.width / 2)));
+        ctx.drawImage(s, tx + jx, yy);
+      });
+      break;
+    }
+    case "bold": {
+      // bold code text spark (weapon impact): pops white for a frame, then the hero's color
+      const s = boldSprite(p.text, t < 0.12 ? "#ffffff" : p.color);
+      ctx.globalAlpha = t > 0.7 ? (1 - t) / 0.3 : 1;
+      ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
+      ctx.globalAlpha = 1;
+      break;
+    }
+    case "shard": {
+      // code glyph debris spinning (simulated by alternating glyphs)
+      const g = p.text[Math.floor(p.life * p.spin) % p.text.length] ?? "#";
+      const s = textSprite(g, t < 0.5 ? p.color : p.color2, "#07040c", 1);
+      ctx.drawImage(s, x - 2, y - 3);
+      break;
+    }
+    case "glitch": {
+      // RGB-split bars around a hit point
+      const k = Math.floor(p.life * 40);
+      for (let i = 0; i < 3; i++) {
+        const h1 = Math.sin(k * 12.9898 + i * 78.233 + p.x) * 43758.5453;
+        const r = h1 - Math.floor(h1);
+        ctx.fillStyle = i === 0 ? "#ff2a6a" : i === 1 ? "#2ae6ff" : "#ffffff";
+        ctx.globalAlpha = 0.85 * (1 - t);
+        ctx.fillRect(Math.round(p.x - p.size + r * 4 - 2), Math.round(p.y - p.size * 0.6 + r * p.size * 1.2), Math.round(p.size * (0.8 + r)), 1);
       }
-      case "smoke": {
-        const r = p.size * (0.6 + t * 1.2);
-        ctx.globalAlpha = (1 - t) * 0.55;
-        ctx.fillStyle = t < 0.3 ? p.color : p.color2;
-        disc(ctx, x, y, r);
-        ctx.globalAlpha = 1;
-        break;
-      }
-      case "glyph": {
-        const s = textSprite(p.text, t < 0.15 ? "#ffffff" : p.color, "#07040c", Math.min(3, p.size + fx.textScale - 1));
-        if (t > 0.75 && Math.floor(p.life * 30) % 2) break; // flicker out
-        ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
-        break;
-      }
-      case "trace": {
-        // an eliminated hero dissolving into its stack trace: lines peel off upward one by one, glitching out
-        const lines = p.text.split("\n");
-        lines.forEach((ln, i) => {
-          const start = i * 0.12;
-          const lt = Math.max(0, (p.life - start) / Math.max(0.1, p.max - start));
-          if (lt >= 1) return;
-          const yy = Math.round(p.y - i * 7 - lt * 22);
-          const jx = Math.round(Math.sin((p.life + i) * 40) * 2 * lt);
-          if (lt > 0.6 && Math.floor(p.life * 30 + i) % 2) return;
-          const s = textSprite(ln, i === 0 ? "#ff3a5c" : lt < 0.2 ? "#ffffff" : p.color, "#07040c", 1);
-          // keep the trace inside the camera view (phones show only part of the arena)
-          const tx = Math.max(fx.view.x + 2, Math.min(fx.view.x + fx.view.w - s.width - 2, Math.round(p.x - s.width / 2)));
-          ctx.drawImage(s, tx + jx, yy);
-        });
-        break;
-      }
-      case "bold": {
-        // bold code text spark (weapon impact): pops white for a frame, then the hero's color
-        const s = boldSprite(p.text, t < 0.12 ? "#ffffff" : p.color);
-        ctx.globalAlpha = t > 0.7 ? (1 - t) / 0.3 : 1;
-        ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
-        ctx.globalAlpha = 1;
-        break;
-      }
-      case "shard": {
-        // code glyph debris spinning (simulated by alternating glyphs)
-        const g = p.text[Math.floor(p.life * p.spin) % p.text.length] ?? "#";
-        const s = textSprite(g, t < 0.5 ? p.color : p.color2, "#07040c", 1);
-        ctx.drawImage(s, x - 2, y - 3);
-        break;
-      }
-      case "glitch": {
-        // RGB-split bars around a hit point
-        const k = Math.floor(p.life * 40);
-        for (let i = 0; i < 3; i++) {
-          const h1 = Math.sin(k * 12.9898 + i * 78.233 + p.x) * 43758.5453;
-          const r = h1 - Math.floor(h1);
-          ctx.fillStyle = i === 0 ? "#ff2a6a" : i === 1 ? "#2ae6ff" : "#ffffff";
-          ctx.globalAlpha = 0.85 * (1 - t);
-          ctx.fillRect(Math.round(p.x - p.size + r * 4 - 2), Math.round(p.y - p.size * 0.6 + r * p.size * 1.2), Math.round(p.size * (0.8 + r)), 1);
-        }
-        ctx.globalAlpha = 1;
-        break;
-      }
-      case "boom": {
-        // pixel explosion: white core -> color -> smoke ring
-        const r = p.size * (0.4 + Math.sqrt(t) * 0.8);
-        if (t < 0.15) { ctx.fillStyle = "#ffffff"; disc(ctx, x, y, r); }
-        else if (t < 0.5) { ctx.fillStyle = p.color; disc(ctx, x, y, r); ctx.fillStyle = "#ffe8a0"; disc(ctx, x, y, r * (0.5 - t)); }
-        else { ctx.globalAlpha = 1 - t; ctx.fillStyle = p.color2; disc(ctx, x, y, r); ctx.globalAlpha = 1; }
-        if (t < 0.5) drawGlow(ctx, x, y, p.color, Math.round(r * 2 + 4), 1 - t * 2);
-        break;
-      }
-      case "ring": {
-        ctx.globalAlpha = 1 - t;
-        ctx.fillStyle = p.color;
-        const r = p.size * (0.2 + t);
-        const n = Math.max(12, Math.round(r * 5));
-        for (let k = 0; k < n; k++) ctx.fillRect(Math.round(p.x + Math.cos((k / n) * TAU) * r), Math.round(p.y + Math.sin((k / n) * TAU) * r), 1, 1);
-        ctx.globalAlpha = 1;
-        break;
-      }
+      ctx.globalAlpha = 1;
+      break;
+    }
+    case "boom": {
+      // pixel explosion: white core -> color -> smoke ring
+      const r = p.size * (0.4 + Math.sqrt(t) * 0.8);
+      if (t < 0.15) { ctx.fillStyle = "#ffffff"; disc(ctx, x, y, r); }
+      else if (t < 0.5) { ctx.fillStyle = p.color; disc(ctx, x, y, r); ctx.fillStyle = "#ffe8a0"; disc(ctx, x, y, r * (0.5 - t)); }
+      else { ctx.globalAlpha = 1 - t; ctx.fillStyle = p.color2; disc(ctx, x, y, r); ctx.globalAlpha = 1; }
+      if (t < 0.5) drawGlow(ctx, x, y, p.color, Math.round(r * 2 + 4), 1 - t * 2);
+      break;
+    }
+    case "ring": {
+      ctx.globalAlpha = 1 - t;
+      ctx.fillStyle = p.color;
+      const r = p.size * (0.2 + t);
+      const n = Math.max(12, Math.round(r * 5));
+      for (let k = 0; k < n; k++) ctx.fillRect(Math.round(p.x + Math.cos((k / n) * TAU) * r), Math.round(p.y + Math.sin((k / n) * TAU) * r), 1, 1);
+      ctx.globalAlpha = 1;
+      break;
     }
   }
 }

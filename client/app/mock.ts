@@ -384,6 +384,7 @@ export function createMockConn(opts: ConnOpts): Conn {
       }
       case "input":
         lastInput = m.frame;
+        (globalThis as { __kaijuLastInput?: InputFrame }).__kaijuLastInput = m.frame; // playtests read the aim
         break;
       case "pause":
         if (m.paused) paused = { by: you, since: Date.now(), resumeAt: null };
@@ -418,8 +419,30 @@ export function createMockConn(opts: ConnOpts): Conn {
         lobby.phase = "lobby";
         pushLobby();
         break;
+      // owner tools (server rules: owner only, not yourself; transfer only to a human, never mid-match)
+      case "kick":
+        if (lobby.ownerId !== you || m.playerId === you) break;
+        lobby.players = lobby.players.filter((p) => p.id !== m.playerId);
+        pushLobby();
+        break;
+      case "transferOwner": {
+        const to = lobby.players.find((p) => p.id === m.playerId);
+        if (lobby.ownerId !== you || !to || to.bot || to.id === you) break;
+        if (lobby.phase === "match") { emit({ t: "error", message: "Hand over the room after the match." }); break; }
+        lobby.ownerId = to.id;
+        pushLobby();
+        break;
+      }
     }
   };
+  // &kicked=1: the host removes you after 3s (kicked notice, then the socket closes 4003)
+  // &handoff=1: the host role moves to octocat after 3s and back to you after 7s (both toasts)
+  const q = new URLSearchParams(location.search);
+  if (q.has("kicked")) setTimeout(() => { emit({ t: "kicked", by: "octocat" }); setTimeout(() => statusFns.forEach((f) => f("kicked")), 50); }, 3000);
+  if (q.has("handoff")) {
+    setTimeout(() => { const o = lobby.players.find((p) => p.id !== you && !p.bot); if (o) { lobby.ownerId = o.id; pushLobby(); } }, 3000);
+    setTimeout(() => { lobby.ownerId = you; pushLobby(); }, 7000);
+  }
 
   setTimeout(() => statusFns.forEach((f) => f("open")), 0);
   setTimeout(() => handle({ t: "hello", room: opts.room, role: opts.role, name: opts.name }), 10);

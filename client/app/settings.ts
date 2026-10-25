@@ -5,6 +5,7 @@ import { createControlsCard } from './controls';
 import { controlsTrained, openControlTraining } from './training';
 import { h, store } from './util';
 import { isMuted, setMuted } from './sound';
+import { setView25d, view25dPinned, view25dWanted } from './view25d';
 
 interface SettingsContext {
   classroom?: boolean;
@@ -84,7 +85,13 @@ function render() {
     h('label.settings-toggle', null,
       h('input', { type: 'checkbox', 'data-testid': 'settings-sound', checked: !isMuted(), onchange: (e: Event) => setMuted(!(e.target as HTMLInputElement).checked) }),
       h('span', null, 'music & sound effects')));
-  const children: (HTMLElement | null)[] = [title, intro, language, sound];
+  // 3D view (beta, off by default): the fight in the three.js stage; a ?view=… link pins it
+  const view = context.classroom || onboarding ? null : h('section.settings-section', null, h('h3', null, 'View'),
+    h('label.settings-toggle', null,
+      h('input', { type: 'checkbox', 'data-testid': 'settings-view3d', checked: view25dWanted(), disabled: view25dPinned(), onchange: (e: Event) => setView25d((e.target as HTMLInputElement).checked) }),
+      h('span', null, '3D view (beta)')),
+    view25dPinned() ? h('p.settings-status', null, 'Set by this link.') : null);
+  const children: (HTMLElement | null)[] = [title, intro, language, sound, view];
   if (!context.classroom && !context.spectator) {
     if (getMotionPermissionState().mobile) {
       const controls = createControlsCard(practice);

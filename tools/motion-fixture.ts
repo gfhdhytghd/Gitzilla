@@ -4,6 +4,7 @@ import https from 'node:https';
 import { WebSocketServer } from 'ws';
 import { RoomServer, type Match } from '../server/rooms';
 import { TraceStore, handleTraceRoute } from '../server/traces';
+import { handleControllerRoute } from '../server/controller-http';
 import { offlineProfile, listFallbackRepos } from '../analysis';
 import { createMatch, playerKitFromProfile, bossKitFromProfile } from '../sim';
 import { createBot } from '../sim/bots';
@@ -71,6 +72,8 @@ export async function startMotionFixture(appBase: string, traceDirectory: string
   server.on('request', (req, res) => {
     void (async () => {
       const url = new URL(req.url || '/', 'http://localhost');
+      if (await handleControllerRoute(req, res, url, rooms)) return;
+      if (url.pathname === '/api/me') { json(res, 200, { enabled: false, user: null }); return; }
       if (await handleTraceRoute(req, res, url.pathname, traces)) return;
       if (url.pathname === '/api/room' && req.method === 'POST') {
         req.resume();

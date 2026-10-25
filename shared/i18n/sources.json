@@ -10978,5 +10978,1450 @@
     "id": "f5ead2c7faa5bdb4",
     "source": "{0} · AI {1}",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "69e4fcd1c9a7ebf3",
+    "source": "manage {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "77c07d5100b5c10f",
+    "source": "remove this bot",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "095a5de3fa14a887",
+    "source": "make host or kick",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "cd879d3c20ca5c30",
+    "source": "★ Make host",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "37ca3cfb5d8522c2",
+    "source": "Kick",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "6391930b93f0ebfd",
+    "source": "Kick {0}? They can't rejoin this room.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "6d904e5c7c8c4d23",
+    "source": "Make {0} the host? You stay in the room as a player.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "acbb8e9aca6306d7",
+    "source": "Kick player…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "269a58d6379f1d12",
+    "source": "nobody else is here",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "39bf935e5c53b3f2",
+    "source": "★ You're the host now.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "d410c032e4a0d9ae",
+    "source": "{0} is now the host",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "e014645d7420e7aa",
+    "source": "You were removed from this room by the host.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "613651fdf45200ae",
+    "source": "You were removed from this room by {0}.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b9795b628255b73c",
+    "source": "You can join another room or start your own.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "1287adb7b06a0f98",
+    "source": "Back to start",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "70fa71f874684cd5",
+    "source": "REMOVED",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c94c347ae4b3eb69",
+    "source": "Hand over the room after the match.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "3c2010e370e42925",
+    "source": "The teacher can't hand over a classroom.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9038a274523e3cc9",
+    "source": "Removed from this classroom",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4ec3243183e3e093",
+    "source": "{0} removed you from this classroom.",
+    "context": "client/edu/classroom-kicked.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "fed2fe551ceb7601",
+    "source": "Your teacher removed you from this classroom.",
+    "context": "client/edu/classroom-kicked.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5590eccb0ef5e943",
+    "source": "You can't rejoin this room. If this was a mistake, talk to your teacher.",
+    "context": "client/edu/classroom-kicked.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "97bc53eaf77306f5",
+    "source": "Your code is still on this device.",
+    "context": "client/edu/classroom-kicked.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "368fe16515ef16ed",
+    "source": "⇩ Download my code",
+    "context": "client/edu/classroom-kicked.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "25f4fbd9d88cca2c",
+    "source": "Remove from class",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8156ecf2e91296d7",
+    "source": "Remove {0} from class",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8e3a5e34fef87b53",
+    "source": "Removing {0}…",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "51dd8fedc5a43e87",
+    "source": "Remove {0} from the class? They can't rejoin this classroom. Work they already handed in stays in your exports.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "70e5fec4a3b67a18",
+    "source": "Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "25ad680b1b31ecca",
+    "source": "GITZILLA classroom",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "cefa64a90b03644e",
+    "source": "Show the QR code and join link",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bd94f9ed89ceafd8",
+    "source": "show QR",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "56c09176fb0a6499",
+    "source": "Close the teacher screen? The lesson keeps running, and you can come back with the same link. To end it, use ⋯ → End lesson.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "c7099deab1358356",
+    "source": "show less",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "178353189e5b5aca",
+    "source": "show all instructions",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "f4599ae498c39990",
+    "source": "Read the full task",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7c7a549fe4834917",
+    "source": "The full task is on your phone or laptop.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0ddc3f7cc82c95e0",
+    "source": "Opens the class view (no names, scores or feedback) in a new window. Drag it to the projector screen.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "155eab270fd63692",
+    "source": "Open projector window ↗",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "af24a9554434902e",
+    "source": "QR code to join this classroom",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "01d66b3216de121f",
+    "source": "1. Scan the code with your phone camera, or open",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "952feb66f0c39848",
+    "source": "2. Type your name. That’s it: no account or app needed.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "362c5966669d44ec",
+    "source": "Room code",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "de394248a984dec5",
+    "source": "Students: join on your phone or laptop",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d941c858b46d274d",
+    "source": "Join this classroom",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1ca5e5f6a733b754",
+    "source": "Keep scores, feedback and code off a mirrored screen until you choose to show them",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4fd84cb3e29585d0",
+    "source": "Projecting: hide scores & feedback",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "541db6ca80b322ad",
+    "source": "Submissions",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4e959e888a60ec8c",
+    "source": "Who needs help first · tap a name to review",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "77ed10a2d34bf99b",
+    "source": "Your code",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7a78ff8f191d30c5",
+    "source": "Your GitHub version",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "c5b6d23bb918a2c4",
+    "source": "Push to GitHub → Submit → read your feedback → improve and submit again.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "42936d4d43faaa3f",
+    "source": "or submit a GitHub repo instead",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5b10cfa7cd954546",
+    "source": "This big screen is not the teacher’s. The teacher controls the class from the screen that created the room.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "3c2acbd684ab04fa",
+    "source": "Join as a student",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ef69c97189638eb5",
+    "source": "Students see this pause too.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "b2bb7fa1522be8b3",
+    "source": "Your teacher will resume in a moment.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "53749b750c1e8ed8",
+    "source": "End the lesson for everyone? Students’ work is kept and you can still export the results.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "e23a71af124d4271",
+    "source": "Python preset lessons",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0278548c49ff031b",
+    "source": "Before this: {0}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8c89ae48f89a898c",
+    "source": "3 steps · about {0} min · student file: {1}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8afaf17a018b349c",
+    "source": "Python preset lessons · from zero to dict",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "b6792ed0d4fb3dbf",
+    "source": "Pick a lesson (in order)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a0496b17ae218247",
+    "source": "Use this lesson",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d6b5e4ce297055c0",
+    "source": "Lesson ready. Open step 1 when the class has joined.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ec57da0b21f082af",
+    "source": "Customize first",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "66dda7cd6bb11c63",
+    "source": "Download the student starter file",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "90e78f316f9c1836",
+    "source": "Customize first only replaces the draft below; students get it when you publish. Put a downloaded .py file in the python/ folder shown. Every step can be edited.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "c163c5661c2062f6",
+    "source": "Teacher notes: preparing and reviewing",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "e23d738ef1e57bde",
+    "source": "How this step is scored (edit or upload a rubric)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "96d15cf84b61a585",
+    "source": "{0} min",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "3175dd4d43613625",
+    "source": "teacher paced",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9734b3695ba0685a",
+    "source": "1 check",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8a1c4f1dc0e92b33",
+    "source": "{0} checks",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "83a99fa0129dcd35",
+    "source": "in-app editor",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "630c74b2de456692",
+    "source": "untitled",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2cdd8f56c7e9a773",
+    "source": "Minutes (0: you decide when to stop)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "45e0b37a2ae29373",
+    "source": "How much the automatic checks count (%) · the rest is the rubric",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a8d3ed382fa06c7b",
+    "source": "Automatic checks (optional), one per line",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "715a821132e01f76",
+    "source": "Add a check:",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "6fa18cacdb599fd3",
+    "source": "+ File exists",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "72bcc76271f976e3",
+    "source": "+ File contains text",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "60adb6a302fcb402",
+    "source": "+ GitHub CI check",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5c96e92d2696d031",
+    "source": "Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed). You can always override a score with ✓ / ✗ during class.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2f53e6b1a2552c91",
+    "source": "Remove step {0} “{1}” and its instructions?",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "3a821707a228e1f8",
+    "source": "👁 Preview as a student",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2545c86fc86287e8",
+    "source": "Name of the class monster",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "c5a1b6a72f8880d4",
+    "source": "Submitted in the in-app editor.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1f72aac9107abb6b",
+    "source": "submitted code (read only)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bbb795c66833da05",
+    "source": "View submitted code (1 file)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "3b0516ea22c21e94",
+    "source": "View submitted code ({0} files)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "29b97be518f7c229",
+    "source": "starter code (preview)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1d8397143ff1dbc3",
+    "source": "This step has no starter files: students submit a GitHub repository.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "92f19534d8c54115",
+    "source": "Step {0} of {1}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8ff597e095f5be6e",
+    "source": "Starter code",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a6b8414056e6f622",
+    "source": "Student preview (not published yet)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "b011e6787e5aa55d",
+    "source": "🔒 Feedback, code and your notes for this student are hidden from the projector.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1af77ee273cbdaae",
+    "source": "Show details",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ff7faba050788094",
+    "source": "Submit your code to receive measured feedback and a next step.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8bb098eaafd019a7",
+    "source": "in-app code · {0}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "21be10abd17ed21a",
+    "source": "These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8b9301762db9face",
+    "source": "Found in your files",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "cb9fbdb3dd3cb644",
+    "source": "Not found yet: add it and submit again",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5cac97f9b1f7d1f4",
+    "source": "Pick a Python preset and press “Use this lesson”, or write your own steps below and press “Publish lesson”.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "051ddc5dccc9f3d0",
+    "source": "1 student connected. Open step 1 when the class is in; late joiners can still join.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "876bc4cb0c87f755",
+    "source": "{0} students connected. Open step 1 when the class is in; late joiners can still join.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1aa7b90deca86867",
+    "source": "Waiting for the first student to join: show them the QR code above.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "c0821a22570b4b01",
+    "source": "Checking 1 submission… the class attack unlocks when it finishes.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "6d581e881a5717d6",
+    "source": "Checking {0} submissions… the class attack unlocks when they finish.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "6f3ed9a83bcec9a2",
+    "source": "The class attack unlocks after the first submission (0 of {0} submitted).",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "306f7cdcf67dbaf8",
+    "source": "{0} of {1} submitted. Launch the class attack when you’re ready; students who haven’t submitted just don’t add damage.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "64e45b0252ac8d44",
+    "source": "The class attack is playing on the projector (about 10 seconds).",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "6df739c95d75d34a",
+    "source": "Say: “{0} of {1} of you submitted, and {2} improved the most.”",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d2d570547e9d3c6c",
+    "source": "Say: “{0} of {1} of you submitted.”",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "478b575097fa08e3",
+    "source": "Next up: {0}.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0730b9cd8f951b8b",
+    "source": "“Retry & improve” gives everyone another go at this step; “Complete lesson” ends it.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "61cd464a728dfd2b",
+    "source": "“Retry & improve” gives everyone another go at this step; “Open next step” starts step {0}.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "11e516dd70b7cf4a",
+    "source": "Lesson complete. Export the results for your records.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "74b3355a9f0a788c",
+    "source": "End lesson…",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4cf8a095560f481d",
+    "source": "Export results · end the lesson",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ed915e1452521e82",
+    "source": "Results for your records",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5767487ec49b9d3f",
+    "source": "⇩ Export CSV",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "451d9fb34c928dd1",
+    "source": "⇩ Export Markdown",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2bf54805479cbb1b",
+    "source": "Coding time",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "afd51896b45c3383",
+    "source": "Step {0}/{1}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "abe309e737e83045",
+    "source": "{0} of {1} submitted",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "809e50d79db093a6",
+    "source": " · {0} offline",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5a7971cf605d265b",
+    "source": "checking code…",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2979ee902346446a",
+    "source": "stuck: needs to resubmit",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4d4e1d6af3bf4b44",
+    "source": "reviewed by you",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1f8361e53335929e",
+    "source": "submitted · needs your review",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "f483300221ac555c",
+    "source": "your reviewed score",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "333865c54a9fc16e",
+    "source": "evidence checks passed (static, not run)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "24bec41e00d05996",
+    "source": "checks {0}/{1}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ce344c5e8efe7301",
+    "source": "no result yet",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8e45c9eccd72e7df",
+    "source": "Works: it does the task (100)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ee256ea1b8d8a75f",
+    "source": "Not yet: it doesn’t do the task yet (max 40)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d2baf0cfd36b619e",
+    "source": "Ask me: let’s talk about it (score unchanged)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4fe292186376b55a",
+    "source": "1 student contributed. Only improvements add extra damage.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "51aecbb1840eb3c2",
+    "source": "{0} students contributed. Only improvements add extra damage.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bdf375b2286eb026",
+    "source": "Checking your code…",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "151c5db601f45011",
+    "source": "Submit improved code",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "294fa5b3c1b9f0ee",
+    "source": "Submit my code",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ff492a6379e67643",
+    "source": "Scored your code ({0}). Keep improving until the teacher closes submissions.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "eb3168f9e7c8a4fd",
+    "source": "Your code saves on this device as you type. Submit when you are ready.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "272615fb1adef68b",
+    "source": "Reconnected. Everything is saved.",
+    "context": "client/app/main.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d516f3bd7df25807",
+    "source": "found in your files",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bbda6d5a98649615",
+    "source": "not found yet",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "03a714cf65787a6b",
+    "source": "check this yourself",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d99cbe3f85e93a42",
+    "source": "{0} of {1} done",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "100ec1bc78a4cc83",
+    "source": "To do",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "83f873f14955cf06",
+    "source": "Check these yourself before you submit. After you submit, the ones the computer can check turn ✓ or ✗.",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "43212c5762d408a2",
+    "source": "From your last submission: 1 still missing. Fix it and submit again.",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "fb46b7dcc17f0c51",
+    "source": "From your last submission: {0} still missing. Fix them and submit again.",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "88504f75accabbd1",
+    "source": "From your last submission. The computer only reads your files; your teacher checks what it prints.",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0eaed704010ffa66",
+    "source": "Done when",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1a822fae620b0182",
+    "source": "Expected output",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "985b22c49fc1634c",
+    "source": "Next hint ({0}/{1})",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "41bb97a5662eec48",
+    "source": "💡 Need a hint? ({0})",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0d0a8c6df3ace225",
+    "source": "Concepts",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "e2ca584d4893c27f",
+    "source": "Student task card",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "90b07545faa613d5",
+    "source": "{0} to-dos",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0977a4567f1619d9",
+    "source": "{0} done-when",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2d8aadd1991253af",
+    "source": "1 hint",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d9ecb5bb368feb86",
+    "source": "{0} hints",
+    "context": "client/edu/task-card.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4d19f436842e9bda",
+    "source": "one line per input() call",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a4de9c8f3379d74f",
+    "source": "input lines",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "deb9023e073fd083",
+    "source": "$ python output",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "f63124e67b48faf3",
+    "source": "input() lines",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "763674d07e2a79d8",
+    "source": "Runs only in your browser. It doesn't change your score.",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "b0f0b76f485c58b4",
+    "source": "▶ Run",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "15f637f29da9b7c7",
+    "source": "reset to starter",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "92eeb63b63fa07ae",
+    "source": "Write → ▶ Run to try it (only in your browser, never scored) → Submit → read your feedback → improve and submit again.",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9bf80a70f6d88a5f",
+    "source": "running {0}…",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1f2d81b4a8c91900",
+    "source": "loading Python… (the first run downloads ~10 MB)",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a778ab518733de3a",
+    "source": "(no output: add a print() to see something)",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5684fc83d71ec7a8",
+    "source": "Reset to the starter code? Your changes to this step will be lost.",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7ce1dc21786b58c2",
+    "source": "code for {0}",
+    "context": "client/edu/inapp-panel.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "cdd1ee34d2f39df5",
+    "source": "Python couldn't load in this browser.",
+    "context": "client/edu/py-run.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9009fc96acf6ba62",
+    "source": "Stopped after {0}s: is there a loop that never ends?",
+    "context": "client/edu/py-run.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "64390236910fb5c5",
+    "source": "code editor",
+    "context": "client/edu/code-editor.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a96583044eba7ad6",
+    "source": "HOW THIS STEP IS SCORED",
+    "context": "client/edu/rubric.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1b261341cb00768e",
+    "source": "edited for this step",
+    "context": "client/edu/rubric.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ef1b0cae2943a564",
+    "source": "lesson default",
+    "context": "client/edu/rubric.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "20260eac0b1027e1",
+    "source": "Students see these criteria under “How this task is scored”.",
+    "context": "client/edu/rubric.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "372ea2d8a3fefc0d",
+    "source": "measures",
+    "context": "client/edu/rubric.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a5fc918683bf9602",
+    "source": "Types",
+    "context": "client/edu/rubric-data.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "c011d6097bfbc8e9",
+    "source": "License",
+    "context": "client/edu/rubric-data.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "6c35493a2b937829",
+    "source": "count",
+    "context": "client/edu/rubric-data.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5ea44c3961f16643",
+    "source": "lines",
+    "context": "client/edu/rubric-data.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a038e3fb2ec9153b",
+    "source": "⏸ Paused by your teacher",
+    "context": "client/app/pause.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "158b1421d459d2c6",
+    "source": "The clock is frozen for the whole class.",
+    "context": "client/app/pause.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "556ee8e0e3078fef",
+    "source": "▶ Resume (P)",
+    "context": "client/app/pause.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "fd659ca63efccd6a",
+    "source": "Resuming in {0}…",
+    "context": "client/app/pause.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "e4643a87746419f1",
+    "source": "Rubric:",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7923e04c84194586",
+    "source": "{0} of {1} submitted · class average {2} · boss −{3}%",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "63be20a2c684416b",
+    "source": "{0} submissions · average {1} · boss −{2}% · past class size unavailable",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "aff61805cf98f409",
+    "source": "No submissions to review yet.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "02b8a52d93bf727a",
+    "source": "Steps reviewed: {0} · students with submissions: {1} · class average {2}",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d4df477cdf44c1c3",
+    "source": "No class rounds have been reviewed yet.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "93c3d4497c74d3f1",
+    "source": "Below 50",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "3cfbb6a4430428e1",
+    "source": "50 to under 80",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "dc6c682b28206105",
+    "source": "{0}/{1}: {2}. Work through one example together.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "01928b376e11533f",
+    "source": "{0}/{1}: {2}. The class also needed this last time; try a different example.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "efb2ccbf57b30088",
+    "source": "{0} students have no submission. Check that they can open the editor and send their work.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "91bafdf552bc4ab2",
+    "source": "One student has no submission. Check that they can open the editor and send their work.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "cb81117f41f4c87a",
+    "source": "The check details are unavailable. Ask students to show one example before choosing what to revisit.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "f34b30ddc678f568",
+    "source": "Check details cover {0} of {1} submissions. Ask the others to show their work.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "beea4945975117c2",
+    "source": "Ask students to show the result and explain one change they made.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "618d7bae6c4e3403",
+    "source": "Ask a few students to explain how their code works before moving on.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "14ca980edf9dda06",
+    "source": "No submission in this round. Help them send one small change.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ec489a5670ff23d2",
+    "source": "Score {0}. Offer a short check-in and one small next step.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "452c1ab1deb6bb9a",
+    "source": "Take a look together: {0}",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "e295efffcf9db688",
+    "source": "Improved by {0} points this round.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8608f26048883ece",
+    "source": "Improved by {0} points on {1}.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a391c7917b6fcfc7",
+    "source": "Met every recorded check on the first round.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "605b857679d5e710",
+    "source": "Met every recorded check this round.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "dc675e76aff5adde",
+    "source": "Open this step again so students can send their work.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "fe913ce33bd74fb8",
+    "source": "Give students time to submit before moving on.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ab145d4cbf8b8a9d",
+    "source": "Retry this step; most submitted work is one check away.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "72660d3f89e582b0",
+    "source": "Work through one example together, then retry this step.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "0b54029ba637247c",
+    "source": "Check one example of student work before choosing the next step.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7a48e73e7d67e3a2",
+    "source": "Move on to step {0}: {1}.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "8aead715581b53cb",
+    "source": "Finish the lesson and ask students to explain one change they made.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "27f492d72e83c66b",
+    "source": "No submission in the reviewed rounds. Help them get started.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "41e2b0a9e8a63139",
+    "source": "Average {0} across {1} submitted steps. Offer a short check-in.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bbb903a67625f3a2",
+    "source": "Score {0} on the submitted step. Offer a short check-in.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a945bcaf4c0f34a9",
+    "source": "Score {0} on {1}. Check one example together.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "a6a9972db567b665",
+    "source": "Start next time by revisiting {0}.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "27e5dfea4d7bb690",
+    "source": "Return to step {0}: {1} before starting a new lesson.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9441f24b234b366a",
+    "source": "Review the first task and invite one small submission.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bf4e6b4186aff017",
+    "source": "Try Python lesson {0} next.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "756ce8194872972f",
+    "source": "Choose a small project that combines what the class practiced.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "e074f20d4a2ec1d3",
+    "source": "Choose a short task that uses today’s ideas in a new way.",
+    "context": "client/edu/debrief.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "197d62af68dcc247",
+    "source": "Round debrief",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "90eeff6b8d054fcf",
+    "source": "Lesson debrief",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2aecffe2e20e1ebc",
+    "source": "What the class got",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d0562ddc6cc31735",
+    "source": "What to reteach",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1ff57a29d7c9d11b",
+    "source": "Next",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2a19bb78de3ef043",
+    "source": "Students",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "07a0c382bbf2e577",
+    "source": "Names are hidden while you project.",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7eb9efe23831fcd9",
+    "source": "Show names",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4ca0ca385cde46c6",
+    "source": "Need help",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2a182ac744ad6c76",
+    "source": "Shout-outs",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1de3df70ddf4faab",
+    "source": "Steps",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "282b9d1443d60bf0",
+    "source": "average {0}",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "ae37c345f12c1123",
+    "source": "{0}/{1} submitted",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2cfa436ab0abf315",
+    "source": "{0} attempts",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "66545028939a3d6a",
+    "source": "Hardest:",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "132cd5224f89c02f",
+    "source": "Retry this step",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "298a9207a732a11d",
+    "source": "Next step",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "50d479ae5658a97d",
+    "source": "Start the next lesson in a new classroom",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "62e97f8f48b7e6f3",
+    "source": "No submission yet for this step.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d55ce3bec7f5c735",
+    "source": "Could not open a new classroom.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "5c403f1ce784ac4c",
+    "source": "attempt {0}",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "dcc839a4015c4b7d",
+    "source": "View",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "5ce7ae33e74fb05f",
+    "source": "3D view (beta)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "05033b3260dc79f4",
+    "source": "Set by this link.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "6033a0fed7886356",
+    "source": "Vision Pro",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "36b2ce46fcac24cb",
+    "source": "Enter Vision Pro",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "e2285f224935f6f3",
+    "source": "Exit Vision Pro",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "a3ce0b6106cdb398",
+    "source": "follow",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "44c59f47532d6195",
+    "source": "follow a hero",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "bd445c462b7eebbc",
+    "source": "overview",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f469802a31447f90",
+    "source": "scale",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "dd7a47c0c9984e92",
+    "source": "tabletop",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "80e06ac967f42160",
+    "source": "life-size",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b204d40acb88c70d",
+    "source": "loading the 3D scene…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "29740e30584f1e1a",
+    "source": "3D view unavailable here: showing 2D",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "788224c61a79970a",
+    "source": "could not start XR: {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "3a7a9ed9e632926c",
+    "source": "1 more check",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d55442ac052575b9",
+    "source": "{0} more checks",
+    "context": "client/edu/debrief-view.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "bba829d0bb9d47e6",
+    "source": "🙈 Scores hidden (projecting)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9d151e4c52ca6777",
+    "source": "👁 Scores visible",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "b938d12c1a275ade",
+    "source": "Show scores on this screen",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "d105af67131760ac",
+    "source": "Hide scores on this screen",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "3fe43cfcd97a0101",
+    "source": "↺ auto",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "4074dab1e4851351",
+    "source": "You chose to hide scores here. Press and hold a 🙈 chip to peek.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1f8579d6feeca84e",
+    "source": "You chose to show scores here. Only do this if this screen isn’t on the projector.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9c392b7d6f971ce4",
+    "source": "Hidden because this screen may be on the projector. Open the projector window to give the class its own view.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "03998310e3fff2f5",
+    "source": "Visible: the class sees the projector window, not this screen.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7f4a2378986f74c0",
+    "source": "Press and hold to peek",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "03681706078d1d34",
+    "source": "{0}: score hidden. Press and hold to peek.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9a484cfc07521e19",
+    "source": "🙈 hidden",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "9f1de29f7ba887c1",
+    "source": "Class impact: 0 damage (the boss was already defeated)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "2e345634242c5178",
+    "source": "Class impact: 0 damage (this step’s share of the boss is used up; the next step unlocks more)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "908759ffac38e9ec",
+    "source": "Class impact: 0 damage (no improvement since the last round)",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "1dff892932df68ef",
+    "source": "“Retry this step” (in the debrief below) gives everyone another go; “Complete lesson” ends it.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "276e74f4057942ba",
+    "source": "“Retry this step” (in the debrief below) gives everyone another go; “Next step” starts step {0}.",
+    "context": "client/app/classroom.ts (claude-edu, hand-translated)"
   }
 ]

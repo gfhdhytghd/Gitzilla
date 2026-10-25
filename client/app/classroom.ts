@@ -14,6 +14,9 @@ import { stepSummary as summarize } from '../edu/summary';
 import { createInAppPanel } from '../edu/inapp-panel';
 import { createCodeEditor } from '../edu/code-editor';
 import { createTaskCard, richText } from '../edu/task-card';
+import { createClassroomKicked } from '../edu/classroom-kicked';
+import { buildLessonDebrief, buildRoundDebrief, type Debrief, type LessonDebrief } from '../edu/debrief';
+import { createDebriefCard, debriefMarkdown } from '../edu/debrief-view';
 import { alignDoneWhen, doneWhenFor } from '../edu/task-brief';
 import type { InAppFile } from '../../shared/classroom';
 import './classroom.css';
@@ -50,7 +53,13 @@ export function createClassroom(app: AppCtx): Screen {
   let lastServerTime = state?.serverTime;
   let draft: ClassroomPlan = localizeClassroomPlan(state?.plan ?? defaultClassroomPlan(), locale());
   let selected: string | null = null;
-  let selectedPreset = pythonClassroomPresets[0].id;
+  // teacher console: "Remove from class" asks inline on the student's row; `removing` = sent, waiting for the roster
+  let confirmRemove: string | null = null;
+  const removing = new Map<string, number>();
+  let kickedOut = false;
+  // ?preset=<id>: a classroom opened from the lesson debrief's "next lesson" starts with that preset selected
+  const wantedPreset = new URLSearchParams(location.search).get('preset');
+  let selectedPreset = pythonClassroomPresets.some(p => p.id === wantedPreset) ? wantedPreset! : pythonClassroomPresets[0].id;
   let rowsSig = '', detailsSig = '', phaseSig = '', planSig = '';
   let raidKey = '', expectationsSig = '';
   const rawChecks = new Map<string, string>();
@@ -90,7 +99,7 @@ export function createClassroom(app: AppCtx): Screen {
   const stepHead = h('div.cr-step-head', { 'data-testid': 'classroom-step-head' }, headStep, headTitle, headClock);
   const controls = h('div.cr-controls', { 'data-testid': 'classroom-controls' });
   const openProjector = h('button.btn.cr-open-projector', { type: 'button', 'data-testid': 'classroom-open-projector', title: 'Opens the class view (no names, scores or feedback) in a new window. Drag it to the projector screen.',
-    onclick: () => { window.open(`${location.pathname}?screen=1&view=projector`, `gitzilla-projector-${app.room}`, 'popup,width=1280,height=720'); } }, 'Open projector window ↗');
+    onclick: () => { window.open(`${location.pathname}?screen=1&view=projector`, `gitzilla-projector-${app.room}`, 'popup,width=1280,height=720'); projectorSeen = Date.now(); rowsSig = detailsSig = ''; render(); } }, 'Open projector window ↗');
   // why the main action is (not) available yet: teachers shouldn't have to guess at a greyed-out button
   const controlsHint = h('p.cr-controls-hint', { role: 'status', 'data-testid': 'classroom-controls-hint' });
   // Projector: how students join (QR + link + code). Inline while the class is filling up; any time later as an
@@ -108,15 +117,36 @@ export function createClassroom(app: AppCtx): Screen {
     h('section.cr-join', null, h('h2', null, 'Join this classroom'), joinBody(),
       h('button.btn', { type: 'button', onclick: () => { joinOverlay.hidden = true; } }, 'Close')));
   const rosterList = h('div.cr-roster-list', { 'data-testid': 'classroom-roster' });
-  // Projector-safe (teacher screen): a selected student's private feedback/code stays hidden on the shared screen
-  // until the teacher reveals it for that student. Teachers whose screen isn't projected can switch it off.
-  let projectorSafe = store.get('kaiju.projectorSafe') !== '0';
+  // Scores on the teacher console: hidden while this screen may be on the projector. "auto" (default): if this
+  // browser has the projector window open (it sends a heartbeat on a BroadcastChannel), the class is looking at that
+  // window, so this console is private and shows scores; without one, the console itself is probably projected, so
+  // scores hide. The teacher can force "hide" or "show". Hidden scores are a clear "🙈 hidden" chip (press and hold,
+  // or focus, to peek), never a blur. A selected student's feedback/code stays behind "Show details" while hidden.
+  type ScoreMode = 'auto' | 'hide' | 'show';
+  const savedMode = store.get('kaiju.scoreMode');
+  let scoreMode: ScoreMode = savedMode === 'hide' || savedMode === 'show' ? savedMode : 'auto';
+  let projectorSeen = 0;
+  const projectorOpen = () => Date.now() - projectorSeen < 6000;
+  const hideScores = () => scoreMode === 'hide' || (scoreMode === 'auto' && !projectorOpen());
+  let projectorSafe = true;   // = hideScores(), refreshed on every render
   let revealed: string | null = null;
-  const safeToggle = h('input', { type: 'checkbox', 'data-testid': 'classroom-projector-safe' }) as HTMLInputElement;
-  safeToggle.checked = projectorSafe;
-  safeToggle.onchange = () => { projectorSafe = safeToggle.checked; store.set('kaiju.projectorSafe', projectorSafe ? '1' : '0'); revealed = null; detailsSig = rowsSig = ''; render(); };
-  const safeLabel = h('label.cr-safe', { title: 'Keep scores, feedback and code off a mirrored screen until you choose to show them' }, safeToggle, h('span', null, 'Projecting: hide scores & feedback'));
-  const roster = h('aside.cr-roster', null, h('div.cr-roster-heading', null, h('h2', null, 'Submissions'), h('small', null, 'Who needs help first · tap a name to review')), rosterList);
+  const projectorChannel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(`gitzilla-projector-${app.room}`);
+  const setScoreMode = (mode: ScoreMode) => { scoreMode = mode; store.set('kaiju.scoreMode', mode); revealed = null; detailsSig = rowsSig = ''; render(); };
+  const scoreToggle = h('button.cr-score-toggle', { type: 'button', 'data-testid': 'classroom-projector-safe', onclick: () => setScoreMode(projectorSafe ? 'show' : 'hide') });
+  const scoreAuto = h('button.cr-score-auto', { type: 'button', 'data-testid': 'classroom-score-auto', onclick: () => setScoreMode('auto') }, '↺ auto');
+  const scoreWhy = h('small.cr-score-why', { 'data-testid': 'classroom-score-why' });
+  const scoreBox = h('div.cr-score-box', null, h('div.cr-score-row', null, scoreToggle, scoreAuto), scoreWhy);
+  const renderScoreBox = () => {
+    setText(scoreToggle, projectorSafe ? '🙈 Scores hidden (projecting)' : '👁 Scores visible');
+    scoreToggle.classList.toggle('on', projectorSafe);
+    scoreToggle.title = projectorSafe ? 'Show scores on this screen' : 'Hide scores on this screen';
+    scoreAuto.hidden = scoreMode === 'auto';
+    setText(scoreWhy, scoreMode === 'hide' ? 'You chose to hide scores here. Press and hold a 🙈 chip to peek.'
+      : scoreMode === 'show' ? 'You chose to show scores here. Only do this if this screen isn’t on the projector.'
+      : projectorSafe ? 'Hidden because this screen may be on the projector. Open the projector window to give the class its own view.'
+      : 'Visible: the class sees the projector window, not this screen.');
+  };
+  const roster = h('aside.cr-roster', null, h('div.cr-roster-heading', null, h('h2', null, 'Submissions'), h('small', null, 'Who needs help first · tap a name to review'), scoreBox), rosterList);
   const bossHpFill = h('i'), bossHpText = h('strong');
   const bossName = h('h2', { translate: 'no' });
   // the game's real kaiju renderer; HP drives phase tint, broken limbs, staggers during the class attack, death
@@ -173,8 +203,29 @@ export function createClassroom(app: AppCtx): Screen {
     waitHint: 'Your teacher will resume in a moment.',
     onChange: on => el.classList.toggle('cr-raid-paused', on),
   });
-  const consoleBar = h('div.cr-console-bar', { 'data-testid': 'classroom-console-bar' }, h('div.cr-console-row', null, controls, h('div.cr-console-tools', null, safeLabel, openProjector)), controlsHint);
-  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, joinCard, consoleBar, stepHead, task, editor, hostBoard, studentBoard, joinOverlay, pause.el);
+  // Teacher debrief (take-edu's model): round debrief after a class attack, lesson debrief when the lesson ends.
+  // Console: everything, names only when not projecting (or revealed); projector: headline + check bars, no names.
+  const debrief = createDebriefCard();
+  let debriefNames = '';   // round key whose names the teacher chose to show while projecting
+  const currentDebrief = (s: ClassroomState): { kind: 'round' | 'lesson'; title: string; key: string; d: Debrief | LessonDebrief } | null => {
+    const reports = teacher() ? app.classroomReports ?? {} : {};
+    if (s.phase === 'complete') return { kind: 'lesson', title: s.plan.title, key: 'lesson', d: buildLessonDebrief(s, reports) };
+    const round = s.rounds.at(-1);
+    if (s.phase !== 'feedback' || !round) return null;
+    const at = s.plan.steps.findIndex(st => st.id === round.stepId);
+    const title = `${t(`Step ${at + 1}`)} · ${s.plan.steps[at]?.title ?? ''}${round.attempt > 1 ? ` · ${t(`attempt ${round.attempt}`)}` : ''}`;
+    return { kind: 'round', title, key: `${round.stepId}:${round.attempt}:${round.at}`, d: buildRoundDebrief(s, reports, round) };
+  };
+  const openNextLesson = async (presetId: string) => {
+    const res = await fetch('/api/room?mode=edu', { method: 'POST' });
+    if (!res.ok) return toast('Could not open a new classroom.', 'err');
+    const { room } = await res.json() as { room: string };
+    location.assign(`/r/${room}?screen=1&preset=${encodeURIComponent(presetId)}`);
+  };
+  const consoleBar = h('div.cr-console-bar', { 'data-testid': 'classroom-console-bar' }, h('div.cr-console-row', null, controls, h('div.cr-console-tools', null, openProjector)), controlsHint);
+  const barSize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { el.style.setProperty('--cr-bar-h', `${consoleBar.hidden ? 0 : consoleBar.offsetHeight}px`); });
+  barSize?.observe(consoleBar);
+  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, joinCard, consoleBar, stepHead, task, debrief.el, editor, hostBoard, studentBoard, joinOverlay, pause.el);
   // teacher on the projector: P / Esc toggles the raid pause
   const onKey = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
@@ -191,7 +242,7 @@ export function createClassroom(app: AppCtx): Screen {
   const command = (action: ClassroomCommand) => { if (CONFIRM[action] && !confirm(t(CONFIRM[action]!))) return; app.conn.send({ t: 'classroomControl', action }); };
   const buildPlanEditor = () => {
     for (const dispose of disposables.splice(0)) dispose();
-    const presets = h('select', { 'data-testid': 'classroom-preset-select', 'aria-label': 'Python 预设课程' },
+    const presets = h('select', { 'data-testid': 'classroom-preset-select', 'aria-label': 'Python preset lessons' },
       ...getPythonClassroomPresets(locale()).map(p => h('option', { value: p.id }, p.title))) as HTMLSelectElement;
     presets.value = selectedPreset;
     const presetSummary = h('p'), presetPrerequisite = h('p.cr-preset-meta'), presetFile = h('p.cr-preset-meta');
@@ -200,8 +251,8 @@ export function createClassroom(app: AppCtx): Screen {
       selectedPreset = presets.value;
       const preset = getPythonClassroomPresets(locale()).find(p => p.id === selectedPreset)!;
       presetSummary.textContent = preset.summary;
-      presetPrerequisite.textContent = `前置知识：${preset.prerequisite}`;
-      presetFile.textContent = `3 个步骤 · 约 ${preset.minutes} 分钟 · 学生文件：${preset.file}`;
+      presetPrerequisite.textContent = t(`Before this: ${preset.prerequisite}`);
+      presetFile.textContent = t(`3 steps · about ${preset.minutes} min · student file: ${preset.file}`);
       guide.textContent = pythonTeacherGuide(selectedPreset, locale());
     };
     presets.onchange = previewPreset; previewPreset();
@@ -211,26 +262,25 @@ export function createClassroom(app: AppCtx): Screen {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
     const library = h('section.cr-preset-library', { 'data-testid': 'classroom-preset-library' },
-      h('h3', null, 'Python 预设课程 · 从零到 dict'),
-      field('按顺序选择一课', presets), presetSummary, presetPrerequisite, presetFile,
+      h('h3', null, 'Python preset lessons · from zero to dict'),
+      field('Pick a lesson (in order)', presets), presetSummary, presetPrerequisite, presetFile,
       h('div.cr-plan-buttons', null,
         button('Use this lesson', 'classroom-preset-use', () => { draft = pythonClassroomPlan(selectedPreset, locale()); rawChecks.clear(); buildPlanEditor(); app.conn.send({ t: 'classroomPlan', plan: structuredClone(draft) }); toast('Lesson ready. Open step 1 when the class has joined.', 'ok'); }, 'btn-primary'),
         button('Customize first', 'classroom-preset-load', () => { draft = pythonClassroomPlan(selectedPreset, locale()); rawChecks.clear(); buildPlanEditor(); editor.querySelector('.cr-step-editors')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }),
-        button('下载学生起始文件', 'classroom-preset-download', starterDownload)),
-      h('small', null, '载入只替换下面的草稿；发布后学生才会收到。下载的 .py 文件需放入所示的 python/ 目录。所有题目可编辑。'),
-      h('details', null, h('summary', null, '教师备课与复核说明'), guide));
+        button('Download the student starter file', 'classroom-preset-download', starterDownload)),
+      h('small', null, 'Customize first only replaces the draft below; students get it when you publish. Put a downloaded .py file in the python/ folder shown. Every step can be edited.'),
+      h('details', null, h('summary', null, 'Teacher notes: preparing and reviewing'), guide));
     const lessonTitle = h('input', { value: draft.title, maxlength: 120, 'data-testid': 'lesson-title' }) as HTMLInputElement;
     lessonTitle.oninput = () => { draft.title = lessonTitle.value; };
     const target = h('input', { value: draft.bossName, maxlength: 80, 'data-testid': 'lesson-boss-name' }) as HTMLInputElement;
     target.oninput = () => { draft.bossName = target.value; };
     const steps = h('div.cr-step-editors');
-    const stepInputs: { step: ClassroomStep; name: HTMLInputElement; instructions: HTMLTextAreaElement }[] = [];
+    const stepInputs: { step: ClassroomStep; name: HTMLInputElement; instructions: HTMLTextAreaElement; summary(): void }[] = [];
     for (const [index, step] of draft.steps.entries()) {
       const name = h('input', { value: step.title, maxlength: 120, 'data-testid': `step-title-${index}` }) as HTMLInputElement;
       name.oninput = () => { step.title = name.value; };
       const instructions = h('textarea', { rows: 4, maxlength: 8000, 'data-testid': `step-instructions-${index}` }, step.instructions) as HTMLTextAreaElement;
       instructions.oninput = () => { step.instructions = instructions.value; };
-      stepInputs.push({ step, name, instructions });
       const duration = h('input', { type: 'number', min: 0, max: 120, value: step.durationSec / 60, 'data-testid': `step-minutes-${index}` }) as HTMLInputElement;
       duration.oninput = () => { step.durationSec = Math.round(Number(duration.value) * 60); };
       const checks = h('textarea', { rows: 3, spellcheck: 'false', placeholder: 'file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests', 'data-testid': `step-checks-${index}` }, rawChecks.get(step.id) ?? checkText(step)) as HTMLTextAreaElement;
@@ -241,19 +291,23 @@ export function createClassroom(app: AppCtx): Screen {
       // the brief's "Done when" rows must stay one per check, in order: re-align them from the preset's own lines
       const briefOrigin = step.brief ? { checks: step.checks, doneWhen: step.brief.doneWhen } : null;
       checks.oninput = () => { rawChecks.set(step.id, checks.value); try { step.checks = parseChecks(checks.value); if (step.brief && briefOrigin) step.brief = { ...step.brief, doneWhen: alignDoneWhen(briefOrigin, step.checks) }; checksWarning.textContent = ''; } catch (e) { checksWarning.textContent = (e as Error).message; } };
-      const rubricStatus = h('small', null, `Rubric: ${step.rubric.title}`);
+      // label and title as separate nodes so each is translated (the title is a catalog string for the default rubric)
+      const rubricTitle = h('span', null, step.rubric.title);
+      const rubricStatus = h('small', null, 'Rubric:', ' ', rubricTitle);
       const rubricDetails = h('details.cr-rubric-config', null, h('summary', null, 'How this step is scored (edit or upload a rubric)'), rubricStatus);
       let rubricMounted = false;
       rubricDetails.addEventListener('toggle', () => {
         if (!rubricDetails.open || rubricMounted) return;
         rubricMounted = true;
-        const ed = createRubricEditor({ current: step.rubric, room: app.room, token: app.token, context: 'classroom', onUse: r => { step.rubric = r; ed.setCurrent(r); rubricStatus.textContent = `Rubric: ${r.title}`; } });
+        const ed = createRubricEditor({ current: step.rubric, room: app.room, token: app.token, context: 'classroom', onUse: r => { step.rubric = r; ed.setCurrent(r); rubricTitle.textContent = r.title; } });
         rubricDetails.append(ed.el); disposables.push(() => ed.dispose());
       });
       const move = (delta: number) => { const to = index + delta; if (to < 0 || to >= draft.steps.length) return; [draft.steps[index], draft.steps[to]] = [draft.steps[to], draft.steps[index]]; buildPlanEditor(); };
-      const stepSummary = () => `Step ${index + 1} · ${step.title || t('untitled')} · ${step.durationSec ? `${Math.round(step.durationSec / 60)} min` : t('teacher paced')} · ${step.checks.length} check${step.checks.length === 1 ? '' : 's'}${step.starter?.length ? t(' · in-app editor') : ''}`;
+      const stepSummary = () => [t(`Step ${index + 1}`), step.title || t('untitled'), step.durationSec ? t(`${Math.round(step.durationSec / 60)} min`) : t('teacher paced'),
+        t(step.checks.length === 1 ? '1 check' : `${step.checks.length} checks`), ...(step.starter?.length ? [t('in-app editor')] : [])].join(' · ');
       const summaryLine = h('summary', null, stepSummary());
-      name.addEventListener('input', () => { summaryLine.textContent = stepSummary(); });
+      for (const input of [name, duration, checks]) input.addEventListener('input', () => { summaryLine.textContent = stepSummary(); });
+      stepInputs.push({ step, name, instructions, summary: () => { summaryLine.textContent = stepSummary(); } });
       steps.append(h('details.cr-step-editor', { open: index === 0 || undefined }, summaryLine, field('Task title', name), field('Student instructions', instructions),
         h('div.cr-editor-numbers', null, field('Minutes (0: you decide when to stop)', duration), field('How much the automatic checks count (%) · the rest is the rubric', weight)),
         field('Automatic checks (optional), one per line', checks),
@@ -272,7 +326,7 @@ export function createClassroom(app: AppCtx): Screen {
       lessonTitle.value = draft.title; target.value = draft.bossName;
       const choices = getPythonClassroomPresets(locale());
       for (const option of presets.options) option.textContent = choices.find(p => p.id === option.value)?.title ?? option.textContent;
-      for (const fields of stepInputs) { fields.name.value = fields.step.title; fields.instructions.value = fields.step.instructions; }
+      for (const fields of stepInputs) { fields.name.value = fields.step.title; fields.instructions.value = fields.step.instructions; fields.summary(); }
       previewPreset();
     };
     editor.replaceChildren(h('div.cr-editor-intro', null, h('h2', null, 'Build the lesson'), h('p', null, 'Give the class a sequence of code challenges. Each task ends with one shared attack.'),
@@ -295,7 +349,7 @@ export function createClassroom(app: AppCtx): Screen {
     const step = state?.plan.steps.find(st => st.id === report.stepId);
     const ce = createCodeEditor({ starter: files, readOnly: true, language: step?.language ?? 'python', label: 'submitted code (read only)' });
     viewer = ce;
-    return h('details.cr-code-view', { 'data-testid': 'classroom-code-view' }, h('summary', null, `View submitted code (${files.length} file${files.length === 1 ? '' : 's'})`), ce.el);
+    return h('details.cr-code-view', { 'data-testid': 'classroom-code-view' }, h('summary', null, files.length === 1 ? 'View submitted code (1 file)' : `View submitted code (${files.length} files)`), ce.el);
   };
   const currentStep = () => state?.plan.steps[state.stepIndex];
   // What students will see for each (unpublished) step: title, instructions, starter files, how it's scored.
@@ -321,6 +375,7 @@ export function createClassroom(app: AppCtx): Screen {
     show(); el.append(ov);
   };
   const renderReport = (id: string | null) => {
+    projectorSafe = teacher() && hideScores();
     const report = id ? app.classroomReports?.[id] : undefined;
     const error = id ? app.classroomErrors?.[id] : undefined;
     const sig = JSON.stringify([id, report, error, teacher(), state?.phase, projectorSafe, revealed]);
@@ -332,6 +387,8 @@ export function createClassroom(app: AppCtx): Screen {
         h('div.cr-plan-buttons', null, button('Show details', 'classroom-reveal', () => { revealed = id; detailsSig = ''; renderReport(id); }, 'btn-primary')));
       return;
     }
+    // teacher picked a student with nothing to review yet (e.g. from the debrief's "need help")
+    if (!report && !error && teacher() && id) { review.replaceChildren(h('h2', null, `${state?.rows.find(r => r.id === id)?.name ?? ''} · review`), h('p', null, 'No submission yet for this step.')); return; }
     if (!report) { review.replaceChildren(h('h2', null, teacher() ? 'Code review' : 'Your feedback'), h('p', null, error ?? (teacher() ? 'Select a student to inspect their commit, evidence and next steps.' : (currentStep()?.starter?.length ? 'Submit your code to receive measured feedback and a next step.' : 'Submit your GitHub version to receive measured feedback and a next step.')))); return; }
     const name = state?.rows.find(r => r.id === id)?.name ?? app.name;
     const localCheckDetail = (detail: string) => { const colon = detail.indexOf(': '); return colon < 0 ? t(detail) : detail.slice(0, colon + 2) + t(detail.slice(colon + 2)); };
@@ -352,7 +409,7 @@ export function createClassroom(app: AppCtx): Screen {
     const cardSaysIt = !teacher() && !!reportStep?.brief?.doneWhen.length;
     review.replaceChildren(h('div.cr-feedback-title', null, h('h2', null, teacher() ? `${name} · review` : 'Your feedback'), h('strong.cr-score', { 'data-testid': 'classroom-own-score' }, int(report.score), h('small', null, ' /100'))),
       report.source === 'in-app'
-        ? h('p.cr-version', null, `in-app code · ${report.commit.replace(/^inapp:/, '')}`)
+        ? h('p.cr-version', null, t(`in-app code · ${report.commit.replace(/^inapp:/, '')}`))
         : h('p.cr-version', null, h('a', { href: `https://github.com/${report.repo}/commit/${report.commit}`, target: '_blank', rel: 'noopener noreferrer' }, `${report.repo} @ ${report.commit.slice(0, 8)}`)),
       codeViewer(report),
       !teacher() && !report.teacherReview && report.checks.length && !cardSaysIt
@@ -376,16 +433,27 @@ export function createClassroom(app: AppCtx): Screen {
   const download = async (format: 'csv' | 'md') => {
     const response = await fetch(`/api/room/${app.room}/classroom.${format}`, { headers: { 'X-Room-Token': app.token ?? '' } });
     if (!response.ok) return toast('The classroom report could not be exported.', 'err');
-    const url = URL.createObjectURL(await response.blob()), link = h('a', { href: url, download: `classroom-${app.room}.${format}` }); link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    let blob = await response.blob();
+    if (format === 'md' && state?.rounds.length) {
+      // the teacher's private record: lesson debrief (every reviewed step), plus this round's when it's open
+      const reports = app.classroomReports ?? {}, parts = [await blob.text()];
+      const round = state.phase === 'feedback' ? currentDebrief(state) : null;
+      if (round) parts.push(debriefMarkdown('round', round.title, round.d, t));
+      parts.push(debriefMarkdown('lesson', state.plan.title, buildLessonDebrief(state, reports), t));
+      blob = new Blob([parts.join('\n\n')], { type: 'text/markdown;charset=utf-8' });
+    }
+    const url = URL.createObjectURL(blob), link = h('a', { href: url, download: `classroom-${app.room}.${format}` }); link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const controlHint = (s: ClassroomState | undefined): string => {
     if (!s) return 'Pick a Python preset and press “Use this lesson”, or write your own steps below and press “Publish lesson”.';
     const connected = s.rows.filter(r => r.connected).length, total = s.rows.length;
     const submitted = s.rows.filter(r => r.status === 'submitted').length, queued = s.rows.filter(r => r.status === 'queued').length;
     switch (s.phase) {
-      case 'setup': return connected ? `${connected} student${connected === 1 ? '' : 's'} connected. Open step 1 when the class is in; late joiners can still join.` : 'Waiting for the first student to join: show them the QR code above.';
+      case 'setup': return !connected ? 'Waiting for the first student to join: show them the QR code above.'
+        : connected === 1 ? '1 student connected. Open step 1 when the class is in; late joiners can still join.'
+        : `${connected} students connected. Open step 1 when the class is in; late joiners can still join.`;
       case 'coding': case 'paused':
-        if (queued) return `Checking ${queued} submission${queued === 1 ? '' : 's'}… the class attack unlocks when they finish.`;
+        if (queued) return queued === 1 ? 'Checking 1 submission… the class attack unlocks when it finishes.' : `Checking ${queued} submissions… the class attack unlocks when they finish.`;
         if (!submitted) return `The class attack unlocks after the first submission (0 of ${total} submitted).`;
         return `${submitted} of ${total} submitted. Launch the class attack when you’re ready; students who haven’t submitted just don’t add damage.`;
       case 'raid': return 'The class attack is playing on the projector (about 10 seconds).';
@@ -393,8 +461,10 @@ export function createClassroom(app: AppCtx): Screen {
         // a line the teacher can say out loud after the attack
         const last = s.rounds.at(-1), best = last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement)[0];
         const next = s.plan.steps[s.stepIndex + 1];
-        const say = `Say: “${submitted} of ${total} of you submitted${best ? `, and ${best.name} improved the most` : ''}.${next ? ` Next: ${next.title}.` : ''}” `;
-        return say + (s.stepIndex + 1 >= s.plan.steps.length ? '“Retry & improve” gives everyone another go at this step; “Complete lesson” ends it.' : `“Retry & improve” gives everyone another go at this step; “Open next step” starts step ${s.stepIndex + 2}.`);
+        const said = best ? t(`Say: “${submitted} of ${total} of you submitted, and ${best.name} improved the most.”`) : t(`Say: “${submitted} of ${total} of you submitted.”`);
+        const upNext = next ? t(`Next up: ${next.title}.`) : '';
+        const how = s.stepIndex + 1 >= s.plan.steps.length ? t('“Retry this step” (in the debrief below) gives everyone another go; “Complete lesson” ends it.') : t(`“Retry this step” (in the debrief below) gives everyone another go; “Next step” starts step ${s.stepIndex + 2}.`);
+        return [said, upNext, how].filter(Boolean).join(' ');
       }
       case 'complete': return 'Lesson complete. Export the results for your records.';
     }
@@ -410,7 +480,8 @@ export function createClassroom(app: AppCtx): Screen {
     if (s.phase === 'coding') add('Pause coding', 'pause');
     if (s.phase === 'paused') add('Resume coding', 'resume');
     if (['coding', 'paused'].includes(s.phase)) { add('+2 minutes', 'extend'); add('Launch class attack', 'attack', !s.rows.some(r => r.status === 'submitted') || s.rows.some(r => r.status === 'queued')); }
-    if (s.phase === 'feedback') { add('Retry & improve', 'retry'); add(s.stepIndex + 1 >= s.plan.steps.length ? 'Complete lesson' : 'Open next step', 'next'); }
+    // after a class attack the round debrief carries Retry / Next (one pair, next to the advice); the bar keeps ⋯
+    if (s.phase === 'feedback' && !s.rounds.length) { add('Retry & improve', 'retry'); add(s.stepIndex + 1 >= s.plan.steps.length ? 'Complete lesson' : 'Open next step', 'next'); }
     if (s.phase === 'raid') {
       const raidPaused = !!s.paused;
       const btn = button(raidPaused ? '▶ Resume raid' : '⏸ Pause raid (P)', 'classroom-raid-pause', () => sendPause(!raidPaused), raidPaused ? 'btn-primary' : '');
@@ -438,7 +509,35 @@ export function createClassroom(app: AppCtx): Screen {
     setText(headClock, ms === null ? '' : clock.textContent!); headClock.classList.toggle('cr-low', ms !== null && ms < 60_000 && state.phase === 'coding');
     clock.classList.toggle('cr-clock-text', ms === null);
   };
+  // ServerMsg "kicked" (the teacher removed this student): calm screen, no reconnect, offer to download the code
+  const showKicked = (by: string) => {
+    if (kickedOut) return;
+    kickedOut = true;
+    app.conn.close();
+    // keep the resume token: the server bans it, so reopening the link is refused. Clearing it would make this an
+    // anonymous newcomer the server lets back in (students have no GitHub identity to ban).
+    const files = state?.plan.steps[state.stepIndex]?.starter?.length ? inApp.files() : undefined;
+    pause.el.remove();
+    el.classList.add('cr-kicked');
+    el.replaceChildren(h('header.cr-header', null, h('a.cr-brand', { href: '/', 'aria-label': 'GITZILLA classroom' }, wordmark({ width: 'clamp(116px, 28vw, 168px)' }), h('small', null, 'classroom'))),
+      createClassroomKicked({ by, room: app.room, files, onHome: () => location.assign('/') }));
+  };
+  // a hidden score: says so plainly; press and hold (or keyboard focus) peeks at it on this device
+  const hiddenChip = (value: HTMLElement, name: string) => {
+    const chip = h('button.cr-hidden-chip', { type: 'button', title: 'Press and hold to peek', 'aria-label': `${name}: score hidden. Press and hold to peek.`, 'data-testid': 'classroom-hidden-score' },
+      h('span.cr-hidden-label', null, '🙈 hidden'), h('span.cr-hidden-value', null, value));
+    const peek = (on: boolean) => chip.classList.toggle('peek', on);
+    chip.addEventListener('pointerdown', (e) => { e.stopPropagation(); peek(true); });
+    for (const type of ['pointerup', 'pointerleave', 'pointercancel', 'blur']) chip.addEventListener(type, () => peek(false));
+    chip.addEventListener('focus', () => peek(true));
+    chip.addEventListener('click', (e) => e.stopPropagation());
+    chip.addEventListener('contextmenu', (e) => e.preventDefault());   // long-press on phones peeks, no menu
+    return chip;
+  };
   const render = () => {
+    if (kickedOut) return;
+    projectorSafe = teacher() && hideScores();
+    renderScoreBox();
     const rawState = app.lobby?.classroom;
     state = rawState ? { ...rawState, plan: localizeClassroomPlan(rawState.plan, locale()) } : undefined; if (state && state.serverTime !== lastServerTime) { clockOffset = state.serverTime - Date.now(); lastServerTime = state.serverTime; }
     const owner = teacher(), screen = app.role === 'screen';
@@ -483,7 +582,22 @@ export function createClassroom(app: AppCtx): Screen {
     stepRail.hidden = !screen && !!step; taskTitle.hidden = !screen && !!step;
     if (step) { setText(headStep, `Step ${state!.stepIndex + 1}/${state!.plan.steps.length}`); setText(headTitle, step.title); }
     const brief = withBrief(step) ? step : null;
-    card.el.hidden = !brief;
+    const db = screen && state && (owner || classFacing) ? currentDebrief(state) : null;
+    debrief.el.hidden = !db;
+    if (db) {
+      const names = owner && (!projectorSafe || debriefNames === db.key);
+      const lesson = db.kind === 'lesson' ? db.d as LessonDebrief : null;
+      const last = state!.stepIndex + 1 >= state!.plan.steps.length;
+      debrief.update({ kind: db.kind, debrief: db.d, mode: owner ? 'teacher' : 'projector', title: db.title, namesVisible: names,
+        onShowNames: () => { debriefNames = db.key; render(); },
+        onPick: id => { selected = id; revealed = id; detailsSig = ''; renderReport(id); review.scrollIntoView({ block: 'start', behavior: 'smooth' }); },
+        actions: db.kind === 'round'
+          ? [{ label: 'Retry this step', testid: 'classroom-retry', run: () => command('retry') }, { label: last ? 'Complete lesson' : 'Next step', testid: 'classroom-next', primary: true, run: () => command('next') }]
+          : [...(lesson?.nextPresetId ? [{ label: 'Start the next lesson in a new classroom', testid: 'classroom-debrief-next-lesson', primary: true, run: () => { void openNextLesson(lesson.nextPresetId!); } }] : []),
+             { label: '⇩ Export Markdown', testid: 'classroom-debrief-export', run: () => { void download('md'); } }] });
+    }
+    // projector during a debrief: the debrief replaces the task card
+    card.el.hidden = !brief || (classFacing && !!db);
     if (brief) card.update({ step: brief, mode: classFacing ? 'projector' : owner ? 'teacher' : 'student', room: app.room, report: screen ? null : app.classroomReports?.[app.you ?? ''] });
     setText(taskText, step?.instructions ?? t('Work in your own editor, push to GitHub, and bring each new version back here. Your class will attack the Boss together.'));
     // long instructions: clamped on the teacher console ("show all"), a short summary on class-facing screens
@@ -513,7 +627,7 @@ export function createClassroom(app: AppCtx): Screen {
     const queued = s?.rows.filter(r => r.status === 'queued').length ?? 0;
     const away = s?.rows.filter(r => !r.connected && r.status === 'empty').length ?? 0;
     const total = (s?.rows.length ?? app.lobby?.players.length ?? 0) - away;
-    setText(progress, `${submitted} of ${total} submitted${queued ? t(` · ${queued} checking`) : ''}${away ? t(` · ${away} offline`) : ''}${s && s.attempt > 1 ? t(` · attempt ${s.attempt}`) : ''}`);
+    setText(progress, `${t(`${submitted} of ${total} submitted`)}${queued ? t(` · ${queued} checking`) : ''}${away ? t(` · ${away} offline`) : ''}${s && s.attempt > 1 ? t(` · attempt ${s.attempt}`) : ''}`);
     progressFill.style.width = `${total ? (submitted / total) * 100 : 0}%`; progressBar.hidden = !screen || !s;
     const key = JSON.stringify([s?.phase, s?.stepIndex, s?.rows.map(r => [r.status, r.connected]), owner, s?.paused ?? null]);
     const p = s?.phase === 'raid' ? s.paused : null;
@@ -521,7 +635,11 @@ export function createClassroom(app: AppCtx): Screen {
     pause.apply(p, byName, owner);
     if (key !== phaseSig) { phaseSig = key; renderControls(); }
     const reports = owner ? app.classroomReports : undefined;
-    const rs = JSON.stringify([s?.rows, owner && s?.rows.map(r => [reports?.[r.id]?.teacherReview, reports?.[r.id]?.checks.length]), s?.phase, projectorSafe]);
+    // a removed student left the roster: forget their pending confirm / selection
+    for (const id of [...removing.keys()]) if (!s?.rows.some(r => r.id === id)) removing.delete(id);
+    if (confirmRemove && !s?.rows.some(r => r.id === confirmRemove)) confirmRemove = null;
+    if (selected && s && !s.rows.some(r => r.id === selected)) { selected = null; detailsSig = ''; }
+    const rs = JSON.stringify([s?.rows, owner && s?.rows.map(r => [reports?.[r.id]?.teacherReview, reports?.[r.id]?.checks.length]), s?.phase, projectorSafe, confirmRemove, [...removing.keys()]]);
     if (rs !== rowsSig) {
       rowsSig = rs; roster.classList.toggle('cr-dense', (s?.rows.length ?? 0) > 15);
       // who needs help first: stuck → not submitted → checking → submitted (then by name). Never ranked by score.
@@ -538,10 +656,11 @@ export function createClassroom(app: AppCtx): Screen {
         pick.append(h(`span.cr-status-dot.st-${row.connected ? row.status : 'offline'}`, { 'aria-hidden': 'true' }), h('span.cr-person', null, h('b', null, row.name), h('small', null, statusText)));
         // until the teacher has looked, "checks 2/2" (what was measured), not a /100 that reads as "correct"
         const passed = rep?.checks.filter(c => c.passed).length ?? 0;
-        const result = !owner ? null
+        const shown = !owner ? null
           : reviewed ? h('strong.cr-points', { title: 'your reviewed score' }, int(reviewed.score))
           : row.status === 'submitted' ? h('span.cr-checks-chip', { title: 'evidence checks passed (static, not run)' }, rep?.checks.length ? `checks ${passed}/${rep.checks.length}` : `${int(row.score ?? 0)}`)
           : h('span.cr-none', { 'aria-label': 'no result yet' }, '·');
+        const result = shown && projectorSafe && !shown.classList.contains('cr-none') ? hiddenChip(shown, row.name) : shown;
         const verdict = (label: string, test: string, title: string, score: (s: number) => number, note: string) =>
           h('button.cr-verdict', { type: 'button', 'data-testid': `classroom-verdict-${test}-${row.id}`, title, onclick: (e: Event) => { e.stopPropagation(); app.conn.send({ t: 'classroomReview', playerId: row.id, score: score(rep!.score), note }); } }, label);
         const verdicts = canReview && row.status === 'submitted' && rep && !reviewed
@@ -550,7 +669,25 @@ export function createClassroom(app: AppCtx): Screen {
               verdict('✗', 'notyet', 'Not yet: it doesn’t do the task yet (max 40)', sc => Math.min(sc, 40), 'Not yet: compare your output with the task.'),
               verdict('?', 'ask', 'Ask me: let’s talk about it (score unchanged)', sc => sc, 'Ask me about this one.'))
           : null;
-        return h(`div.cr-student${row.id === app.you ? '.cr-you' : ''}`, { 'data-row': row.id }, pick, result, verdicts);
+        // teacher console only (never the projector window or a class-facing screen): remove, confirmed inline
+        const canRemove = owner && !projectorView && row.id !== app.you;
+        const more = canRemove ? h('button.cr-row-more', { type: 'button', 'data-testid': `classroom-remove-${row.id}`, title: 'Remove from class', 'aria-label': `Remove ${row.name} from class`, 'aria-expanded': String(confirmRemove === row.id),
+          onclick: (e: Event) => { e.stopPropagation(); confirmRemove = confirmRemove === row.id ? null : row.id; rowsSig = ''; render(); } }, '⋯') : null;
+        const ask = canRemove && confirmRemove === row.id
+          ? h('div.cr-remove-confirm', { role: 'group', 'data-testid': `classroom-remove-confirm-${row.id}` },
+              removing.has(row.id)
+                ? h('p', null, `Removing ${row.name}…`)
+                : h('p', null, `Remove ${row.name} from the class? They can't rejoin this classroom. Work they already handed in stays in your exports.`),
+              h('div.cr-remove-buttons', null,
+                h('button.btn.btn-danger', { type: 'button', 'data-testid': `classroom-remove-yes-${row.id}`, disabled: removing.has(row.id) || undefined, onclick: () => {
+                  app.conn.send({ t: 'kick', playerId: row.id });
+                  // the roster update removes the row; if the server refused (error toast), let the teacher try again
+                  removing.set(row.id, window.setTimeout(() => { removing.delete(row.id); rowsSig = ''; render(); }, 8000));
+                  rowsSig = ''; render();
+                } }, 'Remove from class'),
+                h('button.btn', { type: 'button', 'data-testid': `classroom-remove-cancel-${row.id}`, onclick: () => { confirmRemove = null; rowsSig = ''; render(); } }, 'Cancel')))
+          : null;
+        return h(`div.cr-student${row.id === app.you ? '.cr-you' : ''}${ask ? '.cr-removing' : ''}`, { 'data-row': row.id }, pick, result, verdicts, more, ask);
       }));
       if (!s?.rows.length) rosterList.append(h('p.cr-empty', null, `Students: open ${location.origin} and join ${app.room}.`));
     }
@@ -564,9 +701,15 @@ export function createClassroom(app: AppCtx): Screen {
     if (s?.phase !== 'raid') boss.classList.remove('cr-attacking');
     boss.classList.toggle('cr-defeated', hp <= 0);
     setText(bossMessage, s?.phase === 'raid' ? 'Your code is making the attack. No controller needed.' : s?.phase === 'feedback' ? 'Review the evidence. Improve your next commit.' : s?.phase === 'complete' ? hp <= 0 ? 'Boss defeated. Keep building.' : 'Lesson complete. Every improvement moved the class forward.' : 'Push a better version. Bring the whole class closer.');
-    setText(attackTotal, last ? `Class impact: ${int(last.bossBefore - last.bossAfter)} damage` : 'The first class attack is waiting.');
+    const impact = last ? Math.round(last.bossBefore - last.bossAfter) : 0;
+    setText(attackTotal, !last ? 'The first class attack is waiting.'
+      : impact > 0 ? `Class impact: ${int(impact)} damage`
+      : last.bossBefore <= 0 ? 'Class impact: 0 damage (the boss was already defeated)'
+      // improved work but no damage: the server caps each step at its share of the boss HP
+      : last.attacks.some(a => a.improvement > 0) ? 'Class impact: 0 damage (this step’s share of the boss is used up; the next step unlocks more)'
+      : 'Class impact: 0 damage (no improvement since the last round)');
     const top = last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement).slice(0, 3) ?? [];
-    setText(attackNames, top.length ? `Big improvements: ${top.map(a => `${a.name} +${int(a.improvement)}`).join(' · ')}` : last ? `${last.attacks.length} students contributed. Only improvements add extra damage.` : 'All submitted code contributes. Improvements unlock extra impact.');
+    setText(attackNames, top.length ? `Big improvements: ${top.map(a => `${a.name} +${int(a.improvement)}`).join(' · ')}` : last ? (last.attacks.length === 1 ? '1 student contributed. Only improvements add extra damage.' : `${last.attacks.length} students contributed. Only improvements add extra damage.`) : 'All submitted code contributes. Improvements unlock extra impact.');
     const mine = s?.rows.find(r => r.id === app.you);
     const canSubmit = s?.phase === 'coding' && mine?.status !== 'queued' && app.status === 'open';
     const mineInApp = !!mine?.commit?.startsWith('inapp:');
@@ -585,6 +728,13 @@ export function createClassroom(app: AppCtx): Screen {
     rowsSig = detailsSig = phaseSig = planSig = expectationsSig = ''; refreshEditorLocale(); render();
   });
   if (teacher()) buildPlanEditor(); render();
-  const timer = setInterval(updateClock, 1000);
-  return { el, update: render, destroy() { backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
+  const timer = setInterval(() => {
+    updateClock();
+    if (projectorView) projectorChannel?.postMessage('projector');
+    else if (teacher() && scoreMode === 'auto' && projectorSafe !== hideScores()) { rowsSig = detailsSig = ''; render(); }
+  }, 1000);
+  if (projectorChannel && !projectorView) projectorChannel.onmessage = (e) => { if (e.data === 'projector') projectorSeen = Date.now(); else if (e.data === 'projector-closed') projectorSeen = 0; };
+  const announceClose = () => { if (projectorView) projectorChannel?.postMessage('projector-closed'); };
+  addEventListener('pagehide', announceClose);
+  return { el, update: render, onMsg(m) { if (m.t === 'kicked' && !teacher()) showKicked(m.by); }, destroy() { barSize?.disconnect(); for (const t of removing.values()) clearTimeout(t); announceClose(); removeEventListener('pagehide', announceClose); projectorChannel?.close(); backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
 }

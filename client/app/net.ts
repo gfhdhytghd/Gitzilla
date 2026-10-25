@@ -2,11 +2,16 @@
 import type { ClientMsg, Role, ServerMsg } from "../../shared/types";
 import { store } from "./util";
 
-/** "displaced" = the server resumed this player in another tab (close 4001); we stop reconnecting until reclaim(). */
-export type ConnStatus = "connecting" | "open" | "closed" | "displaced";
+/** "displaced" = the server resumed this player in another tab (close 4001); we stop reconnecting until reclaim().
+ *  "kicked" = the host removed us (`{t:"kicked"}` then close 4003, or a refused rejoin): never reconnect. */
+export type ConnStatus = "connecting" | "open" | "closed" | "displaced" | "kicked";
 
 /** Server close code when the same resume token connects from another tab. */
 export const CLOSE_RESUMED_ELSEWHERE = 4001;
+/** Server close code after the host kicked this member. */
+export const CLOSE_KICKED = 4003;
+/** The server's exact refusal when a kicked seat / identity tries to rejoin. */
+export const KICKED_REJOIN = "You were removed from this room by the host.";
 
 export interface Conn {
   send(m: ClientMsg): void;
@@ -38,6 +43,7 @@ export function connect(opts: ConnOpts): Conn {
   let closed = false;
   let retry = 0;
   let displaced = false;
+  let kicked = false;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   const cancelRetry = () => {
     if (retryTimer !== null) clearTimeout(retryTimer);
@@ -50,7 +56,7 @@ export function connect(opts: ConnOpts): Conn {
 
   const open = () => {
     cancelRetry();
-    if (closed || displaced) return;
+    if (closed || displaced || kicked) return;
     // never stack sockets: a wake + a pending retry both land here
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
     setStatus("connecting");
@@ -72,11 +78,17 @@ export function connect(opts: ConnOpts): Conn {
         return;
       }
       if (m.t === "welcome" && m.token) store.set(tokenKey(opts.room, opts.role), m.token);
+      if (m.t === "kicked" || (m.t === "error" && m.message === KICKED_REJOIN)) kick();
       for (const f of msgFns) f(m);
     };
     sock.onclose = (ev?: { code?: number }) => {
       if (ws !== sock) return;
       ws = null;
+      if (ev?.code === CLOSE_KICKED || kicked) {
+        kick();
+        setStatus("kicked");
+        return;
+      }
       if (ev?.code === CLOSE_RESUMED_ELSEWHERE) {
         // another tab took this player over; reconnecting would just steal it back, forever
         displaced = true;
@@ -92,11 +104,17 @@ export function connect(opts: ConnOpts): Conn {
     };
     sock.onerror = () => sock.close();
   };
+  /** Removed by the host: stop reconnecting for good. The screen decides about the resume token (the generic kicked
+   *  card clears it; the classroom keeps it so the server's token ban still holds for anonymous students). */
+  function kick() {
+    kicked = true;
+    cancelRetry();
+  }
   open();
 
   // Phones sleeping / tab switching kill sockets; reconnect fast when visible again.
   const onVis = () => {
-    if (document.visibilityState === "visible" && !ws && !closed && !displaced) open();
+    if (document.visibilityState === "visible" && !ws && !closed && !displaced && !kicked) open();
   };
   document.addEventListener("visibilitychange", onVis);
 
@@ -115,6 +133,7 @@ export function connect(opts: ConnOpts): Conn {
       name = n;
     },
     reclaim() {
+      if (kicked) return;
       displaced = false;
       retry = 0;
       open();

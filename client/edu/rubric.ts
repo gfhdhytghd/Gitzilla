@@ -4,6 +4,7 @@
 import type { CriterionResult, QualityStat, Rubric, RubricCriterion, RubricSignal } from "../../shared/types.ts";
 import { weightedScore as exactWeightedScore } from "../../rubric/index.ts";
 import { h } from "../app/util.ts";
+import { t } from "../i18n/index.ts";
 import { richText } from "./feed.ts";
 import { SIGNALS, SIGNAL_ORDER, estimateFromQuality, localDefaultRubric, scoreColor, targetText, weightPercents, weightedScore } from "./rubric-data.ts";
 import "./edu.css";
@@ -88,7 +89,7 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
     if (label) label.textContent = 'custom rubric';
   };
   const fileInput = h("input", { type: "file", accept: ".md,.markdown,.txt,.pdf,text/markdown,text/plain,application/pdf", hidden: true }) as HTMLInputElement;
-  const paste = h("textarea.rb-paste", { rows: 4, placeholder: "…or paste the grading criteria here, e.g.\nTesting (30%): unit tests for the main modules\nDocumentation — 20 pts: README with setup steps\nNo file over 300 lines" }) as HTMLTextAreaElement;
+  const paste = h("textarea.rb-paste", { rows: 4, placeholder: t("…or paste the grading criteria here, e.g.\nTesting (30%): unit tests for the main modules\nDocumentation — 20 pts: README with setup steps\nNo file over 300 lines") }) as HTMLTextAreaElement;
 
   const run = async (input: ParseInput, label: string) => {
     status = { text: `$ parsing ${label}…`, kind: "busy" };
@@ -197,7 +198,7 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
                 } }),
                 unit === "%" ? "%" : ` ${unit}`)
             : null),
-      h("div.rb-desc", null, h("span.dim", null, `measures ${info.what}. `), c.description ? h("span", null, ...richText(c.description)) : null),
+      h("div.rb-desc", null, h("span.dim", null, h("span", null, "measures"), " ", h("span", null, info.what), ". "), c.description ? h("span", null, ...richText(c.description)) : null),
     );
   }
 

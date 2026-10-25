@@ -18,6 +18,7 @@ import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
 import { createRubricEditor, createJudgedCard, localDefaultRubric, type RubricEditor, createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
+import { pairPanel } from "./pair";
 import { asciiBar, esc, h, hash32, isPhone, normalizeRepo, shortRepo, store, humanComponent } from "./util";
 
 const WEAPON_ICON: Record<string, string> = { blaster: "⌐╦", smg: "≡╤", shotgun: "═╦═", cannon: "▄█▀", staff: "─o", laser: "═══►", blade: "─┼══" };
@@ -290,6 +291,8 @@ export function createLobby(app: AppCtx): Screen {
     " ",
     h("button.btn-link", { "data-testid": "player-repo-change", onclick: () => ((changingRepo = true), render(), repoInput.focus()) }, "change"),
   );
+  // display device: link a signed-in phone as this seat's controller (claude-auth pair.ts)
+  const pair = pairPanel(app);
   const youPanel = h(
     "section.panel.you-panel",
     null,
@@ -300,6 +303,7 @@ export function createLobby(app: AppCtx): Screen {
     heroGenesis.host,
     h("div.genesis-hint", null, "▶ watch your repo compile into your hero · tap to replay"),
     youCard,
+    pair.el,
   );
 
   const rubricHost = h("section.panel.lobby-rubric", { "data-testid": "lobby-rubric", hidden: true });
@@ -412,9 +416,7 @@ export function createLobby(app: AppCtx): Screen {
     return { n, reason, label, hint, hostFights };
   };
   const tryStart = () => {
-    const spectating = app.lobby?.mode === "pvp" && !pvpStart(app.lobby).hostFights; // a watching host needs no controls
-    if (pendingControls().length || (!screen && !spectating && !getMotionPermissionState().ready)) return;
-    if (app.lobby?.mode === "pvp" && pvpStart(app.lobby).reason) return;
+    if (!app.lobby || startBlocks(app.lobby).length) return; // the button / bar already says why
     const cloning = app.lobby?.players.filter((p) => p.status === "analyzing") ?? [];
     if (cloning.length && !startArmed()) {
       startArmedAt = performance.now();
@@ -425,9 +427,33 @@ export function createLobby(app: AppCtx): Screen {
     audio.onUi();
     app.conn.send({ t: "start" });
   };
-  const startBtn = h("button.btn.btn-big.btn-start", { "data-testid": "start-match", onclick: () => tryStart() }, "$ ./fight.sh") as HTMLButtonElement;
+  const startBtn = h("button.btn.btn-big.btn-start", { "data-testid": "start-match", "aria-describedby": "start-block", onclick: () => tryStart() }, "$ ./fight.sh") as HTMLButtonElement;
+  // why START is blocked, right above the button (the hint below is for non-blocking info)
+  const startBlock = h("div.start-block", { id: "start-block", role: "status", "aria-live": "polite", "data-testid": "start-block", hidden: true });
   const startHint = h("div.start-hint");
   let startError = "";
+  type StartBlock = { text: string; act?: () => void };
+  /** Everything stopping the owner from starting right now (empty = startable), with a fix-it action where there is one. */
+  const startBlocks = (lobby: LobbyState): StartBlock[] => {
+    const out: StartBlock[] = [];
+    const ready = lobby.players.filter((p) => p.status === "ready").length;
+    const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
+    const toBoss = () => (bossPanel.scrollIntoView({ behavior: "smooth", block: "start" }), bossInput.focus());
+    if (lobby.mode === "pvp") {
+      const st = pvpStart(lobby);
+      if (st.reason) out.push({ text: st.reason, act: st.hostFights ? undefined : toTop });
+    } else if (lobby.mode === "edu") {
+      if (ready < 2) out.push({ text: `waiting for classmates (${ready} ready) — or add AI teammates` });
+    } else {
+      if (!ready) out.push({ text: "need ≥1 ready hero", act: toTop });
+      if (lobby.boss.status !== "ready") out.push(lobby.boss.status === "analyzing" ? { text: "⟳ summoning the boss…" } : { text: "② pick the BOSS repo ↓", act: toBoss });
+    }
+    const local = !screen && !getMotionPermissionState().ready && !(lobby.mode === "pvp" && !pvpStart(lobby).hostFights);
+    const others = pendingControls().filter((p) => !(local && p.id === app.you));
+    if (others.length) out.push({ text: `waiting for controls: ${others.map((p) => p.name).join(", ")}` });
+    if (local) out.push({ text: "📱 tap to enable motion or choose touch only", act: openSettings });
+    return out;
+  };
   const bossPanel = h(
     "section.panel.boss-panel",
     null,
@@ -438,6 +464,7 @@ export function createLobby(app: AppCtx): Screen {
     bossInfo,
     bossOwnerCtl,
     changeBossLink,
+    startBlock,
     startBtn,
     startHint,
   );
@@ -594,7 +621,56 @@ export function createLobby(app: AppCtx): Screen {
     return { lines, frac };
   }
 
+  // ---- owner: each other member gets "⋯" → Make host / Kick (bots: Remove), with an inline confirm ----
+  type AdminState = "menu" | "kick" | "host";
+  const adminOpen = new Map<string, AdminState>();
+  const canManage = (p: LobbyPlayer, lobby: LobbyState) => isOwner(app) && p.id !== app.you && lobby.mode !== "edu" && lobby.phase === "lobby";
+  function adminCtl(p: LobbyPlayer): { toggle: HTMLElement; body: HTMLElement | null } {
+    const st = adminOpen.get(p.id);
+    const set = (v?: AdminState) => {
+      if (v) adminOpen.set(p.id, v);
+      else adminOpen.delete(p.id);
+      render();
+    };
+    const send = (m: { t: "kick" | "transferOwner"; playerId: string }) => {
+      adminOpen.delete(p.id);
+      audio.onUi();
+      app.conn.send(m);
+      render();
+    };
+    const toggle = h("button.pc-more", { type: "button", "data-testid": "member-menu", "aria-label": `manage ${p.name}`, "aria-expanded": String(!!st), title: p.bot ? "remove this bot" : "make host or kick", onclick: () => set(st ? undefined : "menu") }, st ? "✕" : "⋯");
+    const cancel = () => h("button.btn.btn-tiny.pc-cancel", { type: "button", "data-testid": "member-cancel", onclick: () => set() }, "Cancel");
+    let body: HTMLElement | null = null;
+    if (st === "menu")
+      body = h("div.pc-admin", null,
+        p.bot ? null : h("button.btn.btn-tiny.pc-host", { type: "button", "data-testid": "member-make-host", onclick: () => set("host") }, "★ Make host"),
+        p.bot
+          ? h("button.btn.btn-tiny.btn-danger", { type: "button", "data-testid": "member-remove", onclick: () => send({ t: "kick", playerId: p.id }) }, "Remove")
+          : h("button.btn.btn-tiny.btn-danger", { type: "button", "data-testid": "member-kick", onclick: () => set("kick") }, "Kick"));
+    else if (st === "kick")
+      body = h("div.pc-admin.confirm", { role: "group" },
+        h("div.pc-q", null, `Kick ${p.name}? They can't rejoin this room.`),
+        h("button.btn.btn-tiny.btn-danger", { type: "button", "data-testid": "member-kick-confirm", onclick: () => send({ t: "kick", playerId: p.id }) }, "Kick"),
+        cancel());
+    else if (st === "host")
+      body = h("div.pc-admin.confirm", { role: "group" },
+        h("div.pc-q", null, `Make ${p.name} the host? You stay in the room as a player.`),
+        h("button.btn.btn-tiny.btn-primary", { type: "button", "data-testid": "member-host-confirm", onclick: () => send({ t: "transferOwner", playerId: p.id }) }, "★ Make host"),
+        cancel());
+    return { toggle, body };
+  }
+
   function playerCard(p: LobbyPlayer, lobby: LobbyState): HTMLElement {
+    const card = playerCardBody(p, lobby);
+    if (!canManage(p, lobby)) return card;
+    const a = adminCtl(p);
+    card.classList.add("has-admin");
+    card.append(a.toggle);
+    if (a.body) card.querySelector(".pcard-info")?.append(a.body);
+    return card;
+  }
+
+  function playerCardBody(p: LobbyPlayer, lobby: LobbyState): HTMLElement {
     const you = p.id === app.you;
     const owner = p.id === lobby.ownerId;
     const portrait = h("div.pcard-portrait");
@@ -655,14 +731,17 @@ export function createLobby(app: AppCtx): Screen {
     strongest = lobby.mode === "pvp" ? strongestIds(lobby.players.filter((p) => p.status === "ready")) : new Set();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", p.kit?.pvpAi?.baseScore ?? "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
+      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", p.kit?.pvpAi?.baseScore ?? "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join(""), canManage(p, lobby), adminOpen.get(p.id) ?? ""].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
       if (!card || cardSig.get(p.id) !== sig) {
         const fresh = playerCard(p, lobby);
         // same ready hero, new Gemini design arrived: glitch-swap instead of the full spin-up reveal
-        if (card?.classList.contains("st-ready") && p.status === "ready" && cardSig.get(p.id)?.split("|").slice(0, 4).join("|") === sig.split("|").slice(0, 4).join("|")) {
+        // only the owner's ⋯ menu changed: no animation at all
+        const base = (x?: string) => x?.split("|").slice(0, -2).join("|");
+        if (card && base(cardSig.get(p.id)) === base(sig)) fresh.classList.remove("reveal");
+        else if (card?.classList.contains("st-ready") && p.status === "ready" && cardSig.get(p.id)?.split("|").slice(0, 4).join("|") === sig.split("|").slice(0, 4).join("|")) {
           fresh.classList.remove("reveal");
           fresh.classList.add("redesign");
         }
@@ -674,6 +753,7 @@ export function createLobby(app: AppCtx): Screen {
       if (squadList.children[i] !== card) squadList.insertBefore(card, squadList.children[i] ?? null);
     });
     for (const [id, c] of cardEls) if (!seen.has(id)) (c.remove(), cardEls.delete(id), cardSig.delete(id));
+    for (const id of adminOpen.keys()) if (!seen.has(id) || !isOwner(app)) adminOpen.delete(id);
     // empty slots up to 4 to make the "4+ players" target visible
     squadList.querySelectorAll(".pcard-slot").forEach((e) => e.remove());
     // royale: show the whole 8-seat roster so "up to eight" reads at a glance
@@ -916,6 +996,7 @@ export function createLobby(app: AppCtx): Screen {
   }
 
   function render() {
+    pair.update(app);
     const lobby = app.lobby;
     if (!lobby) return;
     const edu = lobby.mode === "edu";
@@ -935,13 +1016,40 @@ export function createLobby(app: AppCtx): Screen {
     renderSquad(lobby);
     if (!screen) renderYou(lobby);
     renderBoss(lobby);
-    const pending = pendingControls();
-    const localPending = !screen && !getMotionPermissionState().ready && !(lobby.mode === "pvp" && !pvpStart(lobby).hostFights);
-    if (pending.length || localPending) {
-      startBtn.disabled = true;
-      startHint.textContent = localPending ? "📱 tap to enable motion or choose touch only" : `waiting for controls: ${pending.map(p => p.name).join(", ")}`;
-    }
+    renderStart(lobby);
     if (!screen) renderNext(lobby);
+  }
+
+  /** A blocked START looks disabled (muted, no glow) and says why right above it; startable = lit, reason gone. */
+  function renderStart(lobby: LobbyState) {
+    const owner = isOwner(app);
+    const blocks = owner ? startBlocks(lobby) : [];
+    // the classroom lobby never starts from here (the teacher classroom does)
+    const lines: StartBlock[] = lobby.mode === "edu" && owner && !blocks.length ? [{ text: "Refresh to open the cooperative teacher classroom." }] : blocks;
+    const blocked = lines.length > 0;
+    startBtn.disabled = blocked;
+    startBtn.setAttribute("aria-disabled", String(blocked));
+    startBlock.hidden = !owner || !blocked;
+    startBlock.replaceChildren(...lines.map((b) => (b.act ? h("button.btn-link.sb-line", { type: "button", onclick: b.act }, b.text) : h("div.sb-line", null, b.text))));
+    // the hint below keeps non-blocking info (n ready, who spectates), server errors and the "press again" warning
+    startHint.hidden = owner && blocked && !startError && !startArmed();
+  }
+
+  /** Phone sticky bar as the START control: same rules as the panel button. A blocked bar with a fix-it action stays tappable for that action. */
+  function startBar(lobby: LobbyState, label: string) {
+    const blocks = startBlocks(lobby);
+    nextBar.setAttribute("aria-disabled", String(blocks.length > 0));
+    if (!blocks.length) {
+      nextBar.replaceChildren(label);
+      nextBar.className = "next-bar go";
+      nextAction = tryStart;
+      nextBar.disabled = false;
+      return;
+    }
+    nextBar.replaceChildren(h("span.nb-why", null, ...blocks.map((b) => h("span.nb-line", null, b.text))), h("span.nb-start", null, label));
+    nextBar.className = "next-bar blocked";
+    nextAction = blocks.find((b) => b.act)?.act ?? null;
+    nextBar.disabled = !nextAction;
   }
 
   const phoneLobby = () => matchMedia("(max-width: 600px) and (orientation: portrait)").matches;
@@ -954,22 +1062,21 @@ export function createLobby(app: AppCtx): Screen {
     const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? (edu ? "the teacher" : "the host");
     let text = "", cls = "", act: (() => void) | null = null;
     const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
+    nextBar.removeAttribute("aria-disabled");
     if (lobby.mode === "pvp" && (owner || !me || me.status !== "ready")) {
       const st = pvpStart(lobby);
+      const barIsStart = phoneLobby() && owner;
       if (owner) {
-        text = st.reason || st.label;
-        cls = st.reason ? "busy" : "go";
-        act = st.reason ? (st.hostFights ? null : toTop) : tryStart;
+        startBar(lobby, st.label);
       } else {
         text = me?.status === "analyzing" ? "checking that this repo is yours…" : "👁 you'll spectate — pick a repo you own to fight";
         cls = me?.status === "analyzing" ? "busy" : "";
         act = toTop;
+        nextBar.textContent = text;
+        nextBar.className = `next-bar ${cls}`;
+        nextAction = act;
+        nextBar.disabled = false;
       }
-      nextBar.textContent = text;
-      nextBar.className = `next-bar ${cls}`;
-      nextAction = act;
-      const barIsStart = phoneLobby() && owner;
-      nextBar.disabled = barIsStart && cls !== "go";
       nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
       startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
       return;
@@ -980,37 +1087,26 @@ export function createLobby(app: AppCtx): Screen {
     } else if (me.status === "analyzing") {
       text = `⟳ cloning ${me.repo ?? "your repo"}…`;
       cls = "busy";
+    } else if (owner) {
+      // your hero is in: from here the bar IS the start button (blocked until every reason is cleared)
+      startBar(lobby, edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`);
+      nextBar.dataset.testid = phoneLobby() ? "start-match" : "next-step";
+      startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
+      return;
     } else if (!getMotionPermissionState().ready) {
       text = "📱 open settings to enable motion or choose touch only";
       act = openSettings;
-    } else if (owner && pendingControls().length) {
-      text = `waiting for controls: ${pendingControls().map(p => p.name).join(", ")}`;
-      cls = "busy";
-    } else if (!owner) {
+    } else {
       text = `✓ ready as ${me.kit?.design?.title ?? me.kit?.title ?? "your hero"} · waiting for ${ownerName} to start (${ready} in)`;
       cls = "done";
-    } else if (!bossOk) {
-      text = lobby.boss.status === "analyzing" ? "⟳ summoning the boss…" : "② pick the BOSS repo ↓";
-      cls = lobby.boss.status === "analyzing" ? "busy" : "";
-      act = () => (bossPanel.scrollIntoView({ behavior: "smooth", block: "start" }), bossInput.focus());
-    } else if (lobby.mode === "pvp" && ready < 2) {
-      text = "waiting for a 2nd hero — invite friends or add AI rivals"; cls = "busy";
-    } else if (edu && ready < 2) {
-      text = `waiting for classmates (${ready} ready) — or add AI teammates`;
-      cls = "busy";
-    } else {
-      text = lobby.mode === "pvp" ? `▶ START ROYALE (${ready} heroes)` : edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
-      cls = "go";
-      act = tryStart;
     }
     nextBar.textContent = text;
     nextBar.className = `next-bar ${cls}`;
     nextAction = act;
+    nextBar.disabled = false;
     // data-testid="start-match" always belongs to the VISIBLE start control: the sticky bar on phone-portrait
     // (where the panel button is hidden by CSS), the panel button everywhere else
-    const barIsStart = phoneLobby() && owner && me?.status === "ready" && bossOk && (!edu || ready >= 2) && (lobby.mode !== "pvp" || ready >= 2);
-    nextBar.disabled = !!barIsStart && cls !== "go";
-    nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
+    nextBar.dataset.testid = "next-step";
     startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
   }
 
@@ -1060,6 +1156,7 @@ export function createLobby(app: AppCtx): Screen {
     },
     destroy() {
       stopPermission();
+      pair.destroy();
       rubricEditor?.dispose();
       clearInterval(iv);
       removeEventListener("resize", onResize);

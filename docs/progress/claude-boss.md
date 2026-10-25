@@ -1,3 +1,42 @@
+DONE (3d stage) — claude-boss
+
+## 3D stage: three.js 2.5D screens + Vision Pro WebXR (docs/tasks/view-25d.md, claude-boss = look + index.ts)
+- **Deps (exact pins):** `three@0.186.1` (dependency); `@types/three@0.186.0`, `iwer@2.5.0` (dev only; the gallery's emulated headset). The stage is a lazy chunk (552 kB / 140 kB gzip), loaded only when 3D is on.
+- **Files (mine):**
+  - `client/render/stage25d/index.ts`: wiring, `createStage25d`.
+  - `scene.ts`: the look.
+  - `staging.ts`: boss-plane lift, pure, with `staging.test.ts`.
+  - `gallery.html` / `gallery.ts`.
+- **Files (codex-input, used as-is):** `types.ts`, `projection.ts` (camera rig, XR placement), `xr.ts` (session), `pool.ts` (not used yet).
+- **Look:**
+  - Floor: a NearestFilter texture of the existing ground renderers (arena, royale zone, perk pads, hazards incl. telegraphs, obstacles, pickups).
+  - Standing billboards for heroes (1.35× visual boost around the feet; hitboxes unchanged), the boss and bug minions. All are drawn by the existing 2D renderers into one sprite atlas (1024×512, glows off, alphaTest cutout) and anchored at their feet, with blob shadows.
+  - Boss: a vertical plane at its feet line. `staging.lift()` maps 2D points inside its footprint onto that plane, so limb hits, sparks, damage numbers and shots line up with the drawn limbs (unit-tested; continuous, no jumps).
+  - Bullets: their own glyph sprites (drawBullets per cell into a 512×384 atlas) as instanced camera-facing quads at chest height (12 px), plus additive glow quads and floor shadows under the true 2D position.
+  - GC zone: a translucent red wall cylinder plus a ring line (the `RM -RF` ring stays on the floor).
+  - Void room: dark background with a faint grid.
+  - XR: a table under the diorama and a floating HUD panel (boss HP, alive/heroes up, timer) with SCALE / FOLLOW / EXIT buttons (transient-pointer select via xr.ts → raycast; UI only).
+- **Screen FX:** particles, damage numbers, banners and perk cards are drawn on the caller's overlay ctx through the new `fx.project` hook (projected and lifted). In XR they become floor decals.
+- **Small backward-compatible hooks:** `fx.project` (arena/fx.ts), `glowState.off` (pix.ts), `drawMinions(ctx, m, t, each?)`, perk-card anchoring under `fx.project`. Hits with amount ≤ 0 (spawn shield) no longer show "-0".
+- **API (index.ts):** `createStage25d(opts?)` → `{ canvas, resize(cssW, cssH, dpr), render(ctx, state, time, view?, extras?), screenToWorld, worldToScreen, setFollow, setScale, xrSupported, enterXR, exitXR, xrActive, destroy }`. The module also exports `xrSupported`.
+  - opts: `{ xr?, spectator?, pull?, scale?, onXRChange?, onXRFrame? }`.
+  - extras: `{ you, focusId, events, theme, seed, variant, world, shake: number | {x,y} }`.
+  - Screen coords = logical view px (0..view.w × 0..view.h).
+  - With `canvas` mounted (resize called) the world renders there and `ctx` only gets the FX overlay; otherwise it blits into ctx. The stage does NOT draw postfx (the caller does).
+- **For claude-ui:**
+  - (a) Pass `opts.pull` (latest interpolated state/time/events/extras). While a Vision Pro session presents, window rAF can stop, and the XR loop pulls from it.
+  - (b) In 3D, call drawPostFx with `{ x: 0, y: 0, w: view.w, h: view.h }`: the overlay is in logical view px, and the phone `view.x` offset would shift it.
+- **Verified (Playwright, scratch scripts):**
+  - WebKit raid desktop 1440: 62.1 fps, stage 5.5–8 ms/frame.
+  - WebKit royale 8 bots projector 1920: 62.2 fps, 5.6–6.2 ms.
+  - WebKit iPhone 15 portrait raid/royale follow: 61.6 / 62.2 fps, 6.5 ms.
+  - 0 page errors.
+  - Chromium + IWER emulated headset: Enter → immersive-vr session, 317–319 XR frames in 5 s (~62–63 fps; the emulator runs on headless 60 Hz rAF, so 90 Hz is only verifiable on device); tabletop and life-size both render; exit returns to the screen loop.
+- **Not verified / limits:**
+  - Real Vision Pro (90 Hz, transient-pointer pinch on the buttons; the select→raycast path isn't exercised by the emulator test).
+  - Lasers stay on the floor (no elevated beam).
+  - Pickups and obstacles are floor decals, not billboards.
+
 DONE (royale) — claude-boss
 
 ## PvP royale (docs/tasks/pvp-royale.md, my section)

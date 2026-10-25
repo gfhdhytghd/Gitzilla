@@ -62,11 +62,12 @@ export function createTaskCard(): TaskCard {
       const st = status[i];
       return h(`li.tc-${st}`, { "data-testid": `classroom-done-${i}`, "data-status": report ? st : "open" },
         h("span.tc-mark", { "aria-hidden": "true" }, MARK[st]),
-        h("span.tc-text", null, ...richText(line), report ? h("small", null, ` · ${SAYS[st]}`) : null));
+        h("span.tc-text", null, ...richText(line), report ? h("small", null, " · ", h("span", null, SAYS[st])) : null));
     });
     const failed = status.filter((s) => s === "fail").length;
     const note = !report ? "Check these yourself before you submit. After you submit, the ones the computer can check turn ✓ or ✗."
-      : failed ? `From your last submission: ${failed} still missing. Fix ${failed === 1 ? "it" : "them"} and submit again.`
+      : failed === 1 ? "From your last submission: 1 still missing. Fix it and submit again."
+      : failed ? `From your last submission: ${failed} still missing. Fix them and submit again.`
       : "From your last submission. The computer only reads your files; your teacher checks what it prints.";
     return h("div.tc-block.tc-done-block", null, h("div.tc-label", null, h("h3", null, "Done when")),
       h("ul.tc-done", null, ...items), h("p.tc-note", { "data-testid": "classroom-done-note" }, note));
@@ -89,7 +90,7 @@ export function createTaskCard(): TaskCard {
     const paint = () => {
       list.replaceChildren(...all.slice(0, shown).map((x) => h("li", null, ...richText(x))));
       more.hidden = shown >= all.length;
-      more.textContent = shown ? `Next hint (${shown + 1}/${all.length})` : `💡 Need a hint? (${all.length})`;
+      if (!more.hidden) more.textContent = shown ? `Next hint (${shown + 1}/${all.length})` : `💡 Need a hint? (${all.length})`;
     };
     more.onclick = () => { shown++; save(key, shown); paint(); };
     paint();
@@ -106,7 +107,8 @@ export function createTaskCard(): TaskCard {
     el.className = `tc tc-${v.mode}`;
     if (v.mode === "projector") return el.replaceChildren(goal, chips(b) ?? "", example(b) ?? "");
     if (v.mode === "teacher") {
-      const fold = h("details.tc-fold", { "data-testid": "classroom-task-fold" }, h("summary", null, `Student task card · ${b.todo.length} to-dos · ${b.doneWhen.length} done-when${b.hints?.length ? ` · ${b.hints.length} hints` : ""}`),
+      const fold = h("details.tc-fold", { "data-testid": "classroom-task-fold" }, h("summary", null, ...[`Student task card`, `${b.todo.length} to-dos`, `${b.doneWhen.length} done-when`, ...(b.hints?.length ? [b.hints.length === 1 ? "1 hint" : `${b.hints.length} hints`] : [])]
+          .flatMap((part, i) => (i ? [" · ", h("span", null, part)] : [h("span", null, part)]))),
         h("div.tc-cols", null, h("div.tc-main", null, todoList(v, false), doneList({ ...v, report: null })), h("div.tc-side", null, example(b) ?? "", hints(v, false, true) ?? "")));
       return el.replaceChildren(goal, chips(b) ?? "", fold);
     }

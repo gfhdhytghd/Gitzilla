@@ -73,6 +73,14 @@ Latest movement specification supersedes neutral-pose checks: flat screen-up=0; 
 
 Takeover integration: generic playtest explicitly selects the lobby's touch-only option on its sensorless phone context before START. Safari autopsy checks do the same for real battles and write screenshots/summary under `docs/shots/<timestamp>-safari-autopsy/`. Their layout/control evidence is separate from `permission-gate.ts` and `motion-v3.ts` synthetic-sensor acceptance and physical-phone validation.
 
+## XR plumbing check
+
+`npx tsx tools/xr-check.ts [--frames 180] [--headed] [--local-only]` runs an isolated Chromium/WebGL check with the pinned `iwer@2.5.0` emulator. It owns an ephemeral loopback Vite server, disables `.env` loading/HMR, uses a private dependency cache, and closes its server/browser afterward. No shared DEV/staging/live server is used. `--local-only` removes floor-space support to exercise the estimated-floor fallback.
+
+The fixture imports the real stage25d projection/XR/pool modules and renders a simple textured plane plus128 instanced bullets/shadows in stereo. It verifies session entry from a real button click, native emulator controller select, an explicitly injected transient-pointer select, table/life-size placement, hidden/visible recovery, clean session end and restored screen loop, unchanged texture versions, and stable instance buffers. It reports rAF frame times and CPU submission times, screenshots and console/errors under `docs/shots/<timestamp>-xr-check/`. These are **plumbing/emulation results**, not the artwork/gallery, game performance, Vision Pro90fps, native permissions or physical headset acceptance. The transient-pointer branch uses explicit synthetic injection; the controller select uses the emulator's runtime.
+
+`npx vitest run client/render/stage25d/{projection,pool,xr}.test.ts` covers inverse floor projection at desktop/projector/portrait sizes, logical-view coordinates, phone follow, depth/height, XR placement, texture invalidation/LRU/disposal, pooled transforms/overflow/resource ownership, and XR session lifecycle/fallback. Reference APIs: [IWER setup](https://meta-quest.github.io/immersive-web-emulation-runtime/getting-started.html), [three WebXRManager](https://threejs.org/docs/pages/WebXRManager).
+
 ## Phone fight performance
 
 `node tools/phone-performance.mjs http://localhost:<isolated-port>/r/PERF?mock=match /tmp/phone-perf.json` measures a production build at390×844/DPR3 with4× Chromium CPU throttling,12s warmup and10s capture. It selects the real touch-only option in the mock fight. Reports CPU/task/layout work, DOM mutations, actual game draw intervals, canvas calls, a CPU profile and screenshot. Run baseline/candidate sequentially with other browser workloads stopped. The mock also runs simulation in the browser; this is a rendering comparison, not physical iPhone FPS, GPU power or temperature acceptance.

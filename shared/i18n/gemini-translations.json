@@ -18462,5 +18462,2028 @@
     "zh": "{0} · AI {1}",
     "es": "{0} · IA {1}",
     "fr": "{0} · IA {1}"
+  },
+  {
+    "id": "69e4fcd1c9a7ebf3",
+    "en": "manage {0}",
+    "zh": "管理 {0}",
+    "es": "gestionar a {0}",
+    "fr": "gérer {0}"
+  },
+  {
+    "id": "77c07d5100b5c10f",
+    "en": "remove this bot",
+    "zh": "移除这个机器人",
+    "es": "quitar este bot",
+    "fr": "retirer ce bot"
+  },
+  {
+    "id": "095a5de3fa14a887",
+    "en": "make host or kick",
+    "zh": "设为房主或踢出",
+    "es": "hacer anfitrión o expulsar",
+    "fr": "nommer hôte ou exclure"
+  },
+  {
+    "id": "cd879d3c20ca5c30",
+    "en": "★ Make host",
+    "zh": "★ 设为房主",
+    "es": "★ Hacer anfitrión",
+    "fr": "★ Nommer hôte"
+  },
+  {
+    "id": "37ca3cfb5d8522c2",
+    "en": "Kick",
+    "zh": "踢出",
+    "es": "Expulsar",
+    "fr": "Exclure"
+  },
+  {
+    "id": "6391930b93f0ebfd",
+    "en": "Kick {0}? They can't rejoin this room.",
+    "zh": "要踢出 {0} 吗？对方将无法再加入这个房间。",
+    "es": "¿Expulsar a {0}? No podrá volver a entrar en esta sala.",
+    "fr": "Exclure {0} ? Cette personne ne pourra plus rejoindre ce salon."
+  },
+  {
+    "id": "6d904e5c7c8c4d23",
+    "en": "Make {0} the host? You stay in the room as a player.",
+    "zh": "把房主交给 {0} 吗？你会作为玩家留在房间里。",
+    "es": "¿Hacer anfitrión a {0}? Tú sigues en la sala como jugador.",
+    "fr": "Nommer {0} hôte ? Vous restez dans le salon comme joueur."
+  },
+  {
+    "id": "acbb8e9aca6306d7",
+    "en": "Kick player…",
+    "zh": "踢出玩家…",
+    "es": "Expulsar jugador…",
+    "fr": "Exclure un joueur…"
+  },
+  {
+    "id": "269a58d6379f1d12",
+    "en": "nobody else is here",
+    "zh": "这里没有其他人",
+    "es": "no hay nadie más aquí",
+    "fr": "personne d'autre ici"
+  },
+  {
+    "id": "39bf935e5c53b3f2",
+    "en": "★ You're the host now.",
+    "zh": "★ 你现在是房主了。",
+    "es": "★ Ahora eres el anfitrión.",
+    "fr": "★ Vous êtes maintenant l'hôte."
+  },
+  {
+    "id": "d410c032e4a0d9ae",
+    "en": "{0} is now the host",
+    "zh": "{0} 现在是房主",
+    "es": "{0} es ahora el anfitrión",
+    "fr": "{0} est maintenant l'hôte"
+  },
+  {
+    "id": "e014645d7420e7aa",
+    "en": "You were removed from this room by the host.",
+    "zh": "你已被房主移出这个房间。",
+    "es": "El anfitrión te ha expulsado de esta sala.",
+    "fr": "L'hôte vous a retiré de ce salon."
+  },
+  {
+    "id": "613651fdf45200ae",
+    "en": "You were removed from this room by {0}.",
+    "zh": "你已被 {0} 移出这个房间。",
+    "es": "{0} te ha expulsado de esta sala.",
+    "fr": "{0} vous a retiré de ce salon."
+  },
+  {
+    "id": "b9795b628255b73c",
+    "en": "You can join another room or start your own.",
+    "zh": "你可以加入其他房间，或者自己开一个。",
+    "es": "Puedes unirte a otra sala o crear la tuya.",
+    "fr": "Vous pouvez rejoindre un autre salon ou créer le vôtre."
+  },
+  {
+    "id": "1287adb7b06a0f98",
+    "en": "Back to start",
+    "zh": "返回首页",
+    "es": "Volver al inicio",
+    "fr": "Retour à l'accueil"
+  },
+  {
+    "id": "70fa71f874684cd5",
+    "en": "REMOVED",
+    "zh": "已移出",
+    "es": "EXPULSADO",
+    "fr": "RETIRÉ"
+  },
+  {
+    "id": "c94c347ae4b3eb69",
+    "en": "Hand over the room after the match.",
+    "zh": "请在比赛结束后再移交房间。",
+    "es": "Cede la sala cuando termine la partida.",
+    "fr": "Cédez le salon après la partie."
+  },
+  {
+    "id": "3c2010e370e42925",
+    "en": "The teacher can't hand over a classroom.",
+    "zh": "老师不能移交课堂。",
+    "es": "El profesor no puede ceder una clase.",
+    "fr": "L'enseignant ne peut pas céder une classe."
+  },
+  {
+    "id": "9038a274523e3cc9",
+    "en": "Removed from this classroom",
+    "zh": "已被移出本课堂",
+    "es": "Te han quitado de esta clase",
+    "fr": "Retiré de cette classe"
+  },
+  {
+    "id": "4ec3243183e3e093",
+    "en": "{0} removed you from this classroom.",
+    "zh": "{0} 已将你移出本课堂。",
+    "es": "{0} te ha quitado de esta clase.",
+    "fr": "{0} vous a retiré de cette classe."
+  },
+  {
+    "id": "fed2fe551ceb7601",
+    "en": "Your teacher removed you from this classroom.",
+    "zh": "老师已将你移出本课堂。",
+    "es": "Tu profesor te ha quitado de esta clase.",
+    "fr": "Votre enseignant vous a retiré de cette classe."
+  },
+  {
+    "id": "5590eccb0ef5e943",
+    "en": "You can't rejoin this room. If this was a mistake, talk to your teacher.",
+    "zh": "你无法重新加入这个房间。如果这是误操作，请和老师说明。",
+    "es": "No puedes volver a entrar en esta sala. Si ha sido un error, habla con tu profesor.",
+    "fr": "Vous ne pouvez pas rejoindre à nouveau cette salle. Si c’est une erreur, parlez-en à votre enseignant."
+  },
+  {
+    "id": "97bc53eaf77306f5",
+    "en": "Your code is still on this device.",
+    "zh": "你的代码仍保存在这台设备上。",
+    "es": "Tu código sigue guardado en este dispositivo.",
+    "fr": "Votre code est toujours sur cet appareil."
+  },
+  {
+    "id": "368fe16515ef16ed",
+    "en": "⇩ Download my code",
+    "zh": "⇩ 下载我的代码",
+    "es": "⇩ Descargar mi código",
+    "fr": "⇩ Télécharger mon code"
+  },
+  {
+    "id": "25f4fbd9d88cca2c",
+    "en": "Remove from class",
+    "zh": "移出课堂",
+    "es": "Quitar de la clase",
+    "fr": "Retirer de la classe"
+  },
+  {
+    "id": "8156ecf2e91296d7",
+    "en": "Remove {0} from class",
+    "zh": "将 {0} 移出课堂",
+    "es": "Quitar a {0} de la clase",
+    "fr": "Retirer {0} de la classe"
+  },
+  {
+    "id": "8e3a5e34fef87b53",
+    "en": "Removing {0}…",
+    "zh": "正在移出 {0}…",
+    "es": "Quitando a {0}…",
+    "fr": "Retrait de {0}…"
+  },
+  {
+    "id": "51dd8fedc5a43e87",
+    "en": "Remove {0} from the class? They can't rejoin this classroom. Work they already handed in stays in your exports.",
+    "zh": "要将 {0} 移出课堂吗？移出后无法再加入本课堂。已提交的作业仍保留在你的导出结果中。",
+    "es": "¿Quitar a {0} de la clase? No podrá volver a entrar en esta clase. El trabajo que ya entregó se queda en tus exportaciones.",
+    "fr": "Retirer {0} de la classe ? Cette personne ne pourra plus rejoindre cette classe. Le travail déjà rendu reste dans vos exports."
+  },
+  {
+    "id": "70e5fec4a3b67a18",
+    "en": "Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.",
+    "zh": "检查要找的内容都在你的文件里了。运行一下，对照预期输出，并准备好向老师讲解你的代码。",
+    "es": "Todo lo que buscan las comprobaciones está en tus archivos. Ejecútalo, compáralo con la salida esperada y prepárate para explicárselo a tu profesor.",
+    "fr": "Tout ce que les vérifications cherchent est dans vos fichiers. Exécutez-le, comparez avec la sortie attendue et préparez-vous à l’expliquer à votre enseignant."
+  },
+  {
+    "id": "25ad680b1b31ecca",
+    "en": "GITZILLA classroom",
+    "zh": "GITZILLA 课堂",
+    "es": "Clase de GITZILLA",
+    "fr": "Classe GITZILLA"
+  },
+  {
+    "id": "cefa64a90b03644e",
+    "en": "Show the QR code and join link",
+    "zh": "显示二维码和加入链接",
+    "es": "Mostrar el código QR y el enlace para unirse",
+    "fr": "Afficher le QR code et le lien pour rejoindre"
+  },
+  {
+    "id": "bd94f9ed89ceafd8",
+    "en": "show QR",
+    "zh": "显示二维码",
+    "es": "ver QR",
+    "fr": "voir le QR"
+  },
+  {
+    "id": "56c09176fb0a6499",
+    "en": "Close the teacher screen? The lesson keeps running, and you can come back with the same link. To end it, use ⋯ → End lesson.",
+    "zh": "关闭教师界面吗？课程会继续进行，你可以用同一个链接回来。要结束课程，请使用 ⋯ → 结束课程。",
+    "es": "¿Cerrar la pantalla del profesor? La lección sigue en marcha y puedes volver con el mismo enlace. Para terminarla, usa ⋯ → Terminar lección.",
+    "fr": "Fermer l’écran enseignant ? La leçon continue et vous pouvez revenir avec le même lien. Pour la terminer, utilisez ⋯ → Terminer la leçon."
+  },
+  {
+    "id": "c7099deab1358356",
+    "en": "show less",
+    "zh": "收起",
+    "es": "ver menos",
+    "fr": "voir moins"
+  },
+  {
+    "id": "178353189e5b5aca",
+    "en": "show all instructions",
+    "zh": "显示全部说明",
+    "es": "ver todas las instrucciones",
+    "fr": "voir toutes les consignes"
+  },
+  {
+    "id": "f4599ae498c39990",
+    "en": "Read the full task",
+    "zh": "阅读完整任务",
+    "es": "Leer la tarea completa",
+    "fr": "Lire toute la tâche"
+  },
+  {
+    "id": "7c7a549fe4834917",
+    "en": "The full task is on your phone or laptop.",
+    "zh": "完整任务在你的手机或电脑上。",
+    "es": "La tarea completa está en tu móvil o portátil.",
+    "fr": "La tâche complète est sur votre téléphone ou ordinateur."
+  },
+  {
+    "id": "0ddc3f7cc82c95e0",
+    "en": "Opens the class view (no names, scores or feedback) in a new window. Drag it to the projector screen.",
+    "zh": "在新窗口打开全班视图（不显示姓名、分数或反馈）。把它拖到投影屏幕上。",
+    "es": "Abre la vista de la clase (sin nombres, notas ni comentarios) en una ventana nueva. Arrástrala a la pantalla del proyector.",
+    "fr": "Ouvre la vue de la classe (sans noms, notes ni retours) dans une nouvelle fenêtre. Faites-la glisser sur l’écran du projecteur."
+  },
+  {
+    "id": "155eab270fd63692",
+    "en": "Open projector window ↗",
+    "zh": "打开投影窗口 ↗",
+    "es": "Abrir ventana del proyector ↗",
+    "fr": "Ouvrir la fenêtre du projecteur ↗"
+  },
+  {
+    "id": "af24a9554434902e",
+    "en": "QR code to join this classroom",
+    "zh": "加入本课堂的二维码",
+    "es": "Código QR para unirse a esta clase",
+    "fr": "QR code pour rejoindre cette classe"
+  },
+  {
+    "id": "01d66b3216de121f",
+    "en": "1. Scan the code with your phone camera, or open",
+    "zh": "1. 用手机相机扫描二维码，或打开",
+    "es": "1. Escanea el código con la cámara del móvil, o abre",
+    "fr": "1. Scannez le code avec l’appareil photo de votre téléphone, ou ouvrez"
+  },
+  {
+    "id": "952feb66f0c39848",
+    "en": "2. Type your name. That’s it: no account or app needed.",
+    "zh": "2. 输入你的名字。就这样：不需要账号，也不用装应用。",
+    "es": "2. Escribe tu nombre. Eso es todo: no necesitas cuenta ni app.",
+    "fr": "2. Tapez votre nom. C’est tout : ni compte ni application."
+  },
+  {
+    "id": "362c5966669d44ec",
+    "en": "Room code",
+    "zh": "房间代码",
+    "es": "Código de sala",
+    "fr": "Code de la salle"
+  },
+  {
+    "id": "de394248a984dec5",
+    "en": "Students: join on your phone or laptop",
+    "zh": "同学们：用手机或电脑加入",
+    "es": "Estudiantes: uníos desde el móvil o el portátil",
+    "fr": "Élèves : rejoignez depuis votre téléphone ou ordinateur"
+  },
+  {
+    "id": "d941c858b46d274d",
+    "en": "Join this classroom",
+    "zh": "加入本课堂",
+    "es": "Unirse a esta clase",
+    "fr": "Rejoindre cette classe"
+  },
+  {
+    "id": "1ca5e5f6a733b754",
+    "en": "Keep scores, feedback and code off a mirrored screen until you choose to show them",
+    "zh": "在你选择显示之前，不让分数、反馈和代码出现在镜像的屏幕上",
+    "es": "No mostrar notas, comentarios ni código en una pantalla duplicada hasta que decidas enseñarlos",
+    "fr": "Garder notes, retours et code hors d’un écran dupliqué jusqu’à ce que vous choisissiez de les montrer"
+  },
+  {
+    "id": "4fd84cb3e29585d0",
+    "en": "Projecting: hide scores & feedback",
+    "zh": "投影中：隐藏分数和反馈",
+    "es": "Proyectando: ocultar notas y comentarios",
+    "fr": "Projection : masquer notes et retours"
+  },
+  {
+    "id": "541db6ca80b322ad",
+    "en": "Submissions",
+    "zh": "提交情况",
+    "es": "Entregas",
+    "fr": "Rendus"
+  },
+  {
+    "id": "4e959e888a60ec8c",
+    "en": "Who needs help first · tap a name to review",
+    "zh": "最需要帮助的排在前面 · 点名字查看",
+    "es": "Primero quien necesita ayuda · toca un nombre para revisar",
+    "fr": "D’abord ceux qui ont besoin d’aide · touchez un nom pour relire"
+  },
+  {
+    "id": "77ed10a2d34bf99b",
+    "en": "Your code",
+    "zh": "你的代码",
+    "es": "Tu código",
+    "fr": "Votre code"
+  },
+  {
+    "id": "7a78ff8f191d30c5",
+    "en": "Your GitHub version",
+    "zh": "你的 GitHub 版本",
+    "es": "Tu versión de GitHub",
+    "fr": "Votre version GitHub"
+  },
+  {
+    "id": "c5b6d23bb918a2c4",
+    "en": "Push to GitHub → Submit → read your feedback → improve and submit again.",
+    "zh": "推送到 GitHub → 提交 → 阅读反馈 → 改进后再次提交。",
+    "es": "Sube a GitHub → Entrega → lee los comentarios → mejora y entrega de nuevo.",
+    "fr": "Poussez sur GitHub → Rendez → lisez les retours → améliorez et rendez à nouveau."
+  },
+  {
+    "id": "42936d4d43faaa3f",
+    "en": "or submit a GitHub repo instead",
+    "zh": "或者改为提交 GitHub 仓库",
+    "es": "o entrega un repositorio de GitHub",
+    "fr": "ou rendez plutôt un dépôt GitHub"
+  },
+  {
+    "id": "5b10cfa7cd954546",
+    "en": "This big screen is not the teacher’s. The teacher controls the class from the screen that created the room.",
+    "zh": "这块大屏幕不是老师的。老师在创建房间的那块屏幕上控制课堂。",
+    "es": "Esta pantalla grande no es la del profesor. El profesor controla la clase desde la pantalla que creó la sala.",
+    "fr": "Ce grand écran n’est pas celui de l’enseignant. L’enseignant pilote la classe depuis l’écran qui a créé la salle."
+  },
+  {
+    "id": "3c2acbd684ab04fa",
+    "en": "Join as a student",
+    "zh": "以学生身份加入",
+    "es": "Unirse como estudiante",
+    "fr": "Rejoindre en tant qu’élève"
+  },
+  {
+    "id": "ef69c97189638eb5",
+    "en": "Students see this pause too.",
+    "zh": "学生也会看到这次暂停。",
+    "es": "Los estudiantes también ven esta pausa.",
+    "fr": "Les élèves voient aussi cette pause."
+  },
+  {
+    "id": "b2bb7fa1522be8b3",
+    "en": "Your teacher will resume in a moment.",
+    "zh": "老师马上就会继续。",
+    "es": "Tu profesor reanudará en un momento.",
+    "fr": "Votre enseignant va reprendre dans un instant."
+  },
+  {
+    "id": "53749b750c1e8ed8",
+    "en": "End the lesson for everyone? Students’ work is kept and you can still export the results.",
+    "zh": "要为所有人结束课程吗？学生的作业会保留，你仍然可以导出结果。",
+    "es": "¿Terminar la lección para todos? El trabajo de los estudiantes se conserva y aún puedes exportar los resultados.",
+    "fr": "Terminer la leçon pour tout le monde ? Le travail des élèves est conservé et vous pouvez toujours exporter les résultats."
+  },
+  {
+    "id": "e23a71af124d4271",
+    "en": "Python preset lessons",
+    "zh": "Python 预设课程",
+    "es": "Lecciones de Python predefinidas",
+    "fr": "Leçons Python prêtes à l’emploi"
+  },
+  {
+    "id": "0278548c49ff031b",
+    "en": "Before this: {0}",
+    "zh": "前置知识：{0}",
+    "es": "Antes de esto: {0}",
+    "fr": "Prérequis : {0}"
+  },
+  {
+    "id": "8c89ae48f89a898c",
+    "en": "3 steps · about {0} min · student file: {1}",
+    "zh": "3 个步骤 · 约 {0} 分钟 · 学生文件：{1}",
+    "es": "3 pasos · unos {0} min · archivo del estudiante: {1}",
+    "fr": "3 étapes · environ {0} min · fichier de l’élève : {1}"
+  },
+  {
+    "id": "8afaf17a018b349c",
+    "en": "Python preset lessons · from zero to dict",
+    "zh": "Python 预设课程 · 从零到 dict",
+    "es": "Lecciones de Python predefinidas · de cero a dict",
+    "fr": "Leçons Python prêtes à l’emploi · de zéro à dict"
+  },
+  {
+    "id": "b6792ed0d4fb3dbf",
+    "en": "Pick a lesson (in order)",
+    "zh": "按顺序选择一课",
+    "es": "Elige una lección (en orden)",
+    "fr": "Choisissez une leçon (dans l’ordre)"
+  },
+  {
+    "id": "a0496b17ae218247",
+    "en": "Use this lesson",
+    "zh": "使用这节课",
+    "es": "Usar esta lección",
+    "fr": "Utiliser cette leçon"
+  },
+  {
+    "id": "d6b5e4ce297055c0",
+    "en": "Lesson ready. Open step 1 when the class has joined.",
+    "zh": "课程已就绪。全班加入后打开第 1 步。",
+    "es": "Lección lista. Abre el paso 1 cuando la clase se haya unido.",
+    "fr": "Leçon prête. Ouvrez l’étape 1 quand la classe a rejoint."
+  },
+  {
+    "id": "ec57da0b21f082af",
+    "en": "Customize first",
+    "zh": "先自定义",
+    "es": "Personalizar primero",
+    "fr": "Personnaliser d’abord"
+  },
+  {
+    "id": "66dda7cd6bb11c63",
+    "en": "Download the student starter file",
+    "zh": "下载学生起始文件",
+    "es": "Descargar el archivo inicial del estudiante",
+    "fr": "Télécharger le fichier de départ de l’élève"
+  },
+  {
+    "id": "90e78f316f9c1836",
+    "en": "Customize first only replaces the draft below; students get it when you publish. Put a downloaded .py file in the python/ folder shown. Every step can be edited.",
+    "zh": "“先自定义”只会替换下面的草稿；发布后学生才会收到。下载的 .py 文件需放进所示的 python/ 目录。每个步骤都可以编辑。",
+    "es": "«Personalizar primero» solo reemplaza el borrador de abajo; los estudiantes lo reciben cuando lo publicas. Pon el archivo .py descargado en la carpeta python/ indicada. Todos los pasos se pueden editar.",
+    "fr": "« Personnaliser d’abord » remplace seulement le brouillon ci-dessous ; les élèves le reçoivent quand vous publiez. Placez le fichier .py téléchargé dans le dossier python/ indiqué. Chaque étape est modifiable."
+  },
+  {
+    "id": "c163c5661c2062f6",
+    "en": "Teacher notes: preparing and reviewing",
+    "zh": "教师备课与复核说明",
+    "es": "Notas para el profesor: preparar y revisar",
+    "fr": "Notes pour l’enseignant : préparer et relire"
+  },
+  {
+    "id": "e23d738ef1e57bde",
+    "en": "How this step is scored (edit or upload a rubric)",
+    "zh": "这个步骤怎么评分（编辑或上传评分标准）",
+    "es": "Cómo se puntúa este paso (edita o sube una rúbrica)",
+    "fr": "Comment cette étape est notée (modifier ou importer une grille)"
+  },
+  {
+    "id": "96d15cf84b61a585",
+    "en": "{0} min",
+    "zh": "{0} 分钟",
+    "es": "{0} min",
+    "fr": "{0} min"
+  },
+  {
+    "id": "3175dd4d43613625",
+    "en": "teacher paced",
+    "zh": "由老师掌控节奏",
+    "es": "al ritmo del profesor",
+    "fr": "au rythme de l’enseignant"
+  },
+  {
+    "id": "9734b3695ba0685a",
+    "en": "1 check",
+    "zh": "1 项检查",
+    "es": "1 comprobación",
+    "fr": "1 vérification"
+  },
+  {
+    "id": "8a1c4f1dc0e92b33",
+    "en": "{0} checks",
+    "zh": "{0} 项检查",
+    "es": "{0} comprobaciones",
+    "fr": "{0} vérifications"
+  },
+  {
+    "id": "83a99fa0129dcd35",
+    "en": "in-app editor",
+    "zh": "课堂编辑器",
+    "es": "editor de la app",
+    "fr": "éditeur intégré"
+  },
+  {
+    "id": "630c74b2de456692",
+    "en": "untitled",
+    "zh": "未命名",
+    "es": "sin título",
+    "fr": "sans titre"
+  },
+  {
+    "id": "2cdd8f56c7e9a773",
+    "en": "Minutes (0: you decide when to stop)",
+    "zh": "分钟（0：由你决定何时结束）",
+    "es": "Minutos (0: tú decides cuándo parar)",
+    "fr": "Minutes (0 : vous décidez quand arrêter)"
+  },
+  {
+    "id": "45e0b37a2ae29373",
+    "en": "How much the automatic checks count (%) · the rest is the rubric",
+    "zh": "自动检查所占比例（%）· 其余按评分标准",
+    "es": "Cuánto cuentan las comprobaciones automáticas (%) · el resto es la rúbrica",
+    "fr": "Poids des vérifications automatiques (%) · le reste vient de la grille"
+  },
+  {
+    "id": "a8d3ed382fa06c7b",
+    "en": "Automatic checks (optional), one per line",
+    "zh": "自动检查（可选），每行一条",
+    "es": "Comprobaciones automáticas (opcional), una por línea",
+    "fr": "Vérifications automatiques (facultatif), une par ligne"
+  },
+  {
+    "id": "715a821132e01f76",
+    "en": "Add a check:",
+    "zh": "添加检查：",
+    "es": "Añadir una comprobación:",
+    "fr": "Ajouter une vérification :"
+  },
+  {
+    "id": "6fa18cacdb599fd3",
+    "en": "+ File exists",
+    "zh": "+ 文件存在",
+    "es": "+ El archivo existe",
+    "fr": "+ Le fichier existe"
+  },
+  {
+    "id": "72bcc76271f976e3",
+    "en": "+ File contains text",
+    "zh": "+ 文件包含文字",
+    "es": "+ El archivo contiene un texto",
+    "fr": "+ Le fichier contient un texte"
+  },
+  {
+    "id": "60adb6a302fcb402",
+    "en": "+ GitHub CI check",
+    "zh": "+ GitHub CI 检查",
+    "es": "+ Comprobación de CI de GitHub",
+    "fr": "+ Vérification CI GitHub"
+  },
+  {
+    "id": "5c96e92d2696d031",
+    "en": "Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed). You can always override a score with ✓ / ✗ during class.",
+    "zh": "示例：“file: python/01_hello.py”（文件存在）· “contains: python/01_hello.py :: Hello, Python!”（文件包含这段原文；代码不会被运行）· “ci: unit-tests”（同名的 GitHub 检查已通过）。上课时你随时可以用 ✓ / ✗ 改分。",
+    "es": "Ejemplos: «file: python/01_hello.py» (el archivo existe) · «contains: python/01_hello.py :: Hello, Python!» (el archivo contiene este texto exacto; el código nunca se ejecuta) · «ci: unit-tests» (pasó una comprobación de GitHub con ese nombre). En clase siempre puedes cambiar una nota con ✓ / ✗.",
+    "fr": "Exemples : « file: python/01_hello.py » (le fichier existe) · « contains: python/01_hello.py :: Hello, Python! » (le fichier contient ce texte exact ; le code n’est jamais exécuté) · « ci: unit-tests » (une vérification GitHub de ce nom a réussi). En classe, vous pouvez toujours modifier une note avec ✓ / ✗."
+  },
+  {
+    "id": "2f53e6b1a2552c91",
+    "en": "Remove step {0} “{1}” and its instructions?",
+    "zh": "删除第 {0} 步“{1}”及其说明吗？",
+    "es": "¿Quitar el paso {0} «{1}» y sus instrucciones?",
+    "fr": "Supprimer l’étape {0} « {1} » et ses consignes ?"
+  },
+  {
+    "id": "3a821707a228e1f8",
+    "en": "👁 Preview as a student",
+    "zh": "👁 以学生视角预览",
+    "es": "👁 Vista previa como estudiante",
+    "fr": "👁 Aperçu côté élève"
+  },
+  {
+    "id": "2545c86fc86287e8",
+    "en": "Name of the class monster",
+    "zh": "全班怪兽的名字",
+    "es": "Nombre del monstruo de la clase",
+    "fr": "Nom du monstre de la classe"
+  },
+  {
+    "id": "c5a1b6a72f8880d4",
+    "en": "Submitted in the in-app editor.",
+    "zh": "已在课堂编辑器中提交。",
+    "es": "Entregado desde el editor de la app.",
+    "fr": "Rendu depuis l’éditeur intégré."
+  },
+  {
+    "id": "1f72aac9107abb6b",
+    "en": "submitted code (read only)",
+    "zh": "提交的代码（只读）",
+    "es": "código entregado (solo lectura)",
+    "fr": "code rendu (lecture seule)"
+  },
+  {
+    "id": "bbb795c66833da05",
+    "en": "View submitted code (1 file)",
+    "zh": "查看提交的代码（1 个文件）",
+    "es": "Ver el código entregado (1 archivo)",
+    "fr": "Voir le code rendu (1 fichier)"
+  },
+  {
+    "id": "3b0516ea22c21e94",
+    "en": "View submitted code ({0} files)",
+    "zh": "查看提交的代码（{0} 个文件）",
+    "es": "Ver el código entregado ({0} archivos)",
+    "fr": "Voir le code rendu ({0} fichiers)"
+  },
+  {
+    "id": "29b97be518f7c229",
+    "en": "starter code (preview)",
+    "zh": "起始代码（预览）",
+    "es": "código inicial (vista previa)",
+    "fr": "code de départ (aperçu)"
+  },
+  {
+    "id": "1d8397143ff1dbc3",
+    "en": "This step has no starter files: students submit a GitHub repository.",
+    "zh": "这个步骤没有起始文件：学生提交 GitHub 仓库。",
+    "es": "Este paso no tiene archivos iniciales: los estudiantes entregan un repositorio de GitHub.",
+    "fr": "Cette étape n’a pas de fichiers de départ : les élèves rendent un dépôt GitHub."
+  },
+  {
+    "id": "92f19534d8c54115",
+    "en": "Step {0} of {1}",
+    "zh": "第 {0} 步，共 {1} 步",
+    "es": "Paso {0} de {1}",
+    "fr": "Étape {0} sur {1}"
+  },
+  {
+    "id": "8ff597e095f5be6e",
+    "en": "Starter code",
+    "zh": "起始代码",
+    "es": "Código inicial",
+    "fr": "Code de départ"
+  },
+  {
+    "id": "a6b8414056e6f622",
+    "en": "Student preview (not published yet)",
+    "zh": "学生预览（尚未发布）",
+    "es": "Vista previa del estudiante (aún sin publicar)",
+    "fr": "Aperçu élève (pas encore publié)"
+  },
+  {
+    "id": "b011e6787e5aa55d",
+    "en": "🔒 Feedback, code and your notes for this student are hidden from the projector.",
+    "zh": "🔒 这位学生的反馈、代码和你的备注不会显示在投影上。",
+    "es": "🔒 Los comentarios, el código y tus notas de este estudiante no se muestran en el proyector.",
+    "fr": "🔒 Les retours, le code et vos notes pour cet élève sont masqués sur le projecteur."
+  },
+  {
+    "id": "1af77ee273cbdaae",
+    "en": "Show details",
+    "zh": "显示详情",
+    "es": "Mostrar detalles",
+    "fr": "Afficher les détails"
+  },
+  {
+    "id": "ff7faba050788094",
+    "en": "Submit your code to receive measured feedback and a next step.",
+    "zh": "提交你的代码，获得测量后的反馈和下一步建议。",
+    "es": "Entrega tu código para recibir comentarios medidos y un siguiente paso.",
+    "fr": "Rendez votre code pour recevoir un retour mesuré et une prochaine étape."
+  },
+  {
+    "id": "8bb098eaafd019a7",
+    "en": "in-app code · {0}",
+    "zh": "课堂编辑器代码 · {0}",
+    "es": "código de la app · {0}",
+    "fr": "code intégré · {0}"
+  },
+  {
+    "id": "21be10abd17ed21a",
+    "en": "These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.",
+    "zh": "这些检查只看你的文件，不看程序输出了什么。老师会确认它是否完成了任务。",
+    "es": "Estas comprobaciones miran tus archivos, no lo que imprime tu programa. Tu profesor confirmará que hace la tarea.",
+    "fr": "Ces vérifications regardent vos fichiers, pas ce que votre programme affiche. Votre enseignant confirmera qu’il fait la tâche."
+  },
+  {
+    "id": "8b9301762db9face",
+    "en": "Found in your files",
+    "zh": "在你的文件中找到了",
+    "es": "Encontrado en tus archivos",
+    "fr": "Trouvé dans vos fichiers"
+  },
+  {
+    "id": "cb9fbdb3dd3cb644",
+    "en": "Not found yet: add it and submit again",
+    "zh": "还没找到：加上后再提交一次",
+    "es": "Aún no encontrado: añádelo y vuelve a entregar",
+    "fr": "Pas encore trouvé : ajoutez-le et rendez à nouveau"
+  },
+  {
+    "id": "5cac97f9b1f7d1f4",
+    "en": "Pick a Python preset and press “Use this lesson”, or write your own steps below and press “Publish lesson”.",
+    "zh": "选择一个 Python 预设课程并点“使用这节课”，或在下面编写自己的步骤后点“发布课程”。",
+    "es": "Elige una lección de Python y pulsa «Usar esta lección», o escribe tus propios pasos abajo y pulsa «Publicar lección».",
+    "fr": "Choisissez une leçon Python et appuyez sur « Utiliser cette leçon », ou écrivez vos étapes ci-dessous et appuyez sur « Publier la leçon »."
+  },
+  {
+    "id": "051ddc5dccc9f3d0",
+    "en": "1 student connected. Open step 1 when the class is in; late joiners can still join.",
+    "zh": "已连接 1 名学生。全班到齐后打开第 1 步；迟到的同学仍可加入。",
+    "es": "1 estudiante conectado. Abre el paso 1 cuando esté toda la clase; quien llegue tarde aún puede unirse.",
+    "fr": "1 élève connecté. Ouvrez l’étape 1 quand la classe est là ; les retardataires peuvent encore rejoindre."
+  },
+  {
+    "id": "876bc4cb0c87f755",
+    "en": "{0} students connected. Open step 1 when the class is in; late joiners can still join.",
+    "zh": "已连接 {0} 名学生。全班到齐后打开第 1 步；迟到的同学仍可加入。",
+    "es": "{0} estudiantes conectados. Abre el paso 1 cuando esté toda la clase; quien llegue tarde aún puede unirse.",
+    "fr": "{0} élèves connectés. Ouvrez l’étape 1 quand la classe est là ; les retardataires peuvent encore rejoindre."
+  },
+  {
+    "id": "1aa7b90deca86867",
+    "en": "Waiting for the first student to join: show them the QR code above.",
+    "zh": "等待第一位学生加入：给他们看上面的二维码。",
+    "es": "Esperando al primer estudiante: enséñale el código QR de arriba.",
+    "fr": "En attente du premier élève : montrez-lui le QR code ci-dessus."
+  },
+  {
+    "id": "c0821a22570b4b01",
+    "en": "Checking 1 submission… the class attack unlocks when it finishes.",
+    "zh": "正在检查 1 份提交……检查完成后即可发起全班攻击。",
+    "es": "Comprobando 1 entrega… el ataque de la clase se desbloquea cuando termine.",
+    "fr": "Vérification d’1 rendu… l’attaque de la classe se débloque une fois terminée."
+  },
+  {
+    "id": "6d581e881a5717d6",
+    "en": "Checking {0} submissions… the class attack unlocks when they finish.",
+    "zh": "正在检查 {0} 份提交……全部完成后即可发起全班攻击。",
+    "es": "Comprobando {0} entregas… el ataque de la clase se desbloquea cuando terminen.",
+    "fr": "Vérification de {0} rendus… l’attaque de la classe se débloque quand elles sont terminées."
+  },
+  {
+    "id": "6f3ed9a83bcec9a2",
+    "en": "The class attack unlocks after the first submission (0 of {0} submitted).",
+    "zh": "第一份提交后即可发起全班攻击（已提交 0/{0}）。",
+    "es": "El ataque de la clase se desbloquea tras la primera entrega (0 de {0} entregadas).",
+    "fr": "L’attaque de la classe se débloque après le premier rendu (0 sur {0} rendus)."
+  },
+  {
+    "id": "306f7cdcf67dbaf8",
+    "en": "{0} of {1} submitted. Launch the class attack when you’re ready; students who haven’t submitted just don’t add damage.",
+    "zh": "已提交 {0}/{1}。准备好就发起全班攻击；没提交的同学只是不增加伤害。",
+    "es": "{0} de {1} entregadas. Lanza el ataque de la clase cuando quieras; quien no haya entregado simplemente no suma daño.",
+    "fr": "{0} sur {1} rendus. Lancez l’attaque de la classe quand vous voulez ; ceux qui n’ont pas rendu n’ajoutent simplement pas de dégâts."
+  },
+  {
+    "id": "64e45b0252ac8d44",
+    "en": "The class attack is playing on the projector (about 10 seconds).",
+    "zh": "全班攻击正在投影上播放（约 10 秒）。",
+    "es": "El ataque de la clase se está mostrando en el proyector (unos 10 segundos).",
+    "fr": "L’attaque de la classe passe sur le projecteur (environ 10 secondes)."
+  },
+  {
+    "id": "6df739c95d75d34a",
+    "en": "Say: “{0} of {1} of you submitted, and {2} improved the most.”",
+    "zh": "可以说：“{1} 位同学中有 {0} 位提交了，{2} 进步最大。”",
+    "es": "Di: «{0} de {1} habéis entregado, y {2} es quien más ha mejorado».",
+    "fr": "Dites : « {0} sur {1} ont rendu, et {2} a le plus progressé. »"
+  },
+  {
+    "id": "d2d570547e9d3c6c",
+    "en": "Say: “{0} of {1} of you submitted.”",
+    "zh": "可以说：“{1} 位同学中有 {0} 位提交了。”",
+    "es": "Di: «{0} de {1} habéis entregado».",
+    "fr": "Dites : « {0} sur {1} ont rendu. »"
+  },
+  {
+    "id": "478b575097fa08e3",
+    "en": "Next up: {0}.",
+    "zh": "下一步：{0}。",
+    "es": "A continuación: {0}.",
+    "fr": "Ensuite : {0}."
+  },
+  {
+    "id": "0730b9cd8f951b8b",
+    "en": "“Retry & improve” gives everyone another go at this step; “Complete lesson” ends it.",
+    "zh": "“重试并改进”让大家再做一次这一步；“完成课程”结束课程。",
+    "es": "«Reintentar y mejorar» da a todos otra oportunidad en este paso; «Completar lección» la termina.",
+    "fr": "« Réessayer et améliorer » redonne une chance à tous sur cette étape ; « Terminer la leçon » y met fin."
+  },
+  {
+    "id": "61cd464a728dfd2b",
+    "en": "“Retry & improve” gives everyone another go at this step; “Open next step” starts step {0}.",
+    "zh": "“重试并改进”让大家再做一次这一步；“打开下一步”开始第 {0} 步。",
+    "es": "«Reintentar y mejorar» da a todos otra oportunidad en este paso; «Abrir siguiente paso» empieza el paso {0}.",
+    "fr": "« Réessayer et améliorer » redonne une chance à tous sur cette étape ; « Ouvrir l’étape suivante » lance l’étape {0}."
+  },
+  {
+    "id": "11e516dd70b7cf4a",
+    "en": "Lesson complete. Export the results for your records.",
+    "zh": "课程已完成。导出结果留作记录。",
+    "es": "Lección completada. Exporta los resultados para tus registros.",
+    "fr": "Leçon terminée. Exportez les résultats pour vos archives."
+  },
+  {
+    "id": "74b3355a9f0a788c",
+    "en": "End lesson…",
+    "zh": "结束课程…",
+    "es": "Terminar lección…",
+    "fr": "Terminer la leçon…"
+  },
+  {
+    "id": "4cf8a095560f481d",
+    "en": "Export results · end the lesson",
+    "zh": "导出结果 · 结束课程",
+    "es": "Exportar resultados · terminar la lección",
+    "fr": "Exporter les résultats · terminer la leçon"
+  },
+  {
+    "id": "ed915e1452521e82",
+    "en": "Results for your records",
+    "zh": "结果存档",
+    "es": "Resultados para tus registros",
+    "fr": "Résultats pour vos archives"
+  },
+  {
+    "id": "5767487ec49b9d3f",
+    "en": "⇩ Export CSV",
+    "zh": "⇩ 导出 CSV",
+    "es": "⇩ Exportar CSV",
+    "fr": "⇩ Exporter en CSV"
+  },
+  {
+    "id": "451d9fb34c928dd1",
+    "en": "⇩ Export Markdown",
+    "zh": "⇩ 导出 Markdown",
+    "es": "⇩ Exportar Markdown",
+    "fr": "⇩ Exporter en Markdown"
+  },
+  {
+    "id": "2bf54805479cbb1b",
+    "en": "Coding time",
+    "zh": "编程时间",
+    "es": "Hora de programar",
+    "fr": "Temps de code"
+  },
+  {
+    "id": "afd51896b45c3383",
+    "en": "Step {0}/{1}",
+    "zh": "第 {0}/{1} 步",
+    "es": "Paso {0}/{1}",
+    "fr": "Étape {0}/{1}"
+  },
+  {
+    "id": "abe309e737e83045",
+    "en": "{0} of {1} submitted",
+    "zh": "已提交 {0}/{1}",
+    "es": "{0} de {1} entregadas",
+    "fr": "{0} sur {1} rendus"
+  },
+  {
+    "id": "809e50d79db093a6",
+    "en": " · {0} offline",
+    "zh": " · {0} 人离线",
+    "es": " · {0} sin conexión",
+    "fr": " · {0} hors ligne"
+  },
+  {
+    "id": "5a7971cf605d265b",
+    "en": "checking code…",
+    "zh": "正在检查代码…",
+    "es": "comprobando el código…",
+    "fr": "vérification du code…"
+  },
+  {
+    "id": "2979ee902346446a",
+    "en": "stuck: needs to resubmit",
+    "zh": "卡住了：需要重新提交",
+    "es": "atascado: tiene que volver a entregar",
+    "fr": "bloqué : doit rendre à nouveau"
+  },
+  {
+    "id": "4d4e1d6af3bf4b44",
+    "en": "reviewed by you",
+    "zh": "你已复核",
+    "es": "revisado por ti",
+    "fr": "relu par vous"
+  },
+  {
+    "id": "1f8361e53335929e",
+    "en": "submitted · needs your review",
+    "zh": "已提交 · 等你复核",
+    "es": "entregado · pendiente de tu revisión",
+    "fr": "rendu · à relire"
+  },
+  {
+    "id": "f483300221ac555c",
+    "en": "your reviewed score",
+    "zh": "你复核后的分数",
+    "es": "tu nota revisada",
+    "fr": "votre note après relecture"
+  },
+  {
+    "id": "333865c54a9fc16e",
+    "en": "evidence checks passed (static, not run)",
+    "zh": "通过的证据检查（静态检查，未运行）",
+    "es": "comprobaciones superadas (estáticas, sin ejecutar)",
+    "fr": "vérifications réussies (statiques, sans exécution)"
+  },
+  {
+    "id": "24bec41e00d05996",
+    "en": "checks {0}/{1}",
+    "zh": "检查 {0}/{1}",
+    "es": "comprobaciones {0}/{1}",
+    "fr": "vérifications {0}/{1}"
+  },
+  {
+    "id": "ce344c5e8efe7301",
+    "en": "no result yet",
+    "zh": "还没有结果",
+    "es": "aún sin resultado",
+    "fr": "pas encore de résultat"
+  },
+  {
+    "id": "8e45c9eccd72e7df",
+    "en": "Works: it does the task (100)",
+    "zh": "完成了：程序做到了任务要求（100）",
+    "es": "Funciona: hace la tarea (100)",
+    "fr": "Ça marche : la tâche est faite (100)"
+  },
+  {
+    "id": "ee256ea1b8d8a75f",
+    "en": "Not yet: it doesn’t do the task yet (max 40)",
+    "zh": "还没有：还没做到任务要求（最多 40）",
+    "es": "Todavía no: aún no hace la tarea (máx. 40)",
+    "fr": "Pas encore : la tâche n’est pas encore faite (max 40)"
+  },
+  {
+    "id": "d2baf0cfd36b619e",
+    "en": "Ask me: let’s talk about it (score unchanged)",
+    "zh": "来找我：我们聊聊（分数不变）",
+    "es": "Pregúntame: lo hablamos (nota sin cambios)",
+    "fr": "Venez me voir : on en parle (note inchangée)"
+  },
+  {
+    "id": "4fe292186376b55a",
+    "en": "1 student contributed. Only improvements add extra damage.",
+    "zh": "1 名学生贡献了攻击。只有进步才会带来额外伤害。",
+    "es": "1 estudiante ha contribuido. Solo las mejoras suman daño extra.",
+    "fr": "1 élève a contribué. Seuls les progrès ajoutent des dégâts en plus."
+  },
+  {
+    "id": "51aecbb1840eb3c2",
+    "en": "{0} students contributed. Only improvements add extra damage.",
+    "zh": "{0} 名学生贡献了攻击。只有进步才会带来额外伤害。",
+    "es": "{0} estudiantes han contribuido. Solo las mejoras suman daño extra.",
+    "fr": "{0} élèves ont contribué. Seuls les progrès ajoutent des dégâts en plus."
+  },
+  {
+    "id": "bdf375b2286eb026",
+    "en": "Checking your code…",
+    "zh": "正在检查你的代码…",
+    "es": "Comprobando tu código…",
+    "fr": "Vérification de votre code…"
+  },
+  {
+    "id": "151c5db601f45011",
+    "en": "Submit improved code",
+    "zh": "提交改进后的代码",
+    "es": "Entregar el código mejorado",
+    "fr": "Rendre le code amélioré"
+  },
+  {
+    "id": "294fa5b3c1b9f0ee",
+    "en": "Submit my code",
+    "zh": "提交我的代码",
+    "es": "Entregar mi código",
+    "fr": "Rendre mon code"
+  },
+  {
+    "id": "ff492a6379e67643",
+    "en": "Scored your code ({0}). Keep improving until the teacher closes submissions.",
+    "zh": "已为你的代码评分（{0}）。在老师关闭提交前，可以继续改进。",
+    "es": "Tu código tiene nota ({0}). Sigue mejorando hasta que el profesor cierre las entregas.",
+    "fr": "Votre code est noté ({0}). Continuez à l’améliorer jusqu’à ce que l’enseignant ferme les rendus."
+  },
+  {
+    "id": "eb3168f9e7c8a4fd",
+    "en": "Your code saves on this device as you type. Submit when you are ready.",
+    "zh": "你的代码会在输入时保存在这台设备上。准备好了就提交。",
+    "es": "Tu código se guarda en este dispositivo mientras escribes. Entrégalo cuando estés listo.",
+    "fr": "Votre code s’enregistre sur cet appareil pendant la frappe. Rendez-le quand vous êtes prêt."
+  },
+  {
+    "id": "272615fb1adef68b",
+    "en": "Reconnected. Everything is saved.",
+    "zh": "已重新连接。所有内容都已保存。",
+    "es": "Reconectado. Todo está guardado.",
+    "fr": "Reconnecté. Tout est enregistré."
+  },
+  {
+    "id": "d516f3bd7df25807",
+    "en": "found in your files",
+    "zh": "在你的文件中找到了",
+    "es": "encontrado en tus archivos",
+    "fr": "trouvé dans vos fichiers"
+  },
+  {
+    "id": "bbda6d5a98649615",
+    "en": "not found yet",
+    "zh": "还没找到",
+    "es": "aún no encontrado",
+    "fr": "pas encore trouvé"
+  },
+  {
+    "id": "03a714cf65787a6b",
+    "en": "check this yourself",
+    "zh": "请自己检查这一项",
+    "es": "compruébalo tú",
+    "fr": "vérifiez-le vous-même"
+  },
+  {
+    "id": "d99cbe3f85e93a42",
+    "en": "{0} of {1} done",
+    "zh": "已完成 {0}/{1}",
+    "es": "{0} de {1} hechas",
+    "fr": "{0} sur {1} faites"
+  },
+  {
+    "id": "100ec1bc78a4cc83",
+    "en": "To do",
+    "zh": "待办",
+    "es": "Por hacer",
+    "fr": "À faire"
+  },
+  {
+    "id": "83f873f14955cf06",
+    "en": "Check these yourself before you submit. After you submit, the ones the computer can check turn ✓ or ✗.",
+    "zh": "提交前先自己检查这些。提交后，电脑能检查的项会变成 ✓ 或 ✗。",
+    "es": "Compruébalas tú antes de entregar. Después de entregar, las que el ordenador puede comprobar se marcan con ✓ o ✗.",
+    "fr": "Vérifiez-les vous-même avant de rendre. Après le rendu, celles que l’ordinateur peut vérifier passent à ✓ ou ✗."
+  },
+  {
+    "id": "43212c5762d408a2",
+    "en": "From your last submission: 1 still missing. Fix it and submit again.",
+    "zh": "根据你上次的提交：还差 1 项。改好后再提交一次。",
+    "es": "Según tu última entrega: falta 1. Corrígelo y vuelve a entregar.",
+    "fr": "D’après votre dernier rendu : il en manque encore 1. Corrigez-le et rendez à nouveau."
+  },
+  {
+    "id": "fb46b7dcc17f0c51",
+    "en": "From your last submission: {0} still missing. Fix them and submit again.",
+    "zh": "根据你上次的提交：还差 {0} 项。改好后再提交一次。",
+    "es": "Según tu última entrega: faltan {0}. Corrígelos y vuelve a entregar.",
+    "fr": "D’après votre dernier rendu : il en manque encore {0}. Corrigez-les et rendez à nouveau."
+  },
+  {
+    "id": "88504f75accabbd1",
+    "en": "From your last submission. The computer only reads your files; your teacher checks what it prints.",
+    "zh": "根据你上次的提交。电脑只读你的文件；程序输出什么由老师检查。",
+    "es": "Según tu última entrega. El ordenador solo lee tus archivos; tu profesor comprueba lo que imprime.",
+    "fr": "D’après votre dernier rendu. L’ordinateur lit seulement vos fichiers ; votre enseignant vérifie ce qui s’affiche."
+  },
+  {
+    "id": "0eaed704010ffa66",
+    "en": "Done when",
+    "zh": "完成标准",
+    "es": "Terminado cuando",
+    "fr": "C’est fini quand"
+  },
+  {
+    "id": "1a822fae620b0182",
+    "en": "Expected output",
+    "zh": "预期输出",
+    "es": "Salida esperada",
+    "fr": "Sortie attendue"
+  },
+  {
+    "id": "985b22c49fc1634c",
+    "en": "Next hint ({0}/{1})",
+    "zh": "下一条提示（{0}/{1}）",
+    "es": "Siguiente pista ({0}/{1})",
+    "fr": "Indice suivant ({0}/{1})"
+  },
+  {
+    "id": "41bb97a5662eec48",
+    "en": "💡 Need a hint? ({0})",
+    "zh": "💡 需要提示吗？（{0}）",
+    "es": "💡 ¿Necesitas una pista? ({0})",
+    "fr": "💡 Besoin d’un indice ? ({0})"
+  },
+  {
+    "id": "0d0a8c6df3ace225",
+    "en": "Concepts",
+    "zh": "知识点",
+    "es": "Conceptos",
+    "fr": "Notions"
+  },
+  {
+    "id": "e2ca584d4893c27f",
+    "en": "Student task card",
+    "zh": "学生任务卡",
+    "es": "Tarjeta de tarea del estudiante",
+    "fr": "Fiche de tâche de l’élève"
+  },
+  {
+    "id": "90b07545faa613d5",
+    "en": "{0} to-dos",
+    "zh": "{0} 项待办",
+    "es": "{0} tareas",
+    "fr": "{0} choses à faire"
+  },
+  {
+    "id": "0977a4567f1619d9",
+    "en": "{0} done-when",
+    "zh": "{0} 条完成标准",
+    "es": "{0} criterios de terminado",
+    "fr": "{0} critères de fin"
+  },
+  {
+    "id": "2d8aadd1991253af",
+    "en": "1 hint",
+    "zh": "1 条提示",
+    "es": "1 pista",
+    "fr": "1 indice"
+  },
+  {
+    "id": "d9ecb5bb368feb86",
+    "en": "{0} hints",
+    "zh": "{0} 条提示",
+    "es": "{0} pistas",
+    "fr": "{0} indices"
+  },
+  {
+    "id": "4d19f436842e9bda",
+    "en": "one line per input() call",
+    "zh": "每次 input() 调用一行",
+    "es": "una línea por cada llamada a input()",
+    "fr": "une ligne par appel à input()"
+  },
+  {
+    "id": "a4de9c8f3379d74f",
+    "en": "input lines",
+    "zh": "输入行",
+    "es": "líneas de entrada",
+    "fr": "lignes d’entrée"
+  },
+  {
+    "id": "deb9023e073fd083",
+    "en": "$ python output",
+    "zh": "$ python 输出",
+    "es": "$ salida de python",
+    "fr": "$ sortie python"
+  },
+  {
+    "id": "f63124e67b48faf3",
+    "en": "input() lines",
+    "zh": "input() 输入行",
+    "es": "líneas para input()",
+    "fr": "lignes pour input()"
+  },
+  {
+    "id": "763674d07e2a79d8",
+    "en": "Runs only in your browser. It doesn't change your score.",
+    "zh": "只在你的浏览器里运行，不影响你的分数。",
+    "es": "Se ejecuta solo en tu navegador. No cambia tu nota.",
+    "fr": "S’exécute uniquement dans votre navigateur. Ne change pas votre note."
+  },
+  {
+    "id": "b0f0b76f485c58b4",
+    "en": "▶ Run",
+    "zh": "▶ 运行",
+    "es": "▶ Ejecutar",
+    "fr": "▶ Exécuter"
+  },
+  {
+    "id": "15f637f29da9b7c7",
+    "en": "reset to starter",
+    "zh": "恢复为起始代码",
+    "es": "volver al código inicial",
+    "fr": "revenir au code de départ"
+  },
+  {
+    "id": "92eeb63b63fa07ae",
+    "en": "Write → ▶ Run to try it (only in your browser, never scored) → Submit → read your feedback → improve and submit again.",
+    "zh": "编写 → ▶ 运行试试（只在你的浏览器里，不计分）→ 提交 → 阅读反馈 → 改进后再次提交。",
+    "es": "Escribe → ▶ Ejecuta para probarlo (solo en tu navegador, sin nota) → Entrega → lee los comentarios → mejora y entrega de nuevo.",
+    "fr": "Écrivez → ▶ Exécutez pour essayer (dans votre navigateur seulement, non noté) → Rendez → lisez les retours → améliorez et rendez à nouveau."
+  },
+  {
+    "id": "9bf80a70f6d88a5f",
+    "en": "running {0}…",
+    "zh": "正在运行 {0}…",
+    "es": "ejecutando {0}…",
+    "fr": "exécution de {0}…"
+  },
+  {
+    "id": "1f2d81b4a8c91900",
+    "en": "loading Python… (the first run downloads ~10 MB)",
+    "zh": "正在加载 Python…（第一次运行会下载约 10 MB）",
+    "es": "cargando Python… (la primera ejecución descarga ~10 MB)",
+    "fr": "chargement de Python… (la première exécution télécharge ~10 Mo)"
+  },
+  {
+    "id": "a778ab518733de3a",
+    "en": "(no output: add a print() to see something)",
+    "zh": "（没有输出：加一个 print() 才能看到内容）",
+    "es": "(sin salida: añade un print() para ver algo)",
+    "fr": "(aucune sortie : ajoutez un print() pour voir quelque chose)"
+  },
+  {
+    "id": "5684fc83d71ec7a8",
+    "en": "Reset to the starter code? Your changes to this step will be lost.",
+    "zh": "恢复为起始代码吗？你在这一步的修改会丢失。",
+    "es": "¿Volver al código inicial? Perderás tus cambios en este paso.",
+    "fr": "Revenir au code de départ ? Vos modifications de cette étape seront perdues."
+  },
+  {
+    "id": "7ce1dc21786b58c2",
+    "en": "code for {0}",
+    "zh": "{0} 的代码",
+    "es": "código de {0}",
+    "fr": "code de {0}"
+  },
+  {
+    "id": "cdd1ee34d2f39df5",
+    "en": "Python couldn't load in this browser.",
+    "zh": "这个浏览器无法加载 Python。",
+    "es": "Python no se pudo cargar en este navegador.",
+    "fr": "Python n’a pas pu se charger dans ce navigateur."
+  },
+  {
+    "id": "9009fc96acf6ba62",
+    "en": "Stopped after {0}s: is there a loop that never ends?",
+    "zh": "{0} 秒后已停止：是不是有一个永远不会结束的循环？",
+    "es": "Detenido tras {0} s: ¿hay un bucle que nunca termina?",
+    "fr": "Arrêté après {0} s : y a-t-il une boucle qui ne s’arrête jamais ?"
+  },
+  {
+    "id": "64390236910fb5c5",
+    "en": "code editor",
+    "zh": "代码编辑器",
+    "es": "editor de código",
+    "fr": "éditeur de code"
+  },
+  {
+    "id": "a96583044eba7ad6",
+    "en": "HOW THIS STEP IS SCORED",
+    "zh": "这个步骤怎么评分",
+    "es": "CÓMO SE PUNTÚA ESTE PASO",
+    "fr": "COMMENT CETTE ÉTAPE EST NOTÉE"
+  },
+  {
+    "id": "1b261341cb00768e",
+    "en": "edited for this step",
+    "zh": "已为这个步骤修改",
+    "es": "editado para este paso",
+    "fr": "modifié pour cette étape"
+  },
+  {
+    "id": "ef1b0cae2943a564",
+    "en": "lesson default",
+    "zh": "课程默认",
+    "es": "predeterminado de la lección",
+    "fr": "par défaut de la leçon"
+  },
+  {
+    "id": "20260eac0b1027e1",
+    "en": "Students see these criteria under “How this task is scored”.",
+    "zh": "学生会在“这个任务怎么评分”下看到这些标准。",
+    "es": "Los estudiantes ven estos criterios en «Cómo se puntúa esta tarea».",
+    "fr": "Les élèves voient ces critères sous « Comment cette tâche est notée »."
+  },
+  {
+    "id": "372ea2d8a3fefc0d",
+    "en": "measures",
+    "zh": "衡量",
+    "es": "mide",
+    "fr": "mesure"
+  },
+  {
+    "id": "a5fc918683bf9602",
+    "en": "Types",
+    "zh": "类型",
+    "es": "Tipos",
+    "fr": "Types"
+  },
+  {
+    "id": "c011d6097bfbc8e9",
+    "en": "License",
+    "zh": "许可证",
+    "es": "Licencia",
+    "fr": "Licence"
+  },
+  {
+    "id": "6c35493a2b937829",
+    "en": "count",
+    "zh": "数量",
+    "es": "cantidad",
+    "fr": "nombre"
+  },
+  {
+    "id": "5ea44c3961f16643",
+    "en": "lines",
+    "zh": "行",
+    "es": "líneas",
+    "fr": "lignes"
+  },
+  {
+    "id": "a038e3fb2ec9153b",
+    "en": "⏸ Paused by your teacher",
+    "zh": "⏸ 老师暂停了",
+    "es": "⏸ Pausado por tu profesor",
+    "fr": "⏸ Mis en pause par votre enseignant"
+  },
+  {
+    "id": "158b1421d459d2c6",
+    "en": "The clock is frozen for the whole class.",
+    "zh": "全班的计时都暂停了。",
+    "es": "El reloj está detenido para toda la clase.",
+    "fr": "L’horloge est arrêtée pour toute la classe."
+  },
+  {
+    "id": "556ee8e0e3078fef",
+    "en": "▶ Resume (P)",
+    "zh": "▶ 继续（P）",
+    "es": "▶ Reanudar (P)",
+    "fr": "▶ Reprendre (P)"
+  },
+  {
+    "id": "fd659ca63efccd6a",
+    "en": "Resuming in {0}…",
+    "zh": "{0} 秒后继续…",
+    "es": "Reanudando en {0}…",
+    "fr": "Reprise dans {0}…"
+  },
+  {
+    "id": "e4643a87746419f1",
+    "en": "Rubric:",
+    "zh": "评分标准：",
+    "es": "Rúbrica:",
+    "fr": "Grille d’évaluation :"
+  },
+  {
+    "id": "7923e04c84194586",
+    "en": "{0} of {1} submitted · class average {2} · boss −{3}%",
+    "zh": "已提交 {0}/{1} · 全班平均 {2} · Boss −{3}%",
+    "es": "{0} de {1} entregadas · media de la clase {2} · jefe −{3}%",
+    "fr": "{0} sur {1} rendus · moyenne de la classe {2} · boss −{3} %"
+  },
+  {
+    "id": "63be20a2c684416b",
+    "en": "{0} submissions · average {1} · boss −{2}% · past class size unavailable",
+    "zh": "{0} 份提交 · 平均 {1} · Boss −{2}% · 无法得知当时的班级人数",
+    "es": "{0} entregas · media {1} · jefe −{2}% · tamaño de la clase entonces no disponible",
+    "fr": "{0} rendus · moyenne {1} · boss −{2} % · effectif de l’époque inconnu"
+  },
+  {
+    "id": "aff61805cf98f409",
+    "en": "No submissions to review yet.",
+    "zh": "还没有可复盘的提交。",
+    "es": "Todavía no hay entregas que revisar.",
+    "fr": "Pas encore de rendus à examiner."
+  },
+  {
+    "id": "02b8a52d93bf727a",
+    "en": "Steps reviewed: {0} · students with submissions: {1} · class average {2}",
+    "zh": "已复盘步骤：{0} · 有提交的学生：{1} · 全班平均 {2}",
+    "es": "Pasos revisados: {0} · estudiantes con entregas: {1} · media de la clase {2}",
+    "fr": "Étapes examinées : {0} · élèves ayant rendu : {1} · moyenne de la classe {2}"
+  },
+  {
+    "id": "d4df477cdf44c1c3",
+    "en": "No class rounds have been reviewed yet.",
+    "zh": "还没有复盘过任何一轮。",
+    "es": "Todavía no se ha revisado ninguna ronda.",
+    "fr": "Aucune manche n’a encore été examinée."
+  },
+  {
+    "id": "93c3d4497c74d3f1",
+    "en": "Below 50",
+    "zh": "50 分以下",
+    "es": "Menos de 50",
+    "fr": "Moins de 50"
+  },
+  {
+    "id": "3cfbb6a4430428e1",
+    "en": "50 to under 80",
+    "zh": "50 到 80 分以下",
+    "es": "De 50 a menos de 80",
+    "fr": "De 50 à moins de 80"
+  },
+  {
+    "id": "dc6c682b28206105",
+    "en": "{0}/{1}: {2}. Work through one example together.",
+    "zh": "{0}/{1}：{2}。一起做一个例子。",
+    "es": "{0}/{1}: {2}. Resolved un ejemplo juntos.",
+    "fr": "{0}/{1} : {2}. Faites un exemple ensemble."
+  },
+  {
+    "id": "01928b376e11533f",
+    "en": "{0}/{1}: {2}. The class also needed this last time; try a different example.",
+    "zh": "{0}/{1}：{2}。上次全班也在这里卡住；换一个例子试试。",
+    "es": "{0}/{1}: {2}. La clase también lo necesitó la última vez; prueba con otro ejemplo.",
+    "fr": "{0}/{1} : {2}. La classe en avait aussi besoin la dernière fois ; essayez un autre exemple."
+  },
+  {
+    "id": "efb2ccbf57b30088",
+    "en": "{0} students have no submission. Check that they can open the editor and send their work.",
+    "zh": "有 {0} 名学生没有提交。确认他们能打开编辑器并提交作业。",
+    "es": "{0} estudiantes no han entregado. Comprueba que pueden abrir el editor y enviar su trabajo.",
+    "fr": "{0} élèves n’ont rien rendu. Vérifiez qu’ils peuvent ouvrir l’éditeur et envoyer leur travail."
+  },
+  {
+    "id": "91bafdf552bc4ab2",
+    "en": "One student has no submission. Check that they can open the editor and send their work.",
+    "zh": "有 1 名学生没有提交。确认他能打开编辑器并提交作业。",
+    "es": "Un estudiante no ha entregado. Comprueba que puede abrir el editor y enviar su trabajo.",
+    "fr": "Un élève n’a rien rendu. Vérifiez qu’il peut ouvrir l’éditeur et envoyer son travail."
+  },
+  {
+    "id": "cb81117f41f4c87a",
+    "en": "The check details are unavailable. Ask students to show one example before choosing what to revisit.",
+    "zh": "没有检查的详细结果。先请学生展示一个例子，再决定要复习什么。",
+    "es": "No hay detalles de las comprobaciones. Pide a los estudiantes que enseñen un ejemplo antes de decidir qué repasar.",
+    "fr": "Le détail des vérifications n’est pas disponible. Demandez aux élèves de montrer un exemple avant de choisir quoi revoir."
+  },
+  {
+    "id": "f34b30ddc678f568",
+    "en": "Check details cover {0} of {1} submissions. Ask the others to show their work.",
+    "zh": "检查详情只覆盖了 {1} 份提交中的 {0} 份。请其他同学展示他们的作业。",
+    "es": "Los detalles cubren {0} de {1} entregas. Pide a los demás que enseñen su trabajo.",
+    "fr": "Le détail couvre {0} rendus sur {1}. Demandez aux autres de montrer leur travail."
+  },
+  {
+    "id": "beea4945975117c2",
+    "en": "Ask students to show the result and explain one change they made.",
+    "zh": "请学生展示结果，并讲讲自己做的一处修改。",
+    "es": "Pide a los estudiantes que enseñen el resultado y expliquen un cambio que hicieron.",
+    "fr": "Demandez aux élèves de montrer le résultat et d’expliquer une modification qu’ils ont faite."
+  },
+  {
+    "id": "618d7bae6c4e3403",
+    "en": "Ask a few students to explain how their code works before moving on.",
+    "zh": "继续之前，请几位学生讲讲他们的代码是怎么工作的。",
+    "es": "Antes de seguir, pide a algunos estudiantes que expliquen cómo funciona su código.",
+    "fr": "Avant de continuer, demandez à quelques élèves d’expliquer comment fonctionne leur code."
+  },
+  {
+    "id": "14ca980edf9dda06",
+    "en": "No submission in this round. Help them send one small change.",
+    "zh": "这一轮没有提交。帮他提交一个小改动。",
+    "es": "Sin entrega en esta ronda. Ayúdale a enviar un cambio pequeño.",
+    "fr": "Aucun rendu dans cette manche. Aidez-le à envoyer une petite modification."
+  },
+  {
+    "id": "ec489a5670ff23d2",
+    "en": "Score {0}. Offer a short check-in and one small next step.",
+    "zh": "得分 {0}。简单问问情况，给一个小的下一步。",
+    "es": "Nota {0}. Haz una breve comprobación y propón un pequeño siguiente paso.",
+    "fr": "Note {0}. Faites un petit point et proposez une petite étape suivante."
+  },
+  {
+    "id": "452c1ab1deb6bb9a",
+    "en": "Take a look together: {0}",
+    "zh": "一起看看：{0}",
+    "es": "Revisadlo juntos: {0}",
+    "fr": "Regardez-le ensemble : {0}"
+  },
+  {
+    "id": "e295efffcf9db688",
+    "en": "Improved by {0} points this round.",
+    "zh": "这一轮进步了 {0} 分。",
+    "es": "Ha mejorado {0} puntos en esta ronda.",
+    "fr": "A progressé de {0} points dans cette manche."
+  },
+  {
+    "id": "8608f26048883ece",
+    "en": "Improved by {0} points on {1}.",
+    "zh": "在“{1}”上进步了 {0} 分。",
+    "es": "Ha mejorado {0} puntos en {1}.",
+    "fr": "A progressé de {0} points sur {1}."
+  },
+  {
+    "id": "a391c7917b6fcfc7",
+    "en": "Met every recorded check on the first round.",
+    "zh": "第一轮就通过了所有记录的检查。",
+    "es": "Cumplió todas las comprobaciones registradas en la primera ronda.",
+    "fr": "A réussi toutes les vérifications enregistrées dès la première manche."
+  },
+  {
+    "id": "605b857679d5e710",
+    "en": "Met every recorded check this round.",
+    "zh": "这一轮通过了所有记录的检查。",
+    "es": "Cumplió todas las comprobaciones registradas en esta ronda.",
+    "fr": "A réussi toutes les vérifications enregistrées dans cette manche."
+  },
+  {
+    "id": "dc675e76aff5adde",
+    "en": "Open this step again so students can send their work.",
+    "zh": "再次打开这个步骤，让学生提交作业。",
+    "es": "Vuelve a abrir este paso para que los estudiantes envíen su trabajo.",
+    "fr": "Rouvrez cette étape pour que les élèves envoient leur travail."
+  },
+  {
+    "id": "fe913ce33bd74fb8",
+    "en": "Give students time to submit before moving on.",
+    "zh": "继续之前，给学生一些时间提交。",
+    "es": "Da tiempo a los estudiantes para entregar antes de seguir.",
+    "fr": "Laissez aux élèves le temps de rendre avant de continuer."
+  },
+  {
+    "id": "ab145d4cbf8b8a9d",
+    "en": "Retry this step; most submitted work is one check away.",
+    "zh": "重试这一步；大部分提交只差一项检查。",
+    "es": "Repite este paso; casi todo lo entregado está a una comprobación.",
+    "fr": "Refaites cette étape ; la plupart des rendus sont à une vérification près."
+  },
+  {
+    "id": "72660d3f89e582b0",
+    "en": "Work through one example together, then retry this step.",
+    "zh": "先一起做一个例子，再重试这一步。",
+    "es": "Resolved un ejemplo juntos y luego repetid este paso.",
+    "fr": "Faites un exemple ensemble, puis refaites cette étape."
+  },
+  {
+    "id": "0b54029ba637247c",
+    "en": "Check one example of student work before choosing the next step.",
+    "zh": "选择下一步之前，先看一份学生的作业。",
+    "es": "Revisa un ejemplo de trabajo de un estudiante antes de elegir el siguiente paso.",
+    "fr": "Regardez un exemple de travail d’élève avant de choisir l’étape suivante."
+  },
+  {
+    "id": "7a48e73e7d67e3a2",
+    "en": "Move on to step {0}: {1}.",
+    "zh": "进入第 {0} 步：{1}。",
+    "es": "Pasa al paso {0}: {1}.",
+    "fr": "Passez à l’étape {0} : {1}."
+  },
+  {
+    "id": "8aead715581b53cb",
+    "en": "Finish the lesson and ask students to explain one change they made.",
+    "zh": "结束课程，请学生讲讲自己做的一处修改。",
+    "es": "Termina la lección y pide a los estudiantes que expliquen un cambio que hicieron.",
+    "fr": "Terminez la leçon et demandez aux élèves d’expliquer une modification qu’ils ont faite."
+  },
+  {
+    "id": "27f492d72e83c66b",
+    "en": "No submission in the reviewed rounds. Help them get started.",
+    "zh": "复盘的几轮里都没有提交。帮他开个头。",
+    "es": "Sin entregas en las rondas revisadas. Ayúdale a empezar.",
+    "fr": "Aucun rendu dans les manches examinées. Aidez-le à démarrer."
+  },
+  {
+    "id": "41e2b0a9e8a63139",
+    "en": "Average {0} across {1} submitted steps. Offer a short check-in.",
+    "zh": "{1} 个已提交步骤的平均分为 {0}。简单问问情况。",
+    "es": "Media de {0} en {1} pasos entregados. Haz una breve comprobación.",
+    "fr": "Moyenne de {0} sur {1} étapes rendues. Faites un petit point."
+  },
+  {
+    "id": "bbb903a67625f3a2",
+    "en": "Score {0} on the submitted step. Offer a short check-in.",
+    "zh": "已提交步骤得分 {0}。简单问问情况。",
+    "es": "Nota {0} en el paso entregado. Haz una breve comprobación.",
+    "fr": "Note {0} sur l’étape rendue. Faites un petit point."
+  },
+  {
+    "id": "a945bcaf4c0f34a9",
+    "en": "Score {0} on {1}. Check one example together.",
+    "zh": "“{1}”得分 {0}。一起看一个例子。",
+    "es": "Nota {0} en {1}. Revisad un ejemplo juntos.",
+    "fr": "Note {0} sur {1}. Regardez un exemple ensemble."
+  },
+  {
+    "id": "a6a9972db567b665",
+    "en": "Start next time by revisiting {0}.",
+    "zh": "下次先复习“{0}”。",
+    "es": "La próxima vez, empieza repasando {0}.",
+    "fr": "La prochaine fois, commencez par revoir {0}."
+  },
+  {
+    "id": "27e5dfea4d7bb690",
+    "en": "Return to step {0}: {1} before starting a new lesson.",
+    "zh": "开始新课前，先回到第 {0} 步：{1}。",
+    "es": "Vuelve al paso {0}: {1} antes de empezar una nueva lección.",
+    "fr": "Revenez à l’étape {0} : {1} avant de commencer une nouvelle leçon."
+  },
+  {
+    "id": "9441f24b234b366a",
+    "en": "Review the first task and invite one small submission.",
+    "zh": "复习第一个任务，鼓励大家先交一个小改动。",
+    "es": "Repasa la primera tarea e invita a una entrega pequeña.",
+    "fr": "Revoyez la première tâche et encouragez un petit rendu."
+  },
+  {
+    "id": "bf4e6b4186aff017",
+    "en": "Try Python lesson {0} next.",
+    "zh": "下一节可以试试 Python 第 {0} 课。",
+    "es": "Prueba la lección de Python {0} a continuación.",
+    "fr": "Essayez ensuite la leçon Python {0}."
+  },
+  {
+    "id": "756ce8194872972f",
+    "en": "Choose a small project that combines what the class practiced.",
+    "zh": "选一个小项目，把全班练过的内容结合起来。",
+    "es": "Elige un proyecto pequeño que combine lo que la clase ha practicado.",
+    "fr": "Choisissez un petit projet qui combine ce que la classe a pratiqué."
+  },
+  {
+    "id": "e074f20d4a2ec1d3",
+    "en": "Choose a short task that uses today’s ideas in a new way.",
+    "zh": "选一个简短的任务，用新的方式运用今天学到的内容。",
+    "es": "Elige una tarea corta que use las ideas de hoy de una forma nueva.",
+    "fr": "Choisissez une courte tâche qui utilise les idées du jour autrement."
+  },
+  {
+    "id": "197d62af68dcc247",
+    "en": "Round debrief",
+    "zh": "本轮复盘",
+    "es": "Resumen de la ronda",
+    "fr": "Bilan de la manche"
+  },
+  {
+    "id": "90eeff6b8d054fcf",
+    "en": "Lesson debrief",
+    "zh": "课程复盘",
+    "es": "Resumen de la lección",
+    "fr": "Bilan de la leçon"
+  },
+  {
+    "id": "2aecffe2e20e1ebc",
+    "en": "What the class got",
+    "zh": "全班掌握情况",
+    "es": "Lo que la clase consiguió",
+    "fr": "Ce que la classe a réussi"
+  },
+  {
+    "id": "d0562ddc6cc31735",
+    "en": "What to reteach",
+    "zh": "需要再讲的内容",
+    "es": "Qué volver a enseñar",
+    "fr": "À réexpliquer"
+  },
+  {
+    "id": "1ff57a29d7c9d11b",
+    "en": "Next",
+    "zh": "下一步",
+    "es": "Siguiente",
+    "fr": "Ensuite"
+  },
+  {
+    "id": "2a19bb78de3ef043",
+    "en": "Students",
+    "zh": "学生",
+    "es": "Estudiantes",
+    "fr": "Élèves"
+  },
+  {
+    "id": "07a0c382bbf2e577",
+    "en": "Names are hidden while you project.",
+    "zh": "投影时不显示姓名。",
+    "es": "Los nombres se ocultan mientras proyectas.",
+    "fr": "Les noms sont masqués pendant la projection."
+  },
+  {
+    "id": "7eb9efe23831fcd9",
+    "en": "Show names",
+    "zh": "显示姓名",
+    "es": "Mostrar nombres",
+    "fr": "Afficher les noms"
+  },
+  {
+    "id": "4ca0ca385cde46c6",
+    "en": "Need help",
+    "zh": "需要帮助",
+    "es": "Necesitan ayuda",
+    "fr": "Besoin d’aide"
+  },
+  {
+    "id": "2a182ac744ad6c76",
+    "en": "Shout-outs",
+    "zh": "表扬",
+    "es": "Menciones",
+    "fr": "Bravo à"
+  },
+  {
+    "id": "1de3df70ddf4faab",
+    "en": "Steps",
+    "zh": "步骤",
+    "es": "Pasos",
+    "fr": "Étapes"
+  },
+  {
+    "id": "282b9d1443d60bf0",
+    "en": "average {0}",
+    "zh": "平均 {0}",
+    "es": "media {0}",
+    "fr": "moyenne {0}"
+  },
+  {
+    "id": "ae37c345f12c1123",
+    "en": "{0}/{1} submitted",
+    "zh": "已提交 {0}/{1}",
+    "es": "{0}/{1} entregadas",
+    "fr": "{0}/{1} rendus"
+  },
+  {
+    "id": "2cfa436ab0abf315",
+    "en": "{0} attempts",
+    "zh": "{0} 次尝试",
+    "es": "{0} intentos",
+    "fr": "{0} tentatives"
+  },
+  {
+    "id": "66545028939a3d6a",
+    "en": "Hardest:",
+    "zh": "最难的一项：",
+    "es": "Lo más difícil:",
+    "fr": "Le plus difficile :"
+  },
+  {
+    "id": "132cd5224f89c02f",
+    "en": "Retry this step",
+    "zh": "重试这一步",
+    "es": "Repetir este paso",
+    "fr": "Refaire cette étape"
+  },
+  {
+    "id": "298a9207a732a11d",
+    "en": "Next step",
+    "zh": "下一步",
+    "es": "Siguiente paso",
+    "fr": "Étape suivante"
+  },
+  {
+    "id": "50d479ae5658a97d",
+    "en": "Start the next lesson in a new classroom",
+    "zh": "在新课堂中开始下一课",
+    "es": "Empezar la siguiente lección en una clase nueva",
+    "fr": "Commencer la leçon suivante dans une nouvelle classe"
+  },
+  {
+    "id": "62e97f8f48b7e6f3",
+    "en": "No submission yet for this step.",
+    "zh": "这一步还没有提交。",
+    "es": "Todavía no hay entrega para este paso.",
+    "fr": "Pas encore de rendu pour cette étape."
+  },
+  {
+    "id": "d55ce3bec7f5c735",
+    "en": "Could not open a new classroom.",
+    "zh": "无法打开新课堂。",
+    "es": "No se pudo abrir una clase nueva.",
+    "fr": "Impossible d’ouvrir une nouvelle classe."
+  },
+  {
+    "id": "5c403f1ce784ac4c",
+    "en": "attempt {0}",
+    "zh": "第 {0} 次尝试",
+    "es": "intento {0}",
+    "fr": "tentative {0}"
+  },
+  {
+    "id": "dcc839a4015c4b7d",
+    "en": "View",
+    "zh": "视图",
+    "es": "Vista",
+    "fr": "Affichage"
+  },
+  {
+    "id": "5ce7ae33e74fb05f",
+    "en": "3D view (beta)",
+    "zh": "3D 视图（测试版）",
+    "es": "Vista 3D (beta)",
+    "fr": "Vue 3D (bêta)"
+  },
+  {
+    "id": "05033b3260dc79f4",
+    "en": "Set by this link.",
+    "zh": "由此链接设定。",
+    "es": "Lo fija este enlace.",
+    "fr": "Défini par ce lien."
+  },
+  {
+    "id": "6033a0fed7886356",
+    "en": "Vision Pro",
+    "zh": "Vision Pro",
+    "es": "Vision Pro",
+    "fr": "Vision Pro"
+  },
+  {
+    "id": "36b2ce46fcac24cb",
+    "en": "Enter Vision Pro",
+    "zh": "进入 Vision Pro",
+    "es": "Entrar en Vision Pro",
+    "fr": "Entrer dans Vision Pro"
+  },
+  {
+    "id": "e2285f224935f6f3",
+    "en": "Exit Vision Pro",
+    "zh": "退出 Vision Pro",
+    "es": "Salir de Vision Pro",
+    "fr": "Quitter Vision Pro"
+  },
+  {
+    "id": "a3ce0b6106cdb398",
+    "en": "follow",
+    "zh": "跟随",
+    "es": "seguir",
+    "fr": "suivre"
+  },
+  {
+    "id": "44c59f47532d6195",
+    "en": "follow a hero",
+    "zh": "跟随一位英雄",
+    "es": "seguir a un héroe",
+    "fr": "suivre un héros"
+  },
+  {
+    "id": "bd445c462b7eebbc",
+    "en": "overview",
+    "zh": "全景",
+    "es": "vista general",
+    "fr": "vue d'ensemble"
+  },
+  {
+    "id": "f469802a31447f90",
+    "en": "scale",
+    "zh": "比例",
+    "es": "escala",
+    "fr": "échelle"
+  },
+  {
+    "id": "dd7a47c0c9984e92",
+    "en": "tabletop",
+    "zh": "桌面",
+    "es": "mesa",
+    "fr": "sur table"
+  },
+  {
+    "id": "80e06ac967f42160",
+    "en": "life-size",
+    "zh": "真人大小",
+    "es": "tamaño real",
+    "fr": "grandeur nature"
+  },
+  {
+    "id": "b204d40acb88c70d",
+    "en": "loading the 3D scene…",
+    "zh": "正在加载 3D 场景…",
+    "es": "cargando la escena 3D…",
+    "fr": "chargement de la scène 3D…"
+  },
+  {
+    "id": "29740e30584f1e1a",
+    "en": "3D view unavailable here: showing 2D",
+    "zh": "此处无法使用 3D 视图：显示 2D",
+    "es": "La vista 3D no está disponible aquí: se muestra en 2D",
+    "fr": "Vue 3D indisponible ici : affichage en 2D"
+  },
+  {
+    "id": "788224c61a79970a",
+    "en": "could not start XR: {0}",
+    "zh": "无法启动 XR：{0}",
+    "es": "no se pudo iniciar XR: {0}",
+    "fr": "impossible de lancer la XR : {0}"
+  },
+  {
+    "id": "3a7a9ed9e632926c",
+    "en": "1 more check",
+    "zh": "还有 1 项检查",
+    "es": "1 comprobación más",
+    "fr": "1 vérification de plus"
+  },
+  {
+    "id": "d55442ac052575b9",
+    "en": "{0} more checks",
+    "zh": "还有 {0} 项检查",
+    "es": "{0} comprobaciones más",
+    "fr": "{0} vérifications de plus"
+  },
+  {
+    "id": "bba829d0bb9d47e6",
+    "en": "🙈 Scores hidden (projecting)",
+    "zh": "🙈 分数已隐藏（投影中）",
+    "es": "🙈 Notas ocultas (proyectando)",
+    "fr": "🙈 Notes masquées (projection)"
+  },
+  {
+    "id": "9d151e4c52ca6777",
+    "en": "👁 Scores visible",
+    "zh": "👁 分数可见",
+    "es": "👁 Notas visibles",
+    "fr": "👁 Notes visibles"
+  },
+  {
+    "id": "b938d12c1a275ade",
+    "en": "Show scores on this screen",
+    "zh": "在这块屏幕上显示分数",
+    "es": "Mostrar las notas en esta pantalla",
+    "fr": "Afficher les notes sur cet écran"
+  },
+  {
+    "id": "d105af67131760ac",
+    "en": "Hide scores on this screen",
+    "zh": "在这块屏幕上隐藏分数",
+    "es": "Ocultar las notas en esta pantalla",
+    "fr": "Masquer les notes sur cet écran"
+  },
+  {
+    "id": "3fe43cfcd97a0101",
+    "en": "↺ auto",
+    "zh": "↺ 自动",
+    "es": "↺ automático",
+    "fr": "↺ auto"
+  },
+  {
+    "id": "4074dab1e4851351",
+    "en": "You chose to hide scores here. Press and hold a 🙈 chip to peek.",
+    "zh": "你选择在这里隐藏分数。按住 🙈 标签可以偷看。",
+    "es": "Elegiste ocultar las notas aquí. Mantén pulsada una etiqueta 🙈 para verla.",
+    "fr": "Vous avez choisi de masquer les notes ici. Maintenez une pastille 🙈 pour jeter un œil."
+  },
+  {
+    "id": "1f8579d6feeca84e",
+    "en": "You chose to show scores here. Only do this if this screen isn’t on the projector.",
+    "zh": "你选择在这里显示分数。只有这块屏幕没在投影时才这样做。",
+    "es": "Elegiste mostrar las notas aquí. Hazlo solo si esta pantalla no está en el proyector.",
+    "fr": "Vous avez choisi d’afficher les notes ici. Ne le faites que si cet écran n’est pas projeté."
+  },
+  {
+    "id": "9c392b7d6f971ce4",
+    "en": "Hidden because this screen may be on the projector. Open the projector window to give the class its own view.",
+    "zh": "已隐藏，因为这块屏幕可能正在投影。打开投影窗口，让全班看它自己的视图。",
+    "es": "Ocultas porque esta pantalla puede estar en el proyector. Abre la ventana del proyector para que la clase tenga su propia vista.",
+    "fr": "Masquées car cet écran est peut-être projeté. Ouvrez la fenêtre du projecteur pour donner à la classe sa propre vue."
+  },
+  {
+    "id": "03998310e3fff2f5",
+    "en": "Visible: the class sees the projector window, not this screen.",
+    "zh": "可见：全班看到的是投影窗口，不是这块屏幕。",
+    "es": "Visibles: la clase ve la ventana del proyector, no esta pantalla.",
+    "fr": "Visibles : la classe voit la fenêtre du projecteur, pas cet écran."
+  },
+  {
+    "id": "7f4a2378986f74c0",
+    "en": "Press and hold to peek",
+    "zh": "按住即可偷看",
+    "es": "Mantén pulsado para ver",
+    "fr": "Maintenez pour jeter un œil"
+  },
+  {
+    "id": "03681706078d1d34",
+    "en": "{0}: score hidden. Press and hold to peek.",
+    "zh": "{0}：分数已隐藏。按住即可偷看。",
+    "es": "{0}: nota oculta. Mantén pulsado para verla.",
+    "fr": "{0} : note masquée. Maintenez pour jeter un œil."
+  },
+  {
+    "id": "9a484cfc07521e19",
+    "en": "🙈 hidden",
+    "zh": "🙈 已隐藏",
+    "es": "🙈 oculta",
+    "fr": "🙈 masquée"
+  },
+  {
+    "id": "9f1de29f7ba887c1",
+    "en": "Class impact: 0 damage (the boss was already defeated)",
+    "zh": "全班攻击：0 伤害（Boss 已经被打败了）",
+    "es": "Impacto de la clase: 0 de daño (el jefe ya estaba derrotado)",
+    "fr": "Impact de la classe : 0 dégât (le boss était déjà vaincu)"
+  },
+  {
+    "id": "2e345634242c5178",
+    "en": "Class impact: 0 damage (this step’s share of the boss is used up; the next step unlocks more)",
+    "zh": "全班攻击：0 伤害（这一步能打的 Boss 血量已经用完；下一步会解锁更多）",
+    "es": "Impacto de la clase: 0 de daño (la parte del jefe de este paso ya se agotó; el siguiente paso desbloquea más)",
+    "fr": "Impact de la classe : 0 dégât (la part du boss pour cette étape est épuisée ; l’étape suivante en débloque davantage)"
+  },
+  {
+    "id": "908759ffac38e9ec",
+    "en": "Class impact: 0 damage (no improvement since the last round)",
+    "zh": "全班攻击：0 伤害（与上一轮相比没有进步）",
+    "es": "Impacto de la clase: 0 de daño (sin mejoras desde la última ronda)",
+    "fr": "Impact de la classe : 0 dégât (aucun progrès depuis la dernière manche)"
+  },
+  {
+    "id": "1dff892932df68ef",
+    "en": "“Retry this step” (in the debrief below) gives everyone another go; “Complete lesson” ends it.",
+    "zh": "下方复盘里的“重试这一步”让大家再做一次；“完成课程”结束课程。",
+    "es": "«Repetir este paso» (en el resumen de abajo) da a todos otra oportunidad; «Completar lección» la termina.",
+    "fr": "« Refaire cette étape » (dans le bilan ci-dessous) redonne une chance à tous ; « Terminer la leçon » y met fin."
+  },
+  {
+    "id": "276e74f4057942ba",
+    "en": "“Retry this step” (in the debrief below) gives everyone another go; “Next step” starts step {0}.",
+    "zh": "下方复盘里的“重试这一步”让大家再做一次；“下一步”开始第 {0} 步。",
+    "es": "«Repetir este paso» (en el resumen de abajo) da a todos otra oportunidad; «Siguiente paso» empieza el paso {0}.",
+    "fr": "« Refaire cette étape » (dans le bilan ci-dessous) redonne une chance à tous ; « Étape suivante » lance l’étape {0}."
   }
 ]

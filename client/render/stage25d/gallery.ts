@@ -1,0 +1,168 @@
+// 3D stage gallery: the real sim (raid with bot heroes, or an 8-bot royale) rendered through createStage25d.
+//   ?scene=raid|royale  &boss=<slug>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset)
+// window.__stats = { fps, frameMs, renderMs } for automated checks.
+import type { BossKit, InputFrame, MatchState, PlayerState, RepoProfile } from "../../../shared/types.ts";
+import { bossKitFromProfile, createMatch, createPvpController, playerKitFromProfile, pvpArenaSize } from "../../../sim/index.ts";
+import { drawPostFx, getFxCues } from "../arena/index.ts";
+import { createStage25d } from "./index.ts";
+
+const q = new URLSearchParams(location.search);
+const scene = q.get("scene") ?? "raid";
+const phone = q.get("phone") === "1";
+const profiles = Object.values(import.meta.glob("/data/fallback/*.json", { eager: true, import: "default" })) as RepoProfile[];
+const pick = (s: string | null, i: number) => (s ? profiles.find((p) => p.slug.includes(s)) : undefined) ?? profiles[i % profiles.length];
+
+document.getElementById("nav")!.innerHTML = [["raid", "?scene=raid"], ["raid react", "?scene=raid&boss=react"], ["royale", "?scene=royale"], ["phone raid", "?scene=raid&phone=1"], ["phone royale", "?scene=royale&phone=1"], ["xr (emulated)", "?scene=raid&xr=emulate"]]
+  .map(([t, h]) => `<a href="${h}">${t}</a>`).join("");
+
+async function main() {
+  if (q.get("xr") === "emulate") {
+    // Meta's Immersive Web Emulation Runtime: an emulated headset behind navigator.xr (dev/test only)
+    const { XRDevice, metaQuest3 } = await import("iwer");
+    const dev = new XRDevice(metaQuest3);
+    dev.installRuntime({ forceInstall: true });
+    dev.position.set(0, 1.6, 0.4);
+    // look down ~15 degrees toward the tabletop (its top sits 0.15 m below eye height)
+    const pitch = (-15 * Math.PI) / 180;
+    if (q.get("look") !== "ahead") dev.quaternion.set(Math.sin(pitch / 2), 0, 0, Math.cos(pitch / 2));
+    (globalThis as unknown as { __xrDevice: unknown }).__xrDevice = dev;
+  }
+
+  // ---- match ----
+  const n = scene === "royale" ? 8 : 4;
+  const world = scene === "royale" ? (() => { const s = pvpArenaSize(n); return { w: s.width, h: s.height }; })() : { w: 480, h: 288 };
+  const roster = Array.from({ length: n }, (_, i) => {
+    const p = profiles[(i * 3 + 1) % profiles.length];
+    const kit = playerKitFromProfile(p, scene === "royale" ? { mode: "pvp" } : undefined);
+    return { id: (scene === "royale" ? "bot-" : "p") + i, name: p.slug.split("/")[1].slice(0, 10), kit };
+  });
+  let boss: BossKit | null = scene === "royale" ? null : bossKitFromProfile(pick(q.get("boss"), 0), n);
+  if (boss && q.get("fast")) boss = { ...boss, maxHp: Math.round(boss.maxHp / 4), limbs: boss.limbs.map((l) => ({ ...l, maxHp: Math.round(l.maxHp / 4) })) };
+  let match = scene === "royale" ? createMatch(roster, null, { mode: "pvp" }) : createMatch(roster, boss!);
+  const bots = roster.map((_, i) => (scene === "royale" ? createPvpController(1000 + i) : raidBot(i)));
+
+  // ---- screen ----
+  const scale = Number(q.get("scale") ?? (phone ? 1 : Math.max(1, Math.floor(Math.min(innerWidth / world.w, innerHeight / world.h)))));
+  // like game.ts: the stage's WebGL canvas underneath, a transparent 2D overlay (FX, postfx) on top
+  const wrap = document.getElementById("wrap")!;
+  const box = document.createElement("div");
+  box.style.position = "relative";
+  wrap.appendChild(box);
+  const canvas = document.createElement("canvas");
+  canvas.style.position = "absolute"; canvas.style.left = "0"; canvas.style.top = "0";
+  const ctx = canvas.getContext("2d")!;
+  const dpr = devicePixelRatio || 1;
+  let vw = world.w, vh = world.h;
+  if (phone) { vh = world.h; vw = Math.round(world.h * (innerWidth / innerHeight)); }
+  const cssScale = phone ? innerHeight / vh : scale;
+  const cssW = Math.round(vw * cssScale), cssH = Math.round(vh * cssScale);
+  box.style.width = cssW + "px"; box.style.height = cssH + "px";
+  canvas.style.width = cssW + "px"; canvas.style.height = cssH + "px";
+  canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
+
+  let state: MatchState = match.snapshot() as MatchState;
+  let pending: MatchState["events"] = [];
+  const xrDts: number[] = [], xrUps: number[] = [];
+  const stage = createStage25d({ xr: q.get("xr") !== null, onXRFrame: (dt, upd) => { xrUps.push(upd); if (xrUps.length > 180) xrUps.shift(); stats.xrUpdateMs = xrUps.reduce((a, b) => a + b, 0) / xrUps.length; xrDts.push(dt); if (xrDts.length > 180) xrDts.shift(); const m = xrDts.reduce((a, b) => a + b, 0) / xrDts.length; stats.xrFrames++; stats.xrFps = 1000 / m; }, pull: () => ({ state, time: performance.now() / 1000, events: pending, extras: extrasFor() }) });
+  stage.canvas.style.position = "absolute"; stage.canvas.style.left = "0"; stage.canvas.style.top = "0";
+  stage.canvas.style.width = cssW + "px"; stage.canvas.style.height = cssH + "px";
+  stage.canvas.style.imageRendering = "pixelated";
+  box.append(stage.canvas, canvas);
+  stage.resize(cssW, cssH, dpr);
+  const extrasFor = () => ({ you: roster[0].id, world, events: pending, shake: getFxCues().shake });
+
+  (globalThis as unknown as { __stage: unknown }).__stage = stage;
+  (globalThis as unknown as { __dbgPlayers: unknown }).__dbgPlayers = () => state.players.filter((p) => !p.eliminated).map((p) => [p.id, Math.round(p.hp * 10) / 10, +p.invuln.toFixed(2), p.buffs.join("+"), p.alive]);
+  if (q.get("atlas")) {
+    const dbg = (stage as unknown as { debugCanvases: { atlas: HTMLCanvasElement } }).debugCanvases.atlas;
+    Object.assign(dbg.style, { position: "fixed", right: "0", bottom: "0", width: "1024px", zIndex: "5", background: "#203", imageRendering: "pixelated" });
+    document.body.appendChild(dbg);
+  }
+  const enter = document.getElementById("enter")!;
+  if (await stage.xrSupported()) {
+    enter.style.display = "block";
+    enter.onclick = () => {
+      if (stage.xrActive) void stage.exitXR().then(() => (enter.textContent = "Enter Vision Pro"));
+      else stage.enterXR().then(() => (enter.textContent = "Exit Vision Pro"), (e) => console.error("enterXR failed:", e));
+    };
+  }
+
+  // ---- loop ----
+  const stats = { fps: 0, frameMs: 0, renderMs: 0, frames: 0, xrFrames: 0, xrFps: 0, xrUpdateMs: 0 };
+  (globalThis as unknown as { __stats: typeof stats }).__stats = stats;
+  let last = performance.now(), acc = 0, camX = 0, endAt = 0;
+  const intervals: number[] = [], renders: number[] = [];
+  function step(now: number) {
+    acc += Math.min(0.1, (now - last) / 1000);
+    last = now;
+    while (acc >= 1 / 30) {
+      const inputs = new Map<string, InputFrame>();
+      state.players.forEach((p, i) => inputs.set(p.id, bots[i](state, p)));
+      match.step(1 / 30, inputs);
+      const snap = match.snapshot() as MatchState;
+      pending = pending.concat(snap.events);
+      state = snap;
+      acc -= 1 / 30;
+    }
+    if (match.over && !endAt) endAt = now;
+    if (endAt && now - endAt > 6000) {
+      match = scene === "royale" ? createMatch(roster, null, { mode: "pvp" }) : createMatch(roster, boss!);
+      state = match.snapshot() as MatchState; endAt = 0;
+    }
+  }
+  function frame(now: number) {
+    requestAnimationFrame(frame);
+    if (intervals.length > 120) intervals.shift();
+    intervals.push(now - (frame as unknown as { t?: number }).t! || 16.7);
+    (frame as unknown as { t?: number }).t = now;
+    step(now);
+    if (stage.xrActive) return;
+    const t0 = performance.now();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const k = cssScale * dpr;
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    let view: { x: number; y: number; w: number; h: number } | undefined;
+    if (phone) {
+      const me = state.players[0];
+      camX += ((me ? me.x - vw / 2 : 0) - camX) * 0.15;
+      camX = Math.max(0, Math.min(world.w - vw, camX));
+      view = { x: camX, y: 0, w: vw, h: vh };
+    }
+    const time = now / 1000;
+    stage.render(ctx, state, time, view, extrasFor());
+    drawPostFx(ctx, time, getFxCues().shake, { x: 0, y: 0, w: vw, h: vh });
+    pending = [];
+    const dt = performance.now() - t0;
+    renders.push(dt); if (renders.length > 120) renders.shift();
+    stats.frames++;
+    stats.frameMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    stats.fps = 1000 / stats.frameMs;
+    stats.renderMs = renders.reduce((a, b) => a + b, 0) / renders.length;
+    if (stats.frames % 30 === 0) document.getElementById("hud")!.textContent =
+      `$ gitzilla --stage3d ${scene}${phone ? " (phone)" : ""}  ${stats.fps.toFixed(1)} fps  frame ${stats.frameMs.toFixed(1)} ms  render ${stats.renderMs.toFixed(1)} ms`;
+  }
+  requestAnimationFrame(frame);
+}
+
+function raidBot(i: number) {
+  let seq = 0, ang = i * 1.7, dashT = 0;
+  return (s: MatchState, p: PlayerState): InputFrame => {
+    const b = s.boss;
+    if (!b) return { seq: seq++, move: [0, 0], aim: null, fire: true, dash: false, skill: false, source: "keyboard" };
+    ang += 0.012 * (i % 2 ? 1 : -1);
+    const want = 120 + (i % 3) * 20;
+    let mx = b.x + Math.cos(ang) * want - p.x, my = b.y + Math.sin(ang) * want * 0.7 - p.y;
+    for (const bl of s.bullets) if (bl.owner === "boss" && Math.hypot(bl.x - p.x, bl.y - p.y) < 22) { mx += (p.y - bl.y) * 3; my -= (p.x - bl.x) * 3; }
+    const down = s.players.find((o) => !o.alive);
+    if (down && p.alive) { mx = down.x - p.x; my = down.y - p.y; }
+    const l = Math.hypot(mx, my) || 1, k = Math.min(1, l / 20);
+    dashT -= 1 / 30;
+    const dash = dashT <= 0 && Math.random() < 0.01;
+    if (dash) dashT = 2;
+    return { seq: seq++, move: [(mx / l) * k, (my / l) * k], aim: null, fire: true, dash, skill: Math.random() < 0.004, source: "keyboard" };
+  };
+}
+
+void main();

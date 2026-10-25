@@ -1,0 +1,40 @@
+## DONE — optional discovery / classroom-smoke regression fix (2026-10-25 07:37 UTC)
+- Latest coordinator requirement supersedes the original fatal seat-lookup policy. `lookupControllerSeat` checks fresh `/api/me` first and requests my-seat ONLY for an enabled, signed GitHub user. Anonymous/disabled/missing identity skips it. Every discovery HTTP failure (including401/404/403/5xx), malformed/non-JSON/HTML body, network error, abort or timeout returns null silently. Main falls through to original player join; no “can't check your controller seat” fatal screen.
+- One1500ms deadline covers identity, seat fetch AND JSON body parsing; Promise.race guarantees fallback even when a fetch/body ignores abort. AbortController also cancels real requests. Tests cover a1000ms identity followed by only500ms seat budget, and prevent delayed identity responses from issuing seat requests after cancellation.
+- Wired real `handleControllerRoute` into ALL tools-owned in-process RoomServer harnesses: classroom-smoke, pvp-smoke, motion-fixture. Classroom/motion explicitly provide anonymous `/api/me` JSON instead of SPA/upstream identity. Classroom/PvP assert my-seat returns actual JSON401; motion HTTP test uses an unreachable upstream to prove discovery stays local. No production server/shared protocol/auth bypass changes.
+- **Required30student classroom-smoke PASS**, exit0, browserErrors=[], with30actual joined seats (2browser students +28WS clients). Full configure→submit→review→pause→raid→export→retry→newSHA→reconnect→next,9presets,4languages,360/390phone widths, no battle inputs/snapshots. `docs/shots/classroom-raid/result.json`; log `/tmp/controller-fallback-classroom-smoke.log`.
+- **Root tsc PASS;49focused tests PASS** (45controller-link +4motion fixture). Whitespace check PASS.
+- **10WebKit actual-main routing scenarios PASS /0page errors**, isolated HTTP/WS/pair fixtures: signed offer/controller resume; no-seat/unsigned/ban/503/HTML/network/timeout all take normal player hello, desktop bypass; unsigned never calls my-seat. `/tmp/gitzilla-controller-routing-fallback-20261025/summary.json`, log `/tmp/controller-routing-fallback-check.log`. These are routing isolation tests, not Auth0/hardware acceptance.
+- Extra PvP smoke is **NOT fully passing**: endpoint JSON401 probe, normal phone join, both-player fight snapshots and intro completion succeeded; then the existing drawProof painted-player assertion at tools/pvp-smoke.ts:87 timed out5000ms. Cause/relationship to parallel renderer changes unverified; no renderer edits or timeout relaxation made. Log `/tmp/controller-fallback-pvp-smoke.log`. Reported separately to coordinator.
+- Changed this follow-up: client/app/controller-link.ts, controller-link.test.ts, minimal main.ts catch; tools/classroom-smoke.ts, pvp-smoke.ts, motion-fixture.ts, motion-fixture.test.ts; this progress. Existing dirty edits preserved. No commits, deps, CSS/visual edits, or shared service restarts. Dedicated Vite5197 test server stopped.
+
+DONE — account-linked phone client logic and minimal route integration. Authorized new scope: controller-link.ts + tests + minimal main.ts routing; no visuals/CSS. Existing shared dirty changes preserved, no commits.
+
+## Published API (for claude-auth)
+- lookupControllerSeat(room: string, signal?: AbortSignal): Promise<ControllerSeat | null>; seat={seatId,name,paired};optional discovery first checks /api/me GitHub identity; ALL failed discovery=>null/normal join, total deadline1500ms. This supersedes the original fatal-lookup policy below.
+- createControllerLink({room,name?}): ControllerLink; Conn-compatible input/message/status surface plus state/onState/reconnect/unlink. state={status,seatId,lobby,error}, statuses connecting/open/closed/replaced/kicked/error/unlinked. Open means accepted welcome.controller, not merely socket-open.
+- controllerTokenKey(room)=kaiju.controllerToken.<ROOM>, isolated from all player/screen/projector keys.
+- main.ts phone hook expects pair.ts exports createControllerOffer({room,seat,onConnect,onSkip}): Screen and createControllerScreen({room,link,onDisconnect}): Screen. Existing controller token resumes directly; otherwise lookup/offer occurs BEFORE any player socket/name gate. Screen/mock/desktop retain original routing. Explicit disconnect unlinks and returns home.
+
+## Protocol alignment received from codex-net
+401 lookup unauthenticated,404 no connected matching display,403 ban; controller welcome flag+token; replacement exact message then4001; explicit unlink4002; kicked4003. No pair codes/QR/pairStart. Controller only input/controls/leave/pairEnd.
+
+## Work / pending
+Transport and route integration complete. pair.ts exports now match the published onConnect/onSkip + link/onDisconnect interface. No actual cross-device/Auth0/device proof claimed.
+
+## Delivered behavior
+- `welcome.controller === true` is required before sending input; seatId/lobby/token update only after acceptance. Controller role hello never borrows player/screen/projector tokens. Blocked storage is handled without throwing.
+- Network interruption retries with capped backoff; visibility wake and explicit reconnect cannot create parallel sockets. Obsolete socket callbacks are ignored. Stale input is dropped; just the most recent controls state is retained and replayed after EVERY controller welcome.
+- Replacement exact error or4001 => terminal replaced; kick notice/refusal or4003 => terminal kicked; remote4002 or explicit unlink/leave/pairEnd => terminal unlinked. No auto-reclaim loops. Other server errors surface as terminal error; controller token alone is cleared. Local close cancels retry/listeners while preserving controller resume for the next page.
+- Only input/controls/leave/pairEnd may be sent by this connection. UI main routes BEFORE a player hello/name gate: phone with own controller token resumes, eligible signed phone gets one-tap offer,401/404 continue original room entry,403/offline/5xx surface errors without silently creating seats. Desktop/screen/mock routing stays on the original path.
+- Current user explicitly reauthorized these logic files after the earlier UI handback. Preserved preexisting main.ts changes (kicked flow, classroom/i18n/settings and other owners' edits). No net.ts/shared/server/pair.ts/CSS modifications by this task.
+
+## Validation
+- `npm run typecheck`: PASS with current shared workspace and actual pair.ts exports.
+- `npx vitest run client/app`: **36PASS /4files**, including **30controller-link tests**. Covered my-seat cookie/abort/no-cache/error/malformed responses, independent tokens, welcome gate, reconnect/readiness/stale-input behavior, old-socket callbacks, explicit/remote unlink, replacement, kicks, refused sign-in/no-seat, message restriction, private storage, cleanup and subscriber-triggered unlink during welcome.
+- Additional **7WebKit routing checks PASS**,0page errors: offer (no player socket before tap; exactly controller hello), saved controller resume/token rotation,401,404,403,503 and desktop bypass. Actual main.ts + controller-link.ts, with deliberately stubbed pair visuals and HTTP/WS identity service. Evidence `/tmp/gitzilla-controller-routing-20261025/summary.json`; runner `/tmp/controller-routing-check.mjs`; log `/tmp/controller-routing-check.log`. This isolates routing correctness and is NOT actual Auth0/server/device/visual acceptance.
+- Owned whitespace check PASS. No dependencies installed, commits, pushes or shared-server restarts. Only a dedicated Vite5197 server was used and stopped.
+
+## Visual-owner integration follow-up (reported to coordinator)
+- At final inspection, pair.ts subscribed to `subscribeMotionPermission` before initializing const paintControls/paintSensor and controlsCard; the subscription immediately invokes its callback. This can throw a TDZ ReferenceError when mounting the real controller view. Claimed browser routing checks intentionally stub views and do not cover that defect. Claude-auth owns the fix; no visual-file edit made here. Full actual display+phone WebKit/Auth0 path remains its/server integration acceptance.
+

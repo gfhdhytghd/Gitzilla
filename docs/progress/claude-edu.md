@@ -1,3 +1,304 @@
+# DONE (debrief polish)
+
+Coordinator review of debrief3/console-round-1440. `client/app/classroom.ts` / `.css` + 2 catalog rows. Not committed.
+- **One action pair:** while the round debrief is shown (feedback phase with a round), the console bar no longer
+  renders "Retry & improve" / "Open next step"; it keeps ⋯ (export, end lesson).
+  - The debrief's "Retry this step" / "Next step" (or "Complete lesson") are the buttons. They now carry the
+    `classroom-retry` / `classroom-next` test IDs, so the smoke and my scripts keep working.
+  - The "Say: …" hint now points at them: "“Retry this step” (in the debrief below) gives everyone another go; “Next
+    step” starts step 2." (translated en/zh/es/fr)
+- **No overlap:**
+  - The sticky console bar is now opaque (`#040a08`).
+  - The scroller gets `scroll-padding-top: var(--cr-bar-h) + 8px`, with the bar's height measured by a
+    ResizeObserver, so jumping to the debrief, a review or a name never lands under the bar.
+
+**Verified (WebKit, :5175, with codex-net's HP rebalance live: round 1 = "boss −33%", HP 45 → 30, no longer dead in
+round 1):**
+- exactly 1 Retry and 1 Next on the page, and the bar shows only ⋯;
+- at 1440 and 1280 the bar is opaque rgb(4,10,8) and the debrief's top sits 8px below the bar's bottom;
+- scrolled further, content passes under the bar with nothing showing through;
+- the full 3-step run to "Complete lesson" and the next-lesson room (02-numbers) still pass;
+- 0 page errors.
+
+One headless frame at 1280 came out all black once; a re-run of the same state is clean, so it was a capture
+glitch.
+
+Screenshots in
+/tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/:
+- debrief4/: console-round-top-1440, console-round-top-1280, console-round-scrolled-1440
+- debrief5/: console-round-scrolled-1280
+
+Checks: tsc clean; i18n audit 0/0; `vitest client shared/i18n` passed.
+
+# DONE (hidden scores, no blur)
+
+User report: blurry blobs in the console's Submissions list. `client/app/classroom.ts` / `.css` + 15 catalog rows. Not
+committed. No server changes.
+
+- **No blur anywhere** (the `.cr-safe-on … filter:blur` rule is gone). A hidden score is a dashed "🙈 hidden" chip.
+  Press and hold it (mouse or touch; no context menu on a phone long-press), or give it keyboard focus, to peek on this
+  device. It hides again on release or blur.
+- **The toggle is now by the list, not in the console bar:** "🙈 Scores hidden (projecting)" (amber) or
+  "👁 Scores visible" (green), with a one-line reason under it, plus "↺ auto" when overridden. The selected student's
+  "Show details" gate and the debrief's "Show names" follow the same state.
+- **Default logic, "auto":**
+  - The projector window (`?view=projector`) sends a heartbeat on a BroadcastChannel (`gitzilla-projector-<room>`)
+    every second, and says when it closes.
+  - **A projector window is open in this browser:** the class looks at that window, so this console is private and
+    scores show ("Visible: the class sees the projector window, not this screen.").
+  - **No projector window:** the console itself is probably what's projected, so scores hide ("Hidden because this
+    screen may be on the projector. Open the projector window to give the class its own view.").
+  - Clicking "Open projector window" switches to visible right away; closing it hides the scores again within about
+    6 s.
+  - The teacher can force hide or show (remembered as `kaiju.scoreMode`) and return to auto. The old
+    `kaiju.projectorSafe` key is ignored.
+- **0 damage says why:**
+  - "Class impact: 0 damage (no improvement since the last round)";
+  - "(the boss was already defeated)" when `bossBefore` ≤ 0;
+  - "(this step’s share of the boss is used up; the next step unlocks more)" when someone improved but the server's
+    per-step HP budget (codex-net's rebalance) gave no damage.
+
+  All are derived on the client from the round; no new server field.
+
+**Verified (WebKit, :5175, 3 students, console 1440 and 393):**
+- **Script:**
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/scores-shots.mts
+  (output in scores2/).
+- **Results:**
+  - auto with no projector window gives 2 hidden chips and no blurred element;
+  - press and hold peeks ("checks 2/2"), and release hides it again;
+  - keyboard Tab focus peeks;
+  - opening the projector window makes scores visible in about 3 s; closing it hides them again;
+  - force show / force hide / ↺ auto all work;
+  - round 1 "Class impact: 14 damage", then the same code on retry gives "Class impact: 0 damage (no improvement
+    since the last round)";
+  - 0 overflow, 0 page errors.
+- **Screenshots:** console-hidden-1440, console-peek-1440, console-focus-peek-1440,
+  console-visible-projector-open-1440, console-forced-hide-1440, console-impact-1440, console-roster-393,
+  console-impact-393.
+- **Checks:** tsc clean; i18n audit 0/0; `vitest client shared/i18n` 348 passed.
+
+# DONE (teacher debrief UI)
+
+docs/tasks/teacher-debrief.md, UI section. Built on take-edu's `client/edu/debrief.ts` (imported directly, not
+edited) and codex-net's frozen `round.roster` / `round.checkStats`. Not committed.
+
+## What changed
+- **New `client/edu/debrief-view.ts` + `.css` + `debrief-view.test.ts`:**
+  - `createDebriefCard()`, with teacher and projector modes, for both round and lesson debriefs.
+  - `debriefMarkdown()` for the export.
+  - Each model sentence is translated as a whole (its `DEBRIEF_TEXT` template is in the catalog), then `code` is
+    styled.
+- **Teacher console, feedback phase:** a "Round debrief" card above the roster.
+  - It shows the headline, check bars weakest first (5 shown, the rest folded), score bands, what to reteach, and
+    next.
+  - Buttons: "Retry this step" and "Next step" (or "Complete lesson"), wired to the existing commands.
+  - "Need help" and "Shout-outs" list names; tapping one opens that student's review. A student without a submission
+    shows "<name> · review — No submission yet for this step."
+  - While "Projecting" is on, names stay hidden behind "Show names", per round.
+- **Complete phase:** a "Lesson debrief" with one row per step (average, submitted/roster, attempts, hardest check),
+  the check bars, reteach, next, and "⇩ Export Markdown".
+  - When the model suggests a next preset, "Start the next lesson in a new classroom" creates an edu room and opens it
+    with `?preset=<id>`. The new room's preset picker starts on that lesson (checked: `02-numbers`).
+- **Projector window / class-facing screens:** headline and check bars only (4–6 rows), never names. The debrief
+  replaces the task card while it's shown, and fits 1920×1080 with no scroll.
+- **Markdown export:** the server's classroom.md plus the lesson debrief, and the round debrief when one is open.
+  Every sentence goes through `t()`. Names are included, since the export is the teacher's private record.
+- **Phone-width console (≤600px):** the control bar no longer sticks. Sticky, it covered ~40% of the screen.
+- **i18n:**
+  - 62 hand-translated rows: every `DEBRIEF_TEXT` template except the identity `{0}: {1}`, plus the card labels.
+  - "{0} more checks" sits before "{0} checks", so it isn't partly matched.
+  - zh run checked: the whole card renders in Chinese.
+
+## Verified (WebKit, real server on :5175, 3 students)
+- **Script:**
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/debrief-shots.mts
+  (FULL=1 = everyone who submits passes).
+- **Setup:** Ana and Ben submit, Chloe doesn't.
+- **Round debrief:**
+  - "2 of 3 submitted · class average …";
+  - Need help: chloe; Shout-outs: ana and ben;
+  - names hidden until "Show names";
+  - tapping chloe opens "CHLOE · REVIEW";
+  - the projector shows no names and doesn't scroll;
+  - the Markdown export contains the debrief.
+- **All three steps through the debrief buttons:** "Complete lesson", then the lesson debrief with "Try Python lesson
+  02 next", then the new-classroom button opens a room with 02-numbers selected.
+- **Coverage:** en and zh runs, 0 page errors, 0 sideways overflow.
+- **Screenshots:**
+  - debrief3/: console-round-1440, console-round-names-1440, console-round-393, projector-round-1920,
+    console-lesson-1440, console-lesson-393, projector-lesson-1920, export.md
+  - debrief-zh/: the same set in Chinese
+- **Checks:** tsc clean; `vitest client shared/i18n` 345 passed; i18n audit errors 0 / needsReview 0.
+- **`tools/classroom-smoke.ts` now fails, not because of the classroom:** its in-process server doesn't wire the new
+  controller-link endpoint (`server/controller-http.ts`, uncommitted). In the smoke, the phone student gets "can't
+  check your controller seat — Unexpected token '<'" and never joins, so the roster waits for 30 and sees 29. It
+  passed earlier today with all my classroom changes. On the real :5175 server, phone students join fine. Owner of the
+  controller work: add the controller route to the smoke's server.
+- **The 20-minute background run** was my own command chain: a stray `cat >> file` waited on stdin until the timeout,
+  so the e2e never started. Not a hang in the app.
+
+# DONE (classroom i18n sweep)
+
+Coordinator-cleared hand translation of every English-only classroom string under zh/es/fr. Not committed.
+
+## How it was found
+- **Static:** the i18n generator's own extraction (no API call), diffed against the catalog.
+- **Live:** a WebKit crawl of every classroom screen in each classroom language, collecting every visible text node
+  plus title/aria-label/placeholder, with the same skip rules as `installLanguageUi`. Script:
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/i18n-sweep.mts
+  - teacher setup with every fold open, preview, join overlay;
+  - coding: roster, verdicts, hidden/revealed review, code viewer, ⋯ menu, remove confirm, task fold;
+  - pause, raid, raid pause, feedback, next step;
+  - projector in every phase;
+  - student waiting, coding with hints, GitHub fold, submitted (pass and fail), reviewed, paused, raid, feedback,
+    step 2;
+  - a non-owner big screen.
+
+## Catalog
+- **Rows:** 167 new hand-translated rows (en/zh/es/fr) in sources / gemini-translations / messages.generated
+  (context "… (claude-edu, hand-translated)").
+- **Pattern order:** long `{0}` patterns go at the front; short ones (`{0} min`, `{0} checks`, `{0} hints`,
+  `checks {0}/{1}`, …) go after the existing patterns, so they can't hijack unrelated strings. "Step {0} of {1}"
+  moved to the front because an older generic `Step {0}` row hijacked it.
+- **Checked through the real translator:** 33 rendered strings, including the placeholder ones.
+
+## Code changes (so the strings are translatable at all)
+- **Plural suffixes** (`student{s}`, `submission{s}`, `check{s}`, `file{s}`, "Fix it/them", "N students
+  contributed") are now separate singular/plural sentences. A placeholder holding an English "s" can't be translated.
+- **Composite text nodes** are now per-piece: the feedback "Say: …" line, the step-editor summary, the task-card fold
+  summary, " · found in your files", the rubric editor's "measures X.", and "Rubric: <title>". The generic
+  `{0} from {1}` pattern was turning some of these into "来自 … 的 …".
+- **Step summaries** now refresh on a language switch and when minutes or checks change.
+- **The preset library had hard-coded Chinese** ("Python 预设课程", "前置知识：", "下载学生起始文件", …) that showed in Chinese in
+  en/es/fr. It now has English source strings, and the old Chinese is their zh translation.
+- **Explicit `t()`** where the DOM translator deliberately skips: "in-app code · <hash>" inside `.cr-version`, and
+  the textarea placeholders (rubric paste box; `input()` lines, which follow the language live).
+- **Roster rows wrap** (flex) so longer translations never squeeze the name (es showed "a.." before).
+- **Hidden hint button** no longer carries a bogus "Next hint (4/3)" label.
+
+## Left as is, on purpose
+- noscript text, "README", the "gitzilla" terminal flavor in the pause sheet, the `you/your-project` slug
+  placeholder, and the "classroom" brand subtitle. The translation job had already set all four columns to
+  "classroom".
+- **Grader evidence inside "See the measured rubric evidence"** (e.g. "found python/01_hello.py in the sampled tree;
+  required present…") is half-translated by existing patterns. That text comes from rubric/ (codex-rubric) and is
+  the raw fold.
+
+## Verified
+- **Crawl:** zh/es/fr re-crawled after the changes. The zh English-only list is down to the 5 deliberate leftovers
+  above. es/fr have no stray Chinese and the same 5 leftovers.
+- **Screenshots** (every state, per language) are in
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/sweep5-{zh,es,fr}/
+  (e.g. t-setup-open, t-coding-submitted, t-feedback, p-coding, s-submitted-open).
+- **i18n audit:** errors 0, needsReview 0 (2391 sources).
+- **tsc:** clean.
+- **Tests:** `vitest client shared/i18n` 295 passed.
+- **`tools/classroom-smoke.ts`:** passed (30 students).
+
+# DONE (kick i18n)
+
+Coordinator-cleared edit of shared/i18n for this one job. Not committed.
+- **Merge:** 10 rows merged into `shared/i18n/sources.json`, `gemini-translations.json` and
+  `messages.generated.json`, in the same format claude-ui used (id = sha256(source)[:16]; context "…
+  (claude-edu, hand-translated)").
+  - The 4 `{0}` patterns are inserted at the front of messages.generated.json, right after claude-ui's kick
+    patterns.
+  - "Back to start" was already in the catalog (claude-ui), so it was skipped.
+  - The files re-serialize byte-identically apart from the new rows.
+  - `docs/progress/claude-edu-kick-i18n.json` is deleted. The test in `client/edu/classroom-kicked.test.ts` now
+    checks the real catalog through `shared/i18n/text.ts`.
+- **Wording fix:** the confirm button used the generic "Remove" row (删除 / Eliminar / Supprimer = "delete"). It now
+  says "Remove from class" (移出课堂 / Quitar de la clase / Retirer de la classe), which was already translated.
+- **WebKit check:** classroom language switched by the teacher to zh, then es, then fr; one student removed per
+  language. Script:
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/kick-i18n-shots.mts
+  - The confirm text, its buttons, and the ⋯ button's tooltip and aria-label are translated.
+  - The student's removed screen (title, "Ms Lee 已将你移出本课堂。", the rejoin line, the code line, Download, Back to
+    start) is translated in all three.
+  - 0 page errors.
+  - Screenshots are in kick-i18n/: teacher-confirm-{zh,es,fr}.png and student-removed-{zh,es,fr}.png.
+- **Checks:** `tools/audit-i18n.ts` → errors 0, needsReview 0; tsc clean; `vitest client shared/i18n` 273 passed.
+- **Not part of this job:** some older classroom console strings aren't in the catalog and still show in English
+  under zh/es/fr ("Projecting: hide scores & feedback", "Open projector window ↗", "Submissions", "Who needs help
+  first · tap a name to review", the control hint lines, "Student task card · n to-dos · …"). They need the i18n job,
+  or I can hand-translate them the same way if you clear it.
+
+# DONE (classroom kick)
+
+docs/tasks/kick-transfer.md, classroom side. Built on the ca2facc contract and checked against codex-net's
+in-progress server on :5175. Not committed.
+
+## What changed
+- **Teacher console (`client/app/classroom.ts` + `.css`):**
+  - Each student row has a ⋯ button (40×40, "Remove from class").
+  - It opens an inline confirm under the row: "Remove Ana from the class? They can't rejoin this classroom. Work
+    they already handed in stays in your exports." with [Remove] (danger) and [Cancel], both 40px tall.
+  - Remove sends `{t:"kick", playerId}`; the row shows "Removing Ana…" until the roster update drops it. If the
+    server refuses, the error toast shows and the row re-arms after 8 s.
+  - A removed student's open confirm and selected review are cleared.
+  - The control is only on the owner's console: never the projector window (`?view=projector`) or a class-facing
+    screen (checked, 0 elements), never on yourself.
+- **Student side:** the classroom screen's `onMsg` handles `kicked` (not for the teacher). It
+  - closes the connection, so there's no reconnect;
+  - shows `createClassroomKicked()` (new, `client/edu/classroom-kicked.ts` + `.css`):
+    - "Removed from this classroom · Ms Lee removed you from this classroom. · You can't rejoin this room. If this
+      was a mistake, talk to your teacher.";
+    - "Your code is still on this device. [⇩ Download my code]": one file as-is, several as one .txt
+      (`bundleFiles`, tested);
+    - [Back to start];
+  - hides the red "LINK LOST · RETRYING" label.
+- **Resume token: kept on purpose (differs from the card):**
+  - The server bans the kicked seat's resume token, and classroom students are anonymous, with no identity to ban.
+  - Clearing the token (as the card says) made the student a newcomer: in my first e2e run Ana reopened the link
+    and joined again.
+  - Keeping it means reopening the link is refused: "can't join this room · You were removed from this room by the
+    host."
+  - **claude-ui:** same issue for anonymous raid members on the generic screen. Suggest keeping the token there too,
+    or the ban only holds for signed-in users.
+- **Localization:** hand translations (en/zh/es/fr) for all 11 new strings are in
+  `docs/progress/claude-edu-kick-i18n.json`, in the gemini-translations row format (id = sha256(source)[:16]).
+  - The `{0}` templates match what the UI renders; tested through the real `createTranslator` in
+    `client/edu/classroom-kicked.test.ts`.
+  - **Coordinator:** please merge these rows into shared/i18n (gemini-translations.json → messages.generated.json),
+    or run the i18n job. I didn't edit shared/.
+
+## Integration with claude-ui (their uncommitted main.ts / net.ts)
+- Their generic kicked card now defers to the classroom screen for edu rooms (the `onMsg` path and close status
+  "kicked"), and leaves the token decision to the screen. I re-ran the e2e on the combined tree:
+  - the classroom removed screen shows;
+  - a refused rejoin shows their generic card ("You were removed from this room by the host");
+  - a second reload is refused too, so the ban holds.
+
+## Verified (WebKit, :5175, real server)
+- **E2E:** teacher console at 1440 and 393, projector popup at 1920, and students Ana (iPhone 15), Ben (iPhone SE)
+  and Chloe (desktop). Script:
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/kick-shots.mts
+  - 3 remove buttons on the console, 0 on the projector;
+  - Cancel closes the confirm;
+  - removing Ana (who had submitted) shows her the removed screen, and the download works (classroom-XXXX-code.txt);
+  - the console roster becomes [ben, chloe] and "0 of 2 submitted";
+  - the projector shows "0 of 1" after Ben is removed too;
+  - Ana is still on the removed screen 3 s later (no reconnect), with the link label hidden;
+  - reopening the link is refused by the server;
+  - Ben, removed on iPhone SE, sees the screen;
+  - 0 sideways overflow, 0 page errors.
+- **Screenshots:** in
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/kick3/ (kick4/ has the re-run with claude-ui's integration)
+  - console-confirm-1440.png
+  - console-after-remove-1440.png
+  - console-confirm-393.png
+  - ana-removed-iphone15.png
+  - ana-rejoin-iphone15.png
+  - ben-removed-iphoneSE.png
+  - projector-1920.png
+- **Checks:**
+  - tsc: no errors in my files. The only errors are in `sim/royale-bots.ts`, codex-sim's in-progress work.
+  - `vitest client`: 268 passed.
+- **Unrelated:** at 393px, headless WebKit screenshots of the teacher console show faint task text through the
+  sticky console bar while scrolled. elementsFromPoint says the bar is on top, so it looks like a compositing quirk.
+  It predates this task.
+
 # DONE (editor sideways scroll)
 
 Coordinator follow-up. Only `client/edu/code-editor.ts` changed. Not committed.

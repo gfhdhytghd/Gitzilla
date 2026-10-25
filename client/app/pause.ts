@@ -17,7 +17,11 @@ export interface PauseOverlay {
   dispose(): void;
 }
 
+export type KickTarget = { id: string; name: string; bot?: boolean };
+
 export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; onNewRoom(): void; hostHint?: string; waitHint?: string; onChange?(paused: boolean): void;
+  /** host only: "Kick player…" lists these (everyone but you); onKick sends {t:"kick"}. No hand-over mid-match. */
+  kickTargets?(): KickTarget[]; onKick?(id: string): void;
   /** classroom: plain words for a projector ("Paused by your teacher"), Resume only (no leave / new room in a lesson) */
   classroom?: boolean }): PauseOverlay {
   const by = h("div.pz-line.dim"), count = h("div.pz-count"), hint = h("div.pz-hint");
@@ -25,7 +29,32 @@ export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; on
     h("button.btn.btn-big.btn-start", { "data-testid": "resume-match", onclick: () => opts.onResume() }, opts.classroom ? "▶ Resume (P)" : "▶ RESUME"),
     opts.classroom ? null : h("div.pz-host-row", null,
       h("button.btn", { "data-testid": "pause-leave", onclick: () => opts.onLeave() }, "⏏ leave"),
-      h("button.btn", { "data-testid": "pause-new-room", onclick: () => opts.onNewRoom() }, "end match · new room")));
+      h("button.btn", { "data-testid": "pause-new-room", onclick: () => opts.onNewRoom() }, "end match · new room")),
+    opts.classroom || !opts.onKick ? null : h("button.btn.btn-ghost.pz-kick-open", { "data-testid": "pause-kick", onclick: () => toggleKick() }, "Kick player…"));
+  // "Kick player…": the roster with one Kick/Remove each, then an inline confirm for humans
+  const kickList = h("div.pz-kick", { hidden: true, "data-testid": "pause-kick-list" });
+  let kickOpen = false, confirmId: string | null = null;
+  const renderKick = () => {
+    kickList.hidden = !kickOpen;
+    if (!kickOpen) return;
+    const list = opts.kickTargets?.() ?? [];
+    kickList.replaceChildren(
+      ...(list.length ? list.map((p) => confirmId === p.id
+        ? h("div.pz-kick-row.confirm", null,
+            h("div.pc-q", null, `Kick ${p.name}? They can't rejoin this room.`),
+            h("button.btn.btn-tiny.btn-danger", { "data-testid": "pause-kick-confirm", onclick: () => { confirmId = null; opts.onKick?.(p.id); renderKick(); } }, "Kick"),
+            h("button.btn.btn-tiny", { onclick: () => { confirmId = null; renderKick(); } }, "Cancel"))
+        : h("div.pz-kick-row", null,
+            h("span.pz-kick-name", { translate: "no" }, p.name),
+            h("button.btn.btn-tiny.btn-danger", { "data-testid": p.bot ? "pause-remove-bot" : "pause-kick-player", onclick: () => {
+              if (p.bot) opts.onKick?.(p.id);
+              else confirmId = p.id;
+              renderKick();
+            } }, p.bot ? "Remove" : "Kick"))) : [h("div.dim", null, "nobody else is here")]),
+    );
+  };
+  const toggleKick = () => { kickOpen = !kickOpen; confirmId = null; renderKick(); };
+  host.append(kickList);
   const el = h("div.pause-ov", { "data-testid": "paused-overlay", hidden: true },
     h("div.term-window.pz-win", null,
       h("div.term-title", null, h("span.dots", null, "● ● ●"), " gitzilla"),
@@ -66,6 +95,8 @@ export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; on
         ? "[1]+  Stopped    gitzilla    (suspended by you)"
         : `[1]+  Stopped    gitzilla    (suspended by ${byName === "the host" || byName === "the teacher" ? t(byName) : byName})`;
       host.hidden = !isHost || state.resumeAt !== null;
+      if (host.hidden) kickOpen = false;
+      renderKick();
       hint.textContent = state.resumeAt !== null ? "" : isHost ? opts.hostHint ?? "everyone is frozen · nothing can hit you" : opts.waitHint ?? "waiting for the host to resume…";
     },
     tick() {
