@@ -4,8 +4,6 @@
 
 Built for the HackPSU hackathon, GITZILLA targets the Main Track, Mystery Stack, Nittany AI Challenge, and MLH challenges for Gemini API, DEV Writing, Auth0, and SpaceX/Cursor.
 
-Built for the HackPSU hackathon, GITZILLA targets the Main Track, Mystery Stack, Nittany AI Challenge, and MLH challenges for Gemini API, DEV Writing, Auth0, and SpaceX/Cursor.
-
 > Your GitHub repository is a living monster. Now make it fight.
 
 **Bring your repo. Tilt your phone. Survive the merge.** Gitzilla turns GitHub repositories into pixel-art fighters: bring four friends, use your phones as motion controllers, and compete until one hero remains.
