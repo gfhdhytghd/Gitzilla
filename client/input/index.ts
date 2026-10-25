@@ -284,16 +284,20 @@ export function createInput(opts: InputOptions): InputController {
     const step = calibration.meter().step;
     const trainingThresholds = step ? { ...thresholds, swingThreshold: step === 'swing' ? 4 : thresholds.swingThreshold,
       releaseThreshold: step === 'swing' ? 2 : thresholds.releaseThreshold,
-      twistThreshold: step === 'twist' ? 80 : thresholds.twistThreshold, spinAngle: step === 'spin' ? 220 : thresholds.spinAngle } : thresholds;
+      twistThreshold: step === 'twist' ? 80 : thresholds.twistThreshold,
+      spinAngle: step === 'spin' ? 280 : thresholds.spinAngle, spinMagnitude: step === 'spin' ? 2 : thresholds.spinMagnitude } : thresholds;
     const result = recognizeGesture(gestures, acceleration, now, motionProfile, gyro, trainingThresholds);
     gestures = result.state;
     // Reject transient steering samples during a gesture, but keep moving in
     // the last clean tilt direction. Attacks must never zero movement.
-    if (gyro && Math.hypot(gyro.alpha, gyro.beta, gyro.gamma) >= 80) {
+    if (result.pendingSwing || result.circleActive || (gyro && Math.hypot(gyro.alpha, gyro.beta, gyro.gamma) >= 80)) {
       steeringHoldUntil = now + 120;
     }
     debugState.spinDegrees = result.spinDegrees;
-    calibration.observe({ at: now, acceleration, rotationRate: gyro, spinDegrees: result.spinDegrees });
+    debugState.spinMagnitude = result.spinMagnitude;
+    debugState.spinGyroDegrees = result.spinGyroDegrees;
+    calibration.observe({ at: now, acceleration, rotationRate: gyro, spinDegrees: result.spinDegrees,
+      spinMagnitude: result.spinMagnitude, spinGyroDegrees: result.spinGyroDegrees, swingPeak: result.swingPeak });
     if (result.skill) { skill = true; notify('skill', 'spin', now); }
     else if (result.dash) { dash = true; notify('dash', 'twist', now); }
     else if (result.fired) notify('attack', 'swing', now);

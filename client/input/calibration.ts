@@ -6,11 +6,12 @@ export type GestureKind = 'attack' | 'dash' | 'skill';
 export interface GestureNotice { kind: GestureKind; via: string; at: number }
 export interface CalibrationSample {
   at: number; tilt?: [number, number]; acceleration?: Acceleration; rotationRate?: RotationRate | null;
-  spinDegrees?: number; gesture?: GestureNotice;
+  spinDegrees?: number; spinMagnitude?: number; spinGyroDegrees?: number; swingPeak?: number; gesture?: GestureNotice;
 }
 export interface CalibrationMeter {
   step: CalibrationStep | null; elapsed: number; acceleration: number; gyro: number; gyroAvailable: boolean;
-  spinDegrees: number; tilt: [number, number]; ranges: [number, number, number, number];
+  spinDegrees: number; spinMagnitude: number; spinGyroDegrees: number; instruction: string;
+  tilt: [number, number]; ranges: [number, number, number, number];
   count: number; goal: number; ready: boolean; peak: number; lastGesture: GestureNotice | null;
 }
 const median = (items: number[]) => { const sorted = [...items].sort((a, b) => a - b); return sorted[Math.floor(sorted.length / 2)]; };
@@ -24,6 +25,8 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
   let poseSum: [number, number] = [0, 0]; let poses = 0;
   let ranges: [number, number, number, number] = [0, 0, 0, 0];
   let acceleration = 0, gyro = 0, spinDegrees = 0, peak = 0, count = 0, gyroAvailable = false;
+  let spinMagnitude = 0, spinGyroDegrees = 0, circlePeak = 0;
+  let spinMagnitudes: number[] = [];
   let tilt: [number, number] = [0, 0]; let lastGesture: GestureNotice | null = null;
   let pendingSwing: number | null = null;
   let samples: Record<'swing' | 'twist' | 'spin', number[]> = { swing: [], twist: [], spin: [] };
@@ -34,10 +37,12 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       step = next === 'attack' ? 'swing' : next === 'dash' ? 'twist' : next === 'skill' ? 'spin' : next;
       start = lastAt = now(); count = peak = spinDegrees = 0; lastGesture = null;
       acceleration = gyro = 0;
+      spinMagnitude = spinGyroDegrees = circlePeak = 0;
       pendingSwing = null;
       if (step === 'neutral') { neutral = null; poseSum = [0, 0]; poses = 0; ranges = [0, 0, 0, 0]; samples = { swing: [], twist: [], spin: [] }; }
       if (step === 'tilt') ranges = [0, 0, 0, 0];
       if (step === 'swing' || step === 'twist' || step === 'spin') samples[step] = [];
+      if (step === 'spin') spinMagnitudes = [];
       hooks.start?.(step);
     },
     observe(sample: CalibrationSample) {
@@ -60,12 +65,13 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       // peak so training measures the person's actual flick, not just the threshold.
       if (step === 'swing' && sample.acceleration && pendingSwing !== null) {
         samples.swing[pendingSwing] = Math.max(samples.swing[pendingSwing], acceleration);
-        if (acceleration < 2 && lastGesture && sample.at - lastGesture.at > 50) pendingSwing = null;
+        if (acceleration < 2 && lastGesture && sample.at - lastGesture.at > 50) { pendingSwing = null; peak = 0; }
       }
-      if (step === 'swing' && sample.acceleration && acceleration < 2) peak = 0;
       if (sample.rotationRate) { gyroAvailable = true; gyro = Math.hypot(...Object.values(sample.rotationRate)); }
       if (sample.spinDegrees !== undefined) spinDegrees = sample.spinDegrees;
-      peak = Math.max(peak, step === 'swing' ? acceleration : step === 'spin' ? spinDegrees : gyro);
+      if (sample.spinMagnitude !== undefined) { spinMagnitude = sample.spinMagnitude; circlePeak = Math.max(circlePeak, spinMagnitude); }
+      if (sample.spinGyroDegrees !== undefined) spinGyroDegrees = sample.spinGyroDegrees;
+      peak = Math.max(peak, step === 'swing' ? Math.max(acceleration, sample.swingPeak ?? 0) : step === 'spin' ? spinDegrees : gyro);
       if (sample.gesture) {
         lastGesture = sample.gesture;
         const matches = step === 'swing' && (sample.gesture.via === 'swing' || sample.gesture.via === 'tap')
@@ -74,6 +80,7 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
         if (matches && (step === 'swing' || step === 'twist' || step === 'spin')) {
           if (sample.gesture.via === step) {
             samples[step].push(peak);
+            if (step === 'spin') { spinMagnitudes.push(circlePeak); circlePeak = 0; }
             if (step === 'swing') pendingSwing = samples.swing.length - 1;
           }
           count++; peak = 0;
@@ -81,7 +88,8 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       }
     },
     meter(): CalibrationMeter {
-      return { step, elapsed: Math.max(0, lastAt - start), acceleration, gyro, gyroAvailable, spinDegrees, tilt: [...tilt], ranges: [...ranges],
+      return { step, elapsed: Math.max(0, lastAt - start), acceleration, gyro, gyroAvailable, spinDegrees, spinMagnitude, spinGyroDegrees,
+        instruction: step === 'spin' ? 'Draw circles with your phone; keep its orientation steady.' : '', tilt: [...tilt], ranges: [...ranges],
         count, goal: step ? goals[step] : 0, ready: step !== null && count >= goals[step] && (step !== 'neutral' || lastAt - start >= 300), peak, lastGesture };
     },
     /** Pure snapshot; call input.setProfile(result()) to persist. Skipped steps preserve defaults. */
@@ -90,7 +98,8 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       return sanitizeThresholds({ ...base, neutral: null,
         swingThreshold: samples.swing.length ? median(samples.swing) * 0.6 : base.swingThreshold,
         twistThreshold: samples.twist.length ? median(samples.twist) * 0.6 : base.twistThreshold,
-        spinAngle: samples.spin.length ? median(samples.spin) * 0.6 : base.spinAngle,
+        spinAngle: samples.spin.length ? median(samples.spin) * 0.9 : base.spinAngle,
+        spinMagnitude: spinMagnitudes.length ? median(spinMagnitudes) * 0.6 : base.spinMagnitude,
         fullSpeed: base.fullSpeed }, base);
     },
     stop() { step = null; hooks.finish?.(); return api.result(); },

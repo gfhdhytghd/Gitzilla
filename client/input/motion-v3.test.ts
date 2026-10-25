@@ -21,9 +21,9 @@ describe('motion v3 rotation classification', () => {
     expect(frames.every(f => !f.skill && !f.fired)).toBe(true);
     expect(frames.slice(0, 11).every(f => !f.dash)).toBe(true);
   });
-  it.each([16, 30, 60])('integrates deg/s at %sms: spins emit one skill and zero dashes', interval => {
+  it.each([16, 30, 60])('steering-wheel rotation at %sms never skills or dashes', interval => {
     const frames = gyroTrace([[600, 600], [200, 0]], 'beta', interval);
-    expect(frames.filter(f => f.skill)).toHaveLength(1);
+    expect(frames.filter(f => f.skill)).toHaveLength(0);
     expect(frames.every(f => !f.dash)).toBe(true);
   });
   it('never dashes on the start, ending or reversal of a spin, including >120° sub-skill turns', () => {
@@ -51,7 +51,7 @@ describe('motion v3 rotation classification', () => {
     const first = recognizeGesture(previous, zero, 0, 'standard', rate('alpha', 600));
     const afterGap = recognizeGesture(first.state, zero, 5000, 'standard', rate('alpha', 600));
     expect(afterGap.skill).toBe(false); expect(afterGap.spinDegrees).toBe(0);
-    expect(previous.rotation.started).toBeNull(); expect(previous.rotation.samples).toEqual([]);
+    expect(previous.rotation.started).toBeNull(); expect(previous.circle.samples).toEqual([]);
   });
   it('works without gyro, and gravity high-pass detects iOS null-acceleration impulses', () => {
     let state = createGestureState(); let gravity: Acceleration | null = null;
@@ -61,7 +61,8 @@ describe('motion v3 rotation classification', () => {
       expect(frame.fired || frame.dash || frame.skill).toBe(false);
     }
     const swing = removeGravity({ x: -20, y: 6.9, z: 6.9 }, gravity);
-    expect(recognizeGesture(state, swing.acceleration, 1020).fired).toBe(true);
+    const pending = recognizeGesture(state, swing.acceleration, 1020);
+    expect(recognizeGesture(pending.state, zero, 1040).fired).toBe(true);
   });
 });
 
@@ -104,17 +105,17 @@ describe('per-player calibration and trace capture', () => {
     for (const step of ['swing', 'twist', 'spin'] as const) {
       recorder.startStep(step);
       for (let i = 0; i < (step === 'spin' ? 2 : 3); i++) recorder.observe({ at: now += 300,
-        acceleration: { x: 10, y: 0, z: 0 }, rotationRate: { alpha: 200, beta: 0, gamma: 0 }, spinDegrees: 300,
+        acceleration: { x: 10, y: 0, z: 0 }, rotationRate: { alpha: step === 'spin' ? 0 : 200, beta: 0, gamma: 0 }, spinDegrees: 300, spinMagnitude: 8, spinGyroDegrees: 0,
         gesture: { kind: step === 'swing' ? 'attack' : step === 'twist' ? 'dash' : 'skill', via: step, at: now } });
       expect(recorder.meter().ready).toBe(true);
     }
-    expect(recorder.result()).toMatchObject({ neutral: null, swingThreshold: 6, twistThreshold: 120, spinAngle: 220, fullSpeed: 15 });
+    expect(recorder.result()).toMatchObject({ neutral: null, swingThreshold: 6, twistThreshold: 120, spinAngle: 280, spinMagnitude: 4.8, fullSpeed: 15 });
   });
   it('allows no-gyro long-press training alternate and skipped steps keep defaults', () => {
     const recorder = createCalibrationRecorder(() => defaultThresholds()); recorder.startStep('spin');
     for (let i = 0; i < 2; i++) recorder.observe({ at: i * 1000, gesture: { kind: 'skill', via: 'long-press', at: i * 1000 } });
     expect(recorder.meter()).toMatchObject({ gyroAvailable: false, ready: true });
-    expect(recorder.result().spinAngle).toBe(270);
+    expect(recorder.result().spinAngle).toBe(300);
   });
   it('allows tap/double-tap training alternates without learning thresholds from touch', () => {
     const recorder = createCalibrationRecorder(() => defaultThresholds());
@@ -136,10 +137,15 @@ describe('per-player calibration and trace capture', () => {
     let raw = '';
     const storage = { getItem: () => raw, setItem: (_key: string, value: string) => { raw = value; } };
     const thresholds = sanitizeThresholds({ swingThreshold: -1, twistThreshold: 2000, fullSpeed: NaN, spinAngle: 0 });
-    expect(thresholds).toMatchObject({ swingThreshold: 4, twistThreshold: 350, fullSpeed: 15, spinAngle: 220 });
+    expect(thresholds).toMatchObject({ swingThreshold: 4, twistThreshold: 350, fullSpeed: 15, spinAngle: 280 });
     saveThresholds(thresholds, 'standard', storage); expect(loadThresholds('standard', storage)).toEqual(thresholds);
     expect(loadThresholds('seated', storage).swingThreshold).toBe(6);
-    raw = 'broken'; expect(loadThresholds('standard', storage).spinAngle).toBe(270);
+    raw = 'broken'; expect(loadThresholds('standard', storage).spinAngle).toBe(300);
+  });
+  it('migrates v3 swing/twist training without inheriting rotation-spin thresholds', () => {
+    const old = JSON.stringify({version:3,profile:'standard',thresholds:{swingThreshold:7,twistThreshold:140,spinAngle:230,spinWindowMs:1100}});
+    const storage = {getItem: (key:string) => key.endsWith('.v3') ? old : null};
+    expect(loadThresholds('standard', storage)).toMatchObject({swingThreshold:7,twistThreshold:140,spinAngle:300,spinWindowMs:1500,spinMagnitude:3});
   });
   it('captures raw streams and gesture edges at ≤60Hz per stream for ≤20s without identity data', () => {
     let now = 0; const trace = createTraceBuffer(() => now); trace.start();

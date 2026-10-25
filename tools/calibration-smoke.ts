@@ -29,8 +29,8 @@ try {
   await context.addInitScript('window.__kaijuSyntheticSensors = true;');
   await context.addInitScript(String.raw`(()=>{
     for(const key of ['DeviceMotionEvent','DeviceOrientationEvent']) Object.defineProperty(window[key],'requestPermission',{configurable:true,value:()=>Promise.resolve('granted')});
-    window.__motion={beta:45,gamma:0,x:0,y:0,z:0,rate:{alpha:0,beta:0,gamma:0}};
-    setInterval(()=>{const m=__motion;dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:m.beta,gamma:m.gamma}));dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:m.x,y:m.y,z:m.z},rotationRate:m.rate,interval:30}));},30);
+    window.__motion={beta:45,gamma:0,x:0,y:0,z:0,circleStart:null,rate:{alpha:0,beta:0,gamma:0}};
+    setInterval(()=>{const m=__motion;if(m.circleStart!==null){const a=(performance.now()-m.circleStart)/1000*Math.PI*2;m.x=8*Math.cos(a);m.z=8*Math.sin(a);}dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:m.beta,gamma:m.gamma}));dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:m.x,y:m.y,z:m.z},rotationRate:m.rate,interval:30}));},30);
   })();`);
   page.on('pageerror', e => errors.push(e.stack || e.message));
   await page.goto(`${base}/__calibration-test`);
@@ -55,10 +55,11 @@ try {
   assert((await meter()).ready); check('three settled twist recognitions record gyro peaks');
   await step('spin');
   for (let i = 0; i < 2; i++) {
-    await set({ rate: { alpha: 0, beta: 600, gamma: 0 } }); await page.waitForTimeout(500);
-    await set({ rate: { alpha: 0, beta: 0, gamma: 0 } }); await page.waitForTimeout(850);
+    await page.evaluate(() => { (window as any).__motion.circleStart = performance.now(); }); await page.waitForTimeout(1080);
+    assert((await meter()).spinMagnitude >= 7); assert((await meter()).spinGyroDegrees < 60);
+    await set({ circleStart: null, x: 0, z: 0 }); await page.waitForTimeout(400);
   }
-  assert((await meter()).ready); check('two integrated spins mark skill training ready');
+  assert((await meter()).ready); check('two translation circles mark skill training ready with quiet gyro');
   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/trace' && r.request().method() === 'POST');
   await page.locator('#save').tap();
   console.log('save clicked; waiting for trace HTTP response');
@@ -71,6 +72,8 @@ try {
   assert.equal((profile as any).neutral, null);
   assert.equal((profile as any).fullSpeed, 15);
   assert.equal((profile as any).swingThreshold, 6); assert.equal((profile as any).twistThreshold, 180);
+  assert((profile as any).spinAngle >= 280 && (profile as any).spinAngle <= 340);
+  assert(Math.abs((profile as any).spinMagnitude - 4.8) < 0.1);
   await page.screenshot({ path: `${output}/trained.png` });
   await page.reload();
   assert.deepEqual(await page.evaluate(() => (window as any).__input.profile), profile);

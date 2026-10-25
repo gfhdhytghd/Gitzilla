@@ -95,12 +95,16 @@ try {
       } });
     }
     Object.defineProperty(screen.orientation, 'angle', { configurable: true, get: () => 0 });
-    w.__motion = { enabled: false, beta: 0, gamma: 0, absolute: false, rate: { alpha: 0, beta: 0, gamma: 0 }, nullAcceleration: false, gravityZ: 9.81 };
+    w.__motion = { enabled: false, beta: 0, gamma: 0, absolute: false, rate: { alpha: 0, beta: 0, gamma: 0 }, nullAcceleration: false, gravityZ: 9.81, circleStart: null, circleTilted: false };
     window.setInterval(() => {
       const m = w.__motion;
       if (!m.enabled) return;
       window.dispatchEvent(new DeviceOrientationEvent(m.absolute ? 'deviceorientationabsolute' : 'deviceorientation', { beta: m.beta, gamma: m.gamma, alpha: 0, absolute: m.absolute }));
-      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: m.nullAcceleration ? null : { x: 0, y: 0, z: 0 }, accelerationIncludingGravity: { x: 0, y: 0, z: m.gravityZ }, rotationRate: m.rate, interval: 30 }));
+      const a = (performance.now() - m.circleStart) / 1000 * Math.PI * 2;
+      const c = 15 * Math.cos(a), s = 15 * Math.sin(a);
+      const acceleration = m.circleStart === null ? {x:0,y:0,z:0} : m.circleTilted
+        ? {x:c*Math.SQRT1_2-s/Math.sqrt(6),y:c*Math.SQRT1_2+s/Math.sqrt(6),z:s*2/Math.sqrt(6)} : {x:c,y:0,z:s};
+      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { acceleration: m.nullAcceleration ? null : acceleration, accelerationIncludingGravity: { x: 0, y: 0, z: m.gravityZ }, rotationRate: m.rate, interval: 30 }));
     }, 30);
   })();`);
   page.on('pageerror', error => errors.push(error.stack || error.message));
@@ -284,6 +288,16 @@ try {
   const setRate = async (alpha: number, beta = 0, gamma = 0) => page.evaluate(([alpha, beta, gamma]) => {
     (window as any).__motion.rate = { alpha, beta, gamma };
   }, [alpha, beta, gamma]);
+  async function circleEvidence(tilted: boolean) {
+    await actionEvidence('skill', `translation circle ${tilted ? 'tilted plane' : 'x-z plane'} skills once, no swing/dash leak`, async () => {
+      await page.evaluate(tilted => Object.assign((window as any).__motion, {circleStart:performance.now(),circleTilted:tilted}), tilted);
+      await sleep(1080);
+      await page.evaluate(() => { (window as any).__motion.circleStart = null; });
+      await sleep(150);
+    });
+  }
+  // Keep one circle and one twist inside the automatic first20s trace.
+  await circleEvidence(false);
   for (const axis of ['alpha', 'beta', 'gamma'] as const) {
     await actionEvidence('dash', `twist-return dash ${axis}`, async () => {
       const vector = [0, 0, 0]; vector[['alpha', 'beta', 'gamma'].indexOf(axis)] = 300;
@@ -292,9 +306,13 @@ try {
       await setRate(0); await sleep(200);
     });
   }
-  await actionEvidence('skill', 'integrated gyro spin skill, no dash during start/settle', async () => {
-    await setRate(0, 600); await sleep(550); await setRate(0); await sleep(200);
-  });
+  await circleEvidence(true);
+  await sleep(750);
+  const wheelSeq = inputs.at(-1)?.frame.seq ?? -1;
+  await setRate(0, 600); await sleep(650); await setRate(0); await sleep(250);
+  assert(inputs.some(i => i.frame.seq > wheelSeq), 'wheel negative test received real input frames');
+  assert(inputs.filter(i => i.frame.seq > wheelSeq).every(i => !i.frame.skill && !i.frame.dash && !i.frame.fire));
+  check('steering-wheel rotation no longer casts skill or another action', { wheelSeq, ack });
   // Three real dashes can leave the player next to the boss, where a bullet
   // hits before the next20Hz snapshot. Retreat using normal tilt controls so
   // each subsequent swing has an observable authoritative projectile in flight.

@@ -58,6 +58,7 @@ function mobile(requestPermission?: () => Promise<string>) {
 }
 function advance(ms: number) { time += ms; vi.advanceTimersByTime(ms); }
 function motion(x = 0, y = 0, z = 0) { emit(win, 'devicemotion', { acceleration: { x, y, z } }); }
+function flick(x = 0, y = 0, z = 0) { motion(x,y,z); advance(30); motion(0,0,0); }
 function pointer(target: EventTarget, type: string, id: number, fields: Record<string, unknown> = {}) {
   return emit(target, type, { pointerType: 'touch', pointerId: id, clientX: 0, clientY: 0, ...fields });
 }
@@ -331,18 +332,18 @@ describe('motion-v3 permissions and live sensors', () => {
     orientation(15, 0); expect(input.sample().move[0]).toBeCloseTo(1);
   });
   it('rejects swing-induced steering from rest, then resumes gravity-relative movement', () => {
-    mobile(); const input = start(); orientation(0, 0); input.sample(); motion(-15, 0, 0);
+    mobile(); const input = start(); orientation(0, 0); input.sample(); flick(-15, 0, 0);
     orientation(80, 60); advance(100);
     expect(input.sample()).toMatchObject({ move: [0, 0], fire: true, dash: false, skill: false, aim: null });
     advance(30); orientation(0, 15);
     expect(input.sample().move[0]).toBeGreaterThan(0.8);
-    advance(500); expect(input.sample().fire).toBe(false);
+    advance(601); expect(input.sample().fire).toBe(false);
   });
   it('keeps moving while repeated swings attack and rejects their steering noise', () => {
     mobile(); const input = start(); orientation(0, 15);
     expect(input.sample().move[0]).toBeCloseTo(1);
     for (let i = 0; i < 6; i++) {
-      motion(i % 2 ? 15 : -15, 0, 0);
+      flick(i % 2 ? 15 : -15, 0, 0);
       orientation(80, -60); // swing noise must not reverse or stop the established movement
       expect(input.sample()).toMatchObject({ fire: true, dash: false, skill: false });
       expect(input.sample().move[0]).toBeCloseTo(1);
@@ -369,7 +370,7 @@ describe('motion-v3 permissions and live sensors', () => {
     expect(input.sample().fire).toBe(false);
     for (let i = 0; i < 25; i++) { inclusive(-4.15, 0, 8.89); advance(20); input.sample(); }
     expect(input.sample().move[0]).toBeGreaterThan(0.6);
-    inclusive(-4.15, 0, 30);
+    inclusive(-4.15, 0, 30); advance(30); inclusive(-4.15, 0, 8.89);
     expect(input.sample().fire).toBe(true);
   });
   it('has no drawn controls; long-press fires skill once without any tap attack', () => {
@@ -406,7 +407,7 @@ describe('inclusive profile integration', () => {
     input.dispose();
     input = start();
     expect(input.motionProfile).toBe('seated');
-    motion(7, 0, 0);
+    flick(7, 0, 0);
     expect(input.sample()).toMatchObject({ fire: true, dash: false, skill: false, source: 'motion' });
   });
   it('tap-only uses invisible drag, never requests sensors, and ignores late events', async () => {
@@ -428,14 +429,14 @@ describe('inclusive profile integration', () => {
     const request = vi.fn(async () => 'granted');
     mobile(request);
     const input = start('seated');
-    await input.requestPermission(); motion(7, 0, 0);
+    await input.requestPermission(); flick(7, 0, 0);
     expect(input.sample().fire).toBe(true);
     input.setMotionProfile('tap-only'); motion(50, 0, 0);
     expect(input.sample()).toMatchObject({ fire: false, move: [0, 0], source: 'touch' });
     input.setMotionProfile('standard');
     expect(input.mode).toBe('motion');
     for (let i = 0; i < 4; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 0 }); advance(100); }
-    motion(7, 0, 0);
+    flick(7, 0, 0);
     expect(input.sample().fire).toBe(false);
   });
   it('a pending native permission result cannot override a switch to tap-only', async () => {
@@ -501,7 +502,7 @@ describe('v3 controller integration', () => {
     input.setProfile({ swingThreshold: 5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
     input.dispose(); input = start();
     expect(input.profile).toMatchObject({ swingThreshold: 5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
-    motion(5.5); expect(input.sample().fire).toBe(true);
+    flick(5.5); expect(input.sample().fire).toBe(true);
     input.calibration.startStep('neutral');
     for (let i = 0; i < 10; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 1 }); advance(40); }
     expect(input.calibration.meter()).toMatchObject({ step: 'neutral', ready: true });
@@ -510,13 +511,25 @@ describe('v3 controller integration', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true })));
     input.calibration.stop();
   });
+  it('routes translation circles to exactly one skill without attacks or dashes', () => {
+    mobile(); const input = start(); const frames = [];
+    for (let at=0;at<=1080;at+=30) {
+      if(at) advance(30);
+      const a=at/1000*Math.PI*2;
+      emit(win,'devicemotion',{acceleration:{x:15*Math.cos(a),y:0,z:15*Math.sin(a)},rotationRate:{alpha:0,beta:0,gamma:0}});
+      frames.push(input.sample());
+    }
+    expect(frames.filter(f=>f.skill)).toHaveLength(1);
+    expect(frames.every(f=>!f.fire&&!f.dash)).toBe(true);
+    expect(input.lastGesture?.via).toBe('spin');
+  });
   it('processes gyro-only events and reports lost sensors, then recovers late readings', () => {
     mobile(); const input = start();
     const gyro = (alpha: number) => emit(win, 'devicemotion', { rotationRate: { alpha, beta: 0, gamma: 0 }, acceleration: null });
     gyro(0);
     for (let i = 0; i < 12; i++) { advance(30); gyro(800); }
-    expect(input.sample()).toMatchObject({ skill: true, dash: false, fire: false });
-    expect(input.lastGesture?.via).toBe('spin');
+    expect(input.sample()).toMatchObject({ skill: false, dash: false, fire: false });
+    expect(input.lastGesture?.via).not.toBe('spin');
     advance(2200); expect(input.sensorStatus).toBe('off');
     gyro(0); expect(input.sensorStatus).toBe('on'); expect(input.mode).toBe('motion');
   });
