@@ -20,7 +20,7 @@ Manual status checks and bounded identical-byte resends keep background activity
 
 - Rebased onto the latest committed classroom/editor changes before validation.
 - `npm run typecheck`: passed.
-- `npm test`: 88 files passed, 4 skipped; 1,028 tests passed, 9 skipped.
+- `npm test`: 89 files passed, 4 skipped; 1,038 tests passed, 9 skipped.
 - `npm run build`: passed; existing large-chunk/dynamic-import/browser-externalization warnings remain. Receipt panel is 2.97 KB gzip and stays lazy.
 - `npm audit --omit=dev`: zero vulnerabilities.
 - Eight-human durable batch benchmark on this host: 20 batches / 160 receipts, median 11.20 ms, worst 15.07 ms (SQLite FULL/WAL, one transaction per match). Host measurement only.
