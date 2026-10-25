@@ -23164,5 +23164,61 @@
     "zh": "倾斜 = 移动 · 挥动/轻触 = 攻击 · 用力倾斜 = 冲刺 · 画圈/长按 = 技能",
     "es": "inclinar = moverse · agitar/tocar = atacar · inclinar fuerte = esquivar · círculo/mantener = habilidad",
     "fr": "incliner = bouger · balancer/toucher = attaquer · incliner fort = foncer · cercle/appui = compétence"
+  },
+  {
+    "id": "3f4ea79389b4220f",
+    "en": "swipe to dash",
+    "zh": "滑动来冲刺",
+    "es": "desliza para esquivar",
+    "fr": "glissez pour foncer"
+  },
+  {
+    "id": "9445fb44c5e04cd0",
+    "en": "Swipe quickly toward where you want to dash, or tilt hard (50°) that way. ×3",
+    "zh": "朝想冲刺的方向快速滑动，或朝那个方向用力倾斜（50°）。×3",
+    "es": "Desliza rápido hacia donde quieras esquivar, o inclina fuerte (50°) hacia allí. ×3",
+    "fr": "Glissez vite vers où foncer, ou inclinez fort (50°) dans cette direction. ×3"
+  },
+  {
+    "id": "6daf65fc14040d4f",
+    "en": "swipe — or tilt {0}° of 50°",
+    "zh": "滑动 —— 或倾斜 {0}° / 50°",
+    "es": "desliza — o inclina {0}° de 50°",
+    "fr": "glissez — ou inclinez {0}° sur 50°"
+  },
+  {
+    "id": "7055b44809ee80bc",
+    "en": "motion: tilt · tap · swipe · hold",
+    "zh": "体感：倾斜 · 轻触 · 滑动 · 长按",
+    "es": "movimiento: inclinar · tocar · deslizar · mantener",
+    "fr": "mouvement : incliner · toucher · glisser · maintenir"
+  },
+  {
+    "id": "4c98404858c8a083",
+    "en": "Swipe to dash, or tilt hard. Tap to attack; hold for skill.",
+    "zh": "滑动冲刺，或用力倾斜。轻触攻击；长按放技能。",
+    "es": "Desliza para esquivar, o inclina fuerte. Toca para atacar; mantén para la habilidad.",
+    "fr": "Glissez pour foncer, ou inclinez fort. Touchez pour attaquer ; maintenez pour la compétence."
+  },
+  {
+    "id": "0eba5c2d68936c24",
+    "en": "HackPSU · tilt to move · tap to attack · swipe to dash · hold for your skill",
+    "zh": "HackPSU · 倾斜移动 · 轻触攻击 · 滑动冲刺 · 长按放技能",
+    "es": "HackPSU · inclina para moverte · toca para atacar · desliza para esquivar · mantén para tu habilidad",
+    "fr": "HackPSU · inclinez pour bouger · touchez pour attaquer · glissez pour foncer · maintenez pour votre compétence"
+  },
+  {
+    "id": "c4b4aa73bcf2f388",
+    "en": "Tilt to move. Swipe to dash, or tilt hard. Tap to attack; hold for skill.",
+    "zh": "倾斜移动。滑动冲刺，或用力倾斜。轻触攻击；长按放技能。",
+    "es": "Inclina para moverte. Desliza para esquivar, o inclina fuerte. Toca para atacar; mantén para la habilidad.",
+    "fr": "Inclinez pour bouger. Glissez pour foncer, ou inclinez fort. Touchez pour attaquer ; maintenez pour la compétence."
+  },
+  {
+    "id": "62b18c0d4db7040b",
+    "en": "⚡ swipe",
+    "zh": "⚡ 滑动",
+    "es": "⚡ deslizar",
+    "fr": "⚡ glisser"
   }
 ]

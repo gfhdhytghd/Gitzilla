@@ -13898,5 +13898,45 @@
     "id": "c97f5645ad73bb22",
     "source": "tilt = move · swing/tap = attack · tilt hard = dash · circle/hold = skill",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "3f4ea79389b4220f",
+    "source": "swipe to dash",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9445fb44c5e04cd0",
+    "source": "Swipe quickly toward where you want to dash, or tilt hard (50°) that way. ×3",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "6daf65fc14040d4f",
+    "source": "swipe — or tilt {0}° of 50°",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "7055b44809ee80bc",
+    "source": "motion: tilt · tap · swipe · hold",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "4c98404858c8a083",
+    "source": "Swipe to dash, or tilt hard. Tap to attack; hold for skill.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "0eba5c2d68936c24",
+    "source": "HackPSU · tilt to move · tap to attack · swipe to dash · hold for your skill",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c4b4aa73bcf2f388",
+    "source": "Tilt to move. Swipe to dash, or tilt hard. Tap to attack; hold for skill.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "62b18c0d4db7040b",
+    "source": "⚡ swipe",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

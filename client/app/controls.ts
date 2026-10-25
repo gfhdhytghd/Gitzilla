@@ -36,7 +36,7 @@ export function createControlsCard(train: () => void): { el: HTMLElement; dispos
       });
     };
     const state = getMotionPermissionState();
-    const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : "motion: tilt · swing · tilt hard · spin";
+    const label = prof === "tap-only" ? "touch: drag to move · tap to attack" : "motion: tilt · tap · swipe · hold";
     el.replaceChildren(
       h("div.cc-title", null, "🎮 controls ", state.ready ? h("span.cc-chosen", null, `✓ ${label}`) : h("span.dim", null, "— choose before the fight")),
       ...(!state.ready ? [h("div.cc-permission", { role: "status" }, state.permission === "denied" ? "permission denied — retry or choose touch only" : state.needsPermission ? "📱 tap to enable motion · required on each page load" : "waiting for sensor readings — move your phone or choose touch only")] : []),
@@ -59,7 +59,7 @@ export function createControlsCard(train: () => void): { el: HTMLElement; dispos
       ...(chosen ? [h("div.cc-train", null,
             controlsTrained() ? h("span.ok", null, "✓ gestures trained ") : h("span.dim", null, "not trained yet "),
             h("button.btn-link", { "data-testid": "controls-retrain", onclick: train }, controlsTrained() ? "↻ re-train gestures" : "▶ train gestures (20s)")),
-        h("div.cc-legend", null, prof === "tap-only" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing / tap = attack · tilt hard / double-tap = dash · draw a circle / long-press = skill")] : []),
+        h("div.cc-legend", null, prof === "tap-only" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "Swipe to dash, or tilt hard. Tap to attack; hold for skill.")] : []),
     );
   };
   const stopPermission = subscribeMotionPermission(render);

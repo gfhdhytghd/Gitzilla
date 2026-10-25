@@ -46,7 +46,7 @@ const STEPS: { id: StepId; title: string; sub: string; anim: string; need: numbe
   { id: "hold", title: "hold the screen flat", sub: "screen facing up, parallel to the floor. flat means still.", anim: "a-hold", need: 1 },
   { id: "tilt", title: "tilt to move", sub: "from flat, tilt toward each edge. normal: 15° = full speed.", anim: "a-tilt", need: 4 },
   { id: "swing", title: "swing to attack", sub: "flick the phone like a punch. ×3 (or just tap the screen)", anim: "a-swing", need: 3 },
-  { id: "dash", title: "tilt hard to dash", sub: "Tip the phone hard (50°) toward where you want to dash, then back. ×3 — or double-tap", anim: "a-dash", need: 3 },
+  { id: "dash", title: "swipe to dash", sub: "Swipe quickly toward where you want to dash, or tilt hard (50°) that way. ×3", anim: "a-dash", need: 3 },
   { id: "spin", title: "spin for your skill", sub: "Draw circles with your phone; keep it upright. ×2 — or long-press the screen", anim: "a-spin", need: 2 },
 ];
 
@@ -100,6 +100,9 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     title.textContent = `${stepIdx + 1}/5 · ${s.title}`;
     sub.textContent = s.sub;
     phone.className = `tr-phone ${s.anim}`;
+    // dash step: the input module's touch surface must see the swipe (it ignores [data-input-ignore]); every other step
+    // keeps the trainer's own tap / long-press counting so nothing counts twice
+    el.toggleAttribute("data-input-ignore", s.id !== "dash");
     pad.hidden = s.id !== "tilt";
     dots.replaceChildren(...STEPS.map((_, i) => h(`i${i < stepIdx ? ".done" : i === stepIdx ? ".on" : ""}`)));
     const n = s.id === "tilt" ? got.size : s.id === "hold" ? (neutral ? 1 : 0) : count;
@@ -144,7 +147,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
         // for spin; a gyro turn is neither
         onGesture: (g) => {
           const cur = STEPS[stepIdx].id;
-          if (cur === "dash" && g.kind === "dash" && (g.via === "tilt-dash" || g.via === "double-tap")) hit("dash", spinInput?.calibration.meter().dashTiltDegrees ?? 0);
+          if (cur === "dash" && g.kind === "dash" && (g.via === "swipe" || g.via === "tilt-dash")) hit("dash", spinInput?.calibration.meter().dashTiltDegrees ?? 0);
           if (cur === "spin" && g.kind === "skill" && (g.via === "spin" || g.via === "long-press")) hit("spin", spinInput?.calibration.meter().spinDegrees ?? 0);
         },
       });
@@ -237,8 +240,9 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
       }
     }
   };
-  // touch alternates: tap = attack, double-tap = dash, long-press = skill
-  let downAt = 0, lastTap = 0, pressTimer = 0;
+  // touch alternates: tap = attack (on release, like the fight), long-press = skill. Dash is the input module's swipe
+  // (motion mode has no double-tap dash any more)
+  let downAt = 0, pressTimer = 0;
   const ring = h("div.press-ring");
   const onDown = (e: PointerEvent) => {
     if ((e.target as Element).closest("button")) return;
@@ -262,14 +266,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     const held = performance.now() - downAt;
     downAt = 0;
     if (held > 250) return;
-    const now = performance.now();
-    if (now - lastTap < 300) {
-      hit("dash", 50);
-      lastTap = 0;
-    } else {
-      lastTap = now;
-      setTimeout(() => lastTap && performance.now() - lastTap >= 290 && hit("swing", 12), 310);
-    }
+    hit("swing", 12);
   };
   addEventListener("deviceorientation", onOri);
   addEventListener("devicemotion", onMotion);
@@ -291,7 +288,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     }
     meterFill.style.width = `${clamp(meterVal / meterMax, 0, 1) * 100}%`;
     meterLbl.textContent =
-      s === "hold" ? (ori ? "steady…" : "waiting for sensors…") : s === "tilt" ? "lean until each direction lights up" : s === "swing" ? `${meterVal.toFixed(1)} m/s²` : s === "dash" ? (meterVal >= 50 ? "dash! now tip it back under 35°" : `tilt ${Math.round(meterVal)}° of 50°`)
+      s === "hold" ? (ori ? "steady…" : "waiting for sensors…") : s === "tilt" ? "lean until each direction lights up" : s === "swing" ? `${meterVal.toFixed(1)} m/s²` : s === "dash" ? (meterVal >= 50 ? "dash! now tip it back under 35°" : `swipe — or tilt ${Math.round(meterVal)}° of 50°`)
       : spinGyro > 60 ? `keep it upright: it turned ${Math.round(spinGyro)}°` : `circle ${Math.round(meterVal)}° of 300°`;
     requestAnimationFrame(raf);
   };

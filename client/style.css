@@ -306,21 +306,17 @@ body:has(.screen.game) .link-status.open { display: none; }
 .fx-danger.on { opacity: 1; animation: danger 0.35s steps(2) infinite; }
 @keyframes danger { 50% { opacity: .45; } }
 .stage.enraged { box-shadow: 0 0 0 2px #3a0812, 0 0 80px rgba(255,20,60,.25); }
+/* phase-change glitch: shake + skew + hue shifts only. Photosensitivity: no invert / contrast / black clip bands
+   (they swung the whole stage's luminance by far more than 10% per frame) */
 .stage.glitch { animation: glitch .7s steps(8) both; }
-.stage.glitch .game-canvas { animation: glitch-c .7s steps(8) both; }
 @keyframes glitch {
   0% { transform: translate(0); filter: none; }
-  15% { transform: translate(-6px, 2px) skewX(4deg); filter: hue-rotate(90deg) saturate(3); }
-  30% { transform: translate(5px, -3px); filter: invert(1); }
-  45% { transform: translate(-3px, 0) skewX(-6deg); filter: hue-rotate(-90deg) contrast(2); }
+  15% { transform: translate(-6px, 2px) skewX(4deg); filter: hue-rotate(60deg); }
+  30% { transform: translate(5px, -3px); filter: hue-rotate(-40deg); }
+  45% { transform: translate(-3px, 0) skewX(-6deg); filter: hue-rotate(30deg); }
   60% { transform: translate(4px, 3px); filter: none; }
-  75% { transform: translate(-2px, -1px) skewX(2deg); filter: saturate(4); }
+  75% { transform: translate(-2px, -1px) skewX(2deg); filter: none; }
   100% { transform: none; filter: none; }
-}
-@keyframes glitch-c {
-  0%, 100% { clip-path: none; }
-  20% { clip-path: polygon(0 0, 100% 0, 100% 30%, 0 30%, 0 40%, 100% 40%, 100% 100%, 0 100%); }
-  50% { clip-path: polygon(0 10%, 100% 10%, 100% 55%, 0 55%, 0 70%, 100% 70%, 100% 90%, 0 90%); }
 }
 
 .hud { position: absolute; inset: 0; pointer-events: none; z-index: 5; font-family: var(--term); --hs: 1; }
@@ -1342,14 +1338,17 @@ body:has(.game-menu:not([hidden])) .kj-touch-overlay { display: none; }
 @keyframes tr-tilt { 25% { transform: rotate(-22deg); } 50% { transform: rotate(0) skewY(0); } 75% { transform: rotate(22deg); } }
 .a-swing { animation: tr-swing 1.1s steps(5) infinite; }
 @keyframes tr-swing { 0%, 50%, 100% { transform: translate(0, 0); } 25% { transform: translate(34px, -18px) rotate(10deg); } }
-/* dash = tip the phone hard (≥50°) toward where you go, then back: steep tilt + an arrow on that side */
-.a-dash { animation: tr-dash 2.4s ease-in-out infinite; }
-@keyframes tr-dash { 0%, 8%, 42%, 58%, 92%, 100% { transform: rotate(0); } 18%, 32% { transform: rotate(55deg); } 68%, 82% { transform: rotate(-55deg); } }
-.tr-stage:has(.a-dash)::before, .tr-stage:has(.a-dash)::after { position: absolute; top: 50%; margin-top: -22px; font: 40px/1 var(--pix); color: var(--yellow); opacity: 0; animation: 2.4s steps(1) infinite; }
-.tr-stage:has(.a-dash)::before { content: "◀"; left: calc(50% - 130px); animation-name: tr-dash-l; }
-.tr-stage:has(.a-dash)::after { content: "▶"; right: calc(50% - 130px); animation-name: tr-dash-r; }
-@keyframes tr-dash-r { 0%, 18% { opacity: 0; } 20%, 38% { opacity: 1; } 40%, 100% { opacity: 0; } }
-@keyframes tr-dash-l { 0%, 68% { opacity: 0; } 70%, 88% { opacity: 1; } 90%, 100% { opacity: 0; } }
+/* dash = a quick swipe across the screen toward where you go (tilting hard also works): a fingertip sweeps over the
+   phone's screen with a short trail, and the direction arrow lights up on that side */
+.a-dash { animation: none; }
+.tr-stage:has(.a-dash)::before { content: ""; position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
+  background: #e8fff2; box-shadow: 0 0 0 3px rgba(0,0,0,.6), -18px 0 0 -6px rgba(232,255,242,.45), -34px 0 0 -9px rgba(232,255,242,.2); opacity: 0;
+  animation: tr-swipe 1.6s ease-in infinite; z-index: 2; }
+.tr-stage:has(.a-dash)::after { content: "▶"; position: absolute; top: 50%; margin-top: -22px; left: calc(50% + 60px); font: 40px/1 var(--pix); color: var(--yellow);
+  opacity: 0; animation: tr-swipe-arrow 1.6s steps(1) infinite; }
+@keyframes tr-swipe { 0%, 15% { transform: translateX(-36px); opacity: 0; } 20% { opacity: 1; } 45% { transform: translateX(36px); opacity: 1; } 55%, 100% { transform: translateX(36px); opacity: 0; } }
+@keyframes tr-swipe-arrow { 0%, 40% { opacity: 0; } 42%, 75% { opacity: 1; } 77%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tr-stage:has(.a-dash)::before { animation: none; opacity: 1; } .tr-stage:has(.a-dash)::after { animation: none; opacity: 1; } }
 /* spin = draw a circle with the phone: it travels around the circle but never turns (rotate · translate · un-rotate) */
 .a-spin { animation: tr-orbit 1.4s linear infinite; }
 @keyframes tr-orbit { from { transform: rotate(0deg) translateX(46px) rotate(0deg); } to { transform: rotate(360deg) translateX(46px) rotate(-360deg); } }

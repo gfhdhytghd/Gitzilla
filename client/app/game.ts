@@ -64,7 +64,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const deckMid = h("div.deck-mid");
   // motion v3: no on-screen controls — the deck only says what the gestures are ready to do
   const gsSkillState = h("b"), gsDashState = h("b");
-  const gsSkillLbl = h("span", null, "✦ spin or hold"), gsDashLbl = h("span", null, "⚡ tilt hard");
+  const gsSkillLbl = h("span", null, "✦ spin or hold"), gsDashLbl = h("span", null, "⚡ swipe");
   const gsSkill = h("div.gs-pill.skill", null, gsSkillLbl, gsSkillState);
   const gsDash = h("div.gs-pill.dash", null, gsDashLbl, gsDashState);
   const gestStatus = h("div.gest-status", { "data-testid": "gesture-status" }, gsSkill, gsDash);
@@ -574,7 +574,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let trauma = 0;
   let hitstop = 0;
   let slowmo = 0;
-  let flashA = 0;
+  let flashA = 0, flashTarget = 0;
   let flashCol = "255,255,255";
   let zoom = 1;
   let zoomTarget: [number, number] = [ARENA_W / 2, ARENA_H / 2];
@@ -596,13 +596,16 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     slowmo = Math.max(slowmo, slow);
   };
   let lastFlashAt = 0;
+  // Photosensitivity: the stage flash is an edge vignette (transparent centre), capped at .25 alpha, eased in over ~80 ms
+  // and out at 1.6/s; no full-viewport opacity jump (codex-qa's ≤10% mean-luminance swing per frame).
+  const FLASH_MAX = 0.25;
   const doFlash = (a: number, col = "255,255,255") => {
-    if (calm) a = Math.min(a, 0.12); // a faint tint, never a strobe
+    a = Math.min(a * 0.5, calm ? 0.12 : FLASH_MAX); // a tint, never a strobe
     const now = performance.now();
-    if (now - lastFlashAt < 340 && a < flashA + 0.2) return; // ≤3 full-screen flashes per second
+    if (now - lastFlashAt < 340 && a < flashTarget + 0.1) return; // ≤3 flashes per second
     lastFlashAt = now;
-    if (a >= flashA) flashCol = col;
-    flashA = Math.max(flashA, a);
+    if (a >= flashTarget) flashCol = col;
+    flashTarget = Math.max(flashTarget, a);
   };
 
   const handleEvent = (e: GameEvent, s: MatchState) => {
@@ -1115,7 +1118,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (enablePill && enablePill.hidden !== hideEnable) enablePill.hidden = hideEnable;
     if (introOver && !tipsShown && latest?.status === "fighting") {
       tipsShown = true;
-      const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing/tap = attack · tilt hard = dash · circle/hold = skill");
+      const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "Tilt to move. Swipe to dash, or tilt hard. Tap to attack; hold for skill.");
       overlay.append(tips);
       setTimeout(() => tips.classList.add("fade"), 6000);
       if (mode === "touch") setTimeout(showTouchSplit, 1200); // after the "$ ./fight --now" flash
@@ -1596,8 +1599,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     releasedEvents.length = 0;
 
     // DOM fx
-    flashA = Math.max(0, flashA - dtReal * 3);
-    flash.style.background = flashA > 0.01 ? `rgba(${flashCol},${flashA.toFixed(3)})` : "transparent";
+    flashA += (flashTarget - flashA) * (1 - Math.exp(-dtReal / 0.08));
+    flashTarget = Math.max(0, flashTarget - dtReal * 1.6);
+    flash.style.background = flashA > 0.01
+      ? `radial-gradient(ellipse at center, rgba(${flashCol},0) 45%, rgba(${flashCol},${flashA.toFixed(3)}) 100%)` : "transparent";
     stage.classList.toggle("glitch", performance.now() < glitchUntil);
     let inDanger = false;
     const z0 = roy?.zone;
@@ -1633,7 +1638,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         skillCdMax = Math.max(skillCdMax, me.skillCd);
         const touchMode = input?.mode === "touch";
         setText(gsSkillLbl, touchMode ? "✦ hold" : "✦ spin or hold");
-        setText(gsDashLbl, touchMode ? "⚡ double-tap" : "⚡ tilt hard");
+        setText(gsDashLbl, touchMode ? "⚡ double-tap" : "⚡ swipe");
         setText(gsSkillState, me.skillCd > 0 ? `${me.skillCd.toFixed(1)}s` : "READY");
         gsSkill.classList.toggle("ready", me.skillCd <= 0);
         gsSkill.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");
