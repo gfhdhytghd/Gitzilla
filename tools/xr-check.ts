@@ -99,6 +99,7 @@ try {
   }
   await page.evaluate(() => (window as any).__xrCheck.destroy());
   if (args.includes('--height')) {
+    await page.evaluate(() => localStorage.setItem('kaiju.xr.tableHeightOffset', '1.4'));
     const url = `http://127.0.0.1:${address.port}/client/render/stage25d/gallery.html?scene=raid&xr=emulate&vox=0&xrdebug=1`;
     await page.goto(url);
     await page.waitForFunction(() => (window as any).__stage && (window as any).__xrDevice);
@@ -110,8 +111,8 @@ try {
       const device = (window as any).__xrDevice;
       if (local) { const features = device.supportedFeatures; features.splice(features.indexOf('local-floor'), 1); }
       if (vision) {
-        // Safari desktop UA with ZERO touch points: correction must depend on a
-        // granted Safari XR session, not assume a particular touch-point count.
+        // Safari desktop UA with ZERO touch points: table height is floor-based
+        // regardless of headset brand; Vision Pro identity is diagnostic only.
         Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15' });
         Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, value: 0 });
       }
@@ -126,12 +127,20 @@ try {
     assert(Math.abs(initial.rawHeadY - (args.includes('--local-only') ? 0 : 1.6)) < 0.001);
     assert.equal(initial.referenceOffsetY, args.includes('--local-only') ? -1.6 : 0);
     assert.equal(initial.visionPro, args.includes('--vision-pro'));
-    const expected = args.includes('--vision-pro') ? 0.45 : 1.45;
+    const expected = 0.8;
+    assert.equal(initial.heightSource, args.includes('--local-only') ? 'fallback-1.6m' : 'local-floor');
+    assert.equal(initial.estimatedEyeHeight, args.includes('--local-only') ? 1.6 : null);
+    assert(Math.abs(initial.baseTableY - (args.includes('--local-only') ? -0.8 : 0.8)) < 0.001);
     assert(Math.abs(initial.tableY - expected) < 0.001);
+    assert.equal(initial.tableHeightOffset, 0, 'legacy height offsets must not migrate');
+    await page.evaluate(() => (window as any).__xrDevice.position.y = 1.1);
+    await page.waitForFunction(() => Math.abs((window as any).__stage.debugXR.head.y - 1.1) < 0.01);
+    assert(Math.abs(await page.evaluate(() => (window as any).__stage.debugXR.tableY) - expected) < 0.001, 'crouching must not recalibrate table height');
     await page.evaluate(() => (window as any).__stage.setTableHeightOffset(0.1));
     await page.waitForFunction(y => Math.abs((window as any).__stage.debugXR.tableY - y) < 0.001, expected + 0.1);
-    assert.equal(await page.evaluate(() => localStorage.getItem('kaiju.xr.tableHeightOffset')), '0.1');
+    assert.equal(await page.evaluate(() => localStorage.getItem('kaiju.xr.tableHeightOffset.v2')), '0.1');
     await page.waitForFunction(y => document.querySelector('[data-testid="xr-debug"]')?.textContent?.includes(`table ${y.toFixed(2)}m`), expected + 0.1);
+    assert((await page.getByTestId('xr-debug').textContent())?.includes(initial.heightSource), 'height estimate source must be visible');
     assert(await page.evaluate(() => (window as any).__stage.debugScene.getObjectByName('xr-debug-readout').visible));
     await page.screenshot({ path: join(output, 'height-debug.png') });
     evidence.height = { initial, afterOffset: await page.evaluate(() => JSON.parse(JSON.stringify((window as any).__stage.debugXR))),

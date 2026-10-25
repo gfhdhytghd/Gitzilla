@@ -1,4 +1,20 @@
-DONE (XR HUD boss HP fix + table height buttons) — claude-boss
+DONE (XR world-pinned table + 0.80 m height wiring) — claude-boss
+
+## Round 5 (urgent): XR table pinned in space
+- **Bug:** `getXRPlacement` got `follow: <followed hero>` every frame, so the arena root slid as the hero moved.
+- **Fix (index.ts):** the root and table are placed once per session and again only when the placement key changes. The key covers the scale mode, the `getTableHeightPlacement` tableY (so ▲/▼ changes it), the arena size, and the anchor `xrHome` (head x/z read once at session start, or on a SCALE press). It is never recomputed from the head or a hero per frame; `follow: null` always.
+- **FOLLOW** is now only a marker: a bobbing teal chevron (THREE.Sprite in root space, `LookExtras.follow`) about 74 px above the followed hero. It sits above the perk/"F" badges, which hid it at 52 px. Screen rendering is unaffected.
+- **Height:** take-ui's `getTableHeightPlacement({ referenceSpaceType, initialHeadY: rawHeadY captured ONCE per session, referenceOffsetY, userOffset })`. Its `tableY` feeds the pinned placement, and `baseTableY`, `estimatedEyeHeight` and `heightSource` are copied to `xr.debug`. The old `getComfortTableHeight` call is gone.
+- **Emulator checks (scratch `pincheck.mjs`; gallery xr=emulate, xrmode=vr):**
+  - local-floor: FOLLOW pressed via the controller and the hero ran 136 px; root matrix and table world position constant over 16 samples.
+  - Headset moved (0,1.6,0.4) → (0.45,1.3,0.1) and yawed 29°: root and table constant.
+  - ▲: table +0.100 m with x/z unchanged, then constant.
+  - local (local-floor removed, with tools/iwer-compat.ts): the same results; heightSource fallback-1.6m, head 1.6, table top 0.80 m.
+  - Without iwer-compat, IWER's `getOffsetReferenceSpace` does `mat4.clone(XRRigidTransform)` and drops the offset. That is an emulator bug; the pinning still held.
+  - take-ui's `npx tsx tools/xr-check.ts --height`, `--height --vision-pro` and `--height --local-only`: all pass.
+  - XR HUD check, AR placement and VR perf (update 1.4-1.5 ms) unchanged.
+- tsc clean, vitest 1271 passed / 10 skipped, build OK.
+
 
 ## Round 4 (urgent): XR HUD boss HP was frozen on Vision Pro
 - **Root cause:** the HUD redraw was throttled on the caller's `time` (`time - hudAt < 0.25`). game.ts's `pull()` returns `visTime`, which only advances in the page rAF (game.ts:1444), and Vision Pro pauses that while immersive. So after the first draw, `time` never moved and the panel kept showing the HP from session start. The field and math were right (`boss.hp / boss.maxHp`, same as the 2D bar) and `needsUpdate` was set; the redraw just never ran.

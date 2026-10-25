@@ -22,7 +22,7 @@ import type { SpatialSupport } from "./types.ts";
 import type { CameraRig, ProjectedPoint, StageView, XRHandle, XRScale, XRSelectInfo } from "./types.ts";
 import { StageLook, type LookExtras } from "./scene.ts";
 import { lift } from "./staging.ts";
-import { getComfortTableHeight, getTableHeightOffset, setTableHeightOffset, TABLE_HEIGHT_STEP } from "./height.ts";
+import { getTableHeightOffset, getTableHeightPlacement, setTableHeightOffset, TABLE_HEIGHT_STEP } from "./height.ts";
 import { createXRHeightReadout } from "./height-debug.ts";
 
 export type { StageView } from "./types.ts";
@@ -198,6 +198,9 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   // ---------------- XR ----------------
   let xrLast = -1;
   let xrHome: { x: number; y: number; z: number; scale: XRScale } | null = null;
+  let xrPlaceKey = "";
+  /** raw (pre-offset) head y at session start: undefined = not captured yet this session */
+  let xrInitialRawY: number | null | undefined;
   let xrUpd = 0;
   let support: SpatialSupport | null = null;
   void detectSpatialSupport().then((v) => (support = v), () => {});
@@ -234,7 +237,6 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const time = xrClock;
     const ex = src.extras ?? last?.extras ?? {};
     const W = ex.world?.w ?? 480, H = ex.world?.h ?? 288;
-    const fp = follow ? state.players.find((p) => p.id === follow) : null;
     const cam = renderer.xr.getCamera();
     if (xr?.mode === "immersive-ar" && placement) {
       // AR: the arena sits on a real surface (hit-test); until placed, show a reticle where it would go
@@ -254,7 +256,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
       look.root.worldToLocal(camPos);
       const yawAR = Math.atan2(camPos.x - W / 2, camPos.z - H / 2);
       prepare(state);
-      look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yawAR, cam.quaternion, true, opts.voxels !== false && !xrFlat);
+      look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events, follow }, yawAR, cam.quaternion, true, opts.voxels !== false && !xrFlat);
       look.updateHud(state, true);
       xrUpd = performance.now() - u0;
       renderer.render(look.scene, cam);
@@ -266,27 +268,40 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     const trackedHead = xr?.debug.head;
     if (!trackedHead) { renderer.render(look.scene, cam); return; }
     if (!xrHome || xrHome.scale !== xrScale) xrHome = { x: trackedHead.x, y: trackedHead.y, z: trackedHead.z, scale: xrScale };
-    const table0 = xrScale === "table";
-    // Use a real tracked pose; Vision Pro's requested comfort correction lowers
-    // the previous eye-relative tabletop by1m. Never alter reference-space sign.
-    const place = getXRPlacement({ mode: xrScale, worldWidth: W, worldHeight: H, follow: fp ? { x: fp.x, y: fp.y } : null,
-      tableWidth: 1.2, tableHeight: table0 ? getComfortTableHeight(xrHome.y, tableHeightOffset, xr!.debug.visionPro) : undefined, distance: table0 ? 0.7 : undefined });
-    if (xr) { xr.debug.tableY = place.position.y; xr.debug.tableHeightOffset = tableHeightOffset; heightReadout.update(xr.debug, cam); }
-    place.position.x += xrHome.x;
-    place.position.z += xrHome.z;
-    look.root.scale.setScalar(place.scale);
-    look.root.position.set(place.position.x, place.position.y, place.position.z);
     const table = xrScale === "table";
-    look.table.visible = table;
-    if (table) {
-      look.table.scale.set(W * place.scale + 0.08, 0.04, H * place.scale + 0.08);
-      look.table.position.set(place.position.x + (W * place.scale) / 2, place.position.y - 0.022, place.position.z + (H * place.scale) / 2);
+    // World-locked: the arena root + table are placed when the session starts and again only on an explicit change
+    // (scale button, table height, arena size). Never per frame from the head or the followed hero (follow is a marker).
+    // The head pose is read once (xrHome); the root lives in reference-space coordinates, so head motion can't drag it.
+    // table height (take-ui's height.ts): 0.80 m above the floor, calibrated from the raw head y captured ONCE per session
+    if (xrInitialRawY === undefined) xrInitialRawY = xr!.debug.rawHeadY;
+    const hp = table ? getTableHeightPlacement({ referenceSpaceType: xr!.debug.referenceSpaceType, initialHeadY: xrInitialRawY,
+      referenceOffsetY: xr!.debug.referenceOffsetY, userOffset: tableHeightOffset }) : null;
+    const tableHeight = hp?.tableY;
+    const placeKey = `${xrScale}|${tableHeight}|${W}x${H}|${xrHome.x},${xrHome.z}`;
+    if (placeKey !== xrPlaceKey) {
+      xrPlaceKey = placeKey;
+      const place = getXRPlacement({ mode: xrScale, worldWidth: W, worldHeight: H, follow: null,
+        tableWidth: 1.2, tableHeight, distance: table ? 0.7 : undefined });
+      place.position.x += xrHome.x;
+      place.position.z += xrHome.z;
+      look.root.scale.setScalar(place.scale);
+      look.root.position.set(place.position.x, place.position.y, place.position.z);
+      look.table.visible = table;
+      if (table) {
+        look.table.scale.set(W * place.scale + 0.08, 0.04, H * place.scale + 0.08);
+        look.table.position.set(place.position.x + (W * place.scale) / 2, place.position.y - 0.022, place.position.z + (H * place.scale) / 2);
+      }
+      if (xr) {
+        xr.debug.tableY = place.position.y;
+        if (hp) { xr.debug.baseTableY = hp.baseTableY; xr.debug.estimatedEyeHeight = hp.estimatedEyeHeight; xr.debug.heightSource = hp.heightSource; }
+      }
     }
+    if (xr) { xr.debug.tableHeightOffset = tableHeightOffset; heightReadout.update(xr.debug, cam); }
     look.root.updateMatrixWorld(true);
     look.root.worldToLocal(camPos);
     const yaw = Math.atan2(camPos.x - W / 2, camPos.z - H / 2);
     prepare(state);
-    look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events }, yaw, cam.quaternion, true, opts.voxels !== false && !xrFlat);
+    look.update(state, time, { ...ex, theme: ex.theme as LookExtras["theme"], events: src.events ?? ex.events, follow }, yaw, cam.quaternion, true, opts.voxels !== false && !xrFlat);
     look.updateHud(state, true, xrScale === "table");
     xrUpd = performance.now() - u0;
     renderer.render(look.scene, cam);
@@ -324,7 +339,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
   async function enterXR(mode: "auto" | "immersive-vr" | "immersive-ar" = "auto") {
     if (xr) return;
     xrLast = -1;
-    xrHome = null;
+    xrHome = null; xrPlaceKey = ""; xrInitialRawY = undefined;
     xrSlow = 0; xrFlat = false;
     xrClock = 0; xrSrcTime = NaN;
     // no awaits before requestSession (inside xrEnter): the click/pinch activation must still be live
@@ -354,6 +369,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     opts.onXRChange?.(true);
   }
   function resetRoot() {
+    xrPlaceKey = "";
     look.root.matrixAutoUpdate = true;
     look.root.visible = true;
     look.root.scale.setScalar(1);

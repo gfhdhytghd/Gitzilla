@@ -84,6 +84,10 @@ export interface XRDebugState {
   visionPro: boolean;
   tableHeightOffset: number;
   tableY: number | null;
+  /** Session-start table calibration; local floor is estimated, never measured. */
+  baseTableY?: number;
+  estimatedEyeHeight?: number | null;
+  heightSource?: 'local-floor' | 'initial-pose-estimate' | 'fallback-1.6m';
 }
 export type XRRenderer = Pick<WebGLRenderer, 'xr' | 'setAnimationLoop'> & Partial<Pick<WebGLRenderer, 'getClearAlpha' | 'setClearAlpha'>>;
 export interface TextureCache {

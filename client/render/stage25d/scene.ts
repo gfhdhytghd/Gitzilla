@@ -26,6 +26,8 @@ export interface LookExtras {
   theme?: ArenaTheme;
   seed?: number;
   events?: GameEvent[];
+  /** XR: the hero picked with FOLLOW gets a floating marker (the arena never moves to follow it) */
+  follow?: string | null;
 }
 
 /** XR button row under the HUD panel: x of each button centre relative to the panel centre (3 px gaps, 252 px) */
@@ -125,6 +127,7 @@ export class StageLook {
   readonly table: THREE.Mesh;
   readonly hud: THREE.Mesh; private hudCanvas: HTMLCanvasElement; private hudCtx: CanvasRenderingContext2D; private hudTex: THREE.CanvasTexture;
   readonly buttons: THREE.Mesh[] = [];
+  private followMarker: THREE.Sprite;
   private w = 480; private h = 288;
   plane: BossPlane | null = null;
   private tmpM = new THREE.Matrix4(); private tmpQ = new THREE.Quaternion(); private tmpP = new THREE.Vector3(); private tmpS = new THREE.Vector3();
@@ -235,6 +238,17 @@ export class StageLook {
     this.table.add(edge);
     this.table.visible = false;
     this.scene.add(this.table);
+
+    // FOLLOW marker: a bobbing teal chevron over the followed hero (camera-facing; XR only)
+    {
+      const [c, g] = makeCanvas(9, 6);
+      g.fillStyle = "#07040c"; g.fillRect(0, 0, 9, 2); for (let r = 0; r < 5; r++) g.fillRect(r, r, 9 - 2 * r, 1);
+      g.fillStyle = "#2ee6c8"; for (let r = 0; r < 4; r++) g.fillRect(r + 1, r, 7 - 2 * r, 1);
+      this.followMarker = new THREE.Sprite(new THREE.SpriteMaterial({ map: near(new THREE.CanvasTexture(c)), transparent: true, alphaTest: 0.5 }));
+      this.followMarker.scale.set(18, 12, 1);
+      this.followMarker.visible = false;
+      this.root.add(this.followMarker);
+    }
 
     // floating HUD panel + buttons (XR); positioned in root space above the far edge
     [this.hudCanvas, this.hudCtx] = makeCanvas(256, 48);
@@ -365,6 +379,9 @@ export class StageLook {
     }
     let hi = 0;
     for (const m of this.heroMeshes) m.visible = false;
+    const fp = ex.follow ? state.players.find((q) => q.id === ex.follow && !q.eliminated) : undefined;
+    this.followMarker.visible = !!fp;
+    if (fp) this.followMarker.position.set(fp.x, 74 * (state.heroScale || 1) + Math.sin(time * 4) * 2, fp.y + FOOT * (state.heroScale || 1));
     const sorted: PlayerState[] = state.players.filter((p) => !p.eliminated);
     for (const p of sorted) {
       const mesh = this.heroMeshes[hi], s = HERO_SLOTS[hi];

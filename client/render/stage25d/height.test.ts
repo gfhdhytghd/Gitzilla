@@ -1,22 +1,39 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { getComfortTableHeight, getTableHeightOffset, isVisionProSafari, setTableHeightOffset } from './height';
+import { FALLBACK_EYE_HEIGHT, getComfortTableHeight, getTableHeightPlacement, getTableHeightOffset, isVisionProSafari, setTableHeightOffset, TABLE_HEIGHT_OFFSET_KEY } from './height';
 afterEach(() => vi.unstubAllGlobals());
-it('lowers Vision Pro by exactly1m while preserving normal local-floor placement', () => {
-  expect(getComfortTableHeight(1.6, 0, false)).toBeCloseTo(1.45);
-  expect(getComfortTableHeight(1.6, 0, true)).toBeCloseTo(0.45);
-  expect(getComfortTableHeight(3.2, 0, true)).toBeCloseTo(2.05);
-  expect(getComfortTableHeight(0, 0, true)).toBeCloseTo(-0.5); // actual zero is valid, no fake1.5m
-  expect(getComfortTableHeight(1.6, 0.1, true)).toBeCloseTo(0.55);
+it.each([0, 0.9, 1.6, 3.2, NaN])('local-floor table is0.80m regardless of head pose %s or headset brand', y => {
+  expect(getTableHeightPlacement({ referenceSpaceType: 'local-floor', initialHeadY: y })).toEqual({ tableY: 0.8, baseTableY: 0.8, estimatedEyeHeight: null, heightSource: 'local-floor' });
+  expect(getComfortTableHeight(y, 0, true)).toBe(0.8);
+  expect(getComfortTableHeight(y, 0, false)).toBe(0.8);
 });
-it('persists10cm offsets and tolerates unavailable storage', () => {
-  const values = new Map<string, string>();
+it.each([0.5, 1.2, 1.6, 1.85, 2.5])('local uses a plausible initial floor-relative pose %s as an eye-height estimate', y => {
+  const result = getTableHeightPlacement({ referenceSpaceType: 'local', initialHeadY: y, userOffset: 0.1 });
+  expect(result.estimatedEyeHeight).toBe(y); expect(result.heightSource).toBe('initial-pose-estimate');
+  expect(result.baseTableY).toBeCloseTo(0.8 - y); expect(result.tableY).toBeCloseTo(0.8 - y + 0.1);
+});
+it.each([null, 0, 0.01, -1, 0.49, 2.51, Infinity, NaN])('local head-origin/unknown/implausible pose %s uses documented1.6m fallback', y => {
+  const result = getTableHeightPlacement({ referenceSpaceType: 'local', initialHeadY: y });
+  expect(result.estimatedEyeHeight).toBe(FALLBACK_EYE_HEIGHT); expect(result.heightSource).toBe('fallback-1.6m');
+  expect(result.tableY).toBeCloseTo(-0.8);
+});
+it('converts the raw local result into the existing synthesized-floor space once, retaining user adjustment', () => {
+  expect(getTableHeightPlacement({ referenceSpaceType: 'local', initialHeadY: 0, referenceOffsetY: -1.6, userOffset: 0.1 }).tableY).toBeCloseTo(0.9);
+  expect(getTableHeightPlacement({ referenceSpaceType: 'local', initialHeadY: 1.85, referenceOffsetY: -1.6 }).tableY).toBeCloseTo(0.55);
+});
+it('discards old-base offsets and persists only the new10cm adjustments', () => {
+  const values = new Map<string, string>([['kaiju.xr.tableHeightOffset', '1.4']]);
   vi.stubGlobal('localStorage', { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => values.set(k, v) });
   expect(getTableHeightOffset()).toBe(0); setTableHeightOffset(-0.1); expect(getTableHeightOffset()).toBe(-0.1);
+  expect(values.get(TABLE_HEIGHT_OFFSET_KEY)).toBe('-0.1'); expect(values.get('kaiju.xr.tableHeightOffset')).toBe('1.4');
   setTableHeightOffset(100); expect(getTableHeightOffset()).toBe(2);
+  expect(getTableHeightPlacement({ referenceSpaceType: 'local-floor', initialHeadY: 1.6, userOffset: -0.1 }).tableY).toBeCloseTo(0.7);
   vi.stubGlobal('localStorage', { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } });
   expect(getTableHeightOffset()).toBe(0); expect(setTableHeightOffset(0.1)).toBe(0.1);
 });
-it('keeps Quest/desktop emulation out of the Vision Pro correction', () => {
+it('normalizes invalid offsets without altering the floor base', () => {
+  expect(getTableHeightPlacement({ referenceSpaceType: 'local-floor', initialHeadY: null, userOffset: NaN, referenceOffsetY: NaN }).tableY).toBe(0.8);
+});
+it('keeps Vision Pro detection diagnostic, without a brand-dependent correction', () => {
   const nav = (userAgent: string, maxTouchPoints: number) => ({ userAgent, maxTouchPoints }) as Navigator;
   expect(isVisionProSafari(nav('Macintosh AppleWebKit Safari', 5))).toBe(true);
   expect(isVisionProSafari(nav('Macintosh AppleWebKit Safari', 0))).toBe(false);

@@ -1,4 +1,5 @@
 import { Matrix4, PerspectiveCamera, Vector3 } from 'three';
+import { TABLE_HEIGHT_METERS } from './height';
 import type { Camera } from 'three';
 import type { CameraRig, CameraRigOptions, Point2, ProjectedPoint, StageView, XRPlacement, XRPlacementOptions } from './types';
 
@@ -76,7 +77,7 @@ export function getXRPlacement(options: XRPlacementOptions): XRPlacement {
   const scale = life ? positive(options.metersPerPixel ?? 1.7 / 28, 'metersPerPixel') : positive(options.tableWidth ?? 1.2, 'tableWidth') / w;
   const centerX = options.follow?.x ?? w / 2;
   const centerY = options.follow?.y ?? (life ? h : h / 2);
-  return { scale, position: { x: -centerX * scale, y: life ? 0 : options.tableHeight ?? 0.9,
+  return { scale, position: { x: -centerX * scale, y: life ? 0 : options.tableHeight ?? TABLE_HEIGHT_METERS,
     z: -centerY * scale - (options.distance ?? (life ? 0.5 : 1.3)) } };
 }
 

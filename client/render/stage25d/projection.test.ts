@@ -47,9 +47,9 @@ describe('screen camera/floor projection', () => {
   });
 });
 
-it('places a 1.2m table at0.9m and life-size arena ahead of the viewer; follow moves the root only', () => {
+it('places a 1.2m table at0.8m and life-size arena ahead of the viewer; follow moves the root only', () => {
   const table = getXRPlacement({ worldWidth: 480, worldHeight: 288 });
-  expect(table.scale * 480).toBeCloseTo(1.2); expect(table.position.y).toBe(0.9);
+  expect(table.scale * 480).toBeCloseTo(1.2); expect(table.position.y).toBe(0.8);
   expect(table.position.x + 240 * table.scale).toBeCloseTo(0);
   expect(table.position.z + 144 * table.scale).toBeCloseTo(-1.3);
   const life = getXRPlacement({ worldWidth: 480, worldHeight: 288, mode: 'life' });
