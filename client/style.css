@@ -847,7 +847,7 @@ body:has(.screen.game.dock-narrow) .kj-touch-skill { bottom: 74px; }
 .kj-touch-button:active { transform: translateY(2px); filter: brightness(1.5); }
 
 /* ===================== PHONE PORTRAIT (game) ===================== */
-.safe-probe { position: fixed; left: 0; top: 0; width: 0; height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
+.safe-probe { position: fixed; left: 0; top: 0; width: 0; height: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); visibility: hidden; pointer-events: none; }
 .deck, .minimap { display: none; }
 .screen.game.phone-portrait { background: #05070a; }
 .screen.game.phone-portrait .ambient { display: none; }
@@ -1849,3 +1849,20 @@ body.bigscreen .spectate { display: none; }
     overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: 100%; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
   .chips.sugg::-webkit-scrollbar { display: none; }
 }
+/* in-fight chrome toolbar (game.ts): settings · sound · menu, uniform 44×40 icon buttons in one column, vertically
+   centred in the left gutter that layout() keeps free; safe-area aware. On phones they sit together in the deck row. */
+.game-toolbar { position: absolute; left: calc(env(safe-area-inset-left, 0px) + 8px); top: 50%; transform: translateY(-50%); z-index: 9;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+body:has(.screen.game) .game-toolbar > :is(.btn, .mute-btn, .settings-button) {
+  position: static; inset: auto; transform: none; width: 44px; height: 40px; min-height: 40px; margin: 0; padding: 0;
+  display: grid; place-items: center; opacity: .92; font-family: var(--term); font-size: 20px; line-height: 1;
+  color: var(--text); background: rgba(5, 12, 9, .88); border: 2px solid #2b5a40; box-shadow: none; }
+body:has(.screen.game) .game-toolbar > :is(.btn, .mute-btn, .settings-button):hover { color: var(--green); border-color: var(--green); opacity: 1; }
+body:has(.screen.game) .game-toolbar > .mute-btn { font-size: 12px; }
+.game-toolbar .tb-label { display: none; }
+.screen.game.phone-portrait .game-toolbar { display: none; }
+/* phones: the gear joins sound + menu in the deck row, same height */
+.deck-sensors > .settings-button { position: static; width: 40px; height: 36px; min-height: 36px; margin: 0; padding: 0; font-size: 18px; order: -1; }
+.screen.game.phone-portrait .deck-sensors > :is(.settings-button, .mute-btn, .menu-btn) {
+  height: 36px; min-height: 36px; min-width: 44px; padding: 0 10px; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  opacity: 1; white-space: nowrap; font-family: var(--term); font-size: 16px; line-height: 1; color: var(--text); background: #08100c; border: 2px solid #2b5a40; box-shadow: none; }

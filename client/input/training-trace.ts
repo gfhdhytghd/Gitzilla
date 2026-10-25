@@ -1,10 +1,11 @@
+import { isMotionDevice, screenOrientation } from './orientation';
 import { createSensorTrace, startAutomaticTrace, type SensorTrace } from './trace';
 const installed = new WeakSet<Window>();
 /** The lobby trainer predates the input recorder. Observe its stable training root so
  * real sessions are captured even when it does not call calibration.startStep(). */
 export function installTrainingTrace(): void {
   if (typeof window === 'undefined' || typeof MutationObserver === 'undefined' || !document.body || installed.has(window)) return;
-  if (!window.matchMedia?.('(pointer: coarse)').matches && !(navigator.maxTouchPoints > 0)) return;
+  if (!isMotionDevice(window,navigator)) return;
   installed.add(window);
   let trace: SensorTrace | null = null;
   let mounted = false, lastStep = '';
@@ -21,7 +22,7 @@ export function installTrainingTrace(): void {
   new MutationObserver(update).observe(document.body, { childList: true, subtree: true, characterData: true });
   window.addEventListener('deviceorientation', event => {
     if (trace?.active) trace.add({ type: 'orientation', at: performance.now(), beta: event.beta, gamma: event.gamma, alpha: event.alpha,
-      angle: screen.orientation?.angle ?? 0 });
+      angle: screenOrientation(window,navigator).angle, screenOrientation:screenOrientation(window,navigator) });
   });
   const vector = (a: DeviceMotionEventAcceleration | null) => a ? { x: a.x, y: a.y, z: a.z } : null;
   window.addEventListener('devicemotion', event => {

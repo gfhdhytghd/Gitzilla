@@ -27,6 +27,8 @@ import { asciiBar, clamp, fmtTime, h, isPhone, isTouchDevice, lerp, vibrate } fr
 
 // interpolation delay: snapshot spacing + measured network jitter, between these bounds (seconds)
 const BUFFER_MIN = 0.07, BUFFER_MAX = 0.35;
+// width of the in-fight chrome toolbar column (44px buttons + margins), reserved left and right of the arena
+const TOOLBAR_W = 60;
 const RES = 1; // internal render scale (logical px -> canvas px)
 
 // Avoid replacing text nodes (and invalidating phone layout) when status is unchanged.
@@ -119,7 +121,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       ),
     ),
   );
-  const menuBtn = h("button.btn.btn-tiny.menu-btn", { "data-testid": "game-menu-open", "aria-label": "menu", onclick: (e: Event) => (e.stopPropagation(), (menuSheet.hidden = false)) }, "☰ menu");
+  const menuBtn = h("button.btn.btn-tiny.menu-btn", { "data-testid": "game-menu-open", "aria-label": "menu", title: "menu (Esc)", onclick: (e: Event) => (e.stopPropagation(), (menuSheet.hidden = false)) }, "☰", h("span.tb-label", null, " menu"));
+  // in-fight chrome: settings ⚙ · sound · menu in one toolbar. Desktop / projector: a column in the left gutter (layout()
+  // keeps that gutter free, so it never covers the arena); phones: the deck row.
+  const toolbar = h("div.game-toolbar", { role: "toolbar", "aria-label": "game controls" });
+  const gearBtn = () => document.querySelector<HTMLElement>("[data-testid=settings-open]");
   // ---------------- PvP royale: kill feed, eliminations, spectating ----------------
   const elims = createElimTracker();
   const killFeed = createKillFeed();
@@ -297,13 +303,18 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       deckMid.replaceChildren(P.team, P.combo);
       deck.append(P.review, P.log, P.toasts);
       stage.append(P.timer);
-      sensorRow.append(muteBtn, menuBtn);
+      sensorRow.append(...[gearBtn()].filter((x): x is HTMLElement => !!x), muteBtn, menuBtn);
     } else {
       hud.el.append(P.self, P.team, P.combo, P.log, P.review, P.toasts, P.timer);
-      document.body.append(muteBtn);
-      overlay.append(menuBtn);
+      toolbar.append(...[gearBtn()].filter((x): x is HTMLElement => !!x), muteBtn, menuBtn);
+      if (!toolbar.isConnected) el.append(toolbar);
     }
   };
+  // main.ts places the settings gear into this screen right after createGame(): adopt it into the toolbar / deck
+  requestAnimationFrame(() => {
+    const g = gearBtn();
+    if (g && el.contains(g) && !toolbar.contains(g) && !sensorRow.contains(g)) (portrait ? sensorRow.prepend(g) : toolbar.prepend(g));
+  });
   const layout = () => {
     const W = innerWidth, H = innerHeight, dpr = devicePixelRatio || 1;
     const phone = phoneLayout = isPhone();
@@ -357,10 +368,15 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     view.h = VH;
     if (canvas.width !== VW * RES) canvas.width = VW * RES;
     if (canvas.height !== VH * RES) canvas.height = VH * RES;
-    const s = Math.floor(Math.min((W * dpr) / VW, (H * dpr) / VH));
-    cssScale = s >= 1 ? s / dpr : Math.min(W / VW, H / VH);
-    // integer device-pixel scale wastes too much space on some phones; fall back to fractional nearest-neighbour
-    if ((VH * cssScale) / H < 0.78 && (VW * cssScale) / W < 0.78) cssScale = Math.min(W / VW, H / VH);
+    // keep a gutter for the chrome toolbar on both sides (the arena stays centred and never runs under it)
+    const safeL = parseFloat(getComputedStyle(safeProbe).paddingLeft) || 0;
+    const AW = W - 2 * (TOOLBAR_W + safeL);
+    const s = Math.floor(Math.min((AW * dpr) / VW, (H * dpr) / VH));
+    cssScale = s >= 1 ? s / dpr : Math.min(AW / VW, H / VH);
+    // an integer device-pixel scale that wastes >15% of the room (e.g. 1440×900: 3× = 1080px of 1320) loses to a
+    // fractional nearest-neighbour fit
+    const fit = Math.min(AW / VW, H / VH);
+    if (cssScale < fit * 0.85) cssScale = fit;
     view.cssScale = cssScale;
     const w = Math.round(VW * cssScale), hh = Math.round(VH * cssScale);
     size3d(w, hh);

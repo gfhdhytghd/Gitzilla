@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInput, createInputDebugPanel, vibrate, requestMotionPermission, getMotionPermissionState } from './index';
 import type { InputController } from './index';
+import ipadTraces from './fixtures/real-ipad-orientation.json';
 import { realTraces } from './real-traces';
 import type { MotionProfile } from '../../shared/types';
 
@@ -465,8 +466,8 @@ describe('automatic traces and horizontal sensitivity', () => {
     expect(body.source).toBe('fight'); expect(body.samples.some((s: any) => s.type === 'orientation')).toBe(true);
     expect(body.samples.some((s: any) => s.type === 'input' && Math.abs(s.move[0] - 0.5) < 0.01)).toBe(true);
   });
-  it('uses upright portrait coordinates on phones even if WebKit reports a stale90° screen angle', () => {
-    mobile(); win.innerWidth = 390; win.innerHeight = 844; win.screen.orientation.angle = 90;
+  it('uses Safari portrait angle over a stale modern90° angle', () => {
+    mobile(); vi.stubGlobal('navigator',{maxTouchPoints:5,userAgent:'iPhone',platform:'iPhone'});win.orientation=0; win.innerWidth = 390; win.innerHeight = 844; win.screen.orientation.angle = 90;
     const input = start(); emit(win, 'deviceorientation', { beta: 0, gamma: 7.5 });
     expect(input.sample().move[0]).toBeCloseTo(0.5); expect(input.sample().move[1]).toBeCloseTo(0);
   });
@@ -606,5 +607,38 @@ describe('real iOS trace controller regression (also detached pair surface)',()=
   pose(0,30);const next=pose(-60,0);
   expect(next.filter(f=>f.dash)).toHaveLength(1);expect(next.find(f=>f.dash)?.move[1]).toBeLessThan(-.99);
   expect(pose(0,15).at(-1)?.move[0]).toBeGreaterThan(.9);
+ });
+});
+
+describe('iPad screen-relative orientation regression',()=>{
+ it.each(ipadTraces)('replays $file with Safari landscape angle instead of portrait viewport',async(trace)=>{
+  win.matchMedia=()=>({matches:false});win.orientation=90;win.screen.orientation.angle=0;
+  win.innerWidth=500;win.innerHeight=900;
+  vi.stubGlobal('navigator',{platform:'MacIntel',userAgent:'Macintosh Safari',maxTouchPoints:5});
+  const input=start('standard');vi.stubGlobal('fetch',vi.fn(async()=>({ok:true})));
+  let nonzero=0;
+  for(const [at,beta,gamma] of trace.samples){
+   advance(Math.max(0,at-time));emit(win,'deviceorientation',{beta,gamma});
+   const frame=input.sample();expect(frame.source).toBe('motion');
+   if(Math.hypot(...frame.move)>.1)nonzero++;
+  }
+  expect(nonzero).toBeGreaterThan(500);
+  // A recorded leftward sensor tilt represents the screen's bottom at90°.
+  const down=trace.samples.find(([,b,g])=>g<-10&&Math.abs(b)<3)!;
+  expect(down).toBeDefined();
+  for(let n=0;n<15;n++){advance(30);emit(win,'deviceorientation',{beta:down[1],gamma:down[2]});input.sample();}
+  const frame=input.sample();expect(frame.move[1]).toBeGreaterThan(.6);expect(Math.abs(frame.move[0])).toBeLessThan(.3);
+ });
+ it.each([0,90,180,270])('rotates the actual controller at%s° for both movement and50° dash',angle=>{
+  win.matchMedia=()=>({matches:false});win.orientation=angle;win.screen.orientation.angle=0;
+  win.innerWidth=500;win.innerHeight=900;
+  vi.stubGlobal('navigator',{platform:'MacIntel',userAgent:'Macintosh Safari',maxTouchPoints:5});
+  const input=start();
+  const poses:[[number,number],[number,number],[number,number],[number,number]]=[[15,0],[0,-15],[-15,0],[0,15]];
+  const [b,g]=poses[angle/90];emit(win,'deviceorientation',{beta:0,gamma:0});input.sample();
+  for(let n=0;n<10;n++){advance(30);emit(win,'deviceorientation',{beta:b,gamma:g});input.sample();}
+  expect(input.sample().move[1]).toBeGreaterThan(.99);
+  advance(30);emit(win,'deviceorientation',{beta:b*50/15,gamma:g*50/15});const f=input.sample();
+  expect(f.dash).toBe(true);expect(f.move[1]).toBeCloseTo(1);expect(f.move[0]).toBeCloseTo(0);
  });
 });

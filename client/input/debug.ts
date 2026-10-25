@@ -12,6 +12,9 @@ export interface InputDebugState {
   beta: number;
   gamma: number;
   angle: number;
+  orientationSource: string;
+  windowAngle: number|null;
+  screenAngle: number|null;
   acceleration: { x: number; y: number; z: number };
   rotationRate: RotationRate | null;
   dashTiltDegrees: number;
@@ -24,7 +27,7 @@ export interface InputDebugState {
 }
 
 export const debugState: InputDebugState = {
-  mode: 'uninitialized', permission: 'unknown', sensors: 'off', calibrating: false, profile: 'standard', beta: 0, gamma: 0, angle: 0,
+  mode: 'uninitialized', permission: 'unknown', sensors: 'off', calibrating: false, profile: 'standard', beta: 0, gamma: 0, angle: 0, orientationSource:'default', windowAngle:null, screenAngle:null,
   acceleration: { x: 0, y: 0, z: 0 }, rotationRate: null, dashTiltDegrees:0, dashArmed:true, spinDegrees: 0, spinMagnitude: 0, spinGyroDegrees: 0, move: [0, 0], gestures: [],
 };
 
@@ -47,7 +50,7 @@ export function createInputDebugPanel(): HTMLDivElement & { dispose(): void } {
     panel.textContent = `INPUT ${s.mode} | profile: ${s.profile} | sensors: ${s.sensors} | permission: ${s.permission}${s.calibrating ? ' | calibrating' : ''}\n` +
       `audio: ${audio.state} | music: ${audio.musicPlaying ? 'playing' : 'idle'} | session: ${audio.session}${audio.muted ? ' | muted' : ''}${audio.needsGesture ? ' | tap to resume' : ''}${audio.error ? ` | ${audio.error}` : ''}\n` +
       `trace: ${trace.source} ${trace.status}${trace.error ? ' | ' + trace.error : ''}\n` +
-      `beta ${s.beta.toFixed(1)} gamma ${s.gamma.toFixed(1)} screen ${s.angle}°\n` +
+      `beta ${s.beta.toFixed(1)} gamma ${s.gamma.toFixed(1)} screen ${s.angle}° (${s.orientationSource}; window=${s.windowAngle}, screen=${s.screenAngle})\n` +
       `accel x ${a.x.toFixed(2)} y ${a.y.toFixed(2)} z ${a.z.toFixed(2)} |a| ${Math.hypot(a.x, a.y, a.z).toFixed(2)}\n` +
       `gyro ${s.rotationRate ? Object.values(s.rotationRate).map(v => v.toFixed(0)).join(', ') + ' deg/s' : 'unavailable (tilt/double-tap dash)'} | circle ${s.spinDegrees.toFixed(0)}° @ ${s.spinMagnitude.toFixed(1)}m/s² gyroΣ ${s.spinGyroDegrees.toFixed(0)}°\n` +
       `dash tilt ${s.dashTiltDegrees.toFixed(1)}° / 50° | ${s.dashArmed ? 'armed' : 'return below35°'}\n` +

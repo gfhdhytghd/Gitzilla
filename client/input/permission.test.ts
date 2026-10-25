@@ -96,3 +96,11 @@ it('hiding and resuming a page require fresh delivery before ready returns', () 
   doc.hidden = false; doc.dispatchEvent(new Event('visibilitychange')); expect(s.getState().ready).toBe(false);
   emit('deviceorientation', { beta: 45, gamma: 0 }); expect(s.getState().ready).toBe(true);
 });
+
+it('desktop-UA iPad with touch and a fine pointer still requires a native grant plus fresh readings',async()=>{
+ page(async()=> 'granted',false);
+ vi.stubGlobal('navigator',{platform:'MacIntel',userAgent:'Macintosh Safari',maxTouchPoints:5});
+ const s=session();expect(s.getState()).toMatchObject({mobile:true,required:true,needsPermission:true,ready:false});
+ await s.request();expect(s.getState().ready).toBe(false);
+ emit('deviceorientation',{beta:0,gamma:-15});expect(s.getState().ready).toBe(true);
+});

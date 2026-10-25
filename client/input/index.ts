@@ -1,6 +1,7 @@
 import type { InputFrame, MotionProfile } from '../../shared/types';
 import { createGestureState, gravityMove, normalize, orientationGravity, recognizeGesture, removeGravity, screenTilt } from './gestures';
 import type { Acceleration, RotationRate } from './gestures';
+import { isMotionDevice, screenOrientation } from './orientation';
 import { createTiltDashState, recognizeTiltDash } from './tilt-dash';
 import { loadThresholds, sanitizeThresholds, saveThresholds, type GestureThresholds } from './thresholds';
 import { createCalibrationRecorder, type CalibrationRecorder, type GestureNotice } from './calibration';
@@ -21,6 +22,7 @@ export type { MotionPermissionState } from './permission';
 export { loadTiltSensitivity, saveTiltSensitivity, TILT_SENSITIVITIES, TILT_FULL_SPEED } from './sensitivity';
 export type { TiltSensitivity } from './sensitivity';
 export { screenTilt } from './gestures';
+export { screenOrientation, isMotionDevice, isAppleTouchDevice } from './orientation';
 export { createInputDebugPanel } from './debug';
 export { loadMotionProfile, saveMotionProfile, MOTION_PROFILES, MOTION_PROFILE_LABELS } from './profiles';
 
@@ -63,7 +65,7 @@ export function vibrate(pattern: number | number[]): boolean {
 
 export function createInput(opts: InputOptions): InputController {
   const sensors = window as SensorWindow;
-  const mobile = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const mobile = isMotionDevice(window,navigator);
   let motionProfile = opts.motionProfile ?? loadMotionProfile();
   if (opts.motionProfile) saveMotionProfile(opts.motionProfile);
   const permissionSession = getMotionPermissionSession();
@@ -107,12 +109,8 @@ export function createInput(opts: InputOptions): InputController {
     target.addEventListener(name, listener, options);
     cleanup.push(() => target.removeEventListener(name, listener, options));
   };
-  const angle = () => {
-    // Phones are portrait-only. Some WebKit versions expose a stale landscape
-    // screen angle even while the phone viewport is upright.
-    if (mobile && window.innerWidth > 0 && window.innerWidth < 600 && window.innerHeight > window.innerWidth) return 0;
-    return window.screen?.orientation?.angle ?? sensors.orientation ?? 0;
-  };
+  const orientation = () => screenOrientation(window,navigator);
+  const angle = () => orientation().angle;
   const editable = (target: EventTarget | null) =>
     !!(target as Element | null)?.closest?.('input, textarea, select, [contenteditable="true"]');
   const fallback = () => {
@@ -249,10 +247,12 @@ export function createInput(opts: InputOptions): InputController {
     if (!markSensor()) return;
     debugState.beta = e.beta;
     debugState.gamma = e.gamma;
-    debugState.angle = angle();
+    const posture=orientation();
+    debugState.angle = posture.angle;
+    debugState.orientationSource=posture.source; debugState.windowAngle=posture.windowAngle; debugState.screenAngle=posture.screenAngle;
     lastOrientationAt = performance.now();
-    const tilt = screenTilt(e.beta, e.gamma, angle());
-    trace.add({ type: 'orientation', at: lastOrientationAt, alpha: e.alpha, beta: e.beta, gamma: e.gamma, absolute: e.absolute, angle: angle() });
+    const tilt = screenTilt(e.beta, e.gamma, posture.angle);
+    trace.add({ type: 'orientation', at: lastOrientationAt, alpha: e.alpha, beta: e.beta, gamma: e.gamma, absolute: e.absolute, angle: posture.angle, screenOrientation:posture });
     calibration.observe({ at: lastOrientationAt, tilt });
     acceptGravity(orientationGravity(e.beta, e.gamma), lastOrientationAt);
   };

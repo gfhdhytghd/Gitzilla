@@ -1,4 +1,5 @@
 import type { MotionProfile } from '../../shared/types';
+import { isMotionDevice } from './orientation';
 import { loadMotionProfile } from './profiles';
 
 export const MOTION_PERMISSION_EVENT = 'kaiju:motion-permission';
@@ -18,7 +19,7 @@ type SensorWindow = Window & { DeviceMotionEvent?: SensorAPI; DeviceOrientationE
 /** Page lifetime only. Native grants are NEVER read from or written to localStorage. */
 export function createMotionPermissionSession() {
   const target = window as SensorWindow;
-  const mobile = !!target.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+  const mobile = isMotionDevice(target,navigator);
   const requiresNative = [target.DeviceMotionEvent, target.DeviceOrientationEvent].some(api => !!api?.requestPermission);
   let permission: MotionPermissionState['permission'] = requiresNative ? 'prompt' : 'not-required';
   let granted = !requiresNative;
