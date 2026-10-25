@@ -11,7 +11,7 @@ const VIEW = { w: 1120, h: 672 };
 export const vision: Scene = {
   id: "vision", title: "Vision Pro", tracks: [],
   mount(el, life, ctx) {
-    const sim = createMiniSim({ kind: "raid", heroes: HERO_REPOS.slice(0, 4).map((r) => ({ name: r.split("/")[1], kit: heroKit(r) })), boss: bossKit(FEATURED[ctx.repo], 4) });
+    const sim = createMiniSim({ kind: "raid", heroes: HERO_REPOS.slice(0, 4).map((r) => ({ name: r.split("/")[1], kit: heroKit(r) })), boss: bossKit(FEATURED[ctx.repo], 4), hpMul: 4 });
     const box = h("div.vp-box", { style: `width:${VIEW.w}px;height:${VIEW.h}px` });
     const overlay = h("canvas.vp-overlay", { width: VIEW.w, height: VIEW.h }) as HTMLCanvasElement;
     const table = h("div.vp-table", null, box);

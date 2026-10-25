@@ -1,3 +1,40 @@
+DONE (demo stage) — /demo live-demo slide page: client/demo/ (10 scenes, 13 beats) + one route line in client/app/main.ts. Verified in Chromium + WebKit at 1920 and 1280, Playwright run-through video, fps per scene, live join with 3 simulated phones on :5175. Artifacts in docs/ux-shots/demo/. tsc clean for demo files; vitest 1218 pass. No commits.
+
+## Demo stage (docs/tasks/demo-stage.md)
+- **Open:** `https://gitzilla.wilflin.me/demo` (deep link `?scene=N&beat=B`). Keys: → Space PageDown Enter next ·
+  ← PageUp Backspace back · 1–9, 0 jump · F fullscreen · R next repo (redis → react → flask). Fixed 1920×1080 stage,
+  scaled to the window, so 1280×720 is the same picture.
+- **Scenes** (track badges = targets, never "winner"):
+  1. Title [Grand Prize] · 2. Genesis compile, rotating repos [Gemini] · 3. Repo → kaiju wiring [Gemini]
+  4. Phone motion: 4 gestures driving a real hero / 4 phones + projector royale with kill feed [Mystery Stack, Auth0]
+  5. Three ways to play (real sims) · 6. Classroom: task card + editor / class attack / debrief [Nittany AI]
+  7. Join now (live room, QR, hero wall, START) [Mystery Stack] · 8. Under the hood + live /api/hall [Gemini, Auth0]
+  9. Vision Pro tabletop (stage25d) · 10. Close: boss explodes, "Scan to keep playing" [Grand Prize]
+- **Real parts:** real sim + renderers, data/fallback analyses + data/design Gemini designs, createTaskCard,
+  highlight(), createDebriefCard, playGenesis, createStage25d, POST /api/room + net.ts, /api/qr, /api/hall.
+  Classroom slide uses a labelled sample class. Nothing calls Gemini at runtime; no tokens or private repos.
+- **Robustness:**
+  - Every scene's timers, listeners and frame callbacks go through a Life and die on exit. A probe over 3 full
+    keyboard cycles showed flat intervals (2), timeouts (1), sockets (2: live room + Vite HMR), DOM (98 nodes) and heap.
+  - Wi-Fi down: join shows a local recorded match; hall says "offline", never invented numbers. A dropped socket
+    shows "reconnecting…" and keeps the QR.
+  - The stage is pinned to English (session-only `setClassroomLanguage("en")` + `translate="no"`). The projector
+    laptop's locale can't translate the slides.
+  - Reduced motion: no shake, confetti, glitch or typing; entrances land instantly.
+- **fps** (Chromium headless on the real GPU, 1920): 60 on every scene except Genesis 46–53 (the existing cinematic)
+  and a one-off 110–160 ms hitch entering Vision Pro (3D shader compile). WebKit headless (software): 49–62.
+- **Live join on :5175:** 3 WebKit iPhones joined room UCVG/XIJW, wall showed "Ripgrep Scout", "Gin-Gopher
+  Router-Knight", "Nano-GPT Scout"; START handed the stage to `/r/CODE?screen=1&view=25d` (same screen seat).
+  Not exercised: the match start itself. The lobby waits for every phone to enable motion or pick touch, and the
+  simulated phones couldn't.
+- **Request for coordinator → codex-net (server):** battle rooms are owned by the first *phone*, so the stage's
+  START can't start a co-op match itself. Today START opens the big screen and the host phone starts. If wanted:
+  let the screen that created the room host it, e.g. `POST /api/room?host=screen` or `hello.host`.
+  The client already sends `setBoss` + `start` when it is the owner.
+- **Note:** after START the big-screen page uses the laptop's own language (the English pin is per page).
+- **Not mine:** the root tsc currently reports 2 errors in `client/render/stage25d/spatial.ts`, which someone is
+  editing right now.
+
 DONE (task text) — 27 preset steps × en/zh/es/fr have a StepBrief, a new title and summary instructions, per-step starter TODO comments and a README; the default lesson is rewritten; check labels are cleaned up. Proposed rewrites for student copy owned by other agents are in docs/classroom-copy.md. Full suite 998 pass, tsc clean, take-edu's 108-case brief validation passes. No commits.
 
 ## Task text: content mapping (for take-edu)

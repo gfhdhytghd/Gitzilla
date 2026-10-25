@@ -73,7 +73,7 @@ export const join: Scene = {
       count.textContent = "";
       start.remove();
       status.textContent = `${location.host}/r/CODE · try again when the network is back`;
-      replay = createMiniSim({ kind: "raid", heroes: HERO_REPOS.slice(0, 4).map((r) => ({ name: r.split("/")[1], kit: heroKit(r) })), boss: bossKit(FEATURED[ctx.repo], 4) });
+      replay = createMiniSim({ kind: "raid", heroes: HERO_REPOS.slice(0, 4).map((r) => ({ name: r.split("/")[1], kit: heroKit(r) })), boss: bossKit(FEATURED[ctx.repo], 4), hpMul: 4 });
       rc = c.getContext("2d")!;
     }
     life.add(live.subscribe(render));

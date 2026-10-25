@@ -36,11 +36,14 @@ export function raidBot(i: number): Bot {
 }
 
 /** A looping match: restarts a few seconds after it ends so a slide can sit on it forever. */
-export function createMiniSim(opts: { kind: "raid" | "royale"; heroes: { name: string; kit: PlayerKit }[]; boss?: BossKit; restartAfter?: number; speed?: number }): MiniSim {
+/** hpMul: a tougher boss so a slide never lands on the victory whiteout (the presenter may talk over it for minutes). */
+export function createMiniSim(opts: { kind: "raid" | "royale"; heroes: { name: string; kit: PlayerKit }[]; boss?: BossKit; restartAfter?: number; speed?: number; hpMul?: number }): MiniSim {
   const royale = opts.kind === "royale";
   const roster = opts.heroes.map((h, i) => ({ id: (royale ? "bot-" : "p") + i, name: h.name, kit: h.kit }));
   const world = royale ? (() => { const s = pvpArenaSize(roster.length, "pvp"); return { w: s.width, h: s.height }; })() : { w: 480, h: 288 };
-  const make = (): Match => royale ? createMatch(roster, null, { mode: "pvp" }) : createMatch(roster, opts.boss!);
+  const k = opts.hpMul ?? 1;
+  const boss = opts.boss && k !== 1 ? { ...opts.boss, maxHp: Math.round(opts.boss.maxHp * k), limbs: opts.boss.limbs.map((l) => ({ ...l, maxHp: Math.round(l.maxHp * k) })) } : opts.boss;
+  const make = (): Match => royale ? createMatch(roster, null, { mode: "pvp" }) : createMatch(roster, boss!);
   const bots: Bot[] = roster.map((_, i) => (royale ? createPvpController(1000 + i) : raidBot(i)));
   let match = make(), acc = 0, overFor = 0, seq = 0;
   const sim: MiniSim = {

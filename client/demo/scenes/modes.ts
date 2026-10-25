@@ -9,7 +9,7 @@ import { createClassAttack } from "./classfx.ts";
 export const modes: Scene = {
   id: "modes", title: "Three ways to play", tracks: ["mystery", "nittany"],
   mount(el, life, ctx) {
-    const raid = createMiniSim({ kind: "raid", heroes: HERO_REPOS.slice(0, 4).map((r) => ({ name: r.split("/")[1], kit: heroKit(r) })), boss: bossKit(FEATURED[ctx.repo], 4) });
+    const raid = createMiniSim({ kind: "raid", heroes: HERO_REPOS.slice(0, 4).map((r) => ({ name: r.split("/")[1], kit: heroKit(r) })), boss: bossKit(FEATURED[ctx.repo], 4), hpMul: 4 });
     const roy = createMiniSim({ kind: "royale", heroes: HERO_REPOS.slice(0, 6).map((r) => ({ name: r.split("/")[1], kit: heroKit(r, "pvp") })), speed: 1.3 });
     const c1 = h("canvas", { width: 480, height: 288 }) as HTMLCanvasElement;
     const c2 = h("canvas", { width: roy.world.w, height: roy.world.h }) as HTMLCanvasElement;

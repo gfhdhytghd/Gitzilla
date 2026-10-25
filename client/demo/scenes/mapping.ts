@@ -93,9 +93,11 @@ export const mapping: Scene = {
       limbs.forEach((l, n) => {
         const r = boss.regions.find((x) => x.id === l.id);
         if (!r) return;
-        const at = toStage(r.x, r.y), out = at.x < center.x ? -1 : 1;
+        const name = kit.design?.limbNames?.[l.id] ?? basename(l.component);
+        // left of center the tag hangs left, unless it would run under the fact column
+        const at = toStage(r.x, r.y), out = at.x < center.x && at.x - 40 - name.length * 11 > VIEW.x ? -1 : 1;
         const hot = cyc.has(l.component);
-        tags.append(h("div.limb-tag" + (hot ? ".hot" : "") + (out < 0 ? ".l" : ".r"), { style: `left:${at.x}px;top:${at.y}px;--d:${500 + n * 260}ms` }, kit.design?.limbNames?.[l.id] ?? basename(l.component)));
+        tags.append(h("div.limb-tag" + (hot ? ".hot" : "") + (out < 0 ? ".l" : ".r"), { style: `left:${at.x}px;top:${at.y}px;--d:${500 + n * 260}ms` }, name));
         if (hot) tags.append(h("div.weak", { style: `left:${at.x}px;top:${at.y}px` }));
         requestAnimationFrame(() => life.alive && wire(anchor(compRows[n], "r"), at, hot ? "#ff3355" : "#3dff8b", 400 + n * 260));
       });
