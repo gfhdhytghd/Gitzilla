@@ -306,6 +306,8 @@ export interface PlayerState {
   kit: PlayerKit;
   stats: { damage: number; bestCombo: number; limbsBroken: number; revives: number; killingBlow: boolean };
   perks: string[];           // perk ids picked at code review
+  eliminated?: boolean;      // pvp royale: knocked out for good -> spectating
+  killedBy?: string | null;
 }
 
 export interface BossState {
@@ -347,6 +349,14 @@ export interface PvpState {
   roundEndsAt: number;                      // match time (s) when the round ends
   scores: Record<string, { kos: number; downs: number; damage: number; roundWins: number }>;
   leader: string | null;
+  // mode "pvp" = last-one-standing royale for 2–8 players (no respawns). edu keeps rounds/respawns.
+  royale?: {
+    alive: string[];                       // player ids still in
+    placements: Record<string, number>;    // id -> final place (1 = winner); filled as players are eliminated
+    zone: { cx: number; cy: number; r: number; targetR: number; shrinkStart: number; shrinkEnd: number; dps: number } | null;
+                                           // "GC sweep": outside the circle you take dps; shrinks over [shrinkStart, shrinkEnd] (match time, s)
+    winner: string | null;
+  };
 }
 
 export interface Minion { id: number; x: number; y: number; hp: number; kind: string }
