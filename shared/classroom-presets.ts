@@ -1,6 +1,6 @@
 import { translate } from './i18n/text';
 import type { Locale } from './i18n/locale';
-import type { ClassroomCheck, ClassroomPlan } from './classroom';
+import type { ClassroomCheck, ClassroomPlan, InAppFile } from './classroom';
 import type { Rubric } from './types';
 
 interface Milestone {
@@ -30,7 +30,7 @@ export interface ClassroomPreset {
 
 const lessons: PythonLesson[] = [
   {
-    id: '01-hello', title: '01 · 输出与变量', summary: '用 print、变量和 f-string 制作个人介绍卡。', prerequisite: '零基础；能打开编辑器、运行 Python 3，并提交到 GitHub。', boss: '沉默巨兽',
+    id: '01-hello', title: '01 · 输出与变量', summary: '用 print、变量和 f-string 制作个人介绍卡。', prerequisite: '零基础；能在课堂编辑器输入并提交代码。', boss: '沉默巨兽',
     starter: 'name = "Ada"\nage = 12\n\n# 在下面完成课堂任务。\n',
     milestones: [
       { title: '让程序开口', task: '输出两行文字：第一行 Hello, Python!，第二行写一句你自己的介绍。先在终端运行成功，再提交代码。', examples: '第一行必须是 Hello, Python!；第二行由你决定。说明一对引号和一对括号分别做什么。', evidence: ['print('] },
@@ -123,25 +123,77 @@ const lessons: PythonLesson[] = [
 
 const pathFor = (id: string) => `python/${id.replaceAll('-', '_')}.py`;
 const recordFor = (_id: string) => 'README.md';
+// New editor instructions live with the preset data; existing lesson text uses the shared translator.
+const editorCopy = {
+  en: {
+    prerequisite: 'No prior Python knowledge; enter and submit code in the classroom editor.',
+    open: 'Edit {file} in the classroom editor. Python 3; no GitHub account is required. You can also download it and run: python3 {file}.',
+    continue: 'Keep the code you still need from the previous step in the same file. If starting over, use the starter and rebuild the earlier behavior.',
+    record: 'In the README.md tab, record at least two cases with input / expected / actual, then explain one improvement. Fill in actual results only after checking them.',
+    submit: 'Save your edits and use Submit code in the classroom. A GitHub repository is an optional alternative; if using GitHub, commit and push before submitting the branch.',
+    todo: '# TODO: Complete this step in the assignment. This starter is not a finished solution.\n',
+    cases: 'Self-check examples', input: 'Input', expected: 'Expected', actual: 'Actual', improvement: 'What I improved',
+    teacher: 'Students can edit and submit in the classroom without GitHub. Every step includes a Python starter and a README self-check template. Preserve useful code between steps; a reset restores the unfinished starter.',
+  },
+  zh: {
+    prerequisite: '零基础；能在课堂编辑器输入并提交代码。',
+    open: '在课堂编辑器中编辑 {file}，使用 Python 3，不需要 GitHub 账号。也可以下载后运行：python3 {file}。',
+    continue: '继续在同一个文件中保留前一步仍需要的代码。如果重新开始，请从起始代码补回此前需要的功能。',
+    record: '在 README.md 标签页记录至少两个案例，每个写“输入 / 预期 / 实际”，再写一句改进内容。实际结果请在自测后填写。',
+    submit: '保存修改后，直接点击课堂中的“提交代码”。GitHub 仓库是可选的另一种方式；只有使用 GitHub 时才需要先 commit、push，再提交分支。',
+    todo: '# TODO: 完成课堂任务中的当前步骤；这份起始代码不是完整答案。\n',
+    cases: '自测示例', input: '输入', expected: '预期', actual: '实际', improvement: '我改进了什么',
+    teacher: '学生可以直接在课堂编辑和提交，不需要 GitHub。每步都有 Python 起始文件和 README 自测模板。步骤之间保留仍有用的代码；重置会恢复尚未完成的起始文件。',
+  },
+  es: {
+    prerequisite: 'Sin conocimientos previos de Python; escribe y envía código en el editor de clase.',
+    open: 'Edita {file} en el editor de clase con Python 3. No necesitas GitHub. También puedes descargarlo y ejecutar: python3 {file}.',
+    continue: 'Conserva en el mismo archivo el código que necesites del paso anterior. Si empiezas de nuevo, reconstruye ese comportamiento desde el código inicial.',
+    record: 'En la pestaña README.md, registra al menos dos casos con entrada / esperado / real y explica una mejora. Completa los resultados reales solo después de comprobarlos.',
+    submit: 'Guarda los cambios y usa Enviar código en clase. Un repositorio de GitHub es otra opción; solo en ese caso haz commit y push antes de enviar la rama.',
+    todo: '# TODO: Completa este paso de la tarea. Este código inicial no es una solución terminada.\n',
+    cases: 'Ejemplos de autocomprobación', input: 'Entrada', expected: 'Esperado', actual: 'Real', improvement: 'Mi mejora',
+    teacher: 'El alumnado puede editar y enviar en clase sin GitHub. Cada paso incluye un archivo Python inicial y una plantilla README. Conserva el código útil entre pasos; restablecer recupera el código inicial sin terminar.',
+  },
+  fr: {
+    prerequisite: 'Aucune connaissance préalable de Python ; saisis et envoie du code dans l’éditeur de classe.',
+    open: 'Modifie {file} dans l’éditeur de classe avec Python 3. GitHub n’est pas nécessaire. Tu peux aussi le télécharger et lancer : python3 {file}.',
+    continue: 'Conserve dans le même fichier le code encore utile de l’étape précédente. Si tu recommences, reconstruis ce comportement à partir du code initial.',
+    record: 'Dans l’onglet README.md, note au moins deux cas avec entrée / attendu / réel et explique une amélioration. Remplis les résultats réels seulement après vérification.',
+    submit: 'Enregistre les modifications et utilise Envoyer le code en classe. Un dépôt GitHub reste facultatif ; dans ce cas seulement, fais commit et push avant d’envoyer la branche.',
+    todo: '# TODO: Termine cette étape du devoir. Ce code initial ne constitue pas une solution complète.\n',
+    cases: 'Exemples de vérification', input: 'Entrée', expected: 'Attendu', actual: 'Réel', improvement: 'Mon amélioration',
+    teacher: 'Les élèves peuvent modifier et envoyer en classe sans GitHub. Chaque étape comprend un fichier Python initial et un modèle README. Conserve le code utile entre les étapes ; réinitialiser restaure le code initial inachevé.',
+  },
+} satisfies Record<Locale, Record<string, string>>;
 export const pythonClassroomPresets: readonly ClassroomPreset[] = lessons.map(lesson => ({
   id: lesson.id, title: lesson.title, summary: lesson.summary, prerequisite: lesson.prerequisite, minutes: 30, file: pathFor(lesson.id),
 }));
 export function getPythonClassroomPresets(lang: Locale): readonly ClassroomPreset[] {
-  return pythonClassroomPresets.map(p => ({ ...p, title: translate(p.title, lang), summary: translate(p.summary, lang), prerequisite: translate(p.prerequisite, lang) }));
+  return pythonClassroomPresets.map(p => ({ ...p, title: translate(p.title, lang), summary: translate(p.summary, lang), prerequisite: p.id === '01-hello' ? editorCopy[lang].prerequisite : translate(p.prerequisite, lang) }));
 }
 const lessonFor = (id: string, lang: Locale = 'zh') => {
   const lesson = lessons.find(item => item.id === id);
   if (!lesson) throw new Error('Unknown Python classroom preset');
-  return { ...lesson, title: translate(lesson.title, lang), summary: translate(lesson.summary, lang), prerequisite: translate(lesson.prerequisite, lang), boss: translate(lesson.boss, lang), starter: translate(lesson.starter, lang), teacherNote: translate(lesson.teacherNote, lang), milestones: lesson.milestones.map(m => ({ ...m, title: translate(m.title, lang), task: translate(m.task, lang), examples: translate(m.examples, lang) })) };
+  return { ...lesson, title: translate(lesson.title, lang), summary: translate(lesson.summary, lang), prerequisite: lesson.id === '01-hello' ? editorCopy[lang].prerequisite : translate(lesson.prerequisite, lang), boss: translate(lesson.boss, lang), starter: translate(lesson.starter, lang), teacherNote: translate(lesson.teacherNote, lang), milestones: lesson.milestones.map(m => ({ ...m, title: translate(m.title, lang), task: translate(m.task, lang), examples: translate(m.examples, lang) })) };
 };
 
 export function pythonStarter(id: string, lang: Locale = 'zh'): { filename: string; content: string } {
   const lesson = lessonFor(id, lang);
   return { filename: pathFor(id), content: `# ${lesson.title}\n# ${translate(`Python 3 · 运行：python3 ${pathFor(id)}`, lang)}\n# ${lesson.summary}\n\n${lesson.starter}` };
 }
+function stepStarter(id: string, stepIndex: number, lang: Locale): InAppFile[] {
+  const lesson = lessonFor(id, lang), step = lesson.milestones[stepIndex], copy = editorCopy[lang];
+  const source = pythonStarter(id, lang);
+  return [
+    { path: source.filename, content: source.content + '\n' + copy.todo },
+    { path: recordFor(id), content: `# ${lesson.title}\n\n## ${step.title}\n\n${step.task}\n\n## ${copy.cases}\n\n${step.examples}\n\n| ${copy.input} | ${copy.expected} | ${copy.actual} |\n| --- | --- | --- |\n| TODO | TODO | TODO |\n| TODO | TODO | TODO |\n\n## ${copy.improvement}\n\nTODO\n` },
+  ];
+}
 export function pythonTeacherGuide(id: string, lang: Locale = 'zh'): string {
   const lesson = lessonFor(id, lang), tr = (s: string) => translate(s, lang);
   return [lesson.title, tr('建议课时：30 分钟，三个步骤各 10 分钟；可根据班级情况延长。'), tr(`前置知识：${lesson.prerequisite}`), tr(`备课重点：${lesson.teacherNote}`),
+    editorCopy[lang].teacher,
     tr('每步建议：演示 2 分钟 → 独立编码 5 分钟 → 同桌检查 2 分钟 → 提交与集体攻击 1 分钟。'),
     tr('检查范围：预设只检查文件、源码片段与自测记录。文本片段可能出现在注释中，检查通过不代表程序正确。请让学生运行示例并解释结果，再用教师复核记录最终功能分数。接受正确的等价实现；可删除不适用的文本检查，或添加自己仓库的 GitHub CI 检查。'),
     ...lesson.milestones.map((m, i) => `${tr(`第 ${i + 1} 步 · ${m.title}`)}\n${m.examples}`),
@@ -164,11 +216,12 @@ export function pythonClassroomPlan(id: string, lang: Locale = 'zh'): ClassroomP
       if (i > 0) checks.push({ id: 'record', kind: 'file', path: record, label: tr('自测与改进记录已提交') });
       return {
         id: `${id}-${i + 1}`, title: milestone.title, durationSec: 600, rubric: structuredClone(rubric), checks, checksWeight: 100,
+        language: 'python', starter: stepStarter(id, i, lang),
         instructions: [tr('学习目标'), lesson.summary, tr('本步任务'), milestone.task,
-          tr('文件与运行'), tr(`在仓库创建 ${file}，使用 Python 3。运行：python3 ${file}。`),
-          i === 0 ? `${tr('可以从下面的起始代码开始：')}\n\n${pythonStarter(id, lang).content}` : tr('继续修改同一个文件，保留前一步仍需要的功能。'),
+          tr('文件与运行'), editorCopy[lang].open.replaceAll('{file}', file),
+          i === 0 ? `${tr('可以从下面的起始代码开始：')}\n\n${pythonStarter(id, lang).content}` : editorCopy[lang].continue,
           tr('自测示例'), milestone.examples, tr('记录与提交'),
-          (i === 0 ? tr('运行成功后，') : tr(`在仓库根目录的 ${record} 中添加本课标题，并记录至少两个案例，每个写“输入 / 预期 / 实际”，再写一句你改进了什么。然后`)) + tr('保存、commit、push 到 GitHub，回课堂提交最新分支。'),
+          editorCopy[lang].record, editorCopy[lang].submit,
           tr('评分说明'), tr('当前分数是静态提交证据分，不是程序正确率。源码片段和记录通过后，仍需运行上面的示例并请教师复核。正确的等价写法可由教师调整检查。'),
         ].join('\n\n'),
       };

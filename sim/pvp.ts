@@ -3,7 +3,7 @@ import { ARENA_W, ARENA_H } from '../shared/types.ts';
 import type { Match } from './match.ts';
 import { clamp, distance, random, unit } from './math.ts';
 import { safeInput } from './input.ts';
-import { asClassroomKit, qualityValue, type ClassroomKit } from './quality.ts';
+import { asBattleKit, asClassroomKit, qualityValue, type ClassroomKit } from './quality.ts';
 import { LessonQueue } from './lessons.ts';
 import { classroomQuiz, type ClassroomQuiz } from './quiz.ts';
 import { WEAPONS } from './weapons.ts';
@@ -14,10 +14,14 @@ export interface ClassroomPvpState extends PvpState {
   phase: 'countdown' | 'round' | 'quiz' | 'reveal' | 'finished';
   quizEndsAt: number | null;
   quizScores: Record<string, number>;
+  royale?: NonNullable<PvpState['royale']> & { eliminations: RoyaleElimination[] };
 }
 export type ClassroomState = MatchState & { mode: 'edu' | 'pvp'; boss: null; heroScale: 2; pvp: ClassroomPvpState };
-export type ClassroomRankingRow = NonNullable<Autopsy['ranking']>[number] & { left?: boolean };
-export type ClassroomAutopsy = Omit<Autopsy, 'ranking'> & { ranking: ClassroomRankingRow[] };
+export interface RoyaleElimination { player: string; by: string | null; at: number; placement: number; reason: 'weapon' | 'zone' | 'left' | 'timeout' }
+export type ClassroomRankingRow = NonNullable<Autopsy['ranking']>[number] & { left?: boolean; placement?: number; killedBy?: string | null };
+export type RoyaleRankingRow = ClassroomRankingRow & { placement: number; killedBy: string | null };
+export interface RoyaleReport { winner: string | null; placements: Record<string, number>; eliminations: RoyaleElimination[] }
+export type ClassroomAutopsy = Omit<Autopsy, 'ranking'> & { ranking: ClassroomRankingRow[]; royale?: RoyaleReport };
 type Student = { id: string; name: string; kit: PlayerKit };
 interface Runtime {
   shot: number; lastHit: number; armor: number; dash: number; direction: [number, number];
@@ -26,7 +30,11 @@ interface Runtime {
 }
 interface Shot { damage: number; life: number }
 
-export function pvpArenaSize(count: number) {
+export function pvpArenaSize(count: number, mode: 'edu' | 'pvp' = 'edu') {
+  if (mode === 'pvp') {
+    const scale = 0.8 + 0.2 * Math.sqrt(clamp(count, 2, 8) / 8);
+    return { width: Math.floor(ARENA_W * scale / 16) * 16, height: Math.floor(ARENA_H * scale / 16) * 16 };
+  }
   const scale = Math.max(1, Math.sqrt(count / 8));
   return { width: Math.ceil(720 * scale / 16) * 16, height: Math.ceil(432 * scale / 16) * 16 };
 }
@@ -55,25 +63,26 @@ export class ClassroomMatch implements Match {
   private quiz: ClassroomQuiz | null = null;
   private holds = new Map<string, { pad: string; t: number }>();
   private id = 1;
-  private forfeited = false;
   private seed = 0x434c4153;
   private rng: () => number;
   private width: number;
   private height: number;
+  private zoneRadius = 0;
+  private zoneOrder = new Map<string, number>();
+  private dropExpiry = new Map<number, number>();
 
-  constructor(students: Student[], private duel = false) {
-    if (duel && students.length !== 2) throw new Error('PvP requires exactly two players');
+  constructor(students: Student[], private royale = false) {
+    if (royale && (students.length < 2 || students.length > 8)) throw new Error('PvP royale needs 2–8 players');
     if (students.length < 2 || students.length > 30) throw new Error('Classroom PvP needs 2–30 students');
     this.seed = students.reduce((seed, p) => [...p.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), seed), this.seed);
     this.rng = random(this.seed);
-    // The direct-control duel uses the renderer's arena. The larger classroom
-    // arena would spawn player two beyond the 480px viewport and camera bounds.
-    const arena = duel ? { width: ARENA_W, height: ARENA_H } : pvpArenaSize(students.length);
+    // Royale stays inside the renderer/camera bounds; edu retains its larger arena.
+    const arena = pvpArenaSize(students.length, royale ? 'pvp' : 'edu');
     this.width = arena.width; this.height = arena.height;
     this.state = {
-      t: 0, status: 'countdown', mode: duel ? 'pvp' : 'edu', boss: null, heroScale: 2,
+      t: 0, status: 'countdown', mode: royale ? 'pvp' : 'edu', boss: null, heroScale: 2,
       players: students.map(student => {
-        const kit = duel ? structuredClone(student.kit) : asClassroomKit(student.kit);
+        const kit = royale ? asBattleKit(student.kit) : asClassroomKit(student.kit);
         return { id: student.id, name: student.name, kit, x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0], hp: kit.maxHp, armor: kit.maxArmor, energy: kit.maxEnergy,
           alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 2, buffs: [], perks: [],
           stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false } };
@@ -87,6 +96,14 @@ export class ClassroomMatch implements Match {
       this.state.pvp.scores[p.id] = { kos: 0, downs: 0, damage: 0, roundWins: 0 };
       this.state.pvp.quizScores[p.id] = 0; this.roundScores.set(p.id, { kos: 0, damage: 0 });
     }
+    if (royale) {
+      const cx = this.width * (0.46 + this.rng() * 0.08), cy = this.height * (0.46 + this.rng() * 0.08);
+      this.zoneRadius = Math.hypot(Math.max(cx, this.width - cx), Math.max(cy, this.height - cy)) + 16;
+      this.state.pvp.rounds = 1; this.state.pvp.roundEndsAt = 152;
+      this.state.pvp.royale = { alive: students.map(p => p.id), placements: {}, winner: null, eliminations: [],
+        zone: { cx, cy, r: this.zoneRadius, targetR: 24, shrinkStart: 47, shrinkEnd: 107, dps: 0 } };
+      for (const p of this.state.players) { this.zoneOrder.set(p.id, this.rng()); p.eliminated = false; p.killedBy = null; }
+    }
     this.state.players.forEach((p, i) => this.resetPlayer(p, this.spawnPoints()[i]));
   }
 
@@ -94,16 +111,18 @@ export class ClassroomMatch implements Match {
   removePlayer(id: string): void {
     const s = this.state, p = this.byId.get(id);
     if (!p) return;
+    if (this.royale && p.alive && !this.over) this.eliminate(p, null, 'left');
     const score = s.pvp.scores[id];
     this.departed.set(id, { id, name: p.name, repo: p.kit.repo, kos: score.kos, damage: score.damage,
-      roundWins: score.roundWins, quality: structuredClone(p.kit.quality ?? []), left: true });
+      roundWins: score.roundWins, quality: structuredClone(p.kit.quality ?? []), left: true, ...(this.royale ? { placement: s.pvp.royale!.placements[id], killedBy: p.killedBy ?? null } : {}) });
     s.players = s.players.filter(other => other.id !== id);
     this.byId.delete(id); this.runtime.delete(id); this.roundScores.delete(id); this.holds.delete(id); this.nextBuff.delete(id);
     delete s.pvp.scores[id]; delete s.pvp.quizScores[id];
     for (const bullet of forgetPlayer(s, id)) this.shots.delete(bullet);
     this.lessons.removePlayer(id);
     this.updateLeader();
-    if (!s.players.length || (this.duel && s.players.length < 2)) { this.finish(true); return; }
+    if (this.royale) { this.resolveRoyale(); return; }
+    if (!s.players.length) { this.finish(true); return; }
     if (!this.over && this.quiz?.subject === id) {
       // The question's subject left. Reopen only this quiz, giving the remaining
       // students a fair answer window; combat time, HP and round scores stay intact.
@@ -132,14 +151,20 @@ export class ClassroomMatch implements Match {
     for (const p of s.players) this.updatePlayer(p, dt, inputs.get(p.id), active);
     if (active) {
       this.updateBullets(dt);
-      if (s.t >= s.pvp.roundEndsAt) this.endRound();
+      if (this.royale && !this.over) { this.updatePickups(); this.updateZone(dt); this.resolveRoyale(); }
+      else if (!this.royale && s.t >= s.pvp.roundEndsAt) this.endRound();
     } else this.updateQuiz(dt);
     this.updateLeader();
-    this.lessons.step(s.t, event => this.emit(event));
+    if (!this.royale) this.lessons.step(s.t, event => this.emit(event));
   }
 
   private spawnPoints() {
-    const count = this.state.players.length, cols = Math.ceil(Math.sqrt(count * this.width / this.height)), rows = Math.ceil(count / cols);
+    const count = this.state.players.length;
+    if (this.royale) return Array.from({ length: count }, (_, i) => {
+      const angle = Math.PI + i * Math.PI * 2 / count;
+      return { x: this.width / 2 + Math.cos(angle) * (this.width / 2 - 40), y: this.height / 2 + Math.sin(angle) * (this.height / 2 - 40) };
+    });
+    const cols = Math.ceil(Math.sqrt(count * this.width / this.height)), rows = Math.ceil(count / cols);
     return Array.from({ length: count }, (_, i) => ({
       x: cols === 1 ? this.width / 2 : 64 + (i % cols) * (this.width - 128) / (cols - 1),
       y: rows === 1 ? this.height / 2 : 64 + Math.floor(i / cols) * (this.height - 128) / (rows - 1),
@@ -167,12 +192,13 @@ export class ClassroomMatch implements Match {
     p.skillCd = Math.max(0, p.skillCd - dt); p.dashCd = Math.max(0, p.dashCd - dt); p.invuln = Math.max(0, p.invuln - dt);
     r.shot = Math.max(-dt, r.shot - dt); r.dash -= dt; r.buff -= dt;
     if (!p.alive) {
+      if (this.royale) { p.downedFor += dt; p.vx = p.vy = 0; p.reviveProgress = 0; return; }
       p.downedFor += dt; r.respawn -= dt; p.reviveProgress = clamp(1 - r.respawn / 2.5, 0, 1); p.vx = p.vy = 0;
       if (active && r.respawn <= 0) this.respawn(p);
       return;
     }
     if (r.buff <= 0) p.buffs = p.buffs.filter(b => b === 'tech-debt');
-    p.energy = Math.min(p.kit.maxEnergy, p.energy + dt * qualityValue(p.kit, 'regen', 6) * (p.perks.includes('quiz-boost') ? 1.1 : 1));
+    p.energy = Math.min(p.kit.maxEnergy, p.energy + dt * (this.royale ? 10 : qualityValue(p.kit, 'regen', 6)) * (p.perks.includes('quiz-boost') ? 1.1 : 1));
     if (this.state.t - r.lastHit >= 3 && p.armor < p.kit.maxArmor) {
       r.armor += dt;
       if (r.armor >= 1.5) { p.armor = Math.min(p.kit.maxArmor, p.armor + 1); r.armor = 0; }
@@ -183,7 +209,7 @@ export class ClassroomMatch implements Match {
     p.facing = aim;
     const [mx, my] = input?.move ?? [0, 0];
     if (input?.dash && p.dashCd <= 0) { r.direction = Math.hypot(mx, my) > 0.1 ? unit(mx, my) : aim; r.dash = 0.19; p.dashCd = 1.7; p.invuln = Math.max(p.invuln, 0.24); }
-    const facts = this.duel ? undefined : (p.kit as ClassroomKit).classroom;
+    const facts = this.royale ? undefined : (p.kit as ClassroomKit).classroom;
     const slow = active && (facts?.todoDensity ?? 0) > 0 && (this.state.t + (p.kit.seed >>> 0) % 120 / 10) % 12 < 1.5;
     if (slow && !r.slow) this.lessons.offer('tech-debt', p.id, { player: p.name, repo: p.kit.repo, todos: facts!.todoCount, density: facts!.todoDensity.toFixed(1),
       text: `${p.name}'s open TODOs add a short game slow. The analyzed repo has ${facts!.todoCount} TODO/FIXME/HACK notes.` });
@@ -228,6 +254,8 @@ export class ClassroomMatch implements Match {
   private updateBullets(dt: number) {
     const live: Bullet[] = [];
     for (const b of this.state.bullets) {
+      if (this.over) return;
+      if (this.royale && !this.byId.get(b.owner)?.alive) { this.shots.delete(b.id); continue; }
       const shot = this.shots.get(b.id)!; shot.life -= dt;
       if (b.kind === 'staff') {
         const foe = this.state.players.filter(p => p.alive && p.id !== b.owner).sort((a, c) => distance(b, a) - distance(b, c))[0];
@@ -243,28 +271,33 @@ export class ClassroomMatch implements Match {
       if (!victim && shot.life > 0 && b.x > 12 && b.x < this.width - 12 && b.y > 12 && b.y < this.height - 12) live.push(b);
       else this.shots.delete(b.id);
     }
-    this.state.bullets = live;
+    if (!this.over) this.state.bullets = this.royale ? live.filter(b => this.byId.get(b.owner)?.alive) : live;
   }
   private hurt(target: PlayerState, source: PlayerState, base: number, direction: [number, number]) {
     if (!target.alive || target.invuln > 0 || target.id === source.id) return;
-    const weakness = qualityValue(target.kit, 'weakness', 0);
+    const weakness = this.royale ? 0 : qualityValue(target.kit, 'weakness', 0);
     const amount = Math.min(target.hp + target.armor, target.kit.maxHp * 0.4, base * (1 + weakness) * (target.buffs.includes('firewall') ? 0.65 : target.buffs.includes('fork') ? 0.75 : 1));
     const armor = Math.min(target.armor, amount); target.armor -= armor; target.hp = Math.max(0, target.hp - amount + armor);
     const r = this.runtime.get(target.id)!; r.lastHit = this.state.t; r.armor = 0;
     source.stats.damage += amount; this.state.pvp.scores[source.id].damage += amount; this.roundScores.get(source.id)!.damage += amount;
     this.emit({ type: 'hit', target: target.id, source: source.id, amount, x: target.x, y: target.y, direction, crit: weakness > 0, impact: clamp(amount / 4, 0.1, 1), hitStop: amount >= 3 ? 40 : 0 });
-    const facts = this.duel ? undefined : (source.kit as ClassroomKit).classroom, damage = source.kit.quality?.find(q => q.stat === 'damage');
-    if (!this.duel) this.lessons.offer('component', source.id, { player: source.name, repo: source.kit.repo, component: facts?.components[0]?.name ?? source.kit.repo,
+    const facts = this.royale ? undefined : (source.kit as ClassroomKit).classroom, damage = source.kit.quality?.find(q => q.stat === 'damage');
+    if (!this.royale) this.lessons.offer('component', source.id, { player: source.name, repo: source.kit.repo, component: facts?.components[0]?.name ?? source.kit.repo,
       amount: Number(amount.toFixed(1)), grade: damage?.grade ?? 'C', cycles: facts?.cycles.length ?? 0, signal: damage?.signal ?? 'Analysis unavailable',
       text: `${source.name} dealt ${amount.toFixed(1)} damage. Their damage grade ${damage?.grade ?? 'C'} comes from ${damage?.signal ?? 'a neutral value until analysis is available'}.` });
     if (armor > 0) {
       const f = (target.kit as ClassroomKit).classroom;
-      if (!this.duel) this.lessons.offer('test-coverage', target.id, { player: target.name, repo: target.kit.repo, percent: Number(((f?.testRatio ?? 0) * 100).toFixed(1)), armor: target.kit.maxArmor,
+      if (!this.royale) this.lessons.offer('test-coverage', target.id, { player: target.name, repo: target.kit.repo, percent: Number(((f?.testRatio ?? 0) * 100).toFixed(1)), armor: target.kit.maxArmor,
         text: `${target.name}'s test-derived armor absorbed ${armor.toFixed(1)} damage. ${target.kit.quality?.find(q => q.stat === 'armor')?.signal ?? 'Source analysis is unavailable.'}` });
     }
-    const targetFacts = this.duel ? undefined : (target.kit as ClassroomKit).classroom;
+    const targetFacts = this.royale ? undefined : (target.kit as ClassroomKit).classroom;
     if (targetFacts?.cycles.length) this.lessons.offer('circular-dependency', target.id, { player: target.name, repo: target.kit.repo, members: targetFacts.cycles[0].join(' ↔ '), cycles: targetFacts.cycles.length, bonus: Math.round(weakness * 100) });
     if (target.hp <= 0) {
+      if (this.royale) {
+        this.state.pvp.scores[source.id].kos++; this.roundScores.get(source.id)!.kos++;
+        const attacker = this.runtime.get(source.id)!; attacker.streak++; source.stats.bestCombo = Math.max(source.stats.bestCombo, attacker.streak);
+        this.eliminate(target, source.id, 'weapon'); return;
+      }
       target.alive = false; target.downedFor = 0; target.reviveProgress = 0; r.respawn = 2.5; r.streak = 0; target.vx = target.vy = 0;
       this.state.pvp.scores[source.id].kos++; this.state.pvp.scores[target.id].downs++; this.roundScores.get(source.id)!.kos++;
       const attacker = this.runtime.get(source.id)!; attacker.streak++; source.stats.bestCombo = Math.max(source.stats.bestCombo, attacker.streak);
@@ -276,6 +309,78 @@ export class ClassroomMatch implements Match {
     if (advisory) this.lessons.offer('vulnerability', target.id, { player: target.name, id: advisory.id, pkg: advisory.pkg, fixed: advisory.fixed ?? 'not reported',
       text: `${advisory.pkg} has the public advisory ${advisory.id}. ${advisory.fixed ? `A reported fixed version is ${advisory.fixed}.` : 'Check the advisory for upgrade guidance.'}` });
   }
+
+  private eliminate(target: PlayerState, by: string | null, reason: RoyaleElimination['reason']) {
+    if (target.eliminated || this.over) return;
+    const s = this.state, royale = s.pvp.royale!;
+    target.alive = false; target.eliminated = true; target.killedBy = by;
+    target.hp = 0; target.vx = target.vy = target.reviveProgress = 0; target.downedFor = 0; target.buffs = [];
+    this.runtime.get(target.id)!.respawn = 0;
+    s.pvp.scores[target.id].downs++;
+    royale.alive = s.players.filter(p => p.alive && !p.eliminated).map(p => p.id);
+    const placement = royale.alive.length + 1;
+    royale.placements[target.id] = placement;
+    const entry: RoyaleElimination = { player: target.id, by, placement, at: s.t, reason };
+    royale.eliminations.push(entry);
+    // Preserve already-issued hit/elimination cues, but a spectator cannot deal delayed damage.
+    s.bullets = s.bullets.filter(b => { if (b.owner !== target.id) return true; this.shots.delete(b.id); return false; });
+    if (reason !== 'left') for (const [kind, dx] of [['heart', -8], ['energy', 8]] as const) {
+      const id = this.id++;
+      s.pickups.push({ id, kind, x: clamp(target.x + dx, 32, this.width - 32), y: clamp(target.y, 32, this.height - 32) });
+      this.dropExpiry.set(id, s.t + 15);
+    }
+    const event: Extract<GameEvent, { type: 'downed' }> & Omit<RoyaleElimination, 'player'> = { type: 'downed', ...entry };
+    this.emit(event);
+    this.resolveRoyale();
+  }
+  private resolveRoyale() {
+    if (!this.royale || this.over) return;
+    const s = this.state, royale = s.pvp.royale!;
+    royale.alive = s.players.filter(p => p.alive && !p.eliminated).map(p => p.id);
+    if (royale.alive.length > 1) return;
+    const winner = royale.alive[0] ?? null; royale.winner = winner;
+    if (winner) {
+      royale.placements[winner] = 1; s.pvp.scores[winner].roundWins = 1;
+      this.byId.get(winner)!.stats.killingBlow = royale.eliminations.at(-1)?.by === winner;
+    }
+    this.finish(!winner);
+  }
+  private updateZone(dt: number) {
+    const s = this.state, zone = s.pvp.royale!.zone!;
+    if (s.t - dt < zone.shrinkStart - 5 && s.t >= zone.shrinkStart - 5)
+      this.emit({ type: 'telegraph', attackId: 'gc-sweep', name: 'GC sweep: enter the safe circle', targetPlayer: null });
+    if (s.t < zone.shrinkStart) return;
+    const progress = clamp((s.t - zone.shrinkStart) / (zone.shrinkEnd - zone.shrinkStart), 0, 1);
+    // Preview the24px final circle from countdown; then collapse it fully over30s so camping also ends.
+    zone.r = s.t <= zone.shrinkEnd ? this.zoneRadius + (zone.targetR - this.zoneRadius) * progress
+      : Math.max(0, zone.targetR * (1 - (s.t - zone.shrinkEnd) / 30));
+    zone.dps = 0.6 + progress * 2.4 + Math.max(0, s.t - zone.shrinkEnd) * 0.35;
+    const deadline = s.t >= s.pvp.roundEndsAt;
+    // Resolve a genuinely simultaneous zone death by a seeded tie order, independent of roster iteration.
+    const outside = s.players.filter(p => p.alive && (deadline || distance(p, { x: zone.cx, y: zone.cy }) + 10 > zone.r))
+      .sort((a, b) => (a.hp + a.armor) - (b.hp + b.armor) || this.zoneOrder.get(a.id)! - this.zoneOrder.get(b.id)!);
+    for (const p of outside) {
+      if (this.over) break;
+      const amount = Math.min(p.hp + p.armor, deadline ? p.hp + p.armor : zone.dps * dt);
+      const armor = Math.min(p.armor, amount); p.armor -= armor; p.hp = Math.max(0, p.hp - amount + armor);
+      const r = this.runtime.get(p.id)!; r.lastHit = s.t; r.armor = 0;
+      // GC is environmental damage: no killer credit and no dash/rollback invulnerability exploit.
+      this.emit({ type: 'hit', target: p.id, source: 'gc-sweep', amount, x: p.x, y: p.y, impact: 0.1, direction: unit(p.x - zone.cx, p.y - zone.cy) });
+      if (p.hp <= 1e-8) this.eliminate(p, null, deadline ? 'timeout' : 'zone');
+    }
+  }
+  private updatePickups() {
+    const s = this.state;
+    s.pickups = s.pickups.filter(drop => {
+      if (s.t >= (this.dropExpiry.get(drop.id) ?? 0)) { this.dropExpiry.delete(drop.id); return false; }
+      const player = s.players.filter(p => p.alive && distance(p, drop) <= 18 &&
+        (drop.kind === 'heart' ? p.hp < p.kit.maxHp : p.energy < p.kit.maxEnergy)).sort((a, b) => distance(a, drop) - distance(b, drop))[0];
+      if (!player) return true;
+      if (drop.kind === 'heart') player.hp = Math.min(player.kit.maxHp, player.hp + 1);
+      else player.energy = Math.min(player.kit.maxEnergy, player.energy + 20);
+      this.emit({ type: 'pickup', player: player.id, kind: drop.kind, x: drop.x, y: drop.y }); this.dropExpiry.delete(drop.id); return false;
+    });
+  }
   private ranked() {
     return [...this.state.players].sort((a, b) => {
       const x = this.state.pvp.scores[a.id], y = this.state.pvp.scores[b.id];
@@ -283,14 +388,13 @@ export class ClassroomMatch implements Match {
     });
   }
   private updateLeader() {
+    if (this.royale) {
+      const alive = this.ranked().filter(p => p.alive && !p.eliminated);
+      this.state.pvp.leader = this.state.pvp.royale!.winner ?? alive[0]?.id ?? null; return;
+    }
     const leader = this.ranked()[0];
     if (!leader) { this.state.pvp.leader = null; return; }
     const score = this.state.pvp.scores[leader.id];
-    if (this.duel) {
-      const other = this.ranked()[1];
-      const next = other ? this.state.pvp.scores[other.id] : undefined;
-      if (next && next.roundWins === score.roundWins && next.kos === score.kos && next.damage === score.damage && next.downs === score.downs) { this.state.pvp.leader = null; return; }
-    }
     this.state.pvp.leader = score.kos > 0 || score.damage > 0 || score.roundWins > 0 ? leader.id : null;
   }
   private endRound() {
@@ -299,17 +403,10 @@ export class ClassroomMatch implements Match {
       const x = this.roundScores.get(a.id)!, y = this.roundScores.get(b.id)!; return y.kos - x.kos || y.damage - x.damage || a.id.localeCompare(b.id);
     });
     const winner = sorted[0], score = this.roundScores.get(winner.id)!;
-    const runnerUp = sorted[1] ? this.roundScores.get(sorted[1].id) : undefined;
-    const tied = this.duel && runnerUp?.kos === score.kos && runnerUp.damage === score.damage;
-    if (!tied && (score.kos > 0 || score.damage > 0)) this.state.pvp.scores[winner.id].roundWins++;
+    if (score.kos > 0 || score.damage > 0) this.state.pvp.scores[winner.id].roundWins++;
     this.state.bullets = []; this.shots.clear();
     if (this.state.pvp.round >= 3 || this.state.pvp.scores[winner.id].roundWins >= 2) { this.finish(); return; }
     const s = this.state;
-    if (this.duel) {
-      s.pvp.round++; s.pvp.roundEndsAt = s.t + 75;
-      s.players.forEach((p, i) => { this.resetPlayer(p, this.spawnPoints()[i]); this.roundScores.set(p.id, { kos: 0, damage: 0 }); });
-      return;
-    }
     this.quiz = classroomQuiz(s.players, s.pvp.round, this.seed, s.t, this.width, this.height);
     s.perkOffer = this.quiz.offer; s.pvp.phase = 'quiz'; s.pvp.quizEndsAt = this.quiz.endsAt; this.holds.clear(); this.nextBuff.clear();
     s.players.forEach((p, i) => this.resetPlayer(p, { x: this.width / 2 + (i % 6 - 2.5) * 24, y: this.height / 2 + 80 + Math.floor(i / 6) * 18 }));
@@ -332,7 +429,7 @@ export class ClassroomMatch implements Match {
     }
     if (s.t >= offer.endsAt && s.pvp.phase === 'quiz') {
       s.pvp.phase = 'reveal'; offer.pads.forEach(p => { p.correct = p.id === quiz.correctId; }); offer.quiz!.explain = quiz.explain;
-      if (!this.duel) this.lessons.offer(offer.quiz!.concept as Concept, quiz.subject, { question: offer.quiz!.question, answer: offer.pads.find(p => p.id === quiz.correctId)!.answer!, explain: quiz.explain });
+      if (!this.royale) this.lessons.offer(offer.quiz!.concept as Concept, quiz.subject, { question: offer.quiz!.question, answer: offer.pads.find(p => p.id === quiz.correctId)!.answer!, explain: quiz.explain });
     }
     if (s.t >= quiz.endsAt) {
       s.pvp.round++; s.pvp.phase = 'round'; s.pvp.roundEndsAt = s.t + 75; s.pvp.quizEndsAt = null; s.perkOffer = null; this.quiz = null;
@@ -344,7 +441,7 @@ export class ClassroomMatch implements Match {
   }
   private finish(abandoned = false) {
     if (this.over) return;
-    this.forfeited = abandoned;
+    if (this.royale) { this.state.bullets = []; this.shots.clear(); for (const p of this.state.players) p.vx = p.vy = 0; }
     this.updateLeader(); this.state.pvp.phase = 'finished'; this.state.status = abandoned ? 'defeat' : 'victory';
     this.state.perkOffer = null; this.state.pvp.quizEndsAt = null; this.quiz = null; this.holds.clear(); this.nextBuff.clear();
     this.emit({ type: abandoned ? 'defeat' : 'victory' });
@@ -354,10 +451,11 @@ export class ClassroomMatch implements Match {
   autopsy(): ClassroomAutopsy {
     this.updateLeader();
     const ranking: ClassroomRankingRow[] = this.ranked().map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: this.state.pvp.scores[p.id].kos,
-      damage: this.state.pvp.scores[p.id].damage, roundWins: this.state.pvp.scores[p.id].roundWins, quality: structuredClone(p.kit.quality ?? []) }));
+      damage: this.state.pvp.scores[p.id].damage, roundWins: this.state.pvp.scores[p.id].roundWins, quality: structuredClone(p.kit.quality ?? []), ...(this.royale ? { placement: this.state.pvp.royale!.placements[p.id] ?? 1, killedBy: p.killedBy ?? null } : {}) }));
     ranking.push(...structuredClone([...this.departed.values()]));
-    ranking.sort((a, b) => (this.duel && this.forfeited ? Number(!!a.left) - Number(!!b.left) : 0) || b.roundWins - a.roundWins || b.kos - a.kos || b.damage - a.damage || a.id.localeCompare(b.id));
-    return { mode: this.duel ? 'pvp' : 'edu', victory: this.duel && this.state.players.length > 0, boss: null, duration: Math.max(0, this.state.t - 2), mvp: this.duel && this.forfeited ? this.state.players[0]?.id ?? null : this.state.pvp.leader,
+    ranking.sort((a, b) => (this.royale ? (a.placement ?? 1) - (b.placement ?? 1) : 0) || b.roundWins - a.roundWins || b.kos - a.kos || b.damage - a.damage || a.id.localeCompare(b.id));
+    return { mode: this.royale ? 'pvp' : 'edu', victory: this.royale && !!this.state.pvp.royale!.winner, boss: null, duration: Math.max(0, this.state.t - 2), mvp: this.royale ? this.state.pvp.royale!.winner : this.state.pvp.leader,
+      ...(this.royale ? { royale: structuredClone({ winner: this.state.pvp.royale!.winner, placements: this.state.pvp.royale!.placements, eliminations: this.state.pvp.royale!.eliminations }) } : {}),
       players: this.state.players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { ...p.stats } })),
       ranking };
   }

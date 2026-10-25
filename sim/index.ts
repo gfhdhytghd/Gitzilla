@@ -12,7 +12,7 @@ export type { CodeWeapon } from './flavor.ts';
 export type { BossCode } from './code.ts';
 export { reconcileCodeNames } from './code.ts';
 export { pvpArenaSize } from './pvp.ts';
-export type { ClassroomState, ClassroomPvpState, ClassroomAutopsy, ClassroomRankingRow } from './pvp.ts';
+export type { ClassroomState, ClassroomPvpState, ClassroomAutopsy, ClassroomRankingRow, RoyaleElimination, RoyaleReport, RoyaleRankingRow } from './pvp.ts';
 export { qualityFromRubric } from './quality.ts';
 export type { ClassroomFacts, ClassroomKit, ScoredRubric } from './quality.ts';
 export type { SocialBossKit } from './social.ts';

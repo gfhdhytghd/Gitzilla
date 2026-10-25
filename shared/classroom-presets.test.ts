@@ -5,6 +5,9 @@ import { normalizeClassroomPlan, ClassroomSession } from '../server/classroom';
 import { archive, splitChunks } from '../analysis/fixtures';
 import { extractTarGz } from '../analysis/tar';
 import { profileFromFiles } from '../analysis/graph';
+import { analyzeFiles } from '../analysis/in-app';
+import { LOCALES } from './i18n/locale';
+import { localizeClassroomPlan } from './classroom-localize';
 
 describe('Python classroom curriculum', () => {
   it('provides a valid ordered beginner-to-dict sequence with independent editable drafts', () => {
@@ -33,6 +36,71 @@ describe('Python classroom curriculum', () => {
     const starters = pythonClassroomPresets.map(p => pythonStarter(p.id));
     for (const [i, starter] of starters.entries()) expect(starter.filename).toBe(pythonClassroomPresets[i].file);
     execFileSync('python3', ['-c', 'import ast,json,sys\nfor item in json.load(sys.stdin): ast.parse(item["content"], filename=item["filename"])'], { input: JSON.stringify(starters) });
+  });
+  it('provides every step with editable Python and self-check files matching its existing check paths', () => {
+    for (const lang of LOCALES) for (const preset of pythonClassroomPresets) {
+      const plan = pythonClassroomPlan(preset.id, lang);
+      expect(() => normalizeClassroomPlan(plan)).not.toThrow();
+      for (const step of plan.steps) {
+        expect(step.language).toBe('python');
+        expect(step.starter?.map(file => file.path)).toEqual([preset.file, 'README.md']);
+        expect(step.starter!.length).toBeLessThanOrEqual(20);
+        expect(step.starter!.reduce((bytes, file) => bytes + Buffer.byteLength(file.content, 'utf8'), 0)).toBeLessThan(200 * 1024);
+        const paths = new Set(step.starter!.map(file => file.path));
+        for (const check of step.checks) expect(paths.has(check.path), `${preset.id}/${step.id}: ${check.path}`).toBe(true);
+        const source = step.starter!.find(file => file.path === preset.file)!;
+        expect(source.content).toContain('TODO');
+        expect(step.checks.some(check => check.kind === 'contains' && !source.content.includes(check.text!)), step.id).toBe(true);
+        const readme = step.starter!.find(file => file.path === 'README.md')!;
+        expect(readme.content).toContain(step.title);
+        expect(readme.content).toContain('| TODO | TODO | TODO |');
+        const profile = analyzeFiles(step.starter!, 'in-app');
+        expect(profile.primaryLanguage).toBe('Python');
+        expect(profile.tree).toContain(preset.file);
+        expect(profile.tree).toContain('README.md');
+        expect(profile.readme).toContain(step.title);
+        expect(profile.fallback).toBeUndefined();
+      }
+    }
+  });
+  it('parses all 108 localized step starters without executing student code', () => {
+    const sources = LOCALES.flatMap(lang => pythonClassroomPresets.flatMap(preset => pythonClassroomPlan(preset.id, lang).steps
+      .flatMap(step => step.starter!.filter(file => file.path.endsWith('.py')))));
+    expect(sources).toHaveLength(108);
+    execFileSync('python3', ['-c', 'import ast,json,sys\nfor item in json.load(sys.stdin): ast.parse(item["content"], filename=item["path"])'], { input: JSON.stringify(sources) });
+  });
+  it('keeps step files independent and preserves starters through server plan normalization', () => {
+    const plan = pythonClassroomPlan('09-dict');
+    const normalized = normalizeClassroomPlan(plan);
+    for (const [index, step] of normalized.steps.entries()) {
+      expect(step.language).toBe('python');
+      expect(step.starter).toEqual(plan.steps[index].starter);
+    }
+    plan.steps[0].starter![0].content = 'edited';
+    plan.steps[0].starter![1].content = 'edited record';
+    expect(plan.steps[1].starter![0].content).not.toBe('edited');
+    expect(pythonClassroomPlan('09-dict').steps[0].starter![0].content).not.toBe('edited');
+    expect(pythonClassroomPlan('09-dict').steps[0].starter![1].content).not.toBe('edited record');
+  });
+  it('explains direct classroom submission in every supported language, with GitHub only optional', () => {
+    const optional = { en: 'optional alternative', zh: '可选的另一种方式', es: 'otra opción', fr: 'reste facultatif' };
+    for (const lang of LOCALES) for (const preset of pythonClassroomPresets) {
+      for (const step of pythonClassroomPlan(preset.id, lang).steps) {
+        expect(step.instructions).toContain(optional[lang]);
+        expect(step.instructions).not.toContain('保存、commit、push 到 GitHub，回课堂提交最新分支。');
+        expect(step.instructions).toContain('README.md');
+      }
+    }
+  });
+  it('localizes untouched starter templates without translating custom Python or self-check edits', () => {
+    const plan = pythonClassroomPlan('09-dict', 'zh');
+    plan.steps[0].starter![0].content = 'inventory = {"custom": 42}\n';
+    plan.steps[0].starter![1].content = '# My actual test record\nInput: empty inventory\n';
+    const before = JSON.stringify(plan), localized = localizeClassroomPlan(plan, 'en');
+    expect(localized.steps[0].starter).toEqual(plan.steps[0].starter);
+    expect(localized.steps[1].starter).toEqual(pythonClassroomPlan('09-dict', 'en').steps[1].starter);
+    expect(localized.steps[1].language).toBe('python');
+    expect(JSON.stringify(plan)).toBe(before);
   });
   it('keeps all required artifact paths through the real GitHub archive extractor', async () => {
     for (const preset of pythonClassroomPresets) {

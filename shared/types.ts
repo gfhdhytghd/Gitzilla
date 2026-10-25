@@ -356,6 +356,7 @@ export interface PvpState {
     zone: { cx: number; cy: number; r: number; targetR: number; shrinkStart: number; shrinkEnd: number; dps: number } | null;
                                            // "GC sweep": outside the circle you take dps; shrinks over [shrinkStart, shrinkEnd] (match time, s)
     winner: string | null;
+    eliminations?: { player: string; by: string | null; at: number; placement: number; reason: "weapon" | "zone" | "left" | "timeout" }[];
   };
 }
 

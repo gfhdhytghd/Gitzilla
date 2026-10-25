@@ -54,6 +54,7 @@ export function createBot(seed: number, skill = 0.72) {
   let seq = 0;
   let frame: InputFrame = { seq: 0, move: [0, 0], aim: null, fire: true, dash: false, skill: false, source: 'keyboard' };
   return (state: MatchState, p: PlayerState): InputFrame => {
+    if (state.mode === 'pvp' && (!p.alive || p.eliminated)) return { seq: seq++, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard' };
     if (state.t < nextThink) return { ...frame, seq: seq++, dash: false, skill: false };
     nextThink = state.t + reaction;
     if (state.perkOffer && !state.perkOffer.picked[p.id]) {
@@ -70,7 +71,7 @@ export function createBot(seed: number, skill = 0.72) {
     const boss = state.boss;
     if (!boss) {
       const target = state.players.filter(other => other.id !== p.id && other.alive).sort((a, b) => distance(p, a) - distance(p, b))[0];
-      const weapon = WEAPONS[p.kit.weapon], arena = pvpArenaSize(state.players.length);
+      const weapon = WEAPONS[p.kit.weapon], arena = pvpArenaSize(state.players.length, state.mode === 'pvp' ? 'pvp' : 'edu');
       const toward = target ? unit(target.x - p.x, target.y - p.y) : [0, 0] as [number, number];
       const d = target ? distance(p, target) : 0, preferred = Math.min(160, weapon.speed * weapon.life * 0.65);
       const radial = d > preferred + 18 ? 1 : d < preferred - 20 ? -0.65 : 0;
@@ -86,6 +87,16 @@ export function createBot(seed: number, skill = 0.72) {
       }
       if (p.x < 70) mx += 0.8; if (p.x > arena.width - 70) mx -= 0.8;
       if (p.y < 70) my += 0.8; if (p.y > arena.height - 70) my -= 0.8;
+      if (state.pvp?.royale) {
+        const zone = state.pvp.royale.zone;
+        if (zone && state.t >= zone.shrinkStart - 4 && distance(p, { x: zone.cx, y: zone.cy }) > Math.max(0, zone.r - 26)) {
+          const inward = unit(zone.cx - p.x, zone.cy - p.y); mx = inward[0] * 3; my = inward[1] * 3; danger = true;
+        } else {
+          const drop = state.pickups.filter(drop => distance(p, drop) < 65 && (drop.kind === 'heart' ? p.hp < p.kit.maxHp : p.energy < p.kit.maxEnergy / 2))
+            .sort((a, b) => distance(a, p) - distance(b, p))[0];
+          if (drop) { const towardDrop = unit(drop.x - p.x, drop.y - p.y); mx += towardDrop[0] * 1.5; my += towardDrop[1] * 1.5; }
+        }
+      }
       const length = Math.max(1, Math.hypot(mx, my)), lead = target ? Math.min(0.35, d / (weapon.speed * 1.35)) * skill : 0;
       const aim = target ? unit(target.x + target.vx * lead - p.x, target.y + target.vy * lead - p.y) : null;
       frame = { seq: seq++, move: [mx / length, my / length], aim, fire: !!target,

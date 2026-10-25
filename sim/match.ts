@@ -672,7 +672,7 @@ class ArenaMatch implements BattleMatch {
 
 type MatchPlayer = { id: string; name: string; kit: PlayerKit };
 export function createMatch(players: MatchPlayer[], boss: BossKit, options?: { mode?: 'battle' }): BattleMatch;
-export function createMatch(players: MatchPlayer[], boss: BossKit | null, options: { mode: 'edu' }): ClassroomMatch;
+export function createMatch(players: MatchPlayer[], boss: BossKit | null, options: { mode: 'edu' | 'pvp' }): ClassroomMatch;
 export function createMatch(players: MatchPlayer[], boss: BossKit | null, options?: { mode?: GameMode }): Match;
 export function createMatch(players: MatchPlayer[], boss: BossKit | null, options: { mode?: GameMode } = {}): Match {
   if (options.mode === 'edu') return new ClassroomMatch(players);

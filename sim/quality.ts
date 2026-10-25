@@ -9,7 +9,8 @@ export interface ClassroomFacts {
   functionLengthApproximate: boolean; longestFunction: number; commentRatio: number | null;
   todoCount: number; todoDensity: number; vulns: Pick<KnownVuln, 'id' | 'pkg' | 'fixed'>[];
 }
-export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] } };
+type BattleStats = Pick<PlayerKit, 'maxHp' | 'maxArmor' | 'maxEnergy' | 'speed' | 'damageMul'>;
+export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] }; battleStats?: BattleStats };
 export interface ScoredRubric { rubric: Rubric; results: CriterionResult[] }
 type ExtraSignals = { commentRatio?: number; readmeLength?: number; avgFunctionLength?: number; functionsPerFile?: number; hasTestDir?: boolean };
 const grade = (score: number): QualityStat['grade'] => score >= 0.82 ? 'A' : score >= 0.64 ? 'B' : score >= 0.43 ? 'C' : score >= 0.23 ? 'D' : 'F';
@@ -64,16 +65,23 @@ export function qualityRows(f: ClassroomFacts): QualityStat[] {
 }
 
 export function asClassroomKit(kit: PlayerKit): ClassroomKit {
-  const source = kit as ClassroomKit;
+  const input = kit as ClassroomKit;
+  const source = { ...input, battleStats: input.battleStats ?? { maxHp: kit.maxHp, maxArmor: kit.maxArmor, maxEnergy: kit.maxEnergy, speed: kit.speed, damageMul: kit.damageMul } };
   if (source.rubricQuality) return withQuality(source, source.rubricQuality.rows);
   if (!source.classroom) {
     // Custom/mocked callers can still play, but never get fabricated source-based grades.
-    return { ...structuredClone(kit), maxHp: 12, maxArmor: 5, maxEnergy: 180, speed: 102, damageMul: 1.05,
+    return { ...structuredClone(source), maxHp: 12, maxArmor: 5, maxEnergy: 180, speed: 102, damageMul: 1.05,
       quality: (['hp', 'armor', 'speed', 'damage', 'energy', 'regen', 'weakness'] as const).map(stat => ({ stat,
         value: ({ hp: 12, armor: 5, speed: 102, damage: 1.05, energy: 180, regen: 6, weakness: 0 }[stat]), grade: 'C',
         signal: 'Source analysis unavailable; neutral classroom value', tip: 'Analyze this repository again to get a source-based report card.' })) };
   }
   return withQuality(source, qualityRows(source.classroom));
+}
+
+/** Mode switches restore the original equal-budget stats rather than keeping earned edu bonuses. */
+export function asBattleKit(kit: PlayerKit): PlayerKit {
+  const { quality: _quality, rubricQuality: _rubric, battleStats, ...identity } = structuredClone(kit as ClassroomKit);
+  return { ...identity, ...battleStats };
 }
 
 function withQuality(source: ClassroomKit, rows: QualityStat[]): ClassroomKit {
