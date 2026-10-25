@@ -2,6 +2,7 @@
 import { strict as assert } from 'node:assert';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
+import { completeLandingOnboarding } from './onboarding';
 import { playtestBaseURL } from './playtest';
 
 const base = playtestBaseURL(process.env.SMOKE_URL || process.env.PLAYTEST_URL);
@@ -50,7 +51,8 @@ try {
     await page.goto(`${base}/?debug=input`, { waitUntil: 'networkidle' });
     await page.getByTestId('create-room').waitFor({ state: 'visible' });
     // No evaluate()/CDP script before the first tap: evaluation can grant activation.
-    await page.touchscreen.tap(20, 20);
+    const onboarding = await completeLandingOnboarding(page, { controls: 'touch', touch: true });
+    if (!onboarding.shown) await page.touchscreen.tap(20, 20);
     await page.waitForFunction(() => (window as any).__phoneAudio.contexts[0]?.state === 'running' && (window as any).__phoneAudio.loops > 0);
     await page.evaluate(async () => {
       const path = '/client/input/debug.ts';

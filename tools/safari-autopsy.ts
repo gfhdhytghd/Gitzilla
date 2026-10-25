@@ -1,13 +1,14 @@
 // WebKit (Safari) regression check for the autopsy page: it must scroll vertically, never horizontally, and every
 // action (REMATCH / new room / leave / share / adopt-an-organ QR) must be reachable.
 //
-//   npx tsx tools/safari-autopsy.ts                 # mock battle + edu autopsy on iPhone 15, iPhone SE, desktop Safari
+//   npx tsx tools/safari-autopsy.ts                 # mock battle autopsy + classroom on iPhone 15, iPhone SE, desktop Safari
 //   npx tsx tools/safari-autopsy.ts --real          # also plays a real (bot-filled) battle to its autopsy on DEV
 //
 // DEV only (default http://localhost:5175, override with SAFARI_URL). Needs Playwright WebKit (`npx playwright install
 // webkit`). On non-Ubuntu hosts missing libicu74/libflite, set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1 after placing
 // those libs in ~/.cache/ms-playwright/webkit-*/minibrowser-wpe/sys/lib. Exit 1 on any failure.
 import { devices, webkit, type Page } from "playwright";
+import { completeLandingOnboarding } from "./onboarding";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { playtestBaseURL } from "./playtest";
 
@@ -22,7 +23,13 @@ const DEVICES: [string, Record<string, unknown>][] = [
 ];
 
 async function check(page: Page, label: string): Promise<string[]> {
-  await page.getByTestId("autopsy").waitFor({ timeout: 30_000 });
+  try {
+    await page.getByTestId("autopsy").waitFor({ timeout: 30_000 });
+  } catch (e) {
+    console.error(`${label}: no autopsy; screen = ${await page.evaluate(() => document.querySelector(".screen")?.className).catch(() => "?")}`);
+    await page.screenshot({ path: `safari-autopsy-fail.png` }).catch(() => {});
+    throw e;
+  }
   await page.locator(".ap-scroll").waitFor({ timeout: 15_000 });
   await page.getByTestId("autopsy-leave").waitFor({ timeout: 15_000 });
   await page.waitForTimeout(1500); // share card / reports render async
@@ -65,6 +72,7 @@ async function check(page: Page, label: string): Promise<string[]> {
     if (!box || box.x + box.width > m.vw + 1) fails.push(`${label}: "${text}" not reachable`);
   }
   console.log(`${fails.length ? "FAIL" : "ok  "} ${label}  vw=${m.vw} scroll=${m.scSH}/${m.scCH}`);
+  for (const f of fails) console.log("   " + f);
   await page.screenshot({ path: `${output}/${shot}-actions.png` });
   return fails;
 }
@@ -72,6 +80,8 @@ async function check(page: Page, label: string): Promise<string[]> {
 async function realBattle(page: Page) {
   // create a room as owner, fill with bots, pick fallback repos, start, wait for the natural autopsy
   await page.goto(BASE + "/");
+  await page.getByTestId("create-room").waitFor({ state: "visible" });
+  await completeLandingOnboarding(page, { controls: "touch" });
   await page.getByTestId("create-room").click();
   if (await page.getByTestId("player-name").isVisible().catch(() => false)) {
     await page.getByTestId("player-name").fill("safari");
@@ -104,7 +114,21 @@ const fails: string[] = [];
 const browser = await webkit.launch();
 try {
   for (const [name, opts] of DEVICES) {
-    for (const mock of ["autopsy", "edu-autopsy"]) {
+    {
+      // edu mode is now the classroom (teacher screen / student view), which has no autopsy: just no sideways scroll
+      const ctx = await browser.newContext(opts);
+      await ctx.addInitScript(() => { localStorage.setItem("kaiju.name", "safari"); localStorage.setItem("gitzilla.onboarding.v1", "1"); });
+      const page = await ctx.newPage();
+      await page.goto(`${BASE}/r/QAQB?mock=edu`);
+      await page.locator(".classroom-screen").waitFor({ timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(1500);
+      const r = await page.evaluate(() => ({ vw: document.documentElement.clientWidth, sw: Math.max(document.documentElement.scrollWidth, document.querySelector<HTMLElement>(".classroom-screen")?.scrollWidth ?? 0) }));
+      const f = r.sw > r.vw + 1 ? [`${name} · classroom: horizontal overflow (${r.sw} > ${r.vw})`] : [];
+      console.log(`${f.length ? "FAIL" : "ok  "} ${name} · classroom  vw=${r.vw}`);
+      fails.push(...f);
+      await ctx.close();
+    }
+    for (const mock of ["autopsy"]) {
       const ctx = await browser.newContext(opts);
       await ctx.addInitScript(() => localStorage.setItem("kaiju.name", "safari"));
       const page = await ctx.newPage();

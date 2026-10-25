@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import type { InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 import { playtestBaseURL } from './playtest';
+import { completeLandingOnboarding, openControlSettings, closeControlSettings } from './onboarding';
 
 const base = playtestBaseURL(process.env.MOTION_URL || process.env.PLAYTEST_URL);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -130,6 +131,11 @@ try {
     });
   });
   await page.goto(`${base}/?debug=input`, { waitUntil: 'domcontentloaded' });
+  await page.getByTestId('create-room').waitFor({ state: 'visible' });
+  const onboarding = await completeLandingOnboarding(page, { controls: 'motion', touch: true });
+  const permissionBase = await page.evaluate(() => (window as any).__permissionCalls.length);
+  const expectedNativeCalls = permissionBase + 4;
+  check('first-run onboarding selects motion and uses real Continue', { ...onboarding, nativeCalls: permissionBase });
   await page.getByTestId('create-room').click();
   await page.waitForURL(/\/r\/[A-Z]{4}/);
   await page.getByTestId('player-repo-input').fill('lodash/lodash');
@@ -152,24 +158,27 @@ try {
     assert.equal(snapshots, 0, 'permission cases must run before the match/countdown');
     check(label, { phase: lobby?.phase, controlsReady: mine()?.controlsReady, startDisabled: true, startMessages: starts.length });
   };
-  await enable.waitFor({ state: 'visible' });
-  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), 0);
+  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), permissionBase);
   await assertLobbyBlocked('lobby initially blocks START until motion is enabled');
 
   // Consent denial is tested in the real pre-fight controls card, never in-game.
+  await openControlSettings(page);
   await enable.click();
+  await closeControlSettings(page);
   let permissions = await page.evaluate(() => (window as any).__permissionCalls);
-  assert.equal(permissions.length, 2);
-  assert(permissions.every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted && p.decision === 'denied'));
+  assert.equal(permissions.length, permissionBase + 2);
+  assert(permissions.slice(permissionBase).every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted && p.decision === 'denied'));
   await until(() => controls.some(control => !control.ready), 'unready controls report');
   await assertLobbyBlocked('denied lobby permission keeps native controls unready and START blocked');
-  check('both lobby native permission APIs run synchronously in trusted active click', permissions);
+  check('both lobby native permission APIs run synchronously in trusted active click', permissions.slice(permissionBase));
 
   await page.evaluate(() => { const w = window as any; w.__permissionDecision = 'granted'; w.__holdPermission = true; });
+  await openControlSettings(page);
   await enable.click();
+  await closeControlSettings(page);
   permissions = await page.evaluate(() => (window as any).__permissionCalls);
-  assert.equal(permissions.length, 4, 'real retry must call both APIs again');
-  assert(permissions.slice(2).every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted && p.decision === 'pending'));
+  assert.equal(permissions.length, expectedNativeCalls, 'real retry must call both APIs again');
+  assert(permissions.slice(permissionBase + 2).every((p: any) => p.event === 'click' && p.active && p.trusted && p.accepted && p.decision === 'pending'));
   await page.evaluate(() => { (window as any).__motion.enabled = true; }); await sleep(150);
   assert(!(await page.evaluate(() => (window as any).__permissionStates.some((snapshot: any) => snapshot.ready))), 'pre-grant readings must not ready the phone');
   await assertLobbyBlocked('pending native prompt ignores sensor samples and keeps START blocked');
@@ -199,9 +208,9 @@ try {
   await page.locator('[data-testid="input-sensors"][data-status="on"]').waitFor();
   await until(() => state?.status === 'fighting', 'real fighting snapshots');
   assert.equal(starts.length, 1);
-  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), 4, 'lobby grant must carry into game without a new native request');
+  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), expectedNativeCalls, 'lobby grant must carry into game without a new native request');
   assert(!(await page.getByTestId('motion-gate').isVisible()), 'ready lobby entry must not show countdown permission overlay');
-  check('only ready lobby entry starts match and carries native grant into game', { starts: starts.length, source: inputs.at(-1)?.frame.source, nativeCalls: 4 });
+  check('only ready lobby entry starts match and carries native grant into game', { starts: starts.length, source: inputs.at(-1)?.frame.source, nativeCalls: expectedNativeCalls });
 
   // Preserve in-game loss/recovery coverage after the legitimate pre-fight gate.
   const lostSeq = lastSeq();
@@ -218,7 +227,7 @@ try {
   const recovered = await until(() => inputs.find(input => input.frame.seq > fallbackPacket.seq && input.frame.source === 'motion')?.frame, 'recovered motion input');
   await until(() => ack >= recovered.seq, 'server ack for recovered motion');
   await sleep(250);
-  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), 4);
+  assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), expectedNativeCalls);
   check('fresh in-game readings recover motion and dismiss gate without re-request', { seq: recovered.seq, ack, horizontalReference: [0, 0] });
   for (const direction of [
     { name: 'right roll', beta: 0, gamma: 15, axis: 'x', sign: 1 },

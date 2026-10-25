@@ -1,3 +1,15 @@
+DONE (first-run onboarding harness update)
+
+Holding-deploy fix: shared tools/onboarding.ts performs real UI control choice + settings-close Continue (including Continue without practice); no modal removal/storage bypass. Motion harness selects motion in first-run sheet (native denial is retained in call baseline), closes via Continue, then opens real Settings from lobby for denied/retry/pending/granted-no-events readiness checks. START stays blocked until fresh events/server controlsReady as before. Generic playtest selects explicit touch for emulated phone/keyboard desktop; phone-audio's first activation is now the real touch onboarding interaction. Avoiding edits to lead-owned permission-gate.ts and already-dirty safari-autopsy.ts; those can consume shared helper. App/shared untouched, no commits/service lifecycle. Staging5176 b13e8e3 verification next.
+
+## Staging b13e8e3 deploy-hold verification
+- `MOTION_URL=http://localhost:5176 npx tsx tools/motion-v3.ts`:33PASS,633authoritative snapshots,953input frames,0errors. Artifact `docs/shots/2026-10-25T00-18-58-800Z-motion-v3/summary.json`. Real first-run sheet selects motion, native denial is observed, then real Continue without practice dismisses it. Lobby Settings is opened/closed via actual UI for denial/retry; original START/native/fresh-reading/authoritative/moving+attack checks remain green. Onboarding adds2native calls to the baseline; lobby denial+retry add4, and game reuses all6 correctly. No storage/modal bypass.
+- Generic staging playtest (2players,8s,pallets/flask):exit0/timed-fight. Desktop chose keyboard+Continue; phone chose touch+Continue without practice through the sheet. Artifact `docs/shots/2026-10-25T00-20-00-753Z-2773824/summary.json`.
+- CLI+browser fixtures18PASS; strict TypeScript for touched tools and whitespace PASS. Shared helper tools/onboarding.ts is a new file and must be included with harness changes.
+- Helper integrated into motion-v3, generic playtest, phone-audio and safari-autopsy realBattle entry. Safari's pre-existing uncommitted changes preserved; only import + realBattle onboarding hook added. phone-audio/safari entry hooks typechecked; their full audio/layout suites not rerun for this quick deploy-hold fix.
+- Lead-owned tools/permission-gate.ts was intentionally NOT edited (prior explicit ownership instruction). It can reuse completeLandingOnboarding + openControlSettings/closeControlSettings and must account for any native calls made by motion choice in onboarding. Current settings moved controls out of the inline lobby, so invoking settings-open is required.
+- No app/shared edits, service restarts, production snapshot modifications or commits. Stage5176 reused as requested.
+
 DONE (production snapshot motion verification)
 
 Take-lead frozen production snapshot http://localhost:45093 validated once (no DEV rerun): `MOTION_URL=http://localhost:45093 npx tsx tools/motion-v3.ts` →30PASS,532authoritative snapshots,794input frames,0page/WS/protocol/console errors, exactly1start message after controlsReady. Artifact `docs/shots/2026-10-24T21-18-36-729Z-motion-v3/summary.json`.

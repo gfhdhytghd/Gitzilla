@@ -2,6 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page } from 'playwright';
+import { completeLandingOnboarding } from './onboarding';
 import type { Autopsy, ClientMsg, GameMode, InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -274,6 +275,10 @@ export async function playtest(options: Options): Promise<number> {
     const owner = clients[0];
     phase = 'landing';
     await Promise.all(clients.map(client => client.page.goto(baseURL, { waitUntil: 'domcontentloaded' })));
+    await Promise.all(clients.map(async client => {
+      const result = await completeLandingOnboarding(client.page, { controls: 'touch', touch: client.phone });
+      if (result.shown) note(`${client.name}: completed onboarding with ${result.controls} / ${result.continuedWith}`);
+    }));
     try { await required(owner, 'create-room'); }
     finally { await capturePair('landing'); }
     const ownerName = owner.page.getByTestId('player-name');
@@ -294,6 +299,7 @@ export async function playtest(options: Options): Promise<number> {
     }
     await Promise.all(clients.slice(1).map(async client => {
       await client.page.goto(`${baseURL}/r/${room}${client.spectator ? '?screen=1' : ''}`, { waitUntil: 'domcontentloaded' });
+      await completeLandingOnboarding(client.page, { controls: 'touch', touch: client.phone });
       if (!client.spectator) await optionalJoin(client);
     }));
     phase = 'repository selection';
