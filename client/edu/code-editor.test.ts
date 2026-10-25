@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pythonClassroomPlan } from "../../shared/classroom-presets.ts";
-import { highlight, newlineEdit, seeded, tabEdit, tokenizeLine } from "./code-editor.ts";
+import { backspaceEdit, changedRange, highlight, newlineEdit, seeded, tabEdit, tokenizeLine } from "./code-editor.ts";
 
 const kinds = (line: string, inStr: string | null = null) => tokenizeLine(line, inStr).toks.filter((t) => t.t !== "txt").map((t) => `${t.t}:${t.s}`);
 
@@ -60,6 +60,45 @@ describe("editing helpers", () => {
     const de = tabEdit(ind.text, 0, ind.text.length, true);
     expect(de.text).toBe(src);
     expect(tabEdit("  x", 3, 3, true).text).toBe("x"); // dedent removes up to 4 leading spaces
+  });
+
+  it("Backspace in leading spaces goes back to the previous 4-column stop", () => {
+    const at = (spaces: number, rest = "x") => { const t = "a\n" + " ".repeat(spaces) + rest; return backspaceEdit(t, 2 + spaces, 2 + spaces); };
+    expect(at(8)).toEqual({ text: "a\n    x", start: 6, end: 6 });
+    expect(at(6)).toEqual({ text: "a\n    x", start: 6, end: 6 });
+    expect(at(4)!.text).toBe("a\nx");
+    expect(at(3)!.text).toBe("a\nx");
+    expect(at(5)!.text).toBe("a\n    x");
+    expect(at(1)).toBeNull();                  // one space: a normal Backspace does the same
+    expect(at(0)).toBeNull();                  // line start: normal Backspace joins the lines
+  });
+
+  it("an all-whitespace line dedents too, so Backspace undoes the auto-indent after ':'", () => {
+    const t = "for i in range(3):";
+    const nl = newlineEdit(t, t.length, t.length);
+    const back = backspaceEdit(nl.text, nl.start, nl.end)!;
+    expect(back.text).toBe(t + "\n");
+    expect(back.start).toBe(back.text.length);
+    const deeper = "    if x:\n        ";   // caret at the end of an 8-space blank line
+    expect(backspaceEdit(deeper, deeper.length, deeper.length)!.text).toBe("    if x:\n    ");
+  });
+
+  it("edits only the changed range (one small undo step)", () => {
+    const apply = (b: string, r: ReturnType<typeof changedRange>) => b.slice(0, r.from) + r.insert + b.slice(r.to);
+    for (const [b, a] of [["a\n        x", "a\n    x"], ["if x:", "if x:\n    "], ["abc", "abc"], ["", "print()"], ["x", ""], ["    a\n    b", "a\nb"]]) {
+      const r = changedRange(b, a);
+      expect(apply(b, r)).toBe(a);
+    }
+    expect(changedRange("a\n        x", "a\n    x")).toEqual({ from: 6, to: 10, insert: "" });
+    expect(changedRange("if x:", "if x:\n    ")).toEqual({ from: 5, to: 5, insert: "\n    " });
+  });
+
+  it("keeps the normal Backspace after code, with a selection, or with tabs", () => {
+    expect(backspaceEdit("    x = 1", 9, 9)).toBeNull();          // after code
+    expect(backspaceEdit("    x   ", 8, 8)).toBeNull();           // spaces after code
+    expect(backspaceEdit("        x", 2, 6)).toBeNull();          // selection
+    expect(backspaceEdit("\t  x", 3, 3)).toBeNull();              // a tab in the indent
+    expect(backspaceEdit("        x", 6, 6)).toEqual({ text: "      x", start: 4, end: 4 }); // caret inside the indent: col 6 → 4, the 2 spaces after it stay
   });
 });
 

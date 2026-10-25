@@ -90,6 +90,27 @@ export function newlineEdit(text: string, start: number, end: number): Edit {
   return { text: text.slice(0, start) + ins + text.slice(end), start: start + ins.length, end: start + ins.length };
 }
 
+/** The smallest edit turning `before` into `after`: replace before[from..to) with `insert`. */
+export function changedRange(before: string, after: string): { from: number; to: number; insert: string } {
+  const max = Math.min(before.length, after.length);
+  let a = 0;
+  while (a < max && before[a] === after[a]) a++;
+  let b = 0;
+  while (b < max - a && before[before.length - 1 - b] === after[after.length - 1 - b]) b++;
+  return { from: a, to: before.length - b, insert: after.slice(a, after.length - b) };
+}
+
+/** Backspace in leading spaces (no selection, only spaces between line start and caret): back to the previous
+ *  4-column stop, like Tab in reverse (8 → 4, 6 → 4, 3 → 0). null = let the browser do a normal Backspace. */
+export function backspaceEdit(text: string, start: number, end: number): Edit | null {
+  if (start !== end) return null;
+  const ls = lineStart(text, start);
+  const col = start - ls;
+  if (col < 2 || !/^ +$/.test(text.slice(ls, start))) return null;
+  const at = ls + Math.floor((col - 1) / 4) * 4;
+  return { text: text.slice(0, at) + text.slice(start), start: at, end: at };
+}
+
 /** Tab / Shift+Tab: insert 4 spaces at the caret, or (de)indent every selected line. */
 export function tabEdit(text: string, start: number, end: number, dedent: boolean): Edit {
   const multi = text.slice(start, end).includes("\n");
@@ -272,9 +293,12 @@ export function createCodeEditor(opts: CodeEditorOpts): CodeEditor {
 
   const apply = (e: Edit) => {
     ta.focus();
-    // replace the whole value through setRangeText so the change is a single undoable edit where supported
-    ta.setSelectionRange(0, ta.value.length);
-    if (!document.execCommand?.("insertText", false, e.text)) ta.value = e.text;
+    // replace only the changed range through execCommand so it is one native undo step, and Ctrl+Z puts the caret
+    // back there (replacing the whole value left everything selected after undo: the next key wiped the file)
+    const r = changedRange(ta.value, e.text);
+    ta.setSelectionRange(r.from, r.to);
+    const ok = r.insert ? document.execCommand?.("insertText", false, r.insert) : document.execCommand?.("delete");
+    if (!ok || ta.value !== e.text) ta.value = e.text;
     ta.setSelectionRange(e.start, e.end);
     commit();
   };
@@ -290,7 +314,17 @@ export function createCodeEditor(opts: CodeEditorOpts): CodeEditor {
     } else if (ev.key === "Enter" && !ev.shiftKey && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
       ev.preventDefault();
       apply(newlineEdit(ta.value, ta.selectionStart, ta.selectionEnd));
+    } else if (ev.key === "Backspace" && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+      const e = backspaceEdit(ta.value, ta.selectionStart, ta.selectionEnd);
+      if (e) { ev.preventDefault(); apply(e); }
     }
+  });
+  // soft keyboards (Android reports key "Unidentified"; iOS may skip keydown): the same dedent from beforeinput.
+  // A keydown that already handled Backspace was prevented, so this doesn't fire twice.
+  ta.addEventListener("beforeinput", (ev) => {
+    if (readOnly || ev.isComposing || ev.inputType !== "deleteContentBackward") return;
+    const e = backspaceEdit(ta.value, ta.selectionStart, ta.selectionEnd);
+    if (e) { ev.preventDefault(); apply(e); }
   });
 
   show();

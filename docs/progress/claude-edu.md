@@ -1,3 +1,39 @@
+# DONE (backspace dedent)
+
+User request via the coordinator. `client/edu/code-editor.ts` + `code-editor.test.ts`. Not committed.
+- **Backspace dedent:**
+  - New pure helper `backspaceEdit(text, start, end)`. With no selection and only spaces between the line start and
+    the caret, Backspace goes back to the previous 4-column stop: 8 → 4, 6 → 4, 3 → 0, 5 → 4.
+  - A blank, all-space line works the same way, so one Backspace undoes the auto-indent after `:`.
+  - Normal Backspace everywhere else: after code, with a selection, at the line start, with 1 space, with a tab in
+    the indent, or with Ctrl / Alt / Meta held.
+- **Desktop and soft keyboards:**
+  - Desktop uses keydown `Backspace`.
+  - Soft keyboards (Android reports "Unidentified", and iOS may skip keydown) use `beforeinput` with
+    `deleteContentBackward`. The same helper runs there, and preventDefault stops a second run.
+- **Undo, and a fix to the shared insert path (`apply`, also used by Tab and Enter):**
+  - Before: the whole textarea value was replaced, so after Ctrl+Z all the code stayed selected and the next key
+    wiped the file.
+  - Now `changedRange(before, after)` (pure, tested) replaces only the changed range with execCommand
+    insertText / delete. It's still one native undo step, and Ctrl+Z now selects just the restored spaces.
+  - It falls back to setting the value if execCommand fails.
+
+**Verified:**
+- **WebKit:** desktop 1280 and iPhone 15, a real student editor on :5175. Script:
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/backspace-shots.mts
+  (output in backspace3/). Results on both devices:
+  - Enter after `for …:` gives 4 spaces; one Backspace leaves the line empty;
+  - Ctrl+Z brings the 4 spaces back, with only them selected and the code intact;
+  - Tab then Backspace gives 8 → 4;
+  - `ab` + Backspace gives `a` (normal);
+  - a synthetic cancelable beforeinput deleteContentBackward on a 6-space line is prevented and leaves 4 spaces;
+  - Tab + Ctrl+Z restores the text;
+  - 0 page errors.
+- **Checks:** tsc clean; `vitest client/edu` 79 passed.
+- **Not caused by this change:** on iPhone 15 the editor is scrolled 25px sideways right after the first tap +
+  Ctrl+End (`.ce-scroll`), before any Backspace or Tab, so the first characters of each line are hidden until you
+  scroll back. Say if you want it fixed.
+
 # DONE (feedback panel)
 
 Coordinator follow-up to the task card: the student "Your feedback" panel. Only `client/app/classroom.ts` and `.css`
