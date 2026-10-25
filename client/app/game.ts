@@ -11,6 +11,7 @@ import { createHud, rankPvp } from "./hud";
 import { createElimTracker, createKillFeed, createSpectateBanner, handle, royaleOf, worldSize } from "./royale";
 import { ARCH, archetypeWhy } from "./archetype";
 import { markCanvas } from "./mark";
+import { wordmark } from "./wordmark";
 import { loadGestureProfile, toThresholds } from "./training";
 import { type GenesisHandle, playGenesis } from "../genesis";
 import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay } from "../edu";
@@ -61,7 +62,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const gestStatus = h("div.gest-status", { "data-testid": "gesture-status" }, gsSkill, gsDash);
   const deck = h("div.deck", null, sensorRow, gestStatus, deckMid);
   const lateQr = spectator
-    ? h("div.late-qr", null, h("div.lq-brand", null, markCanvas(2), h("span", null, h("b.g", null, "GIT"), h("b.z", null, "ZILLA"))), h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
+    ? h("div.late-qr", null, h("div.lq-brand", null, markCanvas(2), wordmark({ width: "120px" })), h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
     : null;
   // ☰ menu: leave the fight (with a confirm), resume
   // ---------------- host pause (ClientMsg pause / MatchState.paused) ----------------

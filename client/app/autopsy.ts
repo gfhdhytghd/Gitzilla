@@ -5,6 +5,7 @@ import { type AppCtx, type Screen, isOwner } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createHallBoard } from "./hall";
 import { markCanvas } from "./mark";
+import { WORDMARK_H, WORDMARK_W, wordmark, wordmarkImage } from "./wordmark";
 import { codeSpan, drawCode } from "./codefmt";
 import { ARCH } from "./archetype";
 import { reportCard } from "./report";
@@ -26,9 +27,13 @@ function brag(a: Autopsy, pid: string, bossRepo: string): string {
   return `${me} helped delete ${boss} in ${fmtTime(a.duration)}.`;
 }
 
+/** Small hand-drawn wordmark above every autopsy verdict (links home). */
+const apBrand = () => h("a.ap-brand", { href: "/", "aria-label": "GITZILLA home" }, wordmark({ width: "min(44vw, 190px)" }));
+
 /** 1200x630 share card rendered from pixel-art portraits. */
 async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, heroKit: PlayerKit | null): Promise<HTMLCanvasElement> {
   await fontsReady;
+  const wm = await wordmarkImage();
   const W = 1200, H = 630;
   const c = document.createElement("canvas");
   c.width = W;
@@ -98,13 +103,20 @@ async function renderCard(a: Autopsy, pid: string, bossKit: BossKit | null, hero
       g.fillText(t("★ MVP"), 330, 440);
     }
   }
-  // brand mark + wordmark in the corner
+  // brand: pixel kaiju mark + the hand-drawn wordmark (pixel text if the image can't load)
   g.drawImage(markCanvas(3), 52, H - 112);
-  g.font = '22px "Press Start 2P", "Unifont", monospace';
-  g.fillStyle = "#2fe39a";
-  g.fillText(t("GIT"), 196, H - 84);
-  g.fillStyle = "#ff3e9a";
-  g.fillText(t("ZILLA"), 196 + g.measureText(t("GIT")).width, H - 84);
+  if (wm) {
+    const wh = 44, ww = Math.round((wh * WORDMARK_W) / WORDMARK_H); // ends at x≈319, left of the stats line (x 330)
+    g.imageSmoothingEnabled = true;
+    g.drawImage(wm, 196, H - 114, ww, wh);
+    g.imageSmoothingEnabled = false;
+  } else {
+    g.font = '22px "Press Start 2P", "Unifont", monospace';
+    g.fillStyle = "#2fe39a";
+    g.fillText("GIT", 196, H - 84);
+    g.fillStyle = "#ff3e9a";
+    g.fillText("ZILLA", 196 + g.measureText("GIT").width, H - 84);
+  }
   g.fillStyle = "rgba(255,255,255,.4)";
   g.font = '26px "Unifont", "VT323", monospace';
   g.fillText(t("$ play at HackPSU · your repo is a kaiju"), 196, H - 52);
@@ -278,6 +290,7 @@ export function createAutopsy(app: AppCtx): Screen {
       h(
         "header.ap-head",
         null,
+        apBrand(),
         h("div.ap-verdict" + (a.victory ? ".win" : ".loss"), null, a.victory ? "VICTORY" : "DEFEAT"),
         h("div.ap-sub", null, `$ autopsy --boss ${a.boss.repo} · ${fmtTime(a.duration)} · exit ${a.victory ? "0 (boss deleted)" : "1 (squad wiped)"}`),
         h("div.ap-top-actions", null,
@@ -392,6 +405,7 @@ function createPvpAutopsy(app: AppCtx): Screen {
       h(
         "header.ap-head",
         null,
+        apBrand(),
         h("div.ap-verdict.win", null, "CLASS RESULTS"),
         h("div.ap-sub", null, `$ make grade · ${fmtTime(a.duration)} · winner: ${winner ? winner.name : "—"}${me ? ` · you: #${ranking.indexOf(me) + 1}` : ""}`),
         h("div.ap-top-actions", null,
@@ -514,6 +528,7 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
       h(
         "header.ap-head",
         null,
+        apBrand(),
         h(`div.ap-verdict.${mine && mine.place === 1 ? "win" : mine ? "loss" : "win"}`, null, mine ? (mine.place === 1 ? "LAST ONE STANDING" : `#${mine.place} / ${rows.length}`) : "PVP ROYALE"),
         h("div.ap-sub", null, `$ git log --royale · ${rows.length} heroes · ${fmtTime(a.duration)}`),
         mine && mine.place !== 1

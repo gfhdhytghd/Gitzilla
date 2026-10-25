@@ -5,7 +5,8 @@ import { toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { fetchMe } from "./github";
 import { createHallBoard } from "./hall";
-import { createLogo } from "./logo";
+import { createMarkAnim } from "./logo";
+import { wordmark } from "./wordmark";
 import { demoBossKit, demoPlayerKit } from "./mock";
 import { audio } from "./sound";
 import { h, isTouchDevice, store, typeInto } from "./util";
@@ -50,11 +51,15 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
     boss: demoBossKit("lodash/lodash"),
     heroes: ["facebook/react", "torvalds/linux", "pallets/flask", "rust-lang/rust"].map(demoPlayerKit),
   });
-  // row lockup (188x28 low-res) on wide screens, stacked (140x54) on phones
+  // lockup: the roaring pixel kaiju mark + the hand-drawn wordmark (beside it on wide screens, above it on phones)
   const stack = innerWidth < 700;
-  const logo = stack
-    ? createLogo(Math.max(1, Math.min(3, Math.floor((innerWidth * 0.8) / 106))), "stack")
-    : createLogo(Math.max(2, Math.min(5, Math.floor(Math.min(innerWidth * 0.8, innerHeight < 800 ? 760 : 940) / 154))), "row");
+  const logo = createMarkAnim(stack ? 3 : innerHeight < 800 ? 4 : 5);
+  const lockup = h(
+    `div.brand-lockup${stack ? ".stack" : ""}`,
+    { "data-testid": "brand-lockup" },
+    h("div.bl-mark", null, logo.canvas),
+    wordmark({ width: stack ? "min(86vw, 420px)" : "min(56vw, 600px)", enter: true, sparkle: true }),
+  );
   const tag = h("span.typed");
   let tagIdx = 0;
   let cancelType = () => {};
@@ -136,7 +141,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
     h(
       "main.landing-inner",
       null,
-      h("div.logo-wrap", null, logo.canvas),
+      h("div.logo-wrap", null, lockup),
       h("p.tagline", null, h("span.prompt", null, "> "), tag, h("span.cursor", null, "_")),
       h(
         "div.landing-actions",

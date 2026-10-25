@@ -179,3 +179,27 @@ export function createLogo(scale: number, layout: "row" | "stack" = "row"): Logo
   }
   return { canvas, destroy: () => cancelAnimationFrame(raf) };
 }
+
+/** Just the pixel kaiju mark, animated (roaring </>, plate wave, gentle bob), upscaled by an integer factor. */
+export function createMarkAnim(scale: number): Logo {
+  const src = document.createElement("canvas");
+  src.width = MARK_W;
+  src.height = MARK_H + 2; // room for the 1px bob
+  const canvas = document.createElement("canvas");
+  canvas.className = "logo-mark";
+  canvas.width = src.width * scale;
+  canvas.height = src.height * scale;
+  let raf = 0;
+  const draw = (now: number) => {
+    raf = requestAnimationFrame(draw);
+    const s = src.getContext("2d")!;
+    s.clearRect(0, 0, src.width, src.height);
+    drawMark(s, 0, 1 + Math.round(Math.sin(now / 500)), now / 1000);
+    const g = canvas.getContext("2d")!;
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    g.drawImage(src, 0, 0, canvas.width, canvas.height);
+  };
+  raf = requestAnimationFrame(draw);
+  return { canvas, destroy: () => cancelAnimationFrame(raf) };
+}

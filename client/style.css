@@ -1180,7 +1180,7 @@ body.bigscreen .pcard-name { font-size: 14px; }
 body.bigscreen .pcard-info { font-size: 22px; }
 body.bigscreen .squad-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 .late-qr { position: absolute; right: 10px; bottom: 10px; z-index: 7; background: #fff; padding: 6px; text-align: center; font-family: var(--pix); font-size: 10px; color: #000; box-shadow: 0 0 0 3px var(--green); }
-.late-qr img { width: 120px; height: 120px; display: block; image-rendering: pixelated; }
+.late-qr > img { width: 120px; height: 120px; display: block; image-rendering: pixelated; }
 /* P2-6 */
 .mark-short { display: none; }
 @media (max-width: 600px) and (orientation: portrait) {
@@ -1700,3 +1700,36 @@ body.bigscreen .spectate { display: none; }
 .screen.game.phone-portrait.royale .deck .tm-row.has-pow { grid-template-columns: minmax(0, 1fr) auto 22px auto; gap: 3px; }
 .screen.game.phone-portrait.royale .deck .tm-st { font-size: 11px; }
 .screen.game.phone-portrait.royale .deck .hud-combo { display: none; } /* co-op sync combos mean nothing in a free-for-all */
+
+/* ---------------- hand-drawn GITZILLA wordmark (claude-ui) ---------------- */
+.wm { position: relative; display: inline-block; width: var(--wm-w); max-width: 100%; line-height: 0; vertical-align: middle; }
+.wm picture, .wm-img { display: block; width: 100%; height: auto; }
+.wm-img { image-rendering: auto; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 4px 0 rgba(0,0,0,.55)); }
+/* tiny drop-in bounce (hand-drawn art: smooth easing, not stepped) */
+.wm-enter { animation: wm-in .9s cubic-bezier(.2,.9,.3,1.25) both; transform-origin: 50% 100%; }
+@keyframes wm-in {
+  0% { opacity: 0; transform: translateY(-18px) scale(.92); }
+  55% { opacity: 1; transform: translateY(3px) scale(1.04, .95); }
+  75% { transform: translateY(-2px) scale(.99, 1.02); }
+  100% { opacity: 1; transform: none; }
+}
+/* sparkle twinkle over the drawn pixel sparkle (i of ZILLA) and the skull (i of GIT) */
+.wm-spark { position: absolute; left: 59.5%; top: 20.5%; width: 9%; aspect-ratio: 1; transform: translate(-50%, -50%) scale(.4); pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, #fff 0 8%, transparent 9%), linear-gradient(90deg, transparent 46%, #eafff6 46% 54%, transparent 54%), linear-gradient(transparent 46%, #eafff6 46% 54%, transparent 54%);
+  -webkit-mask: radial-gradient(circle, #000 0 30%, transparent 62%); mask: radial-gradient(circle, #000 0 30%, transparent 62%);
+  mix-blend-mode: screen; filter: drop-shadow(0 0 6px #7dffcf); animation: wm-twinkle 2.6s 1s ease-in-out infinite; }
+.wm-spark-2 { left: 24.3%; top: 15.7%; width: 6%; animation-delay: 2.3s; animation-duration: 3.4s; filter: drop-shadow(0 0 5px #ff9ccc); }
+@keyframes wm-twinkle {
+  0%, 62%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0deg); }
+  72% { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(45deg); }
+  84% { opacity: .55; transform: translate(-50%, -50%) scale(.8) rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) { .wm-enter, .wm-spark { animation: none; } }
+.brand-lockup { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 24px); max-width: 94vw; }
+.brand-lockup.stack { flex-direction: column; gap: 4px; }
+.bl-mark .logo-mark { display: block; image-rendering: pixelated; max-width: 30vw; height: auto; }
+.brand-lockup.stack .bl-mark .logo-mark { max-width: 40vw; }
+.ap-brand { display: inline-block; margin: 0 auto 2px; line-height: 0; }
+.ap-brand .wm-img { filter: drop-shadow(0 3px 0 rgba(0,0,0,.6)); }
+.qr-lockup .bl-mark .logo-mark { max-width: 40%; }
+.lq-brand .wm { width: 96px; } /* white card: the wordmark keeps its own outline */

@@ -11,7 +11,8 @@ import { ARCH, archetypeWhy } from "./archetype";
 import { createGenesisMount } from "./genesisMount";
 import { openSettings } from "./settings";
 import { getMotionPermissionState, subscribeMotionPermission } from "../input";
-import { createLogo } from "./logo";
+import { createMarkAnim } from "./logo";
+import { wordmark } from "./wordmark";
 import { markCanvas } from "./mark";
 import { MOCK_REPOS } from "./mock";
 import { R, X } from "./renderers";
@@ -534,15 +535,16 @@ export function createLobby(app: AppCtx): Screen {
   const qrHelp2 = h("div.qr-help.yellow", null, "★ the first phone to join is the host");
   const classCounter = h("div.class-counter", { hidden: true });
   let body: HTMLElement;
+  let screenLogo: { destroy(): void } | null = null; // the projector's animated mark (stopped on destroy)
   if (screen) {
-    const logo = createLogo(3, "stack");
+    const logo = (screenLogo = createMarkAnim(3));
     body = h(
       "div.lobby-big",
       null,
       h(
         "section.panel.qr-panel",
         null,
-        h("div.logo-wrap.small", null, logo.canvas),
+        h("div.logo-wrap.small", null, h("div.brand-lockup.stack.qr-lockup", null, h("div.bl-mark", null, logo.canvas), wordmark({ width: "min(100%, 300px)", enter: true, sparkle: true }))),
         h("img.qr", { src: `/api/qr?text=${encodeURIComponent(url)}`, alt: "join QR code" }),
         h("div.qr-url", null, url.replace(/^https?:\/\//, "")),
         h("div.qr-code-big", null, app.room),
@@ -1063,6 +1065,7 @@ export function createLobby(app: AppCtx): Screen {
       removeEventListener("resize", onResize);
       heroGenesis.dispose();
       bossGenesis.dispose();
+      screenLogo?.destroy();
       closeBossFull();
       backdrop.destroy();
       el.remove();

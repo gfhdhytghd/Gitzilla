@@ -17,6 +17,7 @@ import type { InAppFile } from '../../shared/classroom';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
 import { createPauseOverlay } from './pause';
+import { wordmark } from './wordmark';
 
 const setText = (el: HTMLElement, s: string) => { if (el.textContent !== s) el.textContent = s; };
 /** Scores, HP and damage read as whole numbers ("100", not "100.0"). */
@@ -60,7 +61,7 @@ export function createClassroom(app: AppCtx): Screen {
   const clock = h('strong.cr-clock', { 'data-testid': 'classroom-clock' });
   const progress = h('div.cr-class-progress', { 'data-testid': 'classroom-progress' });
   const head = h('header.cr-header', null,
-    h('a.cr-brand', { href: '/' }, 'GIT', h('span', null, 'ZILLA'), h('small', null, 'classroom')),
+    h('a.cr-brand', { href: '/', 'aria-label': 'GITZILLA classroom' }, wordmark({ width: projectorView ? '230px' : 'clamp(116px, 28vw, 168px)' }), h('small', null, 'classroom')),
     h('div.cr-title', null, title, phase),
     app.role === 'screen'
       ? h('button.cr-room.cr-room-btn', { type: 'button', 'data-testid': 'classroom-show-join', title: 'Show the QR code and join link', onclick: () => { joinOverlay.hidden = !joinOverlay.hidden; } },

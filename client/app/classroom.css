@@ -37,6 +37,7 @@
 
 .cr-header { display:flex; align-items:center; gap:24px; padding:4px 0 18px; border-bottom:2px dashed var(--green-d); }
 .cr-brand { flex:none; font:16px/1 var(--pix); text-decoration:none; color:var(--cr-green)!important; text-shadow:3px 3px 0 #000; }
+.cr-brand .wm { display:block; }.cr-brand .wm-img { filter:drop-shadow(0 3px 0 rgba(0,0,0,.6)); }
 .cr-brand>span { color:var(--cr-amber); }.cr-brand small { display:block; margin-top:8px; font:9px var(--small); letter-spacing:2px; text-transform:uppercase; color:var(--cr-muted); }
 .cr-title { flex:1; min-width:0; display:grid; gap:6px; }.cr-phase { font:10px/1.4 var(--small); letter-spacing:1px; text-transform:uppercase; color:var(--cr-amber); }
 .cr-phase::before { content:"▶ "; }
