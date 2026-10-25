@@ -3,7 +3,7 @@
 // ellipses in a 100-unit figure space) is rasterized at any height (32 px in-game, 64 edu, 96 portraits),
 // then pixel-art passes add plate seams, bevels, rim light, a 1px outline and glows. Code identity stays:
 // cursor visor ">_", syntax-striped armor, the repo token etched on the chest, real code on the cape.
-import type { HeroLook } from "./look.ts";
+import { ELEMENTS, type HeroLook } from "./look.ts";
 import { hexToHsl, hslToHex, light, mix, shade } from "./color.ts";
 import { glyphBits } from "./font.ts";
 
@@ -28,6 +28,7 @@ interface Part {
   glow?: boolean;   // painted after all passes, never outlined/shaded
   code?: boolean;   // detail line: only drawn from res 2 up (too noisy at 32 px)
   cape?: boolean;   // code-cape surface
+  cloth?: boolean;  // receives the hero's pattern (stripes / circuit / runes / chevron)
 }
 
 interface Arch {
@@ -43,33 +44,73 @@ const ARCH: Record<string, Arch> = {
   rogue:    { sh: 15, pa: 8, chest: 12, waist: 8, hip: 10, leg: 4.6, stance: 17, head: 6.6, robe: false, cape: 0.85, knee: 26, spikes: 1, bulk: 0.95 },
 };
 
+/** 3 silhouettes per class (variant 0 = the base ARCH above). */
+const BODY: Record<string, [Partial<Arch>, Partial<Arch>]> = {
+  knight:   [{ sh: 16, pa: 9, chest: 13, waist: 8, leg: 4.8, stance: 16, bulk: 1.0, spikes: 0, cape: 1.0, head: 7 },             // duelist
+             { sh: 22, pa: 16, chest: 19, waist: 13, leg: 6.6, stance: 13, bulk: 1.3, spikes: 2, cape: 0.5, head: 7.6 }],        // juggernaut
+  heavy:    [{ sh: 26, pa: 19, chest: 22, waist: 16, leg: 8.4, knee: 23, head: 6.2, spikes: 3, bulk: 1.5 },                     // siege
+             { sh: 21, pa: 11, chest: 18, waist: 11, leg: 7, stance: 19, spikes: 0, bulk: 1.3, head: 7.4 }],                   // brute
+  ranger:   [{ sh: 14, pa: 6, chest: 11, waist: 8, leg: 4.3, stance: 18, bulk: 0.9, cape: 0.6 },                                 // scout
+             { sh: 18, pa: 10, chest: 14, waist: 10, leg: 5.4, stance: 12, bulk: 1.12, cape: 1.0, spikes: 1 }],                // marksman
+  mage:     [{ robe: false, sh: 18, pa: 12, leg: 5, stance: 11, bulk: 1.1, cape: 0.9 },                                          // battlemage
+             { sh: 21, pa: 15, hip: 18, spikes: 2, bulk: 1.15, cape: 1.0 }],                                                     // archon
+  engineer: [{ sh: 21, pa: 15, chest: 18, waist: 12, leg: 7, bulk: 1.35, knee: 25, head: 8 },                                    // mech
+             { sh: 15, pa: 8, chest: 12, waist: 9, leg: 4.8, stance: 14, bulk: 0.95, cape: 0.6 }],                             // tinkerer
+  rogue:    [{ sh: 13, pa: 6, chest: 10, waist: 7, leg: 4.2, stance: 20, bulk: 0.85, spikes: 0 },                               // assassin
+             { sh: 17, pa: 10, chest: 14, waist: 9, leg: 5.2, stance: 14, cape: 1.0, bulk: 1.05, spikes: 2 }],                 // corsair
+};
+
+function archFor(L: HeroLook): Arch {
+  const base = ARCH[L.cls] ?? ARCH.knight;
+  const v = L.gear?.body ?? 0;
+  if (!v) return base;
+  return { ...base, ...(BODY[L.cls] ?? BODY.knight)[v - 1] };
+}
+
 export interface GPalette {
   armor: string; armorL: string; armorD: string; trim: string; trimL: string; cloth: string; clothL: string; clothD: string;
   glow: string; glowL: string; skin: string; rim: string; outline: string; metal: string; dark: string;
 }
 
+const palCache = new Map<string, GPalette>();
 export function generalPalette(L: HeroLook): GPalette {
-  const c = L.c;
+  const hit = palCache.get(L.key);
+  if (hit) return hit;
+  const c = L.c, G = L.gear;
   const [ph, ps] = hexToHsl(c.primary);
-  // dark armor tinted by the primary hue; trims in the vivid primary; glows in the accent
-  const armor = hslToHex(ph, Math.min(0.42, ps * 0.5 + 0.1), 0.21);
-  const [sh2, ss] = hexToHsl(c.secondary);
-  const cloth = hslToHex(sh2, Math.min(0.7, ss), 0.3);
-  return {
-    armor, armorL: light(armor, 1.1), armorD: shade(armor, 0.6),
-    trim: mix(c.primaryL, "#ffe39a", 0.35), trimL: mix(c.primaryL, "#fff4cf", 0.55),
+  // armour material family (dark-tinted, obsidian, ivory, gunmetal, bronze, royal)
+  const fam = G?.armor ?? "tinted";
+  const armor = fam === "obsidian" ? hslToHex(ph, 0.18, 0.11)
+    : fam === "ivory" ? hslToHex(ph + 25, 0.2, 0.74)
+    : fam === "gunmetal" ? hslToHex(215, 0.12, 0.34)
+    : fam === "bronze" ? hslToHex(28, 0.48, 0.33)
+    : fam === "royal" ? hslToHex(ph, Math.min(0.75, ps * 0.8 + 0.15), 0.32)
+    : hslToHex(ph, Math.min(0.42, ps * 0.5 + 0.1), 0.21);
+  // trim family
+  const tf = G?.trim ?? "gold";
+  const trim = tf === "silver" ? "#dfe7f2" : tf === "copper" ? "#e08a4f" : tf === "primary" ? c.primaryL : mix(c.primaryL, "#ffe39a", 0.55);
+  const [sh2, ss, sl] = hexToHsl(c.secondary);
+  const cloth = hslToHex(sh2, Math.min(0.7, ss), Math.min(0.42, Math.max(0.24, sl * 0.62)));
+  const el = ELEMENTS[G?.element ?? "arcane"];
+  const out: GPalette = {
+    armor, armorL: light(armor, fam === "ivory" ? 0.5 : 1.1), armorD: shade(armor, fam === "ivory" ? 0.9 : 0.6),
+    trim, trimL: mix(trim, "#ffffff", 0.45),
     cloth, clothL: light(cloth, 0.8), clothD: shade(cloth, 0.7),
-    glow: c.accent, glowL: c.accentL, skin: c.skin,
-    rim: mix(c.accentL, "#ffffff", 0.15), outline: "#0a0710", metal: mix("#9aa6bd", armor, 0.35), dark: "#120e1a",
+    glow: el.c, glowL: el.cL, skin: c.skin,
+    rim: mix(el.cL, "#ffffff", 0.15), outline: "#0a0710", metal: mix("#9aa6bd", armor, 0.35), dark: fam === "ivory" ? "#3a3448" : "#120e1a",
   };
+  if (palCache.size > 300) palCache.clear();
+  palCache.set(L.key, out);
+  return out;
 }
 
 // ------------------------------------------------------------------ rig
 interface Rig { parts: Part[]; hand: Pt; eye: Pt; capeTop: number }
 
 function rig(L: HeroLook, f: GFrame): Rig {
-  const A = ARCH[L.cls] ?? ARCH.knight;
+  const A = archFor(L);
   const P = generalPalette(L);
+  const G = L.gear;
   const run = f.pose === "run";
   const ph = run ? f.i % 4 : 0;
   const bob = run ? (ph % 2 === 1 ? -3 : 0) : f.i === 1 ? 1.5 : 0;   // breathing / run bob (units)
@@ -80,16 +121,22 @@ function rig(L: HeroLook, f: GFrame): Rig {
 
   const { sh, pa, chest, waist, hip, leg, stance, knee } = A;
   // ---------- cape (behind everything)
-  if (A.cape > 0 && (L.back === "cape" || L.back === "scarf" || L.cls === "mage" || L.cls === "knight" || L.cls === "rogue")) {
+  const coat = G?.coat ?? "cape";
+  if ((coat === "cape" || coat === "halfcape" || L.back === "cape" || L.back === "scarf") && A.cape > 0) {
     const fl = run ? 9 + (ph % 2) * 4 : f.i === 1 ? 2 : 0;
-    const len = 76 * A.cape;
+    const len = 76 * A.cape * (coat === "halfcape" ? 0.55 : 1);
     const top = Y(-80);
     const tatter = L.cls === "rogue";
     const p: Pt[] = [[-sh * 0.6, top], [sh * 0.45, top - 1], [sh * 0.1, top + len * 0.55], [-6 - fl * 0.4, top + len]];
     if (tatter) p.push([-12 - fl * 0.6, top + len - 7], [-17 - fl * 0.7, top + len - 1], [-22 - fl * 0.8, top + len - 9]);
     else p.push([-14 - fl * 0.6, top + len + 2], [-24 - fl, top + len - 3]);
     p.push([-sh - 8 - fl * 0.6, top + len * 0.45], [-sh - 2, top + 6]);
-    add({ t: "poly", p }, P.cloth, { cape: true });
+    add({ t: "poly", p }, P.cloth, { cape: true, cloth: true });
+  }
+  // long coat: back skirt behind the legs (front flaps are added after the legs)
+  if (coat === "longcoat" && !A.robe) {
+    const fl = run ? 5 : 0;
+    add({ t: "poly", p: [[-A.waist - 2, Y(-58)], [A.waist, Y(-58)], [A.hip + 2, -16], [-2, -12], [-A.hip - 8 - fl, -14]] }, shade(P.cloth, 0.35), { seam: true, cloth: true });
   }
   // ---------- back items
   if (L.back === "jetpack" || L.back === "laptop" || L.cls === "engineer") {
@@ -123,9 +170,17 @@ function rig(L: HeroLook, f: GFrame): Rig {
     kneeG(bKnee, shade(P.trim, 0.5));
     // tassets (plate skirt)
     add({ t: "poly", p: [[-hip - 1, Y(-54)], [hip + 1, Y(-54)], [hip + 2, Y(-40)], [3, Y(-43)], [-2, Y(-38)], [-hip - 2, Y(-41)]] }, P.armor, { seam: true });
+    if (coat === "longcoat") {
+      const sw2 = run ? [3, 0, -3, 0][ph] : 0;
+      add({ t: "poly", p: [[1, Y(-57)], [hip + 2, Y(-57)], [hip + 6 + sw2, -18], [hip - 1 + sw2, -15], [2, Y(-40)]] }, P.cloth, { seam: true, cloth: true });
+      add({ t: "poly", p: [[-hip - 2, Y(-57)], [-1, Y(-57)], [-2, Y(-40)], [-hip - 5 - sw2, -17], [-hip - 3, Y(-45)]] }, shade(P.cloth, 0.2), { seam: true, cloth: true });
+    } else if (coat === "tabard") {
+      add({ t: "poly", p: [[-4, Y(-57)], [6, Y(-57)], [5, Y(-30)], [1, Y(-26)], [-3, Y(-30)]] }, P.cloth, { seam: true, cloth: true });
+      add({ t: "poly", p: [[-4, Y(-57)], [6, Y(-57)], [6, Y(-55)], [-4, Y(-55)]] }, P.trim, { seam: true });
+    }
   } else {
     const fl = run ? 4 : 0;
-    add({ t: "poly", p: [[-waist - 1, Y(-58)], [waist + 1, Y(-58)], [hip + 9 + fl, -1], [hip * 0.3, 1], [-hip * 0.5, -2], [-hip - 10 - fl, 0]] }, P.cloth, { seam: true });
+    add({ t: "poly", p: [[-waist - 1, Y(-58)], [waist + 1, Y(-58)], [hip + 9 + fl, -1], [hip * 0.3, 1], [-hip * 0.5, -2], [-hip - 10 - fl, 0]] }, P.cloth, { seam: true, cloth: true });
     add({ t: "poly", p: [[-2, Y(-56)], [4, Y(-56)], [8, 0], [-5, 0]] }, P.trim, { seam: true });      // robe front panel
   }
 
@@ -149,10 +204,27 @@ function rig(L: HeroLook, f: GFrame): Rig {
     add({ t: "poly", p: [q(-pa * 0.9, -79), q(-pa * 0.2, -86), q(pa * 0.7, -85), q(pa * 1.1, -78), q(pa * 1.0, -71), q(-pa * 0.7, -72)] }, body, { seam: true }); // main plate
     add({ t: "poly", p: [q(-pa * 0.7, -73.5), q(pa * 1.02, -72.5), q(pa * 1.0, -70.5), q(-pa * 0.75, -71.2)] }, lip, { seam: true });                     // lip
   };
-  pauldron(-sh + 1, -1, P.armorD, shade(P.trim, 0.35));
-  pauldron(sh - 1, 1, P.armor, P.trim);
-  if (A.spikes) {
-    for (let k = 0; k < A.spikes; k++) {
+  const shoulders = G?.shoulders ?? "plate";
+  if (shoulders === "round") {
+    const rnd = (cx: number, body: string, lip: string) => {
+      add({ t: "ell", c: [cx, Y(-77)], rx: pa * 0.95, ry: pa * 0.75 }, body, { seam: true });
+      add({ t: "ell", c: [cx, Y(-72)], rx: pa * 0.9, ry: pa * 0.35 }, lip, { seam: true });
+    };
+    rnd(-sh + 1, P.armorD, shade(P.trim, 0.35));
+    rnd(sh - 1, P.armor, P.trim);
+  } else if (shoulders === "mantle") {
+    // fur/cloth mantle draped over both shoulders, jagged hem
+    const m: Pt[] = [[-sh - pa * 0.7, Y(-76)], [-sh * 0.4, Y(-85)], [sh * 0.5, Y(-85)], [sh + pa * 0.8, Y(-77)], [sh + pa * 0.6, Y(-69)]];
+    for (let k = 0; k <= 6; k++) { const x = sh + pa * 0.6 - ((sh + pa * 0.6) * 2 + pa * 0.1) * (k / 6); m.push([x, Y(k % 2 ? -66 : -70)]); }
+    add({ t: "poly", p: m }, mix(P.cloth, "#d8cbb0", 0.45), { seam: true, cloth: true });
+  } else if (shoulders !== "none") {
+    pauldron(-sh + 1, -1, P.armorD, shade(P.trim, 0.35));
+    pauldron(sh - 1, 1, P.armor, P.trim);
+  } else {
+    add({ t: "ell", c: [sh - 1, Y(-76)], rx: 4.5 * A.bulk, ry: 3.6 }, P.armor, { seam: true });
+  }
+  if ((A.spikes || shoulders === "spiked") && shoulders !== "mantle" && shoulders !== "none") {
+    for (let k = 0; k < Math.max(A.spikes, shoulders === "spiked" ? 3 : 0); k++) {
       const sx = sh - 2 + k * 5;
       add({ t: "poly", p: [[sx - 2.5, Y(-82)], [sx + 2.5, Y(-82)], [sx + 4, Y(-95 + k * 3)]] }, P.trimL, { seam: true });
       add({ t: "poly", p: [[-sh - 1 - k * 4, Y(-82)], [-sh + 4 - k * 4, Y(-83)], [-sh - 5 - k * 4, Y(-94 + k * 3)]] }, shade(P.trim, 0.3), { seam: true });
@@ -188,6 +260,31 @@ function paintHead(add: Add, L: HeroLook, A: Arch, P: GPalette, hc: Pt, e: GExpr
       add({ t: "ell", c: [cx, cy], rx: r * (heavy ? 1.15 : 1), ry: r * 1.12 }, P.armor, { seam: true });
       add({ t: "poly", p: [[cx - r * 0.2, cy - r * 1.1], [cx + r * 0.25, cy - r * 1.1], [cx + r * 0.25, cy + r * 0.9], [cx - r * 0.2, cy + r * 0.9]] }, P.trim, { seam: true }); // center ridge
       visor(cy + 0.5, cx - r * 0.2, cx + r * 1.05);
+      const helm = L.gear?.helm ?? "horned";
+      if (helm === "great") {
+        // flat-topped bucket helm + plume
+        add({ t: "poly", p: [[cx - r * 1.05, cy - r * 1.15], [cx + r * 1.1, cy - r * 1.15], [cx + r * 1.1, cy - r * 0.6], [cx - r * 1.05, cy - r * 0.6]] }, P.armorL, { seam: true });
+        add({ t: "poly", p: [[cx - r * 0.3, cy - r * 1.15], [cx + r * 0.3, cy - r * 1.15], [cx - r * 1.4, cy - r * 2.3], [cx - r * 2.6, cy - r * 1.0]] }, P.cloth, { seam: true, cloth: true });
+        break;
+      }
+      if (helm === "sallet") {
+        // swept-back sallet tail + raised crest ridge
+        add({ t: "poly", p: [[cx - r * 0.6, cy - r * 0.4], [cx - r * 0.9, cy + r * 0.7], [cx - r * 2.4, cy + r * 1.1], [cx - r * 1.6, cy + r * 0.2]] }, P.armorD, { seam: true });
+        add({ t: "poly", p: [[cx - r * 0.9, cy - r * 1.05], [cx + r * 0.6, cy - r * 1.2], [cx + r * 0.1, cy - r * 1.7], [cx - r * 1.3, cy - r * 1.4]] }, P.trimL, { seam: true });
+        break;
+      }
+      if (helm === "skull") {
+        // bone skull-mask face + curling horns
+        add({ t: "poly", p: [[cx - r * 0.1, cy - r * 0.6], [cx + r * 1.15, cy - r * 0.5], [cx + r * 1.2, cy + r * 0.8], [cx + r * 0.5, cy + r * 1.1], [cx - r * 0.1, cy + r * 0.7]] }, "#e9e1cc", { seam: true });
+        if (e !== "blink") { add({ t: "ell", c: [cx + r * 0.35, cy + r * 0.05], rx: 1.2, ry: 1.1 }, eyeCol, { glow: true }); add({ t: "ell", c: [cx + r * 0.9, cy + r * 0.05], rx: 1.0, ry: 1.0 }, eyeCol, { glow: true }); }
+        horns(0.8, "#e9e1cc");
+        break;
+      }
+      if (helm === "crowned") {
+        add({ t: "poly", p: [[cx - r * 0.95, cy - r * 0.85], [cx + r * 0.95, cy - r * 0.85], [cx + r * 1.0, cy - r * 1.9], [cx + r * 0.5, cy - r * 1.25], [cx, cy - r * 2.1], [cx - r * 0.5, cy - r * 1.25], [cx - r * 1.0, cy - r * 1.9]] }, P.trim, { seam: true });
+        add({ t: "ell", c: [cx, cy - r * 1.3], rx: 1.1, ry: 1.1 }, P.glowL, { glow: true });
+        break;
+      }
       if (L.crest === "plume" && !L.crestGlyph) {
         add({ t: "poly", p: [[cx - r * 0.3, cy - r * 1.05], [cx + r * 0.3, cy - r * 1.1], [cx - r * 1.2, cy - r * 2.2], [cx - r * 2.6, cy - r * 0.6]] }, P.cloth, { seam: true });
       } else if (L.crest === "fin" && !L.crestGlyph) {
@@ -334,6 +431,27 @@ export function renderGeneral(L: HeroLook, f: GFrame, res: number, snippet?: str
     const x = i % W, y = (i / W) | 0;
     if (src[i - 1] && src[i + 1] && pid[i - 1] === pid[i] && pid[i + 1] === pid[i] && pid[i - W] === pid[i]) code.push([x, y]);
     else if ((x + y) % 2 === 0) col[i] = P.clothD;
+  }
+  // patterns on cloth (cape / coat / tabard / robe / mantle): stripes, chevrons, circuit traces, token runes
+  const pat = L.gear?.pattern ?? "none";
+  if (pat !== "none") {
+    const per = Math.max(3, Math.round(3 * res)), w0 = Math.max(1, Math.round(res * 0.8));
+    const trace = mix(P.glow, P.cloth, 0.45), node = P.glowL, stripe = mix(P.trim, P.cloth, 0.25);
+    const rune = (L.tokens.find((tk) => tk.length >= 1) ?? L.emblem.join("")).toUpperCase()[0] ?? "*";
+    const rb = glyphBits(rune) ?? glyphBits("*")!;
+    for (let i = 0; i < W * H; i++) {
+      if (pid[i] < 0 || !R.parts[pid[i]].cloth || !src[i]) continue;
+      const x = i % W, y = (i / W) | 0;
+      if (pat === "stripes") { if ((y + (x >> 1)) % (per * 2) < w0) col[i] = stripe; }
+      else if (pat === "chevron") { if ((Math.abs(x - ax) + y) % (per * 2 + 1) < w0) col[i] = stripe; }
+      else if (pat === "circuit") {
+        const gx = x % (per * 2), gy = y % (per * 3);
+        if ((gx === 0 && ((y / per) | 0) % 3 !== 1) || (gy === 0 && ((x / per) | 0) % 2 === 0)) col[i] = gx === 0 && gy === 0 ? node : trace;
+      } else if (pat === "runes" && res >= 2) {
+        const cx = x % 8, cy = y % 9;
+        if (cx < 3 && cy < 5 && rb[cy * 3 + cx] === "1" && ((((x / 8) | 0) + ((y / 9) | 0)) % 2 === 0)) col[i] = mix(P.glowL, P.cloth, 0.3);
+      } else if (pat === "runes") { if (x % 4 === 0 && y % 5 === 0) col[i] = mix(P.glowL, P.cloth, 0.3); }
+    }
   }
   // portraits: real code text on the cape, syntax-colored
   if (res >= 3 && snippet && code.length) paintCapeText(col, pid, R.parts, W, H, snippet, L, P);

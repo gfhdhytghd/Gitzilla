@@ -37,3 +37,27 @@ describe("player look", () => {
     expect(L.c.primary).toMatch(/^#[0-9a-f]{6}$/);
   });
 });
+
+describe("hero variety (gear roll)", () => {
+  const k = (seed: number, over: Partial<PlayerKit> = {}): PlayerKit => ({ ...base, seed, ...over });
+  it("is deterministic per repo and keeps class readable", () => {
+    const a = lookFor(k(4242)), b = lookFor({ ...k(4242) });
+    expect(a.gear).toEqual(b.gear);
+    expect(a.cls).toBe("knight");
+  });
+  it("varies gear, armour family and silhouette across repos of the same language", () => {
+    const looks = Array.from({ length: 24 }, (_, i) => lookFor(k(1000 + i * 7919)));
+    const sig = new Set(looks.map((L) => [L.gear.body, L.gear.armor, L.gear.coat, L.gear.shoulders, L.headgear].join("|")));
+    expect(sig.size).toBeGreaterThan(18);
+    expect(new Set(looks.map((L) => L.gear.armor)).size).toBeGreaterThanOrEqual(4);
+    expect(new Set(looks.map((L) => L.gear.body)).size).toBe(3);
+    expect(new Set(looks.map((L) => L.c.primary)).size).toBeGreaterThan(12);
+  });
+  it("picks the element from the repo's stat profile", () => {
+    expect(lookFor(k(77, { maxArmor: 7 })).gear.element).toBe("ice");
+    expect(lookFor(k(78, { damageMul: 1.25 })).gear.element).toBe("fire");
+    expect(lookFor(k(79, { speed: 110 })).gear.element).toBe("electric");
+    expect(lookFor(k(80, { maxEnergy: 250 })).gear.element).toBe("void");
+    expect(lookFor(k(81, { maxHp: 9 })).gear.element).toBe("nature");
+  });
+});

@@ -1,3 +1,37 @@
+DONE (hero variety)
+
+Hero variety (docs/tasks/variety.md, Heroes). Everything is deterministic per repo: a separate seeded gear stream from `kit.seed`, plus the kit's stat profile for the element. Class readability, the animation frames, the portrait API, the 3D billboard slot, and the voxel path are unchanged.
+- **3 silhouettes per class** (`general.ts` BODY overrides):
+  - knight: paladin / duelist / juggernaut
+  - heavy: base / siege / brute
+  - ranger: base / scout / marksman
+  - mage: robed / battlemage (armoured legs) / archon
+  - engineer: base / mech / tinkerer
+  - rogue: base / assassin / corsair
+- **Gear sets.**
+  - Shoulders: plate / spiked / round / fur mantle / none.
+  - Coat: cape / long coat (split flaps) / tabard / half-cape / none.
+  - Helm shapes: horned / great helm + plume / sallet / skull mask / crowned.
+  - Seeded heads per class: the class default is still the most likely (e.g. rangers mostly hooded, but also helmeted, goggled, bare-headed).
+- **Palette families.**
+  - Armour material: tinted / obsidian / ivory / gunmetal / bronze / royal.
+  - Trim: gold / silver / primary / copper.
+  - The secondary/accent come from a seeded scheme on the (jittered) language colour: complement / triad / split / analogous / mono.
+- **Patterns** on cloth (cape, coat, tabard, robe, mantle): diagonal stripes, chevrons, circuit traces (element colour with nodes), and token runes (the repo's own token glyph, tiled).
+- **Element accent from repo traits** via the kit stats:
+  - armour (tests) → ice, damage → fire, speed (modularity) → electric, energy → void, hp (size) → nature; balanced repos → arcane / their top trait.
+  - It tints every glow (visor, gems, greave seams, rim light).
+  - In-game: a cheap per-element mote aura (embers, frost twinkles, sparks, sinking void motes, spores, arcane sparkles).
+  - Portraits: static seeded motes.
+- **Weapon skins** (all 7 kinds): classic dark plate / light-theme plate / neon (element glyphs) / gilded.
+- **Measured** with the variety protocol (dHash 9x8 + 8-bin RGB histogram, look-alike = dHash ≤ 8/64 & hist ≤ 0.20, same group) on the gallery's `?variety=1` sheet: 7 weapon classes × 8 synthetic repos + 8 same-language (TypeScript) blasters, all hires portraits.
+  - all 64: min pairwise **0.018 → 0.197**, p5 0.219 → 0.337, mean 0.391 → 0.455, look-alike pairs **7 → 0**
+  - TypeScript row: min **0.077 → 0.253**, look-alike pairs **4 → 0**
+  `tools/variety-sheet.ts` (codex-gemini) currently crashes before rendering. Its request rewrite adds `?variety=…` to `/shared/` URLs, which breaks Vite's JSON import (`messages.generated.json?import` has no default export). Owner: codex-gemini. Re-run it once fixed.
+- **Screenshots** (chromium gallery and WebKit lobby/fight on DEV :5175, 0 page errors): the variety sheet before/after, the hero grid with all states, the kernel arena, the lobby cards, and the mock fight. The arena and fight show 4–8 clearly distinct heroes.
+- **Slot bounds.** The widest new silhouette is ~18 px from centre (siege spikes) and the tallest ~45 px above the feet (wizard hat / horns), inside the 60x55 sprite canvas and the stage's 96x100 billboard slot (feet at 88).
+- **Tests.** look.test.ts adds variety tests (determinism, >18 distinct gear signatures in 24 same-language repos, every element from stats). Full suite: 1285 passed, 11 skipped. `tsc` clean.
+
 DONE (ui review)
 
 Coordinator UI review (docs/ui-review-coordinator.md). My rows are UI-5 (hero callouts) and UI-6 (hero size + YOU). Verified with Playwright **WebKit** on DEV :5175 (`/r/QAQA?mock=match`, onboarding pre-dismissed via its session flag) on iPhone 15, iPhone SE, and desktop 1280x800. I looked at the fight phases of the mock loop (it cycles fight → boss intro → fight). 0 page errors and 0 console errors.

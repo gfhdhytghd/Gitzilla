@@ -1,7 +1,7 @@
 // Dev gallery: 24 heroes across all weapons / skills / states, plus lobby portraits.
 // Open via vite: /client/render/player/gallery.html  (?scale=3)
 import type { HeroDesign, PlayerKit, PlayerState, SkillKind, WeaponKind } from "../../../shared/types.ts";
-import { drawPlayer, notePlayerEvents, paintHeroCard, paintHeroTerminal, setPlayerMood, weaponShowcase } from "./index.ts";
+import { drawPlayer, notePlayerEvents, paintHeroCard, paintHeroTerminal, playerPortrait, setPlayerMood, weaponShowcase } from "./index.ts";
 import { drawText } from "./font.ts";
 
 const WEAPONS: WeaponKind[] = ["blade", "blaster", "smg", "shotgun", "cannon", "staff", "laser"];
@@ -463,7 +463,43 @@ function benchSync(n: number) {
   document.title = `BENCHSYNC ${n}: ${ms.toFixed(2)}ms`;
 }
 
-if (params.get("weapons")) weaponsScene();
+// ---------------------------------------------------------------- ?variety=1 : many synthetic repos per class
+/** Deterministic synthetic kit: language, stats (drive the element) and code all from `n`. */
+function varietyKit(n: number, weapon: WeaponKind, langIdx?: number): PlayerKit {
+  const r = (k: number) => (((Math.imul(n * 7919 + k * 104729, 2654435761) >>> 0) % 1000) / 1000);
+  const [lang, color, repo] = LANGS[langIdx ?? Math.floor(r(1) * LANGS.length)];
+  const seed = (Math.imul(n + 101, 2246822519) ^ 0x27d4eb2f) >>> 0;
+  return {
+    repo: repo.split("/")[0] + "/" + repo.split("/")[1] + n, title: `${lang} ${TITLES[weapon]}`, weapon, skill: SKILLS[n % SKILLS.length],
+    maxHp: 5 + Math.round(r(2) * 4), maxArmor: 3 + Math.round(r(3) * 4), maxEnergy: 150 + Math.round(r(4) * 100),
+    speed: 75 + Math.round(r(5) * 30), damageMul: 0.8 + r(6) * 0.45,
+    palette: ["#172131", color, seed & 1 ? "#ffe2ac" : "#d5f5ff", "#f4faf7"], seed,
+    code: { ...CODE[lang], weapon: WEAPON_CODE[lang] },
+  };
+}
+
+function varietyScene() {
+  document.querySelectorAll("h2, #portraits, #terminals, #generals, #showcase").forEach((e) => ((e as HTMLElement).style.display = "none"));
+  const C = 120, perRow = 8;
+  const rows: { label: string; kits: PlayerKit[] }[] = WEAPONS.map((w, wi) => ({ label: w, kits: Array.from({ length: perRow }, (_, j) => varietyKit(wi * 50 + j, w)) }));
+  rows.push({ label: "typescript x8", kits: Array.from({ length: perRow }, (_, j) => varietyKit(900 + j, "blaster", 0)) });
+  stage.width = perRow * C + 90; stage.height = rows.length * C;
+  stage.style.width = stage.width + "px"; stage.style.height = stage.height + "px";
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#151021"; ctx.fillRect(0, 0, stage.width, stage.height);
+  rows.forEach((row, ri) => {
+    ctx.save(); ctx.scale(2, 2); drawText(ctx, row.label, 2, ri * C / 2 + C / 4, "#8bffb0", "left", ""); ctx.restore();
+    row.kits.forEach((kit, ci) => {
+      ctx.fillStyle = (ri + ci) % 2 ? "#1b1528" : "#181224";
+      ctx.fillRect(90 + ci * C, ri * C, C, C);
+      ctx.drawImage(playerPortrait(kit, C, 0, true), 90 + ci * C, ri * C);
+    });
+  });
+}
+
+if (params.get("variety")) varietyScene();
+else if (params.get("weapons")) weaponsScene();
 else if (params.get("benchsync")) benchSync(Number(params.get("benchsync")));
 else if (params.get("bench")) benchScene(Number(params.get("bench")));
 else if (params.get("compare")) compareScene();
