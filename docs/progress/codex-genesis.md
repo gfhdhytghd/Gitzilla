@@ -1,6 +1,13 @@
 DONE (pvp power trace) — codex-genesis
 
-## PvP power trace (current)
+## Softer AI power explanation (current)
+- Updated data-only Genesis after server's `asPvpAiKit` wiring. AI opening now shows `412 stars · 38% tests → REPO POWER 77.9`, then `AI rival · 80% of repo power → POWER 62.3`, then the final adjusted HP/damage and loadout. These first four rows fit phone captions; each side remains ≤40 characters.
+- Reads shared `PlayerKit.pvpAi.baseScore`, `powerMultiplier`, and final `pvpPower.score` verbatim in meaning. Never derives the final score from the parts, applies the handicap again, or scales the source parts. Neutral missing-analysis AI is explicit (`REPO POWER 50 → POWER 40`). Removed the temporary local kit extension now the shared fields are present.
+- **Handoff to codex-net / claude-genesis / claude-ui:** existing powered-kit `buildGenesis` call handles AI automatically. New `ref: 'pvp-power:source'` identifies AI's source repo score; existing `ref: 'pvp-power'` still identifies final playable power. Human/battle/edu/boss traces retain their behavior. No client UI, shared, sim, server changes or commits.
+- `npx vitest run genesis`: **97 PASS**, five files. Includes all 15 real fallback profiles through `asPvpAiKit`, exact opening/stat captions, unchanged source-part captions vs human kits, authoritative supplied score/multiplier (including zero), nonmutation and payload/phone bounds.
+- Scoped Genesis TypeScript, root `npm run typecheck`, production build to `/tmp/gitzilla-genesis-ai-power-build`, and scoped `git diff --check`: **PASS**. Full root test suite and browser/hardware acceptance were not rerun for this caption-only follow-up; older full-suite results below are historical.
+
+## PvP power trace (initial card)
 - Data-only implementation in `genesis/index.ts`, `genesis/README.md`, and new `genesis/pvp-power.test.ts`; no client UI, shared, sim, or server edits and no commits.
 - Powered heroes lead with real repo signals → authoritative supplied score → actual bonuses/final stats. Example: `412 stars · 38% tests → POWER 78`, then `POWER 78 → +2 HP · +58.5% damage`. Armor/speed/energy and all nine supplied part labels, strengths, and influences follow; captions stay ≤40 characters per side with human numbers and credential filtering.
 - Uses sim's exported `PvpPower` metadata and `statsFromPower(0)` neutral baseline; never recomputes the score or treats power as bonuses added to battle allocation. Missing-analysis fallback stays explicitly neutral. Empty equal-budget payload for power heroes; existing battle/edu/boss behavior is preserved when power is absent.

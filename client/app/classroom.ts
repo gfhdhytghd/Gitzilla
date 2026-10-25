@@ -1,7 +1,7 @@
 import { placeSettingsButton } from './settings';
 import { localizeClassroomPlan } from '../../shared/classroom-localize';
 import { locale, onLocaleChange, t, formatNumber } from '../i18n';
-import type { ClassroomPlan, ClassroomState, ClassroomStep, ClassroomReport, ClassroomCommand, ClassroomCheck } from '../../shared/classroom';
+import type { ClassroomPlan, ClassroomState, ClassroomStep, ClassroomReport, ClassroomCommand, ClassroomCheck, StepBrief } from '../../shared/classroom';
 import { defaultClassroomPlan } from '../../shared/classroom-defaults';
 import { pythonClassroomPresets, getPythonClassroomPresets, pythonClassroomPlan, pythonStarter, pythonTeacherGuide } from '../../shared/classroom-presets';
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from './app';
@@ -13,6 +13,8 @@ import { createClassBoss } from '../edu/class-boss';
 import { stepSummary as summarize } from '../edu/summary';
 import { createInAppPanel } from '../edu/inapp-panel';
 import { createCodeEditor } from '../edu/code-editor';
+import { createTaskCard } from '../edu/task-card';
+import { alignDoneWhen } from '../edu/task-brief';
 import type { InAppFile } from '../../shared/classroom';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
@@ -77,7 +79,13 @@ export function createClassroom(app: AppCtx): Screen {
   const moreText = h('button.cr-more-text', { type: 'button', hidden: true, 'data-testid': 'classroom-more-text', onclick: () => { const open = task.classList.toggle('cr-task-open'); moreText.textContent = open ? 'show less' : teacher() ? 'show all instructions' : 'Read the full task'; } }, 'show all instructions');
   const phoneNote = h('p.cr-phone-note', null, 'The full task is on your phone or laptop.');
   const progressFill = h('i'), progressBar = h('div.cr-progress-bar', { 'aria-hidden': 'true' }, progressFill);
-  const task = h('section.cr-task', null, stepRail, taskTitle, taskText, moreText, phoneNote, progress, progressBar, notice, teacherEntry);
+  // structured brief (StepBrief) when the step has one; the free-text instructions are the fallback
+  const card = createTaskCard();
+  const withBrief = (st: ClassroomStep | undefined): st is ClassroomStep & { brief: StepBrief } => !!st?.brief?.goal;
+  const task = h('section.cr-task', null, stepRail, taskTitle, taskText, moreText, card.el, phoneNote, progress, progressBar, notice, teacherEntry);
+  // students: the step, its title and the timer stay pinned while they scroll down to the editor
+  const headStep = h('b.cr-step-head-n'), headTitle = h('span.cr-step-head-title'), headClock = h('strong.cr-step-head-clock', { 'data-testid': 'classroom-step-clock' });
+  const stepHead = h('div.cr-step-head', { 'data-testid': 'classroom-step-head' }, headStep, headTitle, headClock);
   const controls = h('div.cr-controls', { 'data-testid': 'classroom-controls' });
   const openProjector = h('button.btn.cr-open-projector', { type: 'button', 'data-testid': 'classroom-open-projector', title: 'Opens the class view (no names, scores or feedback) in a new window. Drag it to the projector screen.',
     onclick: () => { window.open(`${location.pathname}?screen=1&view=projector`, `gitzilla-projector-${app.room}`, 'popup,width=1280,height=720'); } }, 'Open projector window ↗');
@@ -139,13 +147,12 @@ export function createClassroom(app: AppCtx): Screen {
   let lastSource: 'github' | 'in-app' = 'github';
   submit.addEventListener('click', () => { lastSource = 'github'; });
   const inApp = createInAppPanel({ room: app.room, onSubmit: (files: InAppFile[]) => { lastSource = 'in-app'; app.conn.send({ t: 'classroomSubmitCode', files }); } });
-  const studentTitle = h('h2', null, 'Your next commit');
-  const workflowGit = h('ol.cr-workflow', null, h('li', null, 'Build in your editor.'), h('li', null, 'Push your changes to GitHub.'), h('li', null, 'Submit, read feedback, improve.'));
-  const workflowInApp = h('ol.cr-workflow', null, h('li', null, 'Write your code below.'), h('li', null, '▶ Run to try it (optional).'), h('li', null, 'Submit, read feedback, improve.'));
+  const studentTitle = h('h2', null, 'Your code');
   const githubFields = h('div.cr-github', null, field('GitHub repository', repo), field('Branch / tag / commit', ref), github, submit,
+    h('p.cr-flow', null, 'Push to GitHub → Submit → read your feedback → improve and submit again.'),
     h('p.cr-evidence-note', null, 'Each score is tied to an exact commit. Static evidence checks do not execute your code. GitHub checks report the CI result for that commit; your teacher can review functionality.'));
   const githubAlt = h('details.cr-github-alt', { 'data-testid': 'classroom-github-alt' }, h('summary', null, 'or submit a GitHub repo instead'));
-  const student = h('section.cr-student-work', null, studentTitle, workflowGit, workflowInApp, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
+  const student = h('section.cr-student-work', null, studentTitle, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
   const studentBoard = h('div.cr-student-board', null, student, review);
   // Projector only: the lobby's animated pixel backdrop. Student phones keep the CSS-only grid (no render loop).
   const backdrop = app.role === 'screen' ? createBackdrop({ dim: 0.55, themeCycle: false }) : null;
@@ -165,7 +172,7 @@ export function createClassroom(app: AppCtx): Screen {
     onChange: on => el.classList.toggle('cr-raid-paused', on),
   });
   const consoleBar = h('div.cr-console-bar', { 'data-testid': 'classroom-console-bar' }, h('div.cr-console-row', null, controls, h('div.cr-console-tools', null, safeLabel, openProjector)), controlsHint);
-  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, joinCard, consoleBar, task, editor, hostBoard, studentBoard, joinOverlay, pause.el);
+  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, joinCard, consoleBar, stepHead, task, editor, hostBoard, studentBoard, joinOverlay, pause.el);
   // teacher on the projector: P / Esc toggles the raid pause
   const onKey = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
@@ -229,7 +236,9 @@ export function createClassroom(app: AppCtx): Screen {
       weight.oninput = () => { step.checksWeight = Number(weight.value); };
       const checksWarning = h('small.cr-form-error');
       try { parseChecks(checks.value); } catch (e) { checksWarning.textContent = (e as Error).message; }
-      checks.oninput = () => { rawChecks.set(step.id, checks.value); try { step.checks = parseChecks(checks.value); checksWarning.textContent = ''; } catch (e) { checksWarning.textContent = (e as Error).message; } };
+      // the brief's "Done when" rows must stay one per check, in order: re-align them from the preset's own lines
+      const briefOrigin = step.brief ? { checks: step.checks, doneWhen: step.brief.doneWhen } : null;
+      checks.oninput = () => { rawChecks.set(step.id, checks.value); try { step.checks = parseChecks(checks.value); if (step.brief && briefOrigin) step.brief = { ...step.brief, doneWhen: alignDoneWhen(briefOrigin, step.checks) }; checksWarning.textContent = ''; } catch (e) { checksWarning.textContent = (e as Error).message; } };
       const rubricStatus = h('small', null, `Rubric: ${step.rubric.title}`);
       const rubricDetails = h('details.cr-rubric-config', null, h('summary', null, 'How this step is scored (edit or upload a rubric)'), rubricStatus);
       let rubricMounted = false;
@@ -298,7 +307,8 @@ export function createClassroom(app: AppCtx): Screen {
         : h('p.cr-evidence-note', null, 'This step has no starter files: students submit a GitHub repository.');
       body.replaceChildren(
         h('div.cr-preview-nav', null, button('◀', 'classroom-preview-prev', () => { at = Math.max(0, at - 1); show(); }), h('b', null, `Step ${at + 1} of ${draft.steps.length}`), button('▶', 'classroom-preview-next', () => { at = Math.min(draft.steps.length - 1, at + 1); show(); })),
-        h('h2', null, `${at + 1}. ${st.title}`), h('p.cr-instructions', null, st.instructions),
+        h('h2', null, `${at + 1}. ${st.title}`),
+        withBrief(st) ? (() => { const c = createTaskCard(); c.update({ step: st, mode: 'preview' }); return c.el; })() : h('p.cr-instructions', null, st.instructions),
         h('h3', null, 'Starter code'), editorEl,
         h('h3', null, 'How this task is scored'),
         h('ul', null, ...st.checks.map(c => h('li', null, `${c.label}${c.text ? ` · ${c.text}` : ''}`)), ...st.rubric.criteria.map(c => h('li', null, c.name))));
@@ -413,6 +423,7 @@ export function createClassroom(app: AppCtx): Screen {
     const ms = state.phase === 'raid' ? Math.max(0, (state.raidEndsAt ?? now) - (frozenAt ?? now)) : state.phase === 'paused' ? state.remainingMs : state.deadline === null ? null : Math.max(0, state.deadline - now);
     const seconds = ms === null ? 0 : Math.ceil(ms / 1000);
     setText(clock, ms === null ? state.phase === 'complete' ? 'Well played' : 'Teacher paced' : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`);
+    setText(headClock, ms === null ? '' : clock.textContent!); headClock.classList.toggle('cr-low', ms !== null && ms < 60_000 && state.phase === 'coding');
     clock.classList.toggle('cr-clock-text', ms === null);
   };
   const render = () => {
@@ -446,23 +457,34 @@ export function createClassroom(app: AppCtx): Screen {
     const step = state?.plan.steps[state.stepIndex];
     // steps with starter files open the in-app editor; GitHub moves into an "or submit a GitHub repo" fold
     const inAppStep = !screen && !!step?.starter?.length;
-    inApp.el.hidden = !inAppStep; workflowInApp.hidden = !inAppStep; workflowGit.hidden = inAppStep;
-    setText(studentTitle, inAppStep ? 'Your code' : 'Your next commit');
+    inApp.el.hidden = !inAppStep;
+    setText(studentTitle, inAppStep ? 'Your code' : 'Your GitHub version');
     if (inAppStep && step) inApp.setStep(step, state!.stepIndex > 0 ? state!.plan.steps[state!.stepIndex - 1].id : null);
     if (inAppStep && githubFields.parentElement !== githubAlt) githubAlt.append(githubFields);
     else if (!inAppStep && githubFields.parentElement !== student) githubAlt.after(githubFields);
     githubAlt.hidden = !inAppStep;
     studentBoard.classList.toggle('cr-coding', inAppStep);
     setText(taskTitle, step ? `${state!.stepIndex + 1}. ${step.title}` : t(owner ? 'A classroom built around real code' : 'Your teacher is preparing the first task'));
+    // students: sticky "Step 1/3 · title · 4:32" replaces the rail + heading
+    stepHead.hidden = screen || !step;
+    el.classList.toggle('cr-in-step', !screen && !!step);
+    stepRail.hidden = !screen && !!step; taskTitle.hidden = !screen && !!step;
+    if (step) { setText(headStep, `Step ${state!.stepIndex + 1}/${state!.plan.steps.length}`); setText(headTitle, step.title); }
+    const brief = withBrief(step) ? step : null;
+    card.el.hidden = !brief;
+    if (brief) card.update({ step: brief, mode: classFacing ? 'projector' : owner ? 'teacher' : 'student', room: app.room, report: screen ? null : app.classroomReports?.[app.you ?? ''] });
     setText(taskText, step?.instructions ?? t('Work in your own editor, push to GitHub, and bring each new version back here. Your class will attack the Boss together.'));
     // long instructions: clamped on the teacher console ("show all"), a short summary on class-facing screens
     const longText = (step?.instructions ?? '').split('\n').length > 6 || (step?.instructions ?? '').length > 420;
     if (classFacing && step && longText) setText(taskText, summarize(step.instructions));
     // students (phones!) get the clamp too, so the editor is near the top instead of 2,600 px down
-    moreText.hidden = classFacing || !longText;
+    // with a brief, students and the class see the card; the free text stays the teacher's summary on the console
+    taskText.hidden = !!brief && !owner;
+    moreText.hidden = classFacing || !longText || taskText.hidden;
     if (!task.classList.contains('cr-task-open')) setText(moreText, owner ? 'show all instructions' : 'Read the full task');
-    phoneNote.hidden = !(classFacing && step && longText);
+    phoneNote.hidden = !(classFacing && step && (longText || brief));
     task.classList.toggle('cr-task-long', !!(longText && !classFacing));
+    task.classList.toggle('cr-has-brief', !!brief);
     setText(notice, state?.notice ?? ''); notice.hidden = !state?.notice;
     const s = state;
     const railSig = JSON.stringify([s?.plan.steps.map(p => p.title), s?.stepIndex, s?.attempt]);

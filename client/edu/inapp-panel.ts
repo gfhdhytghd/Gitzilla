@@ -34,7 +34,7 @@ export function createInAppPanel(opts: { room: string; onSubmit(files: InAppFile
   const run = h("button.btn", { type: "button", "data-testid": "classroom-run", title: "Runs only in your browser. It doesn't change your score." }, "▶ Run") as HTMLButtonElement;
   const submit = h("button.btn.btn-primary", { type: "button", "data-testid": "classroom-submit-code" }, "Submit my code") as HTMLButtonElement;
   const reset = h("button.btn.btn-ghost", { type: "button", "data-testid": "classroom-reset-code" }, "reset to starter") as HTMLButtonElement;
-  const note = h("p.cr-evidence-note", null, "▶ Run happens only in your browser and never changes your score. Submit sends your files to be measured.");
+  const note = h("p.cr-flow", null, "Write → ▶ Run to try it (only in your browser, never scored) → Submit → read your feedback → improve and submit again.");
 
   run.onclick = async () => {
     if (!ed) return;

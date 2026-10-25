@@ -1,3 +1,66 @@
+# DONE (task card)
+
+docs/tasks/classroom-brief.md, claude-edu section. Not committed. Built on the StepBrief contract with
+doneWhen[i] ↔ step.checks[i] ↔ report.checks[i]. Verified against claude-ux's real (uncommitted) preset briefs through
+the real server on :5175; mock briefs are only a fallback in the e2e.
+
+## What changed
+- **New `client/edu/task-brief.ts` (pure) + `task-brief.test.ts`:**
+  - `codeSpans`: renders `code` in backticks;
+  - `doneWhenStatus`: pass / fail / self per row from report.checks[i];
+  - `alignDoneWhen` / `doneWhenFor`: see the bug fix below;
+  - storage keys `kaiju.todo.<room>.<step>` and `kaiju.hints.<room>.<step>`.
+- **New `client/edu/task-card.ts` + `task-card.css`:** `createTaskCard()` with four modes.
+  - **student:**
+    - goal at 18px/1.5 in system sans (not the pixel font), max 60ch;
+    - concept chips (≤6);
+    - a numbered TODO checklist: tap the whole row (≥44px) to tick; ticks are saved per room + step, survive a
+      reload, and reset on the next step;
+    - "Done when" rows: ○ before a submission, then ✓ "found in your files" / ✗ "not found yet" / ○ "check this
+      yourself", with a note ("1 still missing. Fix it and submit again.");
+    - an "Expected output" code block (whitespace kept);
+    - "💡 Need a hint? (3)", which reveals one hint at a time and remembers how many.
+  - **preview:** the teacher's "Preview as a student" modal; same as student, nothing saved.
+  - **projector:** goal, chips and example, large and sized by vw/vh. Fits 1920×1080 and 1280×720 with no scroll.
+  - **teacher console:** goal + chips, with "Student task card · 3 to-dos · 2 done-when · 3 hints" folded under the
+    console controls (all hints shown, no checkboxes). The free-text `instructions` stay visible as the teacher's
+    summary.
+- **`client/app/classroom.ts` / `.css`:**
+  - **Sticky student step bar:** "Step 1/3 · title · 9:58", which turns red under 1 min. It stays at the very top:
+    sticky offsets cancel the scroller's 68px settings-button padding (the console bar is fixed the same way).
+  - **Student phones during a step:** the header drops its clock and room code, and the title shrinks.
+  - **Instructions fallback:** students and the class see the card when the step has a brief; without one, the
+    free-text instructions show as before.
+  - **"Your next commit 1-2-3" box removed:** it's now one line under Submit (in-app: in inapp-panel.ts; GitHub: under
+    the GitHub submit button). The heading is "Your code" or "Your GitHub version".
+- **Bug fix the smoke caught:** the server requires one doneWhen row per check. A teacher who edited a preset's
+  checks made Publish fail silently, and students never got the lesson. The plan editor now re-aligns
+  `brief.doneWhen` on every check edit:
+  - checks that stayed keep their written line;
+  - new checks get a plain line ("`README.md` is in your submission", "`x.py` contains `inventory`", "The GitHub
+    check `unit-tests` passes").
+
+## Verified
+- **WebKit e2e:** iPhone SE, iPhone 15 and desktop students, a 1440 console, and a 1920 / 1280×720 projector popup.
+  The script is at /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/brief-shots.mts.
+  - ticks and hints survive a reload;
+  - the sticky bar is at top 0;
+  - ana (adds print) gets ✓✓; chloe (starter as-is) gets ✓✗ "1 still missing";
+  - the projector shows no to-do list, no names and no scroll;
+  - the teacher fold starts collapsed;
+  - step 2 shows the new goal with fresh ticks;
+  - 0 overflow and 0 page errors.
+- **Suite:** typecheck clean; vitest 998 passed / 9 skipped; `tools/classroom-smoke.ts` passed (30 students).
+- **Note for the smoke owner:** the smoke still reads `.cr-instructions` on the student page. That element is now
+  hidden when the step has a brief; its innerText still works.
+
+## Open
+- **claude-ux:** the Done-when rows render under the word "Done when", so they read best as short statements
+  ("`python/01_hello.py` is in your submission"); yours already do. A row whose check is a `contains` on `print(`
+  shows ✓ for any print. That's the known weak-check issue (take-edu).
+- **No teacher UI to edit the brief text yet** (goal, todo, hints). Presets and generated doneWhen only. Ask if
+  wanted.
+
 # DONE (teacher ux)
 
 docs/ux-audit-teacher.md: P0-T1…T5 and the top-5 quick wins done. P1s done where they're client work; the rest are
