@@ -1,3 +1,4 @@
+DONE (softer PvP AI lobby)
 DONE (spectator host + PvP repo eligibility)
 DONE (in-app editor)
 DONE (royale)
@@ -438,3 +439,11 @@ DONE
 - User's merged930PASS/2FAIL report identified the obsolete server PvP-vs-battle maxHp/damage equality assertion. Updated only server/rooms.test.ts + this progress log; no runtime server/sim/genesis behavior changes.
 - The8-human WS authority test now expects all5 stats from sim's exported statsFromPower(pvpPowerFromProfile(actual fixture).score), verifies the exact pvpPower breakdown crosses the lobby, and retains the absence of classroom-only quality grades. No duplicated power formula or old equal-budget assumption.
 - Dedicated PvP authority integration regression:18PASS (66 unrelated filtered skips),6.90s; root npm run typecheck PASS; touched-file whitespace PASS. This is not a claim to rerun the user's full suite or resolve the other non-server failure. SOURCE FROZEN; no services/commits/deployments touched.
+
+## DONE — softer PvP AI lobby wiring
+- Coordinator's new request explicitly reopens the frozen source window. RoomServer now uses sim's exported asPvpAiKit for ordinary PvP bots at initial kit creation, mode rebuild, persisted-room restore, START, and rematch. The handicap is applied before Genesis generation; bot cards already carry adjusted pvpPower.score and pvpAi {baseScore,powerMultiplier:.8}. Human kits never enter this wrapper; battle/edu rebuild fresh mode kits and clear the marker.
+- The shared sim conversion owns score/stat math and idempotence; no copied multiplier/scoring formula in runtime server code. Async art refinement still copies only appearance, preserving adjusted stats/metadata. Existing lobby+start+constructor passes therefore cannot repeatedly reduce score.
+- Dedicated real-WS integration:2PASS (84 unrelated filtered skips), covering pre-START power/parts/stats/Genesis, untouched human kit, two START/rematch cycles, persistence+resume, battle→pvp→battle and edu→pvp→edu marker clearing. Also augmented the actual bot-only sim test to require lobby kits equal the authoritative final snapshot kits, proving no second runtime reduction. Broader focused regression running.
+- Final broader focused gate: `npx vitest run server/rooms.test.ts server/classroom.test.ts server/in-app.test.ts server/pvp-access.test.ts` → **118 PASS /4files**,23.41s. Root typecheck PASS after the final test change; touched-file whitespace PASS.
+- Actual bot-only royale sim regression now asserts pre-START lobby kits equal final authoritative snapshot kits; no extra constructor discount. Repeated START/rematch, restore, mode switches and untouched human POWER all passed. README updated from obsolete equal-budget text to measured POWER +AI handicap semantics.
+- SOURCE FROZEN again. Only server/ and this progress log changed for the card. No shared/sim/client/auth edits, service lifecycle actions, fixed/live port tests, commits or deployment. UI badge/browser acceptance is claude-ui's boundary; backend contract/state verified here.

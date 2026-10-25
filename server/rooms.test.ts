@@ -14,7 +14,7 @@ import { analyzeFiles, offlineProfile } from '../analysis/index.ts';
 import { replayProfileProgress } from '../analysis/progress.ts';
 import { handleEduRoute, MAX_RUBRIC_BYTES } from './edu-http.ts';
 import { buildFeedback, defaultRubric, parseRubric, scoreRepo } from '../rubric/index.ts';
-import { playerKitFromProfile, bossKitFromProfile, createMatch, pvpPowerFromProfile, statsFromPower, qualityFromRubric } from '../sim/index.ts';
+import { asPvpAiKit, playerKitFromProfile, bossKitFromProfile, createMatch, pvpPowerFromProfile, statsFromPower, qualityFromRubric } from '../sim/index.ts';
 import { createBot } from '../sim/bots.ts';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1532,6 +1532,52 @@ describe('PvP royale authority and isolation', () => {
       verifyPvpAccess: verify,
     } };
   }
+  it('shows softer AI POWER before start and preserves it once through start, rematch and restore', async () => {
+    const auth = accessServices(), file = persistenceFile();
+    const f = await setup(0.1, { ...genesisServices, ...auth.services }, { persistenceFile: file }, undefined, 'pvp');
+    const factory = vi.fn(f.services.createMatch); f.services.createMatch = factory;
+    const owner = await f.connect('player', undefined, 'Alice', 'alice');
+    owner.send({ t: 'setRepo', repo: 'pallets/flask' }); owner.send({ t: 'setBots', count: 1 });
+    await until(() => owner.lobby()?.players.length === 2 && owner.lobby()?.players.every(p => p.status === 'ready'));
+    const profile = offlineProfile('pallets/flask'), human = playerKitFromProfile(profile, { mode: 'pvp' }), expected = asPvpAiKit(human);
+    const bot = owner.lobby()!.players.find(p => p.bot)!;
+    expect(bot.kit).toEqual(expected); expect(bot.kit!.pvpAi).toEqual({ baseScore: human.pvpPower!.score, powerMultiplier: 0.8 });
+    expect(bot.kit!.pvpPower!.score).toBe(Math.round(human.pvpPower!.score * 8) / 10);
+    expect(bot.genesis).toEqual(buildGenesis(profile, expected, 'hero'));
+    expect(owner.lobby()!.players.find(p => !p.bot)!.kit).toEqual(human); expect(human.pvpAi).toBeUndefined();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const seen = owner.messages.filter(m => m.t === 'autopsy').length;
+      owner.send({ t: 'start' }); await until(() => owner.messages.filter(m => m.t === 'autopsy').length > seen);
+      const input = factory.mock.calls.at(-1)![0];
+      expect(input.find(p => p.id === bot.id)!.kit).toEqual(expected);
+      expect(input.find(p => p.id === owner.welcome.you)!.kit).toEqual(human);
+      expect(owner.messages.filter(m => m.t === 'snapshot').at(-1)!.state.players.find(p => p.id === bot.id)!.kit).toEqual(expected);
+      owner.send({ t: 'rematch' }); await until(() => owner.lobby()?.phase === 'lobby');
+      expect(owner.lobby()!.players.find(p => p.bot)!.kit).toEqual(expected);
+      expect(owner.lobby()!.players.find(p => p.bot)!.genesis).toEqual(buildGenesis(profile, expected, 'hero'));
+    }
+    await f.close();
+    const restored = await setup(999, { ...genesisServices, ...auth.services }, { persistenceFile: file }, f.room, 'pvp');
+    const resumed = await restored.connect('player', owner.welcome.token);
+    expect(resumed.welcome.lobby.players.find(p => p.bot)!.kit).toEqual(expected);
+    expect(resumed.welcome.lobby.players.find(p => p.bot)!.genesis).toEqual(buildGenesis(profile, expected, 'hero'));
+  });
+  it('applies the AI handicap on a PvP mode rebuild and clears it again in battle and edu', async () => {
+    const f = await setup(999, genesisServices);
+    const owner = await f.connect(); owner.send({ t: 'setBots', count: 1 });
+    await until(() => owner.lobby()?.players.some(p => p.bot && p.status === 'ready'));
+    const profile = offlineProfile('pallets/flask');
+    const botKit = () => owner.lobby()!.players.find(p => p.bot)!.kit;
+    expect(botKit()).toEqual(playerKitFromProfile(profile, { mode: 'battle' }));
+    for (const exitMode of ['battle', 'edu'] as const) {
+      owner.send({ t: 'setMode', mode: 'pvp' });
+      await until(() => owner.lobby()?.mode === 'pvp' && botKit()?.pvpAi?.powerMultiplier === 0.8);
+      expect(botKit()).toEqual(asPvpAiKit(playerKitFromProfile(profile, { mode: 'pvp' })));
+      owner.send({ t: 'setMode', mode: exitMode });
+      await until(() => owner.lobby()?.mode === exitMode && owner.lobby()?.players.find(p => p.bot)?.status === 'ready');
+      expect(botKit()).toEqual(playerKitFromProfile(profile, { mode: exitMode })); expect(botKit()?.pvpAi).toBeUndefined();
+    }
+  });
   it.each([
     ['player', 0], ['player', 1], ['player', 2], ['screen', 0], ['screen', 2],
   ] as const)('lets an ineligible %s host spectate a royale with %i eligible humans and AI fill', async (role, humanCount) => {
@@ -1585,9 +1631,12 @@ describe('PvP royale authority and isolation', () => {
     }, {}, undefined, 'pvp');
     const host = await f.connect('screen'); host.send({ t: 'setBots', count: 2 });
     await until(() => host.lobby()?.players.length === 2 && host.lobby()?.players.every(p => p.bot && p.status === 'ready'));
+    const lobbyKits = new Map(host.lobby()!.players.map(p => [p.id, p.kit]));
+    expect([...lobbyKits.values()].every(kit => kit?.pvpAi?.powerMultiplier === 0.8)).toBe(true);
     host.send({ t: 'start' }); const result = await until(() => host.messages.find(m => m.t === 'autopsy'), 1500);
     expect(result.result.players).toHaveLength(2); expect(result.result.players.every(p => p.id.startsWith('bot-'))).toBe(true);
     const final = host.messages.filter(m => m.t === 'snapshot').at(-1)!.state;
+    for (const player of final.players) expect(player.kit).toEqual(lobbyKits.get(player.id));
     expect(final.pvp?.royale?.alive).toHaveLength(1); expect(Object.values(final.pvp!.royale!.placements).sort()).toEqual([1, 2]);
     expect(tokens).not.toHaveBeenCalled(); expect(f.royaleRecorded).toHaveLength(1); expect(host.socket.readyState).toBe(WebSocket.OPEN);
   }, 20_000);

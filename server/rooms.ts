@@ -4,6 +4,7 @@ import { ClassroomSession, type ClassroomSource } from './classroom';
 import { classroomExport } from './classroom-export';
 import type { InAppFile } from '../shared/classroom';
 import { editorCommit, normalizeEditorFiles } from './in-app';
+import { asPvpAiKit } from '../sim/index';
 import type { IncomingMessage } from 'node:http';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -180,6 +181,7 @@ export class RoomServer {
         try { room.classroom = ClassroomSession.restore(saved.classroom); this.armClassroom(room); }
         catch { room.restartNotice = 'The saved lesson could not be restored. Configure a new lesson.'; }
       }
+      this.preparePvpBots(room);
       this.rooms.set(room.code, room);
       this.scheduleCleanup(room);
     }
@@ -409,6 +411,7 @@ export class RoomServer {
       room.phase = 'lobby'; room.match = undefined; room.departed = undefined; room.state = undefined; room.result = undefined; room.events = [];
       room.feedback = undefined; room.feedbackProfiles = undefined; room.matchRubric = undefined;
       for (const m of room.members.values()) m.input = undefined;
+      this.preparePvpBots(room);
       this.broadcastLobby(room);
       return;
     }
@@ -582,6 +585,7 @@ export class RoomServer {
       member.profile = profile;
       let kit = this.services.playerKitFromProfile(profile, { mode });
       if (oldKit) kit = { ...kit, title: oldKit.title, palette: oldKit.palette, design: oldKit.design };
+      if (mode === 'pvp' && member.lobby.bot) kit = asPvpAiKit(kit);
       member.lobby = { ...member.lobby, status: 'ready', kit,
         genesis: this.services.buildGenesis?.(profile, kit, 'hero'), progress: { stage: 'ready', pct: 1 } };
       if (!member.privateRepo && !kit.design) this.refineHero(room, member, revision, profile);
@@ -639,7 +643,8 @@ export class RoomServer {
           const profile = this.services.botProfile ? this.services.botProfile(repo) : await this.services.analyzeRepo(repo);
           if (room.members.get(id) !== member) return;
           member.profile = profile;
-          const kit = this.services.playerKitFromProfile(profile, { mode: room.mode });
+          let kit = this.services.playerKitFromProfile(profile, { mode: room.mode });
+          if (room.mode === 'pvp') kit = asPvpAiKit(kit);
           member.lobby = { ...member.lobby, repo: profile.slug, status: 'ready', kit,
             genesis: this.services.buildGenesis?.(profile, kit, 'hero'), progress: { stage: 'ready', pct: 1 } };
           member.botInput = this.services.createBot?.(seed);
@@ -840,6 +845,14 @@ export class RoomServer {
     if (new Set(verified.map(v => v.userId)).size !== verified.length) throw new Error('PvP needs different GitHub accounts.');
   }
 
+  private preparePvpBots(room: Room) {
+    if (room.mode !== 'pvp') return;
+    for (const member of bots(room)) if (member.lobby.kit) {
+      member.lobby.kit = asPvpAiKit(member.lobby.kit);
+      if (member.profile) member.lobby.genesis = this.services.buildGenesis?.(member.profile, member.lobby.kit, 'hero');
+    }
+  }
+
   private start(room: Room) {
     const humans = room.mode === 'pvp' ? this.pvpFighters(room) : connectedPlayers(room).filter(p => p.lobby.status === 'ready' && p.lobby.kit);
     if (bots(room).some(p => p.lobby.status !== 'ready' || !p.lobby.kit)) throw new Error('Wait for AI teammates to finish loading');
@@ -869,6 +882,7 @@ export class RoomServer {
       member.lobby.kit = this.services.applyRubric(member.profile!, member.lobby.kit!, matchRubric);
       member.lobby.genesis = this.services.buildGenesis?.(member.profile!, member.lobby.kit, 'hero');
     }
+    this.preparePvpBots(room);
     const match = this.services.createMatch(players.map(p => ({ id: p.id, name: p.name, kit: p.lobby.kit! })), boss, { mode: room.mode });
     room.restartNotice = undefined;
     room.privateMatch = (room.mode === 'battle' && !!room.privateBoss) || players.some(p => p.privateRepo);
