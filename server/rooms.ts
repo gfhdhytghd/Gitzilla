@@ -66,6 +66,8 @@ interface Member {
   controllerSeq?: number;
   displaySeq?: number;
   displayKeyboardReady?: boolean;
+  needsController?: boolean;
+  controllerReady?: boolean;
   inputFromController?: boolean;
   profile?: RepoProfile; // Memory-only, never part of the room-store whitelist.
   socket: WebSocket | null;
@@ -123,6 +125,8 @@ const removedMessage = 'You were removed from this room by the host.';
 const controllerSignIn = 'Sign in with GitHub on both devices to use your phone as the controller.';
 const controllerNoSeat = 'Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.';
 const online = (member: Member) => !!(member.socket || member.controllerSocket);
+const seatControlsReady = (member: Member) => !!member.lobby.bot || (member.needsController
+  ? !!member.controllerSocket && member.controllerReady === true : member.controlsReady);
 const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => m.role === 'player' && online(m));
 const capacity = (room: Room) => room.mode === 'edu' ? 30 : 8;
 const bots = (room: Room) => [...room.members.values()].filter(m => m.lobby.bot);
@@ -210,7 +214,7 @@ export class RoomServer {
       bans: { tokens: [...room.bans.tokens], identities: [...room.bans.identities] },
       players: [...room.members.values()].filter(m => m.role === 'player' || m.id === room.ownerId || m.id === room.teacherId).map(m => ({
         id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed, identities: m.identities,
-        githubIdentity: m.githubIdentity, controllerToken: m.controllerToken,
+        githubIdentity: m.githubIdentity, controllerToken: m.controllerToken, needsController: m.needsController,
         lobby: this.persistedLobby(m),
       })),
       boss: room.privateBoss
@@ -316,7 +320,7 @@ export class RoomServer {
 
   lobby(room: Room): LobbyState {
     return { room: room.code, ownerId: room.ownerId, mode: room.mode, ...(room.mode === 'edu' ? { locale: room.locale ?? 'en' } : {}),
-      players: squad(room).map(m => ({ ...m.lobby, paired: !!m.controllerSocket, controlsReady: !!m.lobby.bot || m.controlsReady, rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
+      players: squad(room).map(m => ({ ...m.lobby, paired: !!m.controllerSocket, controlsReady: seatControlsReady(m), rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
       ...(room.classroom ? { classroom: room.classroom.publicState() } : {}),
       ...(room.mode === 'edu' && room.rubric ? { rubric: room.rubric } : {}) };
   }
@@ -441,11 +445,21 @@ export class RoomServer {
     if (room.classroom && !['controls', 'input'].includes(msg.t)) throw new Error('Use the classroom controls for this lesson');
     if (msg.t === 'controls') {
       if (member.role !== 'player') return;
-      if (typeof msg.ready !== 'boolean' || !['standard', 'seated', 'tap-only'].includes(msg.mode)) throw new Error('Invalid controls readiness');
-      if (!session.controller) member.displayKeyboardReady = !phoneRequest(this.requests.get(socket)) && msg.ready;
-      if (member.controlsReady === msg.ready && member.controlsMode === msg.mode) return;
-      member.controlsReady = msg.ready; member.controlsMode = msg.mode;
-      this.broadcastLobby(room, false); // Per-page sensor state must never be restored from disk.
+      if (typeof msg.ready !== 'boolean' || !['standard', 'seated', 'tap-only'].includes(msg.mode)
+          || (msg.needsController !== undefined && typeof msg.needsController !== 'boolean')) throw new Error('Invalid controls readiness');
+      const beforeReady = member.controlsReady, beforeMode = member.controlsMode, beforeRequired = !!member.needsController;
+      if (session.controller) {
+        member.controllerReady = msg.ready; member.controlsReady = msg.ready; member.controlsMode = msg.mode;
+      } else {
+        if (msg.needsController !== undefined) member.needsController = msg.needsController;
+        member.displayKeyboardReady = !member.needsController && !phoneRequest(this.requests.get(socket)) && msg.ready;
+        if (member.needsController) member.controlsReady = !!member.controllerSocket && member.controllerReady === true;
+        else { member.controlsReady = msg.ready; member.controlsMode = msg.mode; }
+      }
+      const policyChanged = beforeRequired !== !!member.needsController;
+      if (policyChanged) this.persist();
+      if (!policyChanged && beforeReady === member.controlsReady && beforeMode === member.controlsMode) return;
+      this.broadcastLobby(room, false); // Permission stays page-local; only needsController is durable.
       return;
     }
     if (msg.t === 'input') {
@@ -462,7 +476,7 @@ export class RoomServer {
       if (session.controller) member.controllerSeq = f.seq; else {
         member.displaySeq = f.seq;
         const activeKeyboard = f.source === 'keyboard' && (f.move[0] !== 0 || f.move[1] !== 0 || f.fire || f.dash || f.skill);
-        if (activeKeyboard) member.displayKeyboardReady = true;
+        if (activeKeyboard && !member.needsController) member.displayKeyboardReady = true;
         // The phone owns a linked seat. Display heartbeat/auto-aim frames are
         // acknowledged, but must neither replace tilt nor renew its stale timer.
         if (member.controllerSocket && !activeKeyboard) return;
@@ -805,7 +819,7 @@ export class RoomServer {
     }
     // Every new WS hello may be a fresh iOS page. Desktop keyboard is immediately
     // usable; phone clients must report live sensors or an explicit touch choice.
-    member.displayKeyboardReady = !phoneRequest(request);
+    member.displayKeyboardReady = !member.needsController && !phoneRequest(request);
     if (!member.controllerSocket) { member.controlsReady = member.displayKeyboardReady; member.controlsMode = undefined; }
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
@@ -874,7 +888,7 @@ export class RoomServer {
       if (member.controllerToken) this.revokedTokens.add(tokenHash(member.controllerToken));
       member.controllerToken = randomBytes(24).toString('hex');
     }
-    member.controllerSocket = socket; member.controllerSeq = undefined; member.controlsReady = false;
+    member.controllerSocket = socket; member.controllerSeq = undefined; member.controllerReady = false; member.controlsReady = false;
     if (member.inputFromController) { member.input = undefined; member.inputAt = 0; }
     member.identities = [...new Set([...(member.identities ?? []), github, ...(auth0 ? [auth0] : [])])];
     this.sessions.set(socket, { room, member, controller: true }); clearTimeout(room.cleanupTimer);
@@ -888,11 +902,11 @@ export class RoomServer {
 
   private detachController(room: Room, member: Member, revoke: boolean) {
     const socket = member.controllerSocket;
-    member.controllerSocket = null; member.controllerSeq = undefined;
+    member.controllerSocket = null; member.controllerSeq = undefined; member.controllerReady = false;
     if (revoke && member.controllerToken) { this.revokedTokens.add(tokenHash(member.controllerToken)); member.controllerToken = undefined; }
     if (socket) { this.sessions.delete(socket); this.requests.delete(socket); if (revoke) socket.close(4002, 'unlinked'); }
     if (member.inputFromController) { member.input = undefined; member.inputAt = 0; }
-    member.controlsReady = !!member.socket && !!member.displayKeyboardReady;
+    member.controlsReady = !member.needsController && !!member.socket && !!member.displayKeyboardReady;
     this.classroomRoster(room);
     this.broadcastLobby(room); this.flushPersistence();
     if (room.classroom) this.publishClassroom(room, false);
@@ -1052,7 +1066,7 @@ export class RoomServer {
       room.boss.genesis = this.services.buildGenesis?.(room.bossProfile, boss, 'boss');
       room.boss.progress = { stage: 'ready', pct: 1 };
     }
-    const waiting = humans.filter(p => !p.controlsReady);
+    const waiting = humans.filter(p => !seatControlsReady(p));
     if (waiting.length) throw new Error(`${waiting.length} phone${waiting.length === 1 ? ' needs' : 's need'} to tap enable motion: ${waiting.map(p => p.name).join(', ')}`);
     const matchRubric = room.mode === 'edu' && (room.rubric || this.services.defaultRubric) ? structuredClone(room.rubric ?? this.services.defaultRubric!()) : undefined;
     if (matchRubric && this.services.applyRubric) for (const member of players) {

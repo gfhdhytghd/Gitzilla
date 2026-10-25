@@ -7,6 +7,10 @@ export interface Point2 { x: number; y: number }
 export interface ProjectedPoint extends Point2 { scale: number }
 export interface StageView { x: number; y: number; w: number; h: number; cssScale?: number }
 export type XRScale = 'table' | 'life';
+export type ImmersiveMode = 'immersive-vr' | 'immersive-ar';
+export interface SpatialSupport {
+  vr: boolean; ar: boolean; model: boolean; modelImmersive: boolean;
+}
 export interface CameraRigOptions {
   /** Initial logical viewport, NOT the WebGL canvas's CSS/backing-store size. */
   width: number; height: number; worldWidth: number; worldHeight: number;
@@ -47,22 +51,30 @@ export interface XRSelectInfo {
   pose: XRPose | undefined;
 }
 export interface XROptions {
+  /** Default remains VR for Vision Pro. Detect modes before the entry gesture. */
+  mode?: ImmersiveMode;
+  /** AR NotSupportedError only; permission/user cancellation never falls back. */
+  fallbackToVR?: boolean;
+  handTracking?: boolean;
   /** Approximate standing eye height when the device only provides local space. */
   fallbackViewerHeight?: number;
   onFrame?: (time: number, frame?: XRFrame) => void;
   onSelect?: (info: XRSelectInfo) => void;
+  /** Granted joint data only. Pose input is UI-only and never synthesizes select. */
+  onHand?: (source: XRInputSource, frame: XRFrame, space: XRReferenceSpace) => void;
   onVisibilityChange?: (state: XRVisibilityState) => void;
   onEnd?: () => void;
   /** Restore the screen animation loop when the session ends. */
   screenLoop?: ((time: number, frame?: XRFrame) => void) | null;
 }
 export interface XRHandle {
+  mode: ImmersiveMode;
   session: XRSession;
   referenceSpace: XRReferenceSpace;
   referenceSpaceType: 'local-floor' | 'local';
   exit(): Promise<void>;
 }
-export type XRRenderer = Pick<WebGLRenderer, 'xr' | 'setAnimationLoop'>;
+export type XRRenderer = Pick<WebGLRenderer, 'xr' | 'setAnimationLoop'> & Partial<Pick<WebGLRenderer, 'getClearAlpha' | 'setClearAlpha'>>;
 export interface TextureCache {
   /** Stable sprite key + frame signature. Same signature never marks texture dirty. */
   get(key: string, signature: string | number, source: HTMLCanvasElement): CanvasTexture;

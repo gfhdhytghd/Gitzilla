@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Vector3 } from 'three';
+import { Matrix4, PerspectiveCamera, Vector3 } from 'three';
 import type { Camera } from 'three';
 import type { CameraRig, CameraRigOptions, Point2, ProjectedPoint, StageView, XRPlacement, XRPlacementOptions } from './types';
 
@@ -78,4 +78,18 @@ export function getXRPlacement(options: XRPlacementOptions): XRPlacement {
   const centerY = options.follow?.y ?? (life ? h : h / 2);
   return { scale, position: { x: -centerX * scale, y: life ? 0 : options.tableHeight ?? 0.9,
     z: -centerY * scale - (options.distance ?? (life ? 0.5 : 1.3)) } };
+}
+
+/** Center the arena on an actual meter-space surface pose. Uniform scale and
+ * rotation come from the surface, never from the headset's tracking camera. */
+export function surfacePlacementMatrix(surface: Matrix4, worldWidth: number, worldHeight: number,
+  tableWidth = 1.2, out = new Matrix4()): Matrix4 {
+  const scale = positive(tableWidth, 'tableWidth') / positive(worldWidth, 'worldWidth');
+  positive(worldHeight, 'worldHeight');
+  // scale + local translation in one matrix, avoiding temporary matrix objects.
+  out.set(scale, 0, 0, -worldWidth * scale / 2,
+    0, scale, 0, 0.002,
+    0, 0, scale, -worldHeight * scale / 2,
+    0, 0, 0, 1);
+  return out.premultiply(surface);
 }

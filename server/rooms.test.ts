@@ -1943,6 +1943,53 @@ describe('GitHub account phone controller', () => {
     const cookie = request.headers.cookie;
     return cookie === 'alice' || cookie === 'renamed' ? { userId: 'github|42', login: cookie } : cookie === 'bob' ? { userId: 'github|99', login: 'alice' } : null;
   } };
+  it('requires phone-only readiness for a headset and never lets display reports replace phone readiness',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Headset','alice');
+    expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    display.send({t:'controls',ready:true,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    for(const ready of [true,false])display.send({t:'controls',ready,mode:'tap-only'});
+    display.send({t:'setRepo',repo:'test/repo'});display.send({t:'setBoss',repo:'test/boss'});await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    display.send({t:'start'});await until(()=>display.messages.some(m=>m.t==='error'&&m.message.includes('Headset')));
+    expect(display.lobby()?.phase).toBe('lobby');expect(display.lobby()?.players[0].controlsReady).toBe(false);
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'controls',ready:false,mode:'tap-only',needsController:true});await wait(30);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    phone.send({t:'controls',ready:false,mode:'standard',needsController:false});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    display.send({t:'controls',ready:true,mode:'tap-only'});await wait(30);expect(display.lobby()?.players[0].controlsReady).toBe(false);
+    phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'start'});await until(()=>display.messages.some(m=>m.t==='snapshot'));
+    display.send({t:'input',frame:{seq:50,move:[1,0],aim:null,fire:true,dash:false,skill:false,source:'keyboard'}});await until(()=>f.observed.some(frame=>frame.seq===50));
+    const closed=once(phone.socket,'close');phone.send({t:'pairEnd'});await closed;await until(()=>display.lobby()?.players[0].paired===false);
+    expect(display.lobby()?.players[0].controlsReady).toBe(false);
+  });
+  it('preserves an already-ready linked phone when the display enables required-controller mode',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice'),phone=await f.connect('controller',undefined,'Phone','alice');
+    phone.send({t:'controls',ready:true,mode:'seated'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});await wait(30);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    phone.socket.close();await once(phone.socket,'close');await until(()=>display.lobby()?.players[0].paired===false);expect(display.lobby()?.players[0].controlsReady).toBe(false);
+  });
+  it('persists required-controller policy through display reconnect and restart, but never saves a phone permission grant',async()=>{
+    const file=persistenceFile(),f=await setup(999,services,{persistenceFile:file}),display=await f.connect('player',undefined,'Headset','alice');
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    await f.close();const saved=JSON.parse(readFileSync(file,'utf8')).rooms[0].players[0];expect(saved.needsController).toBe(true);expect(saved.controllerReady).toBeUndefined();
+    const restored=await setup(999,services,{persistenceFile:file},f.room),headset=await restored.connect('player',display.welcome.token,'Headset','alice');
+    expect(headset.welcome.lobby.players[0].controlsReady).toBe(false);
+    headset.send({t:'controls',ready:true,mode:'tap-only'});await wait(30);expect(headset.lobby()?.players[0].controlsReady).toBe(false);
+    const resumedPhone=await restored.connect('controller',phone.welcome.token,'Phone','alice');expect(resumedPhone.welcome.lobby.players[0].controlsReady).toBe(false);
+    resumedPhone.send({t:'controls',ready:true,mode:'standard'});await until(()=>headset.lobby()?.players[0].controlsReady===true);
+    const again=await restored.connect('player',headset.welcome.token,'Headset','alice');expect(again.welcome.lobby.players[0].controlsReady).toBe(true);
+    const closed=once(resumedPhone.socket,'close');again.send({t:'pairEnd'});await closed;await until(()=>again.lobby()?.players[0].controlsReady===false);
+    const page=await restored.connect('player',again.welcome.token,'Headset','alice');expect(page.welcome.lobby.players[0].controlsReady).toBe(false);
+  });
+  it('allows only the display to clear its policy explicitly and rejects malformed flags',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice'),phone=await f.connect('controller',undefined,'Phone','alice');
+    phone.send({t:'controls',ready:true,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    let closed=once(phone.socket,'close');phone.send({t:'leave'});await closed;await until(()=>display.lobby()?.players[0].paired===false);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    display.send({t:'controls',ready:true,mode:'standard',needsController:'yes'} as unknown as ClientMsg);await until(()=>display.messages.some(m=>m.t==='error'&&m.message==='Invalid controls readiness'));
+    expect(display.lobby()?.players[0].controlsReady).toBe(false);
+    display.send({t:'controls',ready:true,mode:'tap-only',needsController:false});await until(()=>display.lobby()?.players[0].controlsReady===true);
+  });
   it.each([true,false])('advances every real sim tick for3s of30Hz tilt (linked display neutral: %s)', async linked => {
     let measuring=false,lastT=-1,lastPosition=0;
     const ticks:{at:number;dx:number}[]=[],displaySnapshots:number[]=[],phoneSnapshots:number[]=[];

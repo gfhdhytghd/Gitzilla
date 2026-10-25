@@ -1,8 +1,9 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { enterXR, exitXR, xrSupported } from './xr';
+import { enterXR, exitXR, xrSupported, XRRetryError } from './xr';
 import type { XRRenderer } from './types';
 
 class Session extends EventTarget {
+  inputSources: unknown[] = [];
   visibilityState = 'visible';
   floor = true;
   requestReferenceSpace = vi.fn(async (type: string) => { if (type === 'local-floor' && !this.floor) throw new Error('No floor'); return { type, getOffsetReferenceSpace: (offset: unknown) => ({ type, offset }) }; });
@@ -10,7 +11,7 @@ class Session extends EventTarget {
 }
 function setup(floor = true) {
   const session = new Session(); session.floor = floor;
-  const requestSession = vi.fn(async () => session);
+  const requestSession = vi.fn(async (_mode: XRSessionMode, _options?: XRSessionInit) => session);
   vi.stubGlobal('navigator', { xr: { isSessionSupported: vi.fn(async () => true), requestSession } });
   vi.stubGlobal('XRRigidTransform', class { constructor(public position: unknown) {} });
   const renderer = { xr: { enabled: false, setReferenceSpaceType: vi.fn(), setReferenceSpace: vi.fn(), setSession: vi.fn(async () => {}) }, setAnimationLoop: vi.fn() };
@@ -60,4 +61,43 @@ it('cleans a failed renderer setup and permits a fresh retry', async () => {
   await expect(enterXR(r)).rejects.toThrow('GL unavailable'); expect(session.end).toHaveBeenCalledTimes(1);
   expect(renderer.xr.enabled).toBe(false);
   await enterXR(r); await exitXR();
+});
+
+it('requests optional AR sensing and safely falls back only after unsupported AR', async () => {
+  const { requestSession, r } = setup();
+  requestSession.mockRejectedValueOnce(new DOMException('unsupported', 'NotSupportedError'));
+  const handle = await enterXR(r, { mode: 'immersive-ar' });
+  expect(handle.mode).toBe('immersive-vr');
+  expect(requestSession.mock.calls[0]).toEqual(['immersive-ar', { optionalFeatures: ['local-floor', 'local', 'hand-tracking', 'hit-test', 'anchors', 'plane-detection'] }]);
+  expect(requestSession.mock.calls[1][0]).toBe('immersive-vr');
+});
+
+it('does not retry permission denial and signals when fallback needs a new user gesture', async () => {
+  const { requestSession, r } = setup();
+  requestSession.mockRejectedValueOnce(new DOMException('denied', 'NotAllowedError'));
+  await expect(enterXR(r, { mode: 'immersive-ar' })).rejects.toMatchObject({ name: 'NotAllowedError' });
+  expect(requestSession).toHaveBeenCalledTimes(1);
+  requestSession.mockRejectedValueOnce(new DOMException('unsupported', 'NotSupportedError'));
+  requestSession.mockRejectedValueOnce(new DOMException('activation expired', 'NotAllowedError'));
+  await expect(enterXR(r, { mode: 'immersive-ar' })).rejects.toBeInstanceOf(XRRetryError);
+});
+
+it('routes granted hands to pose callbacks without synthesizing select events', async () => {
+  const { session, r, renderer } = setup(); const onHand = vi.fn(), onSelect = vi.fn();
+  session.inputSources = [{ hand: new Map(), handedness: 'left' }, { targetRayMode: 'transient-pointer' }];
+  const handle = await enterXR(r, { onHand, onSelect });
+  const loop = renderer.setAnimationLoop.mock.calls.at(-1)![0] as Function;
+  const frame = {}; loop(1, frame);
+  expect(onHand).toHaveBeenCalledTimes(1);
+  expect(onHand).toHaveBeenCalledWith(session.inputSources[0], frame, handle.referenceSpace);
+  expect(onSelect).not.toHaveBeenCalled();
+});
+
+it('makes AR compositor clear transparent and restores it on session end', async () => {
+  const { r } = setup();
+  const getClearAlpha = vi.fn(() => 1), setClearAlpha = vi.fn();
+  Object.assign(r, { getClearAlpha, setClearAlpha });
+  const handle = await enterXR(r, { mode: 'immersive-ar' });
+  expect(handle.mode).toBe('immersive-ar'); expect(setClearAlpha).toHaveBeenCalledWith(0);
+  await handle.exit(); expect(setClearAlpha).toHaveBeenLastCalledWith(1);
 });

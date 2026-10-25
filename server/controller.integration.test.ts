@@ -38,11 +38,15 @@ it.skipIf(process.env.ROOM_RESTART_TEST!=='1')('wires my-seat and authenticated 
     const first=await boot();const{room}=await(await fetch(first.base+'/api/room',{method:'POST'})).json() as {room:string};
     expect((await fetch(`${first.base}/api/rooms/${room}/my-seat`)).status).toBe(401);
     const display=await connect(first.base,room,'player'),headers={Cookie:cookie};
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});
+    await until(()=>display.messages.some(m=>m.t==='lobby'&&m.lobby.players[0].controlsReady===false));
     const lookup=()=>fetch(`${first.base}/api/rooms/${room}/my-seat`,{headers});
     expect(await(await lookup()).json()).toEqual({seatId:display.welcome.you,name:'Fixture display',paired:false});
     const phone=await connect(first.base,room,'controller');expect(phone.welcome.you).toBe(display.welcome.you);expect(phone.welcome.controller).toBe(true);
     expect(await(await lookup()).json()).toEqual({seatId:display.welcome.you,name:'Fixture display',paired:true});
     await stop(first.child);const saved=readFileSync(join(directory,'rooms.json'),'utf8');
+    const savedRoom = (JSON.parse(saved).rooms as {code:string;players:{needsController?:boolean}[]}[]).find(entry=>entry.code===room);
+    expect(savedRoom?.players[0].needsController).toBe(true);
     expect(saved).toContain(phone.welcome.token);expect(saved).not.toContain('github|42');expect(saved).not.toContain(cookie);
     const second=await boot();const resumedPhone=await connect(second.base,room,'controller',phone.welcome.token);
     expect(resumedPhone.welcome.controller).toBe(true);expect(resumedPhone.welcome.you).toBe(display.welcome.you);
@@ -51,6 +55,7 @@ it.skipIf(process.env.ROOM_RESTART_TEST!=='1')('wires my-seat and authenticated 
     expect(await(await fetch(`${second.base}/api/rooms/${room}/my-seat`,{headers})).json()).toEqual({seatId:display.welcome.you,name:'Fixture display',paired:true});
     const close=once(resumedPhone.socket,'close');resumedDisplay.send({t:'pairEnd'});expect((await close)[0]).toBe(4002);
     await until(()=>resumedDisplay.messages.some(m=>m.t==='lobby'&&m.lobby.players[0].paired===false));
+    expect(resumedDisplay.messages.filter(m=>m.t==='lobby').at(-1)!.lobby.players[0].controlsReady).toBe(false);
     expect((await fetch(`${second.base}/api/rooms/${room}/my-seat`,{headers})).status).toBe(200);
   }finally{for(const socket of sockets)socket.terminate();for(const child of children)await stop(child);rmSync(directory,{recursive:true,force:true});}
 },20_000);

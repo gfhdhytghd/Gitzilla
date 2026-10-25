@@ -146,6 +146,8 @@ Players report `{t:'controls',ready:boolean,mode:'standard'|'seated'|'tap-only'}
 
 Sensor readiness and profile reports are memory-only. A new connection/page cannot restore readiness from room persistence. A same-page network resume can immediately report true again if the current page's permission and live-sensor checks still pass. START rejects participating ready-repo players whose controlsReady is false with a count and names; spectators and unconfigured repo slots do not block. Reports during combat update the lobby without pausing teammates; the permission prompt/recovery overlay belongs to the client.
 
+A headset display reports `needsController:true` on its controls message. This per-seat policy survives reconnect/restart, while the phone's permission grant remains memory-only. Only a currently linked phone's controls report can make that seat ready: desktop defaults, display controls messages and keyboard activity cannot grant readiness. Display reports cannot revoke an already-ready linked phone either. Phone disconnect/unlink makes the seat not ready again. Omitting the flag preserves the policy; an explicit display `needsController:false` returns to normal controls behavior. Phone messages cannot change the display's policy.
+
 ## Teacher rubric and student feedback
 
 New edu rooms expose a default `lobby.rubric`. Preview a teacher document with `POST /api/rubric/parse?room=ABCD&filename=assignment.md`: send raw text/Markdown/PDF, or JSON `{text,filename?}`, capped at 1 MiB. PDF extraction uses the rubric module's async `pdftotext` adapter; unreadable/scanned PDFs return a helpful text-upload error. Preview preserves `unparsed` lines without applying the rubric.
