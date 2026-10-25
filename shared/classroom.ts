@@ -43,5 +43,7 @@ export interface ClassroomState {
   raidEndsAt: number | null; bossHp: number; bossMaxHp: number;
   rows: ClassroomRow[]; rounds: ClassroomRound[];
   notice?: string;
+  // Host pause (same shape as MatchState.paused): the raid clock freezes; resumeAt = 3s resume countdown target.
+  paused?: { by: string; since: number; resumeAt: number | null } | null;
 }
 export type ClassroomCommand = 'start' | 'pause' | 'resume' | 'attack' | 'next' | 'retry' | 'finish' | 'extend';
