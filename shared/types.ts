@@ -1,5 +1,5 @@
 import type { Locale } from './i18n/locale';
-import type { ClassroomPlan, ClassroomState, ClassroomReport, ClassroomCommand } from "./classroom";
+import type { ClassroomPlan, ClassroomState, ClassroomReport, ClassroomCommand, InAppFile } from "./classroom";
 // Shared contracts. Every module imports from here; change only via the coordinator (Claude, pane wQ:p9).
 
 // ---------- Repo analysis (analysis/ produces, sim/ + render/ consume) ----------
@@ -490,6 +490,7 @@ export type ClientMsg =
   | { t: "classroomPlan"; plan: ClassroomPlan }
   | { t: "classroomControl"; action: ClassroomCommand }
   | { t: "classroomSubmit"; repo: string; ref?: string }
+  | { t: "classroomSubmitCode"; files: InAppFile[] }   // in-app editor submission (≤ 20 files, ≤ 200 KB total)
   | { t: "classroomReview"; playerId: string; score: number; note: string }
   | { t: "hello"; room: string; role: Role; name: string; resume?: string }
   | { t: "setRepo"; repo: string }

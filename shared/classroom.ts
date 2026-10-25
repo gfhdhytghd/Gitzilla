@@ -15,7 +15,12 @@ export interface ClassroomStep {
   rubric: Rubric;
   checks: ClassroomCheck[];
   checksWeight: number; // 0..100; only used when checks exist
+  // In-app editor (no GitHub needed): starter files students edit in the browser. When present the student UI opens
+  // the editor by default; GitHub submission stays available as an alternative.
+  starter?: InAppFile[];
+  language?: 'python';     // editor highlighting / optional in-browser run (Pyodide); grading stays static
 }
+export interface InAppFile { path: string; content: string }  // repo-relative path, UTF-8 text
 export interface ClassroomPlan { title: string; bossName: string; steps: ClassroomStep[] }
 export type ClassroomPhase = 'setup' | 'coding' | 'paused' | 'raid' | 'feedback' | 'complete';
 export interface ClassroomRow {
@@ -33,6 +38,7 @@ export interface ClassroomRound {
 }
 export interface ClassroomReport {
   stepId: string; attempt: number; repo: string; commit: string; submittedAt: number;
+  source?: 'github' | 'in-app';   // in-app: repo = "in-app", commit = content hash ("inapp:<8 hex>")
   score: number; improvement: number; checks: { label: string; passed: boolean; detail: string }[];
   criteria: CriterionResult[]; advice: string[];
   teacherReview?: { score: number; note: string };
