@@ -5,26 +5,12 @@ import { emptyCircle, recognizeCircle, type CircleState } from './circle';
 /** Pure sensor processing. Times: monotonic ms; acceleration: m/s²; gyro: deg/s. */
 export interface Acceleration { x: number; y: number; z: number }
 export interface RotationRate { alpha: number; beta: number; gamma: number }
-interface RotationState {
-  at: number | null;
-  started: number | null;
-  lastRate: Acceleration;
-  direction: Acceleration;
-  net: Acceleration;
-  path: number;
-  peak: number;
-  reversed: boolean;
-  blocked: boolean;
-  quietAt: number | null;
-}
 export interface GestureState {
   fireUntil: number;
   lastFire: number;
   peakHeld: boolean;
   lastPeak: Acceleration | null;
-  lastDash: number;
   lastSkill: number;
-  rotation: RotationState;
   circle: CircleState;
   circleHeld: boolean;
   pendingSwing: { at: number; peak: number } | null;
@@ -43,35 +29,34 @@ export interface GestureResult {
   pendingSwing: boolean;
   swingPeak: number;
 }
-const zero = (): Acceleration => ({ x: 0, y: 0, z: 0 });
 const length = (a: Acceleration) => Math.hypot(a.x, a.y, a.z);
 const dot = (a: Acceleration, b: Acceleration) => a.x * b.x + a.y * b.y + a.z * b.z;
-const emptyRotation = (): RotationState => ({ at: null, started: null, lastRate: zero(), direction: zero(), net: zero(), path: 0,
-  peak: 0, reversed: false, blocked: false, quietAt: null });
 export function createGestureState(): GestureState {
   return { fireUntil: 0, lastFire: -Infinity, peakHeld: false, lastPeak: null,
-    lastDash: -Infinity, lastSkill: -Infinity, rotation: emptyRotation(), circle: emptyCircle(), circleHeld: false, pendingSwing: null };
+    lastSkill: -Infinity, circle: emptyCircle(), circleHeld: false, pendingSwing: null };
 }
 
-/** Twist uses gyro only. Circle skills use acceleration, never rotation integration.
+/** Gyro is only a circle rejection signal; dash comes from gravity tilt.
+ * Circle skills use acceleration, never rotation integration.
  * Swings wait for release/120ms so a curving centripetal peak cannot leak fire. */
 export function recognizeGesture(previous: GestureState, a: Acceleration, now: number, profile: MotionProfile = 'standard',
   rate: RotationRate | null = null, thresholds: GestureThresholds = defaultThresholds(profile)): GestureResult {
   if (profile === 'tap-only') return { state: createGestureState(), fire: false, fired: false, dash: false, skill: false,
     spinDegrees: 0, gyroPeak: 0, spinMagnitude: 0, spinGyroDegrees: 0, circleActive: false, pendingSwing: false, swingPeak: 0 };
   const state = { ...previous, pendingSwing: previous.pendingSwing ? { ...previous.pendingSwing } : null };
-  const r = { ...previous.rotation, net: { ...previous.rotation.net } }; state.rotation = r;
   const circle = recognizeCircle(previous.circle, a, rate, now, thresholds); state.circle = circle.state;
-  let dash = false, skill = false, fired = false, swingPeak = 0;
+  const dash=false;
+  let skill = false, fired = false, swingPeak = 0;
   const magnitude = length(a);
   if (state.pendingSwing) state.pendingSwing.peak = Math.max(state.pendingSwing.peak, magnitude);
   if (magnitude < thresholds.spinMagnitude) state.circleHeld = false;
-  if (circle.potential || circle.active) state.circleHeld = true;
-  // Once a curved peak is classified, its reversal/failed fit cannot reappear
+  if (circle.active) state.circleHeld = true;
+  // Only a confirmed circle (90°), not a 20° flick fragment, claims the peak.
+  // Once a circle is classified, its reversal/failed fit cannot reappear
   // as a delayed swing. A fresh flick requires returning below the noise floor.
   if (state.circleHeld) state.pendingSwing = null; // aborted circles have no attack refund
   if (circle.active) state.fireUntil = 0;
-  if (state.pendingSwing && (magnitude < thresholds.releaseThreshold || now - state.pendingSwing.at >= 120)) {
+  if (state.pendingSwing && (magnitude < thresholds.releaseThreshold || (now - state.pendingSwing.at >= 120 && !circle.potential))) {
     if (now - state.lastFire >= thresholds.refractoryMs) {
       fired = true; swingPeak = state.pendingSwing.peak; state.lastFire = now; state.fireUntil = now + 600;
     }
@@ -86,33 +71,9 @@ export function recognizeGesture(previous: GestureState, a: Acceleration, now: n
   if (circle.completed && now - state.lastSkill >= 1200) {
     skill = true; state.lastSkill = now; state.fireUntil = 0; state.pendingSwing = null;
     state.circle = { ...circle.state, samples: circle.state.samples.slice(-1) };
-    if (r.started !== null) r.blocked = true;
-  }
-  if (rate && [rate.alpha, rate.beta, rate.gamma].every(Number.isFinite)) {
-    const v = { x: rate.alpha, y: rate.beta, z: rate.gamma }, speed = length(v);
-    const gap = r.at === null ? 0 : now - r.at;
-    if (gap > 200 || gap < 0) Object.assign(r, emptyRotation());
-    const dt = r.at === null ? 0 : Math.min(100, Math.max(0, now - r.at)) / 1000;
-    const moving = speed >= 45;
-    if (r.started === null && moving) { r.started = now; r.direction = { ...v }; r.peak = speed; }
-    if (r.started !== null) {
-      r.peak = Math.max(r.peak, speed); r.path += (speed >= 20 ? speed : 0) * dt;
-      r.net = { x: r.net.x + v.x * dt, y: r.net.y + v.y * dt, z: r.net.z + v.z * dt };
-      if (moving && dot(v, r.direction) < 0) r.reversed = true;
-      if (fired || state.pendingSwing || circle.active || now - state.lastFire < 400 || length(r.net) >= 120) r.blocked = true;
-      if (moving) r.quietAt = null; else r.quietAt ??= now;
-      if (r.quietAt !== null && now - r.quietAt >= 100) {
-        dash = !r.blocked && r.reversed && r.peak >= thresholds.twistThreshold && r.path >= 12
-          && length(r.net) <= 22 && now - r.started <= 650 && now - state.lastDash >= 650;
-        if (dash) { state.lastDash = now; state.fireUntil = 0; }
-        Object.assign(r, emptyRotation());
-      }
-      if (r.started !== null && now - r.started > 650) r.blocked = true;
-    }
-    r.at = now; r.lastRate = v;
   }
   return { state, fire: now < state.fireUntil, fired: fired && !skill && !dash, dash, skill,
-    spinDegrees: circle.degrees, gyroPeak: r.peak, spinMagnitude: circle.magnitude, spinGyroDegrees: circle.gyroDegrees,
+    spinDegrees: circle.degrees, gyroPeak: rate ? Math.hypot(rate.alpha,rate.beta,rate.gamma) : 0, spinMagnitude: circle.magnitude, spinGyroDegrees: circle.gyroDegrees,
     circleActive: circle.active, pendingSwing: !!state.pendingSwing, swingPeak: swingPeak || state.pendingSwing?.peak || 0 };
 }
 

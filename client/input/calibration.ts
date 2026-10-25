@@ -1,16 +1,16 @@
 import type { Acceleration, RotationRate } from './gestures';
 import { sanitizeThresholds, type GestureThresholds } from './thresholds';
 
-export type CalibrationStep = 'neutral' | 'tilt' | 'swing' | 'twist' | 'spin';
+export type CalibrationStep = 'neutral' | 'tilt' | 'swing' | 'twist' | 'dash' | 'spin';
 export type GestureKind = 'attack' | 'dash' | 'skill';
 export interface GestureNotice { kind: GestureKind; via: string; at: number }
 export interface CalibrationSample {
   at: number; tilt?: [number, number]; acceleration?: Acceleration; rotationRate?: RotationRate | null;
-  spinDegrees?: number; spinMagnitude?: number; spinGyroDegrees?: number; swingPeak?: number; gesture?: GestureNotice;
+  dashTiltDegrees?: number; spinDegrees?: number; spinMagnitude?: number; spinGyroDegrees?: number; swingPeak?: number; gesture?: GestureNotice;
 }
 export interface CalibrationMeter {
   step: CalibrationStep | null; elapsed: number; acceleration: number; gyro: number; gyroAvailable: boolean;
-  spinDegrees: number; spinMagnitude: number; spinGyroDegrees: number; instruction: string;
+  dashTiltDegrees: number; spinDegrees: number; spinMagnitude: number; spinGyroDegrees: number; instruction: string;
   tilt: [number, number]; ranges: [number, number, number, number];
   count: number; goal: number; ready: boolean; peak: number; lastGesture: GestureNotice | null;
 }
@@ -25,23 +25,24 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
   let poseSum: [number, number] = [0, 0]; let poses = 0;
   let ranges: [number, number, number, number] = [0, 0, 0, 0];
   let acceleration = 0, gyro = 0, spinDegrees = 0, peak = 0, count = 0, gyroAvailable = false;
+  let dashTiltDegrees = 0;
   let spinMagnitude = 0, spinGyroDegrees = 0, circlePeak = 0;
   let spinMagnitudes: number[] = [];
   let tilt: [number, number] = [0, 0]; let lastGesture: GestureNotice | null = null;
   let pendingSwing: number | null = null;
-  let samples: Record<'swing' | 'twist' | 'spin', number[]> = { swing: [], twist: [], spin: [] };
-  const goals = { neutral: 8, tilt: 4, swing: 3, twist: 3, spin: 2 };
+  let samples: Record<'swing' | 'dash' | 'spin', number[]> = { swing: [], dash: [], spin: [] };
+  const goals = { neutral: 8, tilt: 4, swing: 3, twist: 3, dash: 3, spin: 2 };
   const api = {
     get active() { return step !== null; },
     startStep(next: CalibrationStep | 'attack' | 'dash' | 'skill') {
-      step = next === 'attack' ? 'swing' : next === 'dash' ? 'twist' : next === 'skill' ? 'spin' : next;
+      step = next === 'attack' ? 'swing' : next === 'twist' ? 'dash' : next === 'skill' ? 'spin' : next;
       start = lastAt = now(); count = peak = spinDegrees = 0; lastGesture = null;
       acceleration = gyro = 0;
-      spinMagnitude = spinGyroDegrees = circlePeak = 0;
+      dashTiltDegrees = spinMagnitude = spinGyroDegrees = circlePeak = 0;
       pendingSwing = null;
-      if (step === 'neutral') { neutral = null; poseSum = [0, 0]; poses = 0; ranges = [0, 0, 0, 0]; samples = { swing: [], twist: [], spin: [] }; }
+      if (step === 'neutral') { neutral = null; poseSum = [0, 0]; poses = 0; ranges = [0, 0, 0, 0]; samples = { swing: [], dash: [], spin: [] }; }
       if (step === 'tilt') ranges = [0, 0, 0, 0];
-      if (step === 'swing' || step === 'twist' || step === 'spin') samples[step] = [];
+      if (step === 'swing' || step === 'dash' || step === 'spin') samples[step] = [];
       if (step === 'spin') spinMagnitudes = [];
       hooks.start?.(step);
     },
@@ -65,20 +66,21 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       // peak so training measures the person's actual flick, not just the threshold.
       if (step === 'swing' && sample.acceleration && pendingSwing !== null) {
         samples.swing[pendingSwing] = Math.max(samples.swing[pendingSwing], acceleration);
-        if (acceleration < 2 && lastGesture && sample.at - lastGesture.at > 50) { pendingSwing = null; peak = 0; }
+        if (acceleration < getProfile().releaseThreshold && lastGesture && sample.at - lastGesture.at > 50) { pendingSwing = null; peak = 0; }
       }
       if (sample.rotationRate) { gyroAvailable = true; gyro = Math.hypot(...Object.values(sample.rotationRate)); }
+      if (sample.dashTiltDegrees !== undefined) dashTiltDegrees=sample.dashTiltDegrees;
       if (sample.spinDegrees !== undefined) spinDegrees = sample.spinDegrees;
       if (sample.spinMagnitude !== undefined) { spinMagnitude = sample.spinMagnitude; circlePeak = Math.max(circlePeak, spinMagnitude); }
       if (sample.spinGyroDegrees !== undefined) spinGyroDegrees = sample.spinGyroDegrees;
-      peak = Math.max(peak, step === 'swing' ? Math.max(acceleration, sample.swingPeak ?? 0) : step === 'spin' ? spinDegrees : gyro);
+      peak = Math.max(peak, step === 'swing' ? Math.max(acceleration, sample.swingPeak ?? 0) : step === 'spin' ? spinDegrees : dashTiltDegrees);
       if (sample.gesture) {
         lastGesture = sample.gesture;
         const matches = step === 'swing' && (sample.gesture.via === 'swing' || sample.gesture.via === 'tap')
-          || step === 'twist' && (sample.gesture.via === 'twist' || sample.gesture.via === 'double-tap')
+          || step === 'dash' && (sample.gesture.via === 'tilt-dash' || sample.gesture.via === 'double-tap')
           || step === 'spin' && (sample.gesture.via === 'spin' || sample.gesture.via === 'long-press');
-        if (matches && (step === 'swing' || step === 'twist' || step === 'spin')) {
-          if (sample.gesture.via === step) {
+        if (matches && (step === 'swing' || step === 'dash' || step === 'spin')) {
+          if (sample.gesture.via === step || step === 'dash' && sample.gesture.via === 'tilt-dash') {
             samples[step].push(peak);
             if (step === 'spin') { spinMagnitudes.push(circlePeak); circlePeak = 0; }
             if (step === 'swing') pendingSwing = samples.swing.length - 1;
@@ -88,8 +90,8 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       }
     },
     meter(): CalibrationMeter {
-      return { step, elapsed: Math.max(0, lastAt - start), acceleration, gyro, gyroAvailable, spinDegrees, spinMagnitude, spinGyroDegrees,
-        instruction: step === 'spin' ? 'Draw circles with your phone; keep its orientation steady.' : '', tilt: [...tilt], ranges: [...ranges],
+      return { step, elapsed: Math.max(0, lastAt - start), acceleration, gyro, gyroAvailable, dashTiltDegrees, spinDegrees, spinMagnitude, spinGyroDegrees,
+        instruction: step === 'dash' ? 'Tilt hard to dash (50°); return below35°.' : step === 'spin' ? 'Draw circles with your phone; keep its orientation steady.' : '', tilt: [...tilt], ranges: [...ranges],
         count, goal: step ? goals[step] : 0, ready: step !== null && count >= goals[step] && (step !== 'neutral' || lastAt - start >= 300), peak, lastGesture };
     },
     /** Pure snapshot; call input.setProfile(result()) to persist. Skipped steps preserve defaults. */
@@ -97,7 +99,6 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       const base = getProfile();
       return sanitizeThresholds({ ...base, neutral: null,
         swingThreshold: samples.swing.length ? median(samples.swing) * 0.6 : base.swingThreshold,
-        twistThreshold: samples.twist.length ? median(samples.twist) * 0.6 : base.twistThreshold,
         spinAngle: samples.spin.length ? median(samples.spin) * 0.9 : base.spinAngle,
         spinMagnitude: spinMagnitudes.length ? median(spinMagnitudes) * 0.6 : base.spinMagnitude,
         fullSpeed: base.fullSpeed }, base);

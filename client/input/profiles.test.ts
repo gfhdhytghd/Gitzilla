@@ -21,9 +21,9 @@ describe('inclusive motion profiles', () => {
   it('seated and standard share the latest horizontal15° movement while retaining gesture thresholds', () => {
     expect(tiltMove([7.5, 0], [45, 45], 'seated')[0]).toBeCloseTo(0.5);
     expect(tiltMove([15, 0], [0, 0], 'standard')[0]).toBeCloseTo(1);
-    expect(MOTION_SETTINGS.seated.swingThreshold).toBe(6);
+    expect(MOTION_SETTINGS.seated.swingThreshold).toBe(0.8);
   });
-  it.each([[7, 0, 0], [-7, 0, 0], [0, 7, 0], [0, -7, 0], [0, 0, 7], [0, 0, -7]])
+  it.each([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]])
     ('small seated flick (%s, %s, %s) attacks without needing the standard swing', (x, y, z) => {
       const a = { x, y, z };
       const pending = recognizeGesture(createGestureState(), a, 0, 'seated');
@@ -33,7 +33,7 @@ describe('inclusive motion profiles', () => {
   it('seated filters tremor and gives repeat flicks a longer refractory interval', () => {
     let state = createGestureState();
     for (let time = 0; time < 600; time += 20) {
-      const result = recognizeGesture(state, { x: 2, y: -2, z: 1 }, time, 'seated');
+      const result = recognizeGesture(state, { x: 0.12, y: -0.12, z: 0.1 }, time, 'seated');
       expect(result.fired).toBe(false); state = result.state;
     }
     state = recognizeGesture(state, { x: 7, y: 0, z: 0 }, 600, 'seated').state;

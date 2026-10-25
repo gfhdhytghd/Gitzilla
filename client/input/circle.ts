@@ -67,8 +67,11 @@ export function recognizeCircle(previous: CircleState, acceleration: Acceleratio
   const monotonic = maxStep <= 80 && backward <= 12 && travel > 0 && Math.abs(sweep) / travel >= 0.9;
   if (!monotonic) { state.samples = samples.slice(-1); return result; }
   result.degrees = Math.abs(sweep);
-  result.potential = result.degrees >= 20;
-  result.active = result.degrees >= 90;
-  result.completed = samples.length >= 6 && now - samples[0].at >= 200 && result.degrees >= thresholds.spinAngle;
+  // Project observed rotation to a full circle: fast wrist flicks must not
+  // claim swing arbitration merely because two acceleration vectors curved.
+  const quiet = gyroDegrees * thresholds.spinAngle / Math.max(1,result.degrees) < 60;
+  result.potential = result.degrees >= 20 && quiet;
+  result.active = result.degrees >= 90 && quiet;
+  result.completed = quiet && samples.length >= 6 && now - samples[0].at >= 200 && result.degrees >= thresholds.spinAngle;
   return result;
 }

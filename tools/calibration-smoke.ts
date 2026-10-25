@@ -22,7 +22,7 @@ try {
     import {createInput} from '/client/input/index.ts';
     window.__input=createInput({canvas:document.querySelector('canvas'),toArena:(x,y)=>[x,y],getSelf:()=>null});
     enable.onclick=()=>void __input.requestPermission();
-    for(const step of ['neutral','tilt','swing','twist','spin']){ const b=document.createElement('button');b.textContent=step;b.dataset.testid='step-'+step;b.onclick=()=>__input.calibration.startStep(step);steps.append(b); }
+    for(const step of ['neutral','tilt','swing','dash','spin']){ const b=document.createElement('button');b.textContent=step;b.dataset.testid='step-'+step;b.onclick=()=>__input.calibration.startStep(step);steps.append(b); }
     save.onclick=()=>{__input.setProfile(__input.calibration.result());__input.calibration.stop();};
     setInterval(()=>{meter.textContent=JSON.stringify(__input.calibration.meter(),null,2);__input.sample();},30);
   </script>` }));
@@ -30,7 +30,7 @@ try {
   await context.addInitScript(String.raw`(()=>{
     for(const key of ['DeviceMotionEvent','DeviceOrientationEvent']) Object.defineProperty(window[key],'requestPermission',{configurable:true,value:()=>Promise.resolve('granted')});
     window.__motion={beta:45,gamma:0,x:0,y:0,z:0,circleStart:null,rate:{alpha:0,beta:0,gamma:0}};
-    setInterval(()=>{const m=__motion;if(m.circleStart!==null){const a=(performance.now()-m.circleStart)/1000*Math.PI*2;m.x=8*Math.cos(a);m.z=8*Math.sin(a);}dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:m.beta,gamma:m.gamma}));dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:m.x,y:m.y,z:m.z},rotationRate:m.rate,interval:30}));},30);
+    setInterval(()=>{const m=__motion;if(m.circleStart!==null){const a=(performance.now()-m.circleStart)/1000*Math.PI*2;m.x=2*Math.cos(a);m.z=2*Math.sin(a);}dispatchEvent(new DeviceOrientationEvent('deviceorientation',{beta:m.beta,gamma:m.gamma}));dispatchEvent(new DeviceMotionEvent('devicemotion',{acceleration:{x:m.x,y:m.y,z:m.z},rotationRate:m.rate,interval:30}));},30);
   })();`);
   page.on('pageerror', e => errors.push(e.stack || e.message));
   await page.goto(`${base}/__calibration-test`);
@@ -44,19 +44,19 @@ try {
   for (const [beta, gamma] of [[45, -12], [45, 12], [33, 0], [57, 0]]) { await set({ beta, gamma }); await page.waitForTimeout(100); }
   assert((await meter()).ready); await set({ beta: 45, gamma: 0 }); check('all four tilt ranges recognized');
   await step('swing');
-  for (let i = 0; i < 3; i++) { await set({ x: 10 }); await page.waitForTimeout(70); await set({ x: 0 }); await page.waitForTimeout(260); }
+  for (let i = 0; i < 3; i++) { await set({ x: 2 }); await page.waitForTimeout(70); await set({ x: 0 }); await page.waitForTimeout(260); }
   assert((await meter()).ready); check('three actual swing recognitions record user peaks');
-  await step('twist');
+  await step('dash');
   for (let i = 0; i < 3; i++) {
-    await set({ rate: { alpha: 300, beta: 0, gamma: 0 } }); await page.waitForTimeout(100);
-    await set({ rate: { alpha: -300, beta: 0, gamma: 0 } }); await page.waitForTimeout(100);
-    await set({ rate: { alpha: 0, beta: 0, gamma: 0 } }); await page.waitForTimeout(550);
+    await set({beta:0,gamma:0});await page.waitForTimeout(400);
+    await set({beta:0,gamma:60});await page.waitForTimeout(350);
+    await set({beta:0,gamma:0});await page.waitForTimeout(400);
   }
-  assert((await meter()).ready); check('three settled twist recognitions record gyro peaks');
+  assert((await meter()).ready); check('three hard tilt dashes mark fixed50° training ready without gyro');
   await step('spin');
   for (let i = 0; i < 2; i++) {
     await page.evaluate(() => { (window as any).__motion.circleStart = performance.now(); }); await page.waitForTimeout(1080);
-    assert((await meter()).spinMagnitude >= 7); assert((await meter()).spinGyroDegrees < 60);
+    assert((await meter()).spinMagnitude >= 1.9); assert((await meter()).spinGyroDegrees < 60);
     await set({ circleStart: null, x: 0, z: 0 }); await page.waitForTimeout(400);
   }
   assert((await meter()).ready); check('two translation circles mark skill training ready with quiet gyro');
@@ -71,9 +71,9 @@ try {
   profile = await page.evaluate(() => (window as any).__input.profile);
   assert.equal((profile as any).neutral, null);
   assert.equal((profile as any).fullSpeed, 15);
-  assert.equal((profile as any).swingThreshold, 6); assert.equal((profile as any).twistThreshold, 180);
+  assert.equal((profile as any).swingThreshold, 1.2); assert.equal((profile as any).twistThreshold, 180);
   assert((profile as any).spinAngle >= 280 && (profile as any).spinAngle <= 340);
-  assert(Math.abs((profile as any).spinMagnitude - 4.8) < 0.1);
+  assert(Math.abs((profile as any).spinMagnitude-1.2)<.01);
   await page.screenshot({ path: `${output}/trained.png` });
   await page.reload();
   assert.deepEqual(await page.evaluate(() => (window as any).__input.profile), profile);

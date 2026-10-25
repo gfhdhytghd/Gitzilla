@@ -20,7 +20,7 @@ describe('circle-safe swing recognizer', () => {
     });
   it('uses vector magnitude for diagonal swings and ignores low jitter', () => {
     expect(trace([[0, 8, 8, 8], [30, 0, 0, 0]])[1].fired).toBe(true);
-    expect(trace([[0, 3, 4, 2], [100, 11, 0, 0]]).some(f => f.fire)).toBe(false);
+    expect(trace([[0, 0.2, 0.1, 0.15], [100, 0.15, 0, 0]]).some(f => f.fire)).toBe(false);
   });
   it('debounces sustained peaks and requires 200ms between attacks', () => {
     const frames = trace([[0, 15, 0, 0], [80, 0, 0, 0], [100, 15, 0, 0], [150, 0, 0, 0],

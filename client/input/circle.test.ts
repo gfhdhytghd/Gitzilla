@@ -24,7 +24,7 @@ it('fits a tilted plane; primary axis/phone orientation is not required', () => 
 });
 it('rejects circles while the phone rotates, subthreshold jitter and incomplete/reversing arcs', () => {
   expect(circle(20, false, 8, 1, { alpha: 120, beta: 0, gamma: 0 }).some(f => f.skill)).toBe(false);
-  expect(circle(20, true, 0.8).some(f => f.fire || f.skill || f.dash)).toBe(false);
+  expect(circle(20, true, 0.15).some(f => f.fire || f.skill || f.dash)).toBe(false);
   let state = createGestureState(); let skills = 0;
   for (let at = 0; at < 2000; at += 20) {
     const angle = Math.sin(at / 200) * Math.PI / 2;
@@ -83,7 +83,7 @@ it('a reversing circle cannot turn into a delayed swing before returning to rest
   expect(recognizeGesture(state,zero,1580,'standard',quiet).fired).toBe(true);
 });
 
-it('a completed circle does not block the next independent twist-return dash', () => {
+it('a completed circle cannot re-enable the removed twist-return dash', () => {
   let state=circle(20,false,8).at(-1)!.state;
   for(let at=1020;at<1500;at+=20) state=recognizeGesture(state,zero,at,'standard',quiet).state;
   const frames=[];
@@ -91,6 +91,6 @@ it('a completed circle does not block the next independent twist-return dash', (
     const alpha=at<1600?300:at<1700?-300:0;
     const frame=recognizeGesture(state,zero,at,'standard',{alpha,beta:0,gamma:0});state=frame.state;frames.push(frame);
   }
-  expect(frames.filter(f=>f.dash)).toHaveLength(1);
+  expect(frames.filter(f=>f.dash)).toHaveLength(0);
   expect(frames.every(f=>!f.fire&&!f.skill)).toBe(true);
 });

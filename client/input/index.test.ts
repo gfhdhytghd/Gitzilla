@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInput, createInputDebugPanel, vibrate, requestMotionPermission, getMotionPermissionState } from './index';
 import type { InputController } from './index';
+import { realTraces } from './real-traces';
 import type { MotionProfile } from '../../shared/types';
 
 // Small browser fixture: no jsdom dependency and no actual sensor/device claims.
@@ -138,7 +139,7 @@ describe('desktop input', () => {
     const input = start('standard');
     localStorage.setItem('kaiju.motionCalibration.v3', JSON.stringify({version:3,profile:'standard',thresholds:{swingThreshold:6,twistThreshold:150}}));
     emit(win,'kaiju:gesture-trained');
-    expect(input.profile.swingThreshold).toBe(6); expect(input.profile.twistThreshold).toBe(150);
+    expect(input.profile.swingThreshold).toBe(1.2); expect(input.profile.twistThreshold).toBe(180);
   });
   it('maps all dash/skill aliases and ignores editable elements', () => {
     const input = start();
@@ -436,7 +437,7 @@ describe('inclusive profile integration', () => {
     input.setMotionProfile('standard');
     expect(input.mode).toBe('motion');
     for (let i = 0; i < 4; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 0 }); advance(100); }
-    flick(7, 0, 0);
+    flick(1, 0, 0);
     expect(input.sample().fire).toBe(false);
   });
   it('a pending native permission result cannot override a switch to tap-only', async () => {
@@ -491,17 +492,18 @@ describe('page permission handoff', () => {
 });
 
 describe('v3 controller integration', () => {
-  it('freezes movement while a fast gyro gesture is still accumulating', () => {
+  it('gyro rotation alone cannot steal steering or dash', () => {
     mobile(); const input = start(); input.setProfile({ neutral: [0, 45] });
     emit(win, 'devicemotion', { acceleration: { x: 0, y: 0, z: 0 }, rotationRate: { alpha: 300, beta: 0, gamma: 0 } });
-    emit(win, 'deviceorientation', { beta: 80, gamma: 50 }); advance(80);
-    expect(input.sample()).toMatchObject({ move: [0, 0], dash: false, skill: false });
+    emit(win, 'deviceorientation', { beta: 0, gamma: 15 }); advance(80);
+    expect(input.sample()).toMatchObject({ dash: false, skill: false });
+    expect(input.sample().move[0]).toBeGreaterThan(0.8);
   });
   it('persists per-player thresholds/neutral and training exposes bounded recorder APIs', () => {
     mobile(); let input = start();
-    input.setProfile({ swingThreshold: 5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
+    input.setProfile({ swingThreshold: 1.5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
     input.dispose(); input = start();
-    expect(input.profile).toMatchObject({ swingThreshold: 5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
+    expect(input.profile).toMatchObject({ swingThreshold: 1.5, twistThreshold: 90, neutral: [0, 45], fullSpeed: 9 });
     flick(5.5); expect(input.sample().fire).toBe(true);
     input.calibration.startStep('neutral');
     for (let i = 0; i < 10; i++) { emit(win, 'deviceorientation', { beta: 45, gamma: 1 }); advance(40); }
@@ -572,4 +574,37 @@ describe('touch fallback and helpers', () => {
     vi.stubGlobal('navigator', {});
     expect(vibrate(20)).toBe(false);
   });
+});
+
+describe('real iOS trace controller regression (also detached pair surface)',()=>{
+ it.each(realTraces.map((t,i)=>({trace:t,shouldAttack:[0,3,4,6,7].includes(i)})))('delivers real $trace.file sensor gestures through sample()',async({trace,shouldAttack})=>{
+  mobile(async()=> 'granted');const input=start('standard');
+  vi.stubGlobal('fetch',vi.fn(async()=>({ok:true})));
+  await input.requestPermission();
+  let attacks=0,dashes=0,skills=0;
+  for(const s of trace.samples){
+   const [at,kind,...rest]=s;const v=rest as number[];
+   advance(Math.max(0,(at as number)-time));
+   if(kind==='m')emit(win,'devicemotion',{acceleration:{x:v[0],y:v[1],z:v[2]},rotationRate:{alpha:v[3],beta:v[4],gamma:v[5]},accelerationIncludingGravity:{x:v[6],y:v[7],z:v[8]}});
+   else emit(win,'deviceorientation',{beta:v[0],gamma:v[1]});
+   const f=input.sample();attacks+=Number(f.fire);dashes+=Number(f.dash);skills+=Number(f.skill);
+  }
+  expect(attacks>0).toBe(shouldAttack);expect(skills).toBe(0);
+  if(trace.file.startsWith('1792921441887'))expect(dashes).toBeGreaterThan(0);
+ });
+ it.each([[0,50,0,1],[0,-50,0,-1],[50,0,1,1],[-50,0,1,-1]])('exact50° beta%s gamma%s crosses without filter lag', (beta,gamma,axis,sign)=>{
+  mobile();const input=start();emit(win,'deviceorientation',{beta:0,gamma:0});input.sample();advance(30);
+  emit(win,'deviceorientation',{beta,gamma});const frame=input.sample();
+  expect(frame.dash).toBe(true);expect(frame.move[axis]*sign).toBeCloseTo(1);
+ });
+ it('emits downhill dash once per excursion, re-arms below35° and preserves movement',()=>{
+  mobile();const input=start();
+  const pose=(beta:number,gamma:number,ms=300)=>{const frames=[];for(let n=0;n<ms;n+=30){advance(30);emit(win,'deviceorientation',{beta,gamma});frames.push(input.sample());}return frames;};
+  pose(0,0);const first=pose(0,60);
+  expect(first.filter(f=>f.dash)).toHaveLength(1);expect(first.find(f=>f.dash)?.move[0]).toBeGreaterThan(.99);
+  expect(pose(0,60,900).some(f=>f.dash)).toBe(false);
+  pose(0,30);const next=pose(-60,0);
+  expect(next.filter(f=>f.dash)).toHaveLength(1);expect(next.find(f=>f.dash)?.move[1]).toBeLessThan(-.99);
+  expect(pose(0,15).at(-1)?.move[0]).toBeGreaterThan(.9);
+ });
 });
