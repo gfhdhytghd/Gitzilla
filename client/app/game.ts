@@ -1472,7 +1472,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       ctx.restore();
     }
     // 3D: the overlay canvas is view-sized with no world offset (phones scroll view.x/y)
-    safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, use3d ? { x: 0, y: 0, w: view.w, h: view.h } : view);
+    if (use3d) safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, { x: 0, y: 0, w: view.w, h: view.h }, { overlay: true });
+    else safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, view);
     if (portrait || view.w < WW) {
       drawIndicators(s, me ?? null, now);
       if ((miniTick = (miniTick + 1) % 2) === 0) drawMinimap(s, now);

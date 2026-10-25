@@ -1,3 +1,23 @@
+DONE (3d stage v2) — claude-boss
+
+## 3D stage fixes + finishes (coordinator review of the first shots)
+- **White heroes (bug):** this was claude-player's normal hit flash (a solid white body for 0.07 s per hit, plus additive RGB-split ghosts). Under royale fire that covered ~8% of hero frames, and on an alpha-tested billboard it reads as a white cut-out.
+  - Fix: a new backward-compatible `DrawPlayerOpts.softFlash` (client/render/player/index.ts, the default path is unchanged) draws the body plus a 45% white tint and skips the additive ghosts. The stage passes `{ softFlash: true }`.
+  - Measured on the sprite atlas: white-silhouette frames 8% → 0% in royale, 0% in raid.
+- **XR tabletop:** the arena is 1.2 m wide, centred 0.7 m in front of the viewer's head, top 0.15 m below eye height. It's anchored to the head pose at session start / scale change and waits for a tracked pose. Emulator readout: head (0, 1.6, 0.4) → table centre (-0.03, 1.43, -0.30), top 1.45 m, 1.28 × 0.8 m incl. rim. Life-size unchanged.
+- **Lasers:** armed laser hazards are elevated beams at chest height (additive glow tube in the archetype's beam color plus a white core, width from hazard.r, jittering), from the lifted origin (the boss's mouth on its plane) to the arena edge. The telegraph lane stays on the floor. Zero allocations (preallocated vectors/quaternion).
+- **Pickups and obstacles stand up:** standing billboards from new optional `each` callbacks on `drawObstacles` / `drawPickups` (same pattern as `drawMinions`), with floor shadows. Obstacles are anchored at their front edge; pickups get a 1.3× boost.
+- **XR damage numbers / sparks / taunts:** billboards at sprite height (`particleHeight` per kind: texts 14–20 px, sparks 10) lifted onto the boss plane, no longer floor decals. New fx exports: `drawParticle`, `forEachParticle`, `particleHeight`, `isTextParticle`; `drawEvents(..., view, { draw: false })` ingests/steps without drawing. They are instanced camera-facing quads from a 512×192 cell atlas, texts first.
+- **Postfx overlay mode (for claude-ui):** `drawPostFx(ctx, t, shake, view, { overlay: true })` skips the chromatic-aberration and glitch-slice passes (they copy/multiply the frame and paint a transparent overlay solid). Flash, danger vignette, scanlines, vignette and the end screens still draw. `glitchAmount()` / `caAmount()` are exported if claude-ui wants a CSS equivalent on the WebGL canvas. The gallery uses the overlay mode.
+- `onXRFrame(dtMs, updateMs)` now also reports the per-frame scene update time.
+- **fps** (Playwright, real sim, 0 page errors):
+  - WebKit raid + laser 1440: 62.2 fps, stage 5.9 ms.
+  - WebKit raid hydra 1440: 62.2, 7.8 ms.
+  - WebKit royale 8 bots 1920: 62.2, 6.0 ms.
+  - WebKit iPhone 15 raid / royale: 62.1 / 62.1, 6.2 / 6.3 ms.
+  - Chromium + IWER XR raid / royale: 48 / 40 fps in the software-GL headless emulator (two eye views; scene update 1.7 / 1.4 ms per frame, so the CPU side fits 90 Hz with room; GPU/90 Hz to confirm on device).
+- **Shots:** scratchpad `shots/v2/` (desk.png, xr.png, phones.png, raid_hydra.png, plus the singles).
+
 DONE (3d stage) — claude-boss
 
 ## 3D stage: three.js 2.5D screens + Vision Pro WebXR (docs/tasks/view-25d.md, claude-boss = look + index.ts)

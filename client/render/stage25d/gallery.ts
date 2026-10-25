@@ -5,6 +5,7 @@ import type { BossKit, InputFrame, MatchState, PlayerState, RepoProfile } from "
 import { bossKitFromProfile, createMatch, createPvpController, playerKitFromProfile, pvpArenaSize } from "../../../sim/index.ts";
 import { drawPostFx, getFxCues } from "../arena/index.ts";
 import { createStage25d } from "./index.ts";
+import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
 
 const q = new URLSearchParams(location.search);
 const scene = q.get("scene") ?? "raid";
@@ -131,8 +132,14 @@ async function main() {
       view = { x: camX, y: 0, w: vw, h: vh };
     }
     const time = now / 1000;
+    if (q.get("laser") && state.boss && time % 3 < 1) {
+      // gallery-only: a synthetic armed laser from the boss's mouth sweeping toward the heroes
+      const m = kaijuAnchors(state.boss.kit).mouth;
+      const ang = Math.PI - 0.25 + Math.sin(time * 0.8) * 0.25;
+      state = { ...state, hazards: [...state.hazards.filter((h) => h.id !== -77), { id: -77, kind: "laser", x: state.boss.x + m.dx, y: state.boss.y + m.dy, r: 7, angle: ang, t: 1.5, total: 2, armed: true }] };
+    }
     stage.render(ctx, state, time, view, extrasFor());
-    drawPostFx(ctx, time, getFxCues().shake, { x: 0, y: 0, w: vw, h: vh });
+    drawPostFx(ctx, time, getFxCues().shake, { x: 0, y: 0, w: vw, h: vh }, { overlay: true });
     pending = [];
     const dt = performance.now() - t0;
     renders.push(dt); if (renders.length > 120) renders.shift();

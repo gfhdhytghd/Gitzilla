@@ -7,7 +7,7 @@ export { drawBullets } from "./bullets.ts";
 export { drawHazards } from "./hazards.ts";
 export { drawMinions } from "./minions.ts";
 export { drawEvents, trackPlayers, getFxCues } from "./events.ts";
-export { drawPostFx } from "./postfx.ts";
+export { drawPostFx, glitchAmount, caAmount } from "./postfx.ts";
 export { drawObstacles, drawPickups, drawPerkPads } from "./props.ts";
 export { registerPlayerGlyphs } from "./bullets.ts";
 export { drawText, textWidth } from "./font.ts";

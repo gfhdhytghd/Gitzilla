@@ -187,8 +187,8 @@ if(location.pathname === '/') {
     }
   }, 40_000);
 
-  it('runs classroom PvP with no boss controls and reports quality/round snapshots', async () => {
-    const testServer = await fixture(false);
+  it('runs the cooperative preset/editor/class-attack flow without legacy battle controls', async () => {
+    const testServer = await classroomFixture();
     const previousURL = process.env.PLAYTEST_URL;
     const originalLog = console.log;
     let artifactDir = '';
@@ -201,14 +201,12 @@ if(location.pathname === '/') {
     try {
       expect(await playtest({ players: 2, boss: 'unused/never-submit', seconds: 5, headed: false, mode: 'edu' })).toBe(0);
       const summary = JSON.parse(readFileSync(join(artifactDir, 'summary.json'), 'utf8'));
-      expect(summary.options.mode).toBe('edu');
-      expect(summary.screenshots).toContain('classroom-start-phone.png');
-      for (const client of summary.clients) {
-        expect(client.mode).toBe('edu'); expect(client.hasBoss).toBe(false);
-        expect(client.heroScale).toBe(2); expect(client.pvp.round).toBe(1);
-        expect(client.qualityCards.every((card: any) => card.quality.length > 0)).toBe(true);
-      }
-      expect(readFileSync(join(artifactDir, 'playtest.log'), 'utf8')).not.toContain('setBoss');
+      expect(summary.outcome).toBe('round-debrief');
+      expect(Object.values(summary.checks).every(Boolean)).toBe(true);
+      expect(summary.clients.find((c: any) => c.role === 'teacher').controls).toEqual(['start', 'attack']);
+      expect(summary.clients.filter((c: any) => c.role === 'student').every((c: any) => c.sent.classroomSubmitCode === 1)).toBe(true);
+      expect(summary.clients.find((c: any) => c.role === 'teacher').classroom.bossHp).toBe(40);
+      expect(summary.errors.page).toBe(0);
     } finally {
       console.log = originalLog;
       if (previousURL === undefined) delete process.env.PLAYTEST_URL;
@@ -217,3 +215,72 @@ if(location.pathname === '/') {
     }
   }, 40_000);
 });
+
+// Explicitly synthetic browser contract for the current edu path. Real-game proof is a separate staging run.
+async function classroomFixture() {
+  const server = createServer((_req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.end(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body><script>
+const root = location.pathname === '/';
+const projector = location.search.includes('view=projector');
+const teacher = !projector && location.search.includes('screen=1');
+if(root) {
+ document.body.innerHTML='<button data-testid="create-classroom">Classroom</button>';
+ document.querySelector('button').onclick=()=>location.href='/r/FIXT?screen=1';
+} else {
+ const connect = name => {
+  const ws = new WebSocket('ws://'+location.host+'/ws');
+  const btn=(id,label,t,rest={})=>{const b=document.createElement('button');b.dataset.testid=id;b.textContent=label;b.onclick=()=>ws.send(JSON.stringify({t,...rest}));return b;};
+  const main=document.createElement('main');main.dataset.testid='classroom-screen';main.style.minHeight='80px';main.textContent='SYNTHETIC CLASSROOM FIXTURE';document.body.replaceChildren(main);
+  let score, debrief;
+  if(teacher) {
+   main.innerHTML='<select data-testid="classroom-preset-select"><option>01-hello</option></select>';
+   main.append(btn('classroom-preset-load','Load','fixtureLoad'),btn('classroom-save-plan','Publish','classroomPlan'));
+   const open=btn('classroom-open-projector','Projector','fixtureProjector');open.onclick=()=>window.open('/r/FIXT?screen=1&view=projector');main.append(open);
+   main.append(btn('classroom-start','Open step 1','classroomControl',{action:'start'}),btn('classroom-attack','Launch class attack','classroomControl',{action:'attack'}));
+  } else if(!projector) {
+   main.innerHTML='<textarea data-testid="code-editor-input"></textarea>';
+   main.append(btn('classroom-submit-code','Submit my code','classroomSubmitCode'));
+   score=document.createElement('strong');score.dataset.testid='classroom-own-score';score.hidden=true;score.textContent='100';main.append(score);
+  }
+  if(teacher||projector){debrief=document.createElement('section');debrief.dataset.testid='classroom-debrief';debrief.hidden=true;debrief.innerHTML='<h2>Round debrief</h2><p data-testid="classroom-debrief-headline">2 of 2 submitted</p>';main.append(debrief);}
+  ws.onopen=()=>ws.send(JSON.stringify({t:'hello',name,role:teacher?'teacher':projector?'projector':'student'}));
+  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.t==='classroom'){if(score)score.hidden=!m.reports[id];if(debrief)debrief.hidden=m.state.phase!=='feedback';}if(m.t==='welcome')id=m.you;};let id;
+ };
+ if(teacher||projector)connect(projector?'Projector':'Teacher');
+ else {document.body.innerHTML='<input data-testid="player-name"><button data-testid="join-room">Join</button>';document.querySelector('button').onclick=()=>connect(document.querySelector('input').value);}
+}
+</script>`);
+  });
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  const peers = new Map<WebSocket, { id: string; name: string; role: string }>();
+  const reports: Record<string, unknown> = {};
+  const state = { phase: 'setup', stepIndex: 0, bossHp: 60, bossMaxHp: 60, plan: { steps: [{ id: 'unpublished' }] },
+    rows: [] as { id: string; name: string; connected: boolean; status: string }[], rounds: [] as unknown[] };
+  const send = (ws: WebSocket, msg: unknown) => ws.send(JSON.stringify(msg));
+  const broadcast = () => { for (const ws of peers.keys()) send(ws, { t: 'classroom', state, reports }); };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  wss.on('connection', ws => ws.on('message', payload => {
+    const msg = JSON.parse(payload.toString());
+    if (msg.t === 'hello') {
+      const peer = { id: String(peers.size + 1), name: msg.name, role: msg.role }; peers.set(ws, peer);
+      if (msg.role === 'student') state.rows.push({ ...peer, connected: true, status: 'empty' });
+      send(ws, { t: 'welcome', you: peer.id, lobby: { classroom: state } });
+    } else if (msg.t === 'classroomPlan') state.plan.steps = [1, 2, 3].map(i => ({ id: `01-hello-${i}` }));
+    else if (msg.t === 'classroomSubmitCode') {
+      const id = peers.get(ws)!.id; state.rows.find(row => row.id === id)!.status = 'submitted'; reports[id] = { source: 'in-app', score: 100 };
+    } else if (msg.t === 'classroomControl' && msg.action === 'start') state.phase = 'coding';
+    else if (msg.t === 'classroomControl' && msg.action === 'attack') {
+      state.phase = 'raid'; state.bossHp = 40;
+      state.rounds.push({ bossBefore: 60, bossAfter: 40, attacks: state.rows.map(row => ({ id: row.id })) });
+      timer = setTimeout(() => { state.phase = 'feedback'; broadcast(); }, 1000);
+    }
+    broadcast();
+  }));
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  return { url: `http://127.0.0.1:${(server.address() as { port: number }).port}`, async close() {
+    clearTimeout(timer); for (const ws of wss.clients) ws.terminate();
+    await new Promise<void>(done => wss.close(() => done()));
+    await new Promise<void>(done => { server.close(() => done()); server.closeAllConnections(); });
+  } };
+}

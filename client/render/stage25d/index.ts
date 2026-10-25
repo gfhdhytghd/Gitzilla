@@ -60,7 +60,8 @@ export interface Stage25d {
   exitXR(): Promise<void>;
   readonly xrActive: boolean;
   /** debug (gallery): the 2D canvases behind the floor / sprite / bullet textures */
-  readonly debugCanvases: { floor: HTMLCanvasElement; atlas: HTMLCanvasElement; bullets: HTMLCanvasElement };
+  readonly debugCanvases: { floor: HTMLCanvasElement; atlas: HTMLCanvasElement; bullets: HTMLCanvasElement; fx: HTMLCanvasElement };
+  readonly debugScene: THREE.Scene;
   destroy(): void;
 }
 
@@ -257,6 +258,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     get xrActive() { return !!xr; },
     /** debug (gallery): the sprite/floor/bullet canvases behind the textures */
     get debugCanvases() { return look.debugCanvases; },
+    get debugScene() { return look.scene; },
     destroy() {
       void exitXR();
       fx.project = null;

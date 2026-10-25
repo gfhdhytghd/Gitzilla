@@ -287,7 +287,7 @@ export class StageLook {
       if (!mesh) break;
       hi++;
       const scale = state.heroScale || 1;
-      place(mesh, s, p.x, p.y + FOOT * scale, () => drawPlayer(a, p, time, p.id === ex.you));
+      place(mesh, s, p.x, p.y + FOOT * scale, () => drawPlayer(a, p, time, p.id === ex.you, { softFlash: true }));
       mesh.scale.setScalar(HERO_BOOST); // heroes read too small next to a towering kaiju at true scale (UI review UI-6)
       shadow(p.x, p.y + FOOT * scale, 8 * scale, 3 * scale);
     }

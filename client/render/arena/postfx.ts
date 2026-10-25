@@ -47,7 +47,19 @@ function getScratch(w: number, h: number) {
  * view: the visible logical window under a camera (portrait phones). Call with the same transform used for the
  * world draws (camera applied) so view maps onto the canvas. Omit it for the landscape full-arena layout.
  */
-export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number, view?: View) {
+/**
+ * opts.overlay: ctx is a TRANSPARENT overlay above another canvas (the 3D stage). The chromatic-aberration and glitch
+ * passes copy/multiply the frame itself and would paint the transparent overlay solid, so they're skipped; flash,
+ * danger vignette, scanlines, vignette and the end screens still draw. Use glitchAmount()/caAmount() to drive a
+ * CSS/GL equivalent on the underlying canvas if wanted.
+ */
+let lastGlitch = 0, lastCa = 0;
+/** 0..1 glitch strength computed by the last drawPostFx call (phase change / limb break / defeat). */
+export const glitchAmount = () => lastGlitch;
+/** 0..3 chromatic-aberration strength (logical px) computed by the last drawPostFx call. */
+export const caAmount = () => lastCa;
+
+export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number, view?: View, opts: { overlay?: boolean } = {}) {
   fx.now = time;
   setView(ctx, view);
   const m = ctx.getTransform();
@@ -71,7 +83,8 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
   const glitch = sincePhase >= 0 && sincePhase < 0.7 ? 1 - sincePhase / 0.7 : time - fx.limbBreak < 0.15 ? 0.4 : !fx.pvp && fx.defeatAt > 0 && hash2(Math.floor(time * 10), 3) < 0.2 ? 0.5 : 0;
 
   // ---- glitch slices (phase change, limb break, defeat) ----
-  if (glitch > 0) {
+  lastGlitch = glitch;
+  if (glitch > 0 && !opts.overlay) {
     const [sc, sg] = getScratch(W, H);
     sg.clearRect(0, 0, W, H);
     sg.drawImage(canvas, x0, y0, W, H, 0, 0, W, H);
@@ -92,7 +105,8 @@ export function drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: n
 
   // ---- chromatic aberration on shake / glitch ----
   const ca = Math.min(3, sh * 0.35 + glitch * 3);
-  if (ca >= 0.8) {
+  lastCa = ca;
+  if (ca >= 0.8 && !opts.overlay) {
     const k = Math.max(1, Math.round(ca)) * Math.max(1, Math.round(sx / 2));
     const [sc, sg] = getScratch(W, H);
     sg.globalCompositeOperation = "source-over";

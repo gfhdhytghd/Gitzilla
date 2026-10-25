@@ -3,14 +3,16 @@
 ```sh
 npx tsx tools/playtest.ts --players 4 --boss pallets/flask --seconds 60
 npx tsx tools/playtest.ts --players 4 --seconds 180 --headed
-npx tsx tools/playtest.ts --mode edu --players 4 --seconds 30
+PLAYTEST_URL=http://localhost:5176 npx tsx tools/playtest.ts --mode edu --players 4 --seconds 30
 ```
 
 Playwright is a devDependency. If Chromium is missing, run `npx playwright install chromium`. The harness also tries `/usr/bin/chromium`; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to override. The harness reuses the shared DEV server at **http://localhost:5175**; **`PLAYTEST_URL`** overrides that URL. It never starts or stops servers. Port 5173 and `gitzilla.wilflin.me` are stable live targets and are rejected before any request. Audio smoke uses the same DEV default and accepts `SMOKE_URL` or `PLAYTEST_URL`.
 
 `--players` in battle is 1–8 (default 4), `--seconds` is the maximum fight-driving duration (default 60), `--boss` defaults to `pallets/flask`. Each player gets an isolated browser context. Player 1 is the desktop owner at 1280×720. With 2+ players the final player uses **portrait 390×844 CSS, DPR 3**, mobile viewport and touch emulation (1170×2532 PNG). A one-player run adds a phone **spectator**, preserving the requested player count. Desktop players use WASD wander, held J, periodic Space/E. The generic phone context disables sensor APIs to exercise the real touch fallback using CDP touch drags and action buttons; the keyboard driver is still present for synthetic harness fixtures. It tests phone layout and fallback touch controls; use the motion test below for sensor-to-server proof.
 
-`--mode edu` selects **classroom PvP**, supports 2–30 students, and never selects/submits a boss. It clicks the owner's `mode-edu` control before others join, confirms authoritative `LobbyState.mode`, and checks `boss === null`, `heroScale === 2`, PvP rounds/scoring and per-student quality cards in snapshots. Start screenshots are `classroom-start-*`, with no boss intro. If the match naturally ends, the autopsy must contain every student's ranking and no boss. Summary JSON includes quality cards, PvP state, rankings, lesson and quiz-event counts. `--mode battle` remains the default (1–8 players). A timed run does not prove all three rounds or inter-round quizzes completed; use a sufficiently long `--seconds` for that acceptance test.
+`--mode edu` drives the **cooperative classroom**, with 2–30 actual students plus a desktop teacher and the real projector popup. The teacher clicks `create-classroom`, loads the first Python preset, publishes it and opens step 1. Every student joins by name, edits the in-app Python file and clicks Submit my code. The teacher launches a class attack; the harness waits for its natural round-one debrief. `--seconds` bounds the post-attack wait (use at least 15; default 60), not a PvP fight. A PASS requires the teacher/projector debrief, all student submissions and attacks, boss HP decreasing **and remaining above zero**, no student names in projector visible text/accessibility labels during setup/attack/debrief, no page/protocol errors, and no legacy battle inputs/snapshots. It never selects GitHub repos or uses battle start controls in edu. Summary JSON records phase history, observed UI commands, in-app report sources/scores, boss HP and the frozen round. `--mode battle` remains the default (1–8 players).
+
+Edu screenshots include `published-teacher.png`, submitted teacher/portrait student, class attack projector, round debrief teacher/projector and phone feedback. Any acceptance failure returns nonzero and keeps screenshots/summary; a killed round-one boss is never accepted as a successful timed run.
 
 Artifacts go to `docs/shots/<timestamp>/`:
 
@@ -20,7 +22,7 @@ Artifacts go to `docs/shots/<timestamp>/`:
 - `playtest.log`: browser console, uncaught page errors, failed requests, WebSocket transport/protocol errors, and harness stages.
 - `summary.json`: outcome, missing selectors/stages, screenshot paths, error counts, and observed WebSocket snapshot/input counts, including movement/fire/dash/skill evidence.
 
-Exit codes: **0** = the requested fight window ran (or a natural autopsy appeared), **1** = uncaught page errors, WebSocket errors, or harness/runtime failure, **2** = missing/incomplete UI or required end-to-end evidence. Console errors are logged and counted; uncaught page errors always fail. A missing UI gets bounded waits, a failure screenshot, an inventory of visible test IDs, and a clear summary. Full game completion is separate from completing a timed playtest.
+Exit codes: **0** = battle fight window/autopsy, or every edu round-debrief acceptance passed, **1** = uncaught page errors, WebSocket errors, or harness/runtime failure, **2** = missing/incomplete UI or required end-to-end evidence. Console errors are logged and counted; uncaught page errors always fail. A missing UI gets bounded waits, a failure screenshot, an inventory of visible test IDs, and a clear summary. Full game completion is separate from completing a timed playtest.
 
 ## Stable UI selectors (contract for claude-ui)
 
@@ -29,7 +31,11 @@ Use `data-testid` on the actual interactive/visible elements, unique within a pa
 | Test ID | Contract |
 | --- | --- |
 | `create-room` | Landing create button; clicking navigates to `/r/<ROOM>`. |
-| `mode-battle`, `mode-edu` | Owner's mode buttons; select before student joins, synchronized to server lobby mode. |
+| `create-classroom` | Landing classroom entry; navigates to the owning teacher screen `/r/<ROOM>?screen=1`. |
+| `classroom-preset-select`, `classroom-preset-load`, `classroom-save-plan` | Teacher selects, loads and publishes a Python lesson. |
+| `classroom-start`, `classroom-attack`, `classroom-open-projector` | Open step 1, launch the collective attack, open the real class-facing popup. |
+| `code-editor-input`, `classroom-submit-code` | Student writes code and submits through the in-app editor. |
+| `classroom-own-score`, `classroom-debrief` | Graded student feedback and teacher/projector round debrief. |
 | `player-name` | Optional display-name input, on landing or join screen. |
 | `join-room` | Optional confirmation button if joining isn't automatic. |
 | `player-repo-input` | Current player's editable GitHub repo field. |
@@ -43,9 +49,9 @@ Use `data-testid` on the actual interactive/visible elements, unique within a pa
 | `boss-intro` | Optional visible boss intro overlay; screenshot falls back to game canvas if absent. |
 | `autopsy` | Visible real end-of-match screen. |
 
-No app-private functions or direct WebSocket input injection are used. The harness observes actual WebSocket traffic to verify the UI's actions reached the server. Repositories are selected from `/api/fallbacks`, cycled for the requested player count. The specified boss is submitted exactly as given; use a listed fallback boss for a reliable demo.
+No app-private functions or direct WebSocket input injection are used. The harness observes actual WebSocket traffic to verify the UI's actions reached the server. In battle, repositories are selected from `/api/fallbacks`, cycled for the requested player count. The specified boss is submitted exactly as given; use a listed fallback boss for a reliable demo.
 
-Harness self-tests: `npx vitest run tools/playtest.test.ts` checks CLI options. `PLAYTEST_SELF_TEST=1 npx vitest run tools/playtest.integration.test.ts` launches browsers against a clearly labeled synthetic UI/WebSocket fixture, checks both screenshot dimensions and control/ack evidence, then injects page/protocol errors to verify nonzero exit. Those summaries have `syntheticFixture: true`; they verify the harness and do not establish real-game acceptance. The browser self-tests are skipped during normal `npm test`.
+Harness self-tests: `npx vitest run tools/playtest.test.ts` checks CLI options; `npx vitest run tools/playtest-edu.test.ts` checks strict first-round acceptance (including zero HP, unchanged HP, nonfinite HP and missing submissions). `PLAYTEST_SELF_TEST=1 npx vitest run tools/playtest.integration.test.ts` launches browsers against a clearly labeled synthetic UI/WebSocket fixture, checks both screenshot dimensions and control/ack evidence, then injects page/protocol errors to verify nonzero exit. Its separate cooperative classroom fixture exercises the preset/editor/debrief browser contract; these synthetic results are not staging product proof. Those summaries have `syntheticFixture: true`; they verify the harness and do not establish real-game acceptance. The browser self-tests are skipped during normal `npm test`.
 
 `npx tsx tools/inclusive-motion.ts` checks persistent standard/seated/tap-only profiles in a browser component fixture using the actual DEV input module. It records the distinction from game/UI/hardware acceptance in its JSON artifact. `npx tsx tools/audio-smoke.ts` also auditions quiet lesson/quiz feedback and asserts that classroom music suppresses the boss modem sting.
 
@@ -95,4 +101,4 @@ npx tsx tools/classroom-smoke.ts
 
 This self-contained harness starts an ephemeral local server and injects synthetic grading through `GameServices`; production has no fixture route. It drives the teacher and two browser students plus28 WebSocket students through task configuration,30submissions, teacher review, pause, automatic raid, CSV export, improved commit, reload/reconnect and the next task. Artifacts: `docs/shots/classroom-raid/`. It asserts no battle input/snapshot traffic, no uncaught browser errors and no horizontal overflow at390/360px. Two real10second raid timers are included. `/usr/bin/chromium` must be available.
 
-The old `playtest.ts --mode edu` flow above covers the legacy PvP protocol and is no longer the current classroom browser UI. Use `classroom-smoke.ts` for new edu acceptance; retain `playtest.ts --mode battle` for ordinary fights.
+`playtest.ts --mode edu` now targets the current cooperative classroom on an existing DEV/staging server, with real in-app grading and the first-round survival/privacy assertions described above. `classroom-smoke.ts` remains a separate isolated broader regression with injected grading; it does not replace real staging acceptance.

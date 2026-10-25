@@ -540,12 +540,17 @@ export interface DrawPlayerOpts {
   scale?: number;
   /** Classroom PvP (MatchState.mode === "edu"): every other hero is a rival -> name tags + own-color rings, no revive ring. */
   pvp?: boolean;
+  /** 3D stage billboards: hit flash as a white tint over the body instead of a solid white silhouette (and the
+   *  additive RGB-split ghosts are skipped: on a transparent sprite texture they'd turn into opaque white blobs). */
+  softFlash?: boolean;
 }
 
+let SOFT = false;
 export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean, opts?: DrawPlayerOpts): void {
   S = Math.max(1, Math.min(3, opts?.scale ?? 1));
   RES = S >= 2 ? 2 : 1;
   PVP = !!opts?.pvp;
+  SOFT = !!opts?.softFlash;
   OX = Math.round(p.x); OY = Math.round(p.y);
   ctx.save();
   if (S !== 1) { ctx.translate(OX, OY); ctx.scale(S, S); ctx.translate(-OX, -OY); }
@@ -553,7 +558,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     drawPlayerLocal(ctx, p, time, isYou);
   } finally {
     ctx.restore();
-    S = 1; RES = 1; PVP = false;
+    S = 1; RES = 1; PVP = false; SOFT = false;
   }
 }
 
@@ -776,8 +781,16 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     ctx.restore();
   }
 
-  if (since < flashT) {
+  if (since < flashT && SOFT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.45;
     drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "#ffffff");
+    ctx.restore();
+  } else if (since < flashT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "#ffffff");
+  } else if (since < 0.24 && SOFT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
   } else if (since < 0.24) {
     // RGB split glitch
     const o = since < 0.15 ? 2 : 1;

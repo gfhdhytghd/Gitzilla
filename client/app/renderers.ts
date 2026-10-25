@@ -21,7 +21,8 @@ export interface Renderers {
   drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], time: number): void;
   /** `view` = visible window in logical px (portrait camera); omitted = whole arena. */
   drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number, view?: View): void;
-  drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number, view?: View): void;
+  /** overlay: the canvas is a transparent layer over the 3D stage (skips the colour split and glitch slices) */
+  drawPostFx(ctx: CanvasRenderingContext2D, time: number, shake: number, view?: View, opts?: { overlay?: boolean }): void;
   // round 2 (claude-boss arena): placeholders until exported
   drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], time: number): void;
   drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], time: number): void;
