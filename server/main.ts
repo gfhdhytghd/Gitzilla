@@ -7,7 +7,7 @@ import { stat } from 'node:fs/promises';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import { analyzeRepo, listFallbackRepos, offlineProfile } from '../analysis/index.ts';
+import { analyzeFiles, analyzeRepo, listFallbackRepos, offlineProfile } from '../analysis/index.ts';
 import { playerKitFromProfile, bossKitFromProfile, createMatch, qualityFromRubric } from '../sim/index.ts';
 import { designHero, designBoss, fallbackHero, fallbackBoss, applyHeroDesign, applyBossDesign } from '../design/index.ts';
 import { recordMatch, top } from '../hall/index.ts';
@@ -20,9 +20,11 @@ import { lanAddresses, loadTls, urlHost } from './tls.ts';
 import { handleTraceRoute, TraceStore } from './traces.ts';
 import { handleEduRoute } from './edu-http.ts';
 import { defaultRubric, parseRubric, scoreRepo, buildFeedback } from '../rubric/index.ts';
+import { RoyaleHall } from './royale-hall.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
+const royaleHall = new RoyaleHall(process.env.ROYALE_HALL_FILE || resolve(root, '.cache/royale-hall.json'));
 const production = process.env.NODE_ENV === 'production';
 const port = Number(process.env.PORT || 5173);
 const addresses = lanAddresses();
@@ -45,10 +47,12 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
+  analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
   analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
   verifyPvpAccess, buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
+  recordRoyale: winner => royaleHall.record(winner),
   defaultRubric, parseRubric, scoreRepo,
   feedbackForPlayer(profile, rubric, context) {
     return buildFeedback(profile, rubric, scoreRepo(profile, rubric), context, context.quiz);
@@ -133,7 +137,7 @@ server.on('request', (req, res) => {
       const svg = qrSvg(text);
       res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }); res.end(svg); return;
     }
-    if (url.pathname === '/api/hall' && req.method === 'GET') { json(res, 200, top()); return; }
+    if (url.pathname === '/api/hall' && req.method === 'GET') { json(res, 200, { ...top(), royaleWins: royaleHall.top() }); return; }
     if (url.pathname.startsWith('/api/')) { json(res, 404, { error: 'API route not found' }); return; }
     if (vite) vite.middlewares(req, res, () => { res.writeHead(404); res.end('Not found'); });
     else await serveDist(url.pathname, req, res);

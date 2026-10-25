@@ -10,7 +10,7 @@ import type { Autopsy, BossDesign, BossKit, ClientMsg, GameMode, InputFrame, Mat
 import { RoomServer, type GameServices, type RoomServerOptions } from './rooms.ts';
 import { qrSvg } from './qr.ts';
 import { buildGenesis } from '../genesis/index.ts';
-import { offlineProfile } from '../analysis/index.ts';
+import { analyzeFiles, offlineProfile } from '../analysis/index.ts';
 import { replayProfileProgress } from '../analysis/progress.ts';
 import { handleEduRoute, MAX_RUBRIC_BYTES } from './edu-http.ts';
 import { buildFeedback, defaultRubric, parseRubric, scoreRepo } from '../rubric/index.ts';
@@ -48,6 +48,7 @@ function rubricPdf() {
 
 async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options: RoomServerOptions = {}, existingRoom?: string, initialMode: GameMode = 'battle') {
   const recorded: Autopsy[] = [];
+  const royaleRecorded: { name: string; repo: string; kos: number; damage: number }[] = [];
   const observed: InputFrame[] = [];
   const counts: number[] = [];
   const profile = (slug: string) => ({ slug, heart: 'src/real-heart.ts' }) as RepoProfile;
@@ -61,17 +62,22 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     playerKitFromProfile: p => ({ repo: p.slug, title: 'Seed hero', maxHp: 7, maxArmor: 4, maxEnergy: 180, speed: 70, damageMul: 1, seed: 12, weapon: 'blaster', skill: 'hotfix', palette: ['#111111', '#222222', '#333333', '#444444'] }),
     bossKitFromProfile: (p, count, design) => { counts.push(count); return { repo: p.slug, heart: p.heart, archetype: 'kaiju', name: design?.name ?? 'Seed boss', maxHp: count * 100, design, attacks: [], limbs: [], theme: 'terminal', palette: [], speed: 10, enrageAt: 0.5, seed: 20 }; },
     recordMatch: result => { recorded.push(result); },
+    recordRoyale: winner => { royaleRecorded.push(winner); },
     createMatch: (players, boss, options) => {
       const mode = options?.mode ?? 'battle';
       let t = 0;
+      const eliminated = new Set<string>();
+      const placements: Record<string, number> = {};
+      const alive = () => players.filter(p => !eliminated.has(p.id));
+      const winner = () => mode === 'pvp' && (t >= endAt || alive().length <= 1) ? alive()[0]?.id ?? null : null;
       let events: MatchState['events'] = [];
       return {
-        removePlayer: id => { const index = players.findIndex(p => p.id === id); if (index >= 0) players.splice(index, 1); },
+        removePlayer: id => { if (mode === 'pvp') { if (!eliminated.has(id)) { placements[id] = alive().length; eliminated.add(id); } } else { const index = players.findIndex(p => p.id === id); if (index >= 0) players.splice(index, 1); } },
         step: (dt, inputs) => { t += dt; observed.push(...inputs.values()); events.push({ type: 'hit', target: 'boss', amount: 1, x: 0, y: 0 }); },
-        snapshot: () => ({ t, mode, heroScale: mode === 'edu' ? 2 : 1, pvp: mode === 'edu' ? { round: 1, rounds: 3, roundEndsAt: 75, scores: {}, quizScores: Object.fromEntries(players.map((p, i) => [p.id, i + 1])), leader: null } : null, status: t >= endAt ? 'victory' : 'fighting', players: players.map(p => ({ ...p, x: 1, y: 1 })), boss: boss ? { kit: boss, regions: [{ id: 'heart', x: 335, y: 144, r: 15 }] } : null, bullets: [], hazards: [], minions: [], events: events.splice(0) }) as unknown as MatchState,
-        get over() { return t >= endAt; },
+        snapshot: () => ({ t, mode, heroScale: mode === 'edu' ? 2 : 1, pvp: mode !== 'battle' ? { round: 1, rounds: mode === 'edu' ? 3 : 1, roundEndsAt: 75, scores: {}, quizScores: Object.fromEntries(players.map((p, i) => [p.id, i + 1])), leader: winner(), ...(mode === 'pvp' ? { royale: { alive: alive().map(p => p.id), placements: { ...placements, ...(winner() ? { [winner()!]: 1 } : {}) }, zone: null, winner: winner() } } : {}) } : null, status: t >= endAt ? 'victory' : 'fighting', players: players.map(p => ({ ...p, x: 1, y: 1, ...(mode === 'pvp' ? { alive: !eliminated.has(p.id), eliminated: eliminated.has(p.id) } : {}) })), boss: boss ? { kit: boss, regions: [{ id: 'heart', x: 335, y: 144, r: 15 }] } : null, bullets: [], hazards: [], minions: [], events: events.splice(0) }) as unknown as MatchState,
+        get over() { return t >= endAt || (mode === 'pvp' && alive().length <= 1); },
         autopsy: () => ({ mode, victory: mode === 'battle', duration: t, boss: boss ? { repo: boss.repo, limbs: [], heart: 'core' } : null,
-          ranking: mode === 'edu' ? players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: 1, damage: 42, roundWins: 1, quality: p.kit.quality ?? [] })) : undefined, players: players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { damage: 42, bestCombo: 1, limbsBroken: 0, revives: 0, killingBlow: false } })), mvp: players[0]?.id ?? null }) as Autopsy,
+          ranking: mode !== 'battle' ? players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, kos: 1, damage: 42, roundWins: 1, quality: p.kit.quality ?? [] })) : undefined, players: players.map(p => ({ id: p.id, name: p.name, repo: p.kit.repo, stats: { damage: 42, bestCombo: 1, limbsBroken: 0, revives: 0, killingBlow: false } })), mvp: winner() ?? players[0]?.id ?? null }) as Autopsy,
       };
     },
     ...overrides,
@@ -105,7 +111,7 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     const welcome = await until(() => messages.find(m => m.t === 'welcome'));
     return { socket, messages, welcome, send, lobby: () => messages.filter(m => m.t === 'lobby').at(-1)?.lobby };
   }
-  return { connect, observed, counts, recorded, close, room, services, rooms, wsUrl: `ws://127.0.0.1:${port}/ws`, base: `http://127.0.0.1:${port}` };
+  return { connect, observed, counts, recorded, royaleRecorded, close, room, services, rooms, wsUrl: `ws://127.0.0.1:${port}/ws`, base: `http://127.0.0.1:${port}` };
 }
 
 const genesisServices: Partial<GameServices> = {
@@ -1403,6 +1409,54 @@ it('encodes an SVG QR with white quiet zone and no injected markup', () => {
 });
 
 describe('cooperative staged classroom protocol', () => {
+  it('grades in-app code without GitHub/auth/execution, isolates source and restores only aggregates/starters', async () => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const { editorCommit } = await import('./in-app');
+    const file = persistenceFile(), analyzer = vi.fn(analyzeFiles);
+    const github = vi.fn(async (): Promise<never> => { throw new Error('Editor must not fetch GitHub'); });
+    const f = await setup(999, { analyzeFiles: analyzer, analyzeClassroomSubmission: github, getGithubToken: github }, { allowLegacyEdu: false, persistenceFile: file }, undefined, 'edu');
+    const teacher = await f.connect('screen'), a = await f.connect(), b = await f.connect();
+    const latest = (client: typeof a) => client.messages.filter(m => m.t === 'classroom').at(-1);
+    const plan = defaultClassroomPlan(); plan.steps[0].language = 'python';
+    plan.steps[0].starter = [{ path: 'python/main.py', content: '# TEACHER_STARTER\n' }];
+    plan.steps[0].checksWeight = 100;
+    plan.steps[0].checks = [{ id: 'f', kind: 'file', path: 'python/main.py', label: 'File' }, { id: 'c', kind: 'contains', path: 'python/main.py', text: 'answer = 42', label: 'Answer' }];
+    teacher.send({ t: 'classroomPlan', plan }); await until(() => latest(a));
+    teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest(a)?.state.phase === 'coding');
+    const files = [{ path: 'python/main.py', content: 'answer = 42\nraise RuntimeError("PRIVATE_EDITOR_SOURCE")\n' }];
+    teacher.send({ t: 'classroomSubmitCode', files }); await until(() => teacher.messages.some(m => m.t === 'error' && m.message.includes('student')));
+    a.send({ t: 'classroomSubmitCode', files: [{ path: '../secret', content: '' }] });
+    await until(() => a.messages.some(m => m.t === 'error' && m.message.includes('relative')));
+    a.send({ t: 'classroomSubmitCode', files }); await until(() => latest(a)?.reports[a.welcome.you]);
+    const report = latest(a)!.reports[a.welcome.you];
+    expect(report.source).toBe('in-app'); expect(report.repo).toBe('in-app'); expect(report.commit).toBe(editorCommit(files)); expect(report.score).toBe(100);
+    expect(analyzer).toHaveBeenCalledExactlyOnceWith(files, 'in-app'); expect(github).not.toHaveBeenCalled();
+    await until(() => latest(teacher)?.reports[a.welcome.you]);
+    expect((latest(teacher)!.reports[a.welcome.you] as typeof report & { files: unknown }).files).toEqual(files);
+    expect(latest(b)!.reports).toEqual({}); expect(JSON.stringify(latest(b))).not.toContain('PRIVATE_EDITOR_SOURCE');
+    a.send({ t: 'classroomSubmitCode', files }); await until(() => a.messages.some(m => m.t === 'error' && m.message.includes('5 seconds')));
+    await f.close(); const saved = readFileSync(file, 'utf8');
+    expect(saved).not.toContain('PRIVATE_EDITOR_SOURCE'); expect(saved).toContain('TEACHER_STARTER'); expect(saved).toContain(editorCommit(files));
+    const resumed = await setup(999, {}, { allowLegacyEdu: false, persistenceFile: file }, f.room, 'edu');
+    const student = await resumed.connect('player', a.welcome.token), restored = await until(() => latest(student));
+    expect(restored.state.plan.steps[0].starter).toEqual(plan.steps[0].starter); expect(restored.state.plan.steps[0].language).toBe('python');
+    expect(restored.state.phase).toBe('paused'); expect(restored.reports).toEqual({});
+  });
+
+  it.each(['quotes', 'blank lines'])('accepts a valid 200 KiB editor submission with %s beyond the ordinary JSON message limit', async kind => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const { MAX_EDITOR_BYTES } = await import('./in-app');
+    const analyzer = vi.fn(analyzeFiles);
+    const f = await setup(999, { analyzeFiles: analyzer }, { allowLegacyEdu: false }, undefined, 'edu');
+    const teacher = await f.connect('screen'), student = await f.connect();
+    const latest = () => student.messages.filter(m => m.t === 'classroom').at(-1);
+    teacher.send({ t: 'classroomPlan', plan: defaultClassroomPlan() }); await until(() => latest());
+    teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest()?.state.phase === 'coding');
+    const content = kind === 'quotes' ? '#' + '"'.repeat(MAX_EDITOR_BYTES - 5) : '\n'.repeat(MAX_EDITOR_BYTES - 4);
+    student.send({ t: 'classroomSubmitCode', files: [{ path: 'a.py', content }] });
+    await until(() => latest()?.reports[student.welcome.you]); expect(analyzer).toHaveBeenCalledTimes(1);
+  });
+
   it('handles30students with4analysis slots, private feedback, teacher-only controls and reconnect', async () => {
     const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
     const { profileFromFiles } = await import('../analysis/graph');
@@ -1472,18 +1526,13 @@ describe('PvP duel authority and isolation', () => {
       verifyPvpAccess: verify,
     } };
   }
-  it('requires two eligible distinct accounts, rejects bots/boss, and rechecks permissions at start', async () => {
+  it('requires eligible distinct accounts, permits bots but no boss, and rechecks permissions at start', async () => {
     const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
     const a = await f.connect('player', undefined, 'Alice', 'alice');
     const b = await f.connect('player', undefined, 'Bob', 'bob');
-    const third = new WebSocket(f.wsUrl);
-    await once(third, 'open');
-    const denied = once(third, 'message');
-    third.send(JSON.stringify({ t: 'hello', room: f.room, role: 'player', name: 'Third' }));
-    expect(JSON.parse(String((await denied)[0]))).toMatchObject({ t: 'error', message: 'Room is full (2 players)' });
-    third.close();
     a.send({ t: 'setBots', count: 1 }); a.send({ t: 'setBoss', repo: 'third/party' }); a.send({ t: 'start' });
-    await until(() => a.messages.filter(m => m.t === 'error').length >= 3);
+    await until(() => a.messages.filter(m => m.t === 'error').length >= 2);
+    expect(a.lobby()?.players.some(p => p.bot)).toBe(true);
     expect(a.lobby()?.phase).toBe('lobby');
     a.send({ t: 'setRepo', repo: 'alice/own' }); b.send({ t: 'setRepo', repo: 'bob/own' });
     await until(() => a.lobby()?.players.every(p => p.status === 'ready'));
@@ -1496,6 +1545,73 @@ describe('PvP duel authority and isolation', () => {
     await until(() => anon.messages.some(m => m.t === 'error'));
     expect(a.messages.slice(before).some(m => m.t === 'snapshot')).toBe(false);
   });
+  it('allows eight verified humans, rejects a ninth, and does not inherit classroom quality stats', async () => {
+    const f = await setup(999, { ...genesisServices, getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async (repo, token) => ({ repo, userId: Number(token.slice(1)), login: token, private: false }) }, {}, undefined, 'pvp');
+    const people: Awaited<ReturnType<typeof f.connect>>[] = [];
+    for (let i = 0; i < 8; i++) {
+      const person = await f.connect('player', undefined, 'P' + i, 'u' + i); people.push(person);
+      person.send({ t: 'setRepo', repo: 'pallets/flask' });
+    }
+    await until(() => people[0].lobby()?.players.length === 8 && people[0].lobby()?.players.every(p => p.status === 'ready'));
+    const ninth = new WebSocket(f.wsUrl); await once(ninth, 'open'); const response = once(ninth, 'message');
+    ninth.send(JSON.stringify({ t: 'hello', room: f.room, role: 'player', name: 'Ninth' }));
+    expect(JSON.parse(String((await response)[0]))).toMatchObject({ t: 'error', message: 'Room is full (8 players)' }); ninth.close();
+    const base = playerKitFromProfile(offlineProfile('pallets/flask'), { mode: 'battle' });
+    expect(people[0].lobby()?.players.every(p => p.kit?.maxHp === base.maxHp && p.kit.damageMul === base.damageMul && !p.kit.quality)).toBe(true);
+    people[0].send({ t: 'start' }); const snapshot = await until(() => people[0].messages.find(m => m.t === 'snapshot'));
+    expect(snapshot.state.players).toHaveLength(8); expect(snapshot.state.boss).toBeNull();
+  });
+  it.each([false, true])('admits one human plus seven bots and only publishes public-source royale wins (private: %s)', async privateRepo => {
+    const analyze = vi.fn(async (_repo: string, options?: { token?: string }) => {
+      expect(options?.token).toBe(privateRepo ? 'alice' : undefined); return offlineProfile('pallets/flask');
+    });
+    const f = await setup(0.1, { ...genesisServices, analyzeRepo: analyze, getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async repo => ({ repo, userId: 1, login: 'alice', private: privateRepo }) }, {}, undefined, 'pvp');
+    const a = await f.connect('player', undefined, 'Alice', 'alice');
+    a.send({ t: 'setRepo', repo: 'pallets/flask' }); a.send({ t: 'setBots', count: 7 });
+    await until(() => a.lobby()?.players.length === 8 && a.lobby()?.players.every(p => p.status === 'ready'));
+    a.send({ t: 'start' }); await until(() => a.messages.find(m => m.t === 'autopsy'));
+    expect(f.royaleRecorded).toHaveLength(privateRepo ? 0 : 1); expect(f.recorded).toHaveLength(0);
+    if (!privateRepo) expect(f.royaleRecorded[0]).toMatchObject({ name: 'Alice', repo: 'pallets/flask' });
+  });
+  it('keeps eliminated clients spectating, ignores their inputs, and retains leavers in royale results', async () => {
+    const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
+    let match!: ReturnType<GameServices['createMatch']>; const factory = f.services.createMatch;
+    f.services.createMatch = (...args) => { match = factory(...args); return match; };
+    const a = await f.connect('player', undefined, 'Alice', 'alice'), b = await f.connect('player', undefined, 'Bob', 'bob');
+    a.send({ t: 'setRepo', repo: 'alice/own' }); b.send({ t: 'setRepo', repo: 'bob/own' }); a.send({ t: 'setBots', count: 1 });
+    await until(() => a.lobby()?.players.length === 3 && a.lobby()?.players.every(p => p.status === 'ready'));
+    a.send({ t: 'start' }); await until(() => a.messages.find(m => m.t === 'snapshot'));
+    match.removePlayer?.(a.welcome.you);
+    await until(() => a.messages.filter(m => m.t === 'snapshot').at(-1)?.state.players.find(p => p.id === a.welcome.you)?.eliminated);
+    expect(a.socket.readyState).toBe(WebSocket.OPEN);
+    a.send({ t: 'input', frame: { seq: 999, move: [1, 0], aim: null, fire: true, dash: true, skill: true, source: 'keyboard' } }); await wait(80);
+    expect(f.observed.some(frame => frame.seq === 999)).toBe(false);
+    const closed = once(b.socket, 'close'); b.send({ t: 'leave' }); await closed;
+    const ending = await until(() => a.messages.find(m => m.t === 'autopsy'));
+    expect(ending.result.ranking?.some(p => p.id === b.welcome.you)).toBe(true);
+    expect(a.messages.filter(m => m.t === 'snapshot').at(-1)?.state.pvp?.royale?.placements[b.welcome.you]).toBeDefined();
+  });
+  it.each([2, 4, 8])('runs a real %i-fighter royale to one survivor and records exactly one public win', async count => {
+    const f = await setup(999, { ...genesisServices, getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async (repo, token) => ({ repo, userId: Number(token.slice(1)), login: token, private: false }),
+      createMatch: (players, boss, options) => {
+        const match = createMatch(players, boss, options);
+        return { removePlayer: id => match.removePlayer(id), snapshot: () => match.snapshot(), autopsy: () => match.autopsy(), get over() { return match.over; },
+          step: (dt, inputs) => { for (let i = 0; i < 90 && !match.over; i++) match.step(dt, inputs); } };
+      },
+    }, {}, undefined, 'pvp');
+    const people: Awaited<ReturnType<typeof f.connect>>[] = [];
+    for (let i = 0; i < count; i++) { const person = await f.connect('player', undefined, 'P' + i, 'u' + i); people.push(person); person.send({ t: 'setRepo', repo: 'pallets/flask' }); }
+    await until(() => people[0].lobby()?.players.length === count && people[0].lobby()?.players.every(p => p.status === 'ready'));
+    people[0].send({ t: 'start' }); const ending = await until(() => people[0].messages.find(m => m.t === 'autopsy'), 1500);
+    const snapshot = people[0].messages.filter(m => m.t === 'snapshot').at(-1)!.state;
+    expect(snapshot.pvp?.royale?.alive).toHaveLength(1); expect(snapshot.players.filter(p => !p.eliminated)).toHaveLength(1);
+    expect(Object.values(snapshot.pvp!.royale!.placements).sort((a, b) => a - b)).toEqual(Array.from({ length: count }, (_, i) => i + 1));
+    expect(ending.result.ranking).toHaveLength(count); expect(f.royaleRecorded).toHaveLength(1);
+    expect(people.every(p => p.socket.readyState === WebSocket.OPEN)).toBe(true);
+  }, 20_000);
   it('denies a second slot using the same GitHub account and invalidates reconnect selection', async () => {
     const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
     const a = await f.connect('player', undefined, 'Alice', 'alice');

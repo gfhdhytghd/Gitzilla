@@ -1,4 +1,5 @@
-DONE (pause) — owner pause/resume verified for battle, duel and classroom raid
+DONE (in-app editor)
+DONE (royale)
 
 Current infrastructure: DEV/testing is `http://localhost:5175`. Port 5173 and `https://gitzilla.wilflin.me` are stable LIVE from `../gitzilla-live`; never start/stop/test them. Only the coordinator deploys live.
 
@@ -371,3 +372,37 @@ DONE
 - Final focused regressions: **81 PASS / 2 files** (`server/rooms.test.ts`, `server/classroom.test.ts`). Dedicated final pause filter: **9 PASS / 58 unrelated filtered skips**, 4.09s. Real battle/duel/legacy classroom Match snapshots stay invariant with zero steps; tests also cover staged raid transport/clock, non-owner/invalid phase/payload errors, reconnect replay, input dropping, recovery/re-pause, teacher leave and restart reset.
 - Final root typecheck PASS; touched-file whitespace PASS. No duplicated full suite, no shared/dev/live service controls, no commits/pushes or shared source edits. Backend protocol/clock proof is distinct from claude-ui's pause button/overlay visual verification.
 - Pause edit window complete; server source is ready for coordinator review/copy.
+
+## Royale server — implementation / handoff
+- Read pvp-royale + inapp-editor cards. Following requested order: royale first, then normalize starter/language + editor handler. Take-edu's preset metadata failure is acknowledged and will be the first editor fix immediately after royale server validation.
+- PvP capacity 8 including bots, requires total2–8 ready fighters + at least1 verified human. All connected humans must be ready/eligible and use distinct GitHub accounts. Start revalidates all humans and captures bot/human roster revisions across the async check. Bots use equal-budget PvP kits; mode switches preserve/rebuild bot slots.
+- For verified PUBLIC PvP repos, eligibility still uses the user's token but actual source analysis runs anonymously. Thus public royale wins can publish without violating the existing no-credentialed-analysis Hall policy. PRIVATE repos remain credentialed/model-excluded/Hall-excluded. Visibility/identity/repo changes during start verification reject/reselect.
+- Eliminated players retain player identity/socket for spectating; server ignores their actions. Explicit leave calls sim.removePlayer as elimination and retains royale placement/score/history (battle departure filtering is unchanged). Sim must retain royale eliminated rows + placements and return royale.winner; the old2-player duel implementation is not acceptance proof for8p yet.
+- GET /api/hall now includes `royaleWins:[{name,repo,wins,kos,damage,at}]`, separate from battle boards, backed by server-owned .cache/royale-hall.json (no hall/ ownership edits). Only public-source completed royale winners are admitted; no private profiles or credentials. ROYALE_HALL_FILE isolates process tests.
+
+## DONE (royale) — dedicated server validation
+- Focused real-WS authority/royale tests: 11 PASS, including real sim natural outcomes with 2/4/8 players, exactly one survivor, all placements, spectator sockets retained, eliminated inputs ignored, explicit leave history, 8-slot capacity, bot fill, and public/private Hall isolation. Server-owned Hall persistence test: 1 PASS (top20 / bounded retained history).
+- No shared service was started/restarted; tests bind ephemeral loopback ports. No live/tunnel tests or deployment claimed. Starting starter/language preservation immediately, then the in-app submission handler.
+
+## Handoff → take-edu: starter/language FIXED
+- normalizeClassroomPlan now preserves validated `language:'python'` and a copied `starter` file array. ClassroomSession save/restore calls the same normalizer, so preset metadata survives persistence.
+- Shared validator: 1–20 files, ≤200 KiB UTF-8 bytes including paths, unique safe relative forward-slash paths, string contents; rejects traversal, absolute/drive/backslash/control paths and invalid UTF-8 surrogate strings. No file/code execution.
+- `npx vitest run shared/classroom-presets.test.ts server/classroom.test.ts`: 24 PASS. Please rerun your integration gate; server metadata blocker is resolved. No shared service restart needed. Full classroomSubmitCode wiring still in progress.
+
+## In-app editor server integration — implementation / evidence
+- `classroomSubmitCode` dispatch + same student/phase/ticket/throttle/concurrency controls as GitHub. Validated in-memory files call `analyzeFiles(files,'in-app')`, then the existing rubric and exact file/contains checks. SHA-256 canonical sorted file content → `inapp:<8hex>`. No auth/network/CI/code execution in this path; CI evidence cannot be manufactured by editor text.
+- Reports explicitly carry source github/in-app and repo in-app for editor submissions. Local structural extension `ClassroomReport.files?: InAppFile[]` supports claude-edu's existing readonly code viewer; only submitter and reserved teacher receive it via private reports. Other students/spectator screens never receive source. Shared type remains owner-controlled; request optional files field if desired. Detailed reports/source stay memory-only; persisted state contains aggregates/hashes and intentionally public teacher starter files.
+- Outer message envelope now permits bounded JSON-escaped editor text (2MiB wire limit) and up to12 starter steps (16MiB); normalized decoded bounds stay ≤20 files /200KiB per bundle. Existing ordinary message limit stays256KiB. A valid200KiB quote-heavy source submission now passes real WS integration.
+- New dedicated real-WS editor tests: 2 PASS, including no GitHub/auth calls, no code execution (raising Python source statically graded), forbidden teacher submission/traversal, private teacher+submitter code, peer isolation, 5s retry guard, room-cache source absence and restart metadata/aggregate preservation.
+- Root typecheck PASS after explicit test-array/string types. Take-edu independently reports35 PASS/5files for presets+i18n+analysis/classroom and production write:false build PASS.
+- Boundary test found an upstream analysis whitespace-regex CPU stall for ~200KiB all-newline source. Stopped only my dedicated test workers, notified codex-repo to fix analysis-owned multiline-leading whitespace regexes + regression; no shared service touched. Quote-heavy JSON-size boundary passes. Awaiting their fix before final editor completion proof; no all-whitespace performance acceptance claimed yet.
+- Final combined focused snapshot: `npx vitest run server/rooms.test.ts server/classroom.test.ts server/in-app.test.ts server/royale-hall.test.ts shared/classroom-presets.test.ts` → **115 PASS /5files**, 19.98s. Includes all prior pause/leave/auth/privacy/readiness/rubric/classroom tests plus new royale/editor tests. Root typecheck PASS. No duplicate whole-workspace fullsuite run; coordinator owns merged fullsuite.
+- Actual production `main.ts` wiring also verified with `EDITOR_SERVER_TEST=1 npx vitest run server/editor.integration.test.ts`: **1 PASS**, using PORT=0 and isolated temporary rooms/royale/traces. HTTP Hall exposes royaleWins, real WS teacher/student plan opens editor, actual analyzeFiles+rubric returns score/hash/source, and shutdown cache excludes submitted source. No fixed/dev/live ports touched.
+
+## DONE (in-app editor) — server source window FROZEN
+- codex-repo's horizontal-whitespace analyzer fix is present. Dedicated real-WS 200KiB boundary replay now **2 PASS** (quote-heavy JSON and all-newline Python), 953ms entire targeted run; previous >30s stall no longer reproduces in this server integration. Their full analyzer regression belongs to codex-repo.
+- Final root `npm run typecheck` PASS after the actual-main integration fixture's required hello.name was supplied. Focused combined snapshot115PASS/5files, boundary2PASS, actual production-main1PASS are separate runs, not a fabricated summed fullsuite. Touched-file whitespace PASS.
+- Server source edits are finished/frozen for coordinator/take-edu to copy into the isolated no-.env checkout and run UI/WS on their dynamic port43071. No restart needed; no fixed5173/5175 or tunnel actions were performed. No commits/push/deploy, no shared/client/analysis/sim edits by codex-net. Future explicitly assigned fixes can reopen this window.
+
+## Contract requests (optional report typing)
+- Coordinator: please add `ClassroomReport.files?: InAppFile[]` for the already-wired readonly editor viewer. Local server and claude-edu structural extensions agree today. This field is memory-only private report data for submitter + reserved teacher; never public state/other students/Hall/rooms.json. `ClassroomReport.source` is already committed and used directly.

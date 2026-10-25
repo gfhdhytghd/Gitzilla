@@ -1,10 +1,12 @@
 import type { RepoProfile } from '../shared/types';
-import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand } from '../shared/classroom';
+import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand, InAppFile } from '../shared/classroom';
 import { normalizeRubric } from './rubrics';
 import { scoreRepo, weightedScore } from '../rubric';
+import { normalizeEditorFiles } from './in-app';
 
 export interface ClassroomSource {
   profile: RepoProfile; commit: string;
+  source?: 'github' | 'in-app';
   files: { path: string; text: string }[];
   checks: { name: string; status: string; conclusion: string | null }[];
 }
@@ -30,13 +32,16 @@ export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
       return { id: `check-${i}`, kind: c.kind, label: text(c.label, 'check label', 240), path,
         ...(c.kind === 'contains' ? { text: text(c.text, 'required literal text', 500) } : {}) };
     });
-    return { id, title: text(s.title, 'step title', 120), instructions: text(s.instructions, 'instructions', 8000), durationSec: s.durationSec, rubric: normalizeRubric(s.rubric), checks, checksWeight: s.checksWeight };
+    if (s.language !== undefined && s.language !== 'python') throw new Error('Choose Python for the editor language');
+    return { id, title: text(s.title, 'step title', 120), instructions: text(s.instructions, 'instructions', 8000), durationSec: s.durationSec, rubric: normalizeRubric(s.rubric), checks, checksWeight: s.checksWeight,
+      ...(s.language !== undefined ? { language: s.language } : {}),
+      ...(s.starter !== undefined ? { starter: normalizeEditorFiles(s.starter) } : {}) };
   }) };
 }
 
 export class ClassroomSession {
   state: ClassroomState;
-  private reports = new Map<string, ClassroomReport>();
+  private reports = new Map<string, ClassroomReport & { files?: InAppFile[] }>();
   private errors = new Map<string, string>();
   private generation = 0;
   private revisions = new Map<string, number>();
@@ -99,13 +104,14 @@ export class ClassroomSession {
   }
   accept(ticket: SubmissionTicket, source: ClassroomSource) {
     if (!this.valid(ticket)) return;
-    if (source.profile.fallback || !/^[a-f\d]{40,64}$/i.test(source.commit)) throw new Error('An immutable live GitHub commit is required; fallback data is not graded');
+    const inApp = source.source === 'in-app';
+    if (source.profile.fallback || !(inApp ? /^inapp:[a-f\d]{8}$/.test(source.commit) : /^[a-f\d]{40,64}$/i.test(source.commit))) throw new Error('An immutable live GitHub commit or in-app content hash is required; fallback data is not graded');
     const step = this.state.plan.steps[this.state.stepIndex];
     const criteria = scoreRepo(source.profile, step.rubric);
     const files = new Map(source.files.map(f => [f.path, f.text]));
     const checks = step.checks.map(c => {
       const run = source.checks.find(r => r.name === c.path);
-      const passed = c.kind === 'ci' ? run?.status === 'completed' && run.conclusion === 'success' : c.kind === 'file' ? files.has(c.path) : files.get(c.path)?.includes(c.text!) ?? false;
+      const passed = c.kind === 'ci' ? !inApp && run?.status === 'completed' && run.conclusion === 'success' : c.kind === 'file' ? files.has(c.path) : files.get(c.path)?.includes(c.text!) ?? false;
       return { label: c.label, passed, detail: c.kind === 'ci' ? `${c.path}: ${run ? `${run.status} / ${run.conclusion ?? 'pending'}` : 'not found on this commit'}` : `${c.path}: ${passed ? 'static evidence found' : 'required evidence not found in the analyzed archive'}` };
     });
     const measured = weightedScore(step.rubric, criteria), weight = checks.length ? step.checksWeight / 100 : 0;
@@ -113,9 +119,11 @@ export class ClassroomSession {
     const improvement = round(score - (this.previous.get(ticket.id) ?? score));
     const advice = [...checks.filter(c => !c.passed).map(c => `Review ${c.label}: ${c.detail}.`), ...criteria.filter(c => c.score < 0.8 && c.tip).sort((a, b) => a.score - b.score).map(c => c.tip!)].slice(0, 3);
     if (!advice.length) advice.push('The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.');
-    const report: ClassroomReport = { stepId: step.id, attempt: this.state.attempt, repo: source.profile.slug, commit: source.commit, submittedAt: this.now(), score, improvement, criteria, checks, advice };
+    const repo = inApp ? 'in-app' : source.profile.slug;
+    const report: ClassroomReport & { files?: InAppFile[] } = { stepId: step.id, attempt: this.state.attempt, repo, commit: source.commit, source: inApp ? 'in-app' : 'github', submittedAt: this.now(), score, improvement, criteria, checks, advice,
+      ...(inApp ? { files: source.files.map(f => ({ path: f.path, content: f.text })) } : {}) };
     this.reports.set(ticket.id, report); this.errors.delete(ticket.id);
-    Object.assign(this.row(ticket.id), { status: 'submitted', repo: source.profile.slug, commit: source.commit, score, improvement });
+    Object.assign(this.row(ticket.id), { status: 'submitted', repo, commit: source.commit, score, improvement });
   }
   fail(ticket: SubmissionTicket, message: string) {
     if (!this.valid(ticket)) return;
