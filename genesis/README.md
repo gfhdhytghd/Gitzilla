@@ -86,6 +86,14 @@ metadata; it never reimplements the scoring formula. Bonuses compare final kit
 values with sim's `statsFromPower(0)` neutral baseline, **not** the battle kit.
 Unmeasured parts and the neutral missing-analysis fallback stay explicitly labelled.
 
+AI rivals additionally carry `kit.pvpAi = {baseScore, powerMultiplier}`. Their
+opening shows the source score (`REPO POWER 77.9`), then
+`AI rival · 80% of repo power → POWER 62.3`, before the adjusted kit stats.
+Source parts still explain the original repo score; they are never scaled or
+relabeled as the final score. Genesis reads both supplied scores and the
+multiplier without calculating the handicap again. AI source rows use
+`pvp-power:source`; `pvp-power` always identifies the final playable power.
+
 `pvpPowerTrace(profile, kit)` is exported. Refs are `pvp-power`,
 `pvp-power:boost`, `pvp-power:stats`, `pvp-power:loadout`, and
 `pvp-power:part:<index>`. Resolve part refs against `kit.pvpPower.parts` for full

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { PlayerKit, RepoProfile } from '../shared/types.ts';
 import { bossKitFromProfile, playerKitFromProfile } from '../sim/kits.ts';
-import { type PvpPower, asPvpKit } from '../sim/pvpPower.ts';
+import { type PvpPower, asPvpAiKit, asPvpKit, statsFromPower } from '../sim/pvpPower.ts';
 import { buildGenesis, heroBudget, MAX_GENESIS_BYTES, pvpPowerTrace } from './index.ts';
 
 const folder = new URL('../data/fallback/', import.meta.url);
@@ -48,6 +48,39 @@ describe('PvP repo power captions', () => {
     expect(a[2].to).toContain('1.16× damage'); expect(b[2].to).toContain('1.18× damage');
   });
 
+  it('distinguishes supplied source power from the softer AI final power before showing stats', () => {
+    const p = { ...profiles[0], stars: 412, testRatio: 0.38 };
+    const kit = { ...playerKitFromProfile(p), ...statsFromPower(62.3),
+      pvpPower: { score: 62.3, parts: [] }, pvpAi: { baseScore: 77.9, powerMultiplier: 0.8 } };
+    expect(buildGenesis(p, kit, 'hero').trace.slice(0, 4)).toEqual([
+      { part: 'stats', from: '412 stars · 38% tests', to: 'REPO POWER 77.9', ref: 'pvp-power:source' },
+      { part: 'stats', from: 'AI rival · 80% of repo power', to: 'POWER 62.3', ref: 'pvp-power' },
+      { part: 'stats', from: 'POWER 62.3', to: '+2 HP · +46.7% damage', ref: 'pvp-power:boost' },
+      { part: 'stats', from: 'POWER 62.3', to: '8 HP · 1.467× damage', ref: 'pvp-power:stats' },
+    ]);
+    // Read supplied scores and multiplier; do not reconstruct them from parts or multiply twice.
+    expect(pvpPowerTrace(p, { ...kit, pvpPower: { score: 61, parts: [] } })[1].to).toBe('POWER 61');
+    const rows = pvpPowerTrace(p, { ...kit, pvpPower: { score: 0, parts: [] }, pvpAi: { baseScore: 0, powerMultiplier: 0.5 } });
+    expect(rows[0].to).toBe('REPO POWER 0');
+    expect(rows[1]).toMatchObject({ from: 'AI rival · 50% of repo power', to: 'POWER 0' });
+  });
+
+  it.each(profiles.map(p => [p.slug, p] as const))('%s AI trace keeps real source parts and displays adjusted kit stats', (_, p) => {
+    const humanKit = playerKitFromProfile(p, { mode: 'pvp' });
+    const ai = asPvpAiKit(humanKit), before = JSON.stringify({ p, ai });
+    const g = buildGenesis(p, ai, 'hero'), humanTrace = pvpPowerTrace(p, humanKit);
+    expect(g.trace[0].to).toBe(`REPO POWER ${ai.pvpAi!.baseScore}`);
+    expect(ai.pvpAi!.baseScore).toBe(humanKit.pvpPower!.score);
+    expect(g.trace[1]).toMatchObject({ from: 'AI rival · 80% of repo power', to: `POWER ${ai.pvpPower!.score}`, ref: 'pvp-power' });
+    expect(g.trace[3].to).toBe(`${ai.maxHp} HP · ${Number(ai.damageMul.toFixed(3))}× damage`);
+    expect(ai.pvpPower!.parts).toEqual(humanKit.pvpPower!.parts);
+    expect(g.trace.filter(t => t.ref?.startsWith('pvp-power:part:'))).toEqual(humanTrace.filter(t => t.ref?.startsWith('pvp-power:part:')));
+    expect(g.trace.every(t => t.from.length <= 40 && t.to.length <= 40)).toBe(true);
+    expect(Buffer.byteLength(JSON.stringify(g))).toBeLessThanOrEqual(MAX_GENESIS_BYTES);
+    expect(g.budget).toEqual([]);
+    expect(JSON.stringify({ p, ai })).toBe(before);
+  });
+
   it('explains supplied part strengths and weights without recalculating the total', () => {
     const p = profiles[0];
     const kit = { ...playerKitFromProfile(p), pvpPower: {
@@ -72,6 +105,9 @@ describe('PvP repo power captions', () => {
     const g = buildGenesis(profiles[0], kit, 'hero');
     expect(g.trace[0]).toMatchObject({ from: 'Source unmeasured · neutral power', to: 'POWER 50' });
     expect(g.trace.find(t => t.ref === 'pvp-power:part:0')?.from).toContain('unavailable; neutral');
+    const ai = buildGenesis(profiles[0], asPvpAiKit(identity), 'hero');
+    expect(ai.trace[0]).toMatchObject({ from: 'Source unmeasured · neutral power', to: 'REPO POWER 50' });
+    expect(ai.trace[1]).toMatchObject({ from: 'AI rival · 80% of repo power', to: 'POWER 40' });
   });
 
   it('filters credentials in part labels before clipping and retains short captions', () => {

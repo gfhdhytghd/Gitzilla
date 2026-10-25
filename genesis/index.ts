@@ -1,6 +1,6 @@
 import type { BossAttack, BossKit, Genesis, PlayerKit, QualityStat, RepoProfile, TraceStep } from '../shared/types.ts';
 import { bossArchetypeFromProfile } from '../sim/archetypes.ts';
-import { statsFromPower, type PvpPower } from '../sim/pvpPower.ts';
+import { statsFromPower } from '../sim/pvpPower.ts';
 
 export type GenesisKind = 'hero' | 'boss';
 export const MAX_GENESIS_BYTES = 12 * 1024;
@@ -21,18 +21,20 @@ const leaf = (path: string) => path.split('/').filter(Boolean).at(-1) ?? path;
 // Reserve space for the number so a long name never crowds out its payoff.
 const withMetric = (name: string, metric: string, max = 40) => `${caption(name, Math.max(1, max - 3 - metric.length))} · ${metric}`;
 
-/** Local optional extension until the coordinator merges the sim-owned shape. */
-type PowerHeroKit = PlayerKit & { pvpPower?: PvpPower };
-
 /** The supplied score is authoritative; Genesis never computes repo power. */
-export function pvpPowerTrace(profile: RepoProfile, kit: PowerHeroKit): TraceStep[] {
+export function pvpPowerTrace(profile: RepoProfile, kit: PlayerKit): TraceStep[] {
   if (!kit.pvpPower) return [];
   const power = kit.pvpPower, score = `POWER ${human(power.score)}`;
   const baseline = statsFromPower(0);
   const signed = (n: number) => `${n >= 0 ? '+' : ''}${human(num(n))}`;
   const neutral = power.parts.length === 1 && /^Source analysis unavailable/i.test(power.parts[0].label);
+  const source = neutral ? 'Source unmeasured · neutral power' : caption(`${human(profile.stars)} stars · ${pct(profile.testRatio)} tests`);
+  const opening: TraceStep[] = kit.pvpAi ? [
+    { part: 'stats', from: source, to: caption(`REPO POWER ${human(kit.pvpAi.baseScore)}`), ref: 'pvp-power:source' },
+    { part: 'stats', from: caption(`AI rival · ${pct(kit.pvpAi.powerMultiplier)} of repo power`), to: caption(score), ref: 'pvp-power' },
+  ] : [{ part: 'stats', from: source, to: caption(score), ref: 'pvp-power' }];
   return [
-    { part: 'stats', from: neutral ? 'Source unmeasured · neutral power' : caption(`${human(profile.stars)} stars · ${pct(profile.testRatio)} tests`), to: caption(score), ref: 'pvp-power' },
+    ...opening,
     { part: 'stats', from: caption(score), to: caption(`${signed(kit.maxHp - baseline.maxHp)} HP · ${signed((kit.damageMul - baseline.damageMul) * 100)}% damage`), ref: 'pvp-power:boost' },
     { part: 'stats', from: caption(score), to: caption(`${human(kit.maxHp)} HP · ${num(kit.damageMul)}× damage`), ref: 'pvp-power:stats' },
     { part: 'stats', from: caption(score), to: caption(`${human(kit.maxArmor)} armor · ${human(kit.speed)} speed · ${human(kit.maxEnergy)} energy`), ref: 'pvp-power:loadout' },
@@ -48,7 +50,7 @@ export function pvpPowerTrace(profile: RepoProfile, kit: PowerHeroKit): TraceSte
 /** Decode actual kit values, rather than re-rolling the sim's five-point allocation. */
 export function heroBudget(kit: PlayerKit): Genesis['budget'] {
   // Classroom PvP earns stats independently. There is no shared five-point pool.
-  if (kit.quality !== undefined || (kit as PowerHeroKit).pvpPower) return [];
+  if (kit.quality !== undefined || kit.pvpPower) return [];
   return [
     { label: 'hp', value: kit.maxHp - 5 },
     { label: 'armor', value: kit.maxArmor - 3 },
@@ -146,7 +148,7 @@ export function buildGenesis(profile: RepoProfile, kit: PlayerKit | BossKit, kin
 
   if (kind === 'hero') {
     const hero = kit as PlayerKit;
-    const power = (hero as PowerHeroKit).pvpPower;
+    const power = hero.pvpPower;
     if (power) trace.push(...pvpPowerTrace(p, hero));
     else if (hero.quality !== undefined) trace.push(...qualityTrace(hero.quality));
     const weaponName = hero.code?.weapon?.name ?? hero.weapon;
