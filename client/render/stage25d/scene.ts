@@ -427,7 +427,8 @@ export class StageLook {
     // ---- elevated laser beams: from the (lifted) origin to the arena edge at chest height ----
     let li = 0;
     for (const b of this.beams) b.glow.visible = b.core.visible = false;
-    const beamCol = fx.bossKind === "dragon" ? 0xffc030 : fx.bossKind === "mecha" ? 0xff3a1a : fx.bossKind === "abyssal" ? (boss?.phase === 3 ? 0xff2a3a : 0x2ee6ff) : 0x3ee6ff;
+    const tintCol = fx.bossTint ? parseInt(fx.bossTint.edge.slice(1), 16) : null;
+    const beamCol = fx.bossKind === "mecha" ? 0xff3a1a : fx.bossKind === "abyssal" && boss?.phase === 3 ? 0xff2a3a : tintCol ?? (fx.bossKind === "dragon" ? 0xffc030 : fx.bossKind === "abyssal" ? 0x2ee6ff : 0x3ee6ff);
     for (const hz of state.hazards) {
       if (hz.kind !== "laser" || !hz.armed || hz.r >= 15 || li >= this.beams.length) continue;
       const ux = Math.cos(hz.angle), uy = Math.sin(hz.angle);

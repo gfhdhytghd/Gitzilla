@@ -7,6 +7,8 @@
 import type { BossAttackKind, BossBody, BossGrowth, BossKit, BossMouth } from "../../../shared/types.ts";
 import { kaijuAnatomy } from "./anatomy.ts";
 import { bossArchetype, kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
+import { bossVariety, type BossForm, type FinStyle, type WingStyle } from "./variety.ts";
+import { eyeForm, golemForm, insectoidForm, wyrmLegs, type FormParts } from "./forms.ts";
 
 export type Appendage = "spines" | "coil" | "claw" | "lens" | "fist" | "horns" | "hive" | "antenna" | "nub";
 export type Material = "flesh" | "scales" | "chitin" | "stone" | "metal" | "bark" | "foliage" | "sclera" | "obsidian" | "belly" | "gold" | "void";
@@ -30,10 +32,10 @@ export interface LimbLayout {
 
 /** A body mass blob. owner: -1 core/extra, else limb index (vanishes / becomes a stump when broken). */
 export interface Lobe { x: number; y: number; r: number; owner: number; mat: Material; sq?: number /* squareness exponent */; ry?: number; sever?: boolean /* removed (not charred) when its owner limb breaks */ }
-/** Optional extra hints (gallery/dev): forceBody overrides the archetype pick. */
-export interface BossVisualHints { forceBody?: BodyKind }
+/** Optional extra hints (gallery/dev): forceBody overrides the archetype pick, forceForm the body plan (variety.ts). */
+export interface BossVisualHints { forceBody?: BodyKind; forceForm?: BossForm }
 /** A dorsal fin: base point on the spine, outward normal, height (px) in `scale`, crystal spike count. */
-export interface PlateLayout { x: number; y: number; nx: number; ny: number; ch: string; scale: number; owner: number; order: number /* 0 = tail end */; spikes: number; seed: number }
+export interface PlateLayout { x: number; y: number; nx: number; ny: number; ch: string; scale: number; owner: number; order: number /* 0 = tail end */; spikes: number; seed: number; style?: FinStyle /* else the boss's fin style */ }
 export interface EyeLayout { x: number; y: number; r: number; limb: number /* -1 = core */; phase: number }
 export interface TentacleLayout {
   from: number; to: number;  // limb indices; from = -1 => dangling from body
@@ -71,9 +73,21 @@ export interface BossLayout {
     plates: PlateLayout[]; heads: { x: number; y: number }[]; mouth: { x: number; y: number }; mouths: { x: number; y: number }[];
     jaws: JawLayout[]; tailLen: number; jawLimb: number; slots: string[]; hint: BossBody;
     veins: { x: number; y: number; r: number; a: number }[]; mech: boolean;
-    wing?: { x: number; y: number; span: number; limb: number };
+    wing?: { x: number; y: number; span: number; limb: number; style: WingStyle };
     vents: { x: number; y: number }[];
     feet: { x: number; y: number }[];
+    /** body plan (variety.ts); kind stays the archetype's (poses, attacks, beams) */
+    form: BossForm;
+    /** default fin style (plates without their own) */
+    fins: FinStyle;
+    /** hide material of the jaws / front details */
+    mat: Material;
+    /** cracks / veins glow in the element color even when calm */
+    glowVeins: boolean;
+    /** floats: a slow hover bob (and no stomps) */
+    hover: boolean;
+    /** slithers / glides instead of stomping */
+    glide?: boolean;
   };
 }
 
@@ -114,7 +128,7 @@ const big0 = (b: BodyKind) => b === "kaiju" || b === "mecha" || b === "dragon" |
 export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
   const akey = anchors ? anchors.map((a) => a.id + ":" + Math.round(a.x) + "," + Math.round(a.y) + "," + Math.round(a.r)).join(";") : "";
   const d = kit.design;
-  const dkey = (d ? d.body + d.mouth + d.eyes + d.growths.join("") : "") + ((kit as BossKit & BossVisualHints).forceBody ?? "");
+  const dkey = (d ? d.body + d.mouth + d.eyes + d.growths.join("") : "") + ((kit as BossKit & BossVisualHints).forceBody ?? "") + ((kit as BossKit & BossVisualHints).forceForm ?? "") + kit.theme;
   const key = kit.repo + "|" + kit.seed + "|" + kit.limbs.length + "|" + akey + "|" + dkey + "|" + bossArchetype(kit);
   const hit = layoutCache.get(key);
   if (hit) return hit;
@@ -130,6 +144,10 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
   const arch = bossArchetype(kit);
   const body: BodyKind = forced ?? (arch === "hydra" ? "dragon" : arch);
   const hint: BossBody = variant;
+  // look variety (variety.ts): body plan on the archetype's anchors, element, fin / horn / tail / wing variants
+  const V = bossVariety(kit);
+  const forcedForm = (kit as BossKit & BossVisualHints).forceForm;
+  const form: BossForm = forcedForm ?? (forced ? (body === "kaiju" || body === "mecha" || body === "dragon" || body === "abyssal" ? body : "kaiju") : V.form);
   const mouthKind: BossMouth = d?.mouth ?? MOUTHS[(seed >>> 9) % MOUTHS.length];
   const growths: BossGrowth[] = (d?.growths?.length ? d.growths : [GROWTHS[(seed >>> 11) % GROWTHS.length], GROWTHS[(seed >>> 15) % GROWTHS.length]]).filter((g, i, a) => a.indexOf(g) === i).slice(0, 3);
   // the archetype bodies only take growths that sit on the hide (no dangling tentacles/cables, horns, spikes or wings)
@@ -210,6 +228,19 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       });
       heart.x = an.heart.x; heart.y = an.heart.y; heart.hitR = an.heart.r; heart.r = 10;
       const mech = body === "mecha";
+      if (form === "golem" || form === "ironclad" || form === "insectoid" || form === "eye") {
+        const F: FormParts = form === "eye" ? eyeForm(an, R, seed) : form === "insectoid" ? insectoidForm(an, R, seed) : golemForm(an, form === "ironclad", R, seed);
+        lobes.push(...F.lobes); legs.push(...F.legs); tentacles.push(...F.tentacles); eyes.push(...F.eyes);
+        if (form === "eye") { heart.style = "iris"; heart.r = 12; }
+        mouth = null;
+        kaiju = {
+          kind: mech ? "mecha" : "kaiju", plates: F.plates, heads: F.heads, mouth: an.mouth, mouths: an.mouths, jaws: F.jaws, tailLen: an.tailLen, jawLimb: F.jaws[0]?.limb ?? -1,
+          slots: an.limbs.map((l) => l.slot), hint, veins: F.veins, mech: form === "ironclad", vents: F.vents, feet: F.feet,
+          form, fins: V.fins, mat: F.mat, glowVeins: F.glowVeins, hover: F.hover,
+        };
+        for (let i = growths.length - 1; i >= 0; i--) if (growths[i] === "wings") growths.splice(i, 1);
+        break;
+      }
       const ob: Material = mech ? "metal" : "obsidian";
       const limbMat: Material = mech ? "metal" : hint === "golem" ? "stone" : ob;
       const tailMat: Material = hint === "tree" ? "bark" : ob;
@@ -295,11 +326,31 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       for (const [vx, vy] of [[6, -22], [-4, -10], [14, -6], [8, 10], [20, 22], [-10, 30], [16, 40], [-16, -38], [40, 44], [62, 54], [84, 56]] as [number, number][]) veins.push({ x: vx, y: vy, r: 4 + R() * 3, a: R() * Math.PI * 2 });
       mouth = null;
       const jawLimb = mech && body === "mecha" ? own("head") : own("jaw");
+      // variants: horns on the head, a tail-tip shape
+      const horn = (x: number, y: number, nx: number, ny: number, sc: number, k: number, style: FinStyle = "blade") =>
+        plates.push({ x, y, nx, ny, ch: ">", scale: sc, owner: jawLimb, order: nFins + k, spikes: 1, seed: (seed + 900 + k) >>> 0, style });
+      if (mech) { if (V.horns !== "none") horn(-26, -58, 0.2, -0.98, 12, 0, "needle"); }
+      else if (V.horns === "brow") horn(-30, -55, 0.45, -0.9, 9, 0);
+      else if (V.horns === "nose") horn(-45, -49, -0.25, -0.97, 7, 0);
+      else if (V.horns === "crown") [[-36, -55], [-28, -58], [-20, -56]].forEach(([x, y], k) => horn(x, y, 0.1 + k * 0.2, -0.98, 6, k));
+      else if (V.horns === "swept") horn(-22, -54, 0.88, -0.48, 14, 0);
+      const tipOwner = tip >= 0 ? tip : tail;
+      const end = tailPts[tailPts.length - 1];
+      if (V.tail === "club") {
+        lobes.push({ x: end[0] + 3, y: end[1] + 2, r: 7, owner: tipOwner, mat: mech ? "metal" : tailMat, sq: 2, sever: tipOwner >= 0 });
+        [[0.2, -1], [1, -0.2], [0.7, 0.7]].forEach(([nx, ny], k) => plates.push({ x: end[0] + 3 + nx * 5, y: end[1] + 2 + ny * 5, nx, ny, ch: ">", scale: 6, owner: tipOwner, order: k, spikes: 1, seed: (seed + 800 + k) >>> 0, style: "blade" }));
+      } else if (V.tail === "spade") {
+        plates.push({ x: end[0] + 2, y: end[1], nx: 0.7, ny: -0.7, ch: ">", scale: 10, owner: tipOwner, order: 0, spikes: 1, seed: (seed + 801) >>> 0, style: "blade" });
+        plates.push({ x: end[0] + 3, y: end[1] + 3, nx: 0.95, ny: 0.3, ch: ">", scale: 8, owner: tipOwner, order: 0, spikes: 1, seed: (seed + 802) >>> 0, style: "blade" });
+      } else if (V.tail === "blade") {
+        for (let k = 0; k < 3; k++) { const q = tailPts[tailPts.length - 8 + k * 2]; plates.push({ x: q[0], y: q[1] - q[2] + 1, nx: 0.3, ny: -0.95, ch: ">", scale: 11 - k * 2, owner: tipOwner, order: k, spikes: 1, seed: (seed + 810 + k) >>> 0, style: "blade" }); }
+      }
       kaiju = {
         kind: body === "mecha" ? "mecha" : "kaiju", plates, heads, mouth: an.mouth, mouths: an.mouths, tailLen: tx, jawLimb, slots: an.limbs.map((l) => l.slot), hint, veins, mech,
         jaws: [{ hx: -24, hy: -40, len: mech ? 23 : 26, w: mech ? 4 : 5, limb: jawLimb }],
         vents: mech ? [[16, -40], [26, -30], [30, -14], [30, 2]].map(([x2, y2]) => ({ x: x2, y: y2 })) : [],
         feet: [{ x: -15, y: 60 }, { x: 13, y: 59 }],
+        form, fins: V.fins, mat: mech ? "metal" : "obsidian", glowVeins: false, hover: false,
       };
       if (hint === "tree" && !growths.includes("moss")) growths.push("moss");
       const wi = growths.indexOf("wings"); if (wi >= 0) growths.splice(wi, 1);
@@ -314,8 +365,20 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       const gd: Material = "gold";
       lobes.push({ x: 8, y: -2, r: 18, ry: 24, owner: -1, mat: gd }, { x: 2, y: 4, r: 11, ry: 17, owner: -1, mat: gd }, { x: 12, y: 18, r: 17, owner: -1, mat: gd });
       const leg = own("leg");
-      lobes.push({ x: 4, y: 28, r: 14, owner: leg, mat: gd }, { x: 1, y: 44, r: 8, ry: 10, owner: leg, mat: gd }, { x: -3, y: 55, r: 11, ry: 4, owner: leg, mat: gd });
-      lobes.push({ x: 20, y: 30, r: 11, owner: -1, mat: gd }, { x: 18, y: 45, r: 7, ry: 9, owner: -1, mat: gd }, { x: 16, y: 55, r: 9, ry: 4, owner: -1, mat: gd });
+      // naga form (variety.ts): the trunk rises from coils on the ground (the leg slot is the front coil) instead of legs
+      const naga = form === "naga";
+      if (naga) {
+        for (const [cx2, cy2, rx, ry2, rr, n2, own2] of [[8, 46, 30, 9, 9, 16, leg], [6, 34, 20, 7, 8, 12, -1]] as number[][])
+          for (let k = 0; k < n2; k++) {
+            const a = (k / n2) * Math.PI * 2;
+            const front = Math.sin(a) > 0.2;
+            lobes.push({ x: cx2 + Math.cos(a) * rx, y: cy2 + Math.sin(a) * ry2, r: rr * (front ? 1 : 0.85), owner: front ? own2 : -1, mat: k % 3 ? gd : "belly" });
+          }
+        lobes.push({ x: 2, y: 24, r: 13, owner: -1, mat: gd });
+      } else {
+        lobes.push({ x: 4, y: 28, r: 14, owner: leg, mat: gd }, { x: 1, y: 44, r: 8, ry: 10, owner: leg, mat: gd }, { x: -3, y: 55, r: 11, ry: 4, owner: leg, mat: gd });
+        lobes.push({ x: 20, y: 30, r: 11, owner: -1, mat: gd }, { x: 18, y: 45, r: 7, ry: 9, owner: -1, mat: gd }, { x: 16, y: 55, r: 9, ry: 4, owner: -1, mat: gd });
+      }
       // tail sweeping right along the ground, tip lifting into a spade
       const tail = own("tail"), tip = own("tail-tip");
       const tx = an.tailLen;
@@ -327,9 +390,14 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
         const owner = t >= 0.72 && tip >= 0 ? tip : t >= 0.42 ? tail : -1;
         lobes.push({ x, y, r: Math.max(2.5, 11 - t * 8.5), owner, mat: gd, sever: owner >= 0 });
       }
-      lobes.push({ x: tx + 3, y: 30, r: 4, ry: 3, owner: tip >= 0 ? tip : tail, mat: gd, sever: true });
+      if (V.tail === "club") lobes.push({ x: tx + 3, y: 31, r: 6.5, owner: tip >= 0 ? tip : tail, mat: gd, sq: 2, sever: true });
+      else lobes.push({ x: tx + 3, y: 30, r: 4, ry: 3, owner: tip >= 0 ? tip : tail, mat: gd, sever: true });
+      const dragonTipPlates: PlateLayout[] = V.tail === "blade" || V.tail === "spade"
+        ? [{ x: tx + 2, y: 27, nx: 0.6, ny: -0.8, ch: ">", scale: V.tail === "blade" ? 12 : 9, owner: tip >= 0 ? tip : tail, order: 0, spikes: 1, seed: (seed + 77) >>> 0, style: "blade" }]
+        : [];
       // necks + heads: one per mouth, each head ending at its anchor
       const headSlots = ["head-0", "head-1", "head-2"];
+      const neckI = own("neck");
       const heads: { x: number; y: number }[] = [];
       const jaws: JawLayout[] = [];
       const plates: PlateLayout[] = [];
@@ -342,7 +410,9 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
           const t = k / 9, u = 1 - t;
           const x = u * u * u * sx + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * hx;
           const y = u * u * u * sy + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * hy;
-          lobes.push({ x, y, r: 7 - t * 1.5, owner: t > 0.5 ? slotI : -1, mat: gd, sever: t > 0.5 && slotI >= 0 });
+          // the lower half of the first neck is the "neck" limb (charred when it breaks; the head is severed with its own limb)
+          const o = t > 0.5 ? slotI : hi === 0 ? neckI : -1;
+          lobes.push({ x, y, r: 7 - t * 1.5, owner: o, mat: gd, sever: t > 0.5 && slotI >= 0 });
           // small neck spines (the hydra's landmarks are horns and neck spines, not a giant sail)
           if (k % 2 === 1 && k < 9) {
             const t2 = t + 0.01, u2 = 1 - t2;
@@ -356,17 +426,24 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
         }
         lobes.push({ x: hx, y: hy, r: 8.5, ry: 6.5, owner: slotI, mat: gd, sever: slotI >= 0 });
         lobes.push({ x: hx - 9, y: hy + 1, r: 5.5, ry: 3.5, owner: slotI, mat: gd, sever: slotI >= 0 });
-        // horns sweeping back
-        plates.push({ x: hx + 4, y: hy - 5, nx: 0.7, ny: -0.7, ch: ">", scale: 9, owner: slotI, order: 50 + hi, spikes: 2, seed: (seed + hi * 31) >>> 0 });
+        // horns (variant): swept back (the original), upright brow horns, a nose horn, a small crown or long swept blades
+        const hs = (x: number, y: number, nx: number, ny: number, sc: number, k: number, style?: FinStyle) => plates.push({ x, y, nx, ny, ch: ">", scale: sc, owner: slotI, order: 50 + hi * 4 + k, spikes: 2, seed: (seed + hi * 31 + k) >>> 0, style });
+        if (V.horns === "brow") hs(hx + 2, hy - 6, 0.25, -0.97, 9, 0, "blade");
+        else if (V.horns === "nose") { hs(hx - 8, hy - 3, -0.2, -0.98, 6, 0, "blade"); hs(hx + 4, hy - 5, 0.7, -0.7, 7, 1); }
+        else if (V.horns === "crown") [[-2, -7], [3, -7], [7, -4]].forEach(([dx, dy], k) => hs(hx + dx, hy + dy, 0.2 + k * 0.3, -0.95, 5, k, "blade"));
+        else if (V.horns === "swept") hs(hx + 4, hy - 5, 0.9, -0.43, 13, 0, "blade");
+        else hs(hx + 4, hy - 5, 0.7, -0.7, 9, 0);
         heads.push({ x: hx - 3, y: hy - 2 });
         eyes.push({ x: hx - 4, y: hy - 2, r: 2, limb: slotI, phase: R() * 10 });
         jaws.push({ hx: hx - 2, hy: hy + 3, len: 11, w: 3, limb: slotI });
       });
+      plates.push(...dragonTipPlates);
       mouth = null;
       kaiju = {
         kind: "dragon", plates, heads, mouth: an.mouth, mouths: an.mouths, jaws, tailLen: tx, jawLimb: -1, slots: an.limbs.map((l) => l.slot), hint, mech: false,
         veins: [[6, -16], [12, 4], [8, 20], [40, 44], [70, 48]].map(([x2, y2]) => ({ x: x2, y: y2, r: 5, a: R() * 6 })),
-        wing: { x: 12, y: -22, span: 66, limb: own("wing") }, vents: [], feet: [{ x: -3, y: 58 }, { x: 16, y: 58 }],
+        wing: { x: 12, y: -22, span: V.wing === "feather" ? 70 : 66, limb: own("wing"), style: V.wing }, vents: [], feet: naga ? [{ x: -20, y: 54 }, { x: 34, y: 54 }] : [{ x: -3, y: 58 }, { x: 16, y: 58 }],
+        form, fins: V.fins, mat: "gold", glowVeins: false, hover: false, glide: naga,
       };
       break;
     }
@@ -376,7 +453,9 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       const own = (slot: string) => an.limbs.findIndex((l) => l.slot === slot);
       limbs.forEach((l, i) => { const a = an.limbs[i]; if (a) { l.x = a.x; l.y = a.y; l.hitR = a.r; l.r = a.r; l.angle = Math.atan2(a.y, a.x || 0.001); } });
       heart.x = an.heart.x; heart.y = an.heart.y; heart.hitR = an.heart.r; heart.r = 10;
-      const vd: Material = "void";
+      // wyrm form (variety.ts): the same path as a banded chitin centipede with legs, mandibles and antennae
+      const wyrm = form === "wyrm";
+      const vd: Material = wyrm ? "chitin" : "void";
       const tx = an.tailLen;
       // the body path: head -> neck -> front coil (down) -> along the ground -> loop up over the heart -> back coil -> tail
       const path: [number, number, number, string][] = [
@@ -390,22 +469,32 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
         const r2 = r0 * 1.25;
         const o = slot ? own(slot) : -1;
         const sever = slot === "tail" || slot === "tail-tip";
-        lobes.push({ x, y, r: r2, owner: o, mat: vd, sever: sever && o >= 0 });
-        // crystal ridge on top of each segment, sweeping backward
-        if (k % 2 === 0 && k < path.length - 2) plates.push({ x: x + 2, y: y - r2 + 2, nx: 0.45, ny: -0.9, ch: k % 4 ? ">" : "}", scale: Math.round(6 + r2 * 0.6), owner: o, order: path.length - k, spikes: 2 + (k % 2), seed: (seed + k * 13) >>> 0 });
+        lobes.push({ x, y, r: r2, owner: o, mat: wyrm && k % 2 ? "belly" : vd, sq: wyrm ? 2.4 : undefined, sever: sever && o >= 0 });
+        // crystal ridge (abyssal) / armor plates (wyrm) on top of each segment, sweeping backward
+        if (k % 2 === 0 && k < path.length - 2) plates.push({ x: x + 2, y: y - r2 + 2, nx: 0.45, ny: -0.9, ch: k % 4 ? ">" : "}", scale: Math.round((wyrm ? 4 : 6) + r2 * 0.6), owner: o, order: path.length - k, spikes: 2 + (k % 2), seed: (seed + k * 13) >>> 0, style: wyrm ? "plate" : undefined });
       });
       // big horned head with a crystal crest
       const head = own("head"), crest = own("crest");
-      lobes.push({ x: -46, y: -12, r: 16, ry: 12, owner: -1, mat: vd }, { x: -60, y: -7, r: 9, ry: 6, owner: -1, mat: vd }, { x: -40, y: -24, r: 8, ry: 5, owner: -1, mat: vd });
-      for (const [px2, py2, sc, k] of [[-44, -26, 16, 0], [-33, -30, 22, 1], [-22, -26, 16, 2]] as [number, number, number, number][])
-        plates.push({ x: px2, y: py2, nx: 0.6, ny: -0.8, ch: "}", scale: sc, owner: crest, order: 90 + k, spikes: 3, seed: (seed + 500 + k) >>> 0 });
-      eyes.push({ x: -49, y: -15, r: 3, limb: -1, phase: R() * 10 });
+      if (wyrm) {
+        // a rounder head with blade mandibles, long antennae on the crest slot, short legs under the segments
+        lobes.push({ x: -46, y: -12, r: 13, ry: 10, owner: -1, mat: vd, sq: 2.4 }, { x: -56, y: -6, r: 6, ry: 5, owner: -1, mat: "belly" });
+        plates.push({ x: -44, y: -21, nx: 0.3, ny: -0.95, ch: "}", scale: 20, owner: crest, order: 90, spikes: 0, seed: (seed + 500) >>> 0, style: "needle" });
+        plates.push({ x: -58, y: -1, nx: -0.7, ny: 0.7, ch: ">", scale: 9, owner: head, order: 91, spikes: 1, seed: (seed + 501) >>> 0, style: "blade" });
+        eyes.push({ x: -51, y: -15, r: 2, limb: -1, phase: R() * 10 }, { x: -45, y: -16, r: 2, limb: -1, phase: R() * 10 });
+        legs.push(...wyrmLegs(path.map(([x, y, r0, sl]) => [x, y, r0 * 1.25, sl] as [number, number, number, string]), R));
+      } else {
+        lobes.push({ x: -46, y: -12, r: 16, ry: 12, owner: -1, mat: vd }, { x: -60, y: -7, r: 9, ry: 6, owner: -1, mat: vd }, { x: -40, y: -24, r: 8, ry: 5, owner: -1, mat: vd });
+        for (const [px2, py2, sc, k] of [[-44, -26, 16, 0], [-33, -30, 22, 1], [-22, -26, 16, 2]] as [number, number, number, number][])
+          plates.push({ x: px2, y: py2, nx: 0.6, ny: -0.8, ch: "}", scale: sc, owner: crest, order: 90 + k, spikes: 3, seed: (seed + 500 + k) >>> 0 });
+        eyes.push({ x: -49, y: -15, r: 3, limb: -1, phase: R() * 10 });
+      }
       // crescent veins all along the segments (glow cyan; red when enraged)
       const veins = path.filter((_, k) => k % 2 === 1).map(([x, y, r2]) => ({ x, y, r: r2 * 0.55, a: R() * 6 }));
       mouth = null;
       kaiju = {
         kind: "abyssal", plates, heads: [{ x: -46, y: -14 }], mouth: an.mouth, mouths: an.mouths, tailLen: tx, jawLimb: head, slots: an.limbs.map((l) => l.slot), hint, veins, mech: false,
-        jaws: [{ hx: -42, hy: -6, len: 21, w: 5, limb: head }], vents: [], feet: [],
+        jaws: [{ hx: -42, hy: -6, len: wyrm ? 14 : 21, w: wyrm ? 4 : 5, limb: head }], vents: [], feet: [],
+        form, fins: V.fins, mat: vd, glowVeins: false, hover: false,
       };
       break;
     }
@@ -575,6 +664,20 @@ export function bossLayout(kit: BossKit, anchors?: Anchor[]): BossLayout {
       case "cables": for (let k = 0; k < 3; k++) { const a = Math.PI * (0.1 + R() * 0.8); const b = a + 0.6 + R() * 0.8; tentacles.push({ from: -1, to: -1, ax: Math.cos(a) * bodyR, ay: Math.sin(a) * bodyR * 0.5, bx: Math.cos(b) * bodyR, by: Math.sin(b) * bodyR * 0.5 + 4, bulge: 14 + R() * 10, segs: 12, thick: 1.2, knot: false, phase: R() * 10, style: "cable", color: ["#ff4d4d", "#ffd23f", "#3fd2ff", "#7dff6b"][k % 4] }); } break;
     }
   }
+
+  // ---- per-limb parts (variety.ts: gears on engines, server racks on data, crystals on tests, moss on docs, cables
+  //      on I/O), sitting on the limb's anchor and gone when it breaks; the archetype bodies only ----
+  // (the 3 biggest components only, so the hide stays readable)
+  if (kaiju && !forced) limbs.forEach((l, i) => {
+    const part = V.parts[i];
+    if (i >= 3 || !part || part === "plain") return;
+    const ph = R() * 6;
+    if (part === "gears") spots.push({ kind: "gears", x: l.x + 3, y: l.y - 2, angle: 0, size: 4, owner: i, phase: ph });
+    else if (part === "servers") spots.push({ kind: "servers", x: l.x - 5, y: l.y - 3, angle: 0, size: 3, owner: i, phase: ph });
+    else if (part === "crystals") spots.push({ kind: "crystals", x: l.x, y: l.y - 3, angle: -Math.PI / 2 + (R() - 0.5) * 0.8, size: 5 + R() * 3, owner: i, phase: ph });
+    else if (part === "moss") spots.push({ kind: "moss", x: l.x, y: l.y, angle: 0, size: l.r + 6, owner: i, phase: ph });
+    else if (part === "cables") tentacles.push({ from: -1, to: -1, ax: l.x - 4, ay: l.y, bx: l.x + 6, by: l.y + 4, bulge: 8 + R() * 6, segs: 10, thick: 1.2, knot: false, phase: R() * 10, style: "cable", color: ["#ff4d4d", "#ffd23f", "#3fd2ff", "#7dff6b"][i % 4] });
+  });
 
   // ---- scars from seed ----
   const scarCount = 1 + (seed >>> 3) % 4;

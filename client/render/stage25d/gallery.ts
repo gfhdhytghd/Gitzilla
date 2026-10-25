@@ -1,5 +1,5 @@
 // 3D stage gallery: the real sim (raid with bot heroes, or an 8-bot royale) rendered through createStage25d.
-//   ?scene=raid|royale  &boss=<slug>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset) &xrmode=vr|ar
+//   ?scene=raid|royale  &boss=<slug> &form=<body plan>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset) &xrmode=vr|ar
 // window.__stats = { fps, frameMs, renderMs } for automated checks.
 // ?hudcheck=1 (with xr=emulate): the XR HUD panel check. The pull() time is frozen (like game.ts while a headset pauses
 //   the page rAF) and the boss steps through scripted HP levels / a limb break / phases 2-3; each settled level logs the
@@ -42,6 +42,7 @@ async function main() {
     return { id: (scene === "royale" ? "bot-" : "p") + i, name: p.slug.split("/")[1].slice(0, 10), kit };
   });
   let boss: BossKit | null = scene === "royale" ? null : bossKitFromProfile(pick(q.get("boss"), 0), n);
+  if (boss && q.get("form")) boss = { ...boss, forceForm: q.get("form") } as BossKit; // body plan (boss/variety.ts)
   if (boss && q.get("fast")) boss = { ...boss, maxHp: Math.round(boss.maxHp / 4), limbs: boss.limbs.map((l) => ({ ...l, maxHp: Math.round(l.maxHp / 4) })) };
   let match = scene === "royale" ? createMatch(roster, null, { mode: "pvp" }) : createMatch(roster, boss!);
   const bots = roster.map((_, i) => (scene === "royale" ? createPvpController(1000 + i) : raidBot(i)));

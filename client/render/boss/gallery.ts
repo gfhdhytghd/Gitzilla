@@ -2,11 +2,14 @@
 //   ?mode=live (default)  real sim/match.ts with simple bots   &boss=<idx|slug> &players=4 &scale=3 &fast=1 &design=0
 //   ?mode=grid            one panel per theme, staged bullets/hazards/minions  &phase=2|3 &scale=1
 //   ?mode=portraits       bossPortrait() for every fallback (with + without design)
+//   ?mode=variety         every fallback (designed) labelled form / element, each body plan forced, 30 synthetic repos
+//   &form=<golem|insectoid|eye|ironclad|wyrm|...>  force a body plan (variety.ts) in any mode
 import type { ArenaTheme, BossDesign, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, MatchState, Minion, PlayerKit, PlayerState, RepoProfile } from "../../../shared/types.ts";
 import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bossKitFromProfile, bossRegions, createMatch, playerKitFromProfile } from "../../../sim/index.ts";
 import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
 import { drawBoss, bossLookAt, bossPortrait, bossLayout } from "./index.ts";
+import { bossVariety } from "./variety.ts";
 import { drawRoyaleZone, drawArenaBackground, drawBullets, drawEvents, drawHazards, drawMinions, drawObstacles, drawPerkPads, drawPickups, drawPostFx, getFxCues, trackPlayers } from "../arena/index.ts";
 import type { Obstacle, PerkOffer, Pickup } from "../../../shared/types.ts";
 
@@ -33,6 +36,7 @@ function kitFor(p: RepoProfile, n: number, useDesign = q.get("design") !== "0"):
   }
   if (q.get("theme")) kit = { ...kit, theme: q.get("theme") as ArenaTheme };
   if (q.get("body")) kit = { ...kit, forceBody: q.get("body") } as BossKit;
+  if (q.get("form")) kit = { ...kit, forceForm: q.get("form") } as BossKit;
   if (q.get("arch")) kit = { ...kit, archetype: q.get("arch") as BossKit["archetype"] };
   if (!kit.code?.heartLines?.length && q.get("code") !== "0") kit = { ...kit, code: fakeCode(p, kit) };
   if (q.get("fragile")) kit = { ...kit, limbs: kit.limbs.map((l, i) => ({ ...l, fragile: i % 3 === 0 || l.fragile, maintainers: i % 3 === 0 ? 1 : l.maintainers, parasites: i === 1 ? [{ id: "GHSA-xxxx-1234", pkg: "lodash", ecosystem: "npm", summary: "prototype pollution", fixed: "4.17.21" }, { id: "CVE-2024-0001", pkg: "regex", ecosystem: "crates.io", summary: "ReDoS" }] : l.parasites })) };
@@ -322,6 +326,53 @@ function portraits() {
   }
 }
 
+// browser-safe synthetic repos with varied languages, component names, sizes and cycles (sim/bots.ts needs node:fs)
+function synthProfile(i: number): RepoProfile {
+  let s = (i * 2654435761) >>> 0;
+  const r = () => ((s = (Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) + 0x6d2b79f5) >>> 0) / 4294967296);
+  const langs = ["TypeScript", "Rust", "Python", "Go", "Java", "C", "C++", "Ruby", "Lua", "JavaScript", "C#", "Kotlin"];
+  const names = ["src", "lib", "core", "utils", "test", "api", "server", "db", "ui", "render", "parser", "compiler", "cli", "docs", "examples", "net", "http", "cache", "storage", "engine", "runtime", "plugins", "config", "scripts", "bench", "model"];
+  const language = langs[Math.floor(r() * langs.length)];
+  const n = 2 + Math.floor(r() * 7);
+  const pool = [...names].sort(() => r() - 0.5);
+  const components = pool.slice(0, n).map((name, k) => ({ name, files: 5 + Math.floor(r() * 80), loc: Math.round((3000 - k * 300) * (0.3 + r() * 3)), fanIn: Math.floor(r() * 8), fanOut: Math.floor(r() * 6) }));
+  const totalLoc = components.reduce((a, c) => a + c.loc, 0) * (1 + Math.floor(r() * 20));
+  const cyc = r() < 0.2 ? Math.floor(1 + r() * 3) : 0;
+  return { slug: `synth/${["acme", "zeta", "nova", "orbit", "pixel"][i % 5]}-${i}`, description: "synthetic", stars: Math.floor(r() * 50000), primaryLanguage: language,
+    languages: { [language]: 10000 }, totalFiles: 100 + Math.floor(r() * 2000), totalLoc, commits: 100 + Math.floor(r() * 9000), contributors: 1 + Math.floor(r() * 300),
+    ageDays: Math.floor(r() * 5000), components, heart: components[0].name + "/index", heartFanIn: Math.floor(r() * 20),
+    edges: components.slice(1).map((_, k) => [k, k + 1]), cycles: Array.from({ length: cyc }, (_, k) => [components[k % n].name, components[(k + 1) % n].name]),
+    maxDepth: 2 + Math.floor(r() * 9), testRatio: r() * 0.4, seed: Math.floor(r() * 1e9), fallback: true } as RepoProfile;
+}
+
+// ---------------- variety (docs/tasks/variety.md) ----------------
+function variety() {
+  const wrap = document.getElementById("wrap")!;
+  const size = Number(q.get("size") ?? 150);
+  const cell = (kit: BossKit, label: string) => {
+    const c = document.createElement("div");
+    c.className = "cell";
+    c.style.background = "#14101e";
+    c.appendChild(bossPortrait(kit, size));
+    const s = document.createElement("span");
+    s.textContent = label;
+    c.appendChild(s);
+    wrap.appendChild(c);
+  };
+  const tag = (kit: BossKit) => { const v = bossVariety(kit), L = bossLayout(kit); return `${kit.archetype}/${L.kaiju?.form ?? L.body} · ${v.element.id} · ${v.fins}/${v.horns}/${v.tail}`; };
+  for (const p of profiles) { const kit = kitFor(p, 4); cell(kit, p.slug.split("/")[1] + " :: " + tag(kit)); }
+  // every body plan, forced on a fitting archetype
+  const base = kitFor(profiles[0], 4);
+  for (const [arch, form] of [["kaiju", "kaiju"], ["kaiju", "golem"], ["kaiju", "insectoid"], ["kaiju", "eye"], ["mecha", "mecha"], ["mecha", "ironclad"], ["hydra", "dragon"], ["hydra", "naga"], ["abyssal", "abyssal"], ["abyssal", "wyrm"]] as const) {
+    const kit = { ...base, archetype: arch, forceForm: form, limbs: form === "eye" ? base.limbs.slice(0, 3) : base.limbs } as BossKit;
+    cell(kit, `[forced] ${arch}/${form}`);
+  }
+  for (let i = 1; i <= Number(q.get("synth") ?? 30); i++) {
+    const kit = bossKitFromProfile(synthProfile(i), 4);
+    cell(kit, `synth${i} :: ${kit.theme} :: ${tag(kit)}`);
+  }
+}
+
 // scripted FX sequence: limb break -> phase 2 -> phase 3 -> victory (loops every 14 s)
 function fxSeq() {
   const scale = Number(q.get("scale") ?? 3);
@@ -557,4 +608,5 @@ else if (mode === "royale") royale();
 else if (mode === "bullets") bulletsShow();
 else if (mode === "grid") grid();
 else if (mode === "portraits") portraits();
+else if (mode === "variety") variety();
 else live();

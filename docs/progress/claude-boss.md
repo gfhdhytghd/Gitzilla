@@ -1,3 +1,60 @@
+DONE (boss variety) — claude-boss
+
+## Round 6: boss variety (docs/tasks/variety.md, Bosses)
+No sim/contract changes: archetype choice, `bossAnchors` (hit regions, heart, mouths), poses and attacks are untouched. The new body plans are render-side **forms** drawn on the archetype's existing anchors. No new deps.
+- **`client/render/boss/variety.ts`** (pure, deterministic per repo): `bossVariety(kit)` → form + element + variants; `bossElement`, `limbPart`.
+  - **Forms (10, 6 new):**
+    - kaiju archetype: kaiju, **golem** (stone; block torso, huge fist on the arm anchor, pillar legs, an iron chain to a wrecking boulder on the tail anchors), **insectoid** (mantis-wasp; scythe arm, banded abdomen and stinger, thin jointed legs, antennae, mandibles), **eye** (repos with 3 or fewer limbs; floating eyeball whose iris is the heart, eye-pods, an eyestalk with a beak, tentacles; hovers, no stomps);
+    - mecha archetype: mecha, **ironclad** (iron golem with visor, vents and cannon);
+    - hydra archetype: dragon, **naga** (the necks rise from ground coils; slithers);
+    - abyssal archetype: abyssal, **wyrm** (banded chitin centipede with legs, mandibles and antennae).
+    - Kaiju forms come from repo traits: functional/test-heavy → insectoid, compact monolith → golem, big → kaiju. Other archetypes pick their form by repo hash.
+  - **Elements (13):**
+    - The full set: jade (original kaiju), molten, neon, sunset, arcane, frost, chrome, verdant, toxic, phosphor, storm, void (original abyssal), gilded (original hydra).
+    - Each defines hide, hide2, belly, calm and charged fin colours, breath/FX tint, eye/pupil and vein glow.
+    - Choice: the theme family (kernel → molten…, web → neon…, notebook → arcane…, enterprise → chrome…, legacy, terminal), then component-keyword affinity, a limb/cycle rotation, and a repo-hash tiebreak.
+    - Hide = element mixed with 12% of the repo palette, plus a per-repo hue jitter of ±18°. Mech hulls and hydra scales are lifted to stay bright.
+    - Heart, weak-point and enraged colours stay red for readability.
+  - **Variants:**
+    - fin style: crystal / blade / plate / needle (in `finSprite`);
+    - horns: none / brow / nose / crown / swept (kaiju, mecha antenna, per hydra head);
+    - tail tip: curl / club / spade / blade;
+    - dragon wing: membrane / feather / crystal;
+    - per-limb parts from the component name on the 3 biggest components: gears (engine/core), servers (data), crystals (tests), local moss (docs), cables (I/O). Parts are hidden when their limb breaks.
+- **Wiring:**
+  - `art.ts`: element-driven materials; `BossArt.el`, `.fin`, `.lit`.
+  - `index.ts`: element fins, breath, eyes, roar ring, veins and shards; hover/glide; claws and toes only on plans with feet; wing styles; `fx.bossTint`.
+  - `layout.ts`: forms and variants; `kaiju.{form, fins, mat, glowVeins, hover, glide}`; `PlateLayout.style`; dev hint `forceForm`.
+  - `sprite.ts`: element vein colours, golem cracks, sclera veins for the eye, per-limb moss.
+  - New `forms.ts` (golem / insectoid / eye builders and wyrm legs).
+  - Beams in 2D (`arena/hazards.ts`) and 3D (`stage25d/scene.ts`) take the element tint; the mecha keeps its red laser and the abyssal goes red in phase 3.
+  - Fixed along the way: the hydra's "neck" limb owned no art (now charred on break).
+- **Tests (`boss/variety.test.ts`):**
+  - deterministic per repo;
+  - the 15 designed fallbacks are unique by archetype + form + element (9 forms, 7 elements);
+  - every form at 2/3/5/8 limbs × 6 seeds keeps the limb positions and radii equal to `bossAnchors`, keeps the heart on the chest, and gives every limb owned art (lobe, plate, jaw or wing) on its hitbox;
+  - small repos become the eye; forms stay within their archetype.
+- **Galleries:**
+  - `boss/gallery.html?mode=variety`: the 15 fallbacks labelled form/element, every form forced, and 30 browser-side synthetic repos; `&form=` works in any mode.
+  - `stage25d/gallery.html?...&form=`.
+- **codex-gemini's tool** (`npx tsx tools/variety-sheet.ts --label after-bosses --kind bosses --fixtures docs/variety/baseline/fixtures.json --compare docs/variety/baseline/summary.json`; DEV 5175, output `docs/variety/after-bosses/`):
+
+  | View | Min distance ↑ | Mean distance ↑ | Look-alike pairs ↓ | Clusters ↓ | Shape-only pairs ↓ | Palette bits ↑ |
+  |---|---|---|---|---|---|---|
+  | portraits, all 45 | 0.0136 → 0.0982 | 0.414 → 0.442 | 68 → 6 | 8 → 4 | 144 → 74 | 4.95 → 5.62 |
+  | fight, all 45 | 0.0155 → 0.1112 | 0.412 → 0.448 | 67 → 3 | 8 → 2 | 150 → 79 | 4.97 → 5.62 |
+  | fallback 15 (portraits / fight) | 0.079 / 0.072 → 0.263 / 0.242 | | 8 / 10 → **0 / 0** | 4 / 4 → **0 / 0** | | |
+
+  - Remaining look-alikes are synthetic fixtures with identical generic traits (same archetype, theme and `src/module_N` names).
+  - 0 browser errors; pixel hashes repeat.
+- **3D:**
+  - Voxel depth works for every form (painted from slot owners).
+  - WebKit 1440: insectoid 62.2 fps / 6.3 ms; iron golem 61–62 / 6.8; eye 62.2 / 6.4.
+  - Hydras run 8.4–10.4 ms stage CPU, the same as the HEAD baseline (8.5–8.8, measured in a scratch worktree), so there's no regression.
+  - XR HUD check passes on the eye boss.
+- tsc clean; vitest 5013 passed / 20 skipped; build OK.
+- **For claude-ui (optional):** the lobby could show the form and element name (`bossVariety(kit).form`, `.element.label`).
+
 DONE (XR world-pinned table + 0.80 m height wiring) — claude-boss
 
 ## Round 5 (urgent): XR table pinned in space

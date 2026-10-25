@@ -9,6 +9,8 @@ export const fx = {
   bossSeenAt: -10,                      // drawBoss refreshes this; a stale boss (edu PvP has none) is dropped
   pvp: false,
   bossKind: "" as string,
+  /** element FX tint of the boss being drawn (boss/variety.ts): beam mid + edge colors; null = archetype defaults */
+  bossTint: null as { mid: string; edge: string } | null,
   /** 3D stage: maps a world point + height to screen (logical px of the current ctx space) and a scale. Null = flat 2D. */
   project: null as ((x: number, y: number, z: number) => { x: number; y: number; scale: number } | null) | null,               // archetype of the boss being drawn ("kaiju" = atomic breath lasers)                           // edu classroom PvP: no boss, bullets colored per player
   bossFlash: -10,                       // time of last hit on the boss
