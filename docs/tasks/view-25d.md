@@ -83,3 +83,28 @@ User request: "go 2.5D: a flat map, standing avatars, 3D bullets flying at a hei
   - `tools/xr-check.ts`: Playwright Chromium with a WebXR emulator/polyfill (e.g. `iwer`, pinned). It enters the session, renders N frames, and reports frame times and errors.
 - **claude-boss (Claude)** owns the scene's look: floor texture composition, billboard sprites and anchoring, boss staging, bullets/shadows visuals, the zone wall, the floating HUD panel, the void room, and the gallery. It also owns `index.ts`, which wires the pieces into `createStage25d`.
 - **Interface between them:** codex-input publishes types and exports first, in `client/render/stage25d/types.ts`. claude-boss consumes them. Neither edits the other's files.
+
+## Round 3 (user): "Can it look truly 3D on Vision Pro using the spatial APIs?"
+Flat billboards read as cardboard cut-outs in stereo. Goal: real volume and real space.
+- **codex-input (research first, then plumbing).** Report within the first ~10 minutes, with sources (WebKit blog / release notes / MDN), what Vision Pro Safari supports *today*:
+  - WebXR `immersive-ar` (passthrough: the arena on the user's real table)
+  - hand tracking / `transient-pointer`
+  - hit-test / plane detection / anchors
+  - depth sensing / light estimation
+  - the HTML `<model>` element (USDZ), enabled by default or not
+  - spatial / stereo video and photo
+
+  Then implement the best available:
+  - If `immersive-ar` is available: an AR tabletop on a detected or tapped real surface (hit-test), falling back to `immersive-vr`.
+  - Hand tracking for UI if available.
+  - A USDZ export of the current boss/arena (three `USDZExporter`) shown with `<model>` on the spectator page, if supported.
+
+  Plumbing goes in `xr.ts` / `projection.ts` plus a new `spatial.ts`, with tests and an emulator check (IWER supports AR sessions and hit-test).
+- **claude-boss (look).** Make sprites volumetric:
+  - Voxel-extrude the pixel art. Each opaque pixel becomes a cube, about 1 px deep for heroes and 3–6 px for the boss, built per animation frame and cached with greedy meshing or an InstancedMesh.
+  - The pixel-art front face stays exact.
+  - Add real lighting: a key light plus soft shadows on the floor (a shadow map at low res, or keep the blob shadows if it's too expensive).
+  - The boss gets real depth: limbs at different z, the heart glowing as a light source.
+  - Bullets become small emissive spheres or voxels with point-light glints.
+  - Keep 90 fps headroom: measure scene CPU/GPU per frame, and LOD down on phones (phones may keep billboards).
+  - Keep screen 2.5D as it is unless voxels look strictly better there too.
