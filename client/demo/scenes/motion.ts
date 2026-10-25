@@ -2,7 +2,8 @@
 //   beat 1: the four gestures large, each drawn as what the phone really does (input/README + spin-circle card):
 //             tilt  = tip the flat phone (a level ball rolls downhill) → the hero walks that way
 //             swing = a sharp flick (ghost trail + speed lines)        → attack
-//             tilt hard (≥ 50°, any direction) = a steep tip + direction arrow + dash streak → dash that way
+//             swipe or tilt hard (≥ 50°, any direction) = a steep tip right, then left, then a short finger swipe
+//                     across the screen; a direction arrow + dash streak each time → dash that way
 //             spin  = the phone orbits its own long axis: upright and facing you, its centre travels a horizontal
 //                     circle (a flattened ellipse in perspective: bigger when near, behind the ring when far,
 //                     a soft shadow under it); it never rotates → skill
@@ -21,13 +22,13 @@ import { ring } from "./fx.ts";
 const GESTURES = [
   { id: "tilt", verb: "TILT", act: "walk", note: "tip it like a tray", period: 4.8, dwell: 4.8 },
   { id: "swing", verb: "SWING", act: "attack", note: "one sharp flick", period: 1.2, dwell: 3.6 },
-  { id: "dash", verb: "TILT HARD", act: "dash", note: "50° or more, any direction", period: 2.4, dwell: 4.8 },
+  { id: "dash", verb: "SWIPE or TILT HARD", act: "dash", note: "swipe, or tip 50°+ any way", period: 3.6, dwell: 3.6 },
   { id: "spin", verb: "SPIN", act: "skill", note: "circle it around, stay upright", period: 1.8, dwell: 3.8 },
 ] as const;
 type GestureId = (typeof GESTURES)[number]["id"];
 // spin orbit: a horizontal circle seen in perspective (stage px); the phone's base rides the ellipse
 const ORBIT = { cx: 150, cy: 178, rx: 98, ry: 26 };
-const phone = (cls = "") => h(`div.dp${cls}`, null, h("i.dp-screen", null, h("i.dp-ball")), h("i.dp-notch"));
+const phone = (cls = "", finger = false) => h(`div.dp${cls}`, null, h("i.dp-screen", null, h("i.dp-ball"), finger ? h("i.dp-swipe", null, h("i.dp-finger")) : null), h("i.dp-notch"));
 const SVG = (inner: string) => h("div.mo-path", { html: `<svg viewBox="0 0 300 240" width="300" height="240">${inner}</svg>` });
 const ARROW = '<defs><marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>';
 /** The animated rig for one gesture: path guide + phone (+ ghost copies for the trail). */
@@ -40,7 +41,7 @@ function rig(id: GestureId): HTMLElement {
     ...[3, 2, 1].map((k) => h(`div.mo-rig.ghost.g${k}`, { style: `--k:${k}` }, phone())), h("div.mo-rig", null, phone()));
   if (id === "dash") return h("div.mo-stage.g-dash", null,
     SVG(`<ellipse cx="150" cy="150" rx="118" ry="44" class="guide"/>`),
-    h("div.mo-dash-arrow", null, h("i.mo-streak"), h("b.mo-head")), h("div.mo-rig", null, phone()));
+    h("div.mo-dash-arrow", null, h("i.mo-streak"), h("b.mo-head")), h("div.mo-rig", null, phone("", true)));
   // spin: the frame loop places these on the ellipse (translate + depth scale only, never a rotation). Layers: far
   // half of the ring, shadows, phones, near half of the ring; a phone on the near side is lifted above the near half.
   const { cx, cy, rx, ry } = ORBIT;
@@ -86,9 +87,9 @@ export const motion: Scene = {
     const crossed = (at: number, dt = 1 / 30) => { const P = GESTURES[active].period, a = (since - dt) / P, b = since / P; return Math.floor(a - at) !== Math.floor(b - at) && since > dt; };
     // tilt keyframes: tip right · top edge down · left · bottom edge down (demo.css @keyframes mo-tilt)
     const TIPS: [number, number, [number, number]][] = [[0.06, 0.22, [1, 0]], [0.31, 0.47, [0, -1]], [0.56, 0.72, [-1, 0]], [0.81, 0.97, [0, 1]]];
-    // hard tips (@keyframes mo-dash): right, then left. Side tips read clearly; forward/back would turn the flat
-    // phone edge-on. The arrow and the copy still say any direction.
-    const DASHES: [number, [number, number]][] = [[0.08, [1, 0]], [0.58, [-1, 0]]];
+    // dash beats (@keyframes mo-dash / mo-swipe): hard tip right, hard tip left, then a finger swipe right. Side tips
+    // read clearly; forward/back would turn the flat phone edge-on. The arrow and the copy still say any direction.
+    const DASHES: [number, [number, number]][] = [[0.05, [1, 0]], [0.38, [-1, 0]], [0.76, [1, 0]]];
     soloSim.drive = (p: PlayerState, s: MatchState): InputFrame => {
       const g = GESTURES[active].id, b = s.boss, f = phase();
       const base: InputFrame = { seq: 0, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: "motion" };

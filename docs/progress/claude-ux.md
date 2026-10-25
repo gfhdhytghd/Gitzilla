@@ -1,3 +1,10 @@
+DONE (dash swipe copy) — motion slide dash card:
+- Label is "SWIPE or TILT HARD → dash" (two-line label sized to fit; note "swipe, or tip 50°+ any way").
+- The 3.6 s loop is a hard tilt right, a hard tilt left, then a fingertip swiping across the flat screen with a soft
+  trail and the direction arrow. The hero dashes on all three beats.
+- WebKit video and dash-strip.png are in docs/ux-shots/demo/motion/.
+- Overflow passes in Chromium + WebKit at 1920/1280; both flash checks pass. No commits.
+
 DONE (body-plan count) — the stack slide's tile is "10 boss body plans · in 13 elements", counted from claude-boss's
 renderer. Body plans: the renderer has no exported list, so the slide runs its own `bossVariety()` over every
 archetype × limb count × component mix × 24 seeds and counts distinct forms. That matches the `BossForm` union's 10
