@@ -73,6 +73,38 @@
 .pair-panel.required .pr-spin { width: 28px; height: 28px; flex: 0 0 auto; border: 5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: pr-spin 1s linear infinite; }
 @keyframes pr-spin { to { transform: rotate(360deg); } }
 .pair-panel.required .pr-unlink { margin-top: 18px; }
+/* compact required (game / XR pre-entry panel, ~420px wide): same steps at 1x bitmap sizes, no subtitle, scrolls inside
+   itself instead of running off a short viewport; once paired only the status + disconnect remain */
+.pair-panel.required.compact {
+  max-width: none; margin: 0; padding: 14px 16px; font-size: 16px; line-height: 1.4; border-width: 3px;
+  box-shadow: 0 0 0 3px #000, 0 0 24px rgba(255, 197, 61, .22);
+  max-height: max(220px, calc(100dvh - 330px)); overflow-y: auto; overscroll-behavior: contain;
+}
+.pair-panel.required.compact .pr-head { font-size: 12px; }
+.pair-panel.required.compact .pr-why { display: none; }
+.pair-panel.required.compact .pr-steps { margin-top: 12px; gap: 8px; }
+.pair-panel.required.compact .pr-step { grid-template-columns: 32px 1fr; gap: 12px; padding: 10px 12px; }
+.pair-panel.required.compact .pr-num { width: 32px; height: 32px; font-size: 12px; box-shadow: 0 0 0 2px #000; }
+.pair-panel.required.compact .pr-body { gap: 6px 10px; }
+.pair-panel.required.compact .pr-url { font-size: 16px; padding: 3px 8px; letter-spacing: 0; }
+.pair-panel.required.compact .pr-code { margin-left: 0; font-size: 20px; letter-spacing: 4px; padding: 6px 10px; gap: 10px; box-shadow: 0 0 0 3px #000; }
+.pair-panel.required.compact .pr-code small { font-size: 8px; letter-spacing: 2px; }
+.pair-panel.required.compact .pr-btn, .pair-panel.required.compact .pr-unlink { min-height: 48px; padding: 8px 14px; font-size: 12px; }
+.pair-panel.required.compact .pr-btn { margin-left: 0; }
+.pair-panel.required.compact .pr-status { margin-top: 12px; padding: 10px 12px; gap: 10px; font-size: 16px; }
+/* the live status stays visible when the card scrolls inside a short viewport */
+.pair-panel.required.compact .pr-status { position: sticky; bottom: -14px; z-index: 1; background-color: #1a1504; }
+.pair-panel.required.compact .pr-status[data-s="paired"] { background-color: #071a10; }
+.pair-panel.required.compact .pr-spin { width: 18px; height: 18px; border-width: 3px; }
+.pair-panel.required.compact[data-state="paired"] { padding: 10px 12px; }
+.pair-panel.required.compact[data-state="paired"] :is(.pr-head, .pr-why, .pr-steps) { display: none; }
+.pair-panel.required.compact[data-state="paired"] .pr-status { margin-top: 0; }
+.pair-panel.required.compact .pr-unlink { margin-top: 10px; }
+/* in the fight (game.ts toggles .in-fight): paired → just a small status pill; unpaired stays visible on a headset,
+   because without the phone that seat can't play (overrides the generic compact .in-fight rules in style.css) */
+.pair-panel.required.compact.in-fight:not([data-state="paired"]) { display: block; }
+.pair-panel.required.compact.in-fight[data-state="paired"] { padding: 4px; border-width: 2px; background: rgba(3, 8, 6, .85); }
+.pair-panel.required.compact.in-fight[data-state="paired"] > .pr-status { display: flex; padding: 6px 10px; font-size: 16px; }
 @media (prefers-reduced-motion: reduce) { .pair-panel.required .pr-spin, .pair-panel.required .pr-step[data-s="now"] .pr-num { animation: none; } }
 
 /* ---------- phone: offer card ---------- */

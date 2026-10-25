@@ -1,3 +1,14 @@
+DONE (headset card fits the game XR panel) — CSS only (`client/app/pair.css`); no TS or other-owner changes. The `pairPanel(app, { compact: true })` that game.ts mounts in the XR panel renders a compact required variant on headsets:
+- **Compact sizes:** Unifont at 1× (16px), 32px step badges, URL 16px, room code 20px, and no subtitle.
+- **Fits short viewports:** `max-height: max(220px, 100dvh − 330px)` with internal scrolling. The live status is `position: sticky` at the bottom, so it stays visible while the steps scroll.
+- **Paired:** only the status pill and disconnect remain.
+- **During the fight:** game.ts adds `.in-fight`, and the generic compact rules in style.css hid an unpaired panel and emptied a paired required card to a 22px box. My required overrides keep the unpaired steps visible, because a headset seat can't play without its phone. Paired shows a 46px "📱 Phone connected ✓ · ready to fight" pill.
+- **WebKit `?device=headset` on :5175:** 9/9 PASS, 0 page errors (`docs/shots/2026-10-25T08-40-07-752Z-pair-headset/`, script included).
+  - The game XR panel was checked at 1280×900 (take-ui's case) and 1280×720.
+  - Paired: card bottom 268px, height 46px.
+  - Phone dropped mid-fight: bottom 644/900 (no scroll) and 612/720 (scrolls inside, status still fully visible).
+  - The lobby card, zh and desktop checks still pass.
+
 DONE (headset `required` pairPanel) — `pairPanel(app, { required })` renders the headset card: a big 3-step card (① sign in with GitHub here → ② on your phone open host/r/ROOM signed in as @login + big room code → ③ tap "<the phone's exact button text>") with a live status line: "Sign in first…" → "Waiting for your phone…" → "📱 Phone connected ✓ · choose controls on your phone" → "📱 Phone connected ✓ · ready to fight" (from `LobbyPlayer.paired` + `controlsReady`), plus a disconnect button. All copy is in en/zh/es/fr. WebKit `?device=headset` on :5175: 6/6 PASS, 0 page errors (`docs/shots/2026-10-25T08-21-17-605Z-pair-headset/`).
 - **API for take-ui:** `required?: boolean | (() => boolean)`. When omitted it defaults to `globalThis.__kaijuDevice === "headset"` or `?device=headset`, so it already works with device.ts's playtest hook. Pass `required: () => getDevice() === "headset"` once device.ts exports a sync getter. The existing lobby mount (`pairPanel(app)`) picks it up with no lobby change. For the game/XR pre-entry overlay, use `pairPanel(app, { compact: true, required: true })`. The compact variant doesn't move itself.
 - **Placement:** in the lobby the required card moves itself above `.lobby-grid`, full width (max 1180px). Inside the 300px you-panel column the big type wrapped a word or two per line, so I moved it. Elsewhere it moves to the top of its parent.
