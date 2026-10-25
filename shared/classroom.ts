@@ -39,6 +39,7 @@ export interface ClassroomRound {
 export interface ClassroomReport {
   stepId: string; attempt: number; repo: string; commit: string; submittedAt: number;
   source?: 'github' | 'in-app';   // in-app: repo = "in-app", commit = content hash ("inapp:<8 hex>")
+  files?: InAppFile[];            // in-app submissions: the submitted files (teacher's read-only viewer; never public)
   score: number; improvement: number; checks: { label: string; passed: boolean; detail: string }[];
   criteria: CriterionResult[]; advice: string[];
   teacherReview?: { score: number; note: string };

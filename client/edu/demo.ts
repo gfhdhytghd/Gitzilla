@@ -300,12 +300,38 @@ async function viewFeedback(kind: "student" | "class" | "screen") {
   if (params.has("open")) (document.querySelectorAll(".fb-tr:not(.fb-thead)")[Number(params.get("open"))] as HTMLElement | undefined)?.click();
 }
 
+// ---------- classroom boss (real kaiju renderer, HP-driven look) ----------
+async function viewClassBoss() {
+  await import("../app/classroom.css");
+  const { createClassBoss, classBossKit } = await import("./class-boss.ts");
+  const names = ["The Release Blocker", "Null Pointer Hydra", "Legacy Monolith", "Merge Conflict"];
+  const hps: [number, number][] = [[180, 180], [110, 180], [45, 180], [12, 180]];
+  const raidAt = Number(params.get("raid") ?? -1);
+  const grid = h("div.demo-cb");
+  const bosses = names.map((name, i) => {
+    const b = createClassBoss();
+    const kit = classBossKit(name);
+    const [hp, max] = hps[i];
+    grid.append(h("section.cr-boss", { style: "min-height:0" },
+      h("div.cr-boss-heading", null, h("span", null, `${kit.archetype} · ${Math.round((hp / max) * 100)}% HP`), h("h2", null, name)),
+      h("div.cr-hp", null, h("div", null, h("i", { style: `width:${(hp / max) * 100}%` })), h("strong", null, `${hp} / ${max}`)),
+      h("div.cr-boss-stage", null, b.el)));
+    b.update({ name, hp, maxHp: max, raidKey: "" });
+    return { b, name, hp, max };
+  });
+  app.append(h("div.classroom-screen.demo-cb-wrap", null, grid));
+  // ?raid=<i>: that boss takes a class attack 300ms after load (stagger volley); ?kill=<i>: HP → 0 (death topple)
+  if (raidAt >= 0) setTimeout(() => { const x = bosses[raidAt]; x.b.update({ name: x.name, hp: Math.max(0, x.hp - 40), maxHp: x.max, raidKey: "r1" }); }, 300);
+  const kill = Number(params.get("kill") ?? -1);
+  if (kill >= 0) setTimeout(() => { const x = bosses[kill]; x.b.update({ name: x.name, hp: 0, maxHp: x.max, raidKey: "r2" }); }, 300);
+}
+
 function viewIndex() {
-  const links = ["desktop", "phone", "screen", "report", "report-screen", "arch", "genesis", "gallery", "rubric", "feedback", "feedback-class", "feedback-screen"];
+  const links = ["desktop", "phone", "screen", "report", "report-screen", "arch", "genesis", "gallery", "rubric", "feedback", "feedback-class", "feedback-screen", "class-boss"];
   app.append(h("div.demo-index", null, h("h1", null, "GITZILLA // EDU LAB"), h("p", null, "Classroom PvP lessons, quiz, report cards. Report cards use the sim's real edu grading of each fallback repo."), ...links.map((l) => h("a.btn", { href: `?view=${l}${["desktop", "phone", "screen"].includes(l) ? "&t=12" : ""}` }, l))));
 }
 
 document.body.dataset.view = view;
-const views: Record<string, () => void> = { desktop: viewDesktop, phone: viewPhone, screen: viewScreen, report: () => viewReport("desktop"), "report-screen": () => viewReport("screen"), arch: viewArch, genesis: viewGenesis, gallery: viewGallery,
+const views: Record<string, () => void> = { "class-boss": () => void viewClassBoss(), desktop: viewDesktop, phone: viewPhone, screen: viewScreen, report: () => viewReport("desktop"), "report-screen": () => viewReport("screen"), arch: viewArch, genesis: viewGenesis, gallery: viewGallery,
   rubric: () => void viewRubric(), feedback: () => void viewFeedback("student"), "feedback-class": () => void viewFeedback("class"), "feedback-screen": () => void viewFeedback("screen") };
 (views[view] ?? viewIndex)();

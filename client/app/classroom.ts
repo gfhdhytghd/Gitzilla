@@ -10,6 +10,9 @@ import { createGithubPicker } from './github';
 import { createRubricEditor } from '../edu/rubric';
 import { createBackdrop } from './backdrop';
 import { createClassBoss } from '../edu/class-boss';
+import { createInAppPanel } from '../edu/inapp-panel';
+import { createCodeEditor } from '../edu/code-editor';
+import type { InAppFile } from '../../shared/classroom';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
 import { createPauseOverlay } from './pause';
@@ -90,10 +93,17 @@ export function createClassroom(app: AppCtx): Screen {
   const submissionStatus = h('p.cr-submission-status', { role: 'status', 'data-testid': 'classroom-submission-status' });
   const github = createGithubPicker(slug => { repo.value = slug; });
   const expectations = h('details.cr-measurements', null);
-  const student = h('section.cr-student-work', null, h('h2', null, 'Your next commit'),
-    h('ol.cr-workflow', null, h('li', null, 'Build in your editor.'), h('li', null, 'Push your changes to GitHub.'), h('li', null, 'Submit, read feedback, improve.')),
-    expectations, field('GitHub repository', repo), field('Branch / tag / commit', ref), github, submit, submissionStatus,
+  // In-app editor (steps with starter files): code here, ▶ Run in the browser, submit without GitHub.
+  let lastSource: 'github' | 'in-app' = 'github';
+  submit.addEventListener('click', () => { lastSource = 'github'; });
+  const inApp = createInAppPanel({ room: app.room, onSubmit: (files: InAppFile[]) => { lastSource = 'in-app'; app.conn.send({ t: 'classroomSubmitCode', files }); } });
+  const studentTitle = h('h2', null, 'Your next commit');
+  const workflowGit = h('ol.cr-workflow', null, h('li', null, 'Build in your editor.'), h('li', null, 'Push your changes to GitHub.'), h('li', null, 'Submit, read feedback, improve.'));
+  const workflowInApp = h('ol.cr-workflow', null, h('li', null, 'Write your code below.'), h('li', null, '▶ Run to try it (optional).'), h('li', null, 'Submit, read feedback, improve.'));
+  const githubFields = h('div.cr-github', null, field('GitHub repository', repo), field('Branch / tag / commit', ref), github, submit,
     h('p.cr-evidence-note', null, 'Each score is tied to an exact commit. Static evidence checks do not execute your code. GitHub checks report the CI result for that commit; your teacher can review functionality.'));
+  const githubAlt = h('details.cr-github-alt', { 'data-testid': 'classroom-github-alt' }, h('summary', null, 'or submit a GitHub repo instead'));
+  const student = h('section.cr-student-work', null, studentTitle, workflowGit, workflowInApp, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
   const studentBoard = h('div.cr-student-board', null, student, review);
   // Projector only: the lobby's animated pixel backdrop. Student phones keep the CSS-only grid (no render loop).
   const backdrop = app.role === 'screen' ? createBackdrop({ dim: 0.55, themeCycle: false }) : null;
@@ -205,12 +215,25 @@ export function createClassroom(app: AppCtx): Screen {
         }, 'btn-primary')));
   };
 
+  // Teacher: read-only view of an in-app submission (needs the server to include the files in the teacher's report).
+  let viewer: { dispose(): void } | null = null;
+  const codeViewer = (report: NonNullable<AppCtx['classroomReports']>[string]) => {
+    viewer?.dispose(); viewer = null;
+    if (!teacher() || report.source !== 'in-app') return document.createTextNode('');
+    const files = (report as typeof report & { files?: InAppFile[] }).files;
+    if (!files?.length) return h('p.cr-evidence-note', null, 'Submitted in the in-app editor.');
+    const step = state?.plan.steps.find(st => st.id === report.stepId);
+    const ce = createCodeEditor({ starter: files, readOnly: true, language: step?.language ?? 'python', label: 'submitted code (read only)' });
+    viewer = ce;
+    return h('details.cr-code-view', { 'data-testid': 'classroom-code-view' }, h('summary', null, `View submitted code (${files.length} file${files.length === 1 ? '' : 's'})`), ce.el);
+  };
+  const currentStep = () => state?.plan.steps[state.stepIndex];
   const renderReport = (id: string | null) => {
     const report = id ? app.classroomReports?.[id] : undefined;
     const error = id ? app.classroomErrors?.[id] : undefined;
     const sig = JSON.stringify([id, report, error, teacher(), state?.phase]);
     if (sig === detailsSig) return; detailsSig = sig;
-    if (!report) { review.replaceChildren(h('h2', null, teacher() ? 'Code review' : 'Your feedback'), h('p', null, error ?? (teacher() ? 'Select a student to inspect their commit, evidence and next steps.' : 'Submit your GitHub version to receive measured feedback and a next step.'))); return; }
+    if (!report) { review.replaceChildren(h('h2', null, teacher() ? 'Code review' : 'Your feedback'), h('p', null, error ?? (teacher() ? 'Select a student to inspect their commit, evidence and next steps.' : (currentStep()?.starter?.length ? 'Submit your code to receive measured feedback and a next step.' : 'Submit your GitHub version to receive measured feedback and a next step.')))); return; }
     const name = state?.rows.find(r => r.id === id)?.name ?? app.name;
     const localCheckDetail = (detail: string) => { const colon = detail.indexOf(': '); return colon < 0 ? t(detail) : detail.slice(0, colon + 2) + t(detail.slice(colon + 2)); };
     const localAdvice = report.advice.map(advice => {
@@ -222,7 +245,10 @@ export function createClassroom(app: AppCtx): Screen {
       return h('div.cr-criterion', null, h('div', null, h('b', null, criterion?.name ?? c.criterionId), h('span', null, `${Math.round(c.score * 100)}%`)), h('p', null, c.evidence));
     });
     review.replaceChildren(h('div.cr-feedback-title', null, h('h2', null, teacher() ? `${name} · review` : 'Your feedback'), h('strong.cr-score', { 'data-testid': 'classroom-own-score' }, formatNumber(report.score), h('small', null, ' /100'))),
-      h('p.cr-version', null, h('a', { href: `https://github.com/${report.repo}/commit/${report.commit}`, target: '_blank', rel: 'noopener noreferrer' }, `${report.repo} @ ${report.commit.slice(0, 8)}`)),
+      report.source === 'in-app'
+        ? h('p.cr-version', null, `in-app code · ${report.commit.replace(/^inapp:/, '')}`)
+        : h('p.cr-version', null, h('a', { href: `https://github.com/${report.repo}/commit/${report.commit}`, target: '_blank', rel: 'noopener noreferrer' }, `${report.repo} @ ${report.commit.slice(0, 8)}`)),
+      codeViewer(report),
       h('p', null, report.improvement > 0 ? `↑ +${formatNumber(report.improvement)} from your last submission round` : report.improvement < 0 ? `${formatNumber(report.improvement)} from your last submission round` : 'Your measured result for this task'),
       h('h3', null, 'What to work on next'), h('ul.cr-advice', null, ...localAdvice.map(a => h('li', null, a))),
       report.checks.length ? h('div.cr-checks', null, ...report.checks.map(c => h(`div.${c.passed ? 'passed' : 'missing'}`, null, h('b', null, `${c.passed ? '✓' : '○'} ${t(c.label)}`), h('small', null, localCheckDetail(c.detail))))) : document.createTextNode(''),
@@ -291,6 +317,15 @@ export function createClassroom(app: AppCtx): Screen {
     else if (!screen && review.parentElement !== studentBoard) studentBoard.append(review);
     setText(title, state?.plan.title ?? t('Build. Review. Improve.')); setText(phase, state ? phaseNames[state.phase] : owner ? 'Prepare the lesson' : 'Waiting for your teacher');
     const step = state?.plan.steps[state.stepIndex];
+    // steps with starter files open the in-app editor; GitHub moves into an "or submit a GitHub repo" fold
+    const inAppStep = !screen && !!step?.starter?.length;
+    inApp.el.hidden = !inAppStep; workflowInApp.hidden = !inAppStep; workflowGit.hidden = inAppStep;
+    setText(studentTitle, inAppStep ? 'Your code' : 'Your next commit');
+    if (inAppStep && step) inApp.setStep(step, state!.stepIndex > 0 ? state!.plan.steps[state!.stepIndex - 1].id : null);
+    if (inAppStep && githubFields.parentElement !== githubAlt) githubAlt.append(githubFields);
+    else if (!inAppStep && githubFields.parentElement !== student) githubAlt.after(githubFields);
+    githubAlt.hidden = !inAppStep;
+    studentBoard.classList.toggle('cr-coding', inAppStep);
     setText(taskTitle, step ? `${state!.stepIndex + 1}. ${step.title}` : t(owner ? 'A classroom built around real code' : 'Your teacher is preparing the first task'));
     setText(taskText, step?.instructions ?? t('Work in your own editor, push to GitHub, and bring each new version back here. Your class will attack the Boss together.'));
     setText(notice, state?.notice ?? ''); notice.hidden = !state?.notice;
@@ -318,7 +353,7 @@ export function createClassroom(app: AppCtx): Screen {
       rowsSig = rs; roster.classList.toggle('cr-dense', (s?.rows.length ?? 0) > 15);
       rosterList.replaceChildren(...(s?.rows ?? []).map((row, i) => {
         const b = button('', `classroom-row-${row.id}`, () => { selected = row.id; detailsSig = ''; renderReport(selected); }); b.className = `cr-student${row.id === app.you ? ' cr-you' : ''}`;
-        b.append(h('span.cr-rank', null, row.score === undefined ? h('span.cr-none', { 'aria-label': 'no score yet' }, '·') : String(i + 1)), h('span.cr-person', null, h('b', null, row.name), h('small', null, !row.connected ? 'offline' : row.status === 'queued' ? 'checking commit…' : row.status === 'submitted' ? `${row.commit?.slice(0, 8)}${row.improvement > 0 ? ` · ↑${row.improvement}` : ''}` : row.status === 'error' ? 'needs resubmission' : 'writing code')),
+        b.append(h('span.cr-rank', null, row.score === undefined ? h('span.cr-none', { 'aria-label': 'no score yet' }, '·') : String(i + 1)), h('span.cr-person', null, h('b', null, row.name), h('small', null, !row.connected ? 'offline' : row.status === 'queued' ? 'checking code…' : row.status === 'submitted' ? `${row.commit?.startsWith('inapp:') ? `in-app ${row.commit.slice(6, 12)}` : row.commit?.slice(0, 8)}${row.improvement > 0 ? ` · ↑${row.improvement}` : ''}` : row.status === 'error' ? 'needs resubmission' : 'writing code')),
           h('strong.cr-points', null, row.score === undefined ? h('span.cr-none', { 'aria-label': 'no score yet' }, '·') : formatNumber(row.score)), h('span.cr-contribution', null, row.damage > 0 ? `+${row.damage}` : ''));
         return b;
       }));
@@ -338,9 +373,15 @@ export function createClassroom(app: AppCtx): Screen {
     const top = last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement).slice(0, 3) ?? [];
     setText(attackNames, top.length ? `Big improvements: ${top.map(a => `${a.name} +${formatNumber(a.improvement)}`).join(' · ')}` : last ? `${last.attacks.length} students contributed. Retrying unchanged scores does not farm extra damage.` : 'All submitted code contributes. Improvements unlock extra impact.');
     const mine = s?.rows.find(r => r.id === app.you);
-    submit.disabled = s?.phase !== 'coding' || mine?.status === 'queued' || app.status !== 'open';
-    setText(submit, mine?.status === 'queued' ? 'Checking your GitHub commit…' : mine?.status === 'submitted' ? 'Submit an improved version' : 'Submit this version');
-    setText(submissionStatus, app.classroomErrors?.[app.you ?? ''] ?? (mine?.status === 'submitted' ? `Scored commit ${mine.commit?.slice(0, 8)}. You can keep coding until the teacher closes submissions.` : s?.phase === 'coding' ? 'Push first, then submit. A saved local file is not a GitHub commit.' : s?.phase === 'raid' ? 'The class is attacking. Your scored version is locked for this round.' : 'Wait for your teacher to open coding.'));
+    const canSubmit = s?.phase === 'coding' && mine?.status !== 'queued' && app.status === 'open';
+    const mineInApp = !!mine?.commit?.startsWith('inapp:');
+    submit.disabled = !canSubmit;
+    setText(submit, mine?.status === 'queued' && lastSource === 'github' ? 'Checking your GitHub commit…' : mine?.status === 'submitted' ? 'Submit an improved version' : 'Submit this version');
+    inApp.setSubmit({ enabled: !!canSubmit, label: mine?.status === 'queued' && lastSource === 'in-app' ? 'Checking your code…' : mine?.status === 'submitted' ? 'Submit improved code' : 'Submit my code' });
+    setText(submissionStatus, app.classroomErrors?.[app.you ?? ''] ?? (mine?.status === 'submitted'
+      ? (mineInApp ? `Scored your code (${mine.commit!.slice(6, 12)}). Keep improving until the teacher closes submissions.` : `Scored commit ${mine.commit?.slice(0, 8)}. You can keep coding until the teacher closes submissions.`)
+      : s?.phase === 'coding' ? (inAppStep ? 'Your code saves on this device as you type. Submit when you are ready.' : 'Push first, then submit. A saved local file is not a GitHub commit.')
+      : s?.phase === 'raid' ? 'The class is attacking. Your scored version is locked for this round.' : 'Wait for your teacher to open coding.'));
     renderReport(owner ? selected : app.you); updateClock();
   };
   const stopLanguage = onLocaleChange(() => {
@@ -350,5 +391,5 @@ export function createClassroom(app: AppCtx): Screen {
   });
   if (teacher()) buildPlanEditor(); render();
   const timer = setInterval(updateClock, 1000);
-  return { el, update: render, destroy() { backdrop?.destroy(); classBoss?.destroy(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, destroy() { backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
 }

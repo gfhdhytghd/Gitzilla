@@ -1,3 +1,58 @@
+# DONE (in-app editor)
+
+Classroom in-app Python editor (docs/tasks/inapp-editor.md, claude-edu section). Not committed.
+- **`client/edu/code-editor.ts` (+ `code-editor.css`)** is a dependency-free editor: a transparent `<textarea>` over a
+  highlighted `<pre>`, so native selection, IME, undo and the phone keyboard all work.
+  - File tabs for any `step.starter` paths (`python/<lesson>.py`, `README.md`). Sticky line numbers.
+  - Python colours from a tiny line tokenizer that carries triple-quoted strings across lines and handles CJK.
+  - Tab = 4 spaces to the next stop, or indents the selected lines; Shift+Tab dedents; Enter keeps the indent and adds
+    4 after `:` (comments ignored).
+  - 16px Unifont (no iOS zoom). Only the editor scrolls sideways; the page never does.
+  - Draft autosaves per room+step (`kaiju.code.<room>.<step>`). "Reset to starter" returns the unfinished skeleton.
+  - Carry-over: when a step opens with no draft, the student's previous-step code is taken for the same paths. The
+    README always comes from the new step.
+  - `readOnly` mode is the teacher's viewer.
+- **`client/edu/py-run.ts`, ▶ Run:**
+  - Pyodide v0.26.4 from cdn.jsdelivr.net in a Web Worker (Blob URL), loaded lazily on the **first Run** only, so a
+    class of phones doesn't all download ~10 MB at step open. The worker is reused between runs.
+  - 5 s run limit: on timeout the worker is killed, with "Stopped after 5s: is there a loop that never ends?".
+  - stdout/stderr go to a console panel; `input()` reads from an optional "input() lines" box.
+  - It never touches the server and isn't graded. If Pyodide can't load, Run is hidden.
+- **`client/edu/inapp-panel.ts`** is the student panel: editor + [▶ Run] [Submit my code] [reset to starter] + console.
+  Submit sends `{ t: 'classroomSubmitCode', files }`.
+- **`client/app/classroom.ts`:**
+  - A step with `starter` shows "Your code" with the panel. GitHub moves into "or submit a GitHub repo instead".
+  - The editor gets a wider column on desktop.
+  - Status and submit labels are in-app aware ("Checking your code…", "Scored your code (4f43b3)…").
+  - The roster shows "in-app 4f43b3". The report shows "in-app code · <hash>".
+  - The teacher gets "View submitted code (N files)", a read-only editor of `report.files`. That uses a structural
+    cast until `ClassroomReport.files` is typed in shared/; codex-net requested it.
+- **`classroom.css`:** the feedback header wraps and the score shrinks at ≤360px (it overflowed the iPhone SE by 19px).
+
+**Verified** with Playwright **WebKit** on DEV :5175 against the real server (codex-net handler + take-edu presets, no
+patching). Script: `/tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/inapp-shots.mts`.
+- **Flow:** the teacher loads the Python preset and publishes. Students join on desktop, iPhone 15 and iPhone SE.
+- **Editing:** auto-indent after `:` and Shift+Tab dedent work.
+- **Run:** prints `0 1 2 done` in WebKit; `while True: pass` is stopped after 5 s.
+- **Submit:** the payload has `python/01_hello.py` + `README.md` with the edit. A real scored in-app report comes back.
+- **Draft:** it survives a reload; reset restores the starter.
+- **Phones:** a long line scrolls inside the editor only, with 0 page and 0 classroom-scroller overflow on
+  iPhone 15 and SE, including the GitHub fold.
+- **Teacher:** the read-only viewer shows the student's real files.
+- **Step 2:** after attack → next step, the student's step-1 code is carried over, the README is step 2's, and reset
+  gives back the skeleton.
+- 0 page errors. I looked at every screenshot.
+- **Tests:** new `client/edu/code-editor.test.ts` (8: tokenizer, highlight escaping, Enter/Tab/Shift+Tab, carry-over
+  with real presets). `npm run typecheck` PASS. `npx vitest run`: 859 passed; the 2 failures are in
+  `sim/royale.test.ts` (codex-sim's in-progress PvP royale), not classroom.
+
+**Flag for the coordinator / take-edu (not mine to change):** the unfinished preset skeleton plus a single `print(...)`
+line scored **100/100** on step 1. Its checks are "file exists" + contains `print(`, which a TODO skeleton almost
+passes. The presets may want checks that the skeleton fails, e.g. a literal from the expected solution, or a rubric
+weight on the task-specific `contains` checks.
+
+---
+
 # DONE (class boss art)
 
 The classroom Boss is drawn with the game's real kaiju renderer instead of the red ASCII figure. Not committed.
