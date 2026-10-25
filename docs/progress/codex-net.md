@@ -1,3 +1,4 @@
+DONE (classroom lesson HP budget)
 DONE (GitHub account controller + my-seat)
 DONE (teacher debrief server)
 DONE (kick / transferOwner)
@@ -498,3 +499,30 @@ DONE
 - my-seat is active in actual main.ts and tested for exact owner-only fields, changed login/same durable ID, wrong user/same login, absent/anonymous/screen-only seat, method/code/auth/ban errors and no token disclosure. Controller tokens stay separate from display tokens, cannot grant display/admin rights, and resume only their authenticated binding. Live paired/permission resets after restart; display/phone can reconnect in either order.
 - take-ui owns controller-link routing/reconnect/token storage/tests; claude-auth owns display/offer/controller visuals. Server handoff supplied exact statuses, welcome/paired fields and replacement/unlink/kick close semantics. No QR/code work was added; existing unrelated room-join QR behavior stays its prior feature.
 - SOURCE FROZEN. Only server/ and this progress log changed; no shared/client/auth/sim edits, commits, deployment, live5173/tunnel access or shared service start/stop/restart. User/coordinator can review the completed server section; browser/device visuals remain UI owners' validation.
+
+## DONE — lesson-long classroom HP budget
+- Coordinator's bug report reopens source freeze. Chose K=1.85: a70-point class with roughly80% participation (integer floor gives3/4,9/12,24/30) finishes on the final step's first or improved second attack in both3- and9-step lessons.
+- Each new step unlocks bossMaxHp/steps HP plus unspent earlier slices; non-final damage is capped to preserve all future slices (and at least1HP). Raw per-student damage = slice/current enrolled roster × positive uncredited score delta/100 ×1.85. All actual hits are capped proportionally and quantized cumulatively to0.1HP so displayed damage sums exactly to boss HP reduction. No new shared fields.
+- Improvement points use the same linear value as first-attempt points; unchanged/lower scores cannot farm. An already-exhausted unlocked budget can also yield0 until the next step; notified coordinator before any hypothetical reason-field addition, and did not add one. Carry-over is HP budget, not discarded damage from over-cap scores.
+- Attack-time enrolled roster normalization handles late joiners without setup-time HP inflation. Setup HP remains a display scale, not an obsolete damage denominator. Restart rebuilds credited scores from existing frozen attacks and uses persisted current HP for remaining budget. Legacy early-dead saves repair only live locked HP; old frozen round records/exports stay untouched.
+- Added synthetic class matrix3/9steps ×4/12/30students ×typical/perfect/weak, plus unchanged/improvement retries, equal point value, late joins/carry-over and restart/legacy repair cases. Updating old obsolete score/4 tests and extending actual classroom-smoke to all3steps, with nonzero later attacks and final-only victory. Matrix artifact command: BUDGET_REPORT=/tmp/gitzilla-classroom-budget.json npx vitest run server/classroom-budget.test.ts.
+
+### Measured synthetic class curves (HP after each attack)
+
+Typical =70points, floor(80% × roster) submissions; final retry raises those submissions to100 when needed. Perfect =100points/full participation. Weak =35points/50% participation. † marks the final-step improved retry. Initial HP for sizes4/12/30:3steps60/180/450;9steps180/540/1350.
+
+| Class | Students | 3-step HP | 9-step HP |
+|---|---:|---|---|
+| typical | 4 | 40.6 → 21.2 → 1.8 → 0† | 160.6 → 141.2 → 121.8 → 102.4 → 83 → 63.6 → 44.2 → 24.8 → 5.4 → 0† |
+| typical | 12 | 121.7 → 63.4 → 5.1 → 0† | 481.7 → 423.4 → 365.1 → 306.8 → 248.5 → 190.2 → 131.9 → 73.6 → 15.3 → 0† |
+| typical | 30 | 300 → 150 → 0 | 1200 → 1050 → 900 → 750 → 600 → 450 → 300 → 150 → 0 |
+| perfect | 4 | 40 → 20 → 0 | 160 → 140 → 120 → 100 → 80 → 60 → 40 → 20 → 0 |
+| perfect | 12 | 120 → 60 → 0 | 480 → 420 → 360 → 300 → 240 → 180 → 120 → 60 → 0 |
+| perfect | 30 | 300 → 150 → 0 | 1200 → 1050 → 900 → 750 → 600 → 450 → 300 → 150 → 0 |
+| weak | 4 | 53.5 → 47 → 40.5 | 173.5 → 167 → 160.5 → 154 → 147.5 → 141 → 134.5 → 128 → 121.5 |
+| weak | 12 | 160.6 → 141.2 → 121.8 | 520.6 → 501.2 → 481.8 → 462.4 → 443 → 423.6 → 404.2 → 384.8 → 365.4 |
+| weak | 30 | 401.4 → 352.8 → 304.2 | 1301.4 → 1252.8 → 1204.2 → 1155.6 → 1107 → 1058.4 → 1009.8 → 961.2 → 912.6 |
+
+- Final required complete server gate: `BUDGET_REPORT=/tmp/gitzilla-classroom-budget.json ROOM_RESTART_TEST=1 EDITOR_SERVER_TEST=1 npx vitest run server` → **204PASS /14files**,26.05s. Root typecheck PASS and touched-file whitespace PASS. The26 new budget tests cover requested class matrix, unchanged/improved equal-value retries, late roster normalization/carry-over, exact capped damage accounting, restart credits and legacy live-HP repair; existing frozen round fields remain unchanged.
+- Required actual DEV smoke: `SMOKE_URL=http://localhost:5175 CLASSROOM_PLAYERS=4 npx tsx server/classroom-smoke.ts` → **PASS LLUH**,3-step HP **40 →20 →0**, including a kick after step1, nonzero later attacks, frozen exports/private source, rubric/brief/static grading and cleanup. Thus later-round damage is verified through current server WS flow, not only unit math.
+- SOURCE FROZEN again. Only server/ and this progress file changed. No new shared/zero-reason fields, commits, deployment, service lifecycle actions or live/tunnel checks. UI/debrief owners notified about normalized actual damage and exhausted-step budget semantics.

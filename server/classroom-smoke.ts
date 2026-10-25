@@ -79,8 +79,8 @@ try {
   const rubric = await preview.json() as import('../shared/types.ts').Rubric;
   teacher.send({ t: 'setRubric', rubric });
   await until(() => teacher.lobby?.rubric?.title === rubric.title && peers.every(p => p.lobby?.rubric?.title === rubric.title), 'teacher rubric broadcast');
-  const plan = defaultClassroomPlan(); plan.steps = plan.steps.slice(0, 1);
-  Object.assign(plan.steps[0], { durationSec: 0, rubric, checksWeight: 100, language: 'python', starter: [{ path: 'main.py', content: '# TODO\n' }],
+  const plan = defaultClassroomPlan();
+  for (const step of plan.steps) Object.assign(step, { durationSec: 0, rubric, checksWeight: 100, language: 'python', starter: [{ path: 'main.py', content: '# TODO\n' }],
     checks: [{ id: 'file', kind: 'file', path: 'main.py', label: 'Python file' }, { id: 'answer', kind: 'contains', path: 'main.py', text: 'answer = 42', label: 'Answer' }],
     brief: { goal: 'Set the answer.', todo: ['Open `main.py`.', 'Assign 42 to `answer`.'], doneWhen: ['The file exists.', 'The file assigns the answer.'] } });
   teacher.send({ t: 'classroomPlan', plan }); await until(() => teacher.classroom?.state.rows.length === students, 'published lesson');
@@ -96,6 +96,8 @@ try {
   assert.ok(Object.values(teacher.classroom!.reports).every(r => r.files?.[0].content.includes('DEV_SMOKE_STUDENT_SOURCE')));
   teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => peers.every(p => p.classroom?.state.phase === 'raid'), 'class raid');
   const frozenRound = structuredClone(teacher.classroom!.state.rounds[0]);
+  const hpCurve = [teacher.classroom!.state.bossHp];
+  assert.ok(hpCurve[0] > 0, 'The first step must leave the lesson boss alive');
   assert.equal(frozenRound.roster, students);
   assert.deepEqual(frozenRound.checkStats, [{ label:'Python file', passed:students, total:students }, { label:'Answer', passed:students, total:students }]);
   for (const peer of peers) assert.deepEqual(peer.classroom!.state.rounds[0].checkStats, frozenRound.checkStats);
@@ -115,13 +117,28 @@ try {
   await new Promise<void>(resolve => probe.once('open', resolve)); const probeClose = new Promise<number>(resolve => probe.once('close', code => resolve(code)));
   probe.send(JSON.stringify({ t: 'hello', room, role: 'player', name: 'Banned probe', resume: kicked.welcome!.token } satisfies ClientMsg));
   assert.equal(await probeClose, 4003); assert.ok(errors.includes('You were removed from this room by the host.'));
+  for (let step = 1; step < plan.steps.length; step++) {
+    await until(() => teacher.classroom?.state.phase === 'feedback', 'round feedback');
+    teacher.send({ t: 'classroomControl', action: 'next' });
+    await until(() => teacher.classroom?.state.stepIndex === step && teacher.classroom.state.phase === 'coding', 'next coding step');
+    for (const peer of peers.slice(1)) peer.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42\n# DEV_SMOKE_STUDENT_SOURCE\n' }] });
+    await until(() => teacher.classroom?.state.rows.every(row => row.status === 'submitted'), 'next step grading');
+    teacher.send({ t: 'classroomControl', action: 'attack' });
+    await until(() => teacher.classroom?.state.phase === 'raid', 'next class attack');
+    const round = teacher.classroom!.state.rounds.at(-1)!;
+    assert.ok(round.bossBefore > round.bossAfter, 'Each new step must deal visible damage');
+    hpCurve.push(round.bossAfter);
+    assert.deepEqual(teacher.classroom!.state.rounds[0], frozenRound);
+    if (step < plan.steps.length - 1) assert.ok(round.bossAfter > 0, 'Boss survives until the final step');
+    else assert.equal(round.bossAfter, 0, 'A perfect class defeats the boss at the final step');
+  }
   for (let i = 1; i < peers.length; i++) {
     await peers[i].leave();
     await until(() => teacher.lobby?.players.length === students - i - 1, 'student slot removed');
   }
   await teacher.leave();
   assert.deepEqual(await (await fetch(base + '/api/room/' + room)).json(), { exists: false, players: 0, phase: null });
-  console.log(`PASS classroom DEV 5175 room=${room}; teacher + ${students} students; rubric upload, brief, static in-app grading/private source, 5s raid, kick+resume ban, frozen exports, student/teacher leave + deletion OK`);
+  console.log(`PASS classroom DEV 5175 room=${room}; teacher + ${students} students; 3-step HP=${hpCurve.join(' -> ')}; rubric/brief/static grading/private source, raid/kick/resume ban/frozen exports, leave/deletion OK`);
 } finally {
   for (const socket of sockets) socket.terminate();
 }

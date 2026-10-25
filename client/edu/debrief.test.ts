@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ClassroomReport, ClassroomRound, ClassroomState } from '../../shared/classroom';
 import { pythonClassroomPlan } from '../../shared/classroom-presets';
+import { ClassroomSession } from '../../server/classroom';
+import { analyzeFiles } from '../../analysis/in-app';
 import { buildLessonDebrief, buildRoundDebrief, DEBRIEF_TEXT } from './debrief';
 
 function classroom(count = 3, preset = '08-functions'): ClassroomState {
@@ -12,7 +14,10 @@ function classroom(count = 3, preset = '08-functions'): ClassroomState {
   };
 }
 
-/** Real preset/check shapes; teacher review explains scores that differ from file-check percentages. */
+/** Real preset/check shapes; teacher review explains scores that differ from file-check percentages.
+ * Nominal fixture damage is one point for a new high score, zero for unchanged work. It does not
+ * reimplement server balance. A separate actual-session regression covers the server's capped loss.
+ */
 function attack(state: ClassroomState, stepIndex: number, attempt: number, values: (number | null)[], passed?: boolean[][]) {
   const step = state.plan.steps[stepIndex];
   state.stepIndex = stepIndex; state.attempt = attempt;
@@ -23,7 +28,7 @@ function attack(state: ClassroomState, stepIndex: number, attempt: number, value
     if (score === null || score === undefined) return [];
     const earlier = state.rounds.filter(round => round.stepId === step.id).flatMap(round => round.attacks.filter(a => a.id === row.id));
     const improvement = score - (earlier.at(-1)?.score ?? score);
-    const damage = Math.max(0, score - Math.max(0, ...earlier.map(a => a.score))) / 4;
+    const damage = score > Math.max(0, ...earlier.map(a => a.score)) ? 1 : 0;
     const commit = `inapp:${(i + 1).toString(16).padStart(8, '0')}`;
     row.score = score; row.improvement = improvement; row.damage = damage;
     reports[row.id] = { stepId: step.id, attempt, repo: 'in-app', commit, source: 'in-app', submittedAt: state.serverTime,
@@ -44,7 +49,7 @@ describe('round teacher debrief', () => {
   it('uses a realistic three-student round, counting disconnected enrolled students and missing work', () => {
     const state = classroom(), { round, reports } = attack(state, 0, 1, [90, 70, null]);
     const model = buildRoundDebrief(state, reports, round);
-    expect(model.headline).toBe('2 of 3 submitted · class average 80 · boss −20%');
+    expect(model.headline).toBe('2 of 3 submitted · class average 80 · boss −1%');
     expect(model.participation).toEqual({ roster: 3, submitted: 2, missing: ['Cam'] });
     expect(model.scores).toMatchObject({ avg: 80, median: 80 });
     expect(model.scores.bands.map(band => band.count)).toEqual([0, 1, 1]);
@@ -94,6 +99,38 @@ describe('round teacher debrief', () => {
     expect(model.checks).toHaveLength(state.plan.steps[0].checks.length);
     expect(model.checks.every(check => check.passed === 3 && check.total === 3)).toBe(true);
     expect(model.shoutouts).toEqual([]); // 100 alone is not evidence of an individual's check results.
+  });
+
+  it('reads actual capped boss loss from a real session and reports zero loss on an unchanged retry', () => {
+    let now = 10_000;
+    const session = new ClassroomSession(pythonClassroomPlan('01-hello', 'en'), () => now);
+    session.roster(['Ada', 'Ben', 'Cam'].map((name, i) => ({ id: `s${i}`, name, connected: true })));
+    session.control('start');
+    const submit = () => {
+      for (const row of session.state.rows) {
+        const files = [{ path: session.state.plan.steps[0].starter![0].path, content: 'print("Hello, Python!")\n' }];
+        session.accept(session.begin(row.id, 'in-app'), { profile: analyzeFiles(files, 'in-app'), source: 'in-app', commit: 'inapp:12345678',
+          files: files.map(file => ({ path: file.path, text: file.content })), checks: [] });
+        session.review(row.id, 100, 'Teacher checked the example output.');
+      }
+      session.control('attack');
+      const state = session.publicState(), round = state.rounds.at(-1)!;
+      return { state, round, model: buildRoundDebrief(state, session.privatePayload('teacher', true).reports, round) };
+    };
+    const first = submit(), before = JSON.stringify(first.round);
+    const loss = first.round.bossBefore - first.round.bossAfter;
+    expect(loss).toBeGreaterThan(0);
+    expect(first.round.attacks.reduce((sum, hit) => sum + hit.damage, 0)).toBeCloseTo(loss, 8);
+    expect(first.round.bossAfter).toBeGreaterThan(0); // This step cannot consume later steps' locked health.
+    expect(first.model.headline).toContain(`boss −${Math.round(loss / first.round.bossBefore * 100)}%`);
+    expect(first.model.scores.avg).toBe(100);
+    now += 10_001; session.tick(); session.control('retry');
+    const retry = submit();
+    expect(retry.round.attacks.every(hit => hit.damage === 0)).toBe(true);
+    expect(retry.round.bossAfter).toBe(retry.round.bossBefore);
+    expect(retry.model.headline).toContain('boss −0%');
+    expect(retry.model.scores.avg).toBe(100);
+    expect(JSON.stringify(session.state.rounds[0])).toBe(before);
   });
 
   it('falls back only to exact attack participants step/attempt reports and known denominators', () => {

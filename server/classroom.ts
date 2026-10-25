@@ -14,6 +14,7 @@ export interface SubmissionTicket { id: string; generation: number; revision: nu
 const round = (n: number) => Math.round(n * 10) / 10;
 const REFERENCE_STUDENTS = 4;
 const BOSS_HP_PER_STEP = 20;
+const CLASS_ATTACK_MULTIPLIER = 1.85;
 const bounded = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi;
 const text = (s: unknown, name: string, max: number, empty = false): string => {
   if (typeof s !== 'string' || s.length > max || (!empty && !s.trim())) throw new Error(`Invalid ${name}`);
@@ -199,6 +200,11 @@ export class ClassroomSession {
   static restore(value: ClassroomState, now: () => number = Date.now): ClassroomSession {
     const session = new ClassroomSession(value.plan, now);
     session.state = { ...session.state, ...structuredClone(value), plan: normalizeClassroomPlan(value.plan), serverTime: now() };
+    // Older saved lessons could already have spent future steps' HP. Repair only
+    // the live boss, leaving frozen historical rounds/exports untouched.
+    const unlocked = session.state.bossMaxHp * (session.state.stepIndex + 1) / session.state.plan.steps.length;
+    const locked = session.state.stepIndex < session.state.plan.steps.length - 1 ? Math.max(1, round(session.state.bossMaxHp - unlocked)) : 0;
+    session.state.bossHp = Math.max(locked, Math.min(session.state.bossMaxHp, session.state.bossHp));
     for (const row of session.state.rows) { row.connected = false; if (row.status === 'queued') row.status = 'error'; }
     // Reconstruct credited scores so rejoining/retrying cannot farm unchanged commits.
     for (const r of session.state.rounds) for (const a of r.attacks) session.credited.set(`${r.stepId}:${a.id}`, Math.max(a.score, session.credited.get(`${r.stepId}:${a.id}`) ?? 0));
@@ -231,14 +237,28 @@ export class ClassroomSession {
     // Aggregate-only restored submissions have no check evidence: leave stats unavailable.
     const checkStats = reports.length === submitted.length ? step.checks.map((check, index) => ({ label: check.label,
       passed: reports.filter(report => report.checks[index]?.passed === true).length, total: reports.length })) : undefined;
-    const attacks = submitted.map(r => {
+    const roster = Math.max(1, s.rows.length), slice = s.bossMaxHp / s.plan.steps.length;
+    const floor = s.stepIndex < s.plan.steps.length - 1 ? Math.max(1, round(s.bossMaxHp - slice * (s.stepIndex + 1))) : 0;
+    const available = Math.max(0, s.bossHp - floor);
+    const measured = submitted.map(r => {
       const key = `${s.plan.steps[s.stepIndex].id}:${r.id}`;
       const before = this.credited.get(key) ?? 0, score = r.score ?? 0;
-      const damage = round(Math.max(0, score - before) / REFERENCE_STUDENTS);
-      this.credited.set(key, Math.max(before, score)); r.damage = damage; r.totalDamage = round(r.totalDamage + damage);
+      this.credited.set(key, Math.max(before, score));
+      return { row: r, score, raw: slice / roster * Math.max(0, score - before) / 100 * CLASS_ATTACK_MULTIPLIER };
+    });
+    const rawTotal = measured.reduce((sum, attack) => sum + attack.raw, 0);
+    const damageUnits = Math.min(Math.round(available * 10), Math.round(rawTotal * 10));
+    let cumulative = 0, assigned = 0;
+    const attacks = measured.map(({ row: r, score, raw }, index) => {
+      // Cumulative proportional rounding keeps visible 0.1-HP hits summing to the
+      // actual capped boss damage, including large classes and tiny improvements.
+      cumulative += raw;
+      const next = index === measured.length - 1 ? damageUnits : rawTotal > 0 ? Math.round(damageUnits * cumulative / rawTotal) : 0;
+      const damage = (next - assigned) / 10; assigned = next;
+      r.damage = damage; r.totalDamage = round(r.totalDamage + damage);
       return { id: r.id, name: r.name, score, improvement: r.improvement, damage, commit: r.commit! };
     });
-    const bossBefore = s.bossHp; s.bossHp = Math.max(0, round(s.bossHp - attacks.reduce((sum, a) => sum + a.damage, 0)));
+    const bossBefore = s.bossHp; s.bossHp = Math.max(floor, round(s.bossHp - damageUnits / 10));
     // Freeze the enrolled roster and anonymous measurements; later joins/kicks/retries cannot rewrite them.
     s.rounds.push({ stepId: step.id, attempt: s.attempt, at: this.now(), bossBefore, bossAfter: s.bossHp, attacks, roster: s.rows.length,
       ...(checkStats !== undefined ? { checkStats } : {}) });
