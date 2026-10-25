@@ -1,3 +1,39 @@
+# DONE (class boss art)
+
+The classroom Boss is drawn with the game's real kaiju renderer instead of the red ASCII figure. Not committed.
+- **Module:** new `client/edu/class-boss.ts` exports `createClassBoss()` → `{ el, update({ name, hp, maxHp, raidKey }),
+  destroy }`, plus the pure helpers `classBossKit(name)` and `classBossState(kit, hp, frame, pose)`.
+- **Kit:** derived deterministically from the lesson's boss name with `demoBossKit` (the same decorative kit the
+  landing page uses), so it can be any of the 4 archetypes. Changing the name in the lesson editor changes the kaiju;
+  the teacher's name is kept.
+- **Rendering:** it dynamic-imports `client/render/boss` (the chunk the app already loads) and calls the real
+  `drawBoss` with a classroom-driven `BossState`. The crop is measured once per kit with a single `getImageData`,
+  so the kaiju fills the stage. It draws at about 30 fps and only while visible.
+- **HP drives the look:** phase 1/2/3 at >66% / >33% / below, which tints and glitches. Enraged below `enrageAt`.
+  Limbs break off from the smallest up as HP drops; the last one goes on the kill.
+- **Poses:** each new class attack (`raidKey`) plays 7 stagger poses, then a roar, or an enrage beat if the phase
+  dropped. HP at 0 plays the death topple and then leaves an empty stage. There is an occasional idle roar.
+  prefers-reduced-motion draws one static frame.
+- **classroom.ts / classroom.css (small):** the ASCII `<pre>` is replaced by `classBoss.el`, which is
+  **projector-only**: student phones never show the boss panel, so they never start its loop. Its update is fed from
+  render() (name, hp, max, current raid key) and it is destroyed with the screen. The stage is 270px tall (360px at
+  1600px+), with a nearest-neighbor canvas, a red glow, and greyed out when defeated. The existing volley and
+  hit-shake CSS still apply.
+- **Demo:** `client/edu/demo.html?view=class-boss[&raid=i][&kill=i]` shows 4 archetypes at 100/61/25/7% HP; one
+  takes a class attack or is killed.
+
+**Verified** in Playwright **WebKit** and looked at every screenshot:
+- the demo at 1280 and iPhone SE: all HP states, mid-stagger, mid-topple, empty after death;
+- the real classroom on DEV :5175: teacher at 1280 and the 1920 projector show the kaiju; iPhone 15/SE students are
+  unaffected.
+- 0 page errors and 0 horizontal overflow.
+- **Tests:** new `client/edu/class-boss.test.ts` (2: deterministic kit; HP → phase/enrage/broken limbs, monotonic).
+  `npm run typecheck` PASS; `npx vitest run` **790 passed / 8 skipped**.
+- **Not exercised end to end:** a real scored raid, which needs GitHub analysis. The raid path is driven by the same
+  `raidKey` the existing volley CSS uses, and is shown in the demo.
+
+---
+
 # DONE (ui review)
 
 UI-8 (docs/ui-review-coordinator.md, classroom: "visually a different product" and "owner lands on the student view").

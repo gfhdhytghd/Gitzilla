@@ -67,7 +67,10 @@
 .cr-boss-heading>span { font:10px var(--small); letter-spacing:1px; text-transform:uppercase; color:var(--cr-muted); }.cr-boss-heading h2 { font:18px/1.4 var(--pix); color:var(--cr-red); margin-top:8px; overflow-wrap:anywhere; text-shadow:3px 3px 0 #000, 0 0 12px rgba(255,51,85,.5); }
 .cr-hp { display:flex; align-items:center; gap:14px; margin:18px 0 0; }.cr-hp>div { flex:1; height:16px; padding:3px; background:#2a0b14; box-shadow:0 0 0 2px #000, 0 0 0 4px var(--red-d); }
 .cr-hp i { display:block; height:100%; background:repeating-linear-gradient(90deg, var(--cr-red) 0 8px, #b51d3a 8px 10px); transition:width 2s steps(12); }.cr-hp strong { font:12px var(--pix); color:#ff8aa0; min-width:110px; text-align:right; }
-.cr-boss-stage { height:230px; position:relative; display:grid; place-items:center; }.cr-boss-art { margin:0; font:19px/1.04 monospace; color:#ff5a78; text-shadow:3px 3px #3a0b18, 0 0 18px rgba(255,51,85,.45); user-select:none; }
+.cr-boss-stage { height:270px; position:relative; display:grid; place-items:center; }
+.cr-boss-sprite { height:100%; width:100%; display:grid; place-items:center; }
+.cr-boss-canvas { height:100%; width:auto; max-width:100%; object-fit:contain; image-rendering:pixelated; image-rendering:crisp-edges; filter:drop-shadow(0 0 16px rgba(255,51,85,.35)); }
+.cr-defeated .cr-boss-canvas { filter:grayscale(1) brightness(.6); }.cr-boss-art { margin:0; font:19px/1.04 monospace; color:#ff5a78; text-shadow:3px 3px #3a0b18, 0 0 18px rgba(255,51,85,.45); user-select:none; }
 .cr-boss-message { color:var(--cr-muted); }.cr-attack-total { font:16px/1.4 var(--pix); color:var(--cr-amber); margin-top:10px; text-shadow:3px 3px 0 #000; }.cr-attack-names { color:var(--cr-muted); font-size:18px; margin-top:6px; }
 .cr-volley { position:absolute; inset:0; pointer-events:none; overflow:hidden; }.cr-volley>i { display:none; position:absolute; left:3%; top:calc(15% + var(--shot)*9%); color:var(--cr-green); font:16px var(--pix); font-style:normal; text-shadow:0 0 8px var(--cr-green); }
 .cr-attacking .cr-volley>i { display:block; animation:cr-shot 1s calc(var(--shot)*.3s) 5 both; }.cr-attacking .cr-boss-art { animation:cr-boss-hit .5s 2s 12; }.cr-defeated .cr-boss-art { color:#4a5a52; text-shadow:none; }
@@ -93,7 +96,7 @@
 .cr-step-buttons,.cr-plan-buttons { display:flex; flex-wrap:wrap; gap:8px 12px; }.cr-form-error { color:var(--cr-red)!important; }.cr-projector .cr-editor { max-width:1100px; margin-left:auto; margin-right:auto; }.cr-projector .cr-host-main .cr-feedback { max-height:none; }.cr-projector .cr-task>h2 { font-size:30px; }
 .cr-not-teacher { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; padding:12px 14px; margin:6px; background:rgba(255,210,61,.08); box-shadow:0 0 0 2px var(--cr-amber); color:#fff4c4; }
 .classroom-screen .gh { padding:0; border:0; }.classroom-screen .gh-list { max-height:240px; }
-@media(min-width:1600px) { .cr-roster-heading h2 { font-size:15px; }.cr-person b { font-size:25px; }.cr-points { font-size:16px; }.cr-boss-stage { height:285px; }.cr-boss-art { font-size:24px; }.cr-boss { min-height:460px; }.cr-instructions { font-size:24px; } }
+@media(min-width:1600px) { .cr-roster-heading h2 { font-size:15px; }.cr-person b { font-size:25px; }.cr-points { font-size:16px; }.cr-boss-stage { height:360px; }.cr-boss-art { font-size:24px; }.cr-boss { min-height:460px; }.cr-instructions { font-size:24px; } }
 @media(max-width:800px) {
   .classroom-screen { padding:14px 14px 36px; font-size:19px; }
   .cr-header { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px 10px; align-items:center; }

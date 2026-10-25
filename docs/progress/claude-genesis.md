@@ -1,4 +1,14 @@
-DONE (archetypes) + DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+DONE (genesis stall) + DONE (archetypes) + DONE (genesis polish) + DONE (genesis) + DONE (edu pvp)
+
+## Genesis stall fix (coordinator bug: boss overlay stuck at "0 files seen · 0%")
+- Cause: live mode only left on a genesis or on `progress.stage === "ready"`. With no progress events (mock, cached repo, fast analysis) plus `ready` carrying a kit but no genesis (mock `safeGenesis` returns undefined when the local builder throws), it waited forever.
+- `client/genesis/index.ts` now watches live movement (`Live.push` returns whether stage, pct or paths moved; an initial `clone 0%` doesn't count):
+  - **No movement for 1.5 s and a kit is there:** switch to replay (`genesisFromKit`). A genesis always switches at once.
+  - **Replays start at `clone`** unless the live clone really showed files; only then do they continue from `parse`.
+  - **No movement for 6 s and no data:** the canvases hide behind a small "still analyzing <repo>…" note and `opts.onStall()` fires. It comes back by itself when progress moves (live) or the genesis/kit arrives (replay).
+- Verified in **WebKit** (desktop 1100x640 and iPhone emulation 390x844 @3x) with three mounted scenarios: dead 0% then kit only → replay ~1.5 s later; silence then genesis + kit → full replay; nothing → note at 6.0 s, back to the cinematic when the genesis arrives at 9 s. Also the real mock lobby in WebKit (`/r/QQQQ?mock=1`, summon facebook/react) reaches the reveal.
+- **For claude-ui (optional):** `createGenesisMount` could pass `onStall` so the projector's full-screen `bossFull` closes (e.g. `closeBossFull()`) instead of showing the note full screen. The panel/card case needs nothing.
+- Typecheck clean for genesis files; `npx vitest run client/genesis` passes 9 tests.
 
 ## Boss archetypes in the Genesis cinematic (docs/tasks/boss-archetypes.md, claude-genesis part)
 - Typecheck: fixed the boss state literal for the new required `pose`/`airborne` fields. Genesis files typecheck clean; `npx vitest run client/genesis` passes 7 tests (new: form-step tests).

@@ -30,6 +30,9 @@ export interface GenesisOpts {
   interactive?: boolean;      // tap to skip / replay (default true)
   loop?: boolean;             // replay automatically after a pause (demo / attract mode)
   onDone?(): void;
+  /** Live progress stalled ~6 s with no genesis/kit: the cinematic shows a small "still analyzing…" note instead.
+   *  It comes back by itself when progress moves or the genesis/kit arrives (a full-screen host may just close). */
+  onStall?(): void;
 }
 
 export interface GenesisHandle {
@@ -45,6 +48,9 @@ export interface GenesisHandle {
 // logical canvas height target; bosses get chunkier pixels so the ~130 px monster fills the stage
 const TARGET_H = { hero: 215, boss: 185 };
 const END_HOLD = 0.9;
+// live mode with no movement: hand over to a replay once data is there, or step aside with a note
+const STALL_REPLAY = 1.5;
+const STALL_CLOSE = 6;
 
 export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle {
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -57,7 +63,11 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
   pix.style.cssText = "position:absolute;left:0;top:0;image-rendering:pixelated;image-rendering:crisp-edges;";
   const txt = document.createElement("canvas");
   txt.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;";
-  wrap.append(pix, txt);
+  // shown instead of the canvases while live progress is stalled with nothing to replay yet
+  const note = document.createElement("div");
+  note.style.cssText = "position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:8px;" +
+    'font:16px "VT323",ui-monospace,monospace;color:#7fbf9a;letter-spacing:0.5px;';
+  wrap.append(pix, txt, note);
   host.appendChild(wrap);
   const ctx = pix.getContext("2d")!;
   const text = new TextLayer(txt);
@@ -76,6 +86,8 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
   let endFor = 0;
   let pauseIdx = 0;
   let heldFor = 0;
+  let movedAt = performance.now() / 1000;   // last time live progress actually moved
+  let stalled = false;
   const auto = opts.autoAdvance ?? (!!opts.compact || opts.interactive === false);
   let layout: Layout | null = null;
   let dpr = 1, s = 1;
@@ -94,7 +106,26 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
   if (opts.genesis) makeScene(opts.genesis);
   else if (opts.progress || !kit) live = new Live(opts.slug ?? kit?.repo ?? "", opts.kind, reduced);
   else makeScene(genesisFromKit(kit, opts.mode));
-  if (live && opts.progress) live.push(opts.progress);
+  if (live && opts.progress && live.push(opts.progress)) movedAt = performance.now() / 1000;
+
+  const setStalled = (on: boolean) => {
+    if (on === stalled) return;
+    stalled = on;
+    pix.style.display = txt.style.display = on ? "none" : "";
+    note.style.display = on ? "flex" : "none";
+    if (on) {
+      note.textContent = `still analyzing ${opts.slug ?? kit?.repo ?? "the repo"}…`;
+      opts.onStall?.();
+    }
+  };
+  /** Leave live mode for a replay; continue from `parse` only if the live clone really showed files. */
+  const toReplay = (g: Genesis) => {
+    const fromLive = !!live && live.age() > 0.8 && live.shown() > 0;
+    live = null;
+    setStalled(false);
+    makeScene(g);
+    if (fromLive && scene) t = (scene as Scene).T.at.parse[0];
+  };
 
   const relayout = () => {
     const r = wrap.getBoundingClientRect();
@@ -151,7 +182,11 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
       }
       if (done && opts.loop && now - doneAt > 3) replay();
     } else if (live) {
-      live.draw(ctx, text, now, dt);
+      const quiet = now - movedAt;
+      // no progress events (mock, cached repo, fast analysis): replay as soon as there's something to replay
+      if (quiet > STALL_REPLAY && kit) { toReplay(genesisFromKit(kit, opts.mode)); return; }
+      setStalled(quiet > STALL_CLOSE);
+      if (!stalled) live.draw(ctx, text, now, dt);
     }
   };
   raf = requestAnimationFrame(frame);
@@ -198,18 +233,14 @@ export function playGenesis(host: HTMLElement, opts: GenesisOpts): GenesisHandle
           return;
         }
         // live -> replay: the clone already played for real, so continue from `parse`
-        const fromLive = !!live && live.age() > 0.8;
-        live = null;
-        makeScene(next.genesis);
-        if (fromLive && scene) t = (scene as Scene).T.at.parse[0];
+        toReplay(next.genesis);
         return;
       }
-      if (next.progress && live) live.push(next.progress);
+      if (next.progress && live && live.push(next.progress)) movedAt = performance.now() / 1000;
       if (!scene && !live && kit) makeScene(genesisFromKit(kit, opts.mode));
       if (!scene && live && kit && next.progress?.stage === "ready") {
         // ready without genesis (server has none): fall back to the kit-only story
-        live = null;
-        makeScene(genesisFromKit(kit, opts.mode), 0);
+        toReplay(genesisFromKit(kit, opts.mode));
       }
     },
     skip,

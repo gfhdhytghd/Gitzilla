@@ -9,6 +9,7 @@ import { h, store } from './util';
 import { createGithubPicker } from './github';
 import { createRubricEditor } from '../edu/rubric';
 import { createBackdrop } from './backdrop';
+import { createClassBoss } from '../edu/class-boss';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
 
@@ -62,7 +63,10 @@ export function createClassroom(app: AppCtx): Screen {
   const roster = h('aside.cr-roster', null, h('div.cr-roster-heading', null, h('h2', null, 'Class ranking'), h('small', null, 'Current task · score /100')), rosterList);
   const bossHpFill = h('i'), bossHpText = h('strong');
   const bossName = h('h2', { translate: 'no' });
-  const bossArt = h('pre.cr-boss-art', { 'aria-hidden': 'true' }, '       ▄████▄\n   ▄▄▄██▀  ▀██▄▄▄\n   ███ ▀█  █▀ ███\n    ██  ▄▄▄▄  ██\n      ████████\n   ▄███▀██▀███▄\n  ██▀  ████  ▀██\n       ██ ██\n     ▄███ ███▄');
+  // the game's real kaiju renderer; HP drives phase tint, broken limbs, staggers during the class attack, death
+  // (projector only: student phones never show the boss panel, so they never start its animation loop)
+  const classBoss = app.role === 'screen' ? createClassBoss() : null;
+  const bossArt = classBoss?.el ?? h('div.cr-boss-art');
   const volley = h('div.cr-volley', { 'aria-hidden': 'true' }, ...Array.from({ length: 8 }, (_, i) => h('i', { style: `--shot:${i}` }, '◆')));
   const bossMessage = h('p.cr-boss-message');
   const attackTotal = h('div.cr-attack-total', { 'data-testid': 'classroom-damage' });
@@ -297,6 +301,7 @@ export function createClassroom(app: AppCtx): Screen {
     const last = s?.rounds.at(-1);
     const newRaid = s?.phase === 'raid' && last ? `${last.stepId}:${last.attempt}:${last.at}` : '';
     if (newRaid && raidKey !== newRaid) { raidKey = newRaid; boss.classList.remove('cr-attacking'); void boss.offsetWidth; boss.classList.add('cr-attacking'); }
+    classBoss?.update({ name: s?.plan.bossName ?? draft.bossName, hp, maxHp: max, raidKey: newRaid ? raidKey : '' });
     if (s?.phase !== 'raid') boss.classList.remove('cr-attacking');
     boss.classList.toggle('cr-defeated', hp <= 0);
     setText(bossMessage, s?.phase === 'raid' ? 'Your code is making the attack. No controller needed.' : s?.phase === 'feedback' ? 'Review the evidence. Improve your next commit.' : s?.phase === 'complete' ? hp <= 0 ? 'Boss defeated. Keep building.' : 'Lesson complete. Every improvement moved the class forward.' : 'Push a better version. Bring the whole class closer.');
@@ -316,5 +321,5 @@ export function createClassroom(app: AppCtx): Screen {
   });
   if (teacher()) buildPlanEditor(); render();
   const timer = setInterval(updateClock, 1000);
-  return { el, update: render, destroy() { backdrop?.destroy(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, destroy() { backdrop?.destroy(); classBoss?.destroy(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
 }

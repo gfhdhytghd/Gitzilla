@@ -43,8 +43,13 @@ export class Live {
   age(): number { return performance.now() / 1000 - this.start; }
   setLayout(L: Layout) { this.L = L; }
 
-  push(p: GenesisProgress) {
+  /** Number of file tiles shown so far (0 = nothing real has streamed yet). */
+  shown(): number { return this.tiles.length; }
+
+  /** Feed analyzer progress; returns true when it actually moved (new stage, higher pct or new paths). */
+  push(p: GenesisProgress): boolean {
     const now = performance.now() / 1000;
+    const before = `${this.stage}|${this.pct}|${this.tiles.length}`;
     if (p.stage !== this.stage) {
       this.stage = p.stage;
       this.log.push({ t: now, text: `$ gitzilla ${p.stage}`, color: UI.green });
@@ -61,6 +66,7 @@ export class Live {
       this.log.push({ t: born, text: `  ${path}`, color: brighten(langColor(langOfPath(path)), 0.25) });
     });
     if (this.log.length > 200) this.log.splice(2, this.log.length - 200);
+    return `${this.stage}|${this.pct}|${this.tiles.length}` !== before;
   }
 
   draw(ctx: CanvasRenderingContext2D, tx: TextLayer, now: number, dt: number) {
