@@ -1575,3 +1575,22 @@ select option { color: #e8edf7; background: #101a2b; }
 .screen.game.phone-portrait > .settings-button { top: calc(var(--deck-top, 60%) - 44px); left: 6px; }
 /* stacked dissection on phones: the diff takes the column width instead of its content width (was centered + overflowing) */
 .ap-boss-row > .diff { align-self: stretch; width: 100%; max-width: 100%; }
+
+/* ===== host pause ===== */
+.pause-btn { position: absolute; z-index: 8; top: max(6px, calc(var(--gy) - 40px)); right: calc(var(--gx) + 4px); margin: 0; opacity: .9; }
+.screen.game:not(.dock-y) .pause-btn { top: calc(var(--gy) + 6px); right: calc(var(--gx) + 160px); }
+.pause-btn[hidden], .pause-ov[hidden], .pz-host[hidden], [data-testid="game-pause"][hidden] { display: none !important; }
+.screen.game.paused .stage { filter: grayscale(.6) brightness(.45); transition: filter .25s; }
+.screen.game.paused .hud { opacity: .5; }
+.pause-ov { position: absolute; inset: 0; z-index: 55; display: grid; place-items: center; padding: 16px; background: rgba(2,4,6,.45); }
+.pz-win { width: min(560px, 94vw); }
+.pz-line { font-size: 22px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pz-stopped { font-family: var(--pix); font-size: 28px; color: var(--yellow); margin: 6px 0; animation: blink 1s steps(2) infinite; }
+.pz-count { font-family: var(--pix); font-size: 26px; color: var(--green); min-height: 1.2em; margin-top: 6px; }
+.pz-hint { font-size: 18px; color: var(--dim); margin-top: 4px; }
+.pz-host { display: grid; gap: 10px; margin-top: 12px; }
+.pz-host .btn-start { width: 100%; margin: 0; }
+.pz-host-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pz-host-row .btn { flex: 1 1 140px; }
+.pz-win { background: #04080a; box-shadow: 0 0 0 3px var(--green-d), 0 0 0 6px #000, 0 0 40px rgba(57,255,136,.2); }
+.classroom-screen .pause-ov { position: fixed; z-index: 1100; }

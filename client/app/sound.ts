@@ -18,7 +18,7 @@ const paint = () => (muteBtn.textContent = muted ? "♪ off" : "♪ on");
 const toggle = () => {
   muted = !muted;
   store.set("kaiju.muted", muted ? "1" : "0");
-  audio.setMuted(classroomQuiet || muted);
+  audio.setMuted(matchPaused || classroomQuiet || muted);
   paint();
 };
 muteBtn.addEventListener("click", (e) => {
@@ -37,7 +37,14 @@ export function setMuted(next: boolean) {
   if (next !== muted) toggle();
 }
 
+let matchPaused = false;
+/** Host pause: everything goes quiet; the user's own mute preference is kept. */
+export function setPausedAudio(paused: boolean) {
+  matchPaused = paused;
+  audio.setMuted(paused || classroomQuiet || muted);
+}
+
 /** Classroom phones stay silent; retain the user’s battle sound preference. */
 export function setClassroomAudio(quiet: boolean) {
-  classroomQuiet = quiet; audio.setMuted(quiet || muted); muteBtn.hidden = quiet;
+  classroomQuiet = quiet; audio.setMuted(quiet || muted || matchPaused); muteBtn.hidden = quiet;
 }

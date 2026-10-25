@@ -12,6 +12,7 @@ import { createBackdrop } from './backdrop';
 import { createClassBoss } from '../edu/class-boss';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
+import { createPauseOverlay } from './pause';
 
 const setText = (el: HTMLElement, s: string) => { if (el.textContent !== s) el.textContent = s; };
 const phaseNames = { setup: 'Prepare the lesson', coding: 'Build your next commit', paused: 'Coding paused', raid: 'Class attack', feedback: 'Review & improve', complete: 'Lesson complete' };
@@ -101,7 +102,25 @@ export function createClassroom(app: AppCtx): Screen {
   const notTeacher = h('div.cr-not-teacher', { role: 'status', 'data-testid': 'classroom-not-teacher', hidden: true },
     h('span', null, 'This big screen is not the teacher’s. The teacher controls the class from the screen that created the room.'),
     h('a.btn', { href: studentHref() }, 'Join as a student'));
-  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, task, controls, editor, hostBoard, studentBoard);
+  const sendPause = (paused: boolean) => app.conn.send({ t: 'pause', paused });
+  const pause = createPauseOverlay({
+    onResume: () => sendPause(false),
+    onLeave: () => { if (confirm(t('End this lesson and leave?'))) app.leave(); },
+    onNewRoom: () => app.leave({ newRoom: true }),
+    hostHint: 'the raid clock is frozen for the whole class',
+    waitHint: 'your teacher paused the class attack…',
+    onChange: on => el.classList.toggle('cr-raid-paused', on),
+  });
+  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, task, controls, editor, hostBoard, studentBoard, pause.el);
+  // teacher on the projector: P / Esc toggles the raid pause
+  const onKey = (e: KeyboardEvent) => {
+    const k = e.key.toLowerCase();
+    if (!teacher() || state?.phase !== 'raid' || (k !== 'p' && k !== 'escape') || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (!state.paused) sendPause(true);
+    else if (state.paused.resumeAt === null) sendPause(false);
+  };
+  addEventListener('keydown', onKey);
+  const pauseTimer = setInterval(() => pause.tick(), 100);
   let sentToTeacher = false;
 
   const command = (action: ClassroomCommand) => app.conn.send({ t: 'classroomControl', action });
@@ -232,6 +251,12 @@ export function createClassroom(app: AppCtx): Screen {
     if (s.phase === 'paused') add('Resume coding', 'resume');
     if (['coding', 'paused'].includes(s.phase)) { add('+2 minutes', 'extend'); add('Launch class attack', 'attack', !s.rows.some(r => r.status === 'submitted') || s.rows.some(r => r.status === 'queued')); }
     if (s.phase === 'feedback') { add('Retry & improve', 'retry'); add(s.stepIndex + 1 >= s.plan.steps.length ? 'Complete lesson' : 'Open next step', 'next'); }
+    if (s.phase === 'raid') {
+      const raidPaused = !!s.paused;
+      const btn = button(raidPaused ? '▶ Resume raid' : '⏸ Pause raid (P)', 'classroom-raid-pause', () => sendPause(!raidPaused), raidPaused ? 'btn-primary' : '');
+      btn.disabled = !!s.paused?.resumeAt;
+      items.push(btn);
+    }
     if (['coding', 'paused', 'feedback'].includes(s.phase)) add('End lesson', 'finish', s.rows.some(r => r.status === 'queued'));
     items.push(button('Export CSV', 'classroom-export-csv', () => { void download('csv'); }), button('Export Markdown', 'classroom-export-md', () => { void download('md'); }));
     controls.replaceChildren(...items);
@@ -239,7 +264,8 @@ export function createClassroom(app: AppCtx): Screen {
   const updateClock = () => {
     if (!state) { clock.classList.add('cr-clock-text'); return setText(clock, 'Ready when you are'); }
     const now = Date.now() + clockOffset;
-    const ms = state.phase === 'raid' ? Math.max(0, (state.raidEndsAt ?? now) - now) : state.phase === 'paused' ? state.remainingMs : state.deadline === null ? null : Math.max(0, state.deadline - now);
+    const frozenAt = state.paused ? state.paused.since : null; // server ms, same clock as `now`
+    const ms = state.phase === 'raid' ? Math.max(0, (state.raidEndsAt ?? now) - (frozenAt ?? now)) : state.phase === 'paused' ? state.remainingMs : state.deadline === null ? null : Math.max(0, state.deadline - now);
     const seconds = ms === null ? 0 : Math.ceil(ms / 1000);
     setText(clock, ms === null ? state.phase === 'complete' ? 'Well played' : 'Teacher paced' : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`);
     clock.classList.toggle('cr-clock-text', ms === null);
@@ -282,7 +308,10 @@ export function createClassroom(app: AppCtx): Screen {
     const submitted = s?.rows.filter(r => r.status === 'submitted').length ?? 0;
     const queued = s?.rows.filter(r => r.status === 'queued').length ?? 0;
     setText(progress, `${submitted} / ${s?.rows.length ?? app.lobby?.players.length ?? 0} submitted${queued ? t(` · ${queued} checking`) : ''}${s ? t(` · attempt ${s.attempt}`) : ''}`);
-    const key = JSON.stringify([s?.phase, s?.stepIndex, s?.rows.map(r => [r.status, r.connected]), owner]);
+    const key = JSON.stringify([s?.phase, s?.stepIndex, s?.rows.map(r => [r.status, r.connected]), owner, s?.paused ?? null]);
+    const p = s?.phase === 'raid' ? s.paused : null;
+    const byName = !p ? '' : p.by === app.you ? 'you' : app.lobby?.players.find(x => x.id === p.by)?.name ?? 'the teacher';
+    pause.apply(p, byName, owner);
     if (key !== phaseSig) { phaseSig = key; renderControls(); }
     const rs = JSON.stringify(s?.rows);
     if (rs !== rowsSig) {
@@ -321,5 +350,5 @@ export function createClassroom(app: AppCtx): Screen {
   });
   if (teacher()) buildPlanEditor(); render();
   const timer = setInterval(updateClock, 1000);
-  return { el, update: render, destroy() { backdrop?.destroy(); classBoss?.destroy(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, destroy() { backdrop?.destroy(); classBoss?.destroy(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
 }

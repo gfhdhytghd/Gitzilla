@@ -8,6 +8,7 @@ import { ARENA_H, ARENA_W } from "../../shared/types";
 import type { Conn, ConnOpts, ConnStatus } from "./net";
 import { hash32, mulberry32, normalizeRepo } from "./util";
 import { buildGenesisLocal } from "../genesis";
+import { defaultClassroomPlan } from "../../shared/classroom-defaults";
 
 interface SimMod {
   playerKitFromProfile(p: RepoProfile): PlayerKit;
@@ -139,7 +140,20 @@ export function createMockConn(opts: ConnOpts): Conn {
     mode: "battle",
   };
   // a real classroom is owned by the teacher's big screen; other mock rooms hand the projector a spectator seat
-  if (opts.role === "screen") lobby.players.shift(), (lobby.ownerId = mode === "edu" ? "screen" : "b1");
+  if (opts.role === "screen") lobby.players.shift(), (lobby.ownerId = mode === "edu" || mode === "raid" ? "screen" : "b1");
+  // ?mock=raid: a classroom mid "class attack" (for the raid pause UI); ?screen=1 = teacher, otherwise a student
+  if (mode === "raid") {
+    lobby.mode = "edu";
+    lobby.ownerId = "screen"; // the teacher's projector owns a classroom; phones are students
+    const plan = defaultClassroomPlan();
+    const now = Date.now();
+    lobby.classroom = {
+      plan, phase: "raid", stepIndex: 0, attempt: 1, deadline: null, remainingMs: null, serverTime: now,
+      raidEndsAt: now + 45_000, bossHp: 640, bossMaxHp: 1000, rounds: [],
+      paused: new URLSearchParams(location.search).has("paused") ? { by: "screen", since: now, resumeAt: null } : null,
+      rows: lobby.players.map((p, i) => ({ id: p.id, name: p.name, connected: true, status: "submitted" as const, repo: "pallets/flask", commit: "abc1234def", score: 70 + i * 5, improvement: 5, damage: 40 + i * 10, totalDamage: 120, attempts: 1 })),
+    };
+  }
   const pushLobby = () => emit({ t: "lobby", lobby });
 
   const setRepo = (id: string, repo: string, delay: number) => {
@@ -171,6 +185,7 @@ export function createMockConn(opts: ConnOpts): Conn {
   // ---------- match ----------
   let loop: ReturnType<typeof setInterval> | null = null;
   let lastInput: InputFrame | null = null;
+  let paused: MatchState["paused"] = null;
   const startMatch = async () => {
     await ready;
     lobby.phase = "match";
@@ -202,10 +217,11 @@ export function createMockConn(opts: ConnOpts): Conn {
         if (tick % 30 === 0 || !botMove.has(p.id)) botMove.set(p.id, [rnd() * 2 - 1, rnd() * 2 - 1]);
         inputs.set(p.id, { seq: seq++, move: botMove.get(p.id)!, aim: null, fire: true, dash: rnd() < 0.01, skill: rnd() < 0.005, source: "keyboard" });
       }
-      match.step(1 / 30, inputs);
+      if (paused && paused.resumeAt !== null && Date.now() >= paused.resumeAt) paused = null;
+      if (!paused) match.step(1 / 30, inputs);
       if (lastInput) lastInput = { ...lastInput, dash: false, skill: false };
       tick++;
-      const snap = match.snapshot();
+      const snap = { ...match.snapshot(), paused };
       evBuf.push(...snap.events);
       // 20 Hz: send 2 of every 3 ticks
       if (tick % 3 !== 2) {
@@ -282,6 +298,20 @@ export function createMockConn(opts: ConnOpts): Conn {
         break;
       case "input":
         lastInput = m.frame;
+        break;
+      case "pause":
+        if (m.paused) paused = { by: you, since: Date.now(), resumeAt: null };
+        else if (paused) paused = { ...paused, resumeAt: Date.now() + 3000 };
+        if (lobby.classroom) {
+          const c = lobby.classroom;
+          if (paused && paused.resumeAt === null && c.raidEndsAt) c.paused = { ...paused };
+          else if (paused && c.paused) {
+            c.paused = { ...c.paused, resumeAt: paused.resumeAt };
+            setTimeout(() => { if (c.raidEndsAt && c.paused) c.raidEndsAt += Date.now() - c.paused.since; c.paused = null; paused = null; c.serverTime = Date.now(); pushLobby(); }, 3000);
+          }
+          c.serverTime = Date.now();
+          pushLobby();
+        }
         break;
       case "setMode":
         lobby.mode = m.mode;

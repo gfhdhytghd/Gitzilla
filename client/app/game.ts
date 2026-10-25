@@ -6,7 +6,7 @@ import { t } from '../i18n';
 // the hero (full arena height, ~230 px of width), edge indicators, a minimap and a control deck under the viewport.
 import type { GameEvent, MatchState, PlayerState, ServerMsg } from "../../shared/types";
 import { ARENA_H, ARENA_W } from "../../shared/types";
-import { type AppCtx, type Screen } from "./app";
+import { type AppCtx, type Screen, isOwner } from "./app";
 import { createHud, rankPvp } from "./hud";
 import { ARCH, archetypeWhy } from "./archetype";
 import { markCanvas } from "./mark";
@@ -15,6 +15,7 @@ import { type GenesisHandle, playGenesis } from "../genesis";
 import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay } from "../edu";
 import { requestMotionPermission, saveMotionProfile, subscribeMotionPermission } from "../input";
 import { audio, muteBtn } from "./sound";
+import { createPauseOverlay } from "./pause";
 import { bossPortraitCanvas } from "./lobby";
 import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
 import { asciiBar, clamp, fmtTime, h, isPhone, isTouchDevice, lerp, vibrate } from "./util";
@@ -62,6 +63,31 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ? h("div.late-qr", null, h("div.lq-brand", null, markCanvas(2), h("span", null, h("b.g", null, "GIT"), h("b.z", null, "ZILLA"))), h("img", { src: `/api/qr?text=${encodeURIComponent(`${location.origin}/r/${app.room}`)}`, alt: "join QR" }), h("div", null, `join: ${app.room}`))
     : null;
   // ☰ menu: leave the fight (with a confirm), resume
+  // ---------------- host pause (ClientMsg pause / MatchState.paused) ----------------
+  const isHost = () => isOwner(app);
+  const sendPause = (paused: boolean) => app.conn.send({ t: "pause", paused });
+  const menuPauseBtn = h("button.btn.btn-primary", { "data-testid": "game-pause", hidden: true, onclick: () => { menuSheet.hidden = true; sendPause(true); } }, "⏸ pause match (everyone)");
+  const pauseBtn = h("button.btn.btn-tiny.pause-btn", { "data-testid": "pause-match", hidden: true, title: "pause (P / Esc)", onclick: (e: Event) => { e.stopPropagation(); sendPause(true); } }, "⏸ pause");
+  const pause = createPauseOverlay({
+    onResume: () => sendPause(false),
+    onLeave: () => app.leave(),
+    onNewRoom: () => app.leave({ newRoom: true }),
+    onChange: (on) => {
+      el.classList.toggle("paused", on);
+      // match time stood still while paused: re-sync the interpolation clock so motion stays smooth after resume
+      if (!on && latest) offset = performance.now() / 1000 - latest.t;
+    },
+  });
+  const pauseOv = pause.el;
+  let pauseState: MatchState["paused"] = null;
+  const pausedNow = () => pause.active;
+  const applyPause = (p: MatchState["paused"], s: MatchState) => {
+    pauseState = p ?? null;
+    const byName = !p ? "" : p.by === app.you ? "you" : s.players.find((x) => x.id === p.by)?.name ?? "the host";
+    pause.apply(p, byName, isHost());
+  };
+  const tickPauseCountdown = () => void pause.tick();
+
   const menuSheet = h(
     "div.game-menu",
     { hidden: true, "data-testid": "game-menu" },
@@ -74,6 +100,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         null,
         h("div", null, spectator ? "end the class / leave this screen?" : "leave the fight?"),
         h("div.dim", null, spectator ? "the match keeps running for everyone else." : "your hero drops out; the squad keeps fighting."),
+        menuPauseBtn,
         h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? "⏏ end class" : "⏏ leave the fight"),
         spectator ? h("button.btn", { "data-testid": "game-new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
         h("button.btn", { "data-testid": "game-settings", onclick: () => { menuSheet.hidden = true; openSettings(); } }, "Settings"),
@@ -82,7 +109,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ),
   );
   const menuBtn = h("button.btn.btn-tiny.menu-btn", { "data-testid": "game-menu-open", "aria-label": "menu", onclick: (e: Event) => (e.stopPropagation(), (menuSheet.hidden = false)) }, "☰ menu");
-  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr, menuSheet);
+  const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr, pauseBtn, pauseOv, menuSheet);
 
   // ---------------- layout ----------------
   let cssScale = 1;
@@ -236,6 +263,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     latest = s;
     el.classList.remove("waiting");
+    applyPause(s.paused ?? null, s);
+    const canPause = isHost() && s.status === "fighting" && !spectator;
+    pauseBtn.hidden = !canPause || phoneLayout || !!s.paused;
+    menuPauseBtn.hidden = !canPause || !!s.paused;
     if (s.mode === "edu") updateEdu(s);
     if (!introStarted && (s.status === "countdown" || s.t < 1.2)) startIntro(s);
     introStarted = true;
@@ -624,6 +655,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     let wasFiring = false, lastAttackToast = 0;
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
+      if (pausedNow()) return;
       const frame = input.sample();
       app.conn.send({ t: "input", frame });
       if (el.dataset.input !== input.mode) el.dataset.input = input.mode;
@@ -664,6 +696,12 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     setTimeout(() => hint?.classList.add("fade"), 9000);
   };
   const onKey = (e: KeyboardEvent) => {
+    const k = e.key.toLowerCase();
+    if (isHost() && !spectator && (k === "p" || k === "escape") && latest?.status === "fighting" && !(e.target instanceof HTMLInputElement)) {
+      if (!pauseState) sendPause(true);
+      else if (pauseState.resumeAt === null) sendPause(false);
+      return;
+    }
     if (e.key === "Escape") menuSheet.hidden = !menuSheet.hidden;
     if (e.key.toLowerCase() === "h" && hint) hint.classList.toggle("fade");
     if (outro && performance.now() - outro.at > 1200) finishOutro();
@@ -774,15 +812,16 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
   setupInput();
   // Rejoined phones can arrive directly in countdown; gate them before the first snapshot.
+  let touchChosen = false; // "touch only" answers the gate for this page even if the permission state stays pending
   const stopPermission = subscribeMotionPermission(state => {
     if (spectator) return;
-    if (state.ready) { motionOverlay?.remove(); motionOverlay = null; return; }
+    if (state.ready || touchChosen) { motionOverlay?.remove(); motionOverlay = null; return; }
     if (!motionOverlay) {
       motionOverlay = h("div.motion-gate", { "data-testid": "motion-gate", role: "dialog", "aria-label": "enable controls" },
         h("div.term-window", null, h("h2", null, "📱 enable your controls"),
           h("p", null, "Enable motion for this page before the countdown ends, or choose touch only."),
           h("button.btn.btn-primary", { "data-testid": "countdown-motion-enable", onclick: () => { void requestMotionPermission(); } }, "📱 tap to enable motion"),
-          h("button.btn", { onclick: () => { saveMotionProfile("tap-only"); input?.setMotionProfile?.("tap-only"); } }, "touch only")));
+          h("button.btn", { "data-testid": "countdown-touch-only", onclick: () => { saveMotionProfile("tap-only"); input?.setMotionProfile?.("tap-only"); touchChosen = true; motionOverlay?.remove(); motionOverlay = null; } }, "touch only")));
       el.append(motionOverlay);
     }
     motionOverlay.dataset.state = state.permission;
@@ -1011,14 +1050,18 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
     // time dilation
     let rate = 1;
-    if (hitstop > 0) {
+    tickPauseCountdown();
+    if (pausedNow()) {
+      rate = 0;
+      lag = Math.max(0, lag - dtReal); // don't build an interpolation backlog while frozen
+    } else if (hitstop > 0) {
       hitstop -= dtReal;
       rate = 0;
     } else if (slowmo > 0) {
       slowmo -= dtReal;
       rate = 0.3;
     }
-    lag += dtReal * (1 - rate);
+    if (!pausedNow()) lag += dtReal * (1 - rate);
     if (rate === 1 && lag > 0) lag = Math.max(0, lag - dtReal * 0.35);
     lag = Math.min(lag, 0.8);
     visTime += dtReal * rate;
@@ -1209,6 +1252,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       pressRing.remove();
       if (sendIv) clearInterval(sendIv);
       input?.dispose();
+      pause.dispose();
       feed?.dispose();
       disposeIntroGenesis();
       quiz?.dispose();
