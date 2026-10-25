@@ -9,6 +9,8 @@ const profiles = import.meta.glob("/data/fallback/*.json", { eager: true, import
 const bossDesigns = import.meta.glob("/data/design/*.boss.json", { eager: true, import: "default" }) as Record<string, BossDesign>;
 const heroDesigns = import.meta.glob("/data/design/*.hero.json", { eager: true, import: "default" }) as Record<string, HeroDesign>;
 
+/** How many real public repos ship pre-analyzed with the app (data/fallback). */
+export const REPO_COUNT = Object.keys(profiles).length;
 const file = (slug: string) => slug.replace("/", "__");
 export function profile(slug: string): RepoProfile {
   const p = profiles[`/data/fallback/${file(slug)}.json`];

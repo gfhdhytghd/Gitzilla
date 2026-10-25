@@ -1,17 +1,19 @@
-// 8 · Under the hood: the pipeline as an animated diagram (packets flow node to node), the stack, and live numbers
-// from /api/hall (falls back to "offline", never to invented numbers).
+// 8 · Under the hood: the pipeline as an animated diagram (packets flow node to node), the stack, and the system's
+// numbers. Everything here is static (the deck never calls the network); each number is a fact of the code/data.
 import { h } from "../../app/util.ts";
 import type { Scene } from "../core.ts";
+import { REPO_COUNT } from "../data.ts";
 
 const NODES = [
   { k: "GitHub tarball", s: "streamed + untarred in memory" },
   { k: "import graph", s: "9 languages · Tarjan SCC cycles" },
   { k: "Gemini", s: "structured art direction (JSON schema)" },
-  { k: "authoritative sim", s: "30 Hz, server-side" },
+  { k: "game server", s: "authoritative sim · 30 Hz" },
   { k: "snapshots", s: "20 Hz over WebSockets" },
   { k: "phones", s: "any browser · motion sensors" },
 ];
-interface Hall { fastestKills?: { boss: string; squad: string[]; seconds: number }[]; royaleWins?: { name: string; repo: string; wins: number }[]; bossRecords?: { boss: string; wins: number; losses: number }[] }
+// sim/archetypes (kaiju, hydra, mecha, abyssal) · server room cap · shared/i18n LOCALES (en, zh, es, fr)
+const FACTS: [number, string][] = [[REPO_COUNT, "famous repos ship pre-analyzed"], [4, "boss archetypes"], [8, "players per raid"], [4, "languages in the UI"]];
 
 export const stack: Scene = {
   id: "stack", title: "Under the hood", tracks: ["gemini", "auth0"],
@@ -22,20 +24,13 @@ export const stack: Scene = {
       if (i < NODES.length - 1) row.append(h("div.pipe-link", { style: `--i:${i}` }, h("i"), h("i"), h("i")));
     });
     const stackRow = h("div.stack-row", null, ...["Gemini API", "Auth0 · GitHub sign-in", "Vision Pro · WebXR", "Web Audio chiptune", "TypeScript end to end"].map((s, i) => h("span.stack-chip", { style: `--i:${i}` }, s)));
-    const hall = h("div.hall-live", null, h("div.hall-h", null, "$ curl /api/hall", h("span.dim", null, "  live")), h("div.hall-body", null, "loading…"));
-    el.append(h("h2.slide-h", null, "Under the hood: ", h("em", null, "real analysis, real-time sim")), row, stackRow, hall);
-    void (async () => {
-      let j: Hall | null = null;
-      try { const r = await fetch("/api/hall"); if (r.ok) j = (await r.json()) as Hall; } catch { /* offline */ }
-      if (!life.alive) return;
-      const body = hall.querySelector(".hall-body")!;
-      if (!j) { body.textContent = "offline: live numbers unavailable"; return; }
-      const fk = (j.fastestKills ?? []).slice(0, 3), rw = (j.royaleWins ?? []).slice(0, 3);
-      const kills = (j.bossRecords ?? []).reduce((s, b) => s + b.wins, 0);
-      body.replaceChildren(
-        h("div.hall-col", null, h("h4", null, "fastest boss kills"), ...(fk.length ? fk.map((k) => h("div.hall-r", null, h("b", null, `${k.seconds.toFixed(1)}s`), ` ${k.boss} · ${k.squad.length} heroes`)) : [h("div.hall-r.dim", null, "no kills yet: be the first")])),
-        h("div.hall-col", null, h("h4", null, "royale wins"), ...(rw.length ? rw.map((k) => h("div.hall-r", null, h("b", null, `×${k.wins}`), ` ${k.name} · ${k.repo}`)) : [h("div.hall-r.dim", null, "no royale wins yet")])),
-        h("div.hall-col", null, h("h4", null, "bosses deleted"), h("div.hall-big", null, String(kills))));
-    })();
+    const nums = FACTS.map(([n, label], i) => h("div.fact-num", { style: `--i:${i}` }, h("b", { "data-n": n }, "0"), h("span", null, label)));
+    el.append(h("h2.slide-h", null, "Under the hood: ", h("em", null, "real analysis, real-time sim")), row, stackRow, h("div.facts-row", null, ...nums));
+    // count up once (smooth, no flashing)
+    const t0 = performance.now() + 2200;
+    life.frame(() => {
+      const k = Math.max(0, Math.min(1, (performance.now() - t0) / 900));
+      for (const b of el.querySelectorAll<HTMLElement>(".fact-num b")) b.textContent = String(Math.round(Number(b.dataset.n) * (1 - Math.pow(1 - k, 3))));
+    });
   },
 };

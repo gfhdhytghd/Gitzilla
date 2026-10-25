@@ -6,9 +6,9 @@ import { mapping } from "./scenes/mapping.ts";
 import { motion } from "./scenes/motion.ts";
 import { modes } from "./scenes/modes.ts";
 import { classroom } from "./scenes/classroom.ts";
-import { join } from "./scenes/join.ts";
+import { play } from "./scenes/play.ts";
 import { stack } from "./scenes/stack.ts";
 import { vision } from "./scenes/vision.ts";
 import { close } from "./scenes/close.ts";
 
-export const SCENES: Scene[] = [title, genesis, mapping, motion, modes, classroom, join, stack, vision, close];
+export const SCENES: Scene[] = [title, genesis, mapping, motion, modes, classroom, play, stack, vision, close];

@@ -1,6 +1,5 @@
 // /demo core: per-scene lifetimes (every timer, listener and frame callback a scene starts dies with it), the scene
-// contract and the shared stage context.
-import type { LiveRoom } from "./live.ts";
+// contract and the shared stage context. The deck is a presentation: no sockets, no rooms, no API calls.
 
 export type FrameFn = (t: number, dt: number) => void;
 
@@ -35,12 +34,12 @@ export const TRACKS: Record<Track, string> = {
 };
 
 export interface DemoCtx {
-  calm: boolean;                      // prefers-reduced-motion: no shake, no flashes, slower ambient
+  calm: boolean;                      // prefers-reduced-motion: entrances land instantly, slower ambient
+  /** A soft beat accent: a smooth, small scale swell of the stage (never a shake or a flash; WCAG 2.3.1). */
   shake(power?: number): void;
   repo: number;                       // featured repo index (R cycles it); scenes read it on mount and on onRepo
   onRepo(fn: (i: number) => void, life: Life): void;
-  live: LiveRoom;                     // the page's one live room (survives scene changes)
-  blip(kind?: "ui" | "join" | "boom"): void;
+  blip(kind?: "ui" | "boom"): void;
 }
 
 export interface SceneHandle { beat?(n: number): void }

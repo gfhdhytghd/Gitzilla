@@ -8,7 +8,6 @@ import { loadModules } from "../app/renderers.ts";
 import { setClassroomLanguage } from "../i18n/index.ts";
 import { profile, FEATURED } from "./data.ts";
 import { Life, TRACKS, W, H, pixelCanvas, type DemoCtx, type Scene, type SceneHandle } from "./core.ts";
-import { createLiveRoom } from "./live.ts";
 import { SCENES } from "./scenes.ts";
 
 export async function mountDemo(root: HTMLElement) {
@@ -26,7 +25,7 @@ export async function mountDemo(root: HTMLElement) {
   const corner = h("div.ds-corner");
   const bar = h("div.ds-progress");
   const help = h("div.ds-help", null, "→ next · ← back · 1–9 0 jump · F fullscreen · R next repo");
-  const ds = h("div.ds", null, rain, stage, badges, corner, bar, h("div.ds-crt"), h("div.ds-flash"));
+  const ds = h("div.ds", null, rain, stage, badges, corner, bar, h("div.ds-crt"));
   const shell = h("div#demo.demo" + (calm ? ".calm" : ""), { translate: "no" }, ds, help);
   root.replaceChildren(shell);
 
@@ -40,12 +39,11 @@ export async function mountDemo(root: HTMLElement) {
     calm,
     shake(power = 1) {
       if (calm) return;
-      ds.style.setProperty("--shake", `${Math.round(6 * power)}px`);
-      ds.classList.remove("shake"); void ds.offsetWidth; ds.classList.add("shake");
+      ds.style.setProperty("--swell", String(1 + 0.006 * Math.min(2, power)));
+      ds.classList.remove("swell"); void ds.offsetWidth; ds.classList.add("swell");
     },
     repo: 0,
     onRepo(fn, life) { repoFns.add(fn); life.add(() => repoFns.delete(fn)); },
-    live: createLiveRoom(),
     blip(kind = "ui") { try { if (kind === "boom") audio.onBossIntro(); else audio.onUi(); } catch { /* audio locked until a key press */ } },
   };
   const cycleRepo = (dir = 1) => {

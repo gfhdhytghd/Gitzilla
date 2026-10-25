@@ -1,6 +1,6 @@
-// Small shared slide effects: typed text, pixel confetti, QR images (server /api/qr, fetched once so a later Wi-Fi drop
-// keeps showing it) and a pixel "ring" pulse.
+// Small shared slide effects: typed text, the bundled homepage QR and a pixel "ring" pulse.
 import { h } from "../../app/util.ts";
+import qrSvg from "../qr-home.svg?raw";
 import type { Life } from "../core.ts";
 
 /** Types each line into its own row with a block cursor; ms = 0 shows them at once (calm). */
@@ -22,31 +22,10 @@ export async function typeLines(el: HTMLElement, lines: string[], life: Life, ms
   }
 }
 
-const CONFETTI = ["#3dff8b", "#ff3d8b", "#ffd23d", "#3de8ff", "#b18cff"];
-/** Square pixel confetti bursting from (x, y) in stage px; removes itself. */
-export function confetti(host: HTMLElement, x: number, y: number, n = 26) {
-  for (let i = 0; i < n; i++) {
-    const a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 220, s = 8 + ((Math.random() * 3) | 0) * 4;
-    const p = h("i.confetti", { style: `left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${CONFETTI[i % CONFETTI.length]};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d - 120}px;--r:${(Math.random() * 720 - 360) | 0}deg;animation-delay:${(Math.random() * 80) | 0}ms` });
-    host.append(p);
-    setTimeout(() => p.remove(), 1500);
-  }
-}
-
-const qrCache = new Map<string, Promise<string | null>>();
-/** Object URL for a QR of `text`, or null when the server can't be reached. */
-export function qrUrl(text: string): Promise<string | null> {
-  let hit = qrCache.get(text);
-  if (!hit) {
-    hit = fetch(`/api/qr?text=${encodeURIComponent(text)}`).then((r) => (r.ok ? r.blob() : null)).then((b) => (b ? URL.createObjectURL(b) : null)).catch(() => null);
-    qrCache.set(text, hit);
-  }
-  return hit;
-}
-export function qrImage(text: string, cls = "qr"): HTMLElement {
-  const box = h(`div.${cls}`);
-  void qrUrl(text).then((src) => box.replaceChildren(src ? h("img", { src, alt: `QR code for ${text}` }) : h("div.qr-off", null, "QR offline")));
-  return box;
+/** The homepage QR (https://gitzilla.wilflin.me), generated once from server/qr.ts and bundled: no network needed. */
+export const HOME_URL = "https://gitzilla.wilflin.me";
+export function homeQr(cls = "qr"): HTMLElement {
+  return h(`div.${cls}`, { role: "img", "aria-label": `QR code for ${HOME_URL}`, html: qrSvg });
 }
 
 /** Expanding pixel ring at (x, y) inside host (a "haptic" pulse). */

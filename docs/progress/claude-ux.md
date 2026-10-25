@@ -1,3 +1,48 @@
+DONE (demo deck pass) — /demo is now a pure presentation:
+- no rooms, sockets or API calls;
+- "Play it yourself" slide with a bundled homepage QR;
+- motion slide gestures redrawn to the real semantics (incl. the new circle spin);
+- photosensitive-safe deck (WCAG 2.3.1);
+- labels fit their boxes.
+Checked in Chromium + WebKit at 1920/1280. Artifacts in docs/ux-shots/demo/. No commits.
+
+## Demo deck pass (coordinator corrections, 2026-10-25)
+- **No hands-on part.**
+  - Removed `client/demo/live.ts`, the join wall, START, the room creation and the big-screen handoff.
+  - Slide 7 is now "Play it yourself": a big QR to https://gitzilla.wilflin.me (bundled `client/demo/qr-home.svg`,
+    generated from server/qr.ts and verified by decoding), the typed URL, 3 steps, and real heroes.
+  - The close slide uses the same QR: "Scan to start playing".
+  - Vision Pro's bottom line is just "Open on Vision Pro".
+  - "Under the hood" no longer calls /api/hall. It shows static facts from code/data: 15 pre-analyzed repos (counted
+    from data/fallback), 4 archetypes, 8 players per raid, 4 UI languages.
+- **Network assertion** (`docs/ux-shots/demo/deckcheck.mjs`, whole deck by keyboard): 0 `/api/*` requests and 0 `/ws`
+  sockets in Chromium and WebKit at 1920 and 1280. The only socket is Vite's dev HMR (`/?token=`), which doesn't
+  exist in prod. The built demo chunk contains no `/api/`, `/ws` or `new WebSocket`.
+- **Motion slide**, each gesture per input/README and docs/tasks/spin-circle.md:
+  - **tilt:** a flat phone tips right / top-down / left / bottom-down, a level ball rolls downhill, and the hero
+    walks that way.
+  - **swing:** one sharp flick with a ghost trail and speed lines → attack.
+  - **twist:** a wrist turn around the long axis, out to ~80° and back → dash.
+  - **spin:** the phone travels a circle by translation only, upright every frame (`motion/spin-strip.png`), with a
+    lagging trail → skill on each completed circle.
+  - Hero inputs fire on the same beats as the animation.
+  - WebKit video: `motion/motion-slide-webkit.webm`.
+- **Overflow:**
+  - "authoritative sim" became "game server" (sub: "authoritative sim · 30 Hz"). The pixel-font word can't fit a
+    pipeline box at any wrap.
+  - The task card's expected output wraps on the slide (it was a scroll box).
+  - Automated check: every text element's scrollWidth ≤ clientWidth and its box stays inside its parent (2 px).
+    Elements still running an entrance animation are skipped. All 13 slides/beats pass in both engines at both sizes.
+- **Photosensitive safety** (always on, not only reduced motion):
+  - Removed screen shake (now a 0.6% smooth swell), glitch transitions (now fade/slide), CRT flicker (static
+    overlay), the title glitch (gentle float) and the close slide's white flash (the boss fades out). The cursor
+    blink is a soft fade.
+  - `flashcheck.mjs`: Chromium screencast ~30 fps for 3 s from each slide's entry (close: 7 s, through the
+    explosion), 64×36 luminance grid. A swing = >10% of the screen changing by >0.2.
+  - Result: every slide 0 swings, max 0 per 1 s, largest change 0–4.4% of the screen.
+  - Positive control (6 Hz full-screen white toggle): FAIL, 13 swings/s. The detector works.
+- **Checks:** root tsc clean; vitest 1285 passed; prod build OK (demo chunk 70 KB / 27.5 KB gzip).
+
 DONE (demo stage) — /demo live-demo slide page: client/demo/ (10 scenes, 13 beats) + one route line in client/app/main.ts. Verified in Chromium + WebKit at 1920 and 1280, Playwright run-through video, fps per scene, live join with 3 simulated phones on :5175. Artifacts in docs/ux-shots/demo/. root tsc clean; vitest 1218 pass. No commits.
 
 ## Demo stage (docs/tasks/demo-stage.md)

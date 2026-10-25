@@ -1,5 +1,5 @@
-// 10 · Close: the boss takes its last hits and dies in a pixel explosion, the wordmark returns, and the end card says
-// "Scan to keep playing" with the QR again (the live room if one is open, else the site).
+// 10 · Close: the boss takes its last hits and dissolves into drifting pixel shards (a smooth fade, never a flash),
+// the wordmark returns, and the end card says "Scan to start playing" with the homepage QR.
 import { h } from "../../app/util.ts";
 import { R } from "../../app/renderers.ts";
 import { createMarkAnim } from "../../app/logo.ts";
@@ -7,7 +7,7 @@ import { wordmark } from "../../app/wordmark.ts";
 import type { Scene } from "../core.ts";
 import { FEATURED, bossKit } from "../data.ts";
 import { stagedBoss } from "../sims.ts";
-import { qrImage } from "./fx.ts";
+import { HOME_URL, homeQr } from "./fx.ts";
 
 export const close: Scene = {
   id: "close", title: "Thanks", tracks: ["grand"],
@@ -15,17 +15,17 @@ export const close: Scene = {
     const kit = bossKit(FEATURED[ctx.repo], 4);
     const canvas = h("canvas.close-boss", { width: 960, height: 576 }) as HTMLCanvasElement;
     const g = canvas.getContext("2d")!;
-    const blast = h("div.close-blast"), flash = h("div.close-flash");
+    const blast = h("div.close-blast");
     const end = h("div.close-end");
-    el.append(canvas, blast, flash, end);
+    el.append(canvas, blast, end);
     let clock = 0, phase: "hit" | "death" | "gone" = "hit";
     const pops: { x: number; y: number; t: number; n: number }[] = [];
 
     function explode() {
       phase = "gone";
       ctx.blip("boom");
-      ctx.shake(2.2);
-      flash.classList.add("on");
+      ctx.shake(1);
+      canvas.classList.add("gone");
       // pixel shards in the boss's own palette
       const pal = kit.palette;
       for (let i = 0; i < (ctx.calm ? 0 : 140); i++) {
@@ -36,11 +36,10 @@ export const close: Scene = {
       life.timeout(() => {
         const mark = createMarkAnim(6);
         life.add(() => mark.destroy());
-        const url = ctx.live.room ? ctx.live.joinUrl() : location.origin;
         end.replaceChildren(
           h("div.close-wm", null, wordmark({ width: "860px", enter: !ctx.calm, sparkle: !ctx.calm })),
           h("div.close-row", null,
-            h("div.close-card", null, qrImage(url, "close-qr"), h("div", null, h("div.close-scan", null, "Scan to keep playing"), h("div.close-url", null, url.replace(/^https?:\/\//, "")),
+            h("div.close-card", null, homeQr("close-qr"), h("div", null, h("div.close-scan", null, "Scan to start playing"), h("div.close-url", null, HOME_URL.replace(/^https:\/\//, "")),
               h("a.repo-link", { href: "https://github.com/gfhdhytghd/Gitzilla", target: "_blank", rel: "noopener" }, "github.com/gfhdhytghd/Gitzilla"), h("div.close-thx", null, "Built in 24 h at HackPSU · thank you"))),
             h("div.close-mark", null, mark.canvas)));
         end.classList.add("on");
@@ -53,7 +52,7 @@ export const close: Scene = {
       if (phase === "death" && clock > 3.6) explode();
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, 960, 576);
-      if (phase === "gone") return;
+      if (phase === "gone" && clock > 6) return;
       g.setTransform(2, 0, 0, 2, 0, 0);
       g.imageSmoothingEnabled = false;
       const hp = Math.max(0, 0.18 - clock * 0.07);

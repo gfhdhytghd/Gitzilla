@@ -15,10 +15,8 @@ export const vision: Scene = {
     const box = h("div.vp-box", { style: `width:${VIEW.w}px;height:${VIEW.h}px` });
     const overlay = h("canvas.vp-overlay", { width: VIEW.w, height: VIEW.h }) as HTMLCanvasElement;
     const table = h("div.vp-table", null, box);
-    const code = ctx.live.room ?? "CODE";
     el.append(h("h2.slide-h", null, "Put the fight ", h("em", null, "on your table.")), h("div.vp-glass", null, table),
-      h("div.vp-open", null, h("span", null, "Open on Vision Pro"), h("code", null, `${location.host}/r/${code}?screen=1&view=xr`)),
-      h("div.vp-sub", null, "same room, same match: WebXR tabletop, phones still the controllers"));
+      h("div.vp-open", null, "Open on Vision Pro"));
     const g = overlay.getContext("2d")!;
     let stage: { canvas: HTMLCanvasElement; resize(w: number, h: number, d: number): void; render: (...a: never[]) => void; destroy(): void } | null = null, failed = false;
     void import("../../render/stage25d/index.ts").then((m) => {
