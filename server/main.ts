@@ -23,6 +23,7 @@ import { defaultRubric, parseRubric, scoreRepo, buildFeedback } from '../rubric/
 import { RoyaleHall } from './royale-hall.ts';
 import { resolveGithubIdentity } from './github-identity.ts';
 import { handleControllerRoute } from './controller-http.ts';
+import { handleRoomCreate } from './room-http.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
@@ -120,15 +121,7 @@ server.on('request', (req, res) => {
     }
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
     if (await handleEduRoute(req, res, url, rooms)) return;
-    if (url.pathname === '/api/room' && req.method === 'POST') {
-      req.resume();
-      const mode = url.searchParams.get('mode');
-      if (mode && mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') { json(res, 400, { error: 'Choose battle, classroom, or PvP mode' }); return; }
-      const room = rooms.createRoom(undefined, mode === 'edu' ? 'edu' : mode === 'pvp' ? 'pvp' : 'battle');
-      printRoomQr(room);
-      json(res, 201, { room });
-      return;
-    }
+    if (handleRoomCreate(req, res, url, rooms, printRoomQr)) return;
     if (url.pathname.startsWith('/api/room/') && req.method === 'GET') {
       const code = decodeURIComponent(url.pathname.slice('/api/room/'.length)).toUpperCase();
       if (!/^[A-Z]{4}$/.test(code)) { json(res, 400, { error: 'Use a four-letter room code (A–Z only; no digits).' }); return; }

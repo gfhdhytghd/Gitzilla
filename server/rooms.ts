@@ -68,6 +68,7 @@ interface Member {
   displayKeyboardReady?: boolean;
   needsController?: boolean;
   controllerReady?: boolean;
+  screenHostPending?: boolean;
   inputFromController?: boolean;
   profile?: RepoProfile; // Memory-only, never part of the room-store whitelist.
   socket: WebSocket | null;
@@ -214,7 +215,7 @@ export class RoomServer {
       bans: { tokens: [...room.bans.tokens], identities: [...room.bans.identities] },
       players: [...room.members.values()].filter(m => m.role === 'player' || m.id === room.ownerId || m.id === room.teacherId).map(m => ({
         id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed, identities: m.identities,
-        githubIdentity: m.githubIdentity, controllerToken: m.controllerToken, needsController: m.needsController,
+        githubIdentity: m.githubIdentity, controllerToken: m.controllerToken, needsController: m.needsController, screenHostPending: m.screenHostPending,
         lobby: this.persistedLobby(m),
       })),
       boss: room.privateBoss
@@ -265,6 +266,16 @@ export class RoomServer {
     this.scheduleCleanup(room);
     this.persist();
     return code;
+  }
+
+  createScreenHostedRoom(mode: 'battle' | 'pvp'): { room: string; hostToken: string } {
+    const code = this.createRoom(undefined, mode), room = this.rooms.get(code)!;
+    const id = randomUUID(), token = randomBytes(24).toString('hex'), name = 'Big screen';
+    room.members.set(id, { id, token, name, role: 'screen', socket: null, revision: 0, inputAt: 0,
+      controlsReady: false, screenHostPending: true, lobby: { id, name, repo: null, status: 'empty', kit: null } });
+    room.ownerId = id;
+    this.persist();
+    return { room: code, hostToken: token };
   }
 
   roomInfo(code: string): { exists: boolean; players: number; phase: LobbyState['phase'] | null } {
@@ -812,6 +823,7 @@ export class RoomServer {
     if (suppliedName) member.namedByUser = true;
     member.lobby.name = member.name;
     member.socket = socket; member.displaySeq = undefined;
+    member.screenHostPending = false;
     if (!member.controllerSocket) member.input = undefined;
     if (room.mode === 'pvp' && room.phase === 'lobby') {
       member.pvpAccess = undefined; member.profile = undefined; member.revision++;
@@ -823,7 +835,9 @@ export class RoomServer {
     if (!member.controllerSocket) { member.controlsReady = member.displayKeyboardReady; member.controlsMode = undefined; }
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
-    if (!room.classroom && (member.role === 'player' || room.mode === 'edu' || room.mode === 'pvp') && (!room.ownerId || !room.members.get(room.ownerId)?.socket)) room.ownerId = member.id;
+    const owner = room.members.get(room.ownerId);
+    if (!room.classroom && (member.role === 'player' || room.mode === 'edu' || member.id === room.ownerId)
+        && (!owner || (!owner.socket && !owner.screenHostPending))) room.ownerId = member.id;
     if (!room.classroom && room.mode === 'edu' && member.role === 'screen' && (!room.teacherId || room.teacherId === member.id || room.ownerId === member.id)) {
       room.teacherId = member.id; room.ownerId = member.id;
     }
@@ -948,7 +962,7 @@ export class RoomServer {
     if (room.classroom && room.teacherId === member.id) { room.classroom.end(); this.clearPause(room); }
     if (!room.classroom && room.teacherId === member.id) room.teacherId = undefined;
     const humans = [...room.members.values()].filter(m => !m.lobby.bot && online(m));
-    if (!room.classroom && room.ownerId === member.id) room.ownerId = (humans.find(m => m.role === 'player') ?? humans[0])?.id ?? '';
+    if (!room.classroom && room.ownerId === member.id) room.ownerId = (humans.find(m => m.role === 'player') ?? (room.mode === 'edu' ? humans[0] : undefined))?.id ?? '';
     this.pauseOwnershipChanged(room, previousOwner);
     if (!humans.length) {
       for (const m of room.members.values()) { ++m.revision; if (!m.lobby.bot) this.revokedTokens.add(tokenHash(m.token)); }

@@ -17,6 +17,7 @@ import { buildFeedback, defaultRubric, parseRubric, scoreRepo } from '../rubric/
 import { asPvpAiKit, playerKitFromProfile, bossKitFromProfile, createMatch, pvpPowerFromProfile, statsFromPower, qualityFromRubric } from '../sim/index.ts';
 import { createBot } from '../sim/bots.ts';
 import { handleControllerRoute } from './controller-http';
+import { handleRoomCreate } from './room-http';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function until<T>(fn: () => T | undefined | false, attempts = 150): Promise<T> {
@@ -88,6 +89,7 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
   const server = http.createServer((req, res) => {
     void (async () => {
       const url = new URL(req.url!, 'http://localhost');
+      if (handleRoomCreate(req, res, url, rooms)) return;
       if (await handleControllerRoute(req, res, url, rooms)) return;
       if (!await handleEduRoute(req, res, url, rooms)) { res.writeHead(404); res.end(); }
     })();
@@ -105,13 +107,13 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
   };
   cleanup.push(close);
   const room = existingRoom ?? rooms.createRoom(undefined, initialMode);
-  async function connect(role: 'player' | 'screen' | 'controller' = 'player', resume?: string, name = 'Test', cookie?: string, beforeWelcome?: ClientMsg, userAgent?: string) {
+  async function connect(role: 'player' | 'screen' | 'controller' = 'player', resume?: string, name = 'Test', cookie?: string, beforeWelcome?: ClientMsg, userAgent?: string, targetRoom = room) {
     const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { ...(cookie ? { Cookie: cookie } : {}), ...(userAgent ? { 'User-Agent': userAgent } : {}) } });
     const messages: ServerMsg[] = [];
     socket.on('message', raw => messages.push(JSON.parse(raw.toString())));
     await once(socket, 'open');
     const send = (msg: ClientMsg) => socket.send(JSON.stringify(msg));
-    send({ t: 'hello', room, role, name, resume });
+    send({ t: 'hello', room: targetRoom, role, name, resume });
     if (beforeWelcome) send(beforeWelcome);
     const welcome = await until(() => messages.find(m => m.t === 'welcome'));
     return { socket, messages, welcome, send, lobby: () => messages.filter(m => m.t === 'lobby').at(-1)?.lobby };
@@ -129,6 +131,46 @@ const rubricServices: Partial<GameServices> = { ...genesisServices, defaultRubri
   applyRubric: (profile, kit, rubric) => qualityFromRubric(kit, { rubric, results: scoreRepo(profile, rubric) }) };
 
 describe('room protocol over real WebSockets', () => {
+  it.each(['battle','pvp'] as const)('grants only the creating screen host authority in %s rooms, then transfers on disconnect',async mode=>{
+    const f=await setup(.15,genesisServices);
+    const response=await fetch(`${f.base}/api/room?mode=${mode}&host=screen`,{method:'POST'});
+    expect(response.status).toBe(201);expect(response.headers.get('cache-control')).toBe('no-store');
+    const {room,hostToken}=await response.json() as {room:string;hostToken:string};expect(hostToken).toMatch(/^[a-f0-9]{48}$/);
+    const join=(role:'player'|'screen',resume?:string)=>f.connect(role,resume,'Stage',undefined,undefined,undefined,room);
+    const phone=await join('player'),spectator=await join('screen');
+    expect(phone.welcome.lobby.ownerId).not.toBe(phone.welcome.you);expect(spectator.welcome.lobby.ownerId).not.toBe(spectator.welcome.you);
+    spectator.send({t:'start'});await until(()=>spectator.messages.some(m=>m.t==='error'&&m.message.includes('Only the room owner')));
+    const host=await join('screen',hostToken);expect(host.welcome.lobby.ownerId).toBe(host.welcome.you);expect(host.welcome.lobby.players).toHaveLength(1);
+    expect(JSON.stringify(spectator.messages)).not.toContain(hostToken);
+    const kicked=once(phone.socket,'close');host.send({t:'kick',playerId:phone.welcome.you});expect((await kicked)[0]).toBe(4003);
+    host.send({t:'setBots',count:2});await until(()=>host.lobby()?.players.length===2&&host.lobby()?.players.every(p=>p.bot&&p.status==='ready'));
+    // Battle still requires a human fighter; use an ordinary phone there.
+    const human=await join('player');
+    if(mode==='battle'){human.send({t:'setRepo',repo:'pallets/flask'});host.send({t:'setBoss',repo:'pallets/flask'});
+      await until(()=>host.lobby()?.players.find(p=>p.id===human.welcome.you)?.status==='ready'&&host.lobby()?.boss.status==='ready');}
+    host.send({t:'start'});await until(()=>host.messages.some(m=>m.t==='autopsy'));
+    host.send({t:'rematch'});await until(()=>host.lobby()?.phase==='lobby');expect(host.lobby()?.ownerId).toBe(host.welcome.you);
+    const closed=once(host.socket,'close');host.socket.close();await closed;await until(()=>human.lobby()?.ownerId===human.welcome.you);
+    const resumed=await join('screen',hostToken);expect(resumed.welcome.you).toBe(host.welcome.you);expect(resumed.welcome.lobby.ownerId).toBe(human.welcome.you);
+  });
+  it.each(['battle','pvp'] as const)('never implicitly promotes an unrelated screen in ordinary %s rooms',async mode=>{
+    const f=await setup(999,{}, {},undefined,mode),screen=await f.connect('screen');expect(screen.welcome.lobby.ownerId).toBe('');
+    const owner=await f.connect();expect(owner.welcome.lobby.ownerId).toBe(owner.welcome.you);
+    const closed=once(owner.socket,'close');owner.send({t:'leave'});await closed;await until(()=>screen.lobby()?.ownerId==='');
+    const late=await f.connect('screen');expect(late.welcome.lobby.ownerId).toBe('');
+  });
+  it('persists the screen creation reservation and keeps classroom teacher creation unchanged',async()=>{
+    const file=persistenceFile(),first=await setup(999,{}, {persistenceFile:file});
+    const response=await fetch(`${first.base}/api/room?host=screen`,{method:'POST'}),created=await response.json() as {room:string;hostToken:string};
+    await first.close();const f=await setup(999,{}, {persistenceFile:file},created.room);
+    const phone=await f.connect();expect(phone.welcome.lobby.ownerId).not.toBe(phone.welcome.you);
+    const host=await f.connect('screen',created.hostToken);expect(host.welcome.lobby.ownerId).toBe(host.welcome.you);
+    await f.close();const restored=await setup(999,{}, {persistenceFile:file},created.room);
+    const resumed=await restored.connect('screen',created.hostToken);expect(resumed.welcome.lobby.ownerId).toBe(resumed.welcome.you);
+    const edu=await(await fetch(`${restored.base}/api/room?mode=edu&host=screen`,{method:'POST'})).json() as {room:string;hostToken?:string};expect(edu.hostToken).toBeUndefined();
+    const teacher=await restored.connect('screen',undefined,'Teacher',undefined,undefined,undefined,edu.room);expect(teacher.welcome.lobby.ownerId).toBe(teacher.welcome.you);
+    expect((await fetch(`${restored.base}/api/room?host=player`,{method:'POST'})).status).toBe(400);
+  });
   it('pauses a staged classroom raid, resumes after 3s and recovers from teacher absence at 60s', async () => {
     let now = 1_800_000_000_000; vi.spyOn(Date, 'now').mockImplementation(() => now);
     const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
@@ -1591,7 +1633,9 @@ describe('PvP royale authority and isolation', () => {
     ['player', 0], ['player', 1], ['player', 2], ['screen', 0], ['screen', 2],
   ] as const)('lets an ineligible %s host spectate a royale with %i eligible humans and AI fill', async (role, humanCount) => {
     const auth = accessServices(), f = await setup(999, { ...genesisServices, ...auth.services }, {}, undefined, 'pvp');
-    const owner = await f.connect(role, undefined, 'Spectator host', undefined, undefined, 'iPhone');
+    const created = role === 'screen' ? f.rooms.createScreenHostedRoom('pvp') : undefined;
+    const room = created?.room ?? f.room;
+    const owner = await f.connect(role, created?.hostToken, 'Spectator host', undefined, undefined, 'iPhone', room);
     expect(owner.welcome.lobby.ownerId).toBe(owner.welcome.you);
     if (role === 'player') {
       owner.send({ t: 'setRepo', repo: 'not/eligible' });
@@ -1599,7 +1643,7 @@ describe('PvP royale authority and isolation', () => {
     }
     const humans: Awaited<ReturnType<typeof f.connect>>[] = [];
     for (let i = 0; i < humanCount; i++) {
-      const human = await f.connect('player', undefined, ['Alice', 'Bob'][i], ['alice', 'bob'][i]); humans.push(human);
+      const human = await f.connect('player', undefined, ['Alice', 'Bob'][i], ['alice', 'bob'][i], undefined, undefined, room); humans.push(human);
       human.send({ t: 'setRepo', repo: ['alice/own', 'bob/own'][i] });
     }
     owner.send({ t: 'setBots', count: 2 - humanCount });
@@ -1638,7 +1682,8 @@ describe('PvP royale authority and isolation', () => {
           step: (dt, inputs) => { for (let i = 0; i < 90 && !match.over; i++) match.step(dt, inputs); } };
       },
     }, {}, undefined, 'pvp');
-    const host = await f.connect('screen'); host.send({ t: 'setBots', count: 2 });
+    const created = f.rooms.createScreenHostedRoom('pvp');
+    const host = await f.connect('screen', created.hostToken, 'Stage', undefined, undefined, undefined, created.room); host.send({ t: 'setBots', count: 2 });
     await until(() => host.lobby()?.players.length === 2 && host.lobby()?.players.every(p => p.bot && p.status === 'ready'));
     const lobbyKits = new Map(host.lobby()!.players.map(p => [p.id, p.kit]));
     expect([...lobbyKits.values()].every(kit => kit?.pvpAi?.powerMultiplier === 0.8)).toBe(true);

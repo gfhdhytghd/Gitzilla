@@ -25,6 +25,7 @@ The smoke runner defaults to `http://localhost:5175`; use `SMOKE_URL=http://loca
 ## HTTP routes
 
 - `POST /api/room` → HTTP 201 `{ "room": "ABCD" }`; `?mode=edu` creates a classroom
+- `POST /api/room?mode=battle&host=screen` (or `mode=pvp`) → HTTP 201 `{ "room": "ABCD", "hostToken": "..." }`, no-store. The creating stage sends `{t:'hello',room,role:'screen',name:'Demo stage',resume:hostToken}` on `/ws` and then uses normal welcome/resume messages. Keep the token local; share only the room code with players. Ownership is reserved even if a phone joins first, and the reservation survives restart. The connected stage can setBoss/start/rematch/kick; disconnect transfers ownership to the first human player. Rejoining does not steal it back. Other spectator screens never implicitly become owner in battle/PvP. Classroom teacher creation is unchanged and does not return a hostToken.
 - `GET /api/room/ABCD` → `{ "exists": true, "players": 4, "phase": "lobby" }`; missing rooms return false/0/null, invalid/digit codes return 400
 - `GET /api/fallbacks` → JSON `string[]` of fallback slugs
 - `GET /api/qr?text=<encoded-join-url>` → SVG QR (four-module white quiet zone)

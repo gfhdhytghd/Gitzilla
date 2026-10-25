@@ -17,6 +17,7 @@ export interface SavedPlayer {
   githubIdentity?: string; // SHA-256 of the authenticated GitHub ID, private to the server.
   controllerToken?: string; // Room controller resume token; cannot resume a display/player.
   needsController?: boolean; // Durable display policy, not a saved permission grant.
+  screenHostPending?: boolean; // Explicit creation reservation, consumed by its first screen hello.
   lobby: LobbyPlayer;
 }
 export interface SavedRoom {
