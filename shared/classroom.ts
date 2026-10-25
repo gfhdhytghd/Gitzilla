@@ -17,10 +17,20 @@ export interface ClassroomStep {
   checksWeight: number; // 0..100; only used when checks exist
   // In-app editor (no GitHub needed): starter files students edit in the browser. When present the student UI opens
   // the editor by default; GitHub submission stays available as an alternative.
+  // Structured, student-facing task brief (preferred over the free-text `instructions` when present).
+  brief?: StepBrief;
   starter?: InAppFile[];
   language?: 'python';     // editor highlighting / optional in-browser run (Pyodide); grading stays static
 }
-export interface InAppFile { path: string; content: string }  // repo-relative path, UTF-8 text
+export interface InAppFile { path: string; content: string }
+export interface StepBrief {
+  goal: string;               // one sentence: what you are building ("Print a personal introduction card.")
+  todo: string[];             // 2–6 concrete actions, imperative, each ≤ ~90 chars; `code` in backticks
+  doneWhen: string[];         // observable success criteria, mirrors the step's checks ("Running it prints `Hello, Python!`")
+  example?: { title?: string; output: string };   // expected program output / sample, shown in a code block
+  hints?: string[];           // collapsed by default
+  concepts?: string[];        // 1–4 tags shown as chips ("print()", "f-strings", "variables")
+}  // repo-relative path, UTF-8 text
 export interface ClassroomPlan { title: string; bossName: string; steps: ClassroomStep[] }
 export type ClassroomPhase = 'setup' | 'coding' | 'paused' | 'raid' | 'feedback' | 'complete';
 export interface ClassroomRow {
