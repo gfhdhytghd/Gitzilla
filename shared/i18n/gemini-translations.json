@@ -21720,5 +21720,104 @@
     "fr": "SELECT key FROM attestors",
     "provider": "Gemini via AGY",
     "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "70e5fec4a3b67a18",
+    "en": "Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.",
+    "zh": "检查项要找的所有内容都在你的文件中。运行它，与预期输出进行比对，并准备好向老师讲解。",
+    "es": "Todo lo que buscan las comprobaciones está en tus archivos. Ejecútalo, compáralo con la salida esperada y prepárate para explicárselo a tu profesor.",
+    "fr": "Tout ce que recherchent les vérifications se trouve dans vos fichiers. Exécutez-le, comparez-le avec la sortie attendue et préparez-vous à l'expliquer à votre enseignant.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8b9301762db9face",
+    "en": "Found in your files",
+    "zh": "已在你的文件中找到",
+    "es": "Encontrado en tus archivos",
+    "fr": "Trouvé dans vos fichiers",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cb9fbdb3dd3cb644",
+    "en": "Not found yet: add it and submit again",
+    "zh": "尚未找到：请添加后重新提交",
+    "es": "Aún no se ha encontrado: agrégalo y vuelve a enviarlo",
+    "fr": "Pas encore trouvé : ajoutez-le et soumettez à nouveau",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3e5e4730165d2a3e",
+    "en": "Receipt request timed out. Check its status before retrying.",
+    "zh": "收据请求超时。重试前请检查其状态。",
+    "es": "La solicitud de recibo ha caducado. Comprueba su estado antes de volver a intentarlo.",
+    "fr": "Le délai d'attente de la demande de reçu a expiré. Vérifiez son statut avant de réessayer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a0bb0c4acd75c1a3",
+    "en": "Optional Devnet anchor: your wallet address, receipt ID, approximate signing time and salted result digest become public. Anyone can link this wallet to Gitzilla through the app signer. Published history cannot be deleted by Gitzilla. The app pays the test-network fee. Sign a message only; no token transfer.",
+    "zh": "可选 Devnet 锚定：你的钱包地址、收据 ID、大致签名时间以及加盐结果摘要将公开。任何人都可以通过应用签名者将此钱包与 Gitzilla 关联。已发布的历史记录无法由 Gitzilla 删除。应用支付测试网络费用。仅签名消息；无代币转账。",
+    "es": "Anclaje opcional en Devnet: tu dirección de billetera, el ID de recibo, la hora aproximada de firma y el resumen de resultado con sal se hacen públicos. Cualquiera puede vincular esta billetera a Gitzilla mediante el firmante de la aplicación. Gitzilla no puede eliminar el historial publicado. La aplicación paga la tarifa de la red de prueba. Solo firma un mensaje; sin transferencia de tokens.",
+    "fr": "Ancrage Devnet optionnel : votre adresse de portefeuille, l'identifiant de reçu, l'heure approximative de signature et l'empreinte salée du résultat deviennent publics. Toute personne peut associer ce portefeuille à Gitzilla via le signataire de l'application. L'historique publié ne peut pas être supprimé par Gitzilla. L'application paie les frais du réseau de test. Signature d'un message uniquement ; aucun transfert de jetons.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "40b6ef3d4d4f4a63",
+    "en": "Attestor directory must not be writable by others",
+    "zh": "见证者目录不得允许其他人写入",
+    "es": "El directorio del atestador no debe tener permisos de escritura para otros",
+    "fr": "Le répertoire de l'attestateur ne doit pas être accessible en écriture par d'autres",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "78433f1b3a3d886a",
+    "en": "Attestor key path must be ignored by Git",
+    "zh": "Git 必须忽略见证者密钥路径",
+    "es": "Git debe ignorar la ruta de la clave del atestador",
+    "fr": "Le chemin de la clé de l'attestateur doit être ignoré par Git",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ea9e609d89574695",
+    "en": "Restore the existing attestor key before reopening its database",
+    "zh": "在重新打开其数据库前，请恢复现有的见证者密钥",
+    "es": "Restaura la clave del atestador existente antes de reabrir su base de datos",
+    "fr": "Restaurez la clé de l'attestateur existante avant de rouvrir sa base de données",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "2e2a9b95f65a4ab5",
+    "en": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "zh": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "es": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "fr": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "930a777039908789",
+    "en": "BEGIN IMMEDIATE",
+    "zh": "BEGIN IMMEDIATE",
+    "es": "BEGIN IMMEDIATE",
+    "fr": "BEGIN IMMEDIATE",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "729437d41bf7edc7",
+    "en": "Attestor key must be outside served asset directories",
+    "zh": "证明者密钥必须位于所提供的资源目录之外",
+    "es": "La clave del atestador debe estar fuera de los directorios de recursos servidos",
+    "fr": "La clé de l'attestateur doit être en dehors des répertoires de ressources servis",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
   }
 ]

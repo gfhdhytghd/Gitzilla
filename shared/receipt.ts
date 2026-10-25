@@ -1,7 +1,7 @@
 /** Public, source-free receipt format. No opponent identity, code, grades or commit claims. */
 export interface ReceiptPayload {
   version: 1; game: 'gitzilla'; mode: 'pvp'; id: string; match: string; issuedAt: string;
-  outcome: 'win' | 'loss' | 'draw'; placement: number | null; entrants: number;
+  outcome: 'win' | 'loss' | 'draw'; placement: number | null; entrants: number; humans: number;
   repo: string; kos: number; damage: number;
 }
 export interface SignedReceipt {

@@ -2,7 +2,8 @@
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { randomBytes,sign } from 'node:crypto';
-import { mkdirSync,writeFileSync } from 'node:fs';
+import { mkdirSync,writeFileSync,mkdtempSync,rmSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ReceiptService,type FinishedReceiptMatch } from '../server/receipts/service';
 import { ReceiptStore } from '../server/receipts/store';
@@ -13,14 +14,14 @@ const seed=randomBytes(32),walletSeed=randomBytes(32),wallet=base58(publicBytes(
 let prepared=0,sent=0,finalized=false;
 const rpc:AnchorRpc={balance:async()=>1e9,prepare:async()=>{prepared++;return {wire:'exact-wire',signature:'test-tx',lastValidHeight:99};},send:async()=>{sent++;throw new Error('simulate RPC timeout');},inspect:async()=>finalized?'finalized':'pending'};
 const store=new ReceiptStore(':memory:');
-const vite=await createServer({configFile:false,root:process.cwd(),server:{host:'127.0.0.1',port:0},appType:'custom'});
+const vite=await createServer({configFile:'vite.config.ts',root:process.cwd(),server:{host:'127.0.0.1',port:0},appType:'custom'});
 let service:ReceiptService,id='';
 vite.middlewares.use((req,res,next)=>{
   if(req.url==='/receipt-harness'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/client/style.css"></head><body style="padding:16px;overflow:auto"><main id="test"></main></body></html>');return;}
   if(req.url?.startsWith('/api/receipts/')||req.url?.startsWith('/.well-known/'))void handleReceiptRoute(req,res,new URL(req.url,'http://localhost'),service).then(ok=>{if(!ok)next();});else next();
 });
 await vite.listen();const base=vite.resolvedUrls!.local[0].replace(/\/$/,'');service=new ReceiptService(store,seed,base,rpc);
-const input={eligible:true,winner:'a',placements:{a:1},participants:[{id:'a',tokenHash:hash('own-token')}],result:{mode:'pvp',victory:false,duration:30,boss:null,mvp:'a',players:[{id:'a',name:'fixture',repo:'pallets/flask',stats:{damage:1,bestCombo:0,limbsBroken:0,revives:0,killingBlow:false}}]}} as FinishedReceiptMatch;
+const input={eligible:true,winner:'a',placements:{a:1},participants:[{id:'a',tokenHash:hash('own-token')},{id:'b',tokenHash:hash('other-token')}],result:{mode:'pvp',victory:false,duration:30,boss:null,mvp:'a',players:[{id:'a',name:'fixture',repo:'pallets/flask',stats:{damage:1,bestCombo:0,limbsBroken:0,revives:0,killingBlow:false}},{id:'b',name:'fixture opponent',repo:'golang/example',stats:{damage:0,bestCombo:0,limbsBroken:0,revives:0,killingBlow:false}}]}} as FinishedReceiptMatch;
 id=service.record(input).a;
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH??'/usr/bin/chromium'}),page=await browser.newPage({viewport:{width:390,height:844}}),errors:string[]=[],requests:string[]=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
@@ -29,6 +30,13 @@ await page.exposeFunction('testSign',(bytes:number[])=>[...sign(null,Buffer.from
 const assert=(ok:unknown,msg:string)=>{if(!ok)throw new Error(msg);};
 mkdirSync('qa/artifacts/receipts',{recursive:true});
 try{
+  mkdirSync('.cache',{recursive:true});const privateDir=mkdtempSync(resolve('.cache/receipt-private-check-'));const privateFile=resolve(privateDir,'test.seed');
+  try{
+    writeFileSync(privateFile,'PRIVATE_TEST_SENTINEL',{mode:0o600});
+    for(const path of [privateFile.slice(process.cwd().length),'/@fs'+privateFile]){
+      const response=await fetch(base+path);assert([403,404].includes(response.status),'Dev server exposed private path');assert(!(await response.text()).includes('PRIVATE_TEST_SENTINEL'),'Private test content leaked');
+    }
+  }finally{rmSync(privateDir,{recursive:true,force:true});}
   await page.goto(base+'/receipt-harness');
   await page.evaluate(async({id})=>{
     const {installLanguageUi}=await import('/client/'+ 'i18n/index.ts');installLanguageUi();
@@ -64,6 +72,6 @@ try{
   }
   await page.evaluate(()=>(window as any).entry.destroy());assert(await page.locator('[data-testid="match-receipt"]').count()===0,'Receipt did not dispose');
   assert(errors.length===0,'Browser errors: '+errors.join(','));
-  const result={passed:true,viewport:'390x844',locales:['en','zh','es','fr'],checks:['lazy wallet discovery','no-wallet download','independent download verifier','late wallet registration','rejected signature','real Ed25519 wallet signature','pending after timeout','same-wire refresh','finalized link','mobile layout','dispose'],prepared,sent,errors};
+  const result={passed:true,viewport:'390x844',locales:['en','zh','es','fr'],checks:['dev private-file denial','lazy wallet discovery','no-wallet download','independent download verifier','late wallet registration','rejected signature','real Ed25519 wallet signature','pending after timeout','same-wire refresh','finalized link','mobile layout','dispose'],prepared,sent,errors};
   writeFileSync('qa/artifacts/receipts/browser.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));
 }finally{await browser.close();await vite.close();store.close();}

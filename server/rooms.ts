@@ -301,7 +301,16 @@ export class RoomServer {
     return results;
   }
 
+  private receiptResult(member:Member,result:Autopsy):Autopsy {
+    if(!result.receiptIds)return result;
+    const id=member.role==='player'?result.receiptIds[member.id]:undefined;
+    return {...result,receiptIds:id?{[member.id]:id}:undefined};
+  }
   private broadcast(room: Room, message: ServerMsg) {
+    if(message.t==='autopsy'&&message.result.receiptIds){
+      for(const member of room.members.values())if(member.socket?.readyState===WebSocket.OPEN)send(member.socket,{t:'autopsy',result:this.receiptResult(member,message.result)});
+      return;
+    }
     const packet = JSON.stringify(message);
     for (const m of room.members.values()) if (m.socket?.readyState === WebSocket.OPEN) m.socket.send(packet);
   }
@@ -771,7 +780,7 @@ export class RoomServer {
       member.restartNotified = true;
     }
     if (room.state) send(socket, { t: 'snapshot', state: { ...room.state, paused: room.paused ?? null, events: [] }, ack: -1 });
-    if (room.result) send(socket, { t: 'autopsy', result: room.result });
+    if (room.result) send(socket, { t: 'autopsy', result: this.receiptResult(member,room.result) });
     this.sendFeedback(room, member);
   }
 
@@ -950,7 +959,7 @@ export class RoomServer {
     const match = this.services.createMatch(players.map(p => ({ id: p.id, name: p.name, kit: p.lobby.kit! })), boss, { mode: room.mode });
     room.restartNotice = undefined;
     room.privateMatch = (room.mode === 'battle' && !!room.privateBoss) || players.some(p => p.privateRepo);
-    room.receiptEligible = room.mode === 'pvp' && !room.privateMatch;
+    room.receiptEligible = room.mode === 'pvp' && !room.privateMatch && players.filter(p => !p.lobby.bot).length >= 2;
     room.receiptParticipants = room.receiptEligible ? players.filter(p => !p.lobby.bot).map(p => ({id:p.id,tokenHash:tokenHash(p.token)})) : undefined;
     if (boss) room.boss.kit = boss;
     room.match = match; room.departed = new Set(); room.phase = 'match'; room.events = [];

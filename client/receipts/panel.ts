@@ -11,14 +11,14 @@ type Connection={connect:()=>Promise<{accounts:readonly Account[]}>};
 export async function openReceipt(el:HTMLElement,id:string,token:string,dead:()=>boolean) {
   const endpoint=`/api/receipts/${encodeURIComponent(id)}`;
   async function api<T>(action='',input?:unknown):Promise<T> {
-    const res=await fetch(endpoint+action,{method:input===undefined?'GET':'POST',headers:{'X-Room-Token':token,...(input===undefined?{}:{'Content-Type':'application/json'})},body:input===undefined?undefined:JSON.stringify(input),signal:AbortSignal.timeout(15000)});
-    const data=await res.json();if(!res.ok)throw new Error(typeof data.error==='string'?data.error:'Receipt unavailable. Try again.');return data;
+    let res:Response;try{res=await fetch(endpoint+action,{method:input===undefined?'GET':'POST',headers:{'X-Room-Token':token,...(input===undefined?{}:{'Content-Type':'application/json'})},body:input===undefined?undefined:JSON.stringify(input),signal:AbortSignal.timeout(35000)});}catch{throw new Error('Receipt request timed out. Check its status before retrying.');}
+    let data;try{data=await res.json();}catch{throw new Error('Receipt unavailable. Try again.');}if(!res.ok)throw new Error(typeof data.error==='string'?data.error:'Receipt unavailable. Try again.');return data;
   }
   let view=await api<ReceiptView>();if(dead())return ()=>{};
   let wallet:Wallet|undefined,account:Account|undefined,message='',working=false;
   const status=h('p',{role:'status','aria-live':'polite'}),controls=h('div.receipt-actions'),wallets=h('div.receipt-actions');
   const preview=h('pre.receipt-message',{translate:'no',hidden:true}),details=h('details',null,h('summary',null,'Signing message'),preview);
-  const explain=h('p.dim',null,'Optional Devnet anchor: your wallet address and a salted result digest become public. Gitzilla pays the test-network fee. Sign a message only; no token transfer.');
+  const explain=h('p.dim',null,'Optional Devnet anchor: your wallet address, receipt ID, approximate signing time and salted result digest become public. Anyone can link this wallet to Gitzilla through the app signer. Published history cannot be deleted by Gitzilla. The app pays the test-network fee. Sign a message only; no token transfer.');
   const perform=async(task:()=>Promise<void>)=>{
     if(working||dead())return;working=true;render();
     try{await task();if(!dead())render();}catch(error){if(!dead())status.textContent=t(error instanceof Error?error.message:'Receipt unavailable. Try again.');}
@@ -69,7 +69,9 @@ export async function openReceipt(el:HTMLElement,id:string,token:string,dead:()=
         catch{throw new Error('Signing cancelled. Your receipt is still available to download.');}
         if(dead())return;
         if(!signed||signed.signature.length!==64||signed.signedMessage.length!==bytes.length||!bytes.every((b,i)=>b===signed.signedMessage[i]))throw new Error('The wallet changed the signing message. Nothing was published.');
-        view=await api<ReceiptView>('/publish',{wallet:account.address,signature:encode58(signed.signature)});message='';
+        try{view=await api<ReceiptView>('/publish',{wallet:account.address,signature:encode58(signed.signature)});}
+        catch(error){message='';try{view=await api<ReceiptView>();}catch{}throw error;}
+        message='';
       }));
       else controls.append(button('Prepare signing message',request));
       if(view.status==='unclaimed')controls.append(button('Change wallet',async()=>{account=undefined;wallet=undefined;message='';}));

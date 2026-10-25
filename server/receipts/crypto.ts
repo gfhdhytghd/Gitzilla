@@ -1,5 +1,5 @@
 import { createHash, createPrivateKey, createPublicKey, randomBytes, sign, verify } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, lstatSync, openSync, writeSync, fsyncSync, closeSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { getBase58Decoder, getBase58Encoder } from '@solana/kit';
 import { canonical, RECEIPT_PREFIX, type ReceiptPayload, type SignedReceipt } from '../../shared/receipt';
@@ -19,10 +19,11 @@ export function verifyEd25519(publicKey: string, message: Uint8Array, signature:
 export function loadSeed(path: string): Uint8Array {
   mkdirSync(dirname(path),{recursive:true,mode:0o700});
   if (!existsSync(path)) {
-    try { writeFileSync(path,randomBytes(32),{mode:0o600,flag:'wx'}); }
+    try { const fd=openSync(path,'wx',0o600);try{writeSync(fd,randomBytes(32));fsyncSync(fd);}finally{closeSync(fd);} }
     catch(error) { if((error as NodeJS.ErrnoException).code!=='EEXIST')throw error; }
   }
-  const file=statSync(path);if(!file.isFile() || (file.mode&0o077)!==0)throw new Error('Attestor key must be a private file');
+  const parent=statSync(dirname(path));if(!parent.isDirectory()||(parent.mode&0o022)!==0)throw new Error('Attestor directory must not be writable by others');
+  const file=lstatSync(path);if(!file.isFile() || (file.mode&0o077)!==0)throw new Error('Attestor key must be a private file');
   const seed=readFileSync(path);if(seed.length!==32)throw new Error('Invalid attestor key');return seed;
 }
 export function receiptDigest(payload: ReceiptPayload, salt: string) {

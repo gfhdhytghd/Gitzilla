@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { resolve, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -21,19 +22,21 @@ export class ReceiptService {
   }
   /** Called once after a public PvP result is frozen. Never accepts a client result. */
   record(input:FinishedReceiptMatch):Record<string,string> {
-    if(!input.eligible || input.result.mode!=='pvp' || input.result.boss || !input.participants.length)return {};
+    if(!input.eligible || input.result.mode!=='pvp' || input.result.boss || input.participants.length<2)return {};
     const ids:Record<string,string>={},match=randomUUID(),issuedAt=new Date(this.now()).toISOString();
+    return this.store.transaction(()=>{
     for(const owner of input.participants) {
       const row=input.result.ranking?.find(p=>p.id===owner.id),player=input.result.players.find(p=>p.id===owner.id);
       if(!player || !/^[a-f0-9]{64}$/.test(owner.tokenHash))continue;
       const payload:ReceiptPayload={version:1,game:'gitzilla',mode:'pvp',id:randomUUID(),match,issuedAt,
         outcome:input.winner===null?'draw':input.winner===owner.id?'win':'loss',placement:input.placements[owner.id]??null,
-        entrants:input.result.players.length,repo:player.repo,kos:Math.max(0,Math.round(row?.kos??0)),damage:Math.max(0,Math.round(player.stats.damage*10)/10)};
+        entrants:input.result.players.length,humans:input.participants.length,repo:player.repo,kos:Math.max(0,Math.round(row?.kos??0)),damage:Math.max(0,Math.round(player.stats.damage*10)/10)};
       const receipt=signReceipt(payload,this.seed);
-      this.store.put({id:payload.id,ownerHash:owner.tokenHash,receipt,status:'unclaimed',wallet:null,nonce:null,expires:null,message:null,walletSignature:null,transaction:null,wire:null,lastValidHeight:null});
+      this.store.put({id:payload.id,ownerHash:owner.tokenHash,receipt,status:'unclaimed',wallet:null,nonce:null,expires:null,message:null,challengeOrigin:null,memo:null,walletSignature:null,transaction:null,wire:null,lastValidHeight:null});
       ids[owner.id]=payload.id;
     }
     return ids;
+    });
   }
   private owner(id:string,token:string|undefined) {
     const row=this.store.get(id);
@@ -72,8 +75,8 @@ export class ReceiptService {
       try {if(await this.rpc.balance(this.attestor)<10000)throw 0;}
       catch {throw new ReceiptError(503,'Devnet anchoring is temporarily unavailable. You can download the signed receipt.');}
       const nonce=randomBytes(16).toString('hex'),expires=this.now()+300000;
-      row.wallet=wallet;row.nonce=nonce;row.expires=expires;
-      row.message=claimMessage({origin:this.origin,id,digest:row.receipt.digest,wallet,attestor:this.attestor,nonce,expires});
+      row.wallet=wallet;row.nonce=nonce;row.expires=expires;row.challengeOrigin=this.origin;
+      row.message=claimMessage({origin:row.challengeOrigin,id,digest:row.receipt.digest,wallet,attestor:this.attestor,nonce,expires});
       this.store.put(row);return {message:row.message,expires};
     });
   }
@@ -82,34 +85,31 @@ export class ReceiptService {
       const row=this.owner(id,token);this.limit(id);this.wallet(wallet);
       if(row.wallet!==wallet)throw new ReceiptError(409,'The wallet changed; request a new signing message');
       if(row.status==='pending'||row.status==='finalized')return this.view(row);
-      if(!row.nonce||!row.message||!row.expires||row.expires<=this.now())throw new ReceiptError(409,'The signing message expired; try again');
+      if(!row.nonce||!row.message||!row.challengeOrigin||!row.expires||row.expires<=this.now())throw new ReceiptError(409,'The signing message expired; try again');
       if(!verifyEd25519(wallet,new TextEncoder().encode(row.message),signature))throw new ReceiptError(400,'Wallet signature verification failed');
-      const binding:MemoBinding={v:1,id,d:row.receipt.digest,w:wallet,o:this.origin,n:row.nonce,e:row.expires,s:signature};
+      const binding:MemoBinding={v:1,id,d:row.receipt.digest,w:wallet,o:row.challengeOrigin,n:row.nonce,e:row.expires,s:signature};
+      const memo=canonical(binding);
       let prepared;
-      try {prepared=await this.rpc.prepare(this.seed,this.attestor,canonical(binding));}
+      try {prepared=await this.rpc.prepare(this.seed,this.attestor,memo);}
       catch {throw new ReceiptError(503,'Devnet anchoring is temporarily unavailable. You can download the signed receipt.');}
-      row.status='pending';row.transaction=prepared.signature;row.wire=prepared.wire;row.lastValidHeight=prepared.lastValidHeight;
+      row.memo=memo;row.status='pending';row.transaction=prepared.signature;row.wire=prepared.wire;row.lastValidHeight=prepared.lastValidHeight;
       row.walletSignature=signature;row.nonce=null;this.store.put(row);
       // The txid and exact bytes are durable before broadcast. A timeout never creates a new tx.
-      try {if(await this.rpc.send(row.wire)!==row.transaction)throw new Error('Unexpected transaction');} catch { /* Reconcile the known signature. */ }
+      void this.rpc.send(row.wire).catch(()=>{}); // Reconcile the known signature on explicit refresh.
       return this.view(row);
     });
-  }
-  private memo(row:ReceiptRecord):string {
-    const fields=Object.fromEntries(row.message!.split('\n').filter(l=>l.includes(': ')).map(l=>{const i=l.indexOf(': ');return[l.slice(0,i),l.slice(i+2)];}));
-    return canonical({v:1,id:row.id,d:row.receipt.digest,w:row.wallet,o:fields.Origin,n:fields.Nonce,e:row.expires,s:row.walletSignature});
   }
   async refresh(id:string,token:string|undefined):Promise<ReceiptView> {
     return this.lock(id,async()=>{
       const row=this.owner(id,token);this.limit(id+':refresh',30);
-      if(row.status!=='pending'||!row.transaction||!row.wire||row.lastValidHeight===null)return this.view(row);
+      if(row.status!=='pending'||!row.transaction||!row.wire||row.lastValidHeight===null||!row.memo)return this.view(row);
       try {
-        const status=await this.rpc.inspect(row.transaction,row.receipt.attestor,this.memo(row),row.lastValidHeight);
+        const status=await this.rpc.inspect(row.transaction,row.receipt.attestor,row.memo,row.lastValidHeight);
         row.status=status;
-        if(status==='expired'||status==='failed'){row.message=null;row.expires=null;row.nonce=null;}
+        if(status!=='pending'){row.message=null;row.nonce=null;row.wire=null;}
         this.store.put(row);
         // Resending identical bytes is idempotent, including across server restarts.
-        if(status==='pending')await this.rpc.send(row.wire);
+        if(status==='pending'&&row.wire)void this.rpc.send(row.wire).catch(()=>{});
       }catch{ /* Unknown stays pending. No automatic rebuild or duplicate transaction. */ }
       return this.view(row);
     });
@@ -118,8 +118,13 @@ export class ReceiptService {
 export function createReceiptService(root:string,origin:string) {
   const path=resolve(process.env.SOLANA_ATTESTOR_KEY_FILE||resolve(root,'.cache/solana/attestor.seed'));
   const rel=relative(root,path);
-  if(!rel.startsWith('..')&&spawnSync('git',['ls-files','--error-unmatch','--',rel],{cwd:root,stdio:'ignore'}).status===0)throw new Error('Attestor keys must not be tracked');
-  const seed=loadSeed(path);
-  return new ReceiptService(new ReceiptStore(resolve(root,'.cache/solana/receipts.sqlite')),seed,origin,
-    new SolanaRpc(process.env.SOLANA_DEVNET_RPC_URL));
+  if(!rel.startsWith('..')) {
+    if(/^(?:dist|public)(?:[\\/]|$)/.test(rel))throw new Error('Attestor key must be outside served asset directories');
+    if(spawnSync('git',['ls-files','--error-unmatch','--',rel],{cwd:root,stdio:'ignore'}).status===0)throw new Error('Attestor keys must not be tracked');
+    if(spawnSync('git',['check-ignore','--quiet','--',rel],{cwd:root,stdio:'ignore'}).status!==0)throw new Error('Attestor key path must be ignored by Git');
+  }
+  const database=resolve(root,'.cache/solana/receipts.sqlite');
+  if(existsSync(database)&&!existsSync(path))throw new Error('Restore the existing attestor key before reopening its database');
+  const rpc=new SolanaRpc(process.env.SOLANA_DEVNET_RPC_URL),seed=loadSeed(path),store=new ReceiptStore(database);
+  try{return new ReceiptService(store,seed,origin,rpc);}catch(error){store.close();throw error;}
 }

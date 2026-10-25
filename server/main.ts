@@ -80,7 +80,7 @@ const vite = production ? null : await (await import('vite')).createServer({
   // Vite's fallback target uses server.port. Leave the browser port/protocol inferred
   // from /@vite/client so localhost:5175 and HTTPS tunnels share the same origin.
   server: { port, middlewareMode: true, hmr: { server }, fs: { deny: [
-    '.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.cache/**',
+    '.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.cache/**', '**/*.seed', '**/*.sqlite*', ...(process.env.SOLANA_ATTESTOR_KEY_FILE ? [process.env.SOLANA_ATTESTOR_KEY_FILE] : []),
   ] } },
   appType: 'spa',
 });

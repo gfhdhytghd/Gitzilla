@@ -5,7 +5,7 @@ import type { AnchorStatus, SignedReceipt } from '../../shared/receipt';
 export interface ReceiptRecord {
   id: string; ownerHash: string; receipt: SignedReceipt; status: AnchorStatus;
   wallet: string | null; nonce: string | null; expires: number | null;
-  message: string | null; walletSignature: string | null;
+  message: string | null; challengeOrigin: string | null; memo: string | null; walletSignature: string | null;
   transaction: string | null; wire: string | null; lastValidHeight: number | null;
 }
 /** Small, synchronous durable writes. Pending bytes/signature commit before any RPC send. */
@@ -14,8 +14,10 @@ export class ReceiptStore {
   constructor(path: string) {
     if(path!==':memory:')mkdirSync(dirname(path),{recursive:true,mode:0o700});
     this.db=new DatabaseSync(path);
+    try{
     if(path!==':memory:')chmodSync(path,0o600);
-    this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;`);
+    this.db.exec(`PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;`);
+    }catch(error){this.db.close();throw error;}
   }
   get(id: string): ReceiptRecord | undefined {
     const row=this.db.prepare('SELECT value FROM receipts WHERE id=?').get(id) as {value:string}|undefined;
@@ -27,6 +29,11 @@ export class ReceiptStore {
   }
   keys(): string[] {
     return (this.db.prepare('SELECT key FROM attestors').all() as {key:string}[]).map(row=>row.key);
+  }
+  transaction<T>(fn:()=>T):T {
+    this.db.exec('BEGIN IMMEDIATE');
+    try{const value=fn();this.db.exec('COMMIT');return value;}
+    catch(error){this.db.exec('ROLLBACK');throw error;}
   }
   close() { this.db.close(); }
 }

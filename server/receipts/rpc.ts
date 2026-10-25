@@ -51,8 +51,12 @@ export class SolanaRpc implements AnchorRpc {
   }
   async inspect(signature:string,attestor:string,memo:string,lastValidHeight:number) {
     await this.check();
-    const status=(await this.raw<{value:({err:unknown;confirmationStatus:string}|null)[]}>('getSignatureStatuses',[[signature],{searchTransactionHistory:true}])).value[0];
-    if(status?.err)return 'failed' as const;
+    // Read finalized height first. A later status response must be at least this fresh
+    // before absence can prove expiry on a load-balanced RPC.
+    const epoch=await this.raw<{blockHeight:number;absoluteSlot:number}>('getEpochInfo',[{commitment:'finalized'}]);
+    const snapshot=await this.raw<{context:{slot:number};value:({err:unknown;confirmationStatus:string}|null)[]}>('getSignatureStatuses',[[signature],{searchTransactionHistory:true}]);
+    const status=snapshot.value[0];
+    if(status?.err&&status.confirmationStatus==='finalized')return 'failed' as const;
     if(status?.confirmationStatus==='finalized') {
       const tx=await this.raw<any>('getTransaction',[signature,{encoding:'json',commitment:'finalized',maxSupportedTransactionVersion:0}]);
       if(!tx)return 'pending' as const;
@@ -66,7 +70,7 @@ export class SolanaRpc implements AnchorRpc {
       } catch { return 'failed' as const; }
       return 'finalized' as const;
     }
-    if(!status && await this.raw<number>('getBlockHeight',[{commitment:'finalized'}])>lastValidHeight)return 'expired' as const;
+    if(!status && epoch.blockHeight>lastValidHeight && Number.isSafeInteger(epoch.absoluteSlot) && snapshot.context?.slot>=epoch.absoluteSlot)return 'expired' as const;
     return 'pending' as const;
   }
 }

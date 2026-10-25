@@ -1,3 +1,4 @@
+import { walletBindingMessage } from './receipt-verifier';
 /** Independent read-only verifier. Pin an attestor from a separately trusted source. */
 import { readFileSync } from 'node:fs';
 import { createHash, createPublicKey, verify } from 'node:crypto';
@@ -33,7 +34,7 @@ if(transaction){
   if(tx.transaction.signatures[0]!==transaction||m.header.numRequiredSignatures!==1||m.accountKeys[0]!==expected||m.instructions.length!==1||m.accountKeys[ix.programIdIndex]!=='MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'||ix.accounts.length!==1||m.accountKeys[ix.accounts[0]]!==expected)throw new Error('Incorrect Memo signer or instruction');
   const binding=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(decode(ix.data)));
   if(binding.v!==1||binding.id!==receipt.payload.id||binding.d!==digest||typeof binding.o!=='string'||new URL(binding.o).origin!==binding.o||!Number.isSafeInteger(binding.e)||!/^[a-f0-9]{32}$/.test(binding.n))throw new Error('Invalid wallet binding');
-  const message=['Gitzilla wallet binding v1',`Origin: ${binding.o}`,'Network: solana:devnet',`Receipt: ${binding.id}`,`Digest: ${binding.d}`,`Wallet: ${binding.w}`,`Attestor: ${expected}`,`Nonce: ${binding.n}`,`Expires: ${new Date(binding.e).toISOString()}`,'Bind this wallet to this server-attested result. No token transfer or mainnet transaction.'].join('\n');
+  const message=walletBindingMessage(binding,expected);
   if(!signatureValid(binding.w,Buffer.from(message),binding.s))throw new Error('Invalid wallet signature');
   console.log(JSON.stringify({verified:true,network:'solana:devnet',attestor:expected,receipt:receipt.payload.id,wallet:binding.w,transaction}));
 }else console.log(JSON.stringify({verified:true,attestor:expected,receipt:receipt.payload.id,anchorVerified:false}));

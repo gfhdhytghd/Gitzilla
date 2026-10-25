@@ -1695,9 +1695,40 @@ describe('PvP royale authority and isolation', () => {
     await until(() => a.lobby()?.players.length === 8 && a.lobby()?.players.every(p => p.status === 'ready'));
     a.send({ t: 'start' }); await until(() => a.messages.find(m => m.t === 'autopsy'));
     expect(f.royaleRecorded).toHaveLength(privateRepo ? 0 : 1); expect(f.recorded).toHaveLength(0);
-    expect(recordReceipts).toHaveBeenCalledTimes(privateRepo ? 0 : 1);
-    if(!privateRepo){const snapshot=recordReceipts.mock.calls[0] as unknown as [import('./receipts/service').FinishedReceiptMatch]; expect(snapshot[0].participants).toEqual([{id:a.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(a.welcome.token)}]);expect(snapshot[0].result.mode).toBe('pvp');}
+    expect(recordReceipts).not.toHaveBeenCalled(); // One human plus bots never earns a PvP receipt.
     if (!privateRepo) expect(f.royaleRecorded[0]).toMatchObject({ name: 'Alice', repo: 'pallets/flask' });
+  });
+  it.each([false,true])('freezes two human receipt owners and isolates receipt failure (private: %s)',async(privateRepo)=>{
+    const auth=accessServices();auth.verify.mockImplementation(async(repo,token)=>({repo,login:token,userId:token==='alice'?1:2,private:privateRepo}));
+    const recordReceipts=vi.fn((_input:import('./receipts/service').FinishedReceiptMatch)=>{throw new Error('disk full');});
+    const f=await setup(0.1,{...auth.services,recordReceipts},{},undefined,'pvp');
+    const a=await f.connect('player',undefined,'Alice','alice'),b=await f.connect('player',undefined,'Bob','bob');
+    a.send({t:'setRepo',repo:'alice/own'});b.send({t:'setRepo',repo:'bob/own'});
+    await until(()=>a.lobby()?.players.length===2&&a.lobby()?.players.every(p=>p.status==='ready'));
+    a.send({t:'start'});const result=await until(()=>a.messages.find(m=>m.t==='autopsy'));
+    expect(result.t).toBe('autopsy');expect(recordReceipts).toHaveBeenCalledTimes(privateRepo?0:1);if(privateRepo)return;
+    expect(recordReceipts.mock.calls[0][0].participants).toEqual([
+      {id:a.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(a.welcome.token)},
+      {id:b.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(b.welcome.token)}
+    ]);
+    expect(recordReceipts.mock.calls[0][0].result.mode).toBe('pvp');
+    expect(result.t==='autopsy'&&result.result.receiptIds).toBeUndefined();
+  });
+  it('sends only the owner receipt ID, including a reconnect with the original token',async()=>{
+    const auth=accessServices();auth.verify.mockImplementation(async(repo,token)=>({repo,login:token,userId:token==='alice'?1:2,private:false}));
+    const f=await setup(0.1,{...auth.services,recordReceipts:input=>Object.fromEntries(input.participants.map(p=>[p.id,'receipt-'+p.id]))},{},undefined,'pvp');
+    const a=await f.connect('player',undefined,'Alice','alice'),b=await f.connect('player',undefined,'Bob','bob'),screen=await f.connect('screen');
+    a.send({t:'setRepo',repo:'alice/own'});b.send({t:'setRepo',repo:'bob/own'});
+    await until(()=>a.lobby()?.players.length===2&&a.lobby()?.players.every(p=>p.status==='ready'));
+    a.send({t:'start'});
+    const resultA=await until(()=>a.messages.find(m=>m.t==='autopsy')),resultB=await until(()=>b.messages.find(m=>m.t==='autopsy')),resultScreen=await until(()=>screen.messages.find(m=>m.t==='autopsy'));
+    expect(resultA.t==='autopsy'&&resultA.result.receiptIds).toEqual({[a.welcome.you]:'receipt-'+a.welcome.you});
+    expect(resultB.t==='autopsy'&&resultB.result.receiptIds).toEqual({[b.welcome.you]:'receipt-'+b.welcome.you});
+    expect(resultScreen.t==='autopsy'&&resultScreen.result.receiptIds).toBeUndefined();
+    a.socket.close();await once(a.socket,'close');const resumed=await f.connect('player',a.welcome.token,'Alice','alice');
+    const result=await until(()=>resumed.messages.find(m=>m.t==='autopsy'));
+    expect(resumed.welcome.token).toBe(a.welcome.token);
+    expect(result.t==='autopsy'&&result.result.receiptIds).toEqual({[a.welcome.you]:'receipt-'+a.welcome.you});
   });
   it('keeps eliminated clients spectating, ignores their inputs, and retains leavers in royale results', async () => {
     const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');

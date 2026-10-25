@@ -725,6 +725,16 @@
     "context": "client/app/classroom.ts"
   },
   {
+    "id": "fe3237d26a20ae81",
+    "source": "The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.",
+    "context": "client/app/classroom.ts, server/classroom.ts"
+  },
+  {
+    "id": "70e5fec4a3b67a18",
+    "source": "Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.",
+    "context": "client/app/classroom.ts"
+  },
+  {
     "id": "29cbc8ebd3f8ae78",
     "source": "Use file: path, contains: path :: text, or ci: check name",
     "context": "client/app/classroom.ts"
@@ -1435,8 +1445,13 @@
     "context": "client/app/classroom.ts"
   },
   {
-    "id": "5c59c5147593bc7b",
-    "source": "Your measured result for this task",
+    "id": "8b9301762db9face",
+    "source": "Found in your files",
+    "context": "client/app/classroom.ts"
+  },
+  {
+    "id": "cb9fbdb3dd3cb644",
+    "source": "Not found yet: add it and submit again",
     "context": "client/app/classroom.ts"
   },
   {
@@ -9350,11 +9365,6 @@
     "context": "server/classroom.ts"
   },
   {
-    "id": "fe3237d26a20ae81",
-    "source": "The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.",
-    "context": "server/classroom.ts"
-  },
-  {
     "id": "b591c11357387971",
     "source": "Review scores before the class attacks",
     "context": "server/classroom.ts"
@@ -10720,13 +10730,18 @@
     "context": "client/receipts/entry.ts"
   },
   {
+    "id": "3e5e4730165d2a3e",
+    "source": "Receipt request timed out. Check its status before retrying.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
     "id": "c17594eb35b5184e",
     "source": "Signing message",
     "context": "client/receipts/panel.ts"
   },
   {
-    "id": "002e433eb5003d2a",
-    "source": "Optional Devnet anchor: your wallet address and a salted result digest become public. Gitzilla pays the test-network fee. Sign a message only; no token transfer.",
+    "id": "a0bb0c4acd75c1a3",
+    "source": "Optional Devnet anchor: your wallet address, receipt ID, approximate signing time and salted result digest become public. Anyone can link this wallet to Gitzilla through the app signer. Published history cannot be deleted by Gitzilla. The app pays the test-network fee. Sign a message only; no token transfer.",
     "context": "client/receipts/panel.ts"
   },
   {
@@ -10823,6 +10838,11 @@
     "id": "4e4ee86f4de6264c",
     "source": "A server-attested match result, not proof of fair gameplay or an NFT. Devnet history may be reset. Save the signed download.",
     "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "40b6ef3d4d4f4a63",
+    "source": "Attestor directory must not be writable by others",
+    "context": "server/receipts/crypto.ts"
   },
   {
     "id": "3ce5182429bc66c9",
@@ -10950,8 +10970,8 @@
     "context": "server/receipts/service.ts"
   },
   {
-    "id": "eda00dc890b49835",
-    "source": "Unexpected transaction",
+    "id": "729437d41bf7edc7",
+    "source": "Attestor key must be outside served asset directories",
     "context": "server/receipts/service.ts"
   },
   {
@@ -10960,8 +10980,18 @@
     "context": "server/receipts/service.ts"
   },
   {
-    "id": "7672e5e5522738f6",
-    "source": "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "id": "78433f1b3a3d886a",
+    "source": "Attestor key path must be ignored by Git",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "ea9e609d89574695",
+    "source": "Restore the existing attestor key before reopening its database",
+    "context": "server/receipts/service.ts"
+  },
+  {
+    "id": "2e2a9b95f65a4ab5",
+    "source": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
     "context": "server/receipts/store.ts"
   },
   {
@@ -10982,6 +11012,11 @@
   {
     "id": "4534fa45e7ad98aa",
     "source": "SELECT key FROM attestors",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "930a777039908789",
+    "source": "BEGIN IMMEDIATE",
     "context": "server/receipts/store.ts"
   },
   {
