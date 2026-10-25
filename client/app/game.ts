@@ -834,7 +834,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let outro: { victory: boolean; at: number } | null = null;
   const result = { outroDone: false };
   const finishOutro = () => {
-    if (result.outroDone) return;
+    if (result.outroDone || destroyed) return; // e.g. the projector's 60 s BSOD timeout after the screen was left
     result.outroDone = true;
     // leave an immersive session cleanly before the autopsy replaces this screen
     if (st3d?.xrActive) void (st3d.exitXR?.() ?? Promise.resolve()).catch(() => {}).finally(() => app.refresh());
@@ -863,6 +863,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const startOutro = (victory: boolean) => {
     if (outro) return;
     outro = { victory, at: performance.now() };
+    clearTimeout(pressTimer); // a ring charging at the final blow goes away with the fight
+    pressRing.remove();
     const bsod = victory && !!latest?.boss && !royaleOf(latest);
     const kit = latest?.boss?.kit;
     setTimeout(() => {
@@ -1061,12 +1063,15 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const pressRing = h("div.press-ring");
   let pressTimer = 0;
   const ringDown = (e: PointerEvent) => {
+    // gameplay only: not over the outro / BSOD, the pause card or the menu (a "tap to continue" must not charge a ring)
+    if (destroyed || outro || pausedNow() || !menuSheet.hidden) return;
     if (!input || input.mode === "keyboard" || (e.target as Element).closest("button, .game-menu")) return;
     if (document.querySelector('[data-testid="input-charge"]')) return; // the input module draws its own (real) charge ring
     pressRing.style.left = `${e.clientX}px`;
     pressRing.style.top = `${e.clientY}px`;
     pressRing.classList.remove("go");
     pressTimer = window.setTimeout(() => {
+      if (destroyed || outro) return; // the screen moved on during the 180 ms tap window
       document.body.append(pressRing);
       void pressRing.offsetWidth;
       pressRing.classList.add("go"); // starts after the tap window so quick taps don't flash a ring
@@ -1126,6 +1131,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   };
   /** 5s ghost hint over the viewport for touch mode: what the left/right of the arena do. */
   const showTouchSplit = () => {
+    if (destroyed) return;
     const ghost = h("div.touch-ghost", { "aria-hidden": "true" }, h("div.tg-l", null, "MOVE", h("small", null, "drag here")), h("div.tg-r", null, "ATTACK", h("small", null, "tap here")));
     stage.append(ghost);
     const off = () => ghost.classList.add("fade");
@@ -1725,6 +1731,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       removeEventListener("keydown", onKey);
       removeEventListener("pointerup", ringUp);
       removeEventListener("pointercancel", ringUp);
+      clearTimeout(pressTimer); // a pending ring would otherwise be appended to <body> after this screen is gone
+      clearTimeout(gToastTimer);
       pressRing.remove();
       if (sendIv) clearInterval(sendIv);
       input?.dispose();
