@@ -6,6 +6,7 @@ import { createMatch, WEAPONS } from './match.ts';
 import { clamp, distance, random, unit } from './math.ts';
 import { segmentRect } from './arena.ts';
 import { pvpArenaSize } from './pvp.ts';
+import { createPvpController } from './pvpAi.ts';
 
 export function syntheticProfile(seed = 1, slug = `demo/repo-${seed}`): RepoProfile {
   const language = ['TypeScript', 'Rust', 'Python', 'Go', 'Java', 'C++', 'Ruby', 'Lua', 'JavaScript', 'C#'][seed % 10];
@@ -46,6 +47,12 @@ function avoidCover(state: MatchState, p: PlayerState, move: [number, number], s
 }
 
 export function createBot(seed: number, skill = 0.72) {
+  const previous = createReferenceBot(seed, skill), softer = createPvpController(seed);
+  return (state: MatchState, p: PlayerState) => state.mode === 'pvp' ? softer(state, p) : previous(state, p);
+}
+
+/** Previous controller retained for deterministic isolation tests and historical calibration only. */
+export function createReferenceBot(seed: number, skill = 0.72) {
   const rng = random(seed);
   const perkRng = random(seed ^ 0x50414453);
   let review = -1, selectedPad = '';

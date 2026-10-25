@@ -1,0 +1,3084 @@
+{
+  "game": "Gitzilla",
+  "change": "softer PvP AI",
+  "trials": 120,
+  "trialOffset": 48,
+  "simulatedHumanProxyOnly": true,
+  "controls": "1v1: explicit synthetic final POWER70 on both sides (AI base87.5 x.8); same weapon and firewall; alternating spawn slots;7 weapons cycle. 8p: actual15 fallback profiles;1 human-proxy +7 AI, AI raw repo score x.8; human cycles all8 spawns and profiles across120 trials. No hit/HP/outcome injection during matches.",
+  "proxy": "Independent input-only comparator:300–400ms decisions,9–11deg aim envelope,50% threat dodge decisions, lead0.4–1.0, longer bursts/shorter pauses and moderately faster ability decisions. This is NOT actual human win probability.",
+  "duel": {
+    "wins": 83,
+    "matches": 120,
+    "humanWinRate": 0.6916666666666667,
+    "meanDuration": 84.92944444444205,
+    "aiMetrics": {
+      "controllers": 120,
+      "decisions": 25078,
+      "threats": 16097,
+      "dodges": 6409,
+      "dodgeDecisionsRate": 0.3981487233646021,
+      "botTargets": 0,
+      "humanTargets": 5522,
+      "botTargetShare": 0,
+      "mixedChoices": 0,
+      "forcedBotChoices": 0,
+      "forcedBotChoiceRate": 0,
+      "minReaction": 0.3500000015805936,
+      "maxReaction": 0.49999364071746594,
+      "maxAimError": 13.90404063469261,
+      "dashes": 1092,
+      "skills": 637,
+      "firingDuty": 0.8107053613083407
+    },
+    "runs": [
+      {
+        "trial": 48,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 72.26666666666502
+      },
+      {
+        "trial": 49,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 86.1333333333309
+      },
+      {
+        "trial": 50,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 100.99999999999672
+      },
+      {
+        "trial": 51,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 94.06666666666378
+      },
+      {
+        "trial": 52,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 97.29999999999693
+      },
+      {
+        "trial": 53,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 44.333333333333265
+      },
+      {
+        "trial": 54,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 90.13333333333067
+      },
+      {
+        "trial": 55,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 73.8333333333316
+      },
+      {
+        "trial": 56,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 89.5333333333307
+      },
+      {
+        "trial": 57,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 98.46666666666353
+      },
+      {
+        "trial": 58,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 88.63333333333075
+      },
+      {
+        "trial": 59,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 100.86666666666339
+      },
+      {
+        "trial": 60,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 48.033333333333054
+      },
+      {
+        "trial": 61,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 95.23333333333038
+      },
+      {
+        "trial": 62,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 90.29999999999733
+      },
+      {
+        "trial": 63,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 98.53333333333019
+      },
+      {
+        "trial": 64,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 94.9333333333304
+      },
+      {
+        "trial": 65,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 85.13333333333095
+      },
+      {
+        "trial": 66,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 99.13333333333016
+      },
+      {
+        "trial": 67,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 38.66666666666692
+      },
+      {
+        "trial": 68,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 90.39999999999732
+      },
+      {
+        "trial": 69,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 79.49999999999794
+      },
+      {
+        "trial": 70,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 95.49999999999703
+      },
+      {
+        "trial": 71,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 98.66666666666352
+      },
+      {
+        "trial": 72,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 92.26666666666388
+      },
+      {
+        "trial": 73,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 88.09999999999745
+      },
+      {
+        "trial": 74,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 52.433333333332804
+      },
+      {
+        "trial": 75,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 63.36666666666552
+      },
+      {
+        "trial": 76,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 91.3333333333306
+      },
+      {
+        "trial": 77,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 98.83333333333017
+      },
+      {
+        "trial": 78,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 95.63333333333036
+      },
+      {
+        "trial": 79,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 90.49999999999731
+      },
+      {
+        "trial": 80,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 100.56666666666341
+      },
+      {
+        "trial": 81,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 32.90000000000058
+      },
+      {
+        "trial": 82,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 95.33333333333037
+      },
+      {
+        "trial": 83,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 72.86666666666498
+      },
+      {
+        "trial": 84,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 99.79999999999679
+      },
+      {
+        "trial": 85,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 102.5666666666633
+      },
+      {
+        "trial": 86,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 95.96666666666367
+      },
+      {
+        "trial": 87,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 101.16666666666337
+      },
+      {
+        "trial": 88,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 61.06666666666565
+      },
+      {
+        "trial": 89,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 98.06666666666355
+      },
+      {
+        "trial": 90,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 82.56666666666443
+      },
+      {
+        "trial": 91,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 97.53333333333025
+      },
+      {
+        "trial": 92,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 100.33333333333009
+      },
+      {
+        "trial": 93,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 90.266666666664
+      },
+      {
+        "trial": 94,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 90.53333333333065
+      },
+      {
+        "trial": 95,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 59.79999999999905
+      },
+      {
+        "trial": 96,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 91.2333333333306
+      },
+      {
+        "trial": 97,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 81.03333333333119
+      },
+      {
+        "trial": 98,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 99.99999999999677
+      },
+      {
+        "trial": 99,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 89.79999999999735
+      },
+      {
+        "trial": 100,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 77.7666666666647
+      },
+      {
+        "trial": 101,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 79.26666666666462
+      },
+      {
+        "trial": 102,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 62.033333333332266
+      },
+      {
+        "trial": 103,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 93.33333333333049
+      },
+      {
+        "trial": 104,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 86.23333333333089
+      },
+      {
+        "trial": 105,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 106.29999999999642
+      },
+      {
+        "trial": 106,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 101.3999999999967
+      },
+      {
+        "trial": 107,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 81.39999999999783
+      },
+      {
+        "trial": 108,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 95.63333333333036
+      },
+      {
+        "trial": 109,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 33.7666666666672
+      },
+      {
+        "trial": 110,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 74.69999999999821
+      },
+      {
+        "trial": 111,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 82.73333333333109
+      },
+      {
+        "trial": 112,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 99.0666666666635
+      },
+      {
+        "trial": 113,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 93.6666666666638
+      },
+      {
+        "trial": 114,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 87.13333333333084
+      },
+      {
+        "trial": 115,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 98.46666666666353
+      },
+      {
+        "trial": 116,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 36.933333333333685
+      },
+      {
+        "trial": 117,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 90.166666666664
+      },
+      {
+        "trial": 118,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 75.19999999999818
+      },
+      {
+        "trial": 119,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 94.26666666666377
+      },
+      {
+        "trial": 120,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 105.5333333333298
+      },
+      {
+        "trial": 121,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 91.69999999999725
+      },
+      {
+        "trial": 122,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 98.69999999999685
+      },
+      {
+        "trial": 123,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 46.866666666666454
+      },
+      {
+        "trial": 124,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 92.89999999999718
+      },
+      {
+        "trial": 125,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 87.43333333333082
+      },
+      {
+        "trial": 126,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 102.23333333332998
+      },
+      {
+        "trial": 127,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 95.3666666666637
+      },
+      {
+        "trial": 128,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 95.16666666666372
+      },
+      {
+        "trial": 129,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 81.06666666666452
+      },
+      {
+        "trial": 130,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 51.999999999999496
+      },
+      {
+        "trial": 131,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 91.09999999999728
+      },
+      {
+        "trial": 132,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 92.69999999999719
+      },
+      {
+        "trial": 133,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 94.59999999999708
+      },
+      {
+        "trial": 134,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 102.89999999999661
+      },
+      {
+        "trial": 135,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 89.06666666666406
+      },
+      {
+        "trial": 136,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 75.63333333333149
+      },
+      {
+        "trial": 137,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 38.4333333333336
+      },
+      {
+        "trial": 138,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 80.96666666666452
+      },
+      {
+        "trial": 139,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 88.23333333333078
+      },
+      {
+        "trial": 140,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 94.53333333333042
+      },
+      {
+        "trial": 141,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 98.53333333333019
+      },
+      {
+        "trial": 142,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 97.09999999999694
+      },
+      {
+        "trial": 143,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 94.36666666666376
+      },
+      {
+        "trial": 144,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 30.466666666667386
+      },
+      {
+        "trial": 145,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 94.43333333333042
+      },
+      {
+        "trial": 146,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 72.83333333333165
+      },
+      {
+        "trial": 147,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 97.56666666666358
+      },
+      {
+        "trial": 148,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 103.6333333333299
+      },
+      {
+        "trial": 149,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 90.43333333333065
+      },
+      {
+        "trial": 150,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 101.23333333333004
+      },
+      {
+        "trial": 151,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 18.466666666666843
+      },
+      {
+        "trial": 152,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 94.33333333333043
+      },
+      {
+        "trial": 153,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 86.06666666666423
+      },
+      {
+        "trial": 154,
+        "weapon": "blaster",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 100.86666666666339
+      },
+      {
+        "trial": 155,
+        "weapon": "smg",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 99.89999999999678
+      },
+      {
+        "trial": 156,
+        "weapon": "shotgun",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 94.23333333333044
+      },
+      {
+        "trial": 157,
+        "weapon": "cannon",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 101.66666666666335
+      },
+      {
+        "trial": 158,
+        "weapon": "staff",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 45.699999999999854
+      },
+      {
+        "trial": 159,
+        "weapon": "laser",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 89.6333333333307
+      },
+      {
+        "trial": 160,
+        "weapon": "blade",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 80.26666666666456
+      },
+      {
+        "trial": 161,
+        "weapon": "blaster",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 77.3333333333314
+      },
+      {
+        "trial": 162,
+        "weapon": "smg",
+        "humanSlot": 0,
+        "won": false,
+        "duration": 101.09999999999671
+      },
+      {
+        "trial": 163,
+        "weapon": "shotgun",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 88.83333333333074
+      },
+      {
+        "trial": 164,
+        "weapon": "cannon",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 94.46666666666376
+      },
+      {
+        "trial": 165,
+        "weapon": "staff",
+        "humanSlot": 1,
+        "won": false,
+        "duration": 70.2333333333318
+      },
+      {
+        "trial": 166,
+        "weapon": "laser",
+        "humanSlot": 0,
+        "won": true,
+        "duration": 80.69999999999787
+      },
+      {
+        "trial": 167,
+        "weapon": "blade",
+        "humanSlot": 1,
+        "won": true,
+        "duration": 74.06666666666491
+      }
+    ]
+  },
+  "royale": {
+    "top3": 57,
+    "matches": 120,
+    "humanTop3Rate": 0.475,
+    "wins": 34,
+    "meanPlacement": 4.225,
+    "meanDuration": 135.49472222221698,
+    "aiMetrics": {
+      "controllers": 840,
+      "decisions": 191206,
+      "threats": 129555,
+      "dodges": 51561,
+      "dodgeDecisionsRate": 0.39798541160125045,
+      "botTargets": 34522,
+      "humanTargets": 7791,
+      "botTargetShare": 0.8158721905797273,
+      "mixedChoices": 30066,
+      "forcedBotChoices": 14921,
+      "forcedBotChoiceRate": 0.49627486197033194,
+      "minReaction": 0.350000000002771,
+      "maxReaction": 0.4999997942243477,
+      "maxAimError": 13.966953673853734,
+      "dashes": 7589,
+      "skills": 2247,
+      "firingDuty": 0.8109613796795611
+    },
+    "runs": [
+      {
+        "trial": 48,
+        "repo": "facebook/react",
+        "humanSlot": 0,
+        "humanPower": 87,
+        "aiPowers": [
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 125.09999999999535
+      },
+      {
+        "trial": 49,
+        "repo": "redis/redis",
+        "humanSlot": 1,
+        "humanPower": 87.9,
+        "aiPowers": [
+          67.5,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8
+        ],
+        "winner": "bot-6",
+        "placement": 8,
+        "duration": 115.4999999999959
+      },
+      {
+        "trial": 50,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 2,
+        "humanPower": 84.4,
+        "aiPowers": [
+          63.9,
+          51.4,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5
+        ],
+        "winner": "bot-7",
+        "placement": 5,
+        "duration": 141.23333333332778
+      },
+      {
+        "trial": 51,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 3,
+        "humanPower": 64.2,
+        "aiPowers": [
+          61.9,
+          63.6,
+          63.9,
+          67.5,
+          70.3,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-0",
+        "placement": 2,
+        "duration": 143.43333333332765
+      },
+      {
+        "trial": 52,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 4,
+        "humanPower": 79.9,
+        "aiPowers": [
+          65.3,
+          65,
+          61.9,
+          63.6,
+          51.4,
+          67.5,
+          70.3
+        ],
+        "winner": "bot-7",
+        "placement": 8,
+        "duration": 138.23333333332795
+      },
+      {
+        "trial": 53,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 5,
+        "humanPower": 79.5,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-6",
+        "placement": 8,
+        "duration": 141.2666666666611
+      },
+      {
+        "trial": 54,
+        "repo": "golang/example",
+        "humanSlot": 6,
+        "humanPower": 77.4,
+        "aiPowers": [
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          63.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 141.93333333332774
+      },
+      {
+        "trial": 55,
+        "repo": "vuejs/core",
+        "humanSlot": 7,
+        "humanPower": 81.2,
+        "aiPowers": [
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3
+        ],
+        "winner": "bot-4",
+        "placement": 2,
+        "duration": 115.46666666666256
+      },
+      {
+        "trial": 56,
+        "repo": "redis/redis",
+        "humanSlot": 0,
+        "humanPower": 87.9,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8
+        ],
+        "winner": "bot-5",
+        "placement": 6,
+        "duration": 136.53333333332805
+      },
+      {
+        "trial": 57,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 1,
+        "humanPower": 84.4,
+        "aiPowers": [
+          51.4,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 133.3999999999949
+      },
+      {
+        "trial": 58,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 2,
+        "humanPower": 64.2,
+        "aiPowers": [
+          63.6,
+          63.9,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4
+        ],
+        "winner": "bot-5",
+        "placement": 6,
+        "duration": 135.5333333333281
+      },
+      {
+        "trial": 59,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 3,
+        "humanPower": 79.9,
+        "aiPowers": [
+          65,
+          61.9,
+          63.6,
+          51.4,
+          67.5,
+          70.3,
+          69.6
+        ],
+        "winner": "bot-0",
+        "placement": 3,
+        "duration": 142.13333333332773
+      },
+      {
+        "trial": 60,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 4,
+        "humanPower": 79.5,
+        "aiPowers": [
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.9,
+          51.4,
+          67.5
+        ],
+        "winner": "bot-2",
+        "placement": 2,
+        "duration": 141.5666666666611
+      },
+      {
+        "trial": 61,
+        "repo": "golang/example",
+        "humanSlot": 5,
+        "humanPower": 77.4,
+        "aiPowers": [
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          63.6,
+          63.9
+        ],
+        "winner": "bot-0",
+        "placement": 7,
+        "duration": 138.5999999999946
+      },
+      {
+        "trial": 62,
+        "repo": "vuejs/core",
+        "humanSlot": 6,
+        "humanPower": 81.2,
+        "aiPowers": [
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          61.9
+        ],
+        "winner": "bot-2",
+        "placement": 8,
+        "duration": 140.1999999999945
+      },
+      {
+        "trial": 63,
+        "repo": "jquery/jquery",
+        "humanSlot": 7,
+        "humanPower": 81.6,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 137.16666666666134
+      },
+      {
+        "trial": 64,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 0,
+        "humanPower": 84.4,
+        "aiPowers": [
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8
+        ],
+        "winner": "bot-2",
+        "placement": 3,
+        "duration": 131.66666666666165
+      },
+      {
+        "trial": 65,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 1,
+        "humanPower": 64.2,
+        "aiPowers": [
+          63.9,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5
+        ],
+        "winner": "bot-2",
+        "placement": 2,
+        "duration": 123.73333333332876
+      },
+      {
+        "trial": 66,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 2,
+        "humanPower": 79.9,
+        "aiPowers": [
+          61.9,
+          63.6,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-5",
+        "placement": 7,
+        "duration": 137.56666666666132
+      },
+      {
+        "trial": 67,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 3,
+        "humanPower": 79.5,
+        "aiPowers": [
+          65.3,
+          65,
+          61.9,
+          63.9,
+          51.4,
+          67.5,
+          70.3
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 138.6999999999946
+      },
+      {
+        "trial": 68,
+        "repo": "golang/example",
+        "humanSlot": 4,
+        "humanPower": 77.4,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65.3,
+          65,
+          63.6,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-5",
+        "placement": 2,
+        "duration": 140.66666666666114
+      },
+      {
+        "trial": 69,
+        "repo": "vuejs/core",
+        "humanSlot": 5,
+        "humanPower": 81.2,
+        "aiPowers": [
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          61.9,
+          63.6
+        ],
+        "winner": "bot-1",
+        "placement": 6,
+        "duration": 133.43333333332822
+      },
+      {
+        "trial": 70,
+        "repo": "jquery/jquery",
+        "humanSlot": 6,
+        "humanPower": 81.6,
+        "aiPowers": [
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65
+        ],
+        "winner": "bot-3",
+        "placement": 3,
+        "duration": 133.03333333332824
+      },
+      {
+        "trial": 71,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 7,
+        "humanPower": 76,
+        "aiPowers": [
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 139.89999999999452
+      },
+      {
+        "trial": 72,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 0,
+        "humanPower": 64.2,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6
+        ],
+        "winner": "bot-7",
+        "placement": 4,
+        "duration": 130.7666666666617
+      },
+      {
+        "trial": 73,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 1,
+        "humanPower": 79.9,
+        "aiPowers": [
+          63.6,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4
+        ],
+        "winner": "bot-6",
+        "placement": 2,
+        "duration": 123.23333333332879
+      },
+      {
+        "trial": 74,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 2,
+        "humanPower": 79.5,
+        "aiPowers": [
+          65,
+          61.9,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6
+        ],
+        "winner": "bot-3",
+        "placement": 7,
+        "duration": 142.0999999999944
+      },
+      {
+        "trial": 75,
+        "repo": "golang/example",
+        "humanSlot": 3,
+        "humanPower": 77.4,
+        "aiPowers": [
+          60.8,
+          65.3,
+          65,
+          63.6,
+          63.9,
+          51.4,
+          67.5
+        ],
+        "winner": "bot-0",
+        "placement": 3,
+        "duration": 143.56666666666098
+      },
+      {
+        "trial": 76,
+        "repo": "vuejs/core",
+        "humanSlot": 4,
+        "humanPower": 81.2,
+        "aiPowers": [
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          61.9,
+          63.6,
+          63.9
+        ],
+        "winner": "bot-5",
+        "placement": 8,
+        "duration": 140.9333333333278
+      },
+      {
+        "trial": 77,
+        "repo": "jquery/jquery",
+        "humanSlot": 5,
+        "humanPower": 81.6,
+        "aiPowers": [
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65,
+          61.9
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 142.16666666666106
+      },
+      {
+        "trial": 78,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 6,
+        "humanPower": 76,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          65.3
+        ],
+        "winner": "bot-7",
+        "placement": 4,
+        "duration": 141.93333333332774
+      },
+      {
+        "trial": 79,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 7,
+        "humanPower": 66,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6
+        ],
+        "winner": "bot-0",
+        "placement": 3,
+        "duration": 133.1999999999949
+      },
+      {
+        "trial": 80,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 0,
+        "humanPower": 79.9,
+        "aiPowers": [
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5
+        ],
+        "winner": "bot-2",
+        "placement": 2,
+        "duration": 138.43333333332794
+      },
+      {
+        "trial": 81,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 1,
+        "humanPower": 79.5,
+        "aiPowers": [
+          61.9,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-7",
+        "placement": 8,
+        "duration": 137.09999999999468
+      },
+      {
+        "trial": 82,
+        "repo": "golang/example",
+        "humanSlot": 2,
+        "humanPower": 77.4,
+        "aiPowers": [
+          65.3,
+          65,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 137.133333333328
+      },
+      {
+        "trial": 83,
+        "repo": "vuejs/core",
+        "humanSlot": 3,
+        "humanPower": 81.2,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65.3,
+          61.9,
+          63.6,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-2",
+        "placement": 4,
+        "duration": 143.066666666661
+      },
+      {
+        "trial": 84,
+        "repo": "jquery/jquery",
+        "humanSlot": 4,
+        "humanPower": 81.6,
+        "aiPowers": [
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65,
+          61.9,
+          63.6
+        ],
+        "winner": "bot-1",
+        "placement": 8,
+        "duration": 137.39999999999466
+      },
+      {
+        "trial": 85,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 5,
+        "humanPower": 76,
+        "aiPowers": [
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          65.3,
+          65
+        ],
+        "winner": "bot-4",
+        "placement": 2,
+        "duration": 135.99999999999474
+      },
+      {
+        "trial": 86,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 6,
+        "humanPower": 66,
+        "aiPowers": [
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          60.8
+        ],
+        "winner": "bot-5",
+        "placement": 8,
+        "duration": 143.23333333332766
+      },
+      {
+        "trial": 87,
+        "repo": "django/django",
+        "humanSlot": 7,
+        "humanPower": 87,
+        "aiPowers": [
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 124.53333333332871
+      },
+      {
+        "trial": 88,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 0,
+        "humanPower": 79.5,
+        "aiPowers": [
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4
+        ],
+        "winner": "bot-3",
+        "placement": 6,
+        "duration": 113.699999999996
+      },
+      {
+        "trial": 89,
+        "repo": "golang/example",
+        "humanSlot": 1,
+        "humanPower": 77.4,
+        "aiPowers": [
+          65,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 144.69999999999425
+      },
+      {
+        "trial": 90,
+        "repo": "vuejs/core",
+        "humanSlot": 2,
+        "humanPower": 81.2,
+        "aiPowers": [
+          60.8,
+          65.3,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 141.16666666666111
+      },
+      {
+        "trial": 91,
+        "repo": "jquery/jquery",
+        "humanSlot": 3,
+        "humanPower": 81.6,
+        "aiPowers": [
+          69.6,
+          52.8,
+          60.8,
+          65,
+          61.9,
+          63.6,
+          63.9
+        ],
+        "winner": "bot-6",
+        "placement": 8,
+        "duration": 140.96666666666113
+      },
+      {
+        "trial": 92,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 4,
+        "humanPower": 76,
+        "aiPowers": [
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          65.3,
+          65,
+          61.9
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 135.06666666666146
+      },
+      {
+        "trial": 93,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 5,
+        "humanPower": 66,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          60.8,
+          65.3
+        ],
+        "winner": "bot-6",
+        "placement": 7,
+        "duration": 141.76666666666108
+      },
+      {
+        "trial": 94,
+        "repo": "django/django",
+        "humanSlot": 6,
+        "humanPower": 87,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          52.8
+        ],
+        "winner": "bot-0",
+        "placement": 8,
+        "duration": 103.29999999999659
+      },
+      {
+        "trial": 95,
+        "repo": "lodash/lodash",
+        "humanSlot": 7,
+        "humanPower": 84.4,
+        "aiPowers": [
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4
+        ],
+        "winner": "bot-5",
+        "placement": 8,
+        "duration": 129.86666666666176
+      },
+      {
+        "trial": 96,
+        "repo": "golang/example",
+        "humanSlot": 0,
+        "humanPower": 77.4,
+        "aiPowers": [
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-2",
+        "placement": 7,
+        "duration": 138.3999999999946
+      },
+      {
+        "trial": 97,
+        "repo": "vuejs/core",
+        "humanSlot": 1,
+        "humanPower": 81.2,
+        "aiPowers": [
+          65.3,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3
+        ],
+        "winner": "bot-2",
+        "placement": 8,
+        "duration": 144.63333333332758
+      },
+      {
+        "trial": 98,
+        "repo": "jquery/jquery",
+        "humanSlot": 2,
+        "humanPower": 81.6,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-1",
+        "placement": 4,
+        "duration": 144.89999999999424
+      },
+      {
+        "trial": 99,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 3,
+        "humanPower": 76,
+        "aiPowers": [
+          67.5,
+          69.6,
+          52.8,
+          65.3,
+          65,
+          61.9,
+          63.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 144.93333333332757
+      },
+      {
+        "trial": 100,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 4,
+        "humanPower": 66,
+        "aiPowers": [
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          60.8,
+          65.3,
+          65
+        ],
+        "winner": "bot-7",
+        "placement": 8,
+        "duration": 143.53333333332765
+      },
+      {
+        "trial": 101,
+        "repo": "django/django",
+        "humanSlot": 5,
+        "humanPower": 87,
+        "aiPowers": [
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          52.8,
+          60.8
+        ],
+        "winner": "bot-3",
+        "placement": 8,
+        "duration": 136.96666666666135
+      },
+      {
+        "trial": 102,
+        "repo": "lodash/lodash",
+        "humanSlot": 6,
+        "humanPower": 84.4,
+        "aiPowers": [
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          69.6
+        ],
+        "winner": "bot-4",
+        "placement": 4,
+        "duration": 134.83333333332814
+      },
+      {
+        "trial": 103,
+        "repo": "expressjs/express",
+        "humanSlot": 7,
+        "humanPower": 84.2,
+        "aiPowers": [
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-3",
+        "placement": 8,
+        "duration": 135.06666666666146
+      },
+      {
+        "trial": 104,
+        "repo": "vuejs/core",
+        "humanSlot": 0,
+        "humanPower": 81.2,
+        "aiPowers": [
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 139.79999999999453
+      },
+      {
+        "trial": 105,
+        "repo": "jquery/jquery",
+        "humanSlot": 1,
+        "humanPower": 81.6,
+        "aiPowers": [
+          60.8,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5
+        ],
+        "winner": "bot-3",
+        "placement": 4,
+        "duration": 144.36666666666093
+      },
+      {
+        "trial": 106,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 2,
+        "humanPower": 76,
+        "aiPowers": [
+          69.6,
+          52.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9
+        ],
+        "winner": "bot-7",
+        "placement": 2,
+        "duration": 141.73333333332775
+      },
+      {
+        "trial": 107,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 3,
+        "humanPower": 66,
+        "aiPowers": [
+          67.4,
+          67.5,
+          69.6,
+          60.8,
+          65.3,
+          65,
+          61.9
+        ],
+        "winner": "bot-2",
+        "placement": 6,
+        "duration": 131.599999999995
+      },
+      {
+        "trial": 108,
+        "repo": "django/django",
+        "humanSlot": 4,
+        "humanPower": 87,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          52.8,
+          60.8,
+          65.3
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 121.93333333332886
+      },
+      {
+        "trial": 109,
+        "repo": "lodash/lodash",
+        "humanSlot": 5,
+        "humanPower": 84.4,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          69.6,
+          52.8
+        ],
+        "winner": "bot-6",
+        "placement": 6,
+        "duration": 134.39999999999483
+      },
+      {
+        "trial": 110,
+        "repo": "expressjs/express",
+        "humanSlot": 6,
+        "humanPower": 84.2,
+        "aiPowers": [
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.5
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 132.93333333332825
+      },
+      {
+        "trial": 111,
+        "repo": "pallets/flask",
+        "humanSlot": 7,
+        "humanPower": 87.1,
+        "aiPowers": [
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 130.2333333333284
+      },
+      {
+        "trial": 112,
+        "repo": "jquery/jquery",
+        "humanSlot": 0,
+        "humanPower": 81.6,
+        "aiPowers": [
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3
+        ],
+        "winner": "bot-6",
+        "placement": 6,
+        "duration": 136.29999999999472
+      },
+      {
+        "trial": 113,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 1,
+        "humanPower": 76,
+        "aiPowers": [
+          52.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-2",
+        "placement": 3,
+        "duration": 144.09999999999428
+      },
+      {
+        "trial": 114,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 2,
+        "humanPower": 66,
+        "aiPowers": [
+          67.5,
+          69.6,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6
+        ],
+        "winner": "bot-1",
+        "placement": 8,
+        "duration": 141.86666666666108
+      },
+      {
+        "trial": 115,
+        "repo": "django/django",
+        "humanSlot": 3,
+        "humanPower": 87,
+        "aiPowers": [
+          69.7,
+          67.4,
+          67.5,
+          52.8,
+          60.8,
+          65.3,
+          65
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 130.3333333333284
+      },
+      {
+        "trial": 116,
+        "repo": "lodash/lodash",
+        "humanSlot": 4,
+        "humanPower": 84.4,
+        "aiPowers": [
+          70.3,
+          69.6,
+          69.7,
+          67.4,
+          69.6,
+          52.8,
+          60.8
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 143.066666666661
+      },
+      {
+        "trial": 117,
+        "repo": "expressjs/express",
+        "humanSlot": 5,
+        "humanPower": 84.2,
+        "aiPowers": [
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.5,
+          69.6
+        ],
+        "winner": "bot-1",
+        "placement": 2,
+        "duration": 130.49999999999505
+      },
+      {
+        "trial": 118,
+        "repo": "pallets/flask",
+        "humanSlot": 6,
+        "humanPower": 87.1,
+        "aiPowers": [
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          67.4
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 102.76666666666328
+      },
+      {
+        "trial": 119,
+        "repo": "facebook/react",
+        "humanSlot": 7,
+        "humanPower": 87,
+        "aiPowers": [
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3
+        ],
+        "winner": "bot-0",
+        "placement": 2,
+        "duration": 139.29999999999455
+      },
+      {
+        "trial": 120,
+        "repo": "burntsushi/ripgrep",
+        "humanSlot": 0,
+        "humanPower": 76,
+        "aiPowers": [
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5
+        ],
+        "winner": "bot-4",
+        "placement": 6,
+        "duration": 138.79999999999458
+      },
+      {
+        "trial": 121,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 1,
+        "humanPower": 66,
+        "aiPowers": [
+          69.6,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9
+        ],
+        "winner": "bot-0",
+        "placement": 6,
+        "duration": 138.83333333332791
+      },
+      {
+        "trial": 122,
+        "repo": "django/django",
+        "humanSlot": 2,
+        "humanPower": 87,
+        "aiPowers": [
+          67.4,
+          67.5,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 124.03333333332874
+      },
+      {
+        "trial": 123,
+        "repo": "lodash/lodash",
+        "humanSlot": 3,
+        "humanPower": 84.4,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.4,
+          69.6,
+          52.8,
+          60.8,
+          65.3
+        ],
+        "winner": "bot-1",
+        "placement": 6,
+        "duration": 118.66666666666238
+      },
+      {
+        "trial": 124,
+        "repo": "expressjs/express",
+        "humanSlot": 4,
+        "humanPower": 84.2,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.6,
+          69.7,
+          67.5,
+          69.6,
+          52.8
+        ],
+        "winner": "bot-5",
+        "placement": 8,
+        "duration": 138.66666666666126
+      },
+      {
+        "trial": 125,
+        "repo": "pallets/flask",
+        "humanSlot": 5,
+        "humanPower": 87.1,
+        "aiPowers": [
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          67.4,
+          67.5
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 136.4999999999947
+      },
+      {
+        "trial": 126,
+        "repo": "facebook/react",
+        "humanSlot": 6,
+        "humanPower": 87,
+        "aiPowers": [
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.7
+        ],
+        "winner": "bot-4",
+        "placement": 3,
+        "duration": 127.86666666666187
+      },
+      {
+        "trial": 127,
+        "repo": "redis/redis",
+        "humanSlot": 7,
+        "humanPower": 87.9,
+        "aiPowers": [
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5
+        ],
+        "winner": "bot-2",
+        "placement": 5,
+        "duration": 143.46666666666098
+      },
+      {
+        "trial": 128,
+        "repo": "karpathy/nanogpt",
+        "humanSlot": 0,
+        "humanPower": 66,
+        "aiPowers": [
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-3",
+        "placement": 8,
+        "duration": 143.39999999999432
+      },
+      {
+        "trial": 129,
+        "repo": "django/django",
+        "humanSlot": 1,
+        "humanPower": 87,
+        "aiPowers": [
+          67.5,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 135.69999999999476
+      },
+      {
+        "trial": 130,
+        "repo": "lodash/lodash",
+        "humanSlot": 2,
+        "humanPower": 84.4,
+        "aiPowers": [
+          69.7,
+          67.4,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65
+        ],
+        "winner": "bot-6",
+        "placement": 8,
+        "duration": 141.73333333332775
+      },
+      {
+        "trial": 131,
+        "repo": "expressjs/express",
+        "humanSlot": 3,
+        "humanPower": 84.2,
+        "aiPowers": [
+          70.3,
+          69.6,
+          69.7,
+          67.5,
+          69.6,
+          52.8,
+          60.8
+        ],
+        "winner": "bot-2",
+        "placement": 7,
+        "duration": 137.36666666666133
+      },
+      {
+        "trial": 132,
+        "repo": "pallets/flask",
+        "humanSlot": 4,
+        "humanPower": 87.1,
+        "aiPowers": [
+          51.4,
+          67.5,
+          70.3,
+          69.6,
+          67.4,
+          67.5,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 135.59999999999476
+      },
+      {
+        "trial": 133,
+        "repo": "facebook/react",
+        "humanSlot": 5,
+        "humanPower": 87,
+        "aiPowers": [
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.7,
+          67.4
+        ],
+        "winner": "bot-6",
+        "placement": 8,
+        "duration": 112.69999999999605
+      },
+      {
+        "trial": 134,
+        "repo": "redis/redis",
+        "humanSlot": 6,
+        "humanPower": 87.9,
+        "aiPowers": [
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          69.6
+        ],
+        "winner": "bot-5",
+        "placement": 7,
+        "duration": 136.43333333332805
+      },
+      {
+        "trial": 135,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 7,
+        "humanPower": 84.4,
+        "aiPowers": [
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4
+        ],
+        "winner": "bot-0",
+        "placement": 8,
+        "duration": 144.16666666666094
+      },
+      {
+        "trial": 136,
+        "repo": "django/django",
+        "humanSlot": 0,
+        "humanPower": 87,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 129.03333333332847
+      },
+      {
+        "trial": 137,
+        "repo": "lodash/lodash",
+        "humanSlot": 1,
+        "humanPower": 84.4,
+        "aiPowers": [
+          67.4,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9
+        ],
+        "winner": "bot-2",
+        "placement": 8,
+        "duration": 139.19999999999456
+      },
+      {
+        "trial": 138,
+        "repo": "expressjs/express",
+        "humanSlot": 2,
+        "humanPower": 84.2,
+        "aiPowers": [
+          69.6,
+          69.7,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3
+        ],
+        "winner": "bot-7",
+        "placement": 5,
+        "duration": 135.66666666666143
+      },
+      {
+        "trial": 139,
+        "repo": "pallets/flask",
+        "humanSlot": 3,
+        "humanPower": 87.1,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.6,
+          67.4,
+          67.5,
+          69.6,
+          52.8
+        ],
+        "winner": "bot-7",
+        "placement": 6,
+        "duration": 117.39999999999579
+      },
+      {
+        "trial": 140,
+        "repo": "facebook/react",
+        "humanSlot": 4,
+        "humanPower": 87,
+        "aiPowers": [
+          63.9,
+          51.4,
+          67.5,
+          70.3,
+          69.7,
+          67.4,
+          67.5
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 141.43333333332777
+      },
+      {
+        "trial": 141,
+        "repo": "redis/redis",
+        "humanSlot": 5,
+        "humanPower": 87.9,
+        "aiPowers": [
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-4",
+        "placement": 2,
+        "duration": 127.33333333332857
+      },
+      {
+        "trial": 142,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 6,
+        "humanPower": 84.4,
+        "aiPowers": [
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          70.3
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 137.7666666666613
+      },
+      {
+        "trial": 143,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 7,
+        "humanPower": 64.2,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9
+        ],
+        "winner": "bot-6",
+        "placement": 7,
+        "duration": 143.7999999999943
+      },
+      {
+        "trial": 144,
+        "repo": "lodash/lodash",
+        "humanSlot": 0,
+        "humanPower": 84.4,
+        "aiPowers": [
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6
+        ],
+        "winner": "bot-3",
+        "placement": 4,
+        "duration": 142.66666666666103
+      },
+      {
+        "trial": 145,
+        "repo": "expressjs/express",
+        "humanSlot": 1,
+        "humanPower": 84.2,
+        "aiPowers": [
+          69.7,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65
+        ],
+        "winner": "bot-0",
+        "placement": 2,
+        "duration": 141.69999999999442
+      },
+      {
+        "trial": 146,
+        "repo": "pallets/flask",
+        "humanSlot": 2,
+        "humanPower": 87.1,
+        "aiPowers": [
+          70.3,
+          69.6,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 143.066666666661
+      },
+      {
+        "trial": 147,
+        "repo": "facebook/react",
+        "humanSlot": 3,
+        "humanPower": 87,
+        "aiPowers": [
+          51.4,
+          67.5,
+          70.3,
+          69.7,
+          67.4,
+          67.5,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 131.43333333332833
+      },
+      {
+        "trial": 148,
+        "repo": "redis/redis",
+        "humanSlot": 4,
+        "humanPower": 87.9,
+        "aiPowers": [
+          63.6,
+          63.9,
+          51.4,
+          67.5,
+          69.6,
+          69.7,
+          67.4
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 124.63333333332871
+      },
+      {
+        "trial": 149,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 5,
+        "humanPower": 84.4,
+        "aiPowers": [
+          65,
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          70.3,
+          69.6
+        ],
+        "winner": "bot-6",
+        "placement": 6,
+        "duration": 143.19999999999433
+      },
+      {
+        "trial": 150,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 6,
+        "humanPower": 64.2,
+        "aiPowers": [
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          67.5
+        ],
+        "winner": "bot-5",
+        "placement": 8,
+        "duration": 143.066666666661
+      },
+      {
+        "trial": 151,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 7,
+        "humanPower": 79.9,
+        "aiPowers": [
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6
+        ],
+        "winner": "bot-3",
+        "placement": 7,
+        "duration": 143.6999999999943
+      },
+      {
+        "trial": 152,
+        "repo": "expressjs/express",
+        "humanSlot": 0,
+        "humanPower": 84.2,
+        "aiPowers": [
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9
+        ],
+        "winner": "bot-3",
+        "placement": 6,
+        "duration": 141.9999999999944
+      },
+      {
+        "trial": 153,
+        "repo": "pallets/flask",
+        "humanSlot": 1,
+        "humanPower": 87.1,
+        "aiPowers": [
+          69.6,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 114.96666666666259
+      },
+      {
+        "trial": 154,
+        "repo": "facebook/react",
+        "humanSlot": 2,
+        "humanPower": 87,
+        "aiPowers": [
+          67.5,
+          70.3,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8
+        ],
+        "winner": "bot-6",
+        "placement": 7,
+        "duration": 117.13333333332913
+      },
+      {
+        "trial": 155,
+        "repo": "redis/redis",
+        "humanSlot": 3,
+        "humanPower": 87.9,
+        "aiPowers": [
+          63.9,
+          51.4,
+          67.5,
+          69.6,
+          69.7,
+          67.4,
+          67.5
+        ],
+        "winner": "bot-2",
+        "placement": 8,
+        "duration": 133.06666666666158
+      },
+      {
+        "trial": 156,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 4,
+        "humanPower": 84.4,
+        "aiPowers": [
+          61.9,
+          63.6,
+          63.9,
+          51.4,
+          70.3,
+          69.6,
+          69.7
+        ],
+        "winner": "bot-7",
+        "placement": 5,
+        "duration": 131.299999999995
+      },
+      {
+        "trial": 157,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 5,
+        "humanPower": 64.2,
+        "aiPowers": [
+          65.3,
+          65,
+          61.9,
+          63.6,
+          63.9,
+          67.5,
+          70.3
+        ],
+        "winner": "bot-4",
+        "placement": 7,
+        "duration": 142.86666666666102
+      },
+      {
+        "trial": 158,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 6,
+        "humanPower": 79.9,
+        "aiPowers": [
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          51.4
+        ],
+        "winner": "bot-1",
+        "placement": 2,
+        "duration": 142.13333333332773
+      },
+      {
+        "trial": 159,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 7,
+        "humanPower": 79.5,
+        "aiPowers": [
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9
+        ],
+        "winner": "bot-1",
+        "placement": 2,
+        "duration": 135.1999999999948
+      },
+      {
+        "trial": 160,
+        "repo": "pallets/flask",
+        "humanSlot": 0,
+        "humanPower": 87.1,
+        "aiPowers": [
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65
+        ],
+        "winner": "bot-1",
+        "placement": 4,
+        "duration": 138.33333333332794
+      },
+      {
+        "trial": 161,
+        "repo": "facebook/react",
+        "humanSlot": 1,
+        "humanPower": 87,
+        "aiPowers": [
+          70.3,
+          69.7,
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8
+        ],
+        "winner": "bot-5",
+        "placement": 6,
+        "duration": 136.6999999999947
+      },
+      {
+        "trial": 162,
+        "repo": "redis/redis",
+        "humanSlot": 2,
+        "humanPower": 87.9,
+        "aiPowers": [
+          51.4,
+          67.5,
+          69.6,
+          69.7,
+          67.4,
+          67.5,
+          69.6
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 141.49999999999443
+      },
+      {
+        "trial": 163,
+        "repo": "fastapi/fastapi",
+        "humanSlot": 3,
+        "humanPower": 84.4,
+        "aiPowers": [
+          63.6,
+          63.9,
+          51.4,
+          70.3,
+          69.6,
+          69.7,
+          67.4
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 120.23333333332896
+      },
+      {
+        "trial": 164,
+        "repo": "rust-lang/rustlings",
+        "humanSlot": 4,
+        "humanPower": 64.2,
+        "aiPowers": [
+          65,
+          61.9,
+          63.6,
+          63.9,
+          67.5,
+          70.3,
+          69.6
+        ],
+        "winner": "bot-3",
+        "placement": 8,
+        "duration": 142.6333333333277
+      },
+      {
+        "trial": 165,
+        "repo": "gin-gonic/gin",
+        "humanSlot": 5,
+        "humanPower": 79.9,
+        "aiPowers": [
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.6,
+          51.4,
+          67.5
+        ],
+        "winner": "bot-4",
+        "placement": 6,
+        "duration": 141.6666666666611
+      },
+      {
+        "trial": 166,
+        "repo": "spring-projects/spring-petclinic",
+        "humanSlot": 6,
+        "humanPower": 79.5,
+        "aiPowers": [
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65,
+          61.9,
+          63.9
+        ],
+        "winner": "human",
+        "placement": 1,
+        "duration": 139.73333333332786
+      },
+      {
+        "trial": 167,
+        "repo": "golang/example",
+        "humanSlot": 7,
+        "humanPower": 77.4,
+        "aiPowers": [
+          67.4,
+          67.5,
+          69.6,
+          52.8,
+          60.8,
+          65.3,
+          65
+        ],
+        "winner": "bot-6",
+        "placement": 3,
+        "duration": 141.0333333333278
+      }
+    ]
+  },
+  "humanMetrics": {
+    "controllers": 240,
+    "decisions": 59700,
+    "threats": 40680,
+    "dodges": 20409,
+    "dodgeDecisionsRate": 0.5016961651917404,
+    "botTargets": 19224,
+    "humanTargets": 0,
+    "botTargetShare": 1,
+    "mixedChoices": 0,
+    "forcedBotChoices": 0,
+    "forcedBotChoiceRate": 0,
+    "minReaction": 0.30000019862782207,
+    "maxReaction": 0.39999584928154946,
+    "maxAimError": 10.997858267425372,
+    "dashes": 4153,
+    "skills": 1144,
+    "firingDuty": 0.7740351913030643
+  }
+}

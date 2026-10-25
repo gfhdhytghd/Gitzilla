@@ -84,7 +84,7 @@ export class ClassroomMatch implements Match {
     this.state = {
       t: 0, status: 'countdown', mode: royale ? 'pvp' : 'edu', boss: null, heroScale: 2,
       players: students.map(student => {
-        const kit = royale ? asPvpKit(student.kit) : asClassroomKit(student.kit);
+        const kit = royale ? asPvpKit(student.kit, { ai: student.id.startsWith('bot-') || !!(student.kit as ClassroomKit).pvpAi }) : asClassroomKit(student.kit);
         return { id: student.id, name: student.name, kit, x: 0, y: 0, vx: 0, vy: 0, facing: [1, 0], hp: kit.maxHp, armor: kit.maxArmor, energy: kit.maxEnergy,
           alive: true, downedFor: 0, reviveProgress: 0, skillCd: 0, dashCd: 0, invuln: 2, buffs: [], perks: [],
           stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false } };

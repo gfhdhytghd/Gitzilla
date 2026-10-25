@@ -1,3 +1,50 @@
+DONE (softer pvp ai)
+
+## Final sim delivery / acceptance
+- Sim-owned ordinary-PvP behavior, authoritative AI POWER handicap and reproducible harness complete. **Net/UI integration still required for lobby cards before START:** call exported asPvpAiKit on ordinary PvP bot lobby kits and display pvpAi.powerMultiplier as `AI −20%`; exact contract/API below. Sim did not edit server/client/shared. Runtime constructor already applies it to authoritative bot- IDs and publishes the final adjusted score/flag in snapshots. Do not claim lobby badge wiring was completed by sim.
+- Final120 trials each (seeds/trials48..167): equal-final-POWER70 proxy wins83/120=69.17% (target65–75%);1 proxy+7AI top3=57/120=47.5% (target~50%). Duel mean84.93s;8p mean135.49s, mean proxy placement4.225. The proxy is simulated input, not measured human play or a human win probability.
+-1v1 uses explicit synthetic finalPOWER70 for both sides (AI87.5raw×.8), same weapon/firewall,7 weapons cycling and alternating spawn slots.8p uses actual15 public fallback profiles with120 cases covering each repo/spawn; AI source power×.8, human source power unchanged. No hit/health/outcome injection during matches. Proxy froze after early calibration; later changes affected only AI. Field retarget radius was calibrated on the measured window; do not call that field arm an untouched holdout.
+- Telemetry on840 field AI: reaction350.000–499.999ms, applied aim noise max13.97°, once-per-threat dodge decisions39.80%, mixed decisions explicitly preferring another AI49.63%, firing duty81.10%. Remaining target decisions consider humans only within180px, then nearest foe. Overall AI-target share is higher (81.59%) because nearest/default decisions and bot-only endgames also target bots; do not conflate it with the50% explicit preference.
+- AI uses10–14° error envelopes, imperfect0.4–0.9 lead,1.4–2s bursts/.25–.5s pauses, delayed skills/dashes and a wandering18–38px zone inset. Old perfect sustained fire/edge timing is removed. createBot routes only mode:pvp here; prior createReferenceBot remains identical for battle/edu (600-frame exact-input comparisons for each mode PASS).
+- asPvpAiKit adjusts the score once and then applies normal statsFromPower; raw source parts/baseScore remain visible. Constructor/lobby-repeat idempotence, honest final POWER, battle/edu marker removal, server bot-ID safety net, bounded finite inputs and requested decision probabilities covered by7 new tests. Existing no-one-shot/spawn shield behavior remains.
+- **947 workspace tests PASS /84 files,9 optional skips; root tsc PASS; scoped sim tsc PASS; production build PASS; owned diff check PASS.** Final180px constant also has focused7-test confirmation and the merged947-test run. Existing mock Node/fallback/chunk warnings remain; no visual/device/player acceptance claimed.
+- Saved `sim/pvp-ai-results.json` with240 case outcomes, actual powers, placements, durations and telemetry. Reproduce: `npx tsx sim/pvp-ai-bots.ts 120 48`. The older royale-results.json uses archived reference inputs for historical repo-power/quartile evidence and is explicitly not this live AI acceptance report.
+- Onlysim/ + this progress log edited. No commits/pushes, dependencies, credentials/provider calls, server controls or stable LIVE5173 access.
+
+| Test | Outcome | Rate | Requested |
+| --- | ---: | ---: | --- |
+| Equal finalPOWER70 duel | Proxy83/120 wins | 69.17% | 65–75% |
+|1proxy+7AI royale | Proxy57/120 top3 | 47.5% | ~50% |
+| AI threat decisions |51561/129555 dodge attempts |39.80% | ~40% |
+| Explicit bot preference in mixed target sets |14921/30066 |49.63% | ~50% |
+
+
+## Softer AI calibration update
+- New browser-safe sim/pvpAi.ts controls inputs only; createBot routes ordinary pvp there and keeps the previous implementation byte-for-byte behavior for battle/edu.7 focused AI tests PASS (handicap/idempotence/mode exit,350–500ms reaction, bounded aim, once-per-projectile40% decisions,50% mixed-target preference, exact600-frame old/new battle+edu comparisons).
+- First proxy was too optimistic and target pooling over-focused the sole human (duel100%,8p top3=25%). Fixed a conservative human-like proxy profile and froze it:300–400ms reaction,9–11° aim envelope,50% threat decisions, imperfect0.4–1.0 lead, moderate ability use. This proxy is labelled synthetic; no human acceptance claim.
+- With fixed proxy, nearest-any else branch made AI avoid humans too much (duel95.8%,8p top3=100%). Now keeping explicit50% preference for another bot, and otherwise considering a human only within210px instead of cross-map hunting. Longer but still interrupted AI bursts prevent every short pause from becoming a free armor recharge. AI lead remains fallible; reaction/error/dodge/ability constraints are unchanged. Measuring this third pilot before final120+120 trials.
+- Exported asPvpAiKit is live and score/stat handicap idempotent. Net/UI lobby wrapping is still the requested owner integration below; constructor already protects runtime bot- IDs from unhandicapped starts.
+
+## Fixed-proxy acceptance calibration
+- Fixed proxy stayed300–400ms,9–11° error,50% threat decisions after pilot2. No proxy/outcome/health changes since. AI now uses350–500ms decisions (biased toward the slow range's lower end),10–14° error envelope,40% once-per-threat decisions, imperfect0.4–0.9 lead,1.4–2s firing bursts with.25–.5s pauses, delayed skills/dashes, and a wandering18–38px zone buffer (no perfect edge parking).
+- Pilot4: equal-final-POWER duels33/48=68.75% proxy wins (target reached);8p top3 was15/48=31.25% because remaining human aggro was still too broad. Retarget radius for the non-bot-preference half is now170px instead of210; this changes only multi-party targeting, not1v1 behavior. Measuring pilot5, then will freeze and run a separate120-trial window.
+- Pilot4 measured AI reaction.350–.500s, max applied aim error13.95°, dodge decisions40.14%, forced bot preferences49.44%, firing duty81.12%. These are actual controller telemetry, not claimed human observations or guaranteed avoided hits.
+
+## Frozen final config / acceptance run
+- Final AI behavior frozen:350–500ms sampled reaction,10–14° error envelope, imperfect0.4–0.9 lead,40% once-per-bullet dodge attempts,1.4–2s bursts/.25–.5s pauses, delayed skills/dashes, wandering18–38px zone inset.50% of mixed retargets prefer another AI; the other half only pursues humans within180px, otherwise nearest foe. No unconditional cross-map human hunting.
+- Pilot4 equal-final-power proxy win33/48=68.75%;210px human range gave8p top3=31.25%.170px range gave66.67%. Chose190px without changing duel parameters, froze, and launched **120+120 independent trials48..167**, separate from the0..47 pilot window. `sim/pvp-ai-results.json` is now finalized; the old temporary-file note is superseded by the final acceptance section.
+- **947 full workspace tests PASS /84 files,9 optional skips; root tsc PASS; build PASS; scoped sim tsc PASS.**7 focused AI tests and all mode regressions green. Current build keeps existing mock Node/fallback externalization + chunk warnings. No service starts/stops, live access or provider calls.
+- Historical repo-power benchmark now explicitly imports createReferenceBot so its old power/quartile reproduction is stable; it is not the softer-AI acceptance harness. Actual behavior/handicap acceptance uses pvp-ai-bots.ts. Browser mock owner can import browser-safe createPvpController via sim/index.ts instead of importing node-only sim/bots.ts.
+
+##120-trial acceptance update
+- First120-trial window48..167: equal-final-power proxy duels83/120=69.17% (PASS);8p proxy top3=49/120=40.83% (still below requested~50%). Controller telemetry matches requested rates: AI dodge40.02%, mixed forced-bot choice49.74%, reaction350–500ms, max noise13.96°, interrupted firing81.1%.
+- Only remaining calibration change: non-preference human pursuit radius190→180px. This branch requires multiple enemy roles and cannot affect1v1 output; proxy and all duel parameters remain frozen. Re-running the same120 cases for a reproducible finite calibration report; do not call the re-tuned field arm an untouched holdout. Runtime handoff/card flag remains below.
+
+## Contract request / net + UI handoff
+- Add optional `PlayerKit.pvpAi?: {baseScore:number;powerMultiplier:number}`. Public `pvpPower.score` is the final displayed score AFTER the0.8 AI multiplier; pvpAi.baseScore is the unhandicapped real-repo score, powerMultiplier=.8. Source pvpPower.parts stay the real unhandicapped signals, so UI/Genesis can truthfully show `POWER70 · AI −20%` and explain why part totals correspond to the base score. Stats derive from the adjusted score once, never multiply the final stats blindly.
+- Implementing exported `asPvpAiKit(kit)` (idempotent), and constructor recognizes authoritative server `bot-...` IDs. Net owner: wrap **ordinary pvp bot lobby kits** with asPvpAiKit so their lobby POWER/Genesis already reflects the handicap before start; preserve marker through mode/restore/rebuild paths, clear on battle/edu. Human kits never receive it. No server/UI/shared edits by sim.
+- `createBot` will route only mode:pvp through a softer controller; all existing battle/edu paths stay unchanged. Harness reference controller will be exported separately and explicitly labelled a synthetic human-like input proxy, not evidence from human players. Paired1v1 and1human-proxy+7AI outcomes will be recorded with power/handicap distinctions and reproducible seeds.
+
 DONE (repo power)
 
 ## Repo Power final delivery

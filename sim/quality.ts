@@ -1,6 +1,6 @@
 import type { CriterionResult, KnownVuln, PlayerKit, QualityStat, RepoProfile, Rubric, RubricSignal } from '../shared/types.ts';
 import { clamp } from './math.ts';
-import type { PvpPower, PowerScaleFacts } from './pvpPower.ts';
+import type { PvpAi, PvpPower, PowerScaleFacts } from './pvpPower.ts';
 
 export interface ClassroomFacts {
   heart: string; heartFanIn: number; files: string[];
@@ -11,7 +11,7 @@ export interface ClassroomFacts {
   todoCount: number; todoDensity: number; vulns: Pick<KnownVuln, 'id' | 'pkg' | 'fixed'>[];
 }
 type BattleStats = Pick<PlayerKit, 'maxHp' | 'maxArmor' | 'maxEnergy' | 'speed' | 'damageMul'>;
-export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] }; battleStats?: BattleStats; pvpPower?: PvpPower; powerSource?: PowerScaleFacts };
+export type ClassroomKit = PlayerKit & { classroom?: ClassroomFacts; rubricQuality?: { title: string; rows: QualityStat[] }; battleStats?: BattleStats; pvpPower?: PvpPower; pvpAi?: PvpAi; powerSource?: PowerScaleFacts };
 export interface ScoredRubric { rubric: Rubric; results: CriterionResult[] }
 type ExtraSignals = { commentRatio?: number; readmeLength?: number; avgFunctionLength?: number; functionsPerFile?: number; hasTestDir?: boolean };
 const grade = (score: number): QualityStat['grade'] => score >= 0.82 ? 'A' : score >= 0.64 ? 'B' : score >= 0.43 ? 'C' : score >= 0.23 ? 'D' : 'F';
@@ -86,7 +86,7 @@ export function asClassroomKit(kit: PlayerKit): ClassroomKit {
 
 /** Mode switches restore the original equal-budget stats rather than keeping earned edu bonuses. */
 export function asBattleKit(kit: PlayerKit): PlayerKit {
-  const { quality: _quality, rubricQuality: _rubric, pvpPower: _power, battleStats, ...identity } = structuredClone(kit as ClassroomKit);
+  const { quality: _quality, rubricQuality: _rubric, pvpPower: _power, pvpAi: _ai, battleStats, ...identity } = structuredClone(kit as ClassroomKit);
   return { ...identity, ...battleStats };
 }
 

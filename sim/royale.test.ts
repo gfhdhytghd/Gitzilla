@@ -114,7 +114,7 @@ describe('last-one-standing PvP royale', () => {
     const m = match(), s = m.snapshot(), p = s.players[0], zone = s.pvp.royale!.zone!;
     s.t = 80; zone.r = 35; p.x = zone.cx + 100; p.y = zone.cy;
     const input = createBot(901, 0.7)(s, p);
-    expect(input.move[0]).toBeLessThan(-0.8); expect(Math.abs(input.move[1])).toBeLessThan(0.1);
+    expect(input.move[0]).toBeLessThan(-0.8); expect(Math.abs(input.move[1])).toBeLessThan(0.3);
   });
   it.each([2, 4, 8])('ends a %ip stationary stall with exactly one survivor, unique placements and no quizzes', count => {
     const m = match(count), deadline = royaleTimeline(count).limit; advance(m, deadline + 1); const s = m.snapshot();

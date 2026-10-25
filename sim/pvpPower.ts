@@ -3,6 +3,8 @@ import { clamp } from './math.ts';
 import { asBattleKit, classroomFacts, qualitySignals, type ClassroomFacts, type ClassroomKit } from './quality.ts';
 
 export interface PvpPower { score: number; parts: { label: string; value: number; weight: number }[] }
+export interface PvpAi { baseScore: number; powerMultiplier: number }
+export const PVP_AI_POWER_MULTIPLIER = 0.8;
 export interface PowerScaleFacts { stars: number; contributors: number; commits: number; ageDays: number; todoMeasured?: boolean }
 const finite = (n: number) => Number.isFinite(n) ? Math.max(0, n) : 0;
 const logScore = (n: number, cap: number) => clamp(Math.log1p(finite(n)) / Math.log1p(cap), 0, 1);
@@ -38,10 +40,16 @@ export function statsFromPower(score: number) {
 }
 
 /** Idempotent across constructor/design/mode changes. Missing evidence is labelled, not fabricated. */
-export function asPvpKit(kit: PlayerKit): ClassroomKit {
+export function asPvpKit(kit: PlayerKit, options: { ai?: boolean } = {}): ClassroomKit {
   const source = kit as ClassroomKit, base = asBattleKit(kit) as ClassroomKit;
-  const pvpPower = base.classroom && base.powerSource ? powerFromFacts(base.classroom, base.powerSource)
-    : source.pvpPower ?? { score: 50, parts: [{ label: 'Source analysis unavailable; neutral', value: 50, weight: 1 }] };
+  const rawPower = base.classroom && base.powerSource ? powerFromFacts(base.classroom, base.powerSource)
+    : source.pvpPower ? { ...source.pvpPower, score: source.pvpAi?.baseScore ?? source.pvpPower.score }
+      : { score: 50, parts: [{ label: 'Source analysis unavailable; neutral', value: 50, weight: 1 }] };
+  const ai = options.ai ?? !!source.pvpAi;
+  const pvpAi = ai ? { baseScore: rawPower.score, powerMultiplier: PVP_AI_POWER_MULTIPLIER } : undefined;
+  const pvpPower = { ...rawPower, score: round(rawPower.score * (pvpAi?.powerMultiplier ?? 1)) };
   const battleStats = { maxHp: base.maxHp, maxArmor: base.maxArmor, maxEnergy: base.maxEnergy, speed: base.speed, damageMul: base.damageMul };
-  return { ...base, battleStats, pvpPower: structuredClone(pvpPower), ...statsFromPower(pvpPower.score) };
+  return { ...base, battleStats, pvpPower: structuredClone(pvpPower), ...(pvpAi ? { pvpAi } : {}), ...statsFromPower(pvpPower.score) };
 }
+
+export const asPvpAiKit = (kit: PlayerKit) => asPvpKit(kit, { ai: true });

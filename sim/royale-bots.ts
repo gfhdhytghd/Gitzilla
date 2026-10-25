@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { createMatch } from './match.ts';
-import { createBot, loadBalanceProfiles, syntheticProfile } from './bots.ts';
+import { createReferenceBot as createBot, loadBalanceProfiles, syntheticProfile } from './bots.ts';
 import { playerKitFromProfile } from './kits.ts';
 import type { ClassroomRankingRow, RoyaleElimination } from './pvp.ts';
 import type { InputFrame, WeaponKind } from '../shared/types.ts';
@@ -71,7 +71,7 @@ export function royaleSweep(trials = 30) {
       eliminations: report.royale.eliminations as RoyaleElimination[], ranking: report.ranking });
   }
   return { game: 'Gitzilla', mode: 'pvp', royale: true, publicFallbacksOnly: true, trials,
-    controls: 'Actual repo-power public kits, normal-input bots, paired seeds1009+trial401+slot37, skills0.55/0.67/0.79. Roster index(trial+slot*7)%15 balances every repo across every slot each15 trials. No source/health/outcome overrides. Quartiles are global rank cohorts across15 real profiles; weapon/skill styles are retained. Separate controlled duels isolate stat power.',
+    controls: 'Actual repo-power public kits, archived pre-soft-AI reference inputs (createReferenceBot), paired seeds1009+trial401+slot37, skills0.55/0.67/0.79. Roster index(trial+slot*7)%15 balances every repo across every slot each15 trials. No source/health/outcome overrides. Quartiles are global rank cohorts across15 real profiles; weapon/skill styles are retained. Separate controlled duels isolate stat power; live softer-AI acceptance is pvp-ai-bots.ts.',
     repoPower: ordered.map(({ profile, power }) => ({ repo: profile.slug, score: power, quartile: quartile.get(profile.slug)! })),
     powerQuartiles: [1, 2, 3, 4].map(quartile => {
       const entrants = runs.flatMap(run => run.entrants.filter(p => p.quartile === quartile).map(p => ({ ...p, won: p.id === run.winner })));
