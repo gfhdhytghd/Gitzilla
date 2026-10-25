@@ -16,7 +16,7 @@ export class ReceiptStore {
     this.db=new DatabaseSync(path);
     try{
     if(path!==':memory:')chmodSync(path,0o600);
-    this.db.exec(`PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;`);
+    this.db.exec(`PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts; CREATE TABLE IF NOT EXISTS receipt_handoffs (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS receipt_access (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL);`);
     }catch(error){this.db.close();throw error;}
   }
   get(id: string): ReceiptRecord | undefined {
@@ -29,6 +29,25 @@ export class ReceiptStore {
   }
   keys(): string[] {
     return (this.db.prepare('SELECT key FROM attestors').all() as {key:string}[]).map(row=>row.key);
+  }
+  issueHandoff(id:string,hash:string,expires:number,now:number) {
+    this.transaction(()=>{
+      this.db.prepare('DELETE FROM receipt_handoffs WHERE expires<=? OR receipt=?').run(now,id);
+      this.db.prepare('DELETE FROM receipt_access WHERE expires<=? OR receipt=?').run(now,id);
+      this.db.prepare('INSERT INTO receipt_handoffs(hash,receipt,expires) VALUES(?,?,?)').run(hash,id,expires);
+    });
+  }
+  redeemHandoff(id:string,ticketHash:string,grantHash:string,expires:number,now:number):boolean {
+    return this.transaction(()=>{
+      const row=this.db.prepare('SELECT receipt,expires FROM receipt_handoffs WHERE hash=?').get(ticketHash) as {receipt:string;expires:number}|undefined;
+      if(!row||row.receipt!==id||row.expires<=now)return false;
+      this.db.prepare('DELETE FROM receipt_handoffs WHERE hash=?').run(ticketHash);
+      this.db.prepare('INSERT INTO receipt_access(hash,receipt,expires) VALUES(?,?,?)').run(grantHash,id,expires);
+      return true;
+    });
+  }
+  allows(id:string,tokenHash:string,now:number):boolean {
+    return !!this.db.prepare('SELECT 1 FROM receipt_access WHERE hash=? AND receipt=? AND expires>?').get(tokenHash,id,now);
   }
   transaction<T>(fn:()=>T):T {
     this.db.exec('BEGIN IMMEDIATE');

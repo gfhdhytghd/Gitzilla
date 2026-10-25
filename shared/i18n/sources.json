@@ -362,7 +362,7 @@
   {
     "id": "ca082b400a7879ef",
     "source": "GITZILLA",
-    "context": "client/app/autopsy.ts"
+    "context": "client/app/autopsy.ts, client/receipts/page.ts"
   },
   {
     "id": "a80cfb9815e7a4bb",
@@ -2152,7 +2152,7 @@
   {
     "id": "39e3f7ae911c8f00",
     "source": "the host",
-    "context": "client/app/game.ts, client/app/lobby.ts, client/app/pause.ts"
+    "context": "client/app/game.ts, client/app/lobby.ts, client/app/pause.ts, server/rooms.ts"
   },
   {
     "id": "97d575a6f7c6350d",
@@ -5728,6 +5728,201 @@
     "id": "3d4ba0ad4a8bca1f",
     "source": "`{player}` {stat} {grade}: {signal}.",
     "context": "client/edu/concepts.ts"
+  },
+  {
+    "id": "7923e04c84194586",
+    "source": "{0} of {1} submitted · class average {2} · boss −{3}%",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "63be20a2c684416b",
+    "source": "{0} submissions · average {1} · boss −{2}% · past class size unavailable",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "aff61805cf98f409",
+    "source": "No submissions to review yet.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "02b8a52d93bf727a",
+    "source": "Steps reviewed: {0} · students with submissions: {1} · class average {2}",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "d4df477cdf44c1c3",
+    "source": "No class rounds have been reviewed yet.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "93c3d4497c74d3f1",
+    "source": "Below 50",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "3cfbb6a4430428e1",
+    "source": "50 to under 80",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "dc6c682b28206105",
+    "source": "{0}/{1}: {2}. Work through one example together.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "01928b376e11533f",
+    "source": "{0}/{1}: {2}. The class also needed this last time; try a different example.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "efb2ccbf57b30088",
+    "source": "{0} students have no submission. Check that they can open the editor and send their work.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "91bafdf552bc4ab2",
+    "source": "One student has no submission. Check that they can open the editor and send their work.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "cb81117f41f4c87a",
+    "source": "The check details are unavailable. Ask students to show one example before choosing what to revisit.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "f34b30ddc678f568",
+    "source": "Check details cover {0} of {1} submissions. Ask the others to show their work.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "beea4945975117c2",
+    "source": "Ask students to show the result and explain one change they made.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "618d7bae6c4e3403",
+    "source": "Ask a few students to explain how their code works before moving on.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "14ca980edf9dda06",
+    "source": "No submission in this round. Help them send one small change.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "ec489a5670ff23d2",
+    "source": "Score {0}. Offer a short check-in and one small next step.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "452c1ab1deb6bb9a",
+    "source": "Take a look together: {0}",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "e295efffcf9db688",
+    "source": "Improved by {0} points this round.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "8608f26048883ece",
+    "source": "Improved by {0} points on {1}.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "a391c7917b6fcfc7",
+    "source": "Met every recorded check on the first round.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "605b857679d5e710",
+    "source": "Met every recorded check this round.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "dc675e76aff5adde",
+    "source": "Open this step again so students can send their work.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "fe913ce33bd74fb8",
+    "source": "Give students time to submit before moving on.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "ab145d4cbf8b8a9d",
+    "source": "Retry this step; most submitted work is one check away.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "72660d3f89e582b0",
+    "source": "Work through one example together, then retry this step.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "0b54029ba637247c",
+    "source": "Check one example of student work before choosing the next step.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "7a48e73e7d67e3a2",
+    "source": "Move on to step {0}: {1}.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "8aead715581b53cb",
+    "source": "Finish the lesson and ask students to explain one change they made.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "27f492d72e83c66b",
+    "source": "No submission in the reviewed rounds. Help them get started.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "41e2b0a9e8a63139",
+    "source": "Average {0} across {1} submitted steps. Offer a short check-in.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "bbb903a67625f3a2",
+    "source": "Score {0} on the submitted step. Offer a short check-in.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "a945bcaf4c0f34a9",
+    "source": "Score {0} on {1}. Check one example together.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "a6a9972db567b665",
+    "source": "Start next time by revisiting {0}.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "27e5dfea4d7bb690",
+    "source": "Return to step {0}: {1} before starting a new lesson.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "9441f24b234b366a",
+    "source": "Review the first task and invite one small submission.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "bf4e6b4186aff017",
+    "source": "Try Python lesson {0} next.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "756ce8194872972f",
+    "source": "Choose a small project that combines what the class practiced.",
+    "context": "client/edu/debrief.ts"
+  },
+  {
+    "id": "e074f20d4a2ec1d3",
+    "source": "Choose a short task that uses today’s ideas in a new way.",
+    "context": "client/edu/debrief.ts"
   },
   {
     "id": "b14fc10ac275d8b6",
@@ -9685,6 +9880,11 @@
     "context": "server/room-store.ts"
   },
   {
+    "id": "e014645d7420e7aa",
+    "source": "You were removed from this room by the host.",
+    "context": "server/rooms.ts"
+  },
+  {
     "id": "cfce761befa84073",
     "source": "Request failed",
     "context": "server/rooms.ts"
@@ -9800,6 +10000,46 @@
     "context": "server/rooms.ts"
   },
   {
+    "id": "e68c801e2467b1bd",
+    "source": "Only the room owner can do that",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "3c2010e370e42925",
+    "source": "The teacher can't hand over a classroom.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "c94c347ae4b3eb69",
+    "source": "Hand over the room after the match.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "09e8b739c1a22e9c",
+    "source": "Choose a room member",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "5811ed84fbe1f088",
+    "source": "That member is no longer in this room",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "d893bcb4db87edd1",
+    "source": "You can't kick yourself.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "5dbe15ed73a1f78d",
+    "source": "Choose someone else to host.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "0ab22dc4b31c46ab",
+    "source": "Choose a connected human to host.",
+    "context": "server/rooms.ts"
+  },
+  {
     "id": "ea31fe65e8c6c7ad",
     "source": "Only the room owner can pause or resume",
     "context": "server/rooms.ts"
@@ -9822,11 +10062,6 @@
   {
     "id": "92ea91ef5fe8f88f",
     "source": "Invalid controls readiness",
-    "context": "server/rooms.ts"
-  },
-  {
-    "id": "e68c801e2467b1bd",
-    "source": "Only the room owner can do that",
     "context": "server/rooms.ts"
   },
   {
@@ -10730,6 +10965,41 @@
     "context": "client/receipts/entry.ts"
   },
   {
+    "id": "24375d42e945eb38",
+    "source": "Mobile wallet links require the HTTPS game site",
+    "context": "client/receipts/mobile.ts"
+  },
+  {
+    "id": "245ac79945e599fe",
+    "source": "Invalid wallet link",
+    "context": "client/receipts/mobile.ts"
+  },
+  {
+    "id": "52028f1aa6fc2ec8",
+    "source": "Connect your wallet here. Your game stays in the original browser.",
+    "context": "client/receipts/page.ts"
+  },
+  {
+    "id": "ae57f5f602718b08",
+    "source": "When finished, switch back to your original browser tab. Do not join the room again from the wallet.",
+    "context": "client/receipts/page.ts"
+  },
+  {
+    "id": "6cfbfa183ea7a683",
+    "source": "Wallet link unavailable",
+    "context": "client/receipts/page.ts"
+  },
+  {
+    "id": "ab36168f52e1acda",
+    "source": "This wallet link is invalid or expired. Open a new link from the game.",
+    "context": "client/receipts/page.ts, server/receipts/http.ts, server/receipts/service.ts"
+  },
+  {
+    "id": "925893a298628f51",
+    "source": "Invalid link",
+    "context": "client/receipts/page.ts"
+  },
+  {
     "id": "3e5e4730165d2a3e",
     "source": "Receipt request timed out. Check its status before retrying.",
     "context": "client/receipts/panel.ts"
@@ -10755,13 +11025,63 @@
     "context": "client/receipts/panel.ts"
   },
   {
-    "id": "f87251238674dde2",
-    "source": "Choose a wallet account that supports Devnet message signing.",
+    "id": "47b6e16e30df183f",
+    "source": "Choose a Solana account that supports message signing.",
     "context": "client/receipts/panel.ts"
   },
   {
     "id": "57ae4e061312b04b",
     "source": "No compatible wallet detected. You can download the signed receipt without one.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "aed27e95e00e2321",
+    "source": "Choose your wallet below. Keep the original game tab open.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "08b6a3efc2b5fe15",
+    "source": "Phantom",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "303af562b0a6d40c",
+    "source": "Open in Phantom",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "428445b10909debb",
+    "source": "Open in Solflare",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "965fa436398cd1cf",
+    "source": "The wallet link expired. Create a new one.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "efe582513798d25e",
+    "source": "If the wallet does not open, install its app, return here, and create a new link.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "559e0a9add0f7d88",
+    "source": "Create a new wallet link",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "44a9d8b10505cd5a",
+    "source": "Connect with a mobile wallet",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "c214bb140feb604f",
+    "source": "Open the HTTPS game address to connect a mobile wallet.",
+    "context": "client/receipts/panel.ts"
+  },
+  {
+    "id": "03b7d749099480ad",
+    "source": "Open this page inside your wallet app, then approve its connection request. If this browser cannot connect, return to the original game tab and choose another wallet.",
     "context": "client/receipts/panel.ts"
   },
   {
@@ -10945,6 +11265,11 @@
     "context": "server/receipts/service.ts"
   },
   {
+    "id": "86c773b7d6a26561",
+    "source": "Open the original game tab to create a new wallet link",
+    "context": "server/receipts/service.ts"
+  },
+  {
     "id": "0e11940d44f05657",
     "source": "This receipt uses an archived signing key; download the signed receipt",
     "context": "server/receipts/service.ts"
@@ -10995,8 +11320,8 @@
     "context": "server/receipts/service.ts"
   },
   {
-    "id": "2e2a9b95f65a4ab5",
-    "source": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts;",
+    "id": "8c657631ebadbef5",
+    "source": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts; CREATE TABLE IF NOT EXISTS receipt_handoffs (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS receipt_access (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL);",
     "context": "server/receipts/store.ts"
   },
   {
@@ -11017,6 +11342,41 @@
   {
     "id": "4534fa45e7ad98aa",
     "source": "SELECT key FROM attestors",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "151d52a1f2166a8d",
+    "source": "DELETE FROM receipt_handoffs WHERE expires<=? OR receipt=?",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "6d81000e48f53477",
+    "source": "DELETE FROM receipt_access WHERE expires<=? OR receipt=?",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "cfcf481f844720f6",
+    "source": "INSERT INTO receipt_handoffs(hash,receipt,expires) VALUES(?,?,?)",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "1d41eefbe5cacaeb",
+    "source": "SELECT receipt,expires FROM receipt_handoffs WHERE hash=?",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "bf1baeb4688130c0",
+    "source": "DELETE FROM receipt_handoffs WHERE hash=?",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "dfdb0881f50beeaa",
+    "source": "INSERT INTO receipt_access(hash,receipt,expires) VALUES(?,?,?)",
+    "context": "server/receipts/store.ts"
+  },
+  {
+    "id": "0f2deffa05b967ec",
+    "source": "SELECT 1 FROM receipt_access WHERE hash=? AND receipt=? AND expires>?",
     "context": "server/receipts/store.ts"
   },
   {

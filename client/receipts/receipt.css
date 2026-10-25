@@ -5,3 +5,7 @@
 .receipt-actions code { overflow-wrap: anywhere; max-width: 100%; }
 .receipt-message { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: .8rem; border: 1px solid #49645a; }
 .ap-receipt .btn { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+
+.receipt-page { max-width: 760px; height: 100dvh; overflow-y: auto; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+.receipt-page > h1 { color: var(--green); font-family: var(--term); letter-spacing: .08em; }
+.receipt-page > p { line-height: 1.5; }

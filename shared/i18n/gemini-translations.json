@@ -21828,5 +21828,680 @@
     "fr": "La base de données des reçus doit être en dehors des répertoires de ressources servies",
     "provider": "Gemini via AGY",
     "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5dbe15ed73a1f78d",
+    "en": "Choose someone else to host.",
+    "zh": "选择其他人主持。",
+    "es": "Elige a otra persona como anfitrión.",
+    "fr": "Choisissez une autre personne comme hôte.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0ab22dc4b31c46ab",
+    "en": "Choose a connected human to host.",
+    "zh": "选择已连接的真人来主持。",
+    "es": "Elige a un humano conectado como anfitrión.",
+    "fr": "Choisissez un humain connecté comme hôte.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "24375d42e945eb38",
+    "en": "Mobile wallet links require the HTTPS game site",
+    "zh": "移动钱包链接需要 HTTPS 游戏网站",
+    "es": "Los enlaces de billetera móvil requieren el sitio del juego con HTTPS",
+    "fr": "Les liens de portefeuille mobile nécessitent le site de jeu en HTTPS",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "245ac79945e599fe",
+    "en": "Invalid wallet link",
+    "zh": "无效的钱包链接",
+    "es": "Enlace de billetera no válido",
+    "fr": "Lien de portefeuille non valide",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "52028f1aa6fc2ec8",
+    "en": "Connect your wallet here. Your game stays in the original browser.",
+    "zh": "在此连接你的钱包。你的游戏将保留在原浏览器中。",
+    "es": "Conecta tu billetera aquí. Tu juego permanece en el navegador original.",
+    "fr": "Connectez votre portefeuille ici. Votre jeu reste dans le navigateur d'origine.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ae57f5f602718b08",
+    "en": "When finished, switch back to your original browser tab. Do not join the room again from the wallet.",
+    "zh": "完成后，切回原来的浏览器标签页。请勿从钱包中再次加入房间。",
+    "es": "Cuando termines, regresa a la pestaña original de tu navegador. No vuelvas a unirte a la sala desde la billetera.",
+    "fr": "Une fois terminé, revenez à l'onglet d'origine de votre navigateur. Ne rejoignez pas à nouveau la salle depuis le portefeuille.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6cfbfa183ea7a683",
+    "en": "Wallet link unavailable",
+    "zh": "钱包链接不可用",
+    "es": "Enlace de billetera no disponible",
+    "fr": "Lien de portefeuille indisponible",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ab36168f52e1acda",
+    "en": "This wallet link is invalid or expired. Open a new link from the game.",
+    "zh": "此钱包链接无效或已过期。请从游戏中打开一个新链接。",
+    "es": "Este enlace de billetera no es válido o ha caducado. Abre un nuevo enlace desde el juego.",
+    "fr": "Ce lien de portefeuille est invalide ou a expiré. Ouvrez un nouveau lien depuis le jeu.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "925893a298628f51",
+    "en": "Invalid link",
+    "zh": "无效链接",
+    "es": "Enlace no válido",
+    "fr": "Lien non valide",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "aed27e95e00e2321",
+    "en": "Choose your wallet below. Keep the original game tab open.",
+    "zh": "在下方选择你的钱包。请保持原游戏标签页处于打开状态。",
+    "es": "Elige tu billetera a continuación. Mantén abierta la pestaña original del juego.",
+    "fr": "Choisissez votre portefeuille ci-dessous. Gardez l'onglet d'origine du jeu ouvert.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "08b6a3efc2b5fe15",
+    "en": "Phantom",
+    "zh": "Phantom",
+    "es": "Phantom",
+    "fr": "Phantom",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "303af562b0a6d40c",
+    "en": "Open in Phantom",
+    "zh": "在 Phantom 中打开",
+    "es": "Abrir en Phantom",
+    "fr": "Ouvrir dans Phantom",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "428445b10909debb",
+    "en": "Open in Solflare",
+    "zh": "在 Solflare 中打开",
+    "es": "Abrir en Solflare",
+    "fr": "Ouvrir dans Solflare",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "965fa436398cd1cf",
+    "en": "The wallet link expired. Create a new one.",
+    "zh": "钱包链接已过期。请创建一个新链接。",
+    "es": "El enlace de la billetera ha caducado. Crea uno nuevo.",
+    "fr": "Le lien du portefeuille a expiré. Créez-en un nouveau.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "efe582513798d25e",
+    "en": "If the wallet does not open, install its app, return here, and create a new link.",
+    "zh": "如果钱包未打开，请安装其应用，返回此处并创建一个新链接。",
+    "es": "Si la billetera no se abre, instala su aplicación, regresa aquí y crea un nuevo enlace.",
+    "fr": "Si le portefeuille ne s'ouvre pas, installez son application, revenez ici et créez un nouveau lien.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "559e0a9add0f7d88",
+    "en": "Create a new wallet link",
+    "zh": "创建新的钱包链接",
+    "es": "Crear un nuevo enlace de billetera",
+    "fr": "Créer un nouveau lien de portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "44a9d8b10505cd5a",
+    "en": "Connect with a mobile wallet",
+    "zh": "使用移动钱包连接",
+    "es": "Conectar con una billetera móvil",
+    "fr": "Se connecter avec un portefeuille mobile",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c214bb140feb604f",
+    "en": "Open the HTTPS game address to connect a mobile wallet.",
+    "zh": "打开 HTTPS 游戏地址以连接移动钱包。",
+    "es": "Abre la dirección HTTPS del juego para conectar una billetera móvil.",
+    "fr": "Ouvrez l'adresse HTTPS du jeu pour connecter un portefeuille mobile.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "03b7d749099480ad",
+    "en": "Open this page inside your wallet app, then approve its connection request. If this browser cannot connect, return to the original game tab and choose another wallet.",
+    "zh": "在你的钱包应用中打开此页面，然后批准其连接请求。如果此浏览器无法连接，请返回原游戏标签页并选择其他钱包。",
+    "es": "Abre esta página dentro de la aplicación de tu billetera y luego aprueba su solicitud de conexión. Si este navegador no puede conectarse, regresa a la pestaña original del juego y elige otra billetera.",
+    "fr": "Ouvrez cette page dans l'application de votre portefeuille, puis approuvez sa demande de connexion. Si ce navigateur ne peut pas se connecter, revenez à l'onglet d'origine du jeu et choisissez un autre portefeuille.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "86c773b7d6a26561",
+    "en": "Open the original game tab to create a new wallet link",
+    "zh": "打开原游戏标签页以创建新的钱包链接",
+    "es": "Abre la pestaña original del juego para crear un nuevo enlace de billetera",
+    "fr": "Ouvrez l'onglet d'origine du jeu pour créer un nouveau lien de portefeuille",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8c657631ebadbef5",
+    "en": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts; CREATE TABLE IF NOT EXISTS receipt_handoffs (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS receipt_access (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL);",
+    "zh": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts; CREATE TABLE IF NOT EXISTS receipt_handoffs (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS receipt_access (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL);",
+    "es": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts; CREATE TABLE IF NOT EXISTS receipt_handoffs (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS receipt_access (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL);",
+    "fr": "PRAGMA busy_timeout=1000; PRAGMA locking_mode=EXCLUSIVE; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY, owner TEXT NOT NULL, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS receipt_owner ON receipts(owner); CREATE TABLE IF NOT EXISTS attestors (key TEXT PRIMARY KEY); INSERT OR IGNORE INTO attestors SELECT DISTINCT json_extract(value, '$.receipt.attestor') FROM receipts; CREATE TABLE IF NOT EXISTS receipt_handoffs (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS receipt_access (hash TEXT PRIMARY KEY, receipt TEXT NOT NULL, expires INTEGER NOT NULL);",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "151d52a1f2166a8d",
+    "en": "DELETE FROM receipt_handoffs WHERE expires<=? OR receipt=?",
+    "zh": "DELETE FROM receipt_handoffs WHERE expires<=? OR receipt=?",
+    "es": "DELETE FROM receipt_handoffs WHERE expires<=? OR receipt=?",
+    "fr": "DELETE FROM receipt_handoffs WHERE expires<=? OR receipt=?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c4a9832ccfdd8118",
+    "en": "DELETE FROM receipt_access WHERE expires<=?",
+    "zh": "DELETE FROM receipt_access WHERE expires<=?",
+    "es": "DELETE FROM receipt_access WHERE expires<=?",
+    "fr": "DELETE FROM receipt_access WHERE expires<=?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cfcf481f844720f6",
+    "en": "INSERT INTO receipt_handoffs(hash,receipt,expires) VALUES(?,?,?)",
+    "zh": "INSERT INTO receipt_handoffs(hash,receipt,expires) VALUES(?,?,?)",
+    "es": "INSERT INTO receipt_handoffs(hash,receipt,expires) VALUES(?,?,?)",
+    "fr": "INSERT INTO receipt_handoffs(hash,receipt,expires) VALUES(?,?,?)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "1d41eefbe5cacaeb",
+    "en": "SELECT receipt,expires FROM receipt_handoffs WHERE hash=?",
+    "zh": "SELECT receipt,expires FROM receipt_handoffs WHERE hash=?",
+    "es": "SELECT receipt,expires FROM receipt_handoffs WHERE hash=?",
+    "fr": "SELECT receipt,expires FROM receipt_handoffs WHERE hash=?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "bf1baeb4688130c0",
+    "en": "DELETE FROM receipt_handoffs WHERE hash=?",
+    "zh": "DELETE FROM receipt_handoffs WHERE hash=?",
+    "es": "DELETE FROM receipt_handoffs WHERE hash=?",
+    "fr": "DELETE FROM receipt_handoffs WHERE hash=?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "dfdb0881f50beeaa",
+    "en": "INSERT INTO receipt_access(hash,receipt,expires) VALUES(?,?,?)",
+    "zh": "INSERT INTO receipt_access(hash,receipt,expires) VALUES(?,?,?)",
+    "es": "INSERT INTO receipt_access(hash,receipt,expires) VALUES(?,?,?)",
+    "fr": "INSERT INTO receipt_access(hash,receipt,expires) VALUES(?,?,?)",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0f2deffa05b967ec",
+    "en": "SELECT 1 FROM receipt_access WHERE hash=? AND receipt=? AND expires>?",
+    "zh": "SELECT 1 FROM receipt_access WHERE hash=? AND receipt=? AND expires>?",
+    "es": "SELECT 1 FROM receipt_access WHERE hash=? AND receipt=? AND expires>?",
+    "fr": "SELECT 1 FROM receipt_access WHERE hash=? AND receipt=? AND expires>?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7923e04c84194586",
+    "en": "{0} of {1} submitted · class average {2} · boss −{3}%",
+    "zh": "{0}/{1} 已提交 · 班级平均分 {2} · 首领 −{3}%",
+    "es": "{0} de {1} entregados · promedio de la clase {2} · jefe −{3}%",
+    "fr": "{0} sur {1} soumis · moyenne de la classe {2} · boss −{3}%",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "63be20a2c684416b",
+    "en": "{0} submissions · average {1} · boss −{2}% · past class size unavailable",
+    "zh": "{0} 份提交 · 平均分 {1} · 首领 −{2}% · 往期班级人数不可用",
+    "es": "{0} entregas · promedio {1} · jefe −{2}% · tamaño anterior de la clase no disponible",
+    "fr": "{0} soumissions · moyenne {1} · boss −{2}% · effectif précédent de la classe indisponible",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "aff61805cf98f409",
+    "en": "No submissions to review yet.",
+    "zh": "暂无可供查看的提交。",
+    "es": "Aún no hay entregas para revisar.",
+    "fr": "Aucune soumission à examiner pour le moment.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "02b8a52d93bf727a",
+    "en": "Steps reviewed: {0} · students with submissions: {1} · class average {2}",
+    "zh": "已复盘步骤：{0} · 有提交的学生：{1} · 班级平均分 {2}",
+    "es": "Pasos revisados: {0} · estudiantes con entregas: {1} · promedio de la clase {2}",
+    "fr": "Étapes examinées : {0} · élèves ayant soumis : {1} · moyenne de la classe {2}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d4df477cdf44c1c3",
+    "en": "No class rounds have been reviewed yet.",
+    "zh": "尚未复盘任何课堂轮次。",
+    "es": "Aún no se ha revisado ninguna ronda de la clase.",
+    "fr": "Aucune manche de classe n'a encore été examinée.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "93c3d4497c74d3f1",
+    "en": "Below 50",
+    "zh": "低于 50",
+    "es": "Menos de 50",
+    "fr": "Moins de 50",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3cfbb6a4430428e1",
+    "en": "50 to under 80",
+    "zh": "50 到 80 以下",
+    "es": "De 50 a menos de 80",
+    "fr": "De 50 à moins de 80",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "dc6c682b28206105",
+    "en": "{0}/{1}: {2}. Work through one example together.",
+    "zh": "{0}/{1}：{2}。一起演练一个示例。",
+    "es": "{0}/{1}: {2}. Trabajen juntos en un ejemplo.",
+    "fr": "{0}/{1} : {2}. Analysez un exemple ensemble.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "01928b376e11533f",
+    "en": "{0}/{1}: {2}. The class also needed this last time; try a different example.",
+    "zh": "{0}/{1}：{2}。上次班级也需要此内容；尝试换一个示例。",
+    "es": "{0}/{1}: {2}. La clase también necesitó esto la última vez; prueba con otro ejemplo.",
+    "fr": "{0}/{1} : {2}. La classe en avait aussi besoin la dernière fois ; essayez un exemple différent.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "efb2ccbf57b30088",
+    "en": "{0} students have no submission. Check that they can open the editor and send their work.",
+    "zh": "{0} 名学生未提交。请确认他们能够打开编辑器并发送作品。",
+    "es": "{0} estudiantes no tienen entregas. Comprueba que puedan abrir el editor y enviar su trabajo.",
+    "fr": "{0} élèves n'ont rien soumis. Vérifiez qu'ils peuvent ouvrir l'éditeur et envoyer leur travail.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "91bafdf552bc4ab2",
+    "en": "One student has no submission. Check that they can open the editor and send their work.",
+    "zh": "有 1 名学生未提交。请确认其能够打开编辑器并发送作品。",
+    "es": "Un estudiante no tiene entregas. Comprueba que pueda abrir el editor y enviar su trabajo.",
+    "fr": "Un élève n'a rien soumis. Vérifiez qu'il peut ouvrir l'éditeur et envoyer son travail.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "cb81117f41f4c87a",
+    "en": "The check details are unavailable. Ask students to show one example before choosing what to revisit.",
+    "zh": "检查详情不可用。在决定重温哪些内容前，请让学生展示一个示例。",
+    "es": "Los detalles de la comprobación no están disponibles. Pide a los estudiantes que muestren un ejemplo antes de elegir qué repasar.",
+    "fr": "Les détails de la vérification ne sont pas disponibles. Demandez aux élèves de montrer un exemple avant de choisir ce qu'il faut revoir.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f34b30ddc678f568",
+    "en": "Check details cover {0} of {1} submissions. Ask the others to show their work.",
+    "zh": "检查详情涵盖 {1} 份提交中的 {0} 份。请让其余同学展示他们的作品。",
+    "es": "Los detalles de la comprobación cubren {0} de {1} entregas. Pide a los demás que muestren su trabajo.",
+    "fr": "Les détails de la vérification couvrent {0} soumissions sur {1}. Demandez aux autres de montrer leur travail.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "beea4945975117c2",
+    "en": "Ask students to show the result and explain one change they made.",
+    "zh": "让学生展示结果并解释他们做出的一处修改。",
+    "es": "Pide a los estudiantes que muestren el resultado y expliquen un cambio que hayan hecho.",
+    "fr": "Demandez aux élèves de montrer le résultat et d'expliquer une modification apportée.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "618d7bae6c4e3403",
+    "en": "Ask a few students to explain how their code works before moving on.",
+    "zh": "在继续之前，请几位学生讲解一下他们代码的运行原理。",
+    "es": "Pide a algunos estudiantes que expliquen cómo funciona su código antes de continuar.",
+    "fr": "Demandez à quelques élèves d'expliquer le fonctionnement de leur code avant de continuer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "14ca980edf9dda06",
+    "en": "No submission in this round. Help them send one small change.",
+    "zh": "本轮无提交。帮助他们发送一处小修改。",
+    "es": "No hay entregas en esta ronda. Ayúdales a enviar un pequeño cambio.",
+    "fr": "Aucune soumission lors de cette manche. Aidez-les à envoyer une petite modification.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ec489a5670ff23d2",
+    "en": "Score {0}. Offer a short check-in and one small next step.",
+    "zh": "得分 {0}。进行简短的交流指导并提供一个小小的下一步建议。",
+    "es": "Puntuación {0}. Haz una breve revisión y sugiere un pequeño paso siguiente.",
+    "fr": "Score {0}. Proposez un bref point d'étape et une petite étape suivante.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "452c1ab1deb6bb9a",
+    "en": "Take a look together: {0}",
+    "zh": "一起来看：{0}",
+    "es": "Echemos un vistazo juntos: {0}",
+    "fr": "Regardons ensemble : {0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e295efffcf9db688",
+    "en": "Improved by {0} points this round.",
+    "zh": "本轮提升了 {0} 分。",
+    "es": "Mejoró {0} puntos en esta ronda.",
+    "fr": "Progression de {0} points sur cette manche.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8608f26048883ece",
+    "en": "Improved by {0} points on {1}.",
+    "zh": "在 {1} 上提升了 {0} 分。",
+    "es": "Mejoró {0} puntos en {1}.",
+    "fr": "Progression de {0} points sur {1}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a391c7917b6fcfc7",
+    "en": "Met every recorded check on the first round.",
+    "zh": "在第一轮中通过了所有已记录的检查。",
+    "es": "Superó todas las comprobaciones registradas en la primera ronda.",
+    "fr": "A validé toutes les vérifications enregistrées dès la première manche.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "605b857679d5e710",
+    "en": "Met every recorded check this round.",
+    "zh": "在本轮中通过了所有已记录的检查。",
+    "es": "Superó todas las comprobaciones registradas en esta ronda.",
+    "fr": "A validé toutes les vérifications enregistrées lors de cette manche.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "dc675e76aff5adde",
+    "en": "Open this step again so students can send their work.",
+    "zh": "再次开放此步骤，以便学生提交作品。",
+    "es": "Vuelve a abrir este paso para que los estudiantes puedan enviar su trabajo.",
+    "fr": "Rouvrez cette étape pour que les élèves puissent envoyer leur travail.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "fe913ce33bd74fb8",
+    "en": "Give students time to submit before moving on.",
+    "zh": "在继续之前，给学生留出提交的时间。",
+    "es": "Da tiempo a los estudiantes para enviar antes de continuar.",
+    "fr": "Laissez aux élèves le temps de soumettre leur travail avant de continuer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "ab145d4cbf8b8a9d",
+    "en": "Retry this step; most submitted work is one check away.",
+    "zh": "重试此步骤；大部分已提交的作品仅差一项检查。",
+    "es": "Reintenta este paso; a la mayoría de los trabajos entregados solo les falta una comprobación.",
+    "fr": "Réessayez cette étape ; la plupart des travaux soumis ne sont qu'à une vérification près.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "72660d3f89e582b0",
+    "en": "Work through one example together, then retry this step.",
+    "zh": "一起演练一个示例，然后重试此步骤。",
+    "es": "Trabajen juntos en un ejemplo y luego reintenten este paso.",
+    "fr": "Analysez un exemple ensemble, puis réessayez cette étape.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "0b54029ba637247c",
+    "en": "Check one example of student work before choosing the next step.",
+    "zh": "在选择下一步之前，先查看一份学生作品示例。",
+    "es": "Revisa un ejemplo del trabajo de los estudiantes antes de elegir el siguiente paso.",
+    "fr": "Examinez un exemple de travail d'élève avant de choisir l'étape suivante.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "7a48e73e7d67e3a2",
+    "en": "Move on to step {0}: {1}.",
+    "zh": "前往步骤 {0}：{1}。",
+    "es": "Avanza al paso {0}: {1}.",
+    "fr": "Passez à l'étape {0} : {1}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8aead715581b53cb",
+    "en": "Finish the lesson and ask students to explain one change they made.",
+    "zh": "完成本课并让学生解释他们做出的一处修改。",
+    "es": "Termina la lección y pide a los estudiantes que expliquen un cambio que hayan hecho.",
+    "fr": "Terminez la leçon et demandez aux élèves d'expliquer une modification apportée.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "27f492d72e83c66b",
+    "en": "No submission in the reviewed rounds. Help them get started.",
+    "zh": "在已复盘的轮次中无提交。帮助他们开始。",
+    "es": "No hay entregas en las rondas revisadas. Ayúdales a comenzar.",
+    "fr": "Aucune soumission dans les manches examinées. Aidez-les à démarrer.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "41e2b0a9e8a63139",
+    "en": "Average {0} across {1} submitted steps. Offer a short check-in.",
+    "zh": "在已提交的 {1} 个步骤中平均分为 {0}。进行简短的交流指导。",
+    "es": "Promedio de {0} en {1} pasos entregados. Ofrece una breve revisión.",
+    "fr": "Moyenne de {0} sur {1} étapes soumises. Proposez un bref point d'étape.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "bbb903a67625f3a2",
+    "en": "Score {0} on the submitted step. Offer a short check-in.",
+    "zh": "已提交步骤得分 {0}。进行简短的交流指导。",
+    "es": "Puntuación {0} en el paso entregado. Ofrece una breve revisión.",
+    "fr": "Score {0} sur l'étape soumise. Proposez un bref point d'étape.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a945bcaf4c0f34a9",
+    "en": "Score {0} on {1}. Check one example together.",
+    "zh": "{1} 得分 {0}。一起查看一个示例。",
+    "es": "Puntuación {0} en {1}. Revisen un ejemplo juntos.",
+    "fr": "Score {0} sur {1}. Examinez un exemple ensemble.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "a6a9972db567b665",
+    "en": "Start next time by revisiting {0}.",
+    "zh": "下次从重温 {0} 开始。",
+    "es": "Empieza la próxima vez repasando {0}.",
+    "fr": "Commencez la prochaine fois en revoyant {0}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "27e5dfea4d7bb690",
+    "en": "Return to step {0}: {1} before starting a new lesson.",
+    "zh": "在开始新课程前，返回步骤 {0}：{1}。",
+    "es": "Vuelve al paso {0}: {1} antes de comenzar una nueva lección.",
+    "fr": "Revenez à l'étape {0} : {1} avant de commencer une nouvelle leçon.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "9441f24b234b366a",
+    "en": "Review the first task and invite one small submission.",
+    "zh": "复盘第一个任务并鼓励进行一次小提交。",
+    "es": "Repasa la primera tarea e invita a hacer una pequeña entrega.",
+    "fr": "Révisez la première tâche et invitez à faire une petite soumission.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "bf4e6b4186aff017",
+    "en": "Try Python lesson {0} next.",
+    "zh": "接下来尝试 Python 课程 {0}。",
+    "es": "Prueba la lección de Python {0} a continuación.",
+    "fr": "Essayez ensuite la leçon de Python {0}.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "756ce8194872972f",
+    "en": "Choose a small project that combines what the class practiced.",
+    "zh": "选择一个结合了全班所练内容的小项目。",
+    "es": "Elige un proyecto pequeño que combine lo que la clase practicó.",
+    "fr": "Choisissez un petit projet qui combine ce que la classe a pratiqué.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e074f20d4a2ec1d3",
+    "en": "Choose a short task that uses today’s ideas in a new way.",
+    "zh": "选择一个以新方式运用今天所学思路的简短任务。",
+    "es": "Elige una tarea corta que use las ideas de hoy de una forma nueva.",
+    "fr": "Choisissez une tâche courte qui utilise les idées d'aujourd'hui d'une nouvelle manière.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "e014645d7420e7aa",
+    "en": "You were removed from this room by the host.",
+    "zh": "你已被老师移出此房间。",
+    "es": "El profesor te ha eliminado de esta sala.",
+    "fr": "Vous avez été retiré de cette salle par l'enseignant.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "3c2010e370e42925",
+    "en": "The teacher can't hand over a classroom.",
+    "zh": "老师无法移交课堂。",
+    "es": "El profesor no puede transferir una clase.",
+    "fr": "L'enseignant ne peut pas transférer une salle de classe.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c94c347ae4b3eb69",
+    "en": "Hand over the room after the match.",
+    "zh": "比赛结束后移交房间。",
+    "es": "Transfiere la sala después de la partida.",
+    "fr": "Transférez la salle après le match.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "09e8b739c1a22e9c",
+    "en": "Choose a room member",
+    "zh": "选择一名房间成员",
+    "es": "Elige a un miembro de la sala",
+    "fr": "Choisissez un membre de la salle",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "5811ed84fbe1f088",
+    "en": "That member is no longer in this room",
+    "zh": "该成员已不在当前房间中",
+    "es": "Ese miembro ya no está en esta sala",
+    "fr": "Ce membre n'est plus dans cette salle",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "d893bcb4db87edd1",
+    "en": "You can't kick yourself.",
+    "zh": "你不能踢出自己。",
+    "es": "No puedes expulsarte a ti mismo.",
+    "fr": "Vous ne pouvez pas vous expulser vous-même.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "47b6e16e30df183f",
+    "en": "Choose a Solana account that supports message signing.",
+    "zh": "选择支持消息签名的 Solana 账户。",
+    "es": "Selecciona una cuenta de Solana que admita la firma de mensajes.",
+    "fr": "Choisissez un compte Solana qui prend en charge la signature de messages.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "6d81000e48f53477",
+    "en": "DELETE FROM receipt_access WHERE expires<=? OR receipt=?",
+    "zh": "DELETE FROM receipt_access WHERE expires<=? OR receipt=?",
+    "es": "DELETE FROM receipt_access WHERE expires<=? OR receipt=?",
+    "fr": "DELETE FROM receipt_access WHERE expires<=? OR receipt=?",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
   }
 ]

@@ -20,9 +20,11 @@ try{
  if(metadata.current!==base58(publicBytes(seed)))throw new Error('Production attestor metadata mismatch');
  const paths=['/.cache/solana/attestor.seed','/%2ecache/solana/attestor.seed','/@fs'+join(directory,'.cache/solana/attestor.seed'),'/%5c.cache%5csolana%5cattestor.seed'];
  for(const path of paths){const res=await fetch(base+path);if(res.status!==404)throw new Error('Private production path was not denied');}
+ const receiptPage=await fetch(base+'/receipt.html');
+ if(receiptPage.status!==200||!(await receiptPage.text()).includes('receipt-app'))throw new Error('Dedicated receipt entry missing');
  if((await fetch(base+'/')).status!==200)throw new Error('Production page unavailable');
  if((await fetch(base+'/api/receipts/00000000-0000-0000-0000-000000000000')).status!==404)throw new Error('Receipt ownership route mismatch');
- console.log(JSON.stringify({passed:true,productionEntry:true,ephemeralPort:Number(port),metadataMatchesPrivateKey:true,privatePathsDenied:paths.length,root:200,unknownReceipt:404,chainTraffic:false}));
+ console.log(JSON.stringify({passed:true,productionEntry:true,ephemeralPort:Number(port),metadataMatchesPrivateKey:true,privatePathsDenied:paths.length,root:200,receiptPage:200,unknownReceipt:404,chainTraffic:false}));
 }finally{
  if(child.exitCode===null&&child.signalCode===null){const done=once(child,'exit');child.kill('SIGTERM');const timer=setTimeout(()=>child.kill('SIGKILL'),3000);await done;clearTimeout(timer);}
  rmSync(directory,{recursive:true,force:true});

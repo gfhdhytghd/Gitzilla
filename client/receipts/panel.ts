@@ -1,21 +1,24 @@
 import { getWallets } from '@wallet-standard/app';
 import type { SolanaSignMessageFeature } from '@solana/wallet-standard-features';
 import type { ReceiptView } from '../../shared/receipt';
-import { t } from '../i18n';
+import { t, locale } from '../i18n';
+import { walletBrowseUrl, type MobileWallet } from './mobile';
 import { h } from '../app/util';
 import { encode58 } from './base58';
 import './receipt.css';
 type Wallet=ReturnType<ReturnType<typeof getWallets>['get']>[number];
 type Account=Wallet['accounts'][number];
 type Connection={connect:()=>Promise<{accounts:readonly Account[]}>};
-export async function openReceipt(el:HTMLElement,id:string,token:string,dead:()=>boolean) {
+export async function openReceipt(el:HTMLElement,id:string,token:string,dead:()=>boolean,options:{scoped?:boolean}={}) {
   const endpoint=`/api/receipts/${encodeURIComponent(id)}`;
   async function api<T>(action='',input?:unknown):Promise<T> {
-    let res:Response;try{res=await fetch(endpoint+action,{method:input===undefined?'GET':'POST',headers:{'X-Room-Token':token,...(input===undefined?{}:{'Content-Type':'application/json'})},body:input===undefined?undefined:JSON.stringify(input),signal:AbortSignal.timeout(35000)});}catch{throw new Error('Receipt request timed out. Check its status before retrying.');}
+    let res:Response;try{res=await fetch(endpoint+action,{method:input===undefined?'GET':'POST',headers:{[options.scoped?'X-Receipt-Token':'X-Room-Token']:token,...(input===undefined?{}:{'Content-Type':'application/json'})},body:input===undefined?undefined:JSON.stringify(input),signal:AbortSignal.timeout(35000)});}catch{throw new Error('Receipt request timed out. Check its status before retrying.');}
     let data;try{data=await res.json();}catch{throw new Error('Receipt unavailable. Try again.');}if(!res.ok)throw new Error(typeof data.error==='string'?data.error:'Receipt unavailable. Try again.');return data;
   }
   let view=await api<ReceiptView>();if(dead())return ()=>{};
   let wallet:Wallet|undefined,account:Account|undefined,message='',working=false;
+  let mobileTicket:{ticket:string;expiresAt:number}|undefined;
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const status=h('p',{role:'status','aria-live':'polite'}),controls=h('div.receipt-actions'),wallets=h('div.receipt-actions');
   const preview=h('pre.receipt-message',{translate:'no',hidden:true}),details=h('details',null,h('summary',null,'Signing message'),preview);
   const explain=h('p.dim',null,'Optional Devnet anchor: your wallet address, receipt ID, approximate signing time and salted result digest become public. Anyone can link this wallet to Gitzilla through the app signer. Published history cannot be deleted by Gitzilla. The app pays the test-network fee. Sign a message only; no token transfer.');
@@ -38,19 +41,34 @@ export async function openReceipt(el:HTMLElement,id:string,token:string,dead:()=
   const registry=getWallets();
   function renderWallets(){
     if(dead())return;
-    const available=registry.get().filter(w=>w.features['standard:connect']&&w.features['solana:signMessage']&&w.chains.includes('solana:devnet'));
+    const available=registry.get().filter(w=>w.features['standard:connect']&&w.features['solana:signMessage']&&w.chains.some(chain=>chain.startsWith('solana:')));
     wallets.replaceChildren(...available.map(w=>{
       const b=button('Connect wallet',async()=>{
         let connected;
         try{connected=await (w.features['standard:connect'] as Connection).connect();}
         catch{throw new Error('Wallet connection cancelled. You can still download the receipt.');}
         if(dead())return;
-        const next=connected.accounts.find(a=>a.chains.includes('solana:devnet')&&a.features.includes('solana:signMessage'));
-        if(!next)throw new Error('Choose a wallet account that supports Devnet message signing.');
+        const next=connected.accounts.find(a=>a.chains.some(chain=>chain.startsWith('solana:'))&&a.features.includes('solana:signMessage'));
+        if(!next)throw new Error('Choose a Solana account that supports message signing.');
         wallet=w;account=next;message='';await request();
       });b.append(h('span',{translate:'no'},` · ${w.name}`));return b;
     }));
     if(!available.length)wallets.append(h('p.dim',null,'No compatible wallet detected. You can download the signed receipt without one.'));
+    if(isMobile&&!options.scoped&&!available.length&&location.protocol==='https:'){
+      if(mobileTicket&&mobileTicket.expiresAt>Date.now()){
+        wallets.append(h('p',null,'Choose your wallet below. Keep the original game tab open.'));
+        for(const name of ['Phantom','Solflare'] as MobileWallet[]){
+          const link=h('a.btn',{href:walletBrowseUrl(name,location.origin,id,mobileTicket.ticket,locale()),'data-wallet':name,target:'_blank',rel:'noopener noreferrer',referrerpolicy:'no-referrer'},name==='Phantom'?'Open in Phantom':'Open in Solflare');
+          link.addEventListener('click',event=>{if(!mobileTicket||mobileTicket.expiresAt<=Date.now()){event.preventDefault();mobileTicket=undefined;status.textContent=t('The wallet link expired. Create a new one.');render(false);}});
+          wallets.append(link);
+        }
+        wallets.append(h('p.dim',null,'If the wallet does not open, install its app, return here, and create a new link.'));
+        wallets.append(button('Create a new wallet link',async()=>{mobileTicket=await api<{ticket:string;expiresAt:number}>('/handoff',{});}));
+      }else wallets.append(button('Connect with a mobile wallet',async()=>{mobileTicket=await api<{ticket:string;expiresAt:number}>('/handoff',{});}));
+    }
+    if(isMobile&&!options.scoped&&!available.length&&location.protocol!=='https:')wallets.append(h('p.dim',null,'Open the HTTPS game address to connect a mobile wallet.'));
+    if(options.scoped&&!available.length)wallets.append(h('p.dim',null,'Open this page inside your wallet app, then approve its connection request. If this browser cannot connect, return to the original game tab and choose another wallet.'));
+
     wallets.hidden=!!account||view.status==='pending'||view.status==='finalized'||!view.anchorAvailable;
   }
   function render(updateStatus=true){
@@ -81,7 +99,14 @@ export async function openReceipt(el:HTMLElement,id:string,token:string,dead:()=
     renderWallets();
   }
   el.replaceChildren(h('h2.panel-title',null,'MATCH RECEIPT'),h('p',null,'A server-attested match result, not proof of fair gameplay or an NFT. Devnet history may be reset. Save the signed download.'),explain,status,controls,wallets,details);
+  const resume=()=>{
+    if(!options.scoped&&!document.hidden&&!working)void perform(async()=>{
+      view=await api<ReceiptView>();
+      if(view.status==='pending')view=await api<ReceiptView>('/refresh',{});
+    });
+  };
+  document.addEventListener('visibilitychange',resume);
   const offRegister=registry.on('register',()=>renderWallets()),offUnregister=registry.on('unregister',()=>renderWallets());
   render();
-  return ()=>{offRegister();offUnregister();};
+  return ()=>{document.removeEventListener('visibilitychange',resume);offRegister();offUnregister();};
 }

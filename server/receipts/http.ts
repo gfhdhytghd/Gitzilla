@@ -18,7 +18,7 @@ async function body(req:IncomingMessage):Promise<Record<string,unknown>> {
 }
 export async function handleReceiptRoute(req:IncomingMessage,res:ServerResponse,url:URL,service:ReceiptService|undefined):Promise<boolean> {
   const metadata=url.pathname==='/.well-known/gitzilla-attestor.json';
-  const match=url.pathname.match(/^\/api\/receipts\/([a-f0-9-]{36})(?:\/(challenge|publish|refresh))?$/);
+  const match=url.pathname.match(/^\/api\/receipts\/([a-f0-9-]{36})(?:\/(challenge|publish|refresh|handoff|redeem))?$/);
   if(!metadata&&!match)return false;
   try {
     if(!service)throw new ReceiptError(503,'Match receipts are temporarily unavailable');
@@ -31,12 +31,19 @@ export async function handleReceiptRoute(req:IncomingMessage,res:ServerResponse,
     if(requests.size>10000)for(const [key,value]of requests)if(value.until<now)requests.delete(key);
     if(count.n>120)throw new ReceiptError(429,'Too many receipt requests; wait a minute');
     if(metadata){json(res,200,service.keys());return true;}
-    const id=match![1],header=req.headers['x-room-token'];
+    const id=match![1],header=req.headers['x-receipt-token']??req.headers['x-room-token'];
     const token=typeof header==='string'?header:undefined;
     if(!action){json(res,200,service.get(id,token));return true;}
+    // Redemption accepts a bounded one-time ticket, never a room token in the URL.
+    if(action==='redeem'){
+      const input=await body(req);
+      if(typeof input.ticket!=='string')throw new ReceiptError(400,'This wallet link is invalid or expired. Open a new link from the game.');
+      json(res,200,service.redeem(id,input.ticket));return true;
+    }
     // Authenticate before doing any asynchronous work or accepting an upload.
     service.get(id,token);
     const input=await body(req);
+    if(action==='handoff'){json(res,200,service.handoff(id,token));return true;}
     if(action==='refresh'){json(res,200,await service.refresh(id,token));return true;}
     if(typeof input.wallet!=='string')throw new ReceiptError(400,'Choose a valid Solana wallet');
     if(action==='challenge'){json(res,200,await service.challenge(id,token,input.wallet));return true;}

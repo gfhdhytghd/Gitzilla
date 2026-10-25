@@ -40,7 +40,7 @@ export class ReceiptService {
   }
   private owner(id:string,token:string|undefined) {
     const row=this.store.get(id);
-    if(!row || !token || token.length>256 || hash(token)!==row.ownerHash)throw new ReceiptError(404,'Receipt not found for this player');
+    if(!row || !token || token.length>256 || hash(token)!==row.ownerHash&&!this.store.allows(id,hash(token),this.now()))throw new ReceiptError(404,'Receipt not found for this player');
     return row;
   }
   private view(row:ReceiptRecord):ReceiptView {
@@ -48,6 +48,22 @@ export class ReceiptService {
       explorer:row.transaction?`https://explorer.solana.com/tx/${row.transaction}?cluster=devnet`:null,anchorAvailable:row.receipt.attestor===this.attestor};
   }
   get(id:string,token:string|undefined) {return this.view(this.owner(id,token));}
+  handoff(id:string,token:string|undefined) {
+    const row=this.owner(id,token);
+    // Receipt-only grants cannot re-delegate or become room credentials.
+    if(hash(token!)!==row.ownerHash)throw new ReceiptError(403,'Open the original game tab to create a new wallet link');
+    this.limit(id+':handoff',6);
+    const ticket=randomBytes(32).toString('base64url'),expiresAt=this.now()+120000;
+    this.store.issueHandoff(id,hash(ticket),expiresAt,this.now());
+    return {ticket,expiresAt};
+  }
+  redeem(id:string,ticket:string) {
+    if(!/^[A-Za-z0-9_-]{43}$/.test(ticket))throw new ReceiptError(400,'This wallet link is invalid or expired. Open a new link from the game.');
+    this.limit(id+':redeem',12);
+    const token=randomBytes(32).toString('base64url'),expiresAt=this.now()+1800000;
+    if(!this.store.get(id)||!this.store.redeemHandoff(id,hash(ticket),hash(token),expiresAt,this.now()))throw new ReceiptError(400,'This wallet link is invalid or expired. Open a new link from the game.');
+    return {token,expiresAt};
+  }
   keys() {return {version:1,network:'solana:devnet',current:this.attestor,keys:[...new Set([this.attestor,...this.store.keys()])]};}
   private async lock<T>(id:string,fn:()=>Promise<T>):Promise<T> {
     while(this.busy.has(id))await this.busy.get(id)!.catch(()=>{});

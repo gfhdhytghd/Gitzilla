@@ -15,5 +15,5 @@ export default defineConfig({
     // Agents rewrite data/docs/qa artifacts constantly; don't full-reload every client for them.
     watch: { ignored },
   },
-  build: { outDir: "dist", target: "es2022" },
+  build: { outDir: "dist", target: "es2022", rollupOptions: { input: { main: "index.html", receipt: "receipt.html" } } },
 });

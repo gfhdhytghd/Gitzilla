@@ -147,6 +147,39 @@ describe('signed public PvP receipts',()=>{
     const service=new ReceiptService(reopened,loadSeed(join(dir,'key')),'https://gitzilla.example',rpc);
     expect((await service.refresh(id,'token-a')).transaction).toBe('crash-tx');expect(rpc.send).toHaveBeenCalledTimes(1);
   });
+  it('hands off only this receipt once, without granting room or other-player authority',async()=>{
+    const f=fixture(),issued=f.service.handoff(f.id,'token-a');
+    expect(issued.ticket).not.toContain('token-a');expect(issued.expiresAt).toBe(1_800_000_120_000);
+    expect(()=>f.service.handoff(f.id,'token-b')).toThrow('not found');
+    expect(()=>f.service.redeem(f.ids.b,issued.ticket)).toThrow('invalid or expired');
+    const grant=f.service.redeem(f.id,issued.ticket);
+    expect(f.service.get(f.id,grant.token).receipt.payload.id).toBe(f.id);
+    expect(()=>f.service.get(f.ids.b,grant.token)).toThrow('not found');
+    for(let i=0;i<12;i++)expect(()=>f.service.handoff(f.id,grant.token)).toThrow('original game tab');
+    expect(()=>f.service.redeem(f.id,issued.ticket)).toThrow('invalid or expired');
+    const challenge=await f.service.challenge(f.id,grant.token,f.wallet);
+    await f.service.publish(f.id,grant.token,f.wallet,f.signature(challenge.message!));
+    expect(f.service.get(f.id,'token-a').status).toBe('pending');
+  });
+  it('expires unused tickets and scoped grants, and invalidates replaced links',()=>{
+    const f=fixture(),old=f.service.handoff(f.id,'token-a'),next=f.service.handoff(f.id,'token-a');
+    expect(()=>f.service.redeem(f.id,old.ticket)).toThrow('invalid or expired');
+    f.setNow(next.expiresAt);expect(()=>f.service.redeem(f.id,next.ticket)).toThrow('invalid or expired');
+    const grant=f.service.redeem(f.id,f.service.handoff(f.id,'token-a').ticket);
+    f.setNow(grant.expiresAt);expect(()=>f.service.get(f.id,grant.token)).toThrow('not found');
+    expect(f.service.get(f.id,'token-a').receipt.payload.id).toBe(f.id);
+    const second=f.service.redeem(f.id,f.service.handoff(f.id,'token-a').ticket);
+    f.service.handoff(f.id,'token-a');
+    expect(()=>f.service.get(f.id,second.token)).toThrow('not found');
+  });
+  it('persists receipt-only grants across restart without redeeming a used link again',()=>{
+    const path=join(temp(),'mobile.sqlite'),f=fixture(path),ticket=f.service.handoff(f.id,'token-a').ticket;
+    const grant=f.service.redeem(f.id,ticket);f.store.close();stores.splice(stores.indexOf(f.store),1);
+    const store=new ReceiptStore(path);stores.push(store);
+    const service=new ReceiptService(store,f.seed,'https://gitzilla.example',f.rpc,()=>1_800_000_000_001);
+    expect(service.get(f.id,grant.token).receipt.payload.id).toBe(f.id);
+    expect(()=>service.redeem(f.id,ticket)).toThrow('invalid or expired');
+  });
   it('creates a private key with strict file permissions and rejects an exposed key',()=>{
     const path=join(temp(),'key');const seed=loadSeed(path);expect(seed).toHaveLength(32);expect(loadSeed(path)).toEqual(seed);expect(statSync(path).mode&0o777).toBe(0o600);
     chmodSync(path,0o644);expect(()=>loadSeed(path)).toThrow('private file');
@@ -213,6 +246,12 @@ describe('receipt HTTP ownership and origin',()=>{
       expect((await fetch(base+'/api/receipts/'+f.id+'/challenge',{method:'POST',headers:{...headers,Origin:'https://evil.example','Content-Type':'application/json'},body:JSON.stringify({wallet:f.wallet})})).status).toBe(403);
       expect((await fetch(base+'/api/receipts/'+f.id+'/challenge',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({wallet:f.wallet,padding:'a'.repeat(8192)})})).status).toBe(413);
       expect((await fetch(base+'/api/receipts/'+f.id+'/challenge',{method:'POST',headers,body:'{}'})).status).toBe(415);
+      const issuedResponse=await fetch(base+'/api/receipts/'+f.id+'/handoff',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:'{}'});
+      expect(issuedResponse.status).toBe(200);const issued=await issuedResponse.json();
+      const redeemed=await fetch(base+'/api/receipts/'+f.id+'/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket:issued.ticket})});
+      expect(redeemed.status).toBe(200);const grant=await redeemed.json();
+      expect((await fetch(base+'/api/receipts/'+f.id,{headers:{'X-Receipt-Token':grant.token}})).status).toBe(200);
+      expect((await fetch(base+'/api/receipts/'+f.ids.b,{headers:{'X-Receipt-Token':grant.token}})).status).toBe(404);
       expect(f.rpc.balance).not.toHaveBeenCalled();
     }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
   });

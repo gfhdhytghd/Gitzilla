@@ -13,3 +13,9 @@ Actual Devnet genesis verified. The free faucet was unavailable for the isolated
 ## Integration boundary
 
 A fast-forward into main was attempted, but Git refused because `server/rooms.ts` is currently modified by the active kick/transfer owner. No edits were stashed, reset, overwritten or committed on their behalf. Live5173 was not touched. The branch is clean and ready; it was rebased onto 334a52e. Once the kick/transfer work is committed, rebase `feat/solana-receipts` onto main, merge it, install its new packages, and run combined gates before the coordinator deploys. Its RoomServer edits touch eligibility/start/completion, autopsy personalisation and the optional service callback; preserve the kick/ban/owner logic when merging. Do not cherry-pick another owner's uncommitted source.
+
+## Mobile follow-up completed
+
+Phantom/Solflare HTTPS browse links now open a dedicated, lightweight receipt page. Two-minute single-use handoff tickets exchange for a 30-minute grant scoped to one receipt; the room token never crosses browsers. The fragment is removed immediately; grant storage survives reload, never authorizes room actions, and cannot create further links. New links revoke earlier tickets/grants. Original-tab visibility refreshes result status; the wallet page does not join the room. Phone controls, recovery copy and all four languages are implemented.
+
+`npm test`: **1,083 passed / 9 skipped**, 91 passing files. Typecheck/build/i18n audit pass. The HTTPS mobile browser harness uses separate storage, a fake Wallet Standard provider and real Ed25519 signatures; handoff, replay rejection, default-mainnet account signing, single submission, reload and original-tab update pass. Native iPhone app launch remains unverified; no claim of real Phantom/Solflare device acceptance or finalized Devnet transaction. Real production entry-point test serves `receipt.html` successfully on an ephemeral port without touching live.
