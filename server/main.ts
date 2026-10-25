@@ -24,6 +24,7 @@ import { RoyaleHall } from './royale-hall.ts';
 import { resolveGithubIdentity } from './github-identity.ts';
 import { handleControllerRoute } from './controller-http.ts';
 import { handleRoomCreate } from './room-http.ts';
+import { handleSuggestionsRoute } from './suggestions.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
@@ -128,6 +129,7 @@ server.on('request', (req, res) => {
       json(res, 200, rooms.roomInfo(code)); return;
     }
     if (url.pathname === '/api/fallbacks' && req.method === 'GET') { json(res, 200, listFallbackRepos()); return; }
+    if (handleSuggestionsRoute(req, res, url)) return;
     if (url.pathname === '/api/qr' && req.method === 'GET') {
       const text = url.searchParams.get('text');
       if (!text) { json(res, 400, { error: 'Provide text to encode' }); return; }

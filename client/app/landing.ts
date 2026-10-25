@@ -169,7 +169,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
       ),
     ),
     hall,
-    h("footer.landing-foot", null, "HackPSU · tilt to move · swing to attack · twist to dash · spin for your skill"),
+    h("footer.landing-foot", null, "HackPSU · tilt to move · swing to attack · tilt hard to dash · draw a circle for your skill"),
   );
   return {
     el,

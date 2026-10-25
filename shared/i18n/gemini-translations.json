@@ -20569,5 +20569,89 @@
     "zh": "正在组装英雄...",
     "es": "ensamblando héroe...",
     "fr": "assemblage du héros..."
+  },
+  {
+    "id": "51cdd4b48080d35c",
+    "en": "↻ more",
+    "zh": "↻ 换一批",
+    "es": "↻ más",
+    "fr": "↻ plus"
+  },
+  {
+    "id": "54cdec8e8c6ce094",
+    "en": "show a fresh mix",
+    "zh": "换一批推荐",
+    "es": "mostrar otra mezcla",
+    "fr": "afficher un autre mélange"
+  },
+  {
+    "id": "e7ddc46a5cb8eed1",
+    "en": "🔥 new",
+    "zh": "🔥 新",
+    "es": "🔥 nuevo",
+    "fr": "🔥 nouveau"
+  },
+  {
+    "id": "ad887ad615612cfe",
+    "en": "tilt hard to dash",
+    "zh": "用力倾斜来冲刺",
+    "es": "inclina fuerte para esquivar",
+    "fr": "inclinez fort pour foncer"
+  },
+  {
+    "id": "78c1531f16a1a5c9",
+    "en": "Tip the phone hard (50°) toward where you want to dash, then back. ×3 — or double-tap",
+    "zh": "把手机朝想冲刺的方向用力倾斜（50°），再放回。×3 —— 或双击",
+    "es": "Inclina el móvil con fuerza (50°) hacia donde quieras esquivar y vuelve. ×3 — o toca dos veces",
+    "fr": "Inclinez fort le téléphone (50°) vers où foncer, puis revenez. ×3 — ou double-touchez"
+  },
+  {
+    "id": "b787613a983886ec",
+    "en": "dash! now tip it back under 35°",
+    "zh": "冲刺！现在把它放回 35° 以内",
+    "es": "¡esquiva! ahora vuelve por debajo de 35°",
+    "fr": "foncez ! revenez maintenant sous 35°"
+  },
+  {
+    "id": "0d49eb36c9cd63fd",
+    "en": "tilt {0}° of 50°",
+    "zh": "倾斜 {0}° / 50°",
+    "es": "inclinación {0}° de 50°",
+    "fr": "inclinaison {0}° sur 50°"
+  },
+  {
+    "id": "fc1eb7685f60b56c",
+    "en": "motion: tilt · swing · tilt hard · spin",
+    "zh": "体感：倾斜 · 挥动 · 用力倾斜 · 画圈",
+    "es": "movimiento: inclinar · agitar · inclinar fuerte · girar",
+    "fr": "mouvement : incliner · balancer · incliner fort · tourner"
+  },
+  {
+    "id": "508fe2769764cacc",
+    "en": "tilt = move · swing / tap = attack · tilt hard / double-tap = dash · draw a circle / long-press = skill",
+    "zh": "倾斜 = 移动 · 挥动 / 轻触 = 攻击 · 用力倾斜 / 双击 = 冲刺 · 画圈 / 长按 = 技能",
+    "es": "inclinar = moverse · agitar / tocar = atacar · inclinar fuerte / doble toque = esquivar · dibujar un círculo / mantener = habilidad",
+    "fr": "incliner = bouger · balancer / toucher = attaquer · incliner fort / double-toucher = foncer · dessiner un cercle / appui long = compétence"
+  },
+  {
+    "id": "d155863c7b6ef79f",
+    "en": "HackPSU · tilt to move · swing to attack · tilt hard to dash · draw a circle for your skill",
+    "zh": "HackPSU · 倾斜移动 · 挥动攻击 · 用力倾斜冲刺 · 画圈放技能",
+    "es": "HackPSU · inclina para moverte · agita para atacar · inclina fuerte para esquivar · dibuja un círculo para tu habilidad",
+    "fr": "HackPSU · inclinez pour bouger · balancez pour attaquer · inclinez fort pour foncer · dessinez un cercle pour votre compétence"
+  },
+  {
+    "id": "04794388b4a814fa",
+    "en": "⚡ tilt hard",
+    "zh": "⚡ 用力倾斜",
+    "es": "⚡ inclina fuerte",
+    "fr": "⚡ inclinez fort"
+  },
+  {
+    "id": "c97f5645ad73bb22",
+    "en": "tilt = move · swing/tap = attack · tilt hard = dash · circle/hold = skill",
+    "zh": "倾斜 = 移动 · 挥动/轻触 = 攻击 · 用力倾斜 = 冲刺 · 画圈/长按 = 技能",
+    "es": "inclinar = moverse · agitar/tocar = atacar · inclinar fuerte = esquivar · círculo/mantener = habilidad",
+    "fr": "incliner = bouger · balancer/toucher = attaquer · incliner fort = foncer · cercle/appui = compétence"
   }
 ]

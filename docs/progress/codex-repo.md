@@ -1,3 +1,9 @@
+DONE (suggestions server)
+
+Suggestions server complete: 85 curated repos / 21 languages / 15 fallbacks; nonblocking public GitHub rising search, hourly single-flight cache, rate-limit/offline behavior, shuffled session-aware mixes, and GET /api/suggestions wired with two main.ts lines. Suggestions tests 14/14 PASS; broader targeted run 534 PASS; full workspace 5033 PASS / 20 skipped; root typecheck PASS; isolated production-main HTTP smoke PASS. No commits or deployment.
+
+Scope authorized by coordinator: curated pool in analysis/, live public GitHub search/cache/mixing + HTTP handler in server/, and a minimal server/main.ts hook next to /api/fallbacks. Existing ownership restrictions otherwise remain. No commits or shared/client edits. Server token is process.env.GITHUB_TOKEN; this agent shell has no token, so authenticated search is verified with mocked GitHub, without borrowing user session or gh credentials.
+
 DONE (blank-line boundary fix)
 
 Fixed the valid 200 KiB blank-line submission stall by keeping whole-text multiline regex indentation horizontal. Full owned analysis/Hall regression: **130/130 PASS**, 18 files, 1.92s. Strict owned-module TypeScript PASS. Independent exact-boundary calls completed in **775 / 655 / 645 ms**. Dedicated child-process regression enforces a 7.5s kill deadline; no teammate processes or servers touched.
@@ -472,3 +478,24 @@ DONE (in-app editor)
 - Only analysis/ implementation/test files plus this progress log changed. No shared edits, snapshots, presets, package changes, commits, production/dev server access, or student code execution. Existing fallback artifacts need no regeneration for this whitespace scanning fix.
 
 DONE (blank-line boundary fix)
+
+## Suggestions server delivered / UI handoff
+
+- `analysis/suggestion-pool.ts`: **85 unique public repos / 21 languages**, varied small utilities, frameworks, editors, CLI tools, games, ML and compilers. Exactly the 15 actual checked-in offline profiles carry fallback:true. Positive curated star counts come from those snapshots; other counts are 0 (unknown, hidden by the current UI), not invented approximate live counts. All descriptions are bounded plain text.
+- `server/suggestions.ts`: synchronous, nonblocking `createSuggestions().get({n,lang,session})` and `handleSuggestionsRoute`. GET /api/suggestions defaults to 8, clamps 4–16, filters language case-insensitively with common aliases, deduplicates, Fisher–Yates shuffles, targets about 2/3 curated + 1/3 live, and excludes the previous two responses for each session where enough candidates exist. Small pools reuse oldest results before the immediately previous response. Returned records are detached.
+- HTTP uses an HttpOnly SameSite=Lax `gitzilla_suggestions` cookie scoped to /api/suggestions; Cache-Control:no-store permits fresh mixes. Same-origin browser fetch already sends it. Request histories are bounded to 1,000 recent sessions and expire after 1h. Non-GET receives 405 with Allow:GET.
+- Public GitHub search uses **server process.env.GITHUB_TOKEN only**. Global search ranks public nonfork/nonarchived repos created within 30 days with >=200 stars. Language searches add a recently-pushed (7 days), relatively-new (180 days) query. These are discovery heuristics, not measured star-velocity statistics. Query/cache keys canonicalize language and isolate credentials using a hash. No raw token is sent to callers, stored in catalog data, logged, or borrowed from player sessions.
+- One-hour cache, per-key single-flight, 5s upstream timeout. Cold/expired requests return immediately while refresh runs. Transport/5xx/malformed-upstream failures preserve stale public results and wait 60s before retry. Auth/rate-limit statuses 401/403/429 suppress live results globally for that credential until reset/backoff and return curated-only/trendingAt:null; no token always does the same. Malformed reset headers cannot make cooldown permanent.
+- GitHub responses are checked independently of query qualifiers: public only, not forks/archived/disabled, nonempty, size <=204800 KiB, >=200 stars, code language present, no obvious NSFW names/descriptions/topics, no awesome/curated/pure-doc collections. Descriptions strip markup/control characters and stay <=140 chars. GitHub size is an approximate repository-size guard, not a claim to have measured a tarball. API implementation reference: https://docs.github.com/en/rest/search/search#search-repositories .
+- `server/main.ts` changed by **exactly two added lines**: handler import and handler call directly after the unchanged /api/fallbacks branch. No auth/room/sim/client/shared behavior changed.
+- UI can use `GET /api/suggestions?n=8&lang=python`. The first cold response can be curated-only; the next fetch/“more” can show the completed live cache. `trendingAt` is the live-fetch timestamp; null means unavailable/offline/not yet fetched. There is no need to send an API token from the UI.
+
+### Suggestions verification
+
+- `npx vitest run server/suggestions.test.ts`: **14/14 PASS**. Mocked GitHub covers token headers/privacy, nonblocking pending calls, single-flight, hour TTL, stale/error/rate-limit retry handling, language search queries/filtering, full response filters/plain descriptions, ratio/dedup, three-request session windows and small-pool degradation. Also tests the real HTTP handler on an OS-assigned localhost port, cookie continuity/no-store/params/methods.
+- Broader `npx vitest run analysis hall server/suggestions.test.ts`: **534 PASS / 73 files**, 3.16s in the current workspace. Root `npm run typecheck`: **PASS**. `git diff --check`: **PASS**.
+- Independently spawned production `server/main.ts` with PORT=0 and temp room/trace/royale stores, no token: **actual GET /api/suggestions PASS**, 24 unique repos across three cookie-linked requests; language filter PASS; existing GET /api/fallbacks still returns 15. Only this dedicated child was stopped and its temp stores removed. Ports 5173/5175 and stable/live processes untouched.
+- This shell has no GITHUB_TOKEN: authenticated live GitHub was verified with mocks, not claimed as a real credentialed-network smoke. No gh credential borrowed, no new deps/shared/client edits, no commits or deployments.
+- Full workspace `npm test`: **5033 PASS / 20 skipped**, **414 passed / 14 skipped files**, 39.83s. No failing checks remain from this run.
+
+DONE (suggestions server)

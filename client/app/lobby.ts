@@ -14,7 +14,7 @@ import { getMotionPermissionState, subscribeMotionPermission } from "../input";
 import { createMarkAnim } from "./logo";
 import { wordmark } from "./wordmark";
 import { markCanvas } from "./mark";
-import { MOCK_REPOS } from "./mock";
+import { createSuggestionChips } from "./suggestions";
 import { R, X } from "./renderers";
 import { createRubricEditor, createJudgedCard, localDefaultRubric, type RubricEditor, createReportCard, gpa, gpaGrade, GRADE_COLOR } from "../edu";
 import { audio } from "./sound";
@@ -70,15 +70,6 @@ function bossCode(k: BossKit): HTMLElement[] {
   return out;
 }
 
-
-let fallbackCache: Promise<string[]> | null = null;
-function fallbacks(mock: boolean): Promise<string[]> {
-  if (mock) return Promise.resolve(MOCK_REPOS);
-  return (fallbackCache ??= fetch("/api/fallbacks")
-    .then((r) => (r.ok ? r.json() : []))
-    .then((j: unknown) => (Array.isArray(j) ? (j as string[]) : (j as { repos?: string[] })?.repos ?? []))
-    .catch(() => []));
-}
 
 /** Signature of the (optional, possibly late-arriving) Gemini design so cards can animate the swap. */
 export const dsig = (k: { design?: unknown } | null | undefined) => (k?.design ? hash32(JSON.stringify(k.design)) : 0);
@@ -600,17 +591,15 @@ export function createLobby(app: AppCtx): Screen {
   nextBar.addEventListener("click", () => nextAction?.());
   const el = h("div.screen.lobby" + (screen ? ".is-screen" : ""), null, backdrop.canvas, h("div.crt"), h("div.lobby-scroll", null, header, body), screen ? null : nextBar);
 
-  // chips
-  fallbacks(app.mock).then((list) => {
-    const mk = (target: HTMLInputElement, submit: () => void, cls: string) => (slug: string) =>
-      h(`button.chip${cls}`, { onclick: () => { target.value = slug; submit(); } }, slug);
-    const last = store.get("kaiju.lastRepo");
-    youChips.replaceChildren(
-      ...(last ? [h("button.chip.chip-last", { "data-testid": "reuse-repo", onclick: () => ((repoInput.value = last), submitRepo()) }, `↻ ${last} again`)] : []),
-      ...list.slice(0, 10).filter((x) => x !== last).map(mk(repoInput, submitRepo, "")),
-    );
-    bossChips.replaceChildren(...list.slice(0, 10).map(mk(bossInput, submitBoss, ".chip-red")));
+  // chips: a fresh mix from /api/suggestions (curated + rising on GitHub), "↻ more" for another; PvP hides the hero ones
+  createSuggestionChips(youChips, {
+    mock: app.mock, testid: "repo-suggestion", onPick: (slug) => ((repoInput.value = slug), submitRepo()),
+    lead: () => {
+      const last = store.get("kaiju.lastRepo");
+      return last ? [h("button.chip.chip-last", { "data-testid": "reuse-repo", "data-slug": last, onclick: () => ((repoInput.value = last), submitRepo()) }, `↻ ${last} again`)] : [];
+    },
   });
+  createSuggestionChips(bossChips, { mock: app.mock, testid: "boss-suggestion", cls: ".chip-red", onPick: (slug) => ((bossInput.value = slug), submitBoss()) });
 
   // ----- render -----
   function cloneText(slug: string, since: number, steps: string[]): { lines: string[]; frac: number } {

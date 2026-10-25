@@ -62,7 +62,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const deckMid = h("div.deck-mid");
   // motion v3: no on-screen controls — the deck only says what the gestures are ready to do
   const gsSkillState = h("b"), gsDashState = h("b");
-  const gsSkillLbl = h("span", null, "✦ spin or hold"), gsDashLbl = h("span", null, "⚡ twist");
+  const gsSkillLbl = h("span", null, "✦ spin or hold"), gsDashLbl = h("span", null, "⚡ tilt hard");
   const gsSkill = h("div.gs-pill.skill", null, gsSkillLbl, gsSkillState);
   const gsDash = h("div.gs-pill.dash", null, gsDashLbl, gsDashState);
   const gestStatus = h("div.gest-status", { "data-testid": "gesture-status" }, gsSkill, gsDash);
@@ -952,7 +952,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (el.dataset.input !== input.mode) el.dataset.input = input.mode;
       const notice = input.lastGesture;
       if (input.mode !== "keyboard" && notice && notice.at !== lastNoticeAt) {
-        // codex-input says exactly what fired and how ("⚡ dash · twist")
+        // codex-input says exactly what fired and how ("⚡ dash · tilt-dash")
         lastNoticeAt = notice.at;
         const label = notice.kind === "dash" ? "⚡ dash" : notice.kind === "skill" ? "✦ skill" : "▸ attack";
         gestureToast(notice.via ? `${label} · ${notice.via}` : label, notice.kind);
@@ -1090,7 +1090,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (enablePill && enablePill.hidden !== hideEnable) enablePill.hidden = hideEnable;
     if (introOver && !tipsShown && latest?.status === "fighting") {
       tipsShown = true;
-      const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing/tap = attack · twist = dash · spin/hold = skill");
+      const tips = h("div.motion-tips", null, mode === "touch" ? "drag to move · tap = attack · double-tap = dash · hold = skill" : "tilt = move · swing/tap = attack · tilt hard = dash · circle/hold = skill");
       overlay.append(tips);
       setTimeout(() => tips.classList.add("fade"), 6000);
       if (mode === "touch") setTimeout(showTouchSplit, 1200); // after the "$ ./fight --now" flash
@@ -1608,7 +1608,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         skillCdMax = Math.max(skillCdMax, me.skillCd);
         const touchMode = input?.mode === "touch";
         setText(gsSkillLbl, touchMode ? "✦ hold" : "✦ spin or hold");
-        setText(gsDashLbl, touchMode ? "⚡ double-tap" : "⚡ twist");
+        setText(gsDashLbl, touchMode ? "⚡ double-tap" : "⚡ tilt hard");
         setText(gsSkillState, me.skillCd > 0 ? `${me.skillCd.toFixed(1)}s` : "READY");
         gsSkill.classList.toggle("ready", me.skillCd <= 0);
         gsSkill.style.setProperty("--cd", me.skillCd > 0 ? (1 - me.skillCd / skillCdMax).toFixed(2) : "1");

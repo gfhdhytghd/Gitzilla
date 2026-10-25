@@ -12483,5 +12483,65 @@
     "id": "9cb8bc64c346d27c",
     "source": "assembling hero...",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "51cdd4b48080d35c",
+    "source": "↻ more",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "54cdec8e8c6ce094",
+    "source": "show a fresh mix",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "e7ddc46a5cb8eed1",
+    "source": "🔥 new",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ad887ad615612cfe",
+    "source": "tilt hard to dash",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "78c1531f16a1a5c9",
+    "source": "Tip the phone hard (50°) toward where you want to dash, then back. ×3 — or double-tap",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b787613a983886ec",
+    "source": "dash! now tip it back under 35°",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "0d49eb36c9cd63fd",
+    "source": "tilt {0}° of 50°",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "fc1eb7685f60b56c",
+    "source": "motion: tilt · swing · tilt hard · spin",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "508fe2769764cacc",
+    "source": "tilt = move · swing / tap = attack · tilt hard / double-tap = dash · draw a circle / long-press = skill",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "d155863c7b6ef79f",
+    "source": "HackPSU · tilt to move · swing to attack · tilt hard to dash · draw a circle for your skill",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "04794388b4a814fa",
+    "source": "⚡ tilt hard",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c97f5645ad73bb22",
+    "source": "tilt = move · swing/tap = attack · tilt hard = dash · circle/hold = skill",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

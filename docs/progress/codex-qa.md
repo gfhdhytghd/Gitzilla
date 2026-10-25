@@ -1,3 +1,63 @@
+DONE — rematch/reset degradation diagnosis (2026-10-25)
+
+Completed **64 real natural rounds: 8 scenarios ×8 cycles**, plus a separate two-round dense iPhone replay. Coordinator explicitly reduced12→8 once the trend was clear and authorized private :5191 after shared :5175 restarted. Both WebKit desktop1440×900 and iPhone15 profiles covered 2D/25D, REMATCH and alternating [new room] / [leave]→landing→create. Every round used actual owner+3bots, ~15s ordinary input, a natural server ending and real autopsy/continuation/buttons. **Diagnosis complete; bugs reproduced. This is not a product-acceptance PASS.**
+
+The stable private server ran a frozen copy of the then-current dirty working tree, with only generated Vite bootstrap options changed (HMR:false, watch:null, isolated optimizer cache). Its room file, traces, hall and cache were private. Rendering/source hashes are preserved; later peer fixes in the working tree were **not** runtime-retested by this frozen soak. No product files changed by QA, no commits, no live requests or shared-service restarts.
+
+**Findings triaged by owner** — line numbers below refer to the [frozen source](../../qa/artifacts/rematch-private-final-2026-10-25/source/) and its [SHA manifest](../../qa/artifacts/rematch-private-final-2026-10-25/source-manifest.json).
+
+| Finding | First observed cycle | Owner | Source and proof |
+| --- | --- | --- | --- |
+| **HUGE, vertically flipped hero, shrinking back** | **2** in both 2D profiles; later captured in 3D too | **claude-player**, with claude-ui match lifecycle | `client/render/player/index.ts:125–142` returns an old `Mem` from module-level `mems` for reused player IDs. New game `client/app/game.ts:1133` resets `visTime=0`. Old hurt/dash/revive/down/move times survive; lower-only clamps at player `:757–765` turn negative animation ages into huge progress. White-hit branch at `:780–805` also accepts future hurt time. Exact same object identity verified below. |
+| **Stale victory / defeat post-FX** | Carried state **2**; stale victory eligibility **2**, stale PANIC eligibility **8** | **claude-boss** FX; **claude-ui** lifecycle | Module singleton `client/render/arena/fx.ts:8–33`; `events.ts:305–306` clears end timestamps only when *new time exceeds old time by >10s*. `postfx.ts:160–161` can draw old ending during authoritative fighting. Its limb-break glitch age check at `postfx.ts:83` also accepts negative ages. |
+| **Black 3D scene from frozen in-flight boss material contract failure** | Exceptions **1**; persistent sampled black scene by **2** on rematch, also **1** on fresh new-room | **claude-boss** | `client/render/boss/index.ts:934`: `art.mats[K.mat].map` throws because layout branches omit `mat` (e.g. `layout.ts:310`, also other large bodies). Pure frozen geometry check confirms missing fields on kaiju/mecha/dragon/abyssal. This snapshot captured a parallel material/layout migration; it is distinct from the original hero-memory bug and from GPU cap exhaustion. |
+| **Canvas save-stack / transform leak after renderer exception** | **1** | **claude-boss** renderer; **claude-ui** error containment | Boss `index.ts:90` saves before the failing draw and has no `finally` unwind; `client/app/renderers.ts:118–124` catches/logs but does not restore the caller's context. Desktop2D reached save depth **649** at10s with raw frame-start matrix **[1,0,0,1,−103,0]**, not identity. This is per-frame accumulation within each game, separate from player memory. |
+| **Detached/unlost GPU contexts retained across rematch** | First detached context after **1**, rises **1→8** | **claude-boss stage**, claude-ui lifecycle | `client/render/stage25d/index.ts:422–427` disposes scene/renderer but never explicitly loses the WebGL context. Weak refs still see every detached/unlost context across8 rounds. **No context-loss event or cap-caused blank frame was observed**; do not attribute the observed black frames to Safari's cap. |
+
+**Exact first-three-second hero proof (reported to coordinator ASAP)**
+
+[Compact proof and table](../../qa/artifacts/rematch-first3s-iphone-2026-10-25/FIRST3S.md), [identity proof JSON](../../qa/artifacts/rematch-first3s-iphone-2026-10-25/hero-memory-proof.json), [per-frame CSV](../../qa/artifacts/rematch-first3s-iphone-2026-10-25/first3s-hero.csv), [raw rematch frames](../../qa/artifacts/rematch-first3s-iphone-2026-10-25/iphone-2d-rematch/02-first3s-hero.json).
+
+- Same **document**, same **player ID**, same weak **Mem object ID1**; captured **84 baseline /86 rematch owning-hero draws**, every drawn frame during the first3000ms (countdown/intro included).
+- Round2 +33ms: new render time **0.038**, previous `Mem.t=81.874`, retained `hurtT=56.457`, `downT=59.084`, old alive=false/HP0; new hero is alive with normal facing **[1,0]**, render flip **+1**, but **sx57.379 / sy−41.135**. `observe` treats the new round as a revival and updates reviveT, without clearing old hurt/down/move history.
+- At +3000ms: **sx54.686 / sy−39.265**. Camera follows ordinary positive intro zoom **1.9→1.185**. Therefore the vertical flip and enormous size come from stale hit/squash timing, not facing or camera zoom. Unclipped CSS draw extent shrinks **8702×5704→5150×3381px** (includes effects/labels; canvas clips the visible part). An earlier independent reproduction measured **34,194×22,780px** with identity frame-start matrix/depth0, demonstrating this hero bug without the later frozen boss exception/stack leak.
+- Actually viewed the dense-replay white/huge phone screenshot and canonical/last-new-room black 3D phone screenshots. The black scene has surviving HUD/minimap; sampled mean luminance ~3–4 and >90% black scene pixels. Exact >99.5% black/white flags are kept separate from overwhelmingly blank scene flags.
+
+**Post-FX evidence boundary:** [phantom-end-evidence.json](../../qa/artifacts/rematch-soak-final-2026-10-25/phantom-end-evidence.json) records live authoritative state and exact renderer timestamps. Cycle2 desktop snapshot91.367/boss5634.038 remained fighting while FXnow88.029/old victoryAt82.539 made BSOD eligible. Cycle8 iPhone snapshot49.800/boss4410.182 remained fighting while FXnow45.994/old defeatAt40.639 made PANIC eligible; desktop confirms a second case. The original10s wait sampler retained metadata/luminance but no dedicated phantom-overlay PNG; no screenshot inspection of that specific overlay is claimed.
+
+**Counter summary after settled autopsy**
+
+All selected cases have **8 live DOM canvases, 1 active/pending rAF chain, 2 active intervals, 1 game WebSocket, 1 AudioContext, 8 document listeners** after every cycle; window listeners stay25 desktop /27 iPhone. Active timeout counts vary slightly with transient UI work; exact active/created counts are in each checkpoint/CSV. Cumulative creations alone are not called leaks. Snapshot buffer stayed ≤30, interpolation lag ≤0.8, intro zoom ≤1.9; no duplicate game loops/socket/audio growth or unbounded snapshot queue was found. Raw transform/save-depth failures are explicitly retained above.
+
+| Scenario | Rounds | Documents | Reachable/unlost WebGL contexts after cycles1→8 |
+| --- | ---: | ---: | --- |
+| desktop-25d-new-room | 8 | 8 | 1 each fresh document |
+| desktop-2d-new-room | 8 | 8 | 0 |
+| iphone-25d-new-room | 8 | 8 | 1 each fresh document |
+| iphone-2d-new-room | 8 | 8 | 0 |
+| desktop-25d-rematch | 8 | 1 | 1→2→3→4→5→6→7→8 |
+| desktop-2d-rematch | 8 | 1 | 0 |
+| iphone-25d-rematch | 8 | 1 | 1→2→3→4→5→6→7→8 |
+| iphone-2d-rematch | 8 | 1 | 0 |
+
+New-room cases reset the JS realm: no inherited hero/FX timestamps were observed, and the current document has one GPU context in3D. This does not assert native GPU-wide collection across destroyed realms. Both new-room paths still reproduce the frozen boss-material error; they are negative controls for **cross-match state carry**, not a visual product PASS. WebKit iPhone15 emulation is not physical iPhone/Safari hardware proof.
+
+**Artifacts and reproduction**
+
+- [Combined64-round matrix](../../qa/artifacts/rematch-soak-final-2026-10-25/final-matrix.json); [main counter CSV](../../qa/artifacts/rematch-soak-final-2026-10-25/counters.csv), [main diagnosis](../../qa/artifacts/rematch-soak-final-2026-10-25/diagnosis.json). Six full scenarios come from this run; the two initial25D/new-room driver failures remain unchanged.
+- [Corrected25D/new-room run](../../qa/artifacts/rematch-soak-newroom-25d-final-2026-10-25/summary.json) supplies both full8-cycle cases, with [counter CSV](../../qa/artifacts/rematch-soak-newroom-25d-final-2026-10-25/counters.csv). Each case alternates4 direct [new room] and3 [leave]→landing→create transitions.
+- [Frozen material contract probe](../../qa/artifacts/rematch-soak-final-2026-10-25/frozen-layout-contract.json); saved original hooked Vite modules, screenshots and every per-cycle checkpoint remain in the case directories. No tokens printed.
+- `tools/rematch-soak.ts` defaults to12 cycles; `REMATCH_URL=http://localhost:5191 ... --cycles 8 --jobs 4` is the authorized reduced run. `tools/rematch-server.ts <unique-artifact-dir>` snapshots the tree and starts the private non-watching server; `tools/rematch-report.ts <run-dir>` regenerates diagnosis/CSV. Short dense repro: `--cycles 2 --device iphone --view 2d --path rematch`. `tools/rematch-probe.ts` is read-only observation: weak references, raw transforms, actual draw bounds/facing, memory IDs, timers/listeners/rAF, source state and external PNG luminance. It never resets/clamps/unwinds production state or injects match results. Details in tools/README.md.
+
+**Validation and cleanup**
+
+- Probe calibration/unit tests **7 PASS** (`REMATCH_PROBE_SELF_TEST=1`): target guard, CLI, exception-preserving source hook, black/white/gray classification, actual WebKit timer/listener/rAF/canvas cleanup. `npx tsc -p qa/tsconfig.rematch.json` **PASS**. Final root `npx tsc --noEmit --pretty false` **PASS** on the later working tree; [log](../../qa/artifacts/rematch-final-root-tsc.log). Earlier root type errors from the in-flight boss layout migration do not alter the frozen runtime evidence. `git diff --check` PASS.
+- Every QA browser/context completed and closed. Verified private PID **574905** was the recorded snapshot server, sent SIGTERM, then verified PID absent and **no :5191 listener**. [Shutdown record](../../qa/artifacts/rematch-private-final-2026-10-25/shutdown.json). No :5173/live access, no shared :5175 restart, no commits. No later peer fix is certified by this pre-fix soak.
+- Setup failures retained under ignored `qa/artifacts/rematch-*`: first init serialization helper error; shared DEV server restart/reset-to-lobby; collapsed-ready-input wait; blocked private `.cache` optimizer URL; dropped25D query on [leave]→landing→SPA create. Fixed only QA/temporary private configuration. The failed attempts remain distinct from product findings and completed coverage; no full rerun of already accepted scenarios was used to hide them. `qa/artifacts/rematch-soak-private-2026-10-25/` preserves the earlier independent identity-transform hero reproduction.
+
+
+---
+
 DONE — current cooperative edu playtest harness (2026-10-25)
 
 Updated `tools/playtest.ts --mode edu` to call `tools/playtest-edu.ts`: actual teacher classroom creation → first Python preset load → publish/authoritative three-step ACK → named students join → open step 1 → edit and submit in-app Python → launch class attack → natural 10s raid → round debrief. The teacher is not a student or battle fighter. The last student is a portrait 390×844/DPR3 phone; projector opens through the real teacher button. WS listeners are read-only; no direct commands, synthetic scores or forced ending in staging. Battle path retains its own repo/control flow. README and synthetic browser regression now describe the current classroom.
