@@ -1,3 +1,48 @@
+# DONE (ui review)
+
+UI-8 (docs/ui-review-coordinator.md, classroom: "visually a different product" and "owner lands on the student view").
+Not committed.
+
+**Restyle** (`client/app/classroom.css` rewritten, small markup changes in `classroom.ts`): the classroom now uses the
+lobby's visual language.
+- Near-black background with a CSS pixel grid and CRT scanlines. The projector also gets the lobby's animated pixel
+  backdrop (`createBackdrop`); student phones stay CSS-only, so there is still no render loop on phones.
+- Pixel-bordered panels; the boss panel has a red border and its HP bar is segmented.
+- The app's own pixel `.btn` buttons (the classroom no longer flattens them), at least 44px tall.
+- Press Start 2P for short labels: brand, room code, clock, section headings as `$ CLASS RANKING`, scores. The body
+  stays in the terminal font, whose Unifont covers the Chinese presets.
+- Green/yellow tokens, step rail drawn like the lobby's mode tabs.
+- Dark inputs with a dashed green underline. Selects use `appearance:none` with a pixel arrow, the same fix as UI-1.
+- Compact phone header. Non-time clock text ("Ready when you are", "Teacher paced") is shown small. The empty step rail
+  is hidden. Empty rank/score markers are a quiet "·" (the pixel font drew "-" like "_").
+- All layout selectors and behaviour are kept: dense roster over 15 students, raid animation, reduced-motion,
+  preset library, editor.
+
+**Owner landing:**
+- **Redirect:** a player-role owner of a classroom with no lesson yet is sent to the same room's `?screen=1` teacher
+  screen with `location.replace`. This is the legacy player-owned edu room, or `?mock=edu`.
+- **Banner for a non-teacher projector:** a `?screen=1` page that is not the owner shows "This big screen is not the
+  teacher's" with a "Join as a student" link. This also covers a student who briefly inherits ownership while the
+  teacher reconnects.
+- **Mock:** in `client/app/mock.ts` (claude-ui's file, one line), `?mock=edu` with `screen=1` now owns the room like a
+  real classroom; other mocks are unchanged. This is how the coordinator saw "Waiting for your teacher" as owner.
+
+**Verified** with Playwright **WebKit** on DEV :5175 and looked at every screenshot. Script:
+`/tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/classroom-shots.mjs`.
+- **Flow:** teacher on desktop 1280x800 creates the classroom from the landing page, publishes the default lesson,
+  and opens step 1. Students join on iPhone 15 and iPhone SE.
+- **Screens shot:** teacher setup and coding, projector 1920x1080, students waiting and coding (viewport + full length),
+  a second non-teacher projector, and the `?mock=edu` owner on iPhone 15.
+- **Results:** 0 page errors and 0 horizontal overflow everywhere. The mock owner ends up on
+  `…?mock=edu&screen=1` showing "Prepare the lesson" and the editor. The non-teacher banner is visible.
+- **Not exercised:** the raid/feedback phases with real scored submissions, which need GitHub analysis. Their panels
+  share the restyled panel CSS.
+- **Tests:** `npm run typecheck` PASS; `npx vitest run` **788 passed / 8 skipped**.
+- **i18n:** the two new strings (non-teacher banner, "Join as a student") are English until the out-of-band
+  translation job runs.
+
+---
+
 # DONE (rubric) — code + unit tests done; demo views NOT yet screenshot-checked
 
 Rubric UI in client/edu/ (all exported from `client/edu/index.ts`):

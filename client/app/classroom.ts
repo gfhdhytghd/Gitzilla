@@ -8,6 +8,7 @@ import { type AppCtx, type Screen, isOwner, toast } from './app';
 import { h, store } from './util';
 import { createGithubPicker } from './github';
 import { createRubricEditor } from '../edu/rubric';
+import { createBackdrop } from './backdrop';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
 
@@ -89,7 +90,15 @@ export function createClassroom(app: AppCtx): Screen {
     expectations, field('GitHub repository', repo), field('Branch / tag / commit', ref), github, submit, submissionStatus,
     h('p.cr-evidence-note', null, 'Each score is tied to an exact commit. Static evidence checks do not execute your code. GitHub checks report the CI result for that commit; your teacher can review functionality.'));
   const studentBoard = h('div.cr-student-board', null, student, review);
-  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, head, task, controls, editor, hostBoard, studentBoard);
+  // Projector only: the lobby's animated pixel backdrop. Student phones keep the CSS-only grid (no render loop).
+  const backdrop = app.role === 'screen' ? createBackdrop({ dim: 0.55, themeCycle: false }) : null;
+  backdrop?.setTheme('terminal');
+  const studentHref = () => { const q = new URLSearchParams(location.search); q.delete('screen'); const qs = q.toString(); return `${location.pathname}${qs ? `?${qs}` : ''}`; };
+  const notTeacher = h('div.cr-not-teacher', { role: 'status', 'data-testid': 'classroom-not-teacher', hidden: true },
+    h('span', null, 'This big screen is not the teacher’s. The teacher controls the class from the screen that created the room.'),
+    h('a.btn', { href: studentHref() }, 'Join as a student'));
+  const el = h('div.screen.classroom-screen', { 'data-testid': 'classroom-screen' }, backdrop ? h('div.cr-backdrop', { 'aria-hidden': 'true' }, backdrop.canvas) : null, head, notTeacher, task, controls, editor, hostBoard, studentBoard);
+  let sentToTeacher = false;
 
   const command = (action: ClassroomCommand) => app.conn.send({ t: 'classroomControl', action });
   const buildPlanEditor = () => {
@@ -224,16 +233,26 @@ export function createClassroom(app: AppCtx): Screen {
     controls.replaceChildren(...items);
   };
   const updateClock = () => {
-    if (!state) return setText(clock, 'Ready when you are');
+    if (!state) { clock.classList.add('cr-clock-text'); return setText(clock, 'Ready when you are'); }
     const now = Date.now() + clockOffset;
     const ms = state.phase === 'raid' ? Math.max(0, (state.raidEndsAt ?? now) - now) : state.phase === 'paused' ? state.remainingMs : state.deadline === null ? null : Math.max(0, state.deadline - now);
     const seconds = ms === null ? 0 : Math.ceil(ms / 1000);
     setText(clock, ms === null ? state.phase === 'complete' ? 'Well played' : 'Teacher paced' : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`);
+    clock.classList.toggle('cr-clock-text', ms === null);
   };
   const render = () => {
     const rawState = app.lobby?.classroom;
     state = rawState ? { ...rawState, plan: localizeClassroomPlan(rawState.plan, locale()) } : undefined; if (state && state.serverTime !== lastServerTime) { clockOffset = state.serverTime - Date.now(); lastServerTime = state.serverTime; }
     const owner = teacher(), screen = app.role === 'screen';
+    // The room owner belongs on the teacher screen. A player-role owner (legacy edu room, or ?mock=edu) has no
+    // lesson yet, so open this room's teacher view instead of a student page saying "Waiting for your teacher".
+    if (!screen && isOwner(app) && !state && !sentToTeacher) {
+      sentToTeacher = true;
+      const q = new URLSearchParams(location.search); q.set('screen', '1');
+      location.replace(`${location.pathname}?${q}`);
+      return;
+    }
+    notTeacher.hidden = !(screen && app.lobby && app.you && !isOwner(app));
     el.classList.toggle('cr-projector', screen); el.classList.toggle('cr-student-view', !screen);
     teacherEntry.hidden = !(app.role === 'player' && isOwner(app) && !state);
     editor.hidden = !owner || (!!state && state.phase !== 'setup'); hostBoard.hidden = !screen; studentBoard.hidden = screen;
@@ -266,8 +285,8 @@ export function createClassroom(app: AppCtx): Screen {
       rowsSig = rs; roster.classList.toggle('cr-dense', (s?.rows.length ?? 0) > 15);
       rosterList.replaceChildren(...(s?.rows ?? []).map((row, i) => {
         const b = button('', `classroom-row-${row.id}`, () => { selected = row.id; detailsSig = ''; renderReport(selected); }); b.className = `cr-student${row.id === app.you ? ' cr-you' : ''}`;
-        b.append(h('span.cr-rank', null, row.score === undefined ? '—' : String(i + 1)), h('span.cr-person', null, h('b', null, row.name), h('small', null, !row.connected ? 'offline' : row.status === 'queued' ? 'checking commit…' : row.status === 'submitted' ? `${row.commit?.slice(0, 8)}${row.improvement > 0 ? ` · ↑${row.improvement}` : ''}` : row.status === 'error' ? 'needs resubmission' : 'writing code')),
-          h('strong.cr-points', null, row.score === undefined ? '—' : formatNumber(row.score)), h('span.cr-contribution', null, row.damage > 0 ? `+${row.damage}` : ''));
+        b.append(h('span.cr-rank', null, row.score === undefined ? h('span.cr-none', { 'aria-label': 'no score yet' }, '·') : String(i + 1)), h('span.cr-person', null, h('b', null, row.name), h('small', null, !row.connected ? 'offline' : row.status === 'queued' ? 'checking commit…' : row.status === 'submitted' ? `${row.commit?.slice(0, 8)}${row.improvement > 0 ? ` · ↑${row.improvement}` : ''}` : row.status === 'error' ? 'needs resubmission' : 'writing code')),
+          h('strong.cr-points', null, row.score === undefined ? h('span.cr-none', { 'aria-label': 'no score yet' }, '·') : formatNumber(row.score)), h('span.cr-contribution', null, row.damage > 0 ? `+${row.damage}` : ''));
         return b;
       }));
       if (!s?.rows.length) rosterList.append(h('p.cr-empty', null, `Students: open ${location.origin} and join ${app.room}.`));
@@ -297,5 +316,5 @@ export function createClassroom(app: AppCtx): Screen {
   });
   if (teacher()) buildPlanEditor(); render();
   const timer = setInterval(updateClock, 1000);
-  return { el, update: render, destroy() { placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, destroy() { backdrop?.destroy(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); for (const dispose of disposables) dispose(); el.remove(); } };
 }
