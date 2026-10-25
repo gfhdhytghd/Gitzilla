@@ -533,3 +533,15 @@ export interface Autopsy {
   players: { id: string; name: string; repo: string; stats: PlayerState["stats"] }[];
   mvp: string | null;
 }
+
+// GET /api/suggestions?n=8&lang=python — repo suggestions for the lobby (raid hero/boss pickers; PvP still needs your own repo).
+// Mix of a large curated pool and live GitHub "rising" repos, shuffled per request; server caches GitHub results.
+export interface RepoSuggestion {
+  slug: string;                       // owner/name
+  language: string | null;
+  stars: number;
+  description?: string;               // ≤ 140 chars, plain text
+  source: "curated" | "trending";     // trending = fetched live from GitHub (recently created / fast-rising)
+  fallback?: boolean;                 // pre-analyzed offline profile exists (instant summon)
+}
+export interface SuggestionsResponse { repos: RepoSuggestion[]; trendingAt: number | null }  // trendingAt = when the live list was fetched
