@@ -157,3 +157,13 @@ Owner-only lobby `{t:'setRubric',rubric}` validates criteria and normalizes rela
 At start, the server freezes the rubric and applies the sim's bounded `qualityFromRubric` hook to humans and bots. The same rubric drives post-fight scoring. `{t:'feedback',items}` sends each human student only their own feedback; the current owner and projector screens receive the class list. Combat/quiz context comes from the real PvP state/autopsy. Feedback replays on same-server reconnect, clears on rematch/permanent leave, and is never persisted or published to Hall. Restored classrooms rehydrate real repository evidence before starting; private repos need their current authenticated session.
 
 Focused coverage includes real HTTP/WS authorization, raw and PDF uploads, exact/over-limit bodies, rubric restoration, preview cache invalidation/private isolation, student recipient boundaries, current-owner CSV/Markdown exports, and an accelerated actual classroom match through natural rounds and feedback generation.
+
+## Host pause
+
+During an active match, the current owner may send `{t:'pause',paused:true}`. Battle/duel snapshots carry `paused:{by,since,resumeAt:null}` and continue while the server skips every simulation and bot step. Classroom raids use the same field on `ClassroomState`; their raid clock and timer transitions freeze too. Coding's existing classroom pause control remains separate.
+
+`{t:'pause',paused:false}` sets `resumeAt` to server wall time plus 3000ms. Inputs remain ignored and all clocks remain frozen until that deadline. Repeating resume does not restart the countdown; pause cancels a pending resume. Held movement/fire/dash/skill are cleared at both boundaries, retaining sequence acknowledgement. Normal snapshots carry `paused:null` again after resuming; there is no simulation catch-up for elapsed wall time.
+
+A paused owner disconnect with ownership transfer starts the three-second resume countdown automatically; the new owner may pause again. If no new owner exists (including the reserved classroom teacher), a 60-second absence limit applies, with the final three seconds advertised as the resume countdown. Returning before that countdown cancels the absence deadline. Explicit classroom teacher departure still ends the lesson immediately. Pause is memory-only; restart recovery keeps its existing lobby/lesson restoration behavior.
+
+`since` and `resumeAt` are epoch milliseconds. A classroom's gameplay `serverTime` is deliberately frozen while paused; use wall time for the resume overlay countdown. Keep render interpolation/extrapolation frozen while paused rather than advancing from the last velocity.

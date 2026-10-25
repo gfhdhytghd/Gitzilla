@@ -15,6 +15,18 @@ function lesson() {
   return {s, advance:(ms:number)=>{time+=ms;}, plan};
 }
 describe('staged classroom lesson',()=>{
+  it('freezes the host raid clock and shifts its deadline without replaying attacks', () => {
+    const {s, advance} = lesson();
+    s.control('start'); s.accept(s.begin('a','demo/repo'), source); s.control('attack');
+    const before = s.publicState(), remaining = before.raidEndsAt! - before.serverTime;
+    s.pauseHostClock(); advance(20_000); s.pauseHostClock();
+    expect(s.tick()).toBe(false); expect(s.publicState()).toEqual(before);
+    s.resumeHostClock(); s.resumeHostClock();
+    expect(s.state.raidEndsAt! - s.publicState().serverTime).toBe(remaining);
+    expect(s.state.rounds).toEqual(before.rounds); expect(s.state.bossHp).toBe(before.bossHp);
+    advance(remaining - 1); expect(s.tick()).toBe(false);
+    advance(1); expect(s.tick()).toBe(true); expect(s.state.phase).toBe('feedback');
+  });
   it.each([1, 2, 4, 8, 30])('scales HP for %i students while keeping individual damage fixed', count => {
     const {s}=lesson();
     const students=Array.from({length:count},(_,i)=>({id:`s${i}`,name:`Student ${i}`,connected:true}));

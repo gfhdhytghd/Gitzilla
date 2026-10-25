@@ -43,6 +43,7 @@ export class ClassroomSession {
   private previous = new Map<string, number>();
   private credited = new Map<string, number>();
   private submittedAt = new Map<string, number>();
+  private hostPausedAt?: number;
   constructor(plan: ClassroomPlan, private now: () => number = Date.now) {
     this.state = { plan: normalizeClassroomPlan(plan), phase: 'setup', stepIndex: 0, attempt: 1, deadline: null, remainingMs: null, serverTime: now(), raidEndsAt: null, bossHp: plan.steps.length * BOSS_HP_PER_STEP, bossMaxHp: plan.steps.length * BOSS_HP_PER_STEP, rows: [], rounds: [] };
   }
@@ -57,7 +58,15 @@ export class ClassroomSession {
     this.scaleBoss();
   }
   publicState(): ClassroomState {
-    return structuredClone({ ...this.state, serverTime: this.now(), rows: [...this.state.rows].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.improvement - a.improvement || a.name.localeCompare(b.name)) });
+    return structuredClone({ ...this.state, serverTime: this.hostPausedAt ?? this.now(), rows: [...this.state.rows].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.improvement - a.improvement || a.name.localeCompare(b.name)) });
+  }
+  pauseHostClock() { this.hostPausedAt ??= this.now(); }
+  resumeHostClock() {
+    if (this.hostPausedAt === undefined) return;
+    const elapsed = Math.max(0, this.now() - this.hostPausedAt);
+    if (this.state.deadline !== null) this.state.deadline += elapsed;
+    if (this.state.raidEndsAt !== null) this.state.raidEndsAt += elapsed;
+    this.hostPausedAt = undefined;
   }
   remove(id: string) {
     this.revisions.set(id, (this.revisions.get(id) ?? 0) + 1);
@@ -135,6 +144,7 @@ export class ClassroomSession {
     throw new Error('That control is not available in this phase');
   }
   tick(): boolean {
+    if (this.hostPausedAt !== undefined) return false;
     const s = this.state;
     if (s.phase === 'coding' && s.deadline !== null && this.now() >= s.deadline) { s.phase = 'paused'; s.deadline = null; s.remainingMs = 0; s.notice = 'Time is up. Submissions are closed; the teacher can extend or launch the raid.'; return true; }
     if (s.phase === 'raid' && s.raidEndsAt !== null && this.now() >= s.raidEndsAt) { s.phase = 'feedback'; s.raidEndsAt = null; return true; }

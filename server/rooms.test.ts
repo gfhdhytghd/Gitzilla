@@ -27,6 +27,7 @@ const directories: string[] = [];
 afterEach(async () => {
   for (const close of cleanup.splice(0)) await close();
   for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
+  vi.restoreAllMocks();
 });
 function persistenceFile() {
   const directory = mkdtempSync(join(tmpdir(), 'gitzilla-rooms-'));
@@ -117,6 +118,169 @@ const rubricServices: Partial<GameServices> = { ...genesisServices, defaultRubri
   applyRubric: (profile, kit, rubric) => qualityFromRubric(kit, { rubric, results: scoreRepo(profile, rubric) }) };
 
 describe('room protocol over real WebSockets', () => {
+  it('pauses a staged classroom raid, resumes after 3s and recovers from teacher absence at 60s', async () => {
+    let now = 1_800_000_000_000; vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const { profileFromFiles } = await import('../analysis/graph');
+    const files = [{ path: 'README.md', text: '# Example' }, { path: 'src/main.ts', text: 'export const answer=42' }];
+    const f = await setup(999, { analyzeClassroomSubmission: async repo => ({ profile: profileFromFiles(repo, files), files, commit: 'a'.repeat(40), checks: [] }) }, { allowLegacyEdu: false }, undefined, 'edu');
+    const teacher = await f.connect('screen'), student = await f.connect();
+    const latest = (client: typeof teacher) => client.messages.filter(m => m.t === 'classroom').at(-1);
+    const pause = (client: typeof teacher) => latest(client)?.state.paused;
+    const plan = defaultClassroomPlan(); plan.steps[0].checksWeight = 100;
+    plan.steps[0].checks = [{ id: 'docs', kind: 'file', path: 'README.md', label: 'README' }];
+    teacher.send({ t: 'classroomPlan', plan }); await until(() => latest(teacher));
+    teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest(teacher)?.state.phase === 'coding');
+    teacher.send({ t: 'pause', paused: true }); await until(() => teacher.messages.find(m => m.t === 'error'));
+    student.send({ t: 'classroomSubmit', repo: 'demo/repo' }); await until(() => latest(teacher)?.state.rows[0].status === 'submitted');
+    teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => latest(teacher)?.state.phase === 'raid');
+    teacher.send({ t: 'pause', paused: true }); await until(() => pause(student));
+    expect(pause(student)).toEqual({ by: teacher.welcome.you, since: now, resumeAt: null });
+    const frozen = latest(student)!.state, remaining = frozen.raidEndsAt! - frozen.serverTime;
+    student.send({ t: 'pause', paused: false }); await until(() => student.messages.find(m => m.t === 'error'));
+    now += 20000; await wait(240);
+    expect(latest(student)?.state.phase).toBe('raid'); expect(latest(student)?.state.serverTime).toBe(frozen.serverTime);
+    expect(latest(student)?.state.raidEndsAt).toBe(frozen.raidEndsAt);
+    teacher.send({ t: 'pause', paused: false }); await until(() => pause(student)?.resumeAt === now + 3000);
+    now += 2999; await wait(240); expect(latest(student)?.state.serverTime).toBe(frozen.serverTime);
+    now += 1; await until(() => pause(student) === null);
+    expect(latest(student)!.state.raidEndsAt! - latest(student)!.state.serverTime).toBe(remaining);
+    teacher.send({ t: 'pause', paused: true }); await until(() => pause(student)?.resumeAt === null);
+    teacher.socket.close(); await once(teacher.socket, 'close'); const absentAt = now;
+    now = absentAt + 57000; await until(() => pause(student)?.resumeAt === absentAt + 60000);
+    now = absentAt + 59999; await wait(240); expect(latest(student)?.state.phase).toBe('raid');
+    now = absentAt + 60000; await until(() => pause(student) === null);
+    expect(latest(student)!.state.raidEndsAt! - latest(student)!.state.serverTime).toBe(remaining);
+    now += remaining - 1; await wait(240); expect(latest(student)?.state.phase).toBe('raid');
+    now += 1; await until(() => latest(student)?.state.phase === 'feedback');
+    expect(latest(student)?.state.rounds).toHaveLength(1);
+    const returning = await f.connect('screen', teacher.welcome.token);
+    returning.send({ t: 'classroomControl', action: 'retry' }); await until(() => latest(student)?.state.phase === 'coding');
+    student.send({ t: 'classroomSubmit', repo: 'demo/repo' }); await until(() => latest(student)?.state.rows[0].status === 'submitted');
+    returning.send({ t: 'classroomControl', action: 'attack' }); await until(() => latest(student)?.state.phase === 'raid');
+    returning.send({ t: 'pause', paused: true }); await until(() => pause(student));
+    const left = once(returning.socket, 'close'); returning.send({ t: 'leave' }); await left;
+    await until(() => latest(student)?.state.phase === 'complete'); expect(pause(student)).toBeNull();
+  });
+
+  it('does not persist a combat pause or carry it into the restored match', async () => {
+    const file = persistenceFile(), first = await setup(999, {}, { persistenceFile: file });
+    const owner = await first.connect();
+    owner.send({ t: 'setRepo', repo: 'test/owner' }); owner.send({ t: 'setBoss', repo: 'test/boss' });
+    await until(() => owner.lobby()?.players[0].status === 'ready' && owner.lobby()?.boss.status === 'ready');
+    owner.send({ t: 'start' }); await until(() => owner.messages.find(m => m.t === 'snapshot'));
+    owner.send({ t: 'pause', paused: true }); await until(() => owner.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused);
+    await first.close(); expect(readFileSync(file, 'utf8')).not.toContain('resumeAt');
+    const second = await setup(0.1, {}, { persistenceFile: file }, first.room), resumed = await second.connect('player', owner.welcome.token);
+    expect(resumed.welcome.lobby.phase).toBe('lobby'); resumed.send({ t: 'start' });
+    const snapshot = await until(() => resumed.messages.find(m => m.t === 'snapshot'));
+    expect(snapshot.state.paused).toBeNull();
+    await until(() => resumed.messages.find(m => m.t === 'autopsy'));
+  });
+
+  it.each(['battle', 'pvp', 'edu'] as const)('host pause freezes the real %s sim and drops held/paused inputs through the resume countdown', async mode => {
+    let now = 1_800_000_000_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const step = vi.fn<ReturnType<GameServices['createMatch']>['step']>();
+    let match!: ReturnType<GameServices['createMatch']>;
+    const f = await setup(999, { ...genesisServices,
+      getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async (repo, token) => ({ repo, userId: token === 'alice' ? 1 : 2, login: token, private: false }),
+      createMatch: (players, boss, options) => {
+        match = createMatch(players, boss, options);
+        for (let i = 0; i < 90; i++) match.step(1 / 30, new Map()); // Enter actual combat before testing cooldown/round clocks.
+        step.mockImplementation((dt, inputs) => match.step(dt, inputs));
+        return { step, snapshot: () => match.snapshot(), autopsy: () => match.autopsy(), removePlayer: id => match.removePlayer?.(id), get over() { return match.over; } };
+      },
+    }, {}, undefined, mode);
+    const player = await f.connect('player', undefined, 'Host', 'alice'), peer = await f.connect('player', undefined, 'Peer', 'bob');
+    const owner = mode === 'edu' ? await f.connect('screen') : player;
+    player.send({ t: 'setRepo', repo: 'pallets/flask' }); peer.send({ t: 'setRepo', repo: 'fastapi/fastapi' });
+    if (mode === 'battle') owner.send({ t: 'setBoss', repo: 'pallets/flask' });
+    await until(() => owner.lobby()?.players.every(p => p.status === 'ready') && (mode !== 'battle' || owner.lobby()?.boss.status === 'ready'));
+    owner.send({ t: 'start' }); await until(() => owner.messages.find(m => m.t === 'snapshot'));
+    player.send({ t: 'input', frame: { seq: 7, move: [1, 0], aim: null, fire: true, dash: true, skill: true, source: 'keyboard' } });
+    await until(() => step.mock.calls.some(call => call[1].get(player.welcome.you)?.fire));
+    owner.send({ t: 'pause', paused: true });
+    const paused = await until(() => owner.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused);
+    expect(paused).toEqual({ by: owner.welcome.you, since: now, resumeAt: null });
+    const before = match.snapshot(), calls = step.mock.calls.length, snapshots = peer.messages.filter(m => m.t === 'snapshot').length;
+    player.send({ t: 'input', frame: { seq: 99, move: [-1, 0], aim: [1, 0], fire: true, dash: true, skill: true, source: 'keyboard' } });
+    await wait(140);
+    expect(step).toHaveBeenCalledTimes(calls); expect(match.snapshot()).toEqual(before);
+    expect(peer.messages.filter(m => m.t === 'snapshot').length).toBeGreaterThan(snapshots + 1);
+    const screen = await f.connect('screen');
+    expect((await until(() => screen.messages.find(m => m.t === 'snapshot'))).state.paused).toEqual(paused);
+    peer.send({ t: 'pause', paused: false }); await until(() => peer.messages.find(m => m.t === 'error'));
+    expect(peer.messages.filter(m => m.t === 'error').at(-1)?.message).toContain('Only the room owner');
+    owner.send({ t: 'pause', paused: false });
+    await until(() => owner.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt === now + 3000);
+    const resumeAt = now + 3000;
+    now += 1000; owner.send({ t: 'pause', paused: false }); await wait(40);
+    expect(owner.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt).toBe(resumeAt);
+    now = resumeAt - 1; await wait(80); expect(step).toHaveBeenCalledTimes(calls); expect(match.snapshot()).toEqual(before);
+    now = resumeAt; await until(() => step.mock.calls.length > calls);
+    const firstInput = step.mock.calls[calls][1].get(player.welcome.you)!;
+    expect(firstInput).toMatchObject({ seq: 7, move: [0, 0], aim: null, fire: false, dash: false, skill: false });
+    await until(() => owner.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused === null);
+    expect(match.snapshot().t - before.t).toBeLessThan(1); // No wall-time catch-up.
+  });
+
+  it('schedules resume on paused owner transfer and lets the new owner cancel/re-pause', async () => {
+    let now = 1_800_000_000_000; vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const f = await setup(), owner = await f.connect(), peer = await f.connect();
+    owner.send({ t: 'setRepo', repo: 'test/owner' }); owner.send({ t: 'setBoss', repo: 'test/boss' }); peer.send({ t: 'setRepo', repo: 'test/peer' });
+    await until(() => owner.lobby()?.players.every(p => p.status === 'ready') && owner.lobby()?.boss.status === 'ready');
+    owner.send({ t: 'start' }); await until(() => owner.messages.find(m => m.t === 'snapshot'));
+    owner.send({ t: 'pause', paused: true }); await until(() => peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused);
+    const t = peer.messages.filter(m => m.t === 'snapshot').at(-1)!.state.t;
+    owner.socket.close(); await once(owner.socket, 'close');
+    await until(() => peer.lobby()?.ownerId === peer.welcome.you && peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt === now + 3000);
+    peer.send({ t: 'pause', paused: true }); await until(() => peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.by === peer.welcome.you);
+    now += 5000; await wait(80);
+    expect(peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt).toBeNull();
+    expect(peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.t).toBe(t);
+    peer.send({ t: 'pause', paused: false }); await until(() => peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt === now + 3000);
+    now += 3000; await until(() => peer.messages.filter(m => m.t === 'snapshot').at(-1)?.state.t! > t);
+  });
+
+  it.each([false, true])('handles paused owner absence with a 60s bound (owner returns: %s)', async returns => {
+    let now = 1_800_000_000_000; vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const f = await setup(), owner = await f.connect(), screen = await f.connect('screen');
+    owner.send({ t: 'setRepo', repo: 'test/owner' }); owner.send({ t: 'setBoss', repo: 'test/boss' });
+    await until(() => owner.lobby()?.players[0].status === 'ready' && owner.lobby()?.boss.status === 'ready');
+    owner.send({ t: 'start' }); await until(() => owner.messages.find(m => m.t === 'snapshot'));
+    owner.send({ t: 'pause', paused: true }); await until(() => screen.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused);
+    const frozen = screen.messages.filter(m => m.t === 'snapshot').at(-1)!.state.t;
+    owner.socket.close(); await once(owner.socket, 'close'); await until(() => screen.lobby()?.ownerId === '');
+    const disconnectedAt = now;
+    if (returns) {
+      now += 10000; const resumed = await f.connect('player', owner.welcome.token);
+      expect((await until(() => resumed.messages.find(m => m.t === 'snapshot'))).state.paused?.resumeAt).toBeNull();
+      now = disconnectedAt + 70000; await wait(100);
+      expect(screen.messages.filter(m => m.t === 'snapshot').at(-1)?.state.t).toBe(frozen);
+      resumed.send({ t: 'pause', paused: false }); await until(() => resumed.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt === now + 3000);
+      now += 3000;
+    } else {
+      now = disconnectedAt + 56999; await wait(80); expect(screen.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt).toBeNull();
+      now = disconnectedAt + 57000; await until(() => screen.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused?.resumeAt === disconnectedAt + 60000);
+      now = disconnectedAt + 59999; await wait(80); expect(screen.messages.filter(m => m.t === 'snapshot').at(-1)?.state.t).toBe(frozen);
+      now = disconnectedAt + 60000;
+    }
+    await until(() => screen.messages.filter(m => m.t === 'snapshot').at(-1)?.state.paused === null && screen.messages.filter(m => m.t === 'snapshot').at(-1)!.state.t > frozen);
+  });
+
+  it('rejects pause outside combat and rejects malformed pause booleans', async () => {
+    const f = await setup(), owner = await f.connect(), peer = await f.connect();
+    peer.send({ t: 'pause', paused: true }); owner.send({ t: 'pause', paused: true });
+    await until(() => peer.messages.find(m => m.t === 'error')); await until(() => owner.messages.find(m => m.t === 'error'));
+    expect(peer.messages.filter(m => m.t === 'error').at(-1)?.message).toContain('owner');
+    expect(owner.messages.filter(m => m.t === 'error').at(-1)?.message).toContain('during a match');
+    owner.socket.send(JSON.stringify({ t: 'pause', paused: 'false' }));
+    await until(() => owner.messages.filter(m => m.t === 'error').length === 2);
+    expect(owner.messages.filter(m => m.t === 'error').at(-1)?.message).toContain('Choose pause');
+  });
+
   it('previews exact current scores, reuses unchanged evidence and invalidates on rubric/repo/mode changes', async () => {
     const score = vi.fn(scoreRepo);
     const test = await setup(999, { ...rubricServices, scoreRepo: score,
