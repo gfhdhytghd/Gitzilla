@@ -1,6 +1,6 @@
 // Small shared slide effects: typed text, the bundled homepage QR and a pixel "ring" pulse.
 import { h } from "../../app/util.ts";
-import qrSvg from "../qr-home.svg?raw";
+import qrPng from "../assets/qr-home.png";
 import type { Life } from "../core.ts";
 
 /** Types each line into its own row with a block cursor; ms = 0 shows them at once (calm). */
@@ -22,10 +22,19 @@ export async function typeLines(el: HTMLElement, lines: string[], life: Life, ms
   }
 }
 
-/** The homepage QR (https://gitzilla.wilflin.me), generated once from server/qr.ts and bundled: no network needed. */
+/** The homepage QR (https://gitzilla.wilflin.me): a bundled 1036 px black-on-white PNG (37 modules × 28 px, quiet
+ *  zone included, generated from server/qr.ts and decoded to verify). A plain <img>: no inline SVG, nothing inherited,
+ *  no filter, blend or overlay on top, so no browser can paint it solid. */
 export const HOME_URL = "https://gitzilla.wilflin.me";
+/** QR slides call this: the stage's CRT scanline/vignette overlay is switched off while they show, so nothing sits
+ *  on top of the code. */
+export function clearOverQr(el: HTMLElement, life: Life) {
+  const ds = el.closest(".ds");
+  ds?.classList.add("qr-clear");
+  life.add(() => ds?.classList.remove("qr-clear"));
+}
 export function homeQr(cls = "qr"): HTMLElement {
-  return h(`div.${cls}`, { role: "img", "aria-label": `QR code for ${HOME_URL}`, html: qrSvg });
+  return h(`div.qr-box.${cls}`, null, h("img.qr-img", { src: qrPng, alt: `QR code for ${HOME_URL}`, width: 1036, height: 1036, draggable: "false" }));
 }
 
 /** Expanding pixel ring at (x, y) inside host (a "haptic" pulse). */

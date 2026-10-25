@@ -2,8 +2,10 @@
 //   beat 1: the four gestures large, each drawn as what the phone really does (input/README + spin-circle card):
 //             tilt  = tip the flat phone (a level ball rolls downhill) → the hero walks that way
 //             swing = a sharp flick (ghost trail + speed lines)        → attack
-//             twist = a quick wrist turn around the long axis, out and back → dash
-//             spin  = the phone travels around a circle, staying upright (it never rotates) → skill
+//             tilt hard (≥ 50°, any direction) = a steep tip + direction arrow + dash streak → dash that way
+//             spin  = the phone orbits its own long axis: upright and facing you, its centre travels a horizontal
+//                     circle (a flattened ellipse in perspective: bigger when near, behind the ring when far,
+//                     a soft shadow under it); it never rotates → skill
 //           The active tile restarts in phase with the real hero, whose inputs fire on the same beats.
 //   beat 2: four phones around one projector: an 8-bot-style PvP royale with four fighters, each phone tilting with
 //           its fighter's real move input, and a kill feed. Phones also work as gamepads for a big screen / Vision Pro.
@@ -19,11 +21,12 @@ import { ring } from "./fx.ts";
 const GESTURES = [
   { id: "tilt", verb: "TILT", act: "walk", note: "tip it like a tray", period: 4.8, dwell: 4.8 },
   { id: "swing", verb: "SWING", act: "attack", note: "one sharp flick", period: 1.2, dwell: 3.6 },
-  { id: "twist", verb: "TWIST", act: "dash", note: "wrist turn, out and back", period: 1.3, dwell: 3.9 },
-  { id: "spin", verb: "SPIN", act: "skill", note: "stir a circle, stay upright", period: 1.6, dwell: 3.4 },
+  { id: "dash", verb: "TILT HARD", act: "dash", note: "50° or more, any direction", period: 2.4, dwell: 4.8 },
+  { id: "spin", verb: "SPIN", act: "skill", note: "circle it around, stay upright", period: 1.8, dwell: 3.8 },
 ] as const;
 type GestureId = (typeof GESTURES)[number]["id"];
-const SPIN_R = 64;
+// spin orbit: a horizontal circle seen in perspective (stage px); the phone's base rides the ellipse
+const ORBIT = { cx: 150, cy: 178, rx: 98, ry: 26 };
 const phone = (cls = "") => h(`div.dp${cls}`, null, h("i.dp-screen", null, h("i.dp-ball")), h("i.dp-notch"));
 const SVG = (inner: string) => h("div.mo-path", { html: `<svg viewBox="0 0 300 240" width="300" height="240">${inner}</svg>` });
 const ARROW = '<defs><marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>';
@@ -35,13 +38,17 @@ function rig(id: GestureId): HTMLElement {
   if (id === "swing") return h("div.mo-stage.g-swing", null,
     SVG(`${ARROW}<path d="M70 150 Q150 96 236 128" class="arrow fast" marker-end="url(#ah)"/><g class="speed"><path d="M196 92 h56"/><path d="M206 120 h62"/><path d="M196 148 h56"/></g>`),
     ...[3, 2, 1].map((k) => h(`div.mo-rig.ghost.g${k}`, { style: `--k:${k}` }, phone())), h("div.mo-rig", null, phone()));
-  if (id === "twist") return h("div.mo-stage.g-twist", null,
-    SVG(`${ARROW}<path d="M84 150 A66 22 0 0 0 216 150" class="arrow" marker-start="url(#ah)" marker-end="url(#ah)"/><path d="M150 26 V214" class="axis"/>`),
-    h("div.mo-rig.ghost.g1", null, phone()), h("div.mo-rig", null, phone()));
-  // spin: the frame loop moves these along the circle by translation only (see SPIN_R), so the phone never rotates
+  if (id === "dash") return h("div.mo-stage.g-dash", null,
+    SVG(`<ellipse cx="150" cy="150" rx="118" ry="44" class="guide"/>`),
+    h("div.mo-dash-arrow", null, h("i.mo-streak"), h("b.mo-head")), h("div.mo-rig", null, phone()));
+  // spin: the frame loop places these on the ellipse (translate + depth scale only, never a rotation). Layers: far
+  // half of the ring, shadows, phones, near half of the ring; a phone on the near side is lifted above the near half.
+  const { cx, cy, rx, ry } = ORBIT;
   return h("div.mo-stage.g-spin", null,
-    SVG(`${ARROW}<circle cx="150" cy="120" r="${SPIN_R}" class="guide"/><path d="M150 46 A74 74 0 1 1 79 103" class="arrow" marker-end="url(#ah)"/>`),
-    ...[5, 4, 3, 2, 1].map((k) => h("div.mo-rig.mo-spot.ghost", { style: `--k:${k}`, "data-lag": k }, phone())), h("div.mo-rig.mo-spot", { "data-lag": 0 }, phone()));
+    h("div.mo-path.back", { html: `<svg viewBox="0 0 300 240" width="300" height="240"><path d="M${cx - rx} ${cy} A${rx} ${ry} 0 0 1 ${cx + rx} ${cy}" class="guide"/></svg>` }),
+    ...[0, 1, 2, 3].map((k) => h("i.mo-shadow", { "data-lag": k })),
+    ...[3, 2, 1].map((k) => h("div.mo-rig.mo-spot.ghost", { style: `--k:${k}`, "data-lag": k }, phone())), h("div.mo-rig.mo-spot", { "data-lag": 0 }, phone()),
+    h("div.mo-path.front", { html: `<svg viewBox="0 0 300 240" width="300" height="240">${ARROW}<path d="M${cx + rx} ${cy} A${rx} ${ry} 0 0 1 ${cx - rx} ${cy}" class="guide"/><path d="M${cx + 60} ${cy + ry + 14} Q${cx} ${cy + ry + 30} ${cx - 60} ${cy + ry + 14}" class="arrow" marker-end="url(#ah)"/></svg>` }));
 }
 const ARENA = { x: 900, y: 238, w: 960, h: 576 };
 const PROJ = { x: 600, y: 170, w: 720, h: 486 };
@@ -73,18 +80,21 @@ export const motion: Scene = {
     const soloSim = createMiniSim({ kind: "raid", heroes: [{ name: "you", kit: hero }], boss: bossKit(FEATURED[2], 1), restartAfter: 2 });
     let active = 0, since = 0, beat = 0;
     const g0 = arena.getContext("2d")!;
-    const spinSpots = [...tiles[3].querySelectorAll<HTMLElement>(".mo-spot")];
+    const spinSpots = [...tiles[3].querySelectorAll<HTMLElement>(".mo-spot, .mo-shadow")];
     // inputs fire on the same beats the active tile's animation shows (phase restarts with the tile in pick())
     const phase = () => (since % GESTURES[active].period) / GESTURES[active].period;
     const crossed = (at: number, dt = 1 / 30) => { const P = GESTURES[active].period, a = (since - dt) / P, b = since / P; return Math.floor(a - at) !== Math.floor(b - at) && since > dt; };
     // tilt keyframes: tip right · top edge down · left · bottom edge down (demo.css @keyframes mo-tilt)
     const TIPS: [number, number, [number, number]][] = [[0.06, 0.22, [1, 0]], [0.31, 0.47, [0, -1]], [0.56, 0.72, [-1, 0]], [0.81, 0.97, [0, 1]]];
+    // hard tips (@keyframes mo-dash): right, then left. Side tips read clearly; forward/back would turn the flat
+    // phone edge-on. The arrow and the copy still say any direction.
+    const DASHES: [number, [number, number]][] = [[0.08, [1, 0]], [0.58, [-1, 0]]];
     soloSim.drive = (p: PlayerState, s: MatchState): InputFrame => {
       const g = GESTURES[active].id, b = s.boss, f = phase();
       const base: InputFrame = { seq: 0, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: "motion" };
       if (g === "tilt") { const tip = TIPS.find(([a, z]) => f >= a && f <= z); return { ...base, move: tip ? [tip[2][0] * 0.9, tip[2][1] * 0.9] : [0, 0] }; }
       if (g === "swing") return { ...base, fire: f >= 0.52, move: b ? [Math.sign(b.x - 150 - p.x) * 0.2, Math.sign(b.y - p.y) * 0.15] : [0, 0] };
-      if (g === "twist") return { ...base, dash: crossed(0.12), move: [b && p.x > b.x - 120 ? -0.6 : 0.6, 0.15] };
+      if (g === "dash") { const tip = DASHES.find(([a]) => f >= a && f <= a + 0.12); return { ...base, dash: DASHES.some(([a]) => crossed(a)), move: tip ? tip[1] : [0, 0] }; }
       return { ...base, skill: crossed(0.999), fire: false };
     };
     // stage-px centre of a tile's phone area, for the "haptic" rings
@@ -137,17 +147,20 @@ export const motion: Scene = {
         if (since > GESTURES[active].dwell) pick((active + 1) % GESTURES.length);
         const g = GESTURES[active].id;
         // pulse rings on the beat: at the phone (the gesture lands) and at the hero (the action fires)
-        const beatAt = g === "swing" ? 0.52 : g === "twist" ? 0.12 : g === "spin" ? 0.999 : -1;
-        if (beatAt >= 0 && crossed(beatAt, dt)) {
-          const c = tileCentre(active), me = soloSim.state.players[0], col = g === "spin" ? "var(--magenta)" : g === "twist" ? "var(--yellow)" : "var(--cyan)";
+        const beats = g === "swing" ? [0.52] : g === "dash" ? DASHES.map(([a]) => a) : g === "spin" ? [0.999] : [];
+        if (beats.some((at) => crossed(at, dt))) {
+          const c = tileCentre(active), me = soloSim.state.players[0], col = g === "spin" ? "var(--magenta)" : g === "dash" ? "var(--yellow)" : "var(--cyan)";
           ring(solo, c.x, c.y, col);
           if (me) ring(solo, ARENA.x + (me.x / 480) * ARENA.w, ARENA.y + (me.y / 288) * ARENA.h, col);
         }
-        // spin: translate the phone (and its lagging trail) around the circle; orientation is never touched
+        // spin: each phone's base rides the ellipse; depth (sin) sets size, stacking and its shadow. No rotation, ever.
         const spinT = (g === "spin" ? since : t) / GESTURES[3].period;
         for (const spot of spinSpots) {
-          const a = (spinT - Number(spot.dataset.lag) * 0.045) * Math.PI * 2;
-          spot.style.transform = ctx.calm ? "" : `translate(${(Math.cos(a) * SPIN_R).toFixed(1)}px, ${(Math.sin(a) * SPIN_R).toFixed(1)}px)`;
+          const a = ctx.calm ? Math.PI / 2 : (spinT - Number(spot.dataset.lag) * 0.05) * Math.PI * 2;
+          const near = Math.sin(a), k = 1 + 0.16 * near, x = Math.cos(a) * ORBIT.rx, y = ORBIT.cy + near * ORBIT.ry;
+          if (spot.classList.contains("mo-shadow")) { spot.style.transform = `translate(${(150 + x).toFixed(1)}px, ${y.toFixed(1)}px) scale(${k.toFixed(3)})`; spot.style.opacity = (0.28 + 0.14 * near).toFixed(2); continue; }
+          spot.style.transform = `translate(${x.toFixed(1)}px, ${(y - 120 - 56 * k).toFixed(1)}px) scale(${k.toFixed(3)})`;
+          spot.style.zIndex = near > 0 ? "4" : "2";
         }
         soloSim.step(dt);
         g0.setTransform(2, 0, 0, 2, 0, 0); g0.imageSmoothingEnabled = false;

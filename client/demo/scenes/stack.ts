@@ -3,6 +3,7 @@
 import { h } from "../../app/util.ts";
 import type { Scene } from "../core.ts";
 import { REPO_COUNT } from "../data.ts";
+import { ARCHETYPE_DECKS } from "../../../sim/archetypes.ts";
 
 const NODES = [
   { k: "GitHub tarball", s: "streamed + untarred in memory" },
@@ -12,8 +13,8 @@ const NODES = [
   { k: "snapshots", s: "20 Hz over WebSockets" },
   { k: "phones", s: "any browser · motion sensors" },
 ];
-// sim/archetypes (kaiju, hydra, mecha, abyssal) · server room cap · shared/i18n LOCALES (en, zh, es, fr)
-const FACTS: [number, string][] = [[REPO_COUNT, "famous repos ship pre-analyzed"], [4, "boss archetypes"], [8, "players per raid"], [4, "languages in the UI"]];
+// boss body plans: one entry per BossArchetype (a Record, so a new plan must be added there) · room cap · i18n LOCALES
+const FACTS: [number, string][] = [[REPO_COUNT, "famous repos ship pre-analyzed"], [Object.keys(ARCHETYPE_DECKS).length, "boss body plans"], [8, "players per raid"], [4, "languages in the UI"]];
 
 export const stack: Scene = {
   id: "stack", title: "Under the hood", tracks: ["gemini", "auth0"],

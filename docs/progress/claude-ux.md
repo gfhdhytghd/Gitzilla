@@ -1,3 +1,58 @@
+DONE (demo safety pass) — /demo:
+- Vision Pro slide no longer runs live WebGL or <video>;
+- both QRs are plain PNG images, verified by decoding;
+- new spin (horizontal orbit) and dash (tilt hard) animations;
+- swipe/tap navigation, verified on WebKit iPad landscape;
+- copy tweaks.
+Every check passes in Chromium + WebKit at 1920/1280. No commits.
+
+## Demo safety pass (2026-10-25)
+- **Vision Pro white flashes, root cause:** the live 3D slide called the game's `drawPostFx`, whose crit flash
+  paints the whole overlay white with a dithered vignette. My capture caught 79 near-white frames (mean 0.92 vs
+  0.06) in 8.5 s, in bursts every 0.5–2 s. My earlier Chromium check missed it: it sampled every other frame for
+  only 3 s. **The same flash exists in the real game's big screen and needs an owner** (photosensitivity).
+- **Fix:**
+  - The slide is a pre-rendered loop: an 8 s flat tabletop captured from the real stage25d with post-FX off. Every
+    frame checked: max frame mean 0.073, max jump 0.009, seamless 0.5 s crossfade loop.
+  - Shipped as an animated WebP in an `<img>` (1.4 MB) over a black poster background, under the gentle CSS tilt.
+  - **Not `<video>`:** in Playwright WebKit the H.264/VP9 `<video>` crashed the page twice in 12 s (a crashed page
+    paints white); with the video blocked it never crashed.
+  - No slide uses WebGL or post-FX any more (all canvases are 2D; `drawSim` lost its post-FX option). Canvases
+    are transparent on a dark stage.
+  - Reduced motion shows the still poster.
+- **QR shown solid black:**
+  - Both QRs are now a plain `<img>` of a 1036 px black-on-white PNG (37 modules × 28 px, quiet zone included),
+    inlined by Vite as a data URI.
+  - `isolation: isolate`, no filter or blend, no scan line, and the stage's CRT overlay is switched off while the
+    QR slides show.
+  - **Decoded with zbar from real screenshots:** WebKit + Chromium × 1920/1280, play + close slides, all
+    "https://gitzilla.wilflin.me".
+- **WebKit flash check** (`safety.mjs`): one fresh page per slide, screenshots for 5 s, paced to ~10 fps; WebKit
+  managed 3–10 fps at 1920 and 5–10 at 1280. Every slide passes in both engines and both sizes: max frame-to-frame
+  mean-luminance jump 2.4% (threshold 20%). The Chromium screencast check also passes on all slides at both sizes.
+- **Motion slide:**
+  - **Spin** is a horizontal orbit around the phone's long axis, seen in perspective: an ellipse, the phone upright
+    and facing the viewer, bigger and in front when near, smaller and behind the ring when far, with a soft shadow,
+    never rotating (`motion/spin-strip.png`).
+  - **Dash** is "TILT HARD → dash · 50° or more, any direction": a steep tip right then left, with a direction arrow
+    and a dash streak (`motion/dash-strip.png`). Forward/back hard tips turned the flat phone edge-on, so they're
+    not shown. The haptic pulses are smaller round rings.
+  - WebKit video: `motion/motion-slide-webkit.webm`.
+- **Touch navigation** (pointer events, touch/pen): swipe left/right (≥ 50 px, mostly horizontal, < 600 ms) and taps
+  on the outer fifths. A second finger cancels; links/buttons keep their taps; 300 ms lockout.
+  `touchtest.mjs` (WebKit, iPad Pro 11 landscape) passes all 12 cases:
+  - real taps, swipes, vertical drag, slow, short and two-finger swipes;
+  - swipe on beats, and a rapid double swipe gives exactly 2 steps;
+  - scale-to-fit 1194×672 in 1194×834.
+- **Copy:** the Vision title is now "Put the fight on a table in front of you.". "boss body plans" is counted from
+  `sim/archetypes.ts` `ARCHETYPE_DECKS` (a `Record<BossArchetype>`, so new body plans are counted automatically).
+- **Checks:**
+  - network/overflow: 0 `/api`, 0 `/ws`, no overflow, no page errors, in all 4 configs;
+  - root tsc: 0 errors;
+  - prod build: OK;
+  - vitest: one failing file, `qa/artifacts/rematch-boss-fix-server-2026-10-25/.../receipts.test.ts`. That's someone's
+    QA artifact copy, which vitest now picks up; it's not mine.
+
 DONE (demo deck pass) — /demo is now a pure presentation:
 - no rooms, sockets or API calls;
 - "Play it yourself" slide with a bundled homepage QR;

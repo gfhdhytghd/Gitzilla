@@ -1,6 +1,7 @@
 // /demo: the live-demo "slide" page. A fixed 1920×1080 stage scaled to the window (so 1280×720 is the same picture),
 // one frame loop for the ambient layer + the active scene, keyboard/clicker navigation, track badges, progress bar.
 //   → Space PageDown next · ← PageUp back · 1–9, 0 jump · F fullscreen · R next repo · ?scene=N&beat=B to deep link
+//   touch/pen: swipe left = next, swipe right = back · tap the right/left fifth = next/back
 import "./demo.css";
 import { h } from "../app/util.ts";
 import { audio } from "../app/sound.ts";
@@ -24,7 +25,7 @@ export async function mountDemo(root: HTMLElement) {
   const badges = h("div.ds-badges");
   const corner = h("div.ds-corner");
   const bar = h("div.ds-progress");
-  const help = h("div.ds-help", null, "→ next · ← back · 1–9 0 jump · F fullscreen · R next repo");
+  const help = h("div.ds-help", null, "→ next · ← back · swipe or tap the edges · 1–9 0 jump · F fullscreen · R next repo");
   const ds = h("div.ds", null, rain, stage, badges, corner, bar, h("div.ds-crt"));
   const shell = h("div#demo.demo" + (calm ? ".calm" : ""), { translate: "no" }, ds, help);
   root.replaceChildren(shell);
@@ -104,6 +105,38 @@ export async function mountDemo(root: HTMLElement) {
     else if (k === "r" || k === "R") cycleRepo(e.shiftKey ? -1 : 1);
     else return;
     help.classList.add("hide");
+  });
+
+  // ---- touch / pen: swipe ≥ 50 px, mostly horizontal, < 600 ms; or tap the outer fifths. One gesture = one step:
+  // a second finger cancels it, vertical moves are ignored, links/buttons keep their own taps, and steps are
+  // rate-limited so a swipe can't also count as a tap.
+  let swipe: { id: number; x: number; y: number; t: number } | null = null, fingers = 0, lastNav = 0;
+  const nav = (dir: 1 | -1) => {
+    const now = performance.now();
+    if (now - lastNav < 300) return;
+    lastNav = now;
+    (dir > 0 ? next : prev)();
+    help.classList.add("hide");
+  };
+  shell.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+    fingers++;
+    swipe = fingers === 1 && !(e.target as Element).closest("a, button") ? { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() } : null;
+  });
+  const lift = (e: PointerEvent) => { if (e.pointerType !== "mouse") fingers = Math.max(0, fingers - 1); };
+  shell.addEventListener("pointercancel", (e) => { lift(e); swipe = null; });
+  shell.addEventListener("pointerup", (e) => {
+    lift(e);
+    const g = swipe;
+    if (!g || g.id !== e.pointerId) return;
+    swipe = null;
+    const dx = e.clientX - g.x, dy = e.clientY - g.y, dt = performance.now() - g.t;
+    if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 600) return nav(dx < 0 ? 1 : -1);
+    if (Math.hypot(dx, dy) < 12 && dt < 400) {
+      const fifth = innerWidth / 5;
+      if (e.clientX >= innerWidth - fifth) nav(1);
+      else if (e.clientX <= fifth) nav(-1);
+    }
   });
 
   // ---- one frame loop: ambient rain + the active scene's callbacks; window.__demo for automated fps checks

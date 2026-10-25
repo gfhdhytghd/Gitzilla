@@ -69,8 +69,9 @@ export function createMiniSim(opts: { kind: "raid" | "royale"; heroes: { name: s
 }
 
 /** Draws a match state in world units (the caller sets the transform). events: pass null to skip particles/damage
- *  text (the particle pool is global, so only one sim on screen should feed it). */
-export function drawSim(ctx: CanvasRenderingContext2D, sim: MiniSim, time: number, opts: { events?: boolean; postFx?: boolean; shake?: number; variant?: "classroom" | "royale" } = {}) {
+ *  text (the particle pool is global, so only one sim on screen should feed it). Never post-FX: its full-screen crit
+ *  flash would strobe on a slide. */
+export function drawSim(ctx: CanvasRenderingContext2D, sim: MiniSim, time: number, opts: { events?: boolean; variant?: "classroom" | "royale" } = {}) {
   const s = sim.state, roy = s.mode === "pvp";
   const big = sim.world.w !== 480 || sim.world.h !== 288 ? sim.world : undefined;
   X.trackPlayers(s.players);
@@ -87,7 +88,6 @@ export function drawSim(ctx: CanvasRenderingContext2D, sim: MiniSim, time: numbe
   safe("drawBullets", R.drawBullets, ctx, s.bullets, time);
   if (opts.events) safe("drawEvents", R.drawEvents, ctx, sim.events, time, { x: 0, y: 0, w: sim.world.w, h: sim.world.h });
   sim.events.length = 0;
-  if (opts.postFx) safe("drawPostFx", R.drawPostFx, ctx, time, opts.shake ?? 0, { x: 0, y: 0, w: sim.world.w, h: sim.world.h });
 }
 
 /** A boss posed on its own (no match), for the mapping and classroom slides. Regions come from the sim's geometry. */

@@ -7,7 +7,7 @@ import { wordmark } from "../../app/wordmark.ts";
 import type { Scene } from "../core.ts";
 import { FEATURED, bossKit } from "../data.ts";
 import { stagedBoss } from "../sims.ts";
-import { HOME_URL, homeQr } from "./fx.ts";
+import { HOME_URL, clearOverQr, homeQr } from "./fx.ts";
 
 export const close: Scene = {
   id: "close", title: "Thanks", tracks: ["grand"],
@@ -18,6 +18,7 @@ export const close: Scene = {
     const blast = h("div.close-blast");
     const end = h("div.close-end");
     el.append(canvas, blast, end);
+    clearOverQr(el, life);
     let clock = 0, phase: "hit" | "death" | "gone" = "hit";
     const pops: { x: number; y: number; t: number; n: number }[] = [];
 

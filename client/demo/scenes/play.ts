@@ -1,10 +1,10 @@
 // 7 · Play it yourself: a static invitation (the deck is a presentation, nothing live). A big bundled QR to the
-// homepage with a slow scan line, the URL in large type, three steps, and real heroes bobbing gently underneath.
+// homepage (plain image, nothing on top of it), the URL in large type, three steps, and real heroes bobbing gently.
 import { h } from "../../app/util.ts";
 import { R } from "../../app/renderers.ts";
 import type { Scene } from "../core.ts";
 import { HERO_REPOS, heroKit } from "../data.ts";
-import { HOME_URL, homeQr, typeLines } from "./fx.ts";
+import { HOME_URL, clearOverQr, homeQr, typeLines } from "./fx.ts";
 
 export const play: Scene = {
   id: "play", title: "Play it yourself", tracks: ["mystery"],
@@ -18,10 +18,11 @@ export const play: Scene = {
     });
     el.append(
       h("h2.slide-h", null, "Your turn. ", h("em", null, "Play it yourself.")),
-      h("div.play-qr", null, homeQr("play-qr-img"), h("i.play-scan")),
+      h("div.play-qr", null, homeQr("play-qr-img")),
       h("div.play-right", null, url, h("div.play-steps", null, ...steps), h("div.play-note", null, "no app · no account · any phone browser")),
       h("div.play-heroes", null, ...heroes),
     );
+    clearOverQr(el, life);
     void typeLines(url, [HOME_URL.replace(/^https:\/\//, "")], life, ctx.calm ? 0 : 55);
   },
 };
