@@ -34,7 +34,7 @@ const CLONE_STEPS = ["Cloning into '%s'...", "Receiving objects", "Resolving del
 const BOSS_STEPS = ["git clone --depth 1 %s", "Receiving objects", "Mapping components", "Growing tentacles", "Tying knots (cycles)", "Opening eyes", "Waking the kaiju"];
 
 /** Requested contract (docs/progress/claude-ui.md): analyzer progress on LobbyPlayer / lobby.boss. */
-interface Progress { stage?: string; paths?: string[] }
+interface Progress { stage?: string; pct?: number; paths?: string[] }
 
 /** Real code on hero cards: a snippet in a mini editor + the signature move. */
 function codeBits(k: PlayerKit, big: boolean): HTMLElement[] {
@@ -192,8 +192,9 @@ function hearts(kit: PlayerKit): string {
   return "♥".repeat(Math.min(9, kit.maxHp)) + " " + "◆".repeat(Math.min(9, kit.maxArmor));
 }
 
-function statusMarker(testid: string, status: string, text: string) {
-  return h(`span.status-chip.st-${status}`, { "data-testid": testid, "data-status": status }, text);
+/** data-status is the real lobby status (playtests key off it); `look` may differ (a ready hero still compiling). */
+function statusMarker(testid: string, status: string, text: string, look = status) {
+  return h(`span.status-chip.st-${look}`, { "data-testid": testid, "data-status": status }, text);
 }
 
 export function createLobby(app: AppCtx): Screen {
@@ -628,6 +629,35 @@ export function createLobby(app: AppCtx): Screen {
     return { lines, frac };
   }
 
+  // ---- summon gate: a hero stays hidden until it's really summoned ----
+  // status "ready" arrives while the Genesis cinematic is still compiling the hero, so cards / you-card / backdrop wait
+  // for: your own seat → the cinematic's done (capped); others seen analyzing → when their cinematic would end (it plays
+  // its full ~10 s timeline even when the analysis is quick, so: max(start + 10 s, ready + 2.5 s));
+  // bots → a short beat; heroes already ready when this screen arrived (reconnect, resume) → right away. Until then the
+  // card shows the static/progress placeholder.
+  const GENESIS_MS = 10000, REMOTE_TAIL_MS = 2500, BOT_REVEAL_MS = 600, OWN_REVEAL_CAP_MS = 20000;
+  const summon = new Map<string, { analyzed: boolean; startAt: number; readyAt: number }>();
+  let ownGenesisLive = false;
+  const trackSummon = (p: LobbyPlayer) => {
+    const s = summon.get(p.id);
+    if (p.status === "analyzing") {
+      if (!s?.analyzed || s.readyAt) summon.set(p.id, { analyzed: true, startAt: performance.now(), readyAt: 0 });
+    } else if (p.status === "ready") {
+      if (!s) summon.set(p.id, { analyzed: false, startAt: 0, readyAt: performance.now() });
+      else if (!s.readyAt) s.readyAt = performance.now();
+    } else summon.delete(p.id);
+  };
+  const revealed = (p: LobbyPlayer): boolean => {
+    if (p.status !== "ready" || !p.kit) return false;
+    const s = summon.get(p.id);
+    if (!s?.analyzed) return true;
+    const now = performance.now(), since = now - s.readyAt;
+    if (p.id === app.you && ownGenesisLive) return heroGenesis.done || since > OWN_REVEAL_CAP_MS;
+    if (p.bot) return since > BOT_REVEAL_MS;
+    return since > REMOTE_TAIL_MS && now - s.startAt > GENESIS_MS;
+  };
+  let heldIds: string[] = [];
+
   // ---- owner: each other member gets "⋯" → Make host / Kick (bots: Remove), with an inline confirm ----
   type AdminState = "menu" | "kick" | "host";
   const adminOpen = new Map<string, AdminState>();
@@ -696,7 +726,8 @@ export function createLobby(app: AppCtx): Screen {
     const repo = h("div.pcard-repo", null, p.repo ? h("span", { translate: "no" }, `⎇ ${p.repo}`) : "awaiting repo…");
     info.append(name, repo);
     if (!p.bot) info.append(h("div.controls-state", { "data-testid": "player-controls", "data-ready": p.controlsReady !== false }, p.controlsReady === false ? "📱 waiting for controls" : "✓ controls ready"));
-    if (p.status === "ready" && p.kit) {
+    const shown = revealed(p);
+    if (p.status === "ready" && p.kit && shown) {
       portrait.append(heroPortrait(p.kit, 64));
       const pw = lobby.mode === "pvp" ? powerOf(p.kit) : null;
       info.append(
@@ -709,11 +740,12 @@ export function createLobby(app: AppCtx): Screen {
           : h("div.pcard-hearts", null, hearts(p.kit)),
         ...codeBits(p.kit, false),
       );
-    } else if (p.status === "analyzing") {
+    } else if (p.status === "analyzing" || p.status === "ready") {
+      // summoning: static + the real stage/progress; a ready hero whose reveal hasn't played yet stays in here too
       const c = noiseCanvas(32);
       noiseEls.add({ c, hue: "#39ff88" });
       portrait.append(c);
-      info.append(h("pre.clone-log", { "data-clone": p.id }));
+      info.append(h("pre.clone-log", { "data-clone": p.id, "data-testid": "summoning" }));
     } else if (p.status === "error") {
       portrait.append(h("div.portrait-err", null, "✗"));
       info.append(h("div.pcard-err", null, `fatal: ${p.error ?? "analysis failed"}`));
@@ -721,7 +753,8 @@ export function createLobby(app: AppCtx): Screen {
       portrait.append(h("div.portrait-empty", null, "?"));
       info.append(h("div.dim.blink", null, you ? "← paste your repo" : "typing…"));
     }
-    return h(`div.pcard.st-${p.status}${you ? ".is-you" : ""}${p.status === "ready" ? ".reveal" : ""}${crown ? ".strongest" : ""}`, null, portrait, info);
+    const st = p.status === "ready" && !shown ? "analyzing" : p.status;
+    return h(`div.pcard.st-${st}${you ? ".is-you" : ""}${st === "ready" ? ".reveal" : ""}${crown && shown ? ".strongest" : ""}`, { "data-revealed": String(shown) }, portrait, info);
   }
 
   function renderSquad(lobby: LobbyState) {
@@ -738,9 +771,11 @@ export function createLobby(app: AppCtx): Screen {
     classCounter.textContent = `${lobby.players.filter((p) => !p.bot).length} / 30 joined · ${nReady} ready`;
     const seen = new Set<string>();
     strongest = lobby.mode === "pvp" ? strongestIds(lobby.players.filter((p) => p.status === "ready")) : new Set();
+    for (const p of lobby.players) trackSummon(p);
+    heldIds = lobby.players.filter((p) => p.status === "ready" && p.kit && !revealed(p)).map((p) => p.id);
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", p.kit?.pvpAi?.baseScore ?? "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join(""), canManage(p, lobby), adminOpen.get(p.id) ?? ""].join("|");
+      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.pvpPower ? powerScore(p.kit.pvpPower) : "", p.kit?.pvpAi?.baseScore ?? "", strongest.has(p.id), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join(""), revealed(p), canManage(p, lobby), adminOpen.get(p.id) ?? ""].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
@@ -768,7 +803,7 @@ export function createLobby(app: AppCtx): Screen {
     // royale: show the whole 8-seat roster so "up to eight" reads at a glance
     if (!(screen && lobby.mode === "edu")) for (let i = lobby.players.length; i < (lobby.mode === "pvp" || screen ? 8 : 4); i++)
       squadList.append(h("div.pcard.pcard-slot", null, h("div.pcard-portrait", null, h("div.portrait-empty", null, "+")), h("div.pcard-info", null, h("div.dim", null, `slot ${i + 1} · scan to join`))));
-    backdrop.setHeroes(lobby.players.filter((p) => p.kit).map((p) => p.kit!));
+    backdrop.setHeroes(lobby.players.filter((p) => p.kit && revealed(p)).map((p) => p.kit!));
   }
 
   function renderYou(lobby: LobbyState) {
@@ -780,6 +815,7 @@ export function createLobby(app: AppCtx): Screen {
     // PvP: the server's refusal ("not your repo", "forks don't count", …) shows inline under the input, never as a card
     if (lobby.mode === "pvp" && me?.status === "error" && me.error) repoErr.textContent = me.error;
     youPanel.classList.toggle("has-genesis", live);
+    ownGenesisLive = live;
     const collapse = !!me && me.status === "ready" && !changingRepo;
     pickerBox.hidden = collapse;
     pickerDone.hidden = !collapse;
@@ -793,15 +829,18 @@ export function createLobby(app: AppCtx): Screen {
     if (me.repo && document.activeElement !== repoInput && !repoInput.value) repoInput.value = me.repo;
     const st = me.status;
     const pvp = lobby.mode === "pvp";
-    const label = st === "ready" ? "✓ hero summoned" : st === "analyzing" ? (pvp && pvpVerifying(me, lobby) ? "checking that this repo is yours…" : "analyzing repo…")
+    const compiling = st === "ready" && !revealed(me);
+    const label = compiling ? "⟳ compiling your hero…" : st === "ready" ? "✓ hero summoned" : st === "analyzing" ? (pvp && pvpVerifying(me, lobby) ? "checking that this repo is yours…" : "analyzing repo…")
       : pvp ? "👁 spectating · pick a repo you own to fight" : st === "error" ? `✗ ${me.error ?? "error"}` : "no repo yet";
-    youStatus.replaceChildren(statusMarker("player-ready", st, label));
+    youStatus.replaceChildren(statusMarker("player-ready", st, label, compiling ? "analyzing" : st));
     const edu = lobby.mode === "edu";
     const myPower = pvp ? powerOf(me.kit) : null;
-    const sig = `${st}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}|${edu}|${me.kit?.quality?.map((q) => q.grade).join("")}|${myPower ? powerScore(myPower) : ""}|${strongest.has(me.id)}`;
+    const meShown = revealed(me);
+    const sig = `${st}|${meShown}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}|${edu}|${me.kit?.quality?.map((q) => q.grade).join("")}|${myPower ? powerScore(myPower) : ""}|${strongest.has(me.id)}`;
     if (youCard.dataset.sig !== sig) {
       youCard.dataset.sig = sig;
-      if (me.kit && st === "ready" && edu && me.kit.quality?.length) {
+      if (!meShown) youCard.replaceChildren(); // still being summoned: the Genesis cinematic above is the only reveal
+      else if (me.kit && st === "ready" && edu && me.kit.quality?.length) {
         // classroom: stats ARE the code-quality report card
         const k = me.kit;
         youCard.replaceChildren(
@@ -1135,15 +1174,20 @@ export function createLobby(app: AppCtx): Screen {
       const id = pre.dataset.clone!;
       const since = analyzingSince.get(id) ?? performance.now();
       const slug = id === "__boss" ? app.lobby?.boss.repo ?? "" : app.lobby?.players.find((p) => p.id === id)?.repo ?? "";
-      const { lines, frac } = cloneText(slug, since, id === "__boss" ? BOSS_STEPS : CLONE_STEPS);
-      const src = (id === "__boss" ? app.lobby?.boss : app.lobby?.players.find((p) => p.id === id)) as { progress?: Progress } | undefined;
-      const paths = src?.progress?.paths ?? [];
+      const fake = cloneText(slug, since, id === "__boss" ? BOSS_STEPS : CLONE_STEPS);
+      const lines = fake.lines;
+      const src = (id === "__boss" ? app.lobby?.boss : app.lobby?.players.find((p) => p.id === id)) as { progress?: Progress; status?: string } | undefined;
+      const paths = src?.status === "ready" ? [] : src?.progress?.paths ?? [];
       if (src?.progress?.stage) lines[lines.length - 1] = `${src.progress.stage}...`;
+      // real analyzer progress when the server sends it; a ready hero still waiting for its reveal reads 100%
+      let frac = typeof src?.progress?.pct === "number" ? Math.max(0, Math.min(1, src.progress.pct)) : fake.frac;
+      if (src?.status === "ready") (lines.length = 0), lines.push("assembling hero..."), (frac = 1);
       // stream the real file paths the analyzer is reading, newest last
       const k = Math.floor(performance.now() / 140);
       const shown = paths.length ? [paths[k % paths.length], paths[(k + 1) % paths.length]].map((x) => `  ${x}`) : [];
       pre.textContent = [...lines, ...shown].join("\n") + "\n" + asciiBar(frac, 14) + ` ${Math.floor(frac * 100)}%`;
     });
+    if (heldIds.length && app.lobby && heldIds.some((id) => { const p = app.lobby!.players.find((x) => x.id === id); return !p || revealed(p); })) render();
     if (bossFull && bossFullCloseAt && performance.now() > bossFullCloseAt) closeBossFull();
     if (bossRevealAt && performance.now() - bossRevealAt > 1500) {
       bossStage.querySelector(".boss-frame")?.classList.remove("revealing");

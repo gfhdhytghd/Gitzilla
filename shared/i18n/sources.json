@@ -12473,5 +12473,15 @@
     "id": "db5e3ed9bc0cd163",
     "source": "Tap anywhere to continue _",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "aff765ae1601c087",
+    "source": "⟳ compiling your hero…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9cb8bc64c346d27c",
+    "source": "assembling hero...",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

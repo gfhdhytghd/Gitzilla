@@ -20555,5 +20555,19 @@
     "zh": "轻触任意位置继续 _",
     "es": "Toca en cualquier lugar para continuar _",
     "fr": "Touchez n'importe où pour continuer _"
+  },
+  {
+    "id": "aff765ae1601c087",
+    "en": "⟳ compiling your hero…",
+    "zh": "⟳ 正在编译你的英雄…",
+    "es": "⟳ compilando tu héroe…",
+    "fr": "⟳ compilation de ton héros…"
+  },
+  {
+    "id": "9cb8bc64c346d27c",
+    "en": "assembling hero...",
+    "zh": "正在组装英雄...",
+    "es": "ensamblando héroe...",
+    "fr": "assemblage du héros..."
   }
 ]
