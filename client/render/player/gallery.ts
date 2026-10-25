@@ -498,7 +498,40 @@ function varietyScene() {
   });
 }
 
-if (params.get("variety")) varietyScene();
+// ---------------------------------------------------------------- ?rematch=1 : stale per-id memory across matches
+// Match 1 runs t = 100..120 (revive at 119, dash at 119.9, hurt at 119.95); match 2 restarts the clock near 0 with
+// the SAME player ids (as the server does on rematch). Columns: the first frames of match 2 at t = 0.05/0.3/1/3.
+function rematchScene() {
+  document.querySelectorAll("h2, #portraits, #terminals, #generals, #showcase").forEach((e) => ((e as HTMLElement).style.display = "none"));
+  const ts2 = [0.05, 0.3, 1, 3], CWr = 90, CHr = 110;
+  stage.width = (ts2.length + 1) * CWr * SCALE; stage.height = CHr * SCALE;
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#17121f"; ctx.fillRect(0, 0, stage.width, stage.height);
+  const scratch = document.createElement("canvas").getContext("2d")!;
+  const mk = (id: string, x: number): PlayerState => ({
+    id, name: "wilf", x, y: 62, vx: 0, vy: 0, facing: [1, 0.1], hp: 7, armor: 0, energy: 200, alive: true, downedFor: 0, reviveProgress: 0,
+    skillCd: 0, dashCd: 0, invuln: 0, buffs: [], kit: kitFor(24), perks: [], stats: { damage: 0, bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false },
+  });
+  ["end of match 1", ...ts2.map((v) => "rematch t=" + v)].forEach((label, col) => {
+    const p = mk("rm" + col, col * CWr + CWr / 2);
+    for (let t = 100; t <= 120; t += 1 / 30) {
+      p.alive = !(t > 110 && t < 119);
+      if (t > 119.9 && p.dashCd === 0) p.dashCd = 1.7;
+      if (t > 119.95 && p.hp === 7) p.hp = 6;
+      drawPlayer(col === 0 && t + 1 / 30 > 120 ? ctx : scratch, p, t, true);
+    }
+    if (col > 0) {
+      // rematch: fresh state, same id, clock back near 0
+      Object.assign(p, { hp: 7, armor: 5, alive: true, dashCd: 0, facing: [1, 0.1] });
+      drawPlayer(ctx, p, ts2[col - 1], true);
+    }
+    drawText(ctx, label, col * CWr + CWr / 2, CHr - 9, "#8bffb0");
+  });
+}
+
+if (params.get("rematch")) rematchScene();
+else if (params.get("variety")) varietyScene();
 else if (params.get("weapons")) weaponsScene();
 else if (params.get("benchsync")) benchSync(Number(params.get("benchsync")));
 else if (params.get("bench")) benchScene(Number(params.get("bench")));

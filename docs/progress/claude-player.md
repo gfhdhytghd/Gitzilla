@@ -1,3 +1,31 @@
+DONE (rematch huge/flipped hero)
+
+Rematch bug: after a rematch a hero loaded HUGE and FLIPPED, then slowly eased back to normal.
+- **Root cause** (client/render/player). The hero renderer keeps per-player memory in `mems` keyed by player id: timestamps of hurt/dash/revive/knockback/shots, ghosts, particles, rollback history, duck position, etc. On rematch the server reuses the player ids, but the game's `visTime` restarts at 0 in the new game screen.
+  - Old timestamps (e.g. hurtT = 119.95) made `1 - (t - hurtT)/0.16` explode: sx ≈ 121 (huge) and sy ≈ -89 (flipped).
+  - Dash afterimages were stuck at full opacity (negative age → alpha > 1).
+  - All of it decayed only as the new clock crawled back up to the old one ("slowly eases back").
+  - The 3D stage draws its billboards with the same `drawPlayer` and the same clock, so it had the same bug.
+- **Fix.**
+  - New DOM-free `memory.ts`. `memIsStale(prev, t, seed)` rebuilds a player's memory when the clock goes backwards (> 0.25s), after a gap > 3s, or when the same id now carries a different hero (kit seed). That player's queued shots/hits/impacts are cleared too.
+  - `pulse(age, dur)` returns 0 for negative or NaN ages and never exceeds 1. It's used for the hurt, dash, revive, and knockback squash.
+  - `safeScale` clamps the final squash/stretch to [0.6, 1.6], so it's never negative or NaN.
+  - `heroScaleOf` sanitizes `opts.scale` (`Math.max(1, NaN)` was NaN).
+  - The downed fall/rise ages are clamped to 0..1.
+  - The victory mood resets when the clock rewinds.
+  - Other caches in this dir (frames, portraits, looks, colours) are keyed by appearance, not by id or time.
+- **Repro.**
+  - Gallery `?rematch=1`: match 1 runs t = 100..120 (revive, dash, hurt at the end), then match 2 restarts at t = 0.05/0.3/1/3 with the same ids.
+  - Before the fix (fix stashed): solid cyan stuck ghosts plus a giant flipped white hurt-flash sprite.
+  - After the fix: a normal hero in every column.
+- **Real rematch on DEV :5175 in WebKit** (codex-qa `tools/rematch-soak.ts --cycles 2 --device desktop --view all --path rematch`). Both 2D and 2.5D/3D finished match 1 and started match 2 after REMATCH; the probe's first-3s hero samples show:
+  - the memory was rebuilt (new object, all timestamps fresh)
+  - no negative-scale transforms
+  - match-2 hero bounds the same as a fresh match 1 (2D 77–135 × 91–144 px vs 79–145 × 93–142; 3D 62–117 × 74–78 vs 62–117 × 74–142)
+  Both cases later aborted mid match 2 because the shared dev server's game socket closed (a restart, not renderer-related).
+- **Not mine, checked.** The 3D stage has no per-id billboard smoothing (constant rescale), and the snapshot interpolation lives in a fresh game screen per match.
+- **Tests.** `memory.test.ts`: stale detection, safe pulse, a regression of the exact old math (sx > 100, sy < 0) vs the guarded math, and scale sanitizing. Player tests: 65 pass. `tsc` clean.
+
 DONE (hero variety)
 
 Hero variety (docs/tasks/variety.md, Heroes). Everything is deterministic per repo: a separate seeded gear stream from `kit.seed`, plus the kit's stat profile for the element. Class readability, the animation frames, the portrait API, the 3D billboard slot, and the voxel path are unchanged.
