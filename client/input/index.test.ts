@@ -220,7 +220,7 @@ describe('motion-v3 permissions and live sensors', () => {
     expect(requestOrientation).toHaveBeenCalledOnce();
     expect(await input.requestPermission()).toBe(true);
     pointer(win, 'pointerup', 1);
-    expect(input.sample().fire).toBe(false); // defer until double-tap is ruled out
+    expect(input.sample().fire).toBe(true); // motion taps no longer wait for double-tap
     advance(300); expect(input.sample().fire).toBe(true);
     neutral();
     advance(601); expect(input.sample().fire).toBe(false);
@@ -640,5 +640,60 @@ describe('iPad screen-relative orientation regression',()=>{
   expect(input.sample().move[1]).toBeGreaterThan(.99);
   advance(30);emit(win,'deviceorientation',{beta:b*50/15,gamma:g*50/15});const f=input.sample();
   expect(f.dash).toBe(true);expect(f.move[1]).toBeCloseTo(1);expect(f.move[0]).toBeCloseTo(0);
+ });
+});
+
+const swipeCases=['iPhone','iPad'].flatMap(device=>[0,90,180,270].flatMap(angle=>
+ [[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[-1,-1],[1,-1]].map(([x,y])=>({device,angle,x,y}))));
+describe('motion swipe direction and disambiguation',()=>{
+ const enable=(device='iPad',angle=0)=>{
+  win.orientation=angle;win.screen.orientation.angle=0;win.innerWidth=500;win.innerHeight=900;
+  vi.stubGlobal('navigator',{platform:device==='iPad'?'MacIntel':'iPhone',userAgent:device==='iPad'?'Macintosh Safari':'iPhone',maxTouchPoints:5});
+  const input=start();emit(win,'deviceorientation',{beta:0,gamma:0});input.sample();return input;
+ };
+ const swipe=(x=1,y=0,id=1)=>{
+  pointer(win,'pointerdown',id,{target:canvas,clientX:100,clientY:100});advance(70);
+  pointer(win,'pointermove',id,{clientX:100+x*35,clientY:100+y*35});advance(70);
+  pointer(win,'pointerup',id,{clientX:100+x*70,clientY:100+y*70});
+ };
+ it.each(swipeCases)('$device@$angle° swipe($x,$y) follows screen coordinates once',({device,angle,x,y})=>{
+  const input=enable(device,angle);swipe(x,y);
+  const f=input.sample();expect(f).toMatchObject({dash:true,fire:false,skill:false});
+  expect(f.move[0]).toBeCloseTo(x/Math.hypot(x,y));expect(f.move[1]).toBeCloseTo(y/Math.hypot(x,y));
+  expect(input.lastGesture?.via).toBe('swipe');expect(input.sample().dash).toBe(false);
+  advance(800);expect(input.sample().fire).toBe(false);
+ });
+ it('double-tap in motion is attacks only, and long-press remains skill only',()=>{
+  const input=enable();
+  for(const id of [1,2]){pointer(win,'pointerdown',id,{target:canvas});advance(60);pointer(win,'pointerup',id);expect(input.sample()).toMatchObject({fire:true,dash:false,skill:false});advance(60);}
+  advance(650);pointer(win,'pointerdown',3,{target:canvas});advance(560);expect(input.sample()).toMatchObject({skill:true,dash:false,fire:false});
+  pointer(win,'pointerup',3);advance(400);expect(input.sample()).toMatchObject({fire:false,skill:false,dash:false});
+ });
+ it('cancels two-finger swipes and recovers after every finger lifts',()=>{
+  const input=enable();pointer(win,'pointerdown',1,{target:canvas,clientX:100,clientY:100});
+  pointer(win,'pointerdown',2,{target:canvas,clientX:120,clientY:100});advance(100);
+  pointer(win,'pointermove',1,{clientX:180,clientY:100});pointer(win,'pointerup',1,{clientX:180,clientY:100});pointer(win,'pointerup',2,{clientX:120,clientY:100});
+  advance(700);expect(input.sample()).toMatchObject({dash:false,fire:false,skill:false});swipe(0,1,3);expect(input.sample().dash).toBe(true);
+ });
+ it('shares650ms between tilt and swipe; rejected swipe does not extend cooldown',()=>{
+  const input=enable();emit(win,'deviceorientation',{beta:0,gamma:50});expect(input.sample().dash).toBe(true);
+  emit(win,'deviceorientation',{beta:0,gamma:0});swipe();expect(input.sample().dash).toBe(false);
+  advance(520);swipe(0,1,2);expect(input.sample().dash).toBe(true);
+  emit(win,'deviceorientation',{beta:50,gamma:0});expect(input.sample().dash).toBe(false);
+  emit(win,'deviceorientation',{beta:0,gamma:0});advance(660);emit(win,'deviceorientation',{beta:50,gamma:0});expect(input.sample().dash).toBe(true);
+ });
+ it.each(['tap-only','seated'] as const)('%s drag fallback keeps fast drags as movement and double-tap as dash',profile=>{
+  mobile();const input=start(profile);advance(1600);expect(input.mode).toBe('touch');
+  pointer(win,'pointerdown',1,{target:canvas,clientX:100,clientY:100});advance(70);pointer(win,'pointermove',1,{clientX:180,clientY:100});expect(input.sample().move[0]).toBe(1);
+  pointer(win,'pointerup',1,{clientX:180,clientY:100});expect(input.sample()).toMatchObject({dash:false,fire:false});
+  for(const id of [2,3]){advance(70);pointer(win,'pointerdown',id,{target:canvas});advance(60);pointer(win,'pointerup',id);}
+  expect(input.sample()).toMatchObject({dash:true,fire:false});
+ });
+ it('counts swipe training without altering tilt or force thresholds',()=>{
+  const input=enable();vi.stubGlobal('fetch',vi.fn(async()=>({ok:true})));const before=input.profile;
+  input.calibration.startStep('dash');
+  for(const id of [1,2,3]){swipe(1,0,id);input.sample();advance(700);}
+  expect(input.calibration.meter()).toMatchObject({step:'dash',count:3,ready:true});
+  expect(input.calibration.result()).toMatchObject({swingThreshold:before.swingThreshold,spinAngle:before.spinAngle,spinMagnitude:before.spinMagnitude,fullSpeed:before.fullSpeed,twistThreshold:before.twistThreshold});
  });
 });

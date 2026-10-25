@@ -2,7 +2,7 @@ import type { InputFrame, MotionProfile } from '../../shared/types';
 import { createGestureState, gravityMove, normalize, orientationGravity, recognizeGesture, removeGravity, screenTilt } from './gestures';
 import type { Acceleration, RotationRate } from './gestures';
 import { isMotionDevice, screenOrientation } from './orientation';
-import { createTiltDashState, recognizeTiltDash } from './tilt-dash';
+import { createTiltDashState, recognizeTiltDash, DASH_COOLDOWN_MS } from './tilt-dash';
 import { loadThresholds, sanitizeThresholds, saveThresholds, type GestureThresholds } from './thresholds';
 import { createCalibrationRecorder, type CalibrationRecorder, type GestureNotice } from './calibration';
 import { createSensorTrace, startAutomaticTrace, type SensorTrace } from './trace';
@@ -119,7 +119,7 @@ export function createInput(opts: InputOptions): InputController {
     sensorStatus = 'off';
     needsPermission = !!mobile && motionProfile !== 'tap-only' && requiresPermission && !permissionGranted;
     dash = skill = false;
-    touch ??= createTouchControls({ onAction: (kind, via) => notify(kind, via, performance.now()) });
+    touch ??= createTouchControls({ onAction: handleTouchAction });
     touch.setJoystick(true);
     debugState.mode = mode;
     recordGesture('touch fallback');
@@ -149,6 +149,16 @@ export function createInput(opts: InputOptions): InputController {
     trace.add({ type: 'gesture', at, kind, via });
     recordGesture(`${via} → ${kind}`); opts.onGesture?.(lastGesture);
   };
+  function handleTouchAction(kind:GestureNotice['kind'],via:string,direction:[number,number]|null) {
+    const now=performance.now();
+    if(kind==='dash'){
+      if(now-tiltDash.lastDash<DASH_COOLDOWN_MS)return false;
+      tiltDash={...tiltDash,lastDash:now};
+      dashDirection=direction; // Pointer coordinates already use the screen frame.
+    }
+    if(kind!=='attack')gestures.fireUntil=0;
+    notify(kind,via,now);return true;
+  }
   const acceptGravity = (vector: Acceleration, now: number) => {
     if (now < steeringHoldUntil) return;
     const magnitude = Math.hypot(vector.x, vector.y, vector.z);
@@ -443,10 +453,7 @@ export function createInput(opts: InputOptions): InputController {
   debugState.calibrating = false;
   debugState.profile = motionProfile;
   debugState.permission = needsPermission ? 'tap to enable' : mode === 'motion' ? 'not required' : 'not applicable';
-  if (mobile) touch = createTouchControls({ joystick: motionProfile === 'tap-only', onAction: (kind, via) => {
-    if (kind !== 'attack') gestures.fireUntil = 0;
-    notify(kind, via, performance.now());
-  } });
+  if (mobile) touch = createTouchControls({ joystick: motionProfile === 'tap-only', onAction:handleTouchAction });
   cleanup.push(permissionSession.subscribe(applyPermissionState));
   if (mobile) startAutomaticTrace(trace, 'fight');
   else if (new URLSearchParams(window.location?.search).get('trace') === '1') trace.start();

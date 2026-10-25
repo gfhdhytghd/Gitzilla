@@ -57,7 +57,14 @@ try{
    await pose(p.b[0]*50/15,p.b[1]*50/15);
    const dashes=await page.evaluate(()=>(window as any).__frames.filter((f:any)=>f.dash));
    assert.equal(dashes.length,1);assert(dashes[0].move[1]>.99&&Math.abs(dashes[0].move[0])<.01);
-   checks.push({device,angle:p.angle,directions:4,bottomDash:dashes[0].move});
+   await pose(0,0);await page.waitForTimeout(650);await page.evaluate(()=>{(window as any).__frames=[];});
+   await page.dispatchEvent('body','pointerdown',{pointerType:'touch',pointerId:20,clientX:120,clientY:350});await page.waitForTimeout(70);
+   await page.dispatchEvent('body','pointermove',{pointerType:'touch',pointerId:20,clientX:160,clientY:350});await page.waitForTimeout(70);
+   await page.dispatchEvent('body','pointerup',{pointerType:'touch',pointerId:20,clientX:200,clientY:350});await page.waitForTimeout(180);
+   const swipes=await page.evaluate(()=>(window as any).__frames);
+   assert.equal(swipes.filter((f:any)=>f.dash).length,1);assert(swipes.every((f:any)=>!f.fire&&!f.skill));
+   const swipe=swipes.find((f:any)=>f.dash);assert(swipe.move[0]>.99&&Math.abs(swipe.move[1])<.01);
+   checks.push({device,angle:p.angle,directions:4,bottomDash:dashes[0].move,swipeRight:swipe.move});
   }
   if(ipad){
    await page.evaluate(()=>{(window as any).__angle=90;dispatchEvent(new Event('orientationchange'));});
@@ -72,6 +79,6 @@ try{
  }
  assert.equal(errors.length,0,errors.join('\n'));pass=true;
 }catch(e){failure=String(e);process.exitCode=1;}finally{
- writeFileSync(`${output}/summary.json`,JSON.stringify({pass,failure,checks,errors,proof:'WebKit actual input controller, trusted-click native permission mocks, synthetic sensor poses and original real-iPad sample values; Stage Manager-sized viewport; no hardware claim'},null,2));
+ writeFileSync(`${output}/summary.json`,JSON.stringify({pass,failure,checks,errors,proof:'WebKit actual input controller, trusted-click native permission mocks, synthetic sensor poses/PointerEvents and original real-iPad sample values; Stage Manager-sized viewport; no hardware claim'},null,2));
  console.log(JSON.stringify({output,pass,failure,checks,errors},null,2));await browser.close();
 }

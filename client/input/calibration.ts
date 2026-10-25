@@ -77,7 +77,7 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
       if (sample.gesture) {
         lastGesture = sample.gesture;
         const matches = step === 'swing' && (sample.gesture.via === 'swing' || sample.gesture.via === 'tap')
-          || step === 'dash' && (sample.gesture.via === 'tilt-dash' || sample.gesture.via === 'double-tap')
+          || step === 'dash' && (sample.gesture.via === 'tilt-dash' || sample.gesture.via === 'swipe' || sample.gesture.via === 'double-tap')
           || step === 'spin' && (sample.gesture.via === 'spin' || sample.gesture.via === 'long-press');
         if (matches && (step === 'swing' || step === 'dash' || step === 'spin')) {
           if (sample.gesture.via === step || step === 'dash' && sample.gesture.via === 'tilt-dash') {
@@ -91,7 +91,7 @@ export function createCalibrationRecorder(getProfile: () => GestureThresholds,
     },
     meter(): CalibrationMeter {
       return { step, elapsed: Math.max(0, lastAt - start), acceleration, gyro, gyroAvailable, dashTiltDegrees, spinDegrees, spinMagnitude, spinGyroDegrees,
-        instruction: step === 'dash' ? 'Tilt hard to dash (50°); return below35°.' : step === 'spin' ? 'Draw circles with your phone; keep its orientation steady.' : '', tilt: [...tilt], ranges: [...ranges],
+        instruction: step === 'dash' ? 'Swipe to dash, or tilt hard (50°); return below35° to reset tilt.' : step === 'spin' ? 'Draw circles with your phone; keep its orientation steady.' : '', tilt: [...tilt], ranges: [...ranges],
         count, goal: step ? goals[step] : 0, ready: step !== null && count >= goals[step] && (step !== 'neutral' || lastAt - start >= 300), peak, lastGesture };
     },
     /** Pure snapshot; call input.setProfile(result()) to persist. Skipped steps preserve defaults. */

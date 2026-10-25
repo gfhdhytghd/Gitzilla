@@ -47,12 +47,16 @@ try {
   for (let i = 0; i < 3; i++) { await set({ x: 2 }); await page.waitForTimeout(70); await set({ x: 0 }); await page.waitForTimeout(260); }
   assert((await meter()).ready); check('three actual swing recognitions record user peaks');
   await step('dash');
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     await set({beta:0,gamma:0});await page.waitForTimeout(400);
     await set({beta:0,gamma:60});await page.waitForTimeout(350);
     await set({beta:0,gamma:0});await page.waitForTimeout(400);
   }
-  assert((await meter()).ready); check('three hard tilt dashes mark fixed50° training ready without gyro');
+  await page.waitForTimeout(400);
+  await page.dispatchEvent('canvas','pointerdown',{pointerType:'touch',pointerId:7,clientX:120,clientY:350});await page.waitForTimeout(70);
+  await page.dispatchEvent('canvas','pointermove',{pointerType:'touch',pointerId:7,clientX:160,clientY:350});await page.waitForTimeout(70);
+  await page.dispatchEvent('canvas','pointerup',{pointerType:'touch',pointerId:7,clientX:200,clientY:350});
+  assert((await meter()).ready); check('two hard tilts plus one swipe complete dash training without changing tilt thresholds');
   await step('spin');
   for (let i = 0; i < 2; i++) {
     await page.evaluate(() => { (window as any).__motion.circleStart = performance.now(); }); await page.waitForTimeout(1080);

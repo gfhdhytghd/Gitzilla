@@ -283,9 +283,13 @@ try {
     await sleep(450);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   });
-  await actionEvidence('dash', 'double-tap dash (no gyro required)', async () => {
-    await page.touchscreen.tap(120, 350); await sleep(90); await page.touchscreen.tap(120, 350);
+  const swipePacket=await actionEvidence('dash', 'motion swipe right dashes once with no tap attack', async () => {
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:120,y:350}]});await sleep(70);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:160,y:350}]});await sleep(70);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:200,y:350}]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   });
+  assert(swipePacket.move[0]>.99&&Math.abs(swipePacket.move[1])<.01,'swipe dash uses screen-right direction');
   const setRate = async (alpha: number, beta = 0, gamma = 0) => page.evaluate(([alpha, beta, gamma]) => {
     (window as any).__motion.rate = { alpha, beta, gamma };
   }, [alpha, beta, gamma]);
@@ -380,7 +384,7 @@ try {
   await page.screenshot({ path: join(output, 'portrait-motion.png') });
   const uploaded = await until(() => traceUploads.find(trace => trace.source === 'fight'), '20s sensor trace uploaded to real DEV endpoint');
   assert.equal(uploaded.status, 201); assert(uploaded.samples > 100 && uploaded.gyro);
-  for (const gesture of ['tap:attack', 'long-press:skill', 'double-tap:dash', 'tilt-dash:dash', 'spin:skill']) assert(uploaded.gestures.includes(gesture), gesture);
+  for (const gesture of ['tap:attack', 'long-press:skill', 'swipe:dash', 'tilt-dash:dash', 'spin:skill']) assert(uploaded.gestures.includes(gesture), gesture);
   check('automatic20s phone trace without trace flag stored by server', uploaded);
   assert.equal(errors.length, 0, errors.join('\n'));
   pass = true;
