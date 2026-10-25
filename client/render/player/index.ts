@@ -2,6 +2,7 @@
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
 import { lookFor, syntaxColor, ELEMENTS, type HeroLook } from "./look.ts";
+import { memIsStale, pulse, safeScale, heroScaleOf } from "./memory.ts";
 import { heroFrame, heroRim, heroCodeCells, heroHand, tinted, ANCHOR_X, SW, SH, SPRITE_FEET, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle, boldGlyph, weaponWord } from "./weapons.ts";
 import { drawText, glyphBits, textCanvas, textWidth, GLYPH_W } from "./font.ts";
@@ -40,6 +41,7 @@ interface Mem {
   muzzleT: number; impactT: number; stepFrame: number; stepN: number; moveT: number; clackT: number; sleepT: number;
   codeCv: HTMLCanvasElement | null; codeKey: string;
   lastEl: number;
+  seed: number;              // kit seed this memory belongs to (same id + new repo on rematch => rebuild)
 }
 
 const mems = new Map<string, Mem>();
@@ -124,6 +126,13 @@ export function notePlayerShot(playerId: string): void {
 
 function memFor(p: PlayerState, t: number): Mem {
   let m = mems.get(p.id);
+  // Rematch / new game screen: ids are reused but the clock restarts near 0 (or the hero changed). Old timestamps
+  // would turn every timed effect into a huge, flipped squash that "eases back", so rebuild from the current state.
+  if (m && memIsStale(m, t, p.kit.seed)) {
+    mems.delete(p.id);
+    externalShots.delete(p.id); externalHits.delete(p.id); pendingImpacts.delete(p.id);
+    m = undefined;
+  }
   if (!m) {
     m = {
       t, x: p.x, y: p.y, hp: p.hp, armor: p.armor, energy: p.energy, alive: p.alive, dashCd: p.dashCd,
@@ -134,7 +143,7 @@ function memFor(p: PlayerState, t: number): Mem {
       kbT: -99, kbX: 0, kbY: 0, kbAmp: 0, crit: false,
       perks: new Set(p.perks ?? []), perkT: {},
       muzzleT: -99, impactT: -99, stepFrame: -1, stepN: 0, moveT: t, clackT: 0, sleepT: 0, codeCv: null, codeKey: "", lastEl: 0,
-      phase: (hashStr(p.id) % 1000) / 1000,
+      phase: (hashStr(p.id) % 1000) / 1000, seed: p.kit.seed,
     };
     if (mems.size > 48) for (const [k, v] of mems) if (t - v.t > 5) mems.delete(k);
     mems.set(p.id, m);
@@ -548,7 +557,7 @@ export interface DrawPlayerOpts {
 
 let SOFT = false;
 export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean, opts?: DrawPlayerOpts): void {
-  S = Math.max(1, Math.min(3, opts?.scale ?? 1));
+  S = heroScaleOf(opts?.scale);
   RES = S >= 2 ? 2 : 1;
   PVP = !!opts?.pvp;
   SOFT = !!opts?.softFlash;
@@ -569,7 +578,11 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
   const m = memFor(p, t);
   curMem = m;
   curIsYou = isYou;
-  if (t !== textFrameT) { textFrameT = t; youWords = 0; otherWords = 0; }
+  if (t !== textFrameT) {
+    // clock went backwards = a new match: drop the previous match's victory mood
+    if (t < textFrameT - 0.25) mood = "fight";
+    textFrameT = t; youWords = 0; otherWords = 0;
+  }
   const dt = Math.max(0, Math.min(0.1, t - m.t));
   observe(p, m, L, t, dt);
 
@@ -754,15 +767,16 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
 
   // --- squash & stretch
   let sx = 1, sy = 1;
-  const hk = Math.max(0, 1 - (t - m.hurtT) / 0.16);
-  if (hk > 0) { const c = m.crit && t - m.kbT < 0.3 ? 1.6 : 1; sx += 0.16 * hk * c; sy -= 0.12 * hk * c; }
-  const dk = Math.max(0, 1 - (t - m.dashT) / 0.18);
+  const hk = pulse(t - m.hurtT, 0.16);
+  if (hk > 0) { const c = m.crit && pulse(t - m.kbT, 0.3) > 0 ? 1.6 : 1; sx += 0.16 * hk * c; sy -= 0.12 * hk * c; }
+  const dk = pulse(t - m.dashT, 0.18);
   if (dk > 0) { sx += 0.2 * dk; sy -= 0.12 * dk; }
-  const rk = Math.max(0, 1 - (t - m.reviveT) / 0.3);
+  const rk = pulse(t - m.reviveT, 0.3);
   if (rk > 0) { sx -= 0.2 * rk; sy += 0.3 * rk; }
+  sx = safeScale(sx); sy = safeScale(sy);
   const bob = fr.pose === "run" ? (fr.i % 2 === 1 ? -1 : 0) : 0;
   // directional knockback lean from forwarded hit events (snaps back over ~150ms)
-  const kk = Math.max(0, 1 - (t - m.kbT) / 0.15);
+  const kk = pulse(t - m.kbT, 0.15);
   const bx = x + Math.round(m.kbX * m.kbAmp * kk), bfeet = feet + Math.round(m.kbY * m.kbAmp * kk * 0.6) + hop;
 
   // invulnerability blink (not during dashes)
@@ -961,7 +975,7 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
 
 function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, m: Mem, t: number, x: number, y: number, feet: number, flip: number, fr: FrameSpec) {
   // lying body: rotated 90deg (exact, cached once fallen), slightly dimmed
-  const fall = Math.min(1, (t - m.downT) / 0.25);
+  const fall = Math.max(0, Math.min(1, (t - m.downT) / 0.25));
   const ko: FrameSpec = { pose: "idle", i: 0, expr: "ko" };
   if (fall < 1) {
     const cv = heroFrame(L, ko, "", RES);
@@ -996,7 +1010,7 @@ function drawDowned(ctx: CanvasRenderingContext2D, L: HeroLook, p: PlayerState, 
 
   // floating ghost with "404" halo
   if (fall >= 1) {
-    const rise = Math.min(1, (t - m.downT - 0.25) / 0.6);
+    const rise = Math.max(0, Math.min(1, (t - m.downT - 0.25) / 0.6));
     const gx = x + Math.round(Math.sin(t * 1.7 + m.phase * 5) * 2);
     const gy = y - Math.round(rise * 4 + Math.sin(t * 2.4) * 1.5);
     const gc = ghostSprite(L, Math.floor(t * 4) % 2);

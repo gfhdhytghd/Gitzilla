@@ -4,13 +4,13 @@
   "selectedKinds": [
     "bosses"
   ],
-  "createdAt": "2026-10-25T09:53:41.131Z",
+  "createdAt": "2026-10-25T09:59:29.895Z",
   "baseURL": "http://localhost:5175",
   "chromium": "154.0.8037.97",
   "node": "v26.12.0",
-  "gitHead": "864646b7e3dc7ab8698432251a3000ab25011f67",
+  "gitHead": "14d894b55af576525b25a548c8a3155fff4881e6",
   "rendererSources": {
-    "hash": "cebcd5bfdfcb841ceeefb95f66026394f810bdc5949077cf545dbe1218918a62",
+    "hash": "62b495af36956a02d61dc7b1ac65966c6eee6ebb7279aa6d634b4832d627a812",
     "files": {
       "client/render/arena/bullets.ts": "02630b7c4f74cdffa1ee3ad1d4fddef6214d0220ae9b53b9024ae0462588a1c6",
       "client/render/arena/events.ts": "052056d68ae0d6d9281fcfdccba6148daab447c53c4f9a59ea74d593ca6472cf",
@@ -42,17 +42,17 @@
       "shared/classroom-preset-text/zh.ts": "05573d069a0d8703aec0bf63e615132c09d875956f09709b48c62c8e3e77bc24",
       "shared/classroom-presets.ts": "0a11247add7078296f68ea673e324fbec1c02a72d2705025366207baeabac401",
       "shared/classroom.ts": "053cece6d362521d5d1015d8fd2c035179732d112c322795df61aceea32316cd",
-      "shared/i18n/gemini-translations.json": "aaa108fed5586eb8ddbb79a6c673e511d3ae4b6a7c1a4a9eb8e1c847bf90319b",
+      "shared/i18n/gemini-translations.json": "872470ef71a517dff9a1f5b8d2f7e026b004ecfea7106f2849a29678b8decd0a",
       "shared/i18n/generation.json": "d3b33074366131fdcd1883e0589e99ffb47562a9a2c276c0f0df4b88fb93d4c9",
       "shared/i18n/locale.ts": "f1f7b65b2364c56873ad41462e50f6d481a4da95173abacadfe5753bd12932d9",
-      "shared/i18n/messages.generated.json": "ebe27f1ee0820295705456621385aff343e770a79ffc155acdf5fdec61d64193",
+      "shared/i18n/messages.generated.json": "ae1cb82d562374a4bc7c529188cb1e692e2b9a6bc2dad7e96f2261249c4d2ba9",
       "shared/i18n/messages.ts": "3304762e7db2f3433a566562dd4066d7833c70683fd8c0fe5b12f0d3ff361066",
       "shared/i18n/review.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
-      "shared/i18n/sources.json": "4a73666b27abc1670bdabd3fc5cd0e52f09e5511c62939f6b21e78657ede240f",
+      "shared/i18n/sources.json": "634f58022a633564859565172963ba782ec8fa8f808111681fc97d749f4da543",
       "shared/i18n/text.ts": "a57b587112439b36a7ff95368d7cf3211e8d3cda848f87d8f21497d2a88facf7",
       "shared/i18n/translate.ts": "97a9c69a35698a8e5a1fdadb20f98d0cba97523ba89de1a305980ee81b75e85b",
       "shared/kaiju-anatomy.ts": "ff1c7a3e321619746b2e650b76f6627079322a3d4cf75bf8c86c145c36bb6d8d",
-      "shared/types.ts": "13d31283b7697439a3edc1b5f94d43aeb50adcaa9c73875a13e7b303746e01df"
+      "shared/types.ts": "d4179818f41f6ab84c787979ae7d4a819dd47a232ec1f2c2775484d4d542ead9"
     },
     "sourceRef": "working-tree"
   },

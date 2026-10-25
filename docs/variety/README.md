@@ -43,7 +43,26 @@ npx tsx tools/variety-sheet.ts --label after-heroes --kind heroes \
   --compare docs/variety/baseline/summary.json
 ```
 
-`--kind heroes|bosses|all` selects which renderer is imported/captured (default all). Partial runs write their own run summary and leave the latest full `docs/variety/summary.json` intact. After claude-boss finishes, use the same command with `--label after-bosses --kind bosses`.
+`--kind heroes|bosses|all` selects which renderer is imported/captured (default all). Partial runs write their own run summary and leave the latest full `docs/variety/summary.json` intact. The completed boss-only run is documented below; use `--label after-bosses --kind bosses` to reproduce it.
+
+## Boss AFTER — committed variety pass 6c089ac
+
+Measured the current boss renderer using the same 45 frozen inputs, Chromium version and unchanged metric thresholds. No hero renderer was imported. All 90 boss images reproduced pixel-for-pixel in a second fresh Chromium context; browser errors and canvas-edge touches were zero. Both sheets were visually inspected. Baseline and completed hero artifacts are unchanged.
+
+| View | Min distance before→after | Mean distance before→after | Look-alike pairs before→after | Clusters before→after | Shape-only pairs before→after | Pooled palette bits before→after |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| [bosses-portraits](after-bosses/bosses-portraits.png) | 0.01365→0.09819 | 0.41421→0.44229 | 68→6 | 8→4 | 144→74 | 4.9532→5.6244 |
+| [bosses-fight](after-bosses/bosses-fight.png) | 0.01554→0.11120 | 0.41145→0.44795 | 67→3 | 8→2 | 150→79 | 4.9722→5.6196 |
+
+The 15 public fallback bosses have **zero combined look-alike pairs after the change**: portraits8→0 (clusters4→0), fight10→0 (clusters4→0). Fallback-only minimum distance increased0.07916→0.26279 in portraits and0.07206→0.24193 in fights. Remaining aggregate matches involve synthetic profiles; they remain visible in the JSON rather than being hidden or changing thresholds.
+
+[Boss comparison JSON](after-bosses/summary.json). Exact command:
+
+```sh
+npx tsx tools/variety-sheet.ts --label after-bosses --kind bosses \
+  --fixtures docs/variety/baseline/fixtures.json \
+  --compare docs/variety/baseline/summary.json
+```
 
 ## Metric definitions
 
