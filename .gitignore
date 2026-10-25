@@ -8,3 +8,5 @@ docs/shots
 .agents/
 docs/ux-shots
 qa/artifacts
+video/out
+video/raw
