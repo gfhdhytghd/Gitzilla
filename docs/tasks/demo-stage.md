@@ -51,3 +51,26 @@ Navigation: → / Space next, ← back, F fullscreen, numbers jump to a scene. A
   - WebKit + Chromium at 1920×1080 and 1280×720: screenshots of every scene, plus a short recorded run-through (Playwright video) to check the motion.
   - The live-join scene with 3 simulated phones joining.
   - Report fps per scene.
+
+## Addendum (user): highlight what the HackPSU judges care about
+- **Map scenes to tracks.** Tag each relevant scene with a small animated "track" badge. These are targets, not awards; never write "winner":
+  - Phone motion → **Mystery Stack**: phone motion as the core control, direct rivalry in PvP royale, 4+ people, bragging rights with the royale wins board.
+  - Classroom → **Nittany AI Challenge** (education).
+  - Repo → kaiju → **Best Use of Gemini API**.
+  - GitHub sign-in / phone controller → **Best Use of Auth0**.
+  - Title and close → **Grand Prize**.
+- **Expand the edu scene into a full scene of its own** (not just a card). Show the real teacher flow, with animated mock-ups built from the real classroom components or mock data:
+  - the student task card (goal, to-dos, "done when" ✓/✗ live), the in-browser Python editor running code;
+  - submitting and the class attack hitting the shared boss;
+  - the teacher's round debrief ("what to reteach", "need help", shout-outs);
+  - the projector view with no names.
+  - Line: "Code quality becomes damage. Teachers see who needs help."
+- **Expand the phone-motion scene.** Show the four gestures at large size with the real motion icons. Show 4 phones around one projector, with a "PvP royale · last one standing" kill feed. Mention it also works as a gamepad linked to a big screen or Vision Pro by your GitHub account.
+- **Show repo → kaiju as explicit linked mappings.** For a real public fallback repo (e.g. redis/redis, facebook/react), draw animated connector lines from repo facts to monster parts, using the real analysis data in data/fallback:
+  - top components → limbs, labelled with real names;
+  - the most-imported file → heart;
+  - import cycles → red glowing weak points;
+  - language → hero class/weapon (Rust cannon, Go SMG, Python staff…);
+  - stars/contributors/LOC → PvP POWER;
+  - commits/TODOs → taunts / "recent sins".
+  - Show the repo URL as a clickable link and the monster's generated name. Let the presenter press a key to cycle through 3 repos.
