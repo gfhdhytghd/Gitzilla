@@ -338,7 +338,7 @@ body.demo-page .mute-btn, body.demo-page .link-status, body.demo-page .settings-
 
 
 .facts-row { position: absolute; left: 140px; right: 140px; top: 700px; display: flex; gap: 28px; }
-.fact-num { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 12px; background: #020403; box-shadow: 0 0 0 3px #1d3b2b;
+.fact-num { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 12px; background: #020403; box-shadow: 0 0 0 3px #1d3b2b;
   animation: card-in .6s ease-out both calc(2s + var(--i) * .15s); }
 .fact-num b { font-family: var(--pix); font-size: 64px; color: var(--magenta); }
 .fact-num span { font-size: 26px; color: var(--dim); text-align: center; }

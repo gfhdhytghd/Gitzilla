@@ -1,3 +1,9 @@
+DONE (body-plan count) — the stack slide's tile is "10 boss body plans · in 13 elements", counted from claude-boss's
+renderer. Body plans: the renderer has no exported list, so the slide runs its own `bossVariety()` over every
+archetype × limb count × component mix × 24 seeds and counts distinct forms. That matches the `BossForm` union's 10
+today and follows new plans. Elements: `Object.keys(ELEMENTS)` from client/render/boss/variety.ts (13). Overflow check
+passes in Chromium + WebKit at 1920/1280. No commits.
+
 DONE (demo safety pass) — /demo:
 - Vision Pro slide no longer runs live WebGL or <video>;
 - both QRs are plain PNG images, verified by decoding;
