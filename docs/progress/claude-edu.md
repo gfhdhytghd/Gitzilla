@@ -1,3 +1,35 @@
+# DONE (feedback panel)
+
+Coordinator follow-up to the task card: the student "Your feedback" panel. Only `client/app/classroom.ts` and `.css`
+changed. Not committed.
+- **Empty headings hidden:**
+  - "Your measured result for this task" is gone; the ↑/↓ line shows only when the score changed.
+  - "What to work on next" shows only when there is advice.
+- **Check rows in plain words:** each row shows the step's own doneWhen line (doneWhen[i] ↔ checks[i] ↔
+  report.checks[i]), with `code` styled. Steps without a brief get a plain generated line (`doneWhenFor`).
+  - Status: "Found in your files" or, in amber, "Not found yet: add it and submit again".
+  - Check rows now come before the advice.
+  - The teacher's view of a student uses the same rows.
+- **Raw evidence:** the grader's wording ("Literal code evidence…", "static evidence found", "…analyzed archive")
+  appears only inside "See the measured rubric evidence", after the rubric rows.
+- **No repeated note:** the "checks look at your files, not what it prints" note is hidden when the step has a
+  brief, because the task card says it after a submission.
+- **Server all-clear advice:** reworded on the client ("Everything the checks look for is in your files. Run it,
+  compare with the expected output, and be ready to explain it to your teacher."). It's an exact-string map,
+  `PLAIN_ADVICE`, so the server text is untouched.
+
+**Verified:** WebKit on :5175 with the real server and the real preset briefs. Script:
+/tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/feedback-shots.mts
+- **Results for all three students:** no jargon outside the fold, no empty headings, the note isn't repeated,
+  0 overflow, 0 errors. The fold still has the raw evidence.
+- **Screenshots:** in
+  /tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/feedback2/
+  - ben-feedback.png (iPhone SE, ✓✗)
+  - ana-feedback.png (iPhone 15, ✓✓ + advice)
+  - chloe-feedback.png (desktop 1280)
+  - chloe-evidence-fold.png
+- **Checks:** tsc clean; `vitest client/edu` 75 passed; `tools/classroom-smoke.ts` passed.
+
 # DONE (task card)
 
 docs/tasks/classroom-brief.md, claude-edu section. Not committed. Built on the StepBrief contract with

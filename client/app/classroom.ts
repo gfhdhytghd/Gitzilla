@@ -13,8 +13,8 @@ import { createClassBoss } from '../edu/class-boss';
 import { stepSummary as summarize } from '../edu/summary';
 import { createInAppPanel } from '../edu/inapp-panel';
 import { createCodeEditor } from '../edu/code-editor';
-import { createTaskCard } from '../edu/task-card';
-import { alignDoneWhen } from '../edu/task-brief';
+import { createTaskCard, richText } from '../edu/task-card';
+import { alignDoneWhen, doneWhenFor } from '../edu/task-brief';
 import type { InAppFile } from '../../shared/classroom';
 import './classroom.css';
 import { setClassroomAudio } from './sound';
@@ -25,6 +25,8 @@ const setText = (el: HTMLElement, s: string) => { if (el.textContent !== s) el.t
 /** Scores, HP and damage read as whole numbers ("100", not "100.0"). */
 const int = (n: number) => formatNumber(Math.round(n), 0);
 const phaseNames = { setup: 'Prepare the lesson', coding: 'Build your next commit', paused: 'Coding paused', raid: 'Class attack', feedback: 'Review & improve', complete: 'Lesson complete' };
+// the grader's all-clear advice (server text), said the way a student would
+const PLAIN_ADVICE: Record<string, string> = { 'The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.': 'Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.' };
 const field = (label: string, input: HTMLElement) => h('label.cr-field', null, h('span', null, label), input);
 const button = (label: string, test: string, run: () => void, cls = '') => h(`button.btn${cls ? '.' + cls : ''}`, { type: 'button', 'data-testid': test, onclick: run }, label);
 
@@ -335,24 +337,34 @@ export function createClassroom(app: AppCtx): Screen {
     const localCheckDetail = (detail: string) => { const colon = detail.indexOf(': '); return colon < 0 ? t(detail) : detail.slice(0, colon + 2) + t(detail.slice(colon + 2)); };
     const localAdvice = report.advice.filter(advice => !report.checks.some(c => advice === `Review ${c.label}: ${c.detail}.`)).map(advice => {
       const check = report.checks.find(c => advice === `Review ${c.label}: ${c.detail}.`);
-      return check ? t(`Review ${t(check.label)}: ${localCheckDetail(check.detail)}.`) : t(advice);
+      return check ? t(`Review ${t(check.label)}: ${localCheckDetail(check.detail)}.`) : t(PLAIN_ADVICE[advice] ?? advice);
     });
+    const reportStep = state?.plan.steps.find(s => s.id === report.stepId);
     const rows = report.criteria.map(c => {
-      const criterion = state?.plan.steps.find(s => s.id === report.stepId)?.rubric.criteria.find(q => q.id === c.criterionId);
+      const criterion = reportStep?.rubric.criteria.find(q => q.id === c.criterionId);
       return h('div.cr-criterion', null, h('div', null, h('b', null, criterion?.name ?? c.criterionId), h('span', null, `${Math.round(c.score * 100)}%`)), h('p', null, c.evidence));
     });
+    // check rows in plain words: the step's own "Done when" line (doneWhen[i] ↔ checks[i] ↔ report.checks[i]), or a
+    // plain line made from the check; the grader's wording stays in the evidence fold
+    const plainCheck = (i: number) => reportStep?.brief?.doneWhen[i] ?? (reportStep?.checks[i] ? doneWhenFor(reportStep.checks[i]) : t(report.checks[i].label));
+    const rawChecks = report.checks.map(c => h('div.cr-criterion', null, h('div', null, h('b', null, t(c.label)), h('span', null, c.passed ? '✓' : '✗')), h('p', null, localCheckDetail(c.detail))));
+    // the task card already tells students that checks read files, not output
+    const cardSaysIt = !teacher() && !!reportStep?.brief?.doneWhen.length;
     review.replaceChildren(h('div.cr-feedback-title', null, h('h2', null, teacher() ? `${name} · review` : 'Your feedback'), h('strong.cr-score', { 'data-testid': 'classroom-own-score' }, int(report.score), h('small', null, ' /100'))),
       report.source === 'in-app'
         ? h('p.cr-version', null, `in-app code · ${report.commit.replace(/^inapp:/, '')}`)
         : h('p.cr-version', null, h('a', { href: `https://github.com/${report.repo}/commit/${report.commit}`, target: '_blank', rel: 'noopener noreferrer' }, `${report.repo} @ ${report.commit.slice(0, 8)}`)),
       codeViewer(report),
-      !teacher() && !report.teacherReview && report.checks.length
+      !teacher() && !report.teacherReview && report.checks.length && !cardSaysIt
         ? h('p.cr-unreviewed', { 'data-testid': 'classroom-unreviewed-note' }, 'These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.')
         : document.createTextNode(''),
-      h('p', null, report.improvement > 0 ? `↑ +${int(report.improvement)} from your last submission round` : report.improvement < 0 ? `${int(report.improvement)} from your last submission round` : 'Your measured result for this task'),
-      h('h3', null, 'What to work on next'), h('ul.cr-advice', null, ...localAdvice.map(a => h('li', null, a))),
-      report.checks.length ? h('div.cr-checks', null, ...report.checks.map(c => h(`div.${c.passed ? 'passed' : 'missing'}`, null, h('b', null, `${c.passed ? '✓' : '○'} ${t(c.label)}`), h('small', null, localCheckDetail(c.detail))))) : document.createTextNode(''),
-      h('details.cr-measurements', null, h('summary', null, 'See the measured rubric evidence'), ...rows),
+      report.improvement ? h('p', null, report.improvement > 0 ? `↑ +${int(report.improvement)} from your last submission round` : `${int(report.improvement)} from your last submission round`) : document.createTextNode(''),
+      report.checks.length ? h('div.cr-checks', { 'data-testid': 'classroom-feedback-checks' }, ...report.checks.map((c, i) => h(`div.${c.passed ? 'passed' : 'missing'}`, null,
+        h('b', null, `${c.passed ? '✓' : '✗'} `, ...richText(plainCheck(i))),
+        h('small', null, c.passed ? 'Found in your files' : 'Not found yet: add it and submit again')))) : document.createTextNode(''),
+      localAdvice.length ? h('h3', null, 'What to work on next') : document.createTextNode(''),
+      localAdvice.length ? h('ul.cr-advice', null, ...localAdvice.map(a => h('li', null, a))) : document.createTextNode(''),
+      h('details.cr-measurements', null, h('summary', null, 'See the measured rubric evidence'), ...rows, ...rawChecks),
       report.teacherReview ? h('p.cr-teacher-note', null, `Teacher review: ${report.teacherReview.note}`) : document.createTextNode(''));
     if (teacher() && ['coding', 'paused'].includes(state?.phase ?? '')) {
       const score = h('input', { type: 'number', value: report.score, min: 0, max: 100, 'aria-label': 'Reviewed score', 'data-testid': 'classroom-review-score' }) as HTMLInputElement;
