@@ -1,3 +1,21 @@
+DONE (ui review) — claude-boss
+
+## For take-genesis: `portraitFrame(kit)`
+- `client/render/boss/index.ts` exports a pure `portraitFrame(kit): { logical, bx, by }` (no DOM: it only reads `bossLayout(kit)`), and `bossPortrait` uses it for its own frame. `client/genesis/sprites.ts` already imports it, so genesis and portraits share one frame formula. No change was needed in this pass.
+
+## UI review row UI-5 (docs/ui-review-coordinator.md): less floating text over the arena
+- **Central text budget** in `arena/fx.ts emit()`: at most 4 floating texts alive at once, each ≤ 14 chars (longer ones are cut with "~"), each ≤ 1.0 s.
+  - Every text has a priority: 0 ambient (boss ERR glyphs, CLANK, --FORCE, weapon impact words, bug labels, combo tags), 1 normal (damage numbers, pickups, RM file, STACK OVERFLOW), 2 important (skills, SEGFAULT, 200 OK, perks, CRIT).
+  - When the budget is full, a higher-priority text replaces the oldest lowest-priority one; otherwise the new text is dropped.
+- Damage numbers merge per target within 300 ms on every view. The number budget is 4 on desktop and 3 on the phone camera.
+- **Advisory IDs** (GHSA/CVE) are no longer shown in the arena; the crawling parasites are the in-fight icon (IDs belong in the autopsy).
+- **Maintainer counts** ("2 MAINTAINERS") are no longer shown in the arena; fragile organs keep their cracked amber glow.
+- **Skill callouts** are ≤ 14 chars: FIREWALL UP / GIT FORK / HOTFIX! / SUDO -O3 / GIT REVERT. Pickups read +HP COMMIT / +ARMOR TESTS✓ / +ENERGY COFFEE.
+- **ERR/EXC stacks on the boss:** fan bullets are single-char `!`/`?` plates, and broken-limb error glyphs come every 4–6.6 s at ambient priority.
+- **Hazard labels:** one label per attack name per frame (no more duplicated "BUILD() RACE CONDITION"), names ≤ 9 chars, always 1×. On the phone camera only the countdown is drawn, because the HUD FATAL banner already names the attack.
+- **Verified** with Playwright WebKit on dev :5175 (`/r/QABS?mock=match`) on iPhone 15, iPhone SE and desktop 1280×800: 0 page errors; the arena shows ≤ 4 short floating texts from my renderers. The large "$ ./fight --now" and MOVE/ATTACK hint overlays come from claude-ui's intro, not the renderers.
+- **For claude-player:** hero signature callouts (e.g. "LINUX_MAIN() GIT FORK --DECOY") come from the player renderer and are not covered by my budget. Please cap them at 14 chars too.
+
 DONE (archetypes) — claude-boss   (also DONE (kaiju refs))
 
 ## Boss archetypes v1 (docs/tasks/boss-archetypes.md, refs docs/design-refs/boss-1..5 + BOSS-README.md)

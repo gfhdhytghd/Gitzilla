@@ -60,6 +60,7 @@ export interface Particle {
   grav: number;
   drag: number;
   glow: boolean;
+  prio: number;      // floating text only: 0 ambient flavor, 1 normal (numbers, pickups), 2 important (skills, revives, perks, crits)
   spin: number;
 }
 
@@ -67,12 +68,28 @@ const MAX = 900;
 const pool: Particle[] = [];
 const live: Particle[] = [];
 
+/** Floating-text budget (UI review UI-5): at most TEXT_MAX texts alive, each ≤ TEXT_CHARS chars and short-lived. */
+export const TEXT_MAX = 4, TEXT_CHARS = 14, TEXT_LIFE = 1.0;
+const isText = (k: PKind) => k === "glyph" || k === "bold";
+
 export function emit(p: Partial<Particle> & { x: number; y: number }): Particle | null {
   if (live.length >= MAX) return null;
+  if (isText(p.kind ?? "px")) {
+    const prio = p.prio ?? 1;
+    let n = 0, worst: Particle | null = null;
+    for (const o of live) if (isText(o.kind) && o.life < o.max) { n++; if (!worst || o.prio < worst.prio || (o.prio === worst.prio && o.life > worst.life)) worst = o; }
+    if (n >= TEXT_MAX) {
+      // a more important text replaces the least important (oldest) one; otherwise it is dropped
+      if (!worst || worst.prio >= prio) return null;
+      worst.life = worst.max;
+    }
+    if (p.text && p.text.length > TEXT_CHARS) p.text = p.text.slice(0, TEXT_CHARS - 1) + "~";
+    p.max = Math.min(p.max ?? 0.6, TEXT_LIFE);
+  }
   const q = pool.pop() ?? ({} as Particle);
   q.kind = p.kind ?? "px"; q.x = p.x; q.y = p.y; q.vx = p.vx ?? 0; q.vy = p.vy ?? 0;
   q.life = 0; q.max = p.max ?? 0.6; q.size = p.size ?? 1; q.color = p.color ?? "#fff"; q.color2 = p.color2 ?? q.color;
-  q.text = p.text ?? ""; q.grav = p.grav ?? 0; q.drag = p.drag ?? 0; q.glow = p.glow ?? false; q.spin = p.spin ?? 0;
+  q.text = p.text ?? ""; q.grav = p.grav ?? 0; q.drag = p.drag ?? 0; q.glow = p.glow ?? false; q.spin = p.spin ?? 0; q.prio = p.prio ?? 1;
   live.push(q);
   return q;
 }

@@ -48,7 +48,7 @@ let bossTokensFor: { kit: unknown; short: string[] } = { kit: null, short: [] };
 function bossGlyph(kind: string, id: number): string {
   // code disasters: spiral = recursion f(f(f(, fan = thrown exceptions
   if (kind === "spiral") return id % 3 === 2 ? "))" : "F(";
-  if (kind === "fan") return ["ERR", "EXC", "!"][id % 3];
+  if (kind === "fan") return id % 3 ? "!" : "?";
   const kit = fx.boss?.kit;
   if (kit && bossTokensFor.kit !== kit) bossTokensFor = { kit, short: usable(kit.code?.tokens, 3) };
   const toks = bossTokensFor.short;

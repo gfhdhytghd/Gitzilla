@@ -136,7 +136,7 @@ function shatterObstacle(x: number, y: number, w: number, h: number, label: stri
   burst(x, y, 18, { kind: "shard", speed: 110, max: 0.9, text: "{}();=<>/#*01", spin: 16, colors: ["#e8ecf8", c, "#c792ea"], color2: "#3a3f50", grav: 200, drag: 0.8 });
   burst(x, y, 8, { kind: "smoke", speed: 30, max: 0.8, size: 3, color: "#5a5f70", color2: "#2a2d38", drag: 2 });
   for (let k = 0; k < 6; k++) emit({ kind: "px", x: x + (Math.random() - 0.5) * w, y: y + (Math.random() - 0.5) * h, vx: (Math.random() - 0.5) * 80, vy: -40 - Math.random() * 40, grav: 220, max: 0.7, size: 2, color: "#2b3040", color2: "#11131b" });
-  emit({ kind: "glyph", x, y: y - h / 2 - 6, vy: -18, max: 1.1, text: "RM " + baseName(label), color: "#ff7a8a" });
+  emit({ kind: "glyph", x, y: y - h / 2 - 6, vy: -18, max: 0.9, prio: 1, text: "RM " + baseName(label), color: "#ff7a8a" });
 }
 
 // ---------------- pickups ----------------

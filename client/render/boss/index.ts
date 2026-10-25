@@ -149,20 +149,13 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
     if (p > 0.85) { ctx.fillStyle = "#ffffff"; ctx.fillRect(bx + Math.round(l.x), by + Math.round(l.y), 1, 1); }
   });
 
-  // ---- fragile organs (bus factor 1): pulsing amber glow + tiny "1 MAINTAINER" tag ----
+  // ---- fragile organs (bus factor 1): pulsing amber glow (maintainer counts live in the autopsy) ----
   L.limbs.forEach((l, i) => {
     const kl = kit.limbs[i];
     if (broken[i] || !kl?.fragile) return;
     const p = 0.5 + 0.5 * Math.sin(time * 3.2 + i * 1.3);
     drawGlow(ctx, bx + l.x, by + l.y, "#ffb02e", l.r + 4, 0.25 + p * 0.35);
-    if (!opts.portrait) {
-      const n = kl.maintainers ?? 1;
-      const tag = n + " MAINTAINER" + (n === 1 ? "" : "S");
-      const tx = Math.round(bx + l.x), ty = Math.round(by + l.y + (l.y >= 0 ? l.r + 3 : -l.r - 9));
-      ctx.globalAlpha = 0.85;
-      drawText(ctx, tag, tx, ty, p > 0.5 ? "#ffd27a" : "#ffb02e", { align: "center" });
-      ctx.globalAlpha = 1;
-    }
+    // maintainer counts are shown in the autopsy only (UI review UI-5); the cracked amber glow marks the organ in-fight
   });
 
   // ---- parasites: publicly known vulnerabilities crawling on their organ ----
@@ -175,7 +168,6 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
       const rr = l.r * (0.55 + 0.25 * Math.sin(time * 0.7 + k));
       drawParasite(ctx, bx + l.x + Math.cos(a) * rr, by + l.y + Math.sin(a) * rr * 0.85, a + Math.PI / 2 * (k % 2 ? -1 : 1), time + k);
     }
-    if (!opts.portrait && every("cve" + l.id, 2.6 + i * 0.3, time)) emit({ kind: "glyph", x: bx + l.x, y: by + l.y - l.r, vy: -12, max: 1.2, text: vulns[Math.floor(time) % vulns.length].id.slice(0, 16).toUpperCase(), color: "#b6ff3a" });
   });
 
   // ---- appendage + growth dynamics ----
@@ -295,7 +287,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
       if (sp > 70 && sp < 2000) {
         const ux = (b.x - prev.x) / (sp * (time - prev.t)), uy = (b.y - prev.y) / (sp * (time - prev.t));
         for (let k = 0; k < 3; k++) emit({ kind: "spark", x: b.x - ux * 30 + (Math.random() - 0.5) * 40, y: b.y - uy * 30 + (Math.random() - 0.5) * 30, vx: -ux * 120, vy: -uy * 120, max: 0.3, color: "#ff2a4a", color2: "#7a0a24" });
-        if (every("force", 0.22, time)) emit({ kind: "glyph", x: b.x - ux * 40, y: b.y - uy * 40 - 10, vx: -ux * 30, vy: -10, max: 0.6, text: "--FORCE", color: "#ff5a6a" });
+        if (every("force", 0.22, time)) emit({ kind: "glyph", x: b.x - ux * 40, y: b.y - uy * 40 - 10, vx: -ux * 30, vy: -10, max: 0.6, prio: 0, text: "--FORCE", color: "#ff5a6a" });
       }
     }
     lastPos.set(kit.repo, { x: b.x, y: b.y, t: time });
@@ -307,7 +299,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
     const st = L.kaiju ? { x: l.x - Math.cos(l.angle) * l.r * 0.6, y: l.y - Math.sin(l.angle) * l.r * 0.6, r: l.r } : stumpOf(l);
     const x = bx + st.x + Math.cos(l.angle) * st.r * 0.6, y = by + st.y + Math.sin(l.angle) * st.r * 0.6;
     if (every("stump" + l.id, 0.12, time)) emit({ kind: "spark", x, y, vx: Math.cos(l.angle + (Math.random() - 0.5) * 1.5) * 70, vy: Math.sin(l.angle) * 40 - 40, grav: 160, max: 0.45, color: "#ffd23f", color2: "#ff5a2a" });
-    if (every("err" + l.id, 2.2 + (i % 3) * 0.7, time)) emit({ kind: "glyph", x: x + (Math.random() - 0.5) * 10, y, vx: Math.cos(l.angle) * 14, vy: -22, max: 1.1, text: ERR_GLYPHS[(Math.floor(time) + i) % ERR_GLYPHS.length], color: art.dangerRamp[3] });
+    if (every("err" + l.id, 4 + (i % 3) * 1.3, time)) emit({ prio: 0, kind: "glyph", x: x + (Math.random() - 0.5) * 10, y, vx: Math.cos(l.angle) * 14, vy: -22, max: 1.1, text: ERR_GLYPHS[(Math.floor(time) + i) % ERR_GLYPHS.length], color: art.dangerRamp[3] });
     if (every("smk" + l.id, 0.2, time)) emit({ kind: "smoke", x, y, vx: (Math.random() - 0.5) * 6, vy: -16, max: 1.0, size: 2.5, color: "#3a3446", color2: "#211d29" });
   });
 
@@ -1075,7 +1067,7 @@ function drawPoseFx(ctx: CanvasRenderingContext2D, b: BossState, L: BossLayout, 
       const f = K.feet[stepNo % Math.max(1, K.feet.length)] ?? { x: 0, y: 58 };
       addShake(K.kind === "mecha" ? 2 : 2.5);
       burst(bx + f.x, by + f.y, 8, { kind: "smoke", speed: 30, max: 0.6, size: 2.5, color: "#7a7062", color2: "#3a342e", drag: 3 });
-      if (K.kind === "mecha") emit({ kind: "glyph", x: bx + f.x, y: by + f.y - 6, vy: -10, max: 0.5, text: "CLANK", color: "#c8ccd8" });
+      if (K.kind === "mecha") emit({ kind: "glyph", x: bx + f.x, y: by + f.y - 6, vy: -10, max: 0.5, text: "CLANK", color: "#c8ccd8", prio: 0 });
     }
   }
   // roar: shockwave rings from the mouth

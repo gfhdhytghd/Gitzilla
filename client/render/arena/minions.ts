@@ -42,7 +42,7 @@ export function drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], ti
       emit({ kind: "ring", x: m.x, y: m.y, size: 14, max: 0.35, color: "#b6ff3a" });
       burst(m.x, m.y, 8, { kind: "smoke", speed: 25, max: 0.6, size: 2.5, color: "#4a5a3a", color2: "#22281e" });
       const todo = todoFor(m.id);
-      emit({ kind: "glyph", x: m.x, y: m.y - 16, vy: -10, max: 1.4, text: todo.replace(/\s+/g, " ").trim().toUpperCase().slice(0, 28), color: STYLE[variantOf(todo)].label });
+      emit({ kind: "glyph", x: m.x, y: m.y - 16, vy: -10, max: 0.9, prio: 0, text: todo.replace(/\s+/g, " ").trim().toUpperCase().slice(0, 28), color: STYLE[variantOf(todo)].label });
     }
     const dx = m.x - t.x, dy = m.y - t.y;
     if (Math.hypot(dx, dy) > 0.3) {
@@ -66,7 +66,7 @@ export function drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], ti
     // squashed!
     burst(t.x, t.y, 12, { kind: "px", speed: 60, max: 0.5, colors: ["#b6ff3a", "#3f7a1e", "#ffffff"], drag: 4 });
     burst(t.x, t.y, 4, { kind: "shard", speed: 50, max: 0.6, text: "!?#%", spin: 15, color: "#b6ff3a", color2: "#3f7a1e", grav: 120 });
-    emit({ kind: "glyph", x: t.x, y: t.y - 10, vy: -16, max: 1.0, text: Math.random() < 0.5 ? "FIXED" : "WONTFIX", color: "#7dff9a" });
+    emit({ kind: "glyph", x: t.x, y: t.y - 10, vy: -16, max: 0.7, prio: 0, text: Math.random() < 0.5 ? "FIXED" : "WONTFIX", color: "#7dff9a" });
     tracks.delete(id);
   }
 }

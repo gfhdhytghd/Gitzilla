@@ -16,7 +16,7 @@ const glyphKeys = new Map<string, string>();
 const numbers = new Map<string, { p: Particle; sum: number; at: number; crit: boolean }>();
 const MAX_NUMBERS = 7;
 /** floating-text budget: ~4 on a narrow portrait camera, 7 otherwise */
-function maxNumbers() { return fx.view.w < 300 ? 4 : MAX_NUMBERS; }
+function maxNumbers() { return fx.view.w < 300 ? 3 : 4; }
 const numberTimes: number[] = [];
 /** floating damage numbers alive right now (time-window count, independent of merging) */
 function liveNumbers() {
@@ -54,12 +54,13 @@ export function getFxCues(): { shake: number; hitStop: boolean; slowmo: boolean;
   return { shake: fx.shake, hitStop: fx.now < fx.hitStop, slowmo: fx.now < fx.slowmoUntil, flash: fx.flash };
 }
 
+// ≤ 14 chars (UI review UI-5): short enough to read at a glance
 const SKILL_CMD: Record<SkillKind, string> = {
-  firewall: "$ IPTABLES -A BOSS -J DROP",
-  fork: "$ GIT FORK --DECOY",
-  hotfix: "$ HOTFIX --DEPLOY --NOW",
-  overclock: "$ CFLAGS=-O3 MAKE",
-  rollback: "$ GIT RESET --HARD HEAD@{2S}",
+  firewall: "FIREWALL UP",
+  fork: "GIT FORK",
+  hotfix: "HOTFIX!",
+  overclock: "SUDO -O3",
+  rollback: "GIT REVERT",
 };
 const SKILL_COLOR: Record<SkillKind, string> = { firewall: "#5ad8ff", fork: "#c78bff", hotfix: "#7dff9a", overclock: "#ffb02e", rollback: "#9ff0ff" };
 
@@ -95,7 +96,7 @@ function ingest(e: GameEvent, time: number) {
       }
       if (toPlayer) {
         const atk = x.source && x.source !== "boss" ? playerWeapons.get(x.source) : undefined;
-        if (atk && !fx.pvp && every("imp" + x.source, 0.14, time)) emit({ kind: "bold", x: e.x + (Math.random() - 0.5) * 10, y: e.y - 6, vy: -22, max: 0.4, text: atk.impact.slice(0, 8), color: heroColor(x.source!) });
+        if (atk && !fx.pvp && every("imp" + x.source, 0.14, time)) emit({ kind: "bold", x: e.x + (Math.random() - 0.5) * 10, y: e.y - 6, vy: -22, max: 0.4, prio: 0, text: atk.impact.slice(0, 8), color: heroColor(x.source!) });
         players.set(e.target, { ...(players.get(e.target) ?? { name: "" }), x: e.x, y: e.y });
         const pvpHit = fx.pvp && !!x.source && x.source !== "boss";
         // PvP: the number wears the attacker's color so the class can see who hit whom (one number per target per 0.2 s)
@@ -127,7 +128,7 @@ function ingest(e: GameEvent, time: number) {
       if (wpn && every("imp" + x.source, narrow ? 0.4 : 0.2, time) && every("impAll", narrow ? 0.25 : 0.12, time) && liveNumbers() < maxNumbers()) {
         const side = Math.random() < 0.5 ? -1 : 1;
         const pxn = -Math.sin(ang) * side, pyn = Math.cos(ang) * side;
-        emit({ kind: narrow ? "glyph" : "bold", x: e.x + pxn * 10, y: e.y + pyn * 10 - 2, vx: pxn * 22, vy: pyn * 22 - 10, max: narrow ? 0.3 : 0.4, text: wpn.impact.slice(0, narrow ? 5 : 8), color: heroColor(x.source!) });
+        emit({ kind: narrow ? "glyph" : "bold", x: e.x + pxn * 10, y: e.y + pyn * 10 - 2, vx: pxn * 22, vy: pyn * 22 - 10, max: narrow ? 0.3 : 0.4, text: wpn.impact.slice(0, narrow ? 5 : 8), color: heroColor(x.source!), prio: 0 });
         noteNumber();
       }
       burst(e.x, e.y, crit ? 10 : 4, { kind: "spark", speed: crit ? 120 : 80, spread: 1.6, dir: ang + Math.PI, max: 0.25, colors: ["#ffffff", "#ffd23f", "#ff9a2a"] });
@@ -142,7 +143,7 @@ function ingest(e: GameEvent, time: number) {
       // one rolling number per limb: keep summing while it's still on screen
       const key = e.target + "|" + (e.limb ?? "");
       const prev = numbers.get(key);
-      const mergeOk = narrow ? time - (prev?.at ?? -9) < 0.3 || (prev && prev.p.life < prev.p.max * 0.75) : !critOk;
+      const mergeOk = time - (prev?.at ?? -9) < 0.3 || (!critOk && !!prev && prev.p.life < prev.p.max * 0.75);
       if (mergeOk && prev && (narrow || !prev.crit) && prev.p.life < prev.p.max * 0.75 && prev.p.text.startsWith("-" + Math.round(prev.sum))) {
         prev.sum += e.amount;
         prev.p.text = "-" + Math.round(prev.sum) + (prev.crit ? " CRIT" : "");
@@ -154,7 +155,7 @@ function ingest(e: GameEvent, time: number) {
         let ox = 0, oy = -1;
         if (toBoss && b) { const dx = e.x - b.x, dy = e.y - b.y, l = Math.hypot(dx, dy) || 1; ox = dx / l; oy = Math.min(-0.3, dy / l); }
         const p = emit({
-          kind: "glyph", x: e.x + ox * 10, y: e.y + oy * 8, vx: ox * 26 + (Math.random() - 0.5) * 8, vy: oy * 30 - 18, grav: 50, drag: 1.5, max: critOk ? 1.0 : 0.8,
+          kind: "glyph", x: e.x + ox * 10, y: e.y + oy * 8, vx: ox * 26 + (Math.random() - 0.5) * 8, vy: oy * 30 - 18, grav: 50, drag: 1.5, max: critOk ? 1.0 : 0.8, prio: critOk ? 2 : 1,
           text: critOk ? "-" + Math.round(e.amount) + " CRIT" : "-" + Math.round(e.amount), color: critOk ? "#ff7a2a" : crit ? "#ffb05a" : toBoss ? "#fff4c4" : "#d0ffb0", size: critOk && !narrow ? 2 : 1,
         });
         if (p) { numbers.set(key, { p, sum: e.amount, at: time, crit: critOk }); noteNumber(); }
@@ -162,7 +163,7 @@ function ingest(e: GameEvent, time: number) {
       for (const [k, v] of numbers) if (time - v.at > 1.2) numbers.delete(k);
       // small combo tag next to the number (claude-ui shows the big HUD combo)
       if (e.combo && e.combo >= 2 && every("combo", 0.5, time) && liveNumbers() < maxNumbers() + (narrow ? 0 : 2)) {
-        emit({ kind: "glyph", x: e.x + 12, y: e.y - 4, vx: 10, vy: -16, max: 0.6, text: "X" + e.combo, color: "#ffe14a", size: 1 });
+        emit({ kind: "glyph", x: e.x + 12, y: e.y - 4, vx: 10, vy: -16, max: 0.6, text: "X" + e.combo, color: "#ffe14a", size: 1, prio: 0 });
         if (e.combo >= 3) emit({ kind: "ring", x: e.x, y: e.y, size: 16, max: 0.3, color: "#ffe14a" });
       }
       break;
@@ -195,7 +196,7 @@ function ingest(e: GameEvent, time: number) {
       const p = players.get(e.player);
       if (p) {
         burst(p.x, p.y, 16, { kind: "px", speed: 60, max: 0.7, colors: ["#8a8a9a", "#ffffff", "#ff3a5c"], drag: 3 });
-        emit({ kind: "glyph", x: p.x + 14, y: p.y - 26, vx: 10, vy: -40, max: 0.6, text: "SEGFAULT", color: "#ff3a5c" });
+        emit({ kind: "glyph", x: p.x + 14, y: p.y - 26, vx: 10, vy: -40, max: 0.6, text: "SEGFAULT", color: "#ff3a5c", prio: 2 });
         emit({ kind: "glitch", x: p.x, y: p.y - 4, max: 0.4, size: 14 });
       }
       addShake(5);
@@ -207,7 +208,7 @@ function ingest(e: GameEvent, time: number) {
       if (p) {
         emit({ kind: "ring", x: p.x, y: p.y, size: 24, max: 0.5, color: "#7dff9a" });
         burst(p.x, p.y, 18, { kind: "px", speed: 50, max: 0.8, colors: ["#7dff9a", "#ffffff"], grav: -30, glow: true });
-        emit({ kind: "glyph", x: p.x, y: p.y - 18, vy: -12, max: 1.4, text: "200 OK", color: "#7dff9a" });
+        emit({ kind: "glyph", x: p.x, y: p.y - 18, vy: -12, max: 1.0, text: "200 OK", color: "#7dff9a", prio: 2 });
       }
       break;
     }
@@ -215,7 +216,7 @@ function ingest(e: GameEvent, time: number) {
       const p = players.get(e.player);
       if (p) {
         const c = SKILL_COLOR[e.skill] ?? "#ffffff";
-        emit({ kind: "glyph", x: p.x, y: p.y - 22, vy: -10, max: 1.5, text: SKILL_CMD[e.skill] ?? "$ " + e.skill, color: c });
+        emit({ kind: "glyph", x: p.x, y: p.y - 22, vy: -10, max: 1.0, prio: 2, text: SKILL_CMD[e.skill] ?? e.skill.toUpperCase(), color: c });
         emit({ kind: "ring", x: p.x, y: p.y, size: 22, max: 0.4, color: c });
         burst(p.x, p.y, 10, { kind: "px", speed: 45, max: 0.6, colors: [c, "#ffffff"], glow: true });
       }
@@ -238,7 +239,7 @@ function ingest(e: GameEvent, time: number) {
     }
     case "pickup": {
       // code flavor + a plain-language hint in brackets
-      const label = e.kind === "heart" ? "+1 COMMIT (HP)" : e.kind === "armor" ? "TESTS PASSED (ARMOR)" : "+COFFEE (ENERGY)";
+      const label = e.kind === "heart" ? "+HP COMMIT" : e.kind === "armor" ? "+ARMOR TESTS✓" : "+ENERGY COFFEE";
       const c = e.kind === "heart" ? "#3fb950" : e.kind === "armor" ? "#c8d4ff" : "#5ae6ff";
       emit({ kind: "glyph", x: e.x, y: e.y - 10, vy: -26, max: 0.7, text: label, color: c });
       emit({ kind: "ring", x: e.x, y: e.y, size: 10, max: 0.25, color: c });
@@ -252,7 +253,7 @@ function ingest(e: GameEvent, time: number) {
       const p = players.get(e.player);
       if (p) {
         const label = e.correct === true ? "CORRECT! " + e.perk.toUpperCase() : e.correct === false ? "NOT QUITE: " + e.perk.toUpperCase() : "MERGED " + e.perk.toUpperCase();
-        emit({ kind: "glyph", x: p.x, y: p.y - 24, vy: -14, max: 1.6, text: label, color: e.correct === false ? "#ffb02e" : "#3dff9a" });
+        emit({ kind: "glyph", x: p.x, y: p.y - 24, vy: -14, max: 1.0, text: label, color: e.correct === false ? "#ffb02e" : "#3dff9a", prio: 2 });
         emit({ kind: "ring", x: p.x, y: p.y, size: 22, max: 0.45, color: "#3dff9a" });
         burst(p.x, p.y, 14, { kind: "px", speed: 50, max: 0.7, colors: ["#3dff9a", "#ffffff"], grav: -40, glow: true });
       }

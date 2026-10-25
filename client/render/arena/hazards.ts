@@ -26,6 +26,7 @@ function dangerColor() {
 
 export function drawHazards(ctx: CanvasRenderingContext2D, hazards: Hazard[], time: number) {
   const seen = new Set<number>();
+  labeled.clear();
   const red = dangerColor();
   // cascade groups for chain lightning
   const cascades = hazards.filter((h) => h.kind === "cascade");
@@ -74,7 +75,7 @@ function onArm(h: Hazard, red: string) {
     burst(h.x, h.y, 10, { kind: "smoke", speed: 40, max: 0.9, size: 4, color: "#5a4a50", color2: "#2a2228", drag: 2 });
     emit({ kind: "ring", x: h.x, y: h.y, size: h.r * 1.4, max: 0.4, color: "#ffffff" });
     burst(h.x, h.y, 8, { kind: "shard", speed: 90, max: 0.7, text: "/\\#*;", spin: 18, color: "#ffd23f", color2: red, grav: 160 });
-    emit({ kind: "glyph", x: h.x, y: h.y - 10, vy: -20, max: 0.8, text: "STACK OVERFLOW", color: "#ffffff" });
+    emit({ kind: "glyph", x: h.x, y: h.y - 10, vy: -20, max: 0.8, prio: 1, text: "STACK OVERFLOW", color: "#ffffff" });
   } else if (h.kind === "cascade") {
     addShake(3);
     burst(h.x, h.y, 14, { kind: "spark", speed: 100, max: 0.35, colors: ["#ffffff", "#9ff0ff", red] });
@@ -104,17 +105,25 @@ function ditherDisc(ctx: CanvasRenderingContext2D, x: number, y: number, r: numb
   }
 }
 
+const labeled = new Set<string>(); // names already labeled this frame (one label per attack, not per hazard)
+
 function stackTrace(ctx: CanvasRenderingContext2D, x: number, y: number, name: string, left: number, red: string, time: number) {
-  // compact label at the hazard; the full FATAL banner lives in claude-ui's HUD
-  const n = (name || "").split("::")[0].trim().toUpperCase();
+  // compact label at the hazard; the full FATAL banner lives in claude-ui's HUD. On the narrow phone camera the HUD
+  // banner already names the attack, so only a small countdown is drawn; on wide views each name appears once (≤14 chars).
+  const narrow = fx.view.w < 300;
+  let n = narrow ? "" : (name || "").split("::")[0].trim().toUpperCase();
+  if (n.length > 9) n = n.slice(0, 8) + "~";
+  const key = n || "#" + Math.round(x / 40) + "," + Math.round(y / 40);
+  if (labeled.has(key)) n = "";
+  labeled.add(key);
   const msg = (n ? n + " " : "") + left.toFixed(1) + "S";
   const blink = Math.floor(time * 8) % 2 === 0;
-  const sc = fx.textScale;
+  const sc = 1;
   const w = msg.length * 4 * sc;
   const v = fx.view;
   const lo = Math.max(12, v.x + 2), hi = Math.min(ARENA_W - 12, v.x + v.w - 2);
   const tx = Math.max(lo, Math.min(hi - w, Math.round(x) - (w >> 1)));
-  const ty = Math.max(Math.max(24, v.y + 2), Math.min(Math.min(ARENA_H - 18, v.y + v.h - 6 * sc), Math.round(y - (sc - 1) * 5)));
+  const ty = Math.max(Math.max(24, v.y + 2), Math.min(Math.min(ARENA_H - 18, v.y + v.h - 6 * sc), Math.round(y)));
   drawText(ctx, msg, tx, ty, blink ? "#ffffff" : red, { scale: sc });
 }
 
@@ -267,7 +276,7 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
         ctx.drawImage(g, Math.round(h.x + ux * s2) - (g.width >> 1), Math.round(h.y + uy * s2) - (g.height >> 1));
       }
     }
-    if (atomic && Math.random() < 0.5) emit({ kind: "bold", x: h.x + ux * (20 + Math.random() * endS * 0.8) + px * (Math.random() - 0.5) * 16, y: h.y + uy * (20 + Math.random() * endS * 0.8) + py * (Math.random() - 0.5) * 16, vx: px * 20 * (Math.random() - 0.5), vy: -10, max: 0.35, text: beam!.text.trim().split("")[Math.floor(Math.random() * beam!.text.trim().length)] || "<", color: beam!.edge });
+    if (atomic && Math.random() < 0.5) emit({ prio: 0, kind: "bold", x: h.x + ux * (20 + Math.random() * endS * 0.8) + px * (Math.random() - 0.5) * 16, y: h.y + uy * (20 + Math.random() * endS * 0.8) + py * (Math.random() - 0.5) * 16, vx: px * 20 * (Math.random() - 0.5), vy: -10, max: 0.35, text: beam!.text.trim().split("")[Math.floor(Math.random() * beam!.text.trim().length)] || "<", color: beam!.edge });
     // impact sparks where the beam hits the wall
     const ex = h.x + ux * endS, ey = h.y + uy * endS;
     drawGlow(ctx, ex, ey, "#ffffff", 10, fade);
