@@ -12448,5 +12448,30 @@
     "id": "ab48c571dc178b2f",
     "source": "leave this screen?",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "4ea1f7f492342902",
+    "source": "Draw circles with your phone; keep it upright. ×2 — or long-press the screen",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "78b730a07a999b13",
+    "source": "keep it upright: it turned {0}°",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "def67def570f9c53",
+    "source": "circle {0}° of 300°",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "a03b21cb0c857ca6",
+    "source": "Press any key to continue _",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "db5e3ed9bc0cd163",
+    "source": "Tap anywhere to continue _",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

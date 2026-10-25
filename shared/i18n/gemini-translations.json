@@ -20520,5 +20520,40 @@
     "zh": "离开此界面？",
     "es": "¿salir de esta pantalla?",
     "fr": "quitter cet écran ?"
+  },
+  {
+    "id": "4ea1f7f492342902",
+    "en": "Draw circles with your phone; keep it upright. ×2 — or long-press the screen",
+    "zh": "用手机在空中画圈，保持手机竖直。×2 —— 或长按屏幕",
+    "es": "Dibuja círculos con el móvil; mantenlo vertical. ×2 — o mantén pulsada la pantalla",
+    "fr": "Dessinez des cercles avec le téléphone ; gardez-le droit. ×2 — ou appui long sur l'écran"
+  },
+  {
+    "id": "78b730a07a999b13",
+    "en": "keep it upright: it turned {0}°",
+    "zh": "保持竖直：手机转了 {0}°",
+    "es": "mantenlo vertical: giró {0}°",
+    "fr": "gardez-le droit : il a tourné de {0}°"
+  },
+  {
+    "id": "def67def570f9c53",
+    "en": "circle {0}° of 300°",
+    "zh": "画圈 {0}° / 300°",
+    "es": "círculo {0}° de 300°",
+    "fr": "cercle {0}° sur 300°"
+  },
+  {
+    "id": "a03b21cb0c857ca6",
+    "en": "Press any key to continue _",
+    "zh": "按任意键继续 _",
+    "es": "Pulsa cualquier tecla para continuar _",
+    "fr": "Appuyez sur une touche pour continuer _"
+  },
+  {
+    "id": "db5e3ed9bc0cd163",
+    "en": "Tap anywhere to continue _",
+    "zh": "轻触任意位置继续 _",
+    "es": "Toca en cualquier lugar para continuar _",
+    "fr": "Touchez n'importe où pour continuer _"
   }
 ]

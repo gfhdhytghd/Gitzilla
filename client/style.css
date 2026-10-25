@@ -463,7 +463,10 @@ body:has(.screen.game) .link-status.open { display: none; }
 .bsod { position: absolute; inset: 0; background: #0a28a8; color: #fff; display: flex; flex-direction: column; justify-content: center; padding: 6vh 12vw; font-size: clamp(16px, 2.6vw, 30px); animation: bsod-in .2s steps(3) both; }
 .bsod-title { align-self: center; background: #c0c0c0; color: #0a28a8; font-family: var(--pix); font-size: clamp(10px, 1.6vw, 18px); padding: 4px 10px; margin-bottom: 3vh; }
 .bsod p { margin: .3em 0; }
-.bsod-press { margin-top: 2em !important; text-align: center; animation: blink 1s steps(2) infinite; }
+.bsod-press { margin-top: 2em !important; text-align: center; animation: bsod-pulse 2.4s ease-in-out infinite; }
+/* gentle pulse, never a flash */
+@keyframes bsod-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .bsod-press { animation: none; } }
 @keyframes bsod-in { 0% { clip-path: inset(48% 0 48% 0); } 100% { clip-path: inset(0); } }
 .defeat { position: absolute; inset: 0; background: rgba(30,0,6,.9); color: #ffb3c0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: clamp(16px, 2.4vw, 28px); animation: bsod-in .25s steps(3) both; }
 .df-title { font-family: var(--pix); color: var(--red); font-size: clamp(18px, 4vw, 44px); text-shadow: 4px 4px 0 #000, -3px 0 var(--cyan); animation: glitch .9s steps(6) infinite; margin-bottom: 2vh; }
@@ -1341,8 +1344,12 @@ body:has(.game-menu:not([hidden])) .kj-touch-overlay { display: none; }
 @keyframes tr-swing { 0%, 50%, 100% { transform: translate(0, 0); } 25% { transform: translate(34px, -18px) rotate(10deg); } }
 .a-twist { animation: tr-twist 1.2s steps(6) infinite; }
 @keyframes tr-twist { 0%, 40%, 100% { transform: rotateY(0) rotate(0); } 15% { transform: rotate(38deg); } 25% { transform: rotate(-6deg); } }
-.a-spin { animation: tr-spin 1.6s steps(12) infinite; }
-@keyframes tr-spin { to { transform: rotate(360deg); } }
+/* spin = draw a circle with the phone: it travels around the circle but never turns (rotate · translate · un-rotate) */
+.a-spin { animation: tr-orbit 1.4s linear infinite; }
+@keyframes tr-orbit { from { transform: rotate(0deg) translateX(46px) rotate(0deg); } to { transform: rotate(360deg) translateX(46px) rotate(-360deg); } }
+.tr-stage:has(.a-spin)::before { content: ""; position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; margin: -46px 0 0 -46px; border-radius: 50%; border: 2px dashed rgba(57,255,136,.45); }
+/* the trainer's spin step runs a real input instance: its on-screen touch buttons stay hidden under the trainer */
+body:has(.training) .kj-touch-overlay { display: none; }
 .tr-tiltpad { position: absolute; right: 8%; top: 50%; width: 96px; height: 96px; margin-top: -48px; box-shadow: inset 0 0 0 2px #1d3b2b; display: grid; place-items: center; }
 .tr-tiltpad[hidden] { display: none; }
 .tr-dot { width: 12px; height: 12px; background: var(--yellow); transition: transform .06s; }
@@ -1805,9 +1812,17 @@ body.bigscreen .spectate { display: none; }
    paired seat's small "Phone connected ✓" line stays, tucked bottom-centre */
 .game-overlay > .pair-panel.compact { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(420px, calc(100vw - 24px)); margin: 0; z-index: 25; }
 .pair-panel.compact.in-fight:not([data-state="paired"]) { display: none; }
-.pair-panel.compact.in-fight[data-state="paired"] { padding: 4px 10px; width: auto; border-width: 1px; background: rgba(3, 8, 6, .8); }
+.pair-panel.compact.in-fight[data-state="paired"] { padding: 4px 10px; width: auto; border: 2px solid #4dff9a; background: #030806; }
 .pair-panel.compact.in-fight[data-state="paired"] > :not(.pp-head) { display: none; }
-.pair-panel.compact.in-fight .pp-head { font-size: 8px; }
+.pair-panel.compact.in-fight .pp-head { font-size: 8px; color: #7dffb3; text-shadow: none; }
+/* "📱 Phone connected ✓" over the fight (headset = pair.css's required card, in-fight = only .pr-status): one solid, opaque
+   pill with bright text, legible over every arena theme and the 3D canvas. pair.css's compact sticky rule repainted the
+   "ready" status (dark text meant for a green fill) on a dark brown background: near-black on near-black. */
+.screen.game .pair-panel.required.compact.in-fight[data-state="paired"] { padding: 0; border: 0; background: #030806; box-shadow: 0 0 0 3px #000; }
+.screen.game .pair-panel.required.compact.in-fight[data-state="paired"] > .pr-status,
+.screen.game .pair-panel.required.compact.in-fight[data-state="paired"] > .pr-status[data-s] {
+  background: #030806; color: #eafff3; box-shadow: inset 0 0 0 3px #4dff9a; text-shadow: none; opacity: 1;
+}
 .xr-panel > .pair-panel.compact { margin: 0; max-width: none; }
 /* headset seat: the Vision Pro panel is the main action (immersive sessions need a tap, so it can't auto-enter) */
 .xr-panel.prominent { top: 92px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 20px)); padding: 14px 16px; } /* under the boss bar */

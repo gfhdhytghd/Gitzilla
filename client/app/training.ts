@@ -1,11 +1,12 @@
 import { createTouchGestureState, recognizeTouch, type TouchSignal } from '../input/touch-gestures';
 // Motion v3 gesture training (lobby, phones): 5 short steps with an animated pixel phone, a live meter and a ✓ per
-// step. Doubles as the tutorial. Reads DeviceOrientation/DeviceMotion directly (no dependency on the input module) and
-// stores per-player thresholds in localStorage (`kaiju.gestureProfile`), which game.ts hands to
-// input.setProfile(...) when the input module supports it (codex-input motion v3).
+// step. Doubles as the tutorial. Hold/tilt/swing/twist read DeviceOrientation/DeviceMotion directly; the spin step runs
+// codex-input's own recognizer (a circle drawn with the phone, NOT a gyro turn) through input.calibration, so training
+// and the fight agree. Stores per-player thresholds in localStorage (`kaiju.gestureProfile`), which game.ts hands to
+// input.setProfile(...), and in codex-input's own threshold store.
 import { defaultThresholds, sanitizeThresholds, saveThresholds } from "../input/thresholds";
 import { orientationGravity, gravityMove } from "../input/gestures";
-import { loadTiltSensitivity, TILT_FULL_SPEED, loadMotionProfile } from "../input";
+import { loadTiltSensitivity, TILT_FULL_SPEED, loadMotionProfile, createInput, type InputController } from "../input";
 import { h, store, vibrate } from "./util";
 
 export interface GestureProfile {
@@ -14,7 +15,8 @@ export interface GestureProfile {
   tilt: { left: number; right: number; up: number; down: number }; // degrees reached
   swing: number; // m/s² threshold for an attack swing
   twist: number; // deg/s threshold for a dash twist
-  spin: number; // degrees accumulated within ~1.2s for a skill spin
+  spin: number; // spinAngle: monotonic acceleration sweep (°) of a circle drawn with the phone (280–340)
+  spinMagnitude?: number; // centripetal linear acceleration floor for that circle, m/s²
   at: number;
 }
 const KEY = "kaiju.gestureProfile";
@@ -31,7 +33,7 @@ export const isTrained = () => !!loadGestureProfile();
 
 /** Map the trainer's result onto codex-input's GestureThresholds (partial; the rest keeps its defaults). */
 export function toThresholds(p: GestureProfile) {
-  return { swingThreshold: p.swing, twistThreshold: p.twist, spinAngle: p.spin };
+  return { swingThreshold: p.swing, twistThreshold: p.twist, spinAngle: p.spin, ...(p.spinMagnitude ? { spinMagnitude: p.spinMagnitude } : {}) };
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -43,7 +45,7 @@ const STEPS: { id: StepId; title: string; sub: string; anim: string; need: numbe
   { id: "tilt", title: "tilt to move", sub: "from flat, tilt toward each edge. normal: 15° = full speed.", anim: "a-tilt", need: 4 },
   { id: "swing", title: "swing to attack", sub: "flick the phone like a punch. ×3 (or just tap the screen)", anim: "a-swing", need: 3 },
   { id: "twist", title: "twist to dash", sub: "a quick wrist twist that snaps back. ×3 (or double-tap)", anim: "a-twist", need: 3 },
-  { id: "spin", title: "spin for your skill", sub: "turn the phone all the way around. ×2 — or long-press the screen", anim: "a-spin", need: 2 },
+  { id: "spin", title: "spin for your skill", sub: "Draw circles with your phone; keep it upright. ×2 — or long-press the screen", anim: "a-spin", need: 2 },
 ];
 
 /** Opens the full-screen trainer. Resolves when finished or skipped. */
@@ -58,7 +60,11 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
   let stableSince = 0;
   const holdSamples: [number, number][] = [];
   let lastGestureAt = 0;
-  let rotWindow: { t: number; deg: number }[] = []; // |rotationRate| integration for spins
+  let rotWindow: { t: number; deg: number }[] = []; // |rotationRate| integration (twist only: a gyro turn is never a spin)
+  // spin step: the input module's circle recognizer + calibration recorder (created for that step only)
+  let spinInput: InputController | null = null;
+  let spinResult: { spinAngle: number; spinMagnitude: number } | null = null;
+  let spinGyro = 0;
   let hpVec: [number, number, number] = [0, 0, 0], lowG: [number, number, number] | null = null;
   let lastMotionT = 0;
   let meterVal = 0, meterMax = 1;
@@ -126,7 +132,29 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     stepIdx++;
     count = 0;
     meterVal = 0;
+    if (STEPS[stepIdx].id === "spin") startSpin();
     render();
+  };
+  const startSpin = () => {
+    if (spinInput) return;
+    try {
+      spinInput = createInput({
+        canvas: document.createElement("canvas"), toArena: () => [0, 0], getSelf: () => null,
+        // only a recognized circle (or the long-press alternative) counts: a gyro turn never reaches here as a skill
+        onGesture: (g) => { if (g.kind === "skill" && (g.via === "spin" || g.via === "long-press")) hit("spin", spinInput?.calibration.meter().spinDegrees ?? 0); },
+      });
+      spinInput.calibration.startStep("spin");
+    } catch (e) {
+      console.warn("[kaiju] spin training: input module unavailable, long-press only", e);
+      spinInput = null;
+    }
+  };
+  const stopSpin = () => {
+    if (!spinInput) return;
+    const r = spinInput.calibration.stop(); // skipped / long-press-only keeps the input defaults
+    spinResult = { spinAngle: r.spinAngle, spinMagnitude: r.spinMagnitude };
+    spinInput.dispose();
+    spinInput = null;
   };
   nextBtn.addEventListener("click", advance);
   skipBtn.addEventListener("click", () => finish(false));
@@ -197,7 +225,6 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
     const rot = r ? Math.hypot(r.alpha ?? 0, r.beta ?? 0, r.gamma ?? 0) : 0; // deg/s
     rotWindow.push({ t: now, deg: rot * dt });
     rotWindow = rotWindow.filter((x) => now - x.t < 1200);
-    const spun = rotWindow.reduce((s, x) => s + x.deg, 0);
     const s = STEPS[stepIdx];
     const refractory = now - lastGestureAt < 450;
     if (s.id === "swing") {
@@ -215,14 +242,6 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
       if (!refractory && rot > 220 && recent < 120) {
         lastGestureAt = now;
         hit("twist", rot);
-      }
-    } else if (s.id === "spin") {
-      meterVal = spun;
-      meterMax = 360;
-      if (now - lastGestureAt > 900 && spun >= 270) {
-        lastGestureAt = now;
-        rotWindow = [];
-        hit("spin", spun);
       }
     }
   };
@@ -268,10 +287,17 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
 
   const raf = () => {
     if (disposed) return;
-    meterFill.style.width = `${clamp(meterVal / meterMax, 0, 1) * 100}%`;
     const s = STEPS[stepIdx].id;
+    if (s === "spin" && spinInput) {
+      const m = spinInput.calibration.meter();
+      meterVal = m.spinDegrees;
+      meterMax = 300;
+      spinGyro = m.spinGyroDegrees;
+    }
+    meterFill.style.width = `${clamp(meterVal / meterMax, 0, 1) * 100}%`;
     meterLbl.textContent =
-      s === "hold" ? (ori ? "steady…" : "waiting for sensors…") : s === "tilt" ? "lean until each direction lights up" : s === "swing" ? `${meterVal.toFixed(1)} m/s²` : s === "twist" ? `${Math.round(meterVal)}°/s` : `${Math.round(meterVal)}° of 270°`;
+      s === "hold" ? (ori ? "steady…" : "waiting for sensors…") : s === "tilt" ? "lean until each direction lights up" : s === "swing" ? `${meterVal.toFixed(1)} m/s²` : s === "twist" ? `${Math.round(meterVal)}°/s`
+      : spinGyro > 60 ? `keep it upright: it turned ${Math.round(spinGyro)}°` : `circle ${Math.round(meterVal)}° of 300°`;
     requestAnimationFrame(raf);
   };
   requestAnimationFrame(raf);
@@ -280,6 +306,7 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
   function finish(trained: boolean) {
     if (disposed) return;
     disposed = true;
+    stopSpin();
     if (trained && neutral) {
       const prof: GestureProfile = {
         v: 3,
@@ -287,7 +314,9 @@ export function openTraining(opts: { onDone?(trained: boolean): void } = {}): ()
         tilt: tiltMax,
         swing: clamp(0.6 * (median(peaks.swing) || 12), 6, 14),
         twist: clamp(0.6 * (median(peaks.twist) || 360), 150, 400),
-        spin: clamp(0.8 * (median(peaks.spin) || 330), 220, 320),
+        // the input module learned the circle sweep and magnitude; its own clamps are 280–340° / 2–8 m/s²
+        spin: clamp(spinResult?.spinAngle ?? 300, 280, 340),
+        ...(spinResult ? { spinMagnitude: spinResult.spinMagnitude } : {}),
         at: Date.now(),
       };
       store.set(KEY, JSON.stringify(prof));

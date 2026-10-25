@@ -274,7 +274,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   if (xrPanel) {
     overlay.append(xrPanel);
     syncXrPanel();
-    xrStatus.textContent = "loading the 3D scene…";
+    xrStatus.textContent = view25dWanted() ? "loading the 3D scene…" : "";
     // only offer the headset when the browser can actually open an immersive-vr session
     void emulateXrIfAsked().then(xrSupported).then((ok) => (xrEnter.hidden = !ok));
   }
@@ -815,9 +815,29 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     result.outroDone = true;
     app.refresh();
   };
+  // Boss-raid victory BSOD: a real "press any key". It waits for a key / tap / click / gamepad button (a projector or
+  // spectator screen gives up after 60 s); defeat, royale and classroom endings keep their short auto-advance.
+  let bsodWait = false, bsodReadyAt = 0, padWasDown = true;
+  const continueOutro = (e?: KeyboardEvent) => {
+    if (!outro) return;
+    if (bsodWait) {
+      if (performance.now() < bsodReadyAt || e?.repeat) return; // a key still held from the fight is not a press
+      bsodWait = false;
+      finishOutro();
+    } else if (performance.now() - outro.at > 1200) finishOutro();
+  };
+  /** gamepads: any button going down while the BSOD waits (polled from the frame loop) */
+  const pollPadContinue = () => {
+    if (!bsodWait || performance.now() < bsodReadyAt) return;
+    let down = false;
+    for (const pad of navigator.getGamepads?.() ?? []) if (pad?.buttons.some((btn) => btn.pressed)) down = true;
+    if (down && !padWasDown) continueOutro();
+    padWasDown = down;
+  };
   const startOutro = (victory: boolean) => {
     if (outro) return;
     outro = { victory, at: performance.now() };
+    const bsod = victory && !!latest?.boss && !royaleOf(latest);
     const kit = latest?.boss?.kit;
     setTimeout(() => {
       const roy = royaleOf(latest);
@@ -863,7 +883,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
             h("p", null, "The current boss will be terminated."),
             h("p", null, "*  Segmentation fault (core dumped)"),
             h("p", null, `*  boss: exit 139 (segfault) · squad: exit 0 (victory) after ${fmtTime(latest?.t ?? 0)}`),
-            h("p.bsod-press", null, "Press any key to view the autopsy _"),
+            h("p.bsod-press", { "data-testid": "bsod-continue" }, isTouchDevice() ? "Tap anywhere to continue _" : "Press any key to continue _"),
           )
         : h(
             "div.defeat",
@@ -874,8 +894,14 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
             h("p.dim", null, "loading autopsy…"),
           );
       overlay.append(card);
+      if (bsod) {
+        bsodWait = true;
+        bsodReadyAt = performance.now() + 600;
+        padWasDown = true; // a button already held doesn't count until it's released
+      }
     }, victory ? 1000 : 500);
-    setTimeout(finishOutro, victory ? 3200 : 2000);
+    if (!bsod) setTimeout(finishOutro, victory ? 3200 : 2000);
+    else if (spectator) setTimeout(() => { if (bsodWait) (bsodWait = false), finishOutro(); }, 60_000);
   };
 
   // ---------------- input ----------------
@@ -973,12 +999,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     if (e.key === "Escape") menuSheet.hidden = !menuSheet.hidden;
     if (e.key.toLowerCase() === "h" && hint) hint.classList.toggle("fade");
-    if (outro && performance.now() - outro.at > 1200) finishOutro();
+    continueOutro(e);
   };
   addEventListener("keydown", onKey);
-  overlay.addEventListener("pointerdown", () => {
-    if (outro && performance.now() - outro.at > 1200) finishOutro();
-  });
+  // tap / click anywhere (the BSOD covers the overlay; phones: tap anywhere)
+  overlay.addEventListener("pointerdown", () => continueOutro());
   stage.addEventListener("pointerdown", () => {
     if (!outro && watchingRoyale(latest)) cycleWatch(1);
   });
@@ -1414,6 +1439,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
   const frame = (nowMs: number) => {
     raf = requestAnimationFrame(frame);
+    pollPadContinue();
     if (document.hidden) { last = nowMs; return; }
     // Bound sustained phone CPU/GPU work instead of running the elaborate pixel
     // effects at the display's maximum refresh rate. The independent 30 Hz input

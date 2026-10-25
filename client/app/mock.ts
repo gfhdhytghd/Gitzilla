@@ -142,7 +142,8 @@ export function createMockConn(opts: ConnOpts): Conn {
   const lobby: LobbyState = {
     room: opts.room, ownerId: "you",
     players: [
-      { id: "you", name: opts.name || "you", repo: null, status: "empty", kit: null },
+      // &paired=1: a phone controller is linked to your seat (pair panel playtests)
+      { id: "you", name: opts.name || "you", repo: null, status: "empty", kit: null, ...(new URLSearchParams(location.search).has("paired") ? { paired: true } : {}) },
       { id: "b1", name: "octocat", repo: "facebook/react", status: "analyzing", kit: null },
       { id: "b2", name: "linus", repo: "torvalds/linux", status: "analyzing", kit: null },
       { id: "b3", name: "ada", repo: "rust-lang/rust", status: "analyzing", kit: null },
@@ -248,6 +249,8 @@ export function createMockConn(opts: ConnOpts): Conn {
     let tick = 0;
     let seq = 0;
     let evBuf: GameEvent[] = [];
+    const bossWinS = Number(new URLSearchParams(location.search).get("bosswin") || 0);
+    const bossWinAt = bossWinS > 0 ? performance.now() + bossWinS * 1000 : 0;
     let latestSnap: (() => MatchState) | null = null;
     if (jitter) {
       const pub = setInterval(() => {
@@ -293,6 +296,15 @@ export function createMockConn(opts: ConnOpts): Conn {
           emit({ t: "autopsy", result: royale.autopsy() });
           pushLobby();
         }, 2600);
+      }
+      // &bosswin=S: the squad wins the raid S seconds in (BSOD / outro playtests)
+      if (bossWinAt && !royale && !edu && performance.now() > bossWinAt) {
+        clearInterval(loop!);
+        loop = null;
+        lobby.phase = "autopsy";
+        emit({ t: "autopsy", result: { ...match.autopsy(), victory: true } });
+        pushLobby();
+        return;
       }
       if (match.over && !royale) {
         clearInterval(loop!);
