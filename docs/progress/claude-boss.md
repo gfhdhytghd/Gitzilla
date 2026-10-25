@@ -1,3 +1,21 @@
+DONE (royale) — claude-boss
+
+## PvP royale (docs/tasks/pvp-royale.md, my section)
+- **GC-sweep zone:** `drawRoyaleZone(ctx, pvp, matchT, time, world?)`, exported from `client/render/arena/index.ts`. Draw it in world space after the arena background and before the heroes. `matchT` = MatchState.t (zone timing is in match seconds); `world` = the arena size (`pvpArenaSize`).
+  - Outside the circle: darkened and dithered "freed memory", a red radar sweep wedge passing over it, and drifting `0X0` / `FREE()` garbage glyphs.
+  - Edge: a marching ring of bold `RM -RF` glyphs with glow (brighter red while shrinking).
+  - Next circle: dashed white telegraph while pending or shrinking.
+  - Label: "GC SWEEP IN Ns" / "GC SWEEP!", clamped into the camera view so phones always see it.
+- **Elimination FX:** call `trackPlayers(players, pvp)` (the new optional 2nd arg gives placements). The moment `PlayerState.eliminated` turns true, the hero dissolves into a stack trace of its own code: `SEGFAULT #<place>`, `AT <identifier>()` ×≤3, `BY @<killer>`. Lines peel off upward and glitch out over 1.6 s, clamped into the view, plus code shards, a glitch flash and a small shake. The trace is a single particle, outside the 4-text budget.
+- **Arena size:** `drawArenaBackground(ctx, theme, seed, t, variant?, size?)` takes the real arena size (e.g. `{ w: 720, h: 432 }` from `pvpArenaSize`), so the floor, walls and props cover the whole royale arena instead of 480×288. The new `variant: "royale"` keeps the boss theme look but turns on per-player bullet colors and boss-free FX. `"classroom"` is unchanged.
+- **For claude-ui:**
+  - pass `size` and `"royale"` to drawArenaBackground in mode "pvp";
+  - call `drawRoyaleZone` after it;
+  - pass `s.pvp` as the 2nd arg of `trackPlayers`;
+  - don't draw eliminated heroes (or let claude-player hide them);
+  - the camera/minimap need the royale world size (still 480×288 constants in game.ts).
+- **Gallery:** `?mode=royale` (8 heroes in 720×432, zone pending → shrinking, eliminations every 1.6 s), plus `&portrait=1&res1=1` for the phone camera. Checked big screen and phone.
+
 DONE (ui review) — claude-boss
 
 ## For take-genesis: `portraitFrame(kit)`

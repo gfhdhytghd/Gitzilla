@@ -7,7 +7,7 @@ import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
 import { bossKitFromProfile, bossRegions, createMatch, playerKitFromProfile } from "../../../sim/index.ts";
 import { kaijuAnchors } from "../../../shared/kaiju-anatomy.ts";
 import { drawBoss, bossLookAt, bossPortrait, bossLayout } from "./index.ts";
-import { drawArenaBackground, drawBullets, drawEvents, drawHazards, drawMinions, drawObstacles, drawPerkPads, drawPickups, drawPostFx, getFxCues, trackPlayers } from "../arena/index.ts";
+import { drawRoyaleZone, drawArenaBackground, drawBullets, drawEvents, drawHazards, drawMinions, drawObstacles, drawPerkPads, drawPickups, drawPostFx, getFxCues, trackPlayers } from "../arena/index.ts";
 import type { Obstacle, PerkOffer, Pickup } from "../../../shared/types.ts";
 
 const profiles = Object.values(import.meta.glob("/data/fallback/*.json", { eager: true, import: "default" })) as RepoProfile[];
@@ -61,7 +61,7 @@ function pickProfile(): RepoProfile {
 
 function nav() {
   const el = document.getElementById("nav")!;
-  const links: [string, string][] = [["live", "?mode=live"], ["grid", "?mode=grid"], ["grid p3", "?mode=grid&phase=3"], ["portraits", "?mode=portraits"], ["bodies", "?mode=bodies"], ["fx", "?mode=fx"], ["pvp", "?mode=pvp"], ["film", "?mode=film&pose=walk"]];
+  const links: [string, string][] = [["live", "?mode=live"], ["grid", "?mode=grid"], ["grid p3", "?mode=grid&phase=3"], ["portraits", "?mode=portraits"], ["bodies", "?mode=bodies"], ["fx", "?mode=fx"], ["pvp", "?mode=pvp"], ["film", "?mode=film&pose=walk"], ["royale", "?mode=royale"]];
   profiles.forEach((p, i) => links.push([p.slug.split("/")[1], "?mode=live&boss=" + i]));
   el.innerHTML = links.map(([t, h]) => `<a href="${h}">${t}</a>`).join("");
 }
@@ -479,6 +479,56 @@ function film() {
   requestAnimationFrame(frame);
 }
 
+// PvP royale (staged): 8 heroes in a 720x432 arena, GC-sweep zone pending -> shrinking, heroes eliminated over time.
+// &portrait=1 shows a phone camera following hero 0.
+function royale() {
+  const AW = 720, AH = 432;
+  const scale = Number(q.get("scale") ?? 2);
+  const ctx = makeStage(scale);
+  if (!PORTRAIT) { ctx.canvas.width = AW * scale; ctx.canvas.height = AH * scale; }
+  const ps = Array.from({ length: 8 }, (_, k) => {
+    const a = (k / 8) * Math.PI * 2;
+    const p0 = fakePlayer(k % 4, AW / 2 + Math.cos(a) * 280, AH / 2 + Math.sin(a) * 160);
+    return { ...p0, id: "r" + k, name: ["ana", "ben", "cy", "dee", "eli", "fay", "gus", "hal"][k], kit: playerKitFromProfile(profiles[(k * 2 + 1) % profiles.length]) };
+  });
+  const t0 = performance.now() / 1000;
+  function frame() {
+    const time = performance.now() / 1000, mt = (time - t0) % 20; // match clock loops every 20 s
+    const zone = { cx: 380, cy: 210, r: mt < 4 ? 400 : Math.max(90, 400 - (mt - 4) * 30), targetR: 90, shrinkStart: 4, shrinkEnd: 14.3, dps: 1 };
+    ps.forEach((p, k) => {
+      p.eliminated = mt > 6 + k * 1.6 && k > 0;
+      p.alive = !p.eliminated;
+      p.killedBy = p.eliminated ? "r0" : null;
+      const a = (k / 8) * Math.PI * 2 + time * 0.2;
+      const rr = Math.min(zone.r - 20, 200) * 0.8;
+      p.x = zone.cx + Math.cos(a) * rr; p.y = zone.cy + Math.sin(a) * rr * 0.6;
+    });
+    const alive = ps.filter((p) => !p.eliminated).map((p) => p.id);
+    const placements: Record<string, number> = {};
+    ps.forEach((p, k) => { if (p.eliminated) placements[p.id] = 9 - k; });
+    const pvp = { round: 1, rounds: 1, roundEndsAt: 150, scores: {}, leader: "r0", royale: { alive, placements, zone, winner: alive.length === 1 ? alive[0] : null } } as unknown as MatchState["pvp"];
+    let view: { x: number; y: number; w: number; h: number } | undefined;
+    if (PORTRAIT) {
+      const c = ctx.canvas;
+      const sc = Math.max(1, Math.floor(c.height / AH));
+      const vw = c.width / sc;
+      camX += (ps[0].x - vw / 2 - camX) * 0.15; camX = Math.max(0, Math.min(AW - vw, camX));
+      view = { x: camX, y: 0, w: vw, h: AH };
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.setTransform(sc, 0, 0, sc, -Math.round(camX * sc), 0);
+    } else ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    drawArenaBackground(ctx, "web", 11, time, "royale", { w: AW, h: AH });
+    drawRoyaleZone(ctx, pvp, mt, time, { w: AW, h: AH });
+    drawBoss(ctx, null, time);
+    trackPlayers(ps, pvp);
+    ps.filter((p) => !p.eliminated).sort((a, b) => a.y - b.y).forEach((p) => (drawPlayerMod ? drawPlayerMod(ctx, p, time, p.id === "r0") : stubPlayer(ctx, p)));
+    drawEvents(ctx, [], time, view ?? { x: 0, y: 0, w: AW, h: AH });
+    drawPostFx(ctx, time, 0, view ?? { x: 0, y: 0, w: AW, h: AH });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 function bodies() {
   const wrap = document.getElementById("wrap")!;
   const BODIES = ["kaiju", "blob", "serpent", "spider", "hydra", "golem", "swarm", "eye", "tree", "machine"] as const;
@@ -503,6 +553,7 @@ if (mode === "bodies") bodies();
 else if (mode === "fx") fxSeq();
 else if (mode === "pvp") pvp();
 else if (mode === "film") film();
+else if (mode === "royale") royale();
 else if (mode === "bullets") bulletsShow();
 else if (mode === "grid") grid();
 else if (mode === "portraits") portraits();

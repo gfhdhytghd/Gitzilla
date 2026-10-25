@@ -4,7 +4,10 @@ import type { ArenaTheme } from "../../../shared/types.ts";
 
 /** Renderer-side themes: the six boss themes plus the edu "classroom" (no boss, PvP). */
 export type Theme = ArenaTheme | "classroom";
-import { ARENA_H, ARENA_W } from "../../../shared/types.ts";
+import { ARENA_H as BASE_H, ARENA_W as BASE_W } from "../../../shared/types.ts";
+
+// Arena size of the layer being built / animated (battle 480x288; PvP royale arenas are bigger, see sim pvpArenaSize).
+let ARENA_W = BASE_W, ARENA_H = BASE_H;
 import { bayer, disc, drawGlow, hash2, hexToRgb, line, makeCanvas, mix, rgbToHex, rng, type RGB } from "./pix.ts";
 import { drawTextRaw } from "./font.ts";
 
@@ -47,13 +50,15 @@ export type Ambient =
   | { k: "fluoro"; x: number; w: number; ph: number }
   | { k: "clock"; x: number; y: number; ph: number };
 
-export interface ArenaLayer { canvas: HTMLCanvasElement; ambient: Ambient[]; pal: Pal }
+export interface ArenaLayer { canvas: HTMLCanvasElement; ambient: Ambient[]; pal: Pal; w: number; h: number }
 
 const cache = new Map<string, ArenaLayer>();
 
 /** code: the boss repo's real lines (heartLines + snippets) to print on the floor; optional. */
-export function getArena(theme: Theme, seed: number, code?: string[]): ArenaLayer {
-  const key = theme + "|" + seed + "|" + (code ? code.length + ":" + code.join("").length : "");
+export function getArena(theme: Theme, seed: number, code?: string[], size?: { w: number; h: number }): ArenaLayer {
+  const w = Math.round(size?.w ?? BASE_W), h = Math.round(size?.h ?? BASE_H);
+  ARENA_W = w; ARENA_H = h;
+  const key = theme + "|" + seed + "|" + w + "x" + h + "|" + (code ? code.length + ":" + code.join("").length : "");
   let a = cache.get(key);
   if (!a) {
     if (cache.size > 8) cache.clear();
@@ -221,7 +226,7 @@ function build(theme: Theme, seed: number, code?: string[]): ArenaLayer {
   }
   ctx.globalCompositeOperation = "source-over";
 
-  return { canvas: c, ambient, pal };
+  return { canvas: c, ambient, pal, w: ARENA_W, h: ARENA_H };
 }
 
 function inPlay(x: number, y: number, m = 0) {
@@ -728,6 +733,7 @@ function walls(ctx: CanvasRenderingContext2D, theme: Theme, pal: Pal, R: () => n
 
 // ---------- ambient animation ----------
 export function drawAmbient(ctx: CanvasRenderingContext2D, layer: ArenaLayer, time: number) {
+  ARENA_W = layer.w; ARENA_H = layer.h;
   const pal = layer.pal;
   for (const a of layer.ambient) {
     switch (a.k) {

@@ -1,5 +1,5 @@
 // Game events -> juice: damage numbers, glitch flashes, shrapnel, banners, death sequences.
-import type { GameEvent, PlayerState, SkillKind } from "../../../shared/types.ts";
+import type { GameEvent, PlayerState, PvpState, SkillKind } from "../../../shared/types.ts";
 import { drawGlow, hash2, TAU } from "./pix.ts";
 import { drawText, textWidth } from "./font.ts";
 import { addShake, burst, drawParticles, emit, every, fx, setView, stepParticles, type Particle, type View } from "./fx.ts";
@@ -30,8 +30,25 @@ interface Banner { text: string; sub: string; color: string; at: number; dur: nu
 const banners: Banner[] = [];
 
 /** Optional: give the FX layer player positions (for downed/revived/skill effects). Call once per frame. */
-export function trackPlayers(ps: PlayerState[]) {
+const eliminatedSeen = new Set<string>();
+
+/** players: every frame. pvp (optional): royale placements for the elimination FX ("#5"). */
+export function trackPlayers(ps: PlayerState[], pvp?: PvpState | null) {
   for (const p of ps) {
+    // royale: the moment a hero is eliminated it dissolves into a stack trace of its own code
+    if (p.eliminated && !eliminatedSeen.has(p.id)) {
+      eliminatedSeen.add(p.id);
+      const ids = (p.kit.code?.identifiers ?? []).filter((x) => x && x.length <= 12).slice(0, 3);
+      const frames = (ids.length ? ids : ["main", "loop", "fight"]).map((x) => "AT " + x.toUpperCase() + "()");
+      const place = pvp?.royale?.placements?.[p.id];
+      const killer = p.killedBy ? ps.find((q) => q.id === p.killedBy)?.name : null;
+      const head = "SEGFAULT" + (place ? " #" + place : "");
+      emit({ kind: "trace", x: p.x, y: p.y - 6, max: 1.6, text: [head, ...frames, killer ? "BY @" + killer.toUpperCase().slice(0, 9) : ""].filter(Boolean).join("\n"), color: "#ff9ab0" });
+      burst(p.x, p.y, 18, { kind: "shard", speed: 70, max: 0.9, text: "{}();#*01", spin: 14, colors: [heroColor(p.id), "#ffffff"], color2: "#3a2a40", grav: 160 });
+      emit({ kind: "glitch", x: p.x, y: p.y - 4, max: 0.4, size: 16 });
+      addShake(4);
+    }
+    if (!p.eliminated) eliminatedSeen.delete(p.id);
     players.set(p.id, { x: p.x, y: p.y, name: p.name });
     // re-register whenever the hero's token list changes (e.g. repo swapped between rematches)
     const toks = p.kit.code?.tokens ?? [];

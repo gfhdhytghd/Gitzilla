@@ -47,7 +47,7 @@ export function setView(ctx: CanvasRenderingContext2D, view?: View) {
 export function addShake(px: number) { fx.shake = Math.min(10, Math.max(fx.shake, px)); }
 
 // ---------- particles ----------
-export type PKind = "px" | "spark" | "smoke" | "glyph" | "ring" | "shard" | "glitch" | "boom" | "bold";
+export type PKind = "px" | "spark" | "smoke" | "glyph" | "ring" | "shard" | "glitch" | "boom" | "bold" | "trace";
 
 export interface Particle {
   kind: PKind;
@@ -155,6 +155,23 @@ export function drawParticles(ctx: CanvasRenderingContext2D) {
         const s = textSprite(p.text, t < 0.15 ? "#ffffff" : p.color, "#07040c", Math.min(3, p.size + fx.textScale - 1));
         if (t > 0.75 && Math.floor(p.life * 30) % 2) break; // flicker out
         ctx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y - s.height / 2));
+        break;
+      }
+      case "trace": {
+        // an eliminated hero dissolving into its stack trace: lines peel off upward one by one, glitching out
+        const lines = p.text.split("\n");
+        lines.forEach((ln, i) => {
+          const start = i * 0.12;
+          const lt = Math.max(0, (p.life - start) / Math.max(0.1, p.max - start));
+          if (lt >= 1) return;
+          const yy = Math.round(p.y - i * 7 - lt * 22);
+          const jx = Math.round(Math.sin((p.life + i) * 40) * 2 * lt);
+          if (lt > 0.6 && Math.floor(p.life * 30 + i) % 2) return;
+          const s = textSprite(ln, i === 0 ? "#ff3a5c" : lt < 0.2 ? "#ffffff" : p.color, "#07040c", 1);
+          // keep the trace inside the camera view (phones show only part of the arena)
+          const tx = Math.max(fx.view.x + 2, Math.min(fx.view.x + fx.view.w - s.width - 2, Math.round(p.x - s.width / 2)));
+          ctx.drawImage(s, tx + jx, yy);
+        });
         break;
       }
       case "bold": {
