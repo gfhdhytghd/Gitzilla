@@ -31,7 +31,8 @@ function shortLabel(todo: string): string {
   return t.length > 14 ? t.slice(0, 13) + "~" : t;
 }
 
-export function drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], time: number) {
+/** each (optional, 3D stage): called per minion with a draw callback, so the caller can set a transform/slot first. */
+export function drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], time: number, each?: (m: Minion, draw: () => void) => void) {
   const seen = new Set<number>();
   for (const m of minions) {
     seen.add(m.id);
@@ -54,12 +55,16 @@ export function drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], ti
     const spawnK = Math.min(1, (time - t.born) / 0.25);
     const todo = todoFor(m.id);
     const st = STYLE[variantOf(todo)];
-    drawBug(ctx, m.x, m.y, t.fx, t.fy, time + m.id * 0.37, time - t.flash < 0.08, st, spawnK);
-    if (spawnK >= 1 && minions.length <= 8) {
-      ctx.globalAlpha = 0.85;
-      drawText(ctx, shortLabel(todo), Math.round(m.x), Math.round(m.y) - 13, st.label, { align: "center" });
-      ctx.globalAlpha = 1;
-    }
+    const tr = t;
+    const draw = () => {
+      drawBug(ctx, m.x, m.y, tr.fx, tr.fy, time + m.id * 0.37, time - tr.flash < 0.08, st, spawnK);
+      if (spawnK >= 1 && minions.length <= 8) {
+        ctx.globalAlpha = 0.85;
+        drawText(ctx, shortLabel(todo), Math.round(m.x), Math.round(m.y) - 13, st.label, { align: "center" });
+        ctx.globalAlpha = 1;
+      }
+    };
+    if (each) each(m, draw); else draw();
   }
   for (const [id, t] of tracks) {
     if (seen.has(id)) continue;

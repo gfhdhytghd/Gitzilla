@@ -172,7 +172,11 @@ export function glowSprite(color: string, r: number, strength = 1): HTMLCanvasEl
   return cv;
 }
 
+/** Set `off` while drawing into transparent sprite textures (3D billboards): additive glows would become opaque halos. */
+export const glowState = { off: false };
+
 export function drawGlow(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, r: number, alpha = 1, strength = 1) {
+  if (glowState.off) return;
   const g = glowSprite(color, r, strength);
   const prevA = ctx.globalAlpha, prevOp = ctx.globalCompositeOperation;
   ctx.globalCompositeOperation = "lighter";

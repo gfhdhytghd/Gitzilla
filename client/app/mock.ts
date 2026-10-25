@@ -142,7 +142,8 @@ export function createMockConn(opts: ConnOpts): Conn {
   const lobby: LobbyState = {
     room: opts.room, ownerId: "you",
     players: [
-      { id: "you", name: opts.name || "you", repo: null, status: "empty", kit: null },
+      // &paired=1: a phone controller is linked to your seat (pair panel playtests)
+      { id: "you", name: opts.name || "you", repo: null, status: "empty", kit: null, ...(new URLSearchParams(location.search).has("paired") ? { paired: true } : {}) },
       { id: "b1", name: "octocat", repo: "facebook/react", status: "analyzing", kit: null },
       { id: "b2", name: "linus", repo: "torvalds/linux", status: "analyzing", kit: null },
       { id: "b3", name: "ada", repo: "rust-lang/rust", status: "analyzing", kit: null },
@@ -198,6 +199,13 @@ export function createMockConn(opts: ConnOpts): Conn {
 
   // ---------- match ----------
   let loop: ReturnType<typeof setInterval> | null = null;
+  // &lat=60-120: like the server (30 Hz sim, its own 20 Hz snapshot timer) through a jittery tunnel: each snapshot
+  // arrives LO..HI ms later, in order (one WebSocket). For smoothness playtests.
+  const jitter = (() => {
+    const m = /^(\d+)-(\d+)$/.exec(new URLSearchParams(location.search).get("lat") ?? "");
+    return m ? { lo: +m[1], hi: +m[2] } : null;
+  })();
+  let deliverAt = 0;
   let lastInput: InputFrame | null = null;
   let paused: MatchState["paused"] = null;
   const startMatch = async () => {
@@ -241,6 +249,19 @@ export function createMockConn(opts: ConnOpts): Conn {
     let tick = 0;
     let seq = 0;
     let evBuf: GameEvent[] = [];
+    const bossWinS = Number(new URLSearchParams(location.search).get("bosswin") || 0);
+    const bossWinAt = bossWinS > 0 ? performance.now() + bossWinS * 1000 : 0;
+    let latestSnap: (() => MatchState) | null = null;
+    if (jitter) {
+      const pub = setInterval(() => {
+        if (!loop) return clearInterval(pub);
+        if (!latestSnap) return;
+        const msg: ServerMsg = { t: "snapshot", state: { ...latestSnap(), events: evBuf }, ack: lastInput?.seq ?? 0 };
+        evBuf = [];
+        deliverAt = Math.max(deliverAt, performance.now() + jitter.lo + Math.random() * (jitter.hi - jitter.lo));
+        setTimeout(() => msgFns.forEach((f) => f(structuredClone(msg))), deliverAt - performance.now());
+      }, 1000 / 20);
+    }
     loop = setInterval(() => {
       const inputs = new Map<string, InputFrame>();
       for (const p of ps) {
@@ -258,11 +279,12 @@ export function createMockConn(opts: ConnOpts): Conn {
       tick++;
       const snap = { ...match.snapshot(), paused };
       evBuf.push(...snap.events);
+      // edu mock: dress the fake boss match as a classroom brawl (no boss, PvP scoreboard, 2x heroes)
+      const dress = () => (royale ? royale.dress(snap) : edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap);
+      if (jitter) latestSnap = dress;
       // 20 Hz: send 2 of every 3 ticks
-      if (tick % 3 !== 2) {
-        // edu mock: dress the fake boss match as a classroom brawl (no boss, PvP scoreboard, 2x heroes)
-        const st = royale ? royale.dress(snap) : edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap;
-        emit({ t: "snapshot", state: { ...st, events: evBuf }, ack: lastInput?.seq ?? 0 });
+      else if (tick % 3 !== 2) {
+        emit({ t: "snapshot", state: { ...dress(), events: evBuf }, ack: lastInput?.seq ?? 0 });
         evBuf = [];
       }
       if (royale?.winner && !royaleEnded) {
@@ -274,6 +296,15 @@ export function createMockConn(opts: ConnOpts): Conn {
           emit({ t: "autopsy", result: royale.autopsy() });
           pushLobby();
         }, 2600);
+      }
+      // &bosswin=S: the squad wins the raid S seconds in (BSOD / outro playtests)
+      if (bossWinAt && !royale && !edu && performance.now() > bossWinAt) {
+        clearInterval(loop!);
+        loop = null;
+        lobby.phase = "autopsy";
+        emit({ t: "autopsy", result: { ...match.autopsy(), victory: true } });
+        pushLobby();
+        return;
       }
       if (match.over && !royale) {
         clearInterval(loop!);
@@ -384,6 +415,7 @@ export function createMockConn(opts: ConnOpts): Conn {
       }
       case "input":
         lastInput = m.frame;
+        (globalThis as { __kaijuLastInput?: InputFrame }).__kaijuLastInput = m.frame; // playtests read the aim
         break;
       case "pause":
         if (m.paused) paused = { by: you, since: Date.now(), resumeAt: null };
@@ -418,8 +450,30 @@ export function createMockConn(opts: ConnOpts): Conn {
         lobby.phase = "lobby";
         pushLobby();
         break;
+      // owner tools (server rules: owner only, not yourself; transfer only to a human, never mid-match)
+      case "kick":
+        if (lobby.ownerId !== you || m.playerId === you) break;
+        lobby.players = lobby.players.filter((p) => p.id !== m.playerId);
+        pushLobby();
+        break;
+      case "transferOwner": {
+        const to = lobby.players.find((p) => p.id === m.playerId);
+        if (lobby.ownerId !== you || !to || to.bot || to.id === you) break;
+        if (lobby.phase === "match") { emit({ t: "error", message: "Hand over the room after the match." }); break; }
+        lobby.ownerId = to.id;
+        pushLobby();
+        break;
+      }
     }
   };
+  // &kicked=1: the host removes you after 3s (kicked notice, then the socket closes 4003)
+  // &handoff=1: the host role moves to octocat after 3s and back to you after 7s (both toasts)
+  const q = new URLSearchParams(location.search);
+  if (q.has("kicked")) setTimeout(() => { emit({ t: "kicked", by: "octocat" }); setTimeout(() => statusFns.forEach((f) => f("kicked")), 50); }, 3000);
+  if (q.has("handoff")) {
+    setTimeout(() => { const o = lobby.players.find((p) => p.id !== you && !p.bot); if (o) { lobby.ownerId = o.id; pushLobby(); } }, 3000);
+    setTimeout(() => { lobby.ownerId = you; pushLobby(); }, 7000);
+  }
 
   setTimeout(() => statusFns.forEach((f) => f("open")), 0);
   setTimeout(() => handle({ t: "hello", room: opts.room, role: opts.role, name: opts.name }), 10);

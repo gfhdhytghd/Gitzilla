@@ -10,13 +10,15 @@ import { consumeAuthError } from "./github";
 import { createLanding, createWhoami, normalizeRoomCode } from "./landing";
 import { createLobby } from "./lobby";
 import { createMockConn } from "./mock";
-import { connect } from "./net";
+import { KICKED_REJOIN, connect } from "./net";
 import { loadModules } from "./renderers";
 import { getMotionPermissionState, subscribeMotionPermission } from "../input";
-import { h, store } from "./util";
+import { detectDevice, isHeadset, usesLocalControls } from "./device";
+import { h, isPhone, store } from "./util";
+import { controllerTokenKey, createControllerLink, lookupControllerSeat } from "./controller-link";
+import { createControllerOffer, createControllerScreen } from "./pair";
 
 installLanguageUi();
-installSettings();
 const root = document.getElementById("app")!;
 const params = new URLSearchParams(location.search);
 const mock = params.has("mock");
@@ -58,6 +60,7 @@ function route() {
     }
     return enterRoom(code);
   }
+  if (/^\/demo\/?$/.test(location.pathname)) return void import("../demo/index.ts").then((m) => m.mountDemo(root));
   if (location.pathname !== "/") history.replaceState(null, "", "/" + location.search);
   modulesReady.finally(showLanding);
 }
@@ -76,21 +79,54 @@ function showLanding() {
   placeSettingsButton(landing.el);
 }
 
-function enterRoom(room: string) {
+async function enterRoom(room: string) {
   const role: Role = params.get("screen") === "1" ? "screen" : "player";
   document.body.classList.toggle("bigscreen", role === "screen");
   const stored = store.get("kaiju.name");
-  if (role === "player" && !stored) {
-    const gate = createWhoami(room, (name) => {
-      store.set("kaiju.name", name);
-      gate.destroy();
-      modulesReady.finally(() => startRoom(room, role, name));
-    });
-    root.append(gate.el);
-    placeSettingsButton(gate.el);
-    return;
+  // Decide before opening any player socket, so accepting the offer never creates a second seat.
+  if (role === "player" && !mock && isPhone()) {
+    await modulesReady;
+    const showController = () => {
+      const link = createControllerLink({ room, name: stored ?? undefined });
+      const view = createControllerScreen({ room, link, onDisconnect: () => {
+        link.unlink(); view.destroy(); location.assign("/");
+      },
+      // end cards (taken over / unlinked / error): link again, or play on this phone as a normal player
+      relink: () => { link.close(); view.destroy(); showController(); },
+      playHere: () => { link.close(); view.destroy(); root.replaceChildren(); joinPlayer(); } });
+      root.replaceChildren(view.el);
+      placeSettingsButton(view.el);
+    };
+    if (store.get(controllerTokenKey(room))) return showController();
+    try {
+      const seat = await lookupControllerSeat(room);
+      if (seat) {
+        const offer = createControllerOffer({ room, seat,
+          onConnect: () => { offer.destroy(); showController(); },
+          onSkip: () => { offer.destroy(); joinPlayer(); },
+        });
+        root.replaceChildren(offer.el);
+        placeSettingsButton(offer.el);
+        return;
+      }
+    } catch {
+      // Controller discovery is optional. Older/offline services must not prevent a normal join.
+    }
   }
-  modulesReady.finally(() => startRoom(room, role, stored ?? "screen"));
+  joinPlayer();
+  function joinPlayer() {
+    if (role === "player" && !stored) {
+      const gate = createWhoami(room, (name) => {
+        store.set("kaiju.name", name);
+        gate.destroy();
+        modulesReady.finally(() => startRoom(room, role, name));
+      });
+      root.append(gate.el);
+      placeSettingsButton(gate.el);
+      return;
+    }
+    modulesReady.finally(() => startRoom(room, role, stored ?? "screen"));
+  }
 }
 
 function startRoom(room: string, role: Role, name: string) {
@@ -149,10 +185,14 @@ function startRoom(room: string, role: Role, name: string) {
 
   const reportControls = () => {
     if (role === "screen" || app.lobby?.mode === "edu" || !app.you || app.status !== "open") return;
+    if (isHeadset()) {
+      app.conn.send({ t: "controls", ready: false, mode: "standard", needsController: true });
+      return;
+    }
     const state = getMotionPermissionState();
     app.conn.send({ t: "controls", ready: state.ready, mode: state.profile });
   };
-  stopControls = subscribeMotionPermission(reportControls);
+  if (usesLocalControls()) stopControls = subscribeMotionPermission(reportControls);
 
   const show = (kind: typeof screenKind) => {
     if (kind === screenKind) return;
@@ -213,6 +253,39 @@ function startRoom(room: string, role: Role, name: string) {
   }
 
   let fatal = false;
+  /** Removed by the host (kicked notice, close 4003, or a refused rejoin): a calm card, no reconnect, token gone. */
+  let kickedShown = false;
+  function showKicked(by: string | null) {
+    if (kickedShown) return;
+    kickedShown = fatal = true;
+    stopControls();
+    setClassroomLanguage(null);
+    // keep the resume token (like the classroom): the server bans it, so a reload / reopened link is refused instead
+    // of joining as an anonymous newcomer
+    app.conn.close();
+    link.className = "link-status closed";
+    link.textContent = "REMOVED";
+    screen?.destroy();
+    screen = null;
+    screenKind = null;
+    showDisplaced(false);
+    root.replaceChildren(h(
+      "div.screen.fatal.kicked",
+      { "data-testid": "kicked" },
+      h(
+        "div.term-window",
+        null,
+        h("div.term-title", null, h("span.dots", null, "● ● ●"), ` kaiju@room-${room}`),
+        h(
+          "div.term-body",
+          null,
+          h("div.kicked-line", null, by ? `You were removed from this room by ${by}.` : KICKED_REJOIN),
+          h("div.dim", null, "You can join another room or start your own."),
+          h("a.btn.btn-primary", { href: mock ? "/?mock=1" : "/", "data-testid": "kicked-home" }, "Back to start"),
+        ),
+      ),
+    ));
+  }
   /** PR-0: tell people when a match vanished (server restart) or the host changed, instead of silently moving them. */
   function noticeLobbyChange(prev: LobbyState | null, next: LobbyState) {
     if (!prev) return;
@@ -220,10 +293,10 @@ function startRoom(room: string, role: Role, name: string) {
       showBanner(next.mode === "edu" ? "⚠ the brawl was interrupted — the teacher can start again" : "⚠ the match was interrupted — the host can start again");
     }
     if (prev.ownerId !== next.ownerId && next.ownerId) {
-      if (next.ownerId === app.you) toast("★ you are now the host", "ok", 4500);
+      if (next.ownerId === app.you) toast("★ You're the host now.", "ok", 4500);
       else {
         const who = next.players.find((p) => p.id === next.ownerId)?.name;
-        toast(who ? `host is now ${who}` : next.mode === "edu" ? "the teacher screen is now the host" : "the host changed", "info", 4000);
+        toast(who ? `${who} is now the host` : next.mode === "edu" ? "the teacher screen is now the host" : "the host changed", "info", 4000);
       }
     }
   }
@@ -238,16 +311,43 @@ function startRoom(room: string, role: Role, name: string) {
       if (fatal) return; // keep "LINK ERR" after a fatal error instead of "retrying"
       app.status = s;
       link.className = `link-status ${s}`;
+      if (s === "kicked") {
+        if (app.lobby?.mode === "edu") return; // the classroom screen shows its own removed card (with a code download)
+        return showKicked(null);
+      }
       link.textContent = s === "open" ? (mock ? "LINK MOCK" : "LINK OK") : s === "connecting" ? "LINK…" : s === "displaced" ? "OPEN IN ANOTHER TAB" : "LINK LOST · RETRYING";
       showDisplaced(s === "displaced");
     });
     app.conn.onMessage((m: ServerMsg) => {
+      if (kickedShown) return;
+      // generic kicked card for raid / PvP (and a refused rejoin before any lobby); the classroom handles its own in onMsg
+      if ((m.t === "kicked" || (m.t === "error" && m.message === KICKED_REJOIN)) && app.lobby?.mode !== "edu") return showKicked(m.t === "kicked" ? m.by || null : null);
       switch (m.t) {
         case "classroom":
           if (app.lobby) app.lobby.classroom = m.state;
           app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {};
           break;
         case "welcome":
+          // The room mode is known only after welcome; release the transient student slot before spectator entry.
+          if (isHeadset() && role === "player" && m.lobby.mode === "edu") {
+            stopControls();
+            const spectatorUrl = new URL(location.href); spectatorUrl.searchParams.set("screen", "1"); spectatorUrl.searchParams.set("view", "projector");
+            // Join the projector before leaving: the last player's explicit leave deletes an otherwise empty room.
+            // Its welcome stores the separate projector token, so navigation resumes this seat rather than adding one.
+            history.replaceState(null, "", spectatorUrl.href);
+            const projector = connect({ room, role: "screen", name });
+            let releasingPlayer = false;
+            projector.onMessage(message => {
+              if (message.t === "welcome") {
+                releasingPlayer = true;
+                app.conn.send({ t: "leave" }); app.conn.close();
+              } else if (releasingPlayer && message.t === "lobby" && !message.lobby.players.some(player => player.id === m.you)) {
+                // The server has removed the player while this projector is still connected.
+                projector.close(); link.remove(); location.replace(spectatorUrl.href);
+              }
+            });
+            return;
+          }
           app.you = m.you;
           app.token = m.token;
           noticeLobbyChange(app.lobby, m.lobby);
@@ -299,4 +399,4 @@ addEventListener("popstate", () => location.reload());
 consumeAuthError();
 // phones play in portrait; a sideways phone gets a full-screen guard (the game keeps running underneath)
 document.body.append(h("div.rotate-guard", null, h("div.rg-phone"), h("div", null, "ROTATE TO PORTRAIT ↻"), h("div.rg-sub", null, "gitzilla is played with the phone upright")));
-route();
+void detectDevice().then(() => { installSettings(); route(); });

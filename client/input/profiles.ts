@@ -6,8 +6,8 @@ export const MOTION_PROFILE_LABELS: Record<MotionProfile, string> = {
   standard: 'Standard', seated: 'Seated / low-motion', 'tap-only': 'Tap only',
 };
 export const MOTION_SETTINGS = {
-  standard: { deadzone: 0.6, fullSpeed: 15, smoothingMs: 45, swingThreshold: 12, releaseThreshold: 5, refractoryMs: 200 },
-  seated: { deadzone: 0.6, fullSpeed: 15, smoothingMs: 45, swingThreshold: 6, releaseThreshold: 3, refractoryMs: 350 },
+  standard: { deadzone: 0.6, fullSpeed: 15, smoothingMs: 45, swingThreshold: 1.2, releaseThreshold: 0.45, refractoryMs: 200 },
+  seated: { deadzone: 0.6, fullSpeed: 15, smoothingMs: 45, swingThreshold: 0.8, releaseThreshold: 0.3, refractoryMs: 350 },
   'tap-only': { deadzone: 0, fullSpeed: 1, smoothingMs: 65, swingThreshold: Infinity, releaseThreshold: 0, refractoryMs: 350 },
 } satisfies Record<MotionProfile, Record<string, number>>;
 

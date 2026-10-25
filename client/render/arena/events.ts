@@ -102,6 +102,7 @@ function dangerColor() {
 function ingest(e: GameEvent, time: number) {
   switch (e.type) {
     case "hit": {
+      if (Math.round(e.amount) <= 0) break; // shielded / spawn-protected hits: nothing to show
       const x = e as typeof e & HitExtra;
       const toBoss = e.target === "boss";
       const toPlayer = !toBoss && (x.source === "boss" || players.has(e.target));
@@ -291,7 +292,8 @@ function ingest(e: GameEvent, time: number) {
 }
 
 /** view: visible logical window under a camera (portrait phones). Omit for the full landscape arena. */
-export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number, view?: View) {
+/** opts.draw = false (3D stage in XR): ingest events and step particles only; the stage draws them as billboards. */
+export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], time: number, view?: View, opts: { draw?: boolean } = {}) {
   fx.now = time;
   setView(ctx, view);
   for (const e of events) {
@@ -322,6 +324,7 @@ export function drawEvents(ctx: CanvasRenderingContext2D, events: GameEvent[], t
   }
 
   stepParticles(time);
+  if (opts.draw === false) return;
   drawParticles(ctx);
   drawPerkCards(ctx, time);
 

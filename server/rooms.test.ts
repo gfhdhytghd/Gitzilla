@@ -1,10 +1,10 @@
 import http from 'node:http';
 import { once } from 'node:events';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { Autopsy, BossDesign, BossKit, ClientMsg, GameMode, InputFrame, MatchState, PlayerKit, RepoProfile, ServerMsg } from '../shared/types.ts';
 import { RoomServer, type GameServices, type RoomServerOptions } from './rooms.ts';
@@ -16,6 +16,8 @@ import { handleEduRoute, MAX_RUBRIC_BYTES } from './edu-http.ts';
 import { buildFeedback, defaultRubric, parseRubric, scoreRepo } from '../rubric/index.ts';
 import { asPvpAiKit, playerKitFromProfile, bossKitFromProfile, createMatch, pvpPowerFromProfile, statsFromPower, qualityFromRubric } from '../sim/index.ts';
 import { createBot } from '../sim/bots.ts';
+import { handleControllerRoute } from './controller-http';
+import { handleRoomCreate } from './room-http';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function until<T>(fn: () => T | undefined | false, attempts = 150): Promise<T> {
@@ -24,6 +26,8 @@ async function until<T>(fn: () => T | undefined | false, attempts = 150): Promis
 }
 const cleanup: (() => Promise<void>)[] = [];
 const directories: string[] = [];
+const cadenceMeasurements: object[] = [];
+afterAll(() => { if (process.env.INPUT_CADENCE_REPORT) writeFileSync(process.env.INPUT_CADENCE_REPORT, JSON.stringify(cadenceMeasurements, null, 2) + '\n'); });
 afterEach(async () => {
   for (const close of cleanup.splice(0)) await close();
   for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
@@ -83,9 +87,12 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
     ...overrides,
   };
   const server = http.createServer((req, res) => {
-    void handleEduRoute(req, res, new URL(req.url!, 'http://localhost'), rooms).then(handled => {
-      if (!handled) { res.writeHead(404); res.end(); }
-    });
+    void (async () => {
+      const url = new URL(req.url!, 'http://localhost');
+      if (handleRoomCreate(req, res, url, rooms)) return;
+      if (await handleControllerRoute(req, res, url, rooms)) return;
+      if (!await handleEduRoute(req, res, url, rooms)) { res.writeHead(404); res.end(); }
+    })();
   });
   const wss = new WebSocketServer({ server, path: '/ws' });
   const rooms = new RoomServer(wss, services, { allowLegacyEdu: true, ...options });
@@ -100,13 +107,13 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
   };
   cleanup.push(close);
   const room = existingRoom ?? rooms.createRoom(undefined, initialMode);
-  async function connect(role: 'player' | 'screen' = 'player', resume?: string, name = 'Test', cookie?: string, beforeWelcome?: ClientMsg, userAgent?: string) {
+  async function connect(role: 'player' | 'screen' | 'controller' = 'player', resume?: string, name = 'Test', cookie?: string, beforeWelcome?: ClientMsg, userAgent?: string, targetRoom = room) {
     const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { ...(cookie ? { Cookie: cookie } : {}), ...(userAgent ? { 'User-Agent': userAgent } : {}) } });
     const messages: ServerMsg[] = [];
     socket.on('message', raw => messages.push(JSON.parse(raw.toString())));
     await once(socket, 'open');
     const send = (msg: ClientMsg) => socket.send(JSON.stringify(msg));
-    send({ t: 'hello', room, role, name, resume });
+    send({ t: 'hello', room: targetRoom, role, name, resume });
     if (beforeWelcome) send(beforeWelcome);
     const welcome = await until(() => messages.find(m => m.t === 'welcome'));
     return { socket, messages, welcome, send, lobby: () => messages.filter(m => m.t === 'lobby').at(-1)?.lobby };
@@ -124,6 +131,46 @@ const rubricServices: Partial<GameServices> = { ...genesisServices, defaultRubri
   applyRubric: (profile, kit, rubric) => qualityFromRubric(kit, { rubric, results: scoreRepo(profile, rubric) }) };
 
 describe('room protocol over real WebSockets', () => {
+  it.each(['battle','pvp'] as const)('grants only the creating screen host authority in %s rooms, then transfers on disconnect',async mode=>{
+    const f=await setup(.15,genesisServices);
+    const response=await fetch(`${f.base}/api/room?mode=${mode}&host=screen`,{method:'POST'});
+    expect(response.status).toBe(201);expect(response.headers.get('cache-control')).toBe('no-store');
+    const {room,hostToken}=await response.json() as {room:string;hostToken:string};expect(hostToken).toMatch(/^[a-f0-9]{48}$/);
+    const join=(role:'player'|'screen',resume?:string)=>f.connect(role,resume,'Stage',undefined,undefined,undefined,room);
+    const phone=await join('player'),spectator=await join('screen');
+    expect(phone.welcome.lobby.ownerId).not.toBe(phone.welcome.you);expect(spectator.welcome.lobby.ownerId).not.toBe(spectator.welcome.you);
+    spectator.send({t:'start'});await until(()=>spectator.messages.some(m=>m.t==='error'&&m.message.includes('Only the room owner')));
+    const host=await join('screen',hostToken);expect(host.welcome.lobby.ownerId).toBe(host.welcome.you);expect(host.welcome.lobby.players).toHaveLength(1);
+    expect(JSON.stringify(spectator.messages)).not.toContain(hostToken);
+    const kicked=once(phone.socket,'close');host.send({t:'kick',playerId:phone.welcome.you});expect((await kicked)[0]).toBe(4003);
+    host.send({t:'setBots',count:2});await until(()=>host.lobby()?.players.length===2&&host.lobby()?.players.every(p=>p.bot&&p.status==='ready'));
+    // Battle still requires a human fighter; use an ordinary phone there.
+    const human=await join('player');
+    if(mode==='battle'){human.send({t:'setRepo',repo:'pallets/flask'});host.send({t:'setBoss',repo:'pallets/flask'});
+      await until(()=>host.lobby()?.players.find(p=>p.id===human.welcome.you)?.status==='ready'&&host.lobby()?.boss.status==='ready');}
+    host.send({t:'start'});await until(()=>host.messages.some(m=>m.t==='autopsy'));
+    host.send({t:'rematch'});await until(()=>host.lobby()?.phase==='lobby');expect(host.lobby()?.ownerId).toBe(host.welcome.you);
+    const closed=once(host.socket,'close');host.socket.close();await closed;await until(()=>human.lobby()?.ownerId===human.welcome.you);
+    const resumed=await join('screen',hostToken);expect(resumed.welcome.you).toBe(host.welcome.you);expect(resumed.welcome.lobby.ownerId).toBe(human.welcome.you);
+  });
+  it.each(['battle','pvp'] as const)('never implicitly promotes an unrelated screen in ordinary %s rooms',async mode=>{
+    const f=await setup(999,{}, {},undefined,mode),screen=await f.connect('screen');expect(screen.welcome.lobby.ownerId).toBe('');
+    const owner=await f.connect();expect(owner.welcome.lobby.ownerId).toBe(owner.welcome.you);
+    const closed=once(owner.socket,'close');owner.send({t:'leave'});await closed;await until(()=>screen.lobby()?.ownerId==='');
+    const late=await f.connect('screen');expect(late.welcome.lobby.ownerId).toBe('');
+  });
+  it('persists the screen creation reservation and keeps classroom teacher creation unchanged',async()=>{
+    const file=persistenceFile(),first=await setup(999,{}, {persistenceFile:file});
+    const response=await fetch(`${first.base}/api/room?host=screen`,{method:'POST'}),created=await response.json() as {room:string;hostToken:string};
+    await first.close();const f=await setup(999,{}, {persistenceFile:file},created.room);
+    const phone=await f.connect();expect(phone.welcome.lobby.ownerId).not.toBe(phone.welcome.you);
+    const host=await f.connect('screen',created.hostToken);expect(host.welcome.lobby.ownerId).toBe(host.welcome.you);
+    await f.close();const restored=await setup(999,{}, {persistenceFile:file},created.room);
+    const resumed=await restored.connect('screen',created.hostToken);expect(resumed.welcome.lobby.ownerId).toBe(resumed.welcome.you);
+    const edu=await(await fetch(`${restored.base}/api/room?mode=edu&host=screen`,{method:'POST'})).json() as {room:string;hostToken?:string};expect(edu.hostToken).toBeUndefined();
+    const teacher=await restored.connect('screen',undefined,'Teacher',undefined,undefined,undefined,edu.room);expect(teacher.welcome.lobby.ownerId).toBe(teacher.welcome.you);
+    expect((await fetch(`${restored.base}/api/room?host=player`,{method:'POST'})).status).toBe(400);
+  });
   it('pauses a staged classroom raid, resumes after 3s and recovers from teacher absence at 60s', async () => {
     let now = 1_800_000_000_000; vi.spyOn(Date, 'now').mockImplementation(() => now);
     const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
@@ -1586,7 +1633,9 @@ describe('PvP royale authority and isolation', () => {
     ['player', 0], ['player', 1], ['player', 2], ['screen', 0], ['screen', 2],
   ] as const)('lets an ineligible %s host spectate a royale with %i eligible humans and AI fill', async (role, humanCount) => {
     const auth = accessServices(), f = await setup(999, { ...genesisServices, ...auth.services }, {}, undefined, 'pvp');
-    const owner = await f.connect(role, undefined, 'Spectator host', undefined, undefined, 'iPhone');
+    const created = role === 'screen' ? f.rooms.createScreenHostedRoom('pvp') : undefined;
+    const room = created?.room ?? f.room;
+    const owner = await f.connect(role, created?.hostToken, 'Spectator host', undefined, undefined, 'iPhone', room);
     expect(owner.welcome.lobby.ownerId).toBe(owner.welcome.you);
     if (role === 'player') {
       owner.send({ t: 'setRepo', repo: 'not/eligible' });
@@ -1594,7 +1643,7 @@ describe('PvP royale authority and isolation', () => {
     }
     const humans: Awaited<ReturnType<typeof f.connect>>[] = [];
     for (let i = 0; i < humanCount; i++) {
-      const human = await f.connect('player', undefined, ['Alice', 'Bob'][i], ['alice', 'bob'][i]); humans.push(human);
+      const human = await f.connect('player', undefined, ['Alice', 'Bob'][i], ['alice', 'bob'][i], undefined, undefined, room); humans.push(human);
       human.send({ t: 'setRepo', repo: ['alice/own', 'bob/own'][i] });
     }
     owner.send({ t: 'setBots', count: 2 - humanCount });
@@ -1633,7 +1682,8 @@ describe('PvP royale authority and isolation', () => {
           step: (dt, inputs) => { for (let i = 0; i < 90 && !match.over; i++) match.step(dt, inputs); } };
       },
     }, {}, undefined, 'pvp');
-    const host = await f.connect('screen'); host.send({ t: 'setBots', count: 2 });
+    const created = f.rooms.createScreenHostedRoom('pvp');
+    const host = await f.connect('screen', created.hostToken, 'Stage', undefined, undefined, undefined, created.room); host.send({ t: 'setBots', count: 2 });
     await until(() => host.lobby()?.players.length === 2 && host.lobby()?.players.every(p => p.bot && p.status === 'ready'));
     const lobbyKits = new Map(host.lobby()!.players.map(p => [p.id, p.kit]));
     expect([...lobbyKits.values()].every(kit => kit?.pvpAi?.powerMultiplier === 0.8)).toBe(true);
@@ -1716,15 +1766,23 @@ describe('PvP royale authority and isolation', () => {
   });
   it('sends only the owner receipt ID, including a reconnect with the original token',async()=>{
     const auth=accessServices();auth.verify.mockImplementation(async(repo,token)=>({repo,login:token,userId:token==='alice'?1:2,private:false}));
-    const f=await setup(0.1,{...auth.services,recordReceipts:input=>Object.fromEntries(input.participants.map(p=>[p.id,'receipt-'+p.id]))},{},undefined,'pvp');
+    const f=await setup(0.1,{...auth.services,getSession:async req=>req.headers.cookie==='alice'?{userId:'github|1',login:'alice'}:null,
+      recordReceipts:input=>Object.fromEntries(input.participants.map(p=>[p.id,'receipt-'+p.id]))},{},undefined,'pvp');
     const a=await f.connect('player',undefined,'Alice','alice'),b=await f.connect('player',undefined,'Bob','bob'),screen=await f.connect('screen');
     a.send({t:'setRepo',repo:'alice/own'});b.send({t:'setRepo',repo:'bob/own'});
     await until(()=>a.lobby()?.players.length===2&&a.lobby()?.players.every(p=>p.status==='ready'));
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});
+    await until(()=>a.lobby()?.players.find(p=>p.id===a.welcome.you)?.controlsReady===true);
     a.send({t:'start'});
     const resultA=await until(()=>a.messages.find(m=>m.t==='autopsy')),resultB=await until(()=>b.messages.find(m=>m.t==='autopsy')),resultScreen=await until(()=>screen.messages.find(m=>m.t==='autopsy'));
     expect(resultA.t==='autopsy'&&resultA.result.receiptIds).toEqual({[a.welcome.you]:'receipt-'+a.welcome.you});
     expect(resultB.t==='autopsy'&&resultB.result.receiptIds).toEqual({[b.welcome.you]:'receipt-'+b.welcome.you});
     expect(resultScreen.t==='autopsy'&&resultScreen.result.receiptIds).toBeUndefined();
+    const phoneResult=await until(()=>phone.messages.find(m=>m.t==='autopsy'));
+    expect(phoneResult.result.receiptIds).toBeUndefined();
+    phone.socket.close();await once(phone.socket,'close');
+    const resumedPhone=await f.connect('controller',phone.welcome.token,'Phone','alice');
+    expect((await until(()=>resumedPhone.messages.find(m=>m.t==='autopsy'))).result.receiptIds).toBeUndefined();
     a.socket.close();await once(a.socket,'close');const resumed=await f.connect('player',a.welcome.token,'Alice','alice');
     const result=await until(()=>resumed.messages.find(m=>m.t==='autopsy'));
     expect(resumed.welcome.token).toBe(a.welcome.token);
@@ -1964,6 +2022,195 @@ describe('host kick and transfer authority', () => {
     expect(await (await fetch(exportUrl, { headers })).text()).toBe(before); expect(teacher.lobby()?.ownerId).toBe(teacher.welcome.you);
     if (phase === 'coding') { teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => latest()?.state.phase === 'raid'); expect(latest().state.rounds[0].attacks.map(a => a.id)).toEqual([b.welcome.you]); }
     await denied(f, a.welcome.token);
+  });
+});
+
+describe('GitHub account phone controller', () => {
+  const services: Partial<GameServices> = { getSession: async request => {
+    const cookie = request.headers.cookie;
+    return cookie === 'alice' || cookie === 'renamed' ? { userId: 'github|42', login: cookie } : cookie === 'bob' ? { userId: 'github|99', login: 'alice' } : null;
+  } };
+  it('requires phone-only readiness for a headset and never lets display reports replace phone readiness',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Headset','alice');
+    expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    display.send({t:'controls',ready:true,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    for(const ready of [true,false])display.send({t:'controls',ready,mode:'tap-only'});
+    display.send({t:'setRepo',repo:'test/repo'});display.send({t:'setBoss',repo:'test/boss'});await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    display.send({t:'start'});await until(()=>display.messages.some(m=>m.t==='error'&&m.message.includes('Headset')));
+    expect(display.lobby()?.phase).toBe('lobby');expect(display.lobby()?.players[0].controlsReady).toBe(false);
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'controls',ready:false,mode:'tap-only',needsController:true});await wait(30);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    phone.send({t:'controls',ready:false,mode:'standard',needsController:false});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    display.send({t:'controls',ready:true,mode:'tap-only'});await wait(30);expect(display.lobby()?.players[0].controlsReady).toBe(false);
+    phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'start'});await until(()=>display.messages.some(m=>m.t==='snapshot'));
+    display.send({t:'input',frame:{seq:50,move:[1,0],aim:null,fire:true,dash:false,skill:false,source:'keyboard'}});await until(()=>f.observed.some(frame=>frame.seq===50));
+    const closed=once(phone.socket,'close');phone.send({t:'pairEnd'});await closed;await until(()=>display.lobby()?.players[0].paired===false);
+    expect(display.lobby()?.players[0].controlsReady).toBe(false);
+  });
+  it('preserves an already-ready linked phone when the display enables required-controller mode',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice'),phone=await f.connect('controller',undefined,'Phone','alice');
+    phone.send({t:'controls',ready:true,mode:'seated'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});await wait(30);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    phone.socket.close();await once(phone.socket,'close');await until(()=>display.lobby()?.players[0].paired===false);expect(display.lobby()?.players[0].controlsReady).toBe(false);
+  });
+  it('persists required-controller policy through display reconnect and restart, but never saves a phone permission grant',async()=>{
+    const file=persistenceFile(),f=await setup(999,services,{persistenceFile:file}),display=await f.connect('player',undefined,'Headset','alice');
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    await f.close();const saved=JSON.parse(readFileSync(file,'utf8')).rooms[0].players[0];expect(saved.needsController).toBe(true);expect(saved.controllerReady).toBeUndefined();
+    const restored=await setup(999,services,{persistenceFile:file},f.room),headset=await restored.connect('player',display.welcome.token,'Headset','alice');
+    expect(headset.welcome.lobby.players[0].controlsReady).toBe(false);
+    headset.send({t:'controls',ready:true,mode:'tap-only'});await wait(30);expect(headset.lobby()?.players[0].controlsReady).toBe(false);
+    const resumedPhone=await restored.connect('controller',phone.welcome.token,'Phone','alice');expect(resumedPhone.welcome.lobby.players[0].controlsReady).toBe(false);
+    resumedPhone.send({t:'controls',ready:true,mode:'standard'});await until(()=>headset.lobby()?.players[0].controlsReady===true);
+    const again=await restored.connect('player',headset.welcome.token,'Headset','alice');expect(again.welcome.lobby.players[0].controlsReady).toBe(true);
+    const closed=once(resumedPhone.socket,'close');again.send({t:'pairEnd'});await closed;await until(()=>again.lobby()?.players[0].controlsReady===false);
+    const page=await restored.connect('player',again.welcome.token,'Headset','alice');expect(page.welcome.lobby.players[0].controlsReady).toBe(false);
+  });
+  it('allows only the display to clear its policy explicitly and rejects malformed flags',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice'),phone=await f.connect('controller',undefined,'Phone','alice');
+    phone.send({t:'controls',ready:true,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    let closed=once(phone.socket,'close');phone.send({t:'leave'});await closed;await until(()=>display.lobby()?.players[0].paired===false);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    display.send({t:'controls',ready:false,mode:'standard',needsController:true});await until(()=>display.lobby()?.players[0].controlsReady===false);
+    display.send({t:'controls',ready:true,mode:'standard',needsController:'yes'} as unknown as ClientMsg);await until(()=>display.messages.some(m=>m.t==='error'&&m.message==='Invalid controls readiness'));
+    expect(display.lobby()?.players[0].controlsReady).toBe(false);
+    display.send({t:'controls',ready:true,mode:'tap-only',needsController:false});await until(()=>display.lobby()?.players[0].controlsReady===true);
+  });
+  it.each([true,false])('advances every real sim tick for3s of30Hz tilt (linked display neutral: %s)', async linked => {
+    let measuring=false,lastT=-1,lastPosition=0;
+    const ticks:{at:number;dx:number}[]=[],displaySnapshots:number[]=[],phoneSnapshots:number[]=[];
+    const f=await setup(999,{...genesisServices,...services,createMatch:(players,boss,options)=>{
+      const match=createMatch(players.map(p=>({...p,kit:{...p.kit,speed:30,maxHp:999,maxArmor:999}})),boss?{...boss,attacks:[],speed:0}:null,options);
+      return{removePlayer:id=>match.removePlayer(id),step:(dt,input)=>match.step(dt,input),autopsy:()=>match.autopsy(),get over(){return match.over;},snapshot:()=>{
+        const state=match.snapshot(),position=state.players[0].y; // Clear vertical lane at spawn x=64.
+        if(measuring&&state.t>lastT)ticks.push({at:performance.now(),dx:position-lastPosition});lastT=state.t;lastPosition=position;return state;
+      }};
+    }});
+    const display=await f.connect('player',undefined,'Display','alice');
+    display.send({t:'setRepo',repo:'pallets/flask'});display.send({t:'setBoss',repo:'pallets/flask'});
+    await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    const phone=linked?await f.connect('controller',undefined,'Phone','alice'):display;
+    phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'start'});await until(()=>display.messages.filter(m=>m.t==='snapshot').at(-1)?.state.status==='fighting',500);
+    display.socket.on('message',raw=>{if(measuring&&JSON.parse(String(raw)).t==='snapshot')displaySnapshots.push(performance.now());});
+    if(linked)phone.socket.on('message',raw=>{if(measuring&&JSON.parse(String(raw)).t==='snapshot')phoneSnapshots.push(performance.now());});
+    let seq=0;
+    const send=()=>{phone.send({t:'input',frame:{seq:++seq,move:[0,1],aim:null,fire:false,dash:false,skill:false,source:'motion'}});
+      if(linked)display.send({t:'input',frame:{seq:10_000+seq,move:[0,0],aim:[1,0],fire:false,dash:false,skill:false,source:'keyboard'}});};
+    send();await wait(80);measuring=true;const timer=setInterval(send,1000/30);
+    try{await wait(3000);}finally{clearInterval(timer);measuring=false;}
+    expect(ticks.length).toBeGreaterThanOrEqual(75);expect(ticks.filter(t=>t.dx<=0)).toHaveLength(0);
+    expect(ticks.every(t=>Math.abs(t.dx-1)<0.00001)).toBe(true);
+    const summarize=(times:number[])=>{const gaps=times.slice(1).map((time,i)=>time-times[i]).sort((a,b)=>a-b);return{samples:times.length,p50:gaps[Math.floor(gaps.length*.5)]??0,p95:gaps[Math.floor(gaps.length*.95)]??0,p99:gaps[Math.floor(gaps.length*.99)]??0,max:gaps.at(-1)??0};};
+    const report={kind:linked?'controller+neutral-display':'single-device',seconds:3,ticks:summarize(ticks.map(t=>t.at)),stops:0,distance:ticks.reduce((sum,t)=>sum+t.dx,0),displaySnapshots:summarize(displaySnapshots),...(linked?{phoneSnapshots:summarize(phoneSnapshots)}:{})};
+    cadenceMeasurements.push(report);expect(report.ticks.max).toBeLessThan(250);
+    if(linked)expect(display.messages.filter(m=>m.t==='snapshot').at(-1)!.ack).toBeGreaterThan(10_000);
+  },10_000);
+  it('acks ignored display frames but lets phone input expire safely after a long gap',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice');
+    display.send({t:'setRepo',repo:'test/repo'});display.send({t:'setBoss',repo:'test/boss'});await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'start'});await until(()=>phone.messages.some(m=>m.t==='snapshot'));
+    phone.send({t:'input',frame:{seq:1,move:[1,0],aim:null,fire:false,dash:false,skill:false,source:'motion'}});
+    await until(()=>f.observed.some(i=>i.seq===1&&i.move[0]===1));let seq=1000;
+    const timer=setInterval(()=>display.send({t:'input',frame:{seq:++seq,move:[0,0],aim:null,fire:false,dash:false,skill:false,source:'keyboard'}}),1000/30);
+    try{
+      await wait(180);expect(f.observed.at(-1)?.move).toEqual([1,0]);
+      await wait(220);expect(f.observed.at(-1)?.move).toEqual([0,0]);
+      expect(display.messages.filter(m=>m.t==='snapshot').at(-1)!.ack).toBeGreaterThan(1000);
+      expect(phone.messages.filter(m=>m.t==='snapshot').at(-1)!.ack).toBe(1);
+      phone.send({t:'input',frame:{seq:2,move:[1,0],aim:null,fire:false,dash:false,skill:false,source:'motion'}});
+      await until(()=>f.observed.at(-1)?.seq===2&&f.observed.at(-1)?.move[0]===1);
+    }finally{clearInterval(timer);}
+  });
+  async function refused(f: Awaited<ReturnType<typeof setup>>, role: 'player' | 'controller', cookie: string | undefined, message: string, resume?: string) {
+    const socket = new WebSocket(f.wsUrl, { headers: cookie ? { Cookie: cookie } : {} }), messages: ServerMsg[] = [];
+    socket.on('message', raw => messages.push(JSON.parse(String(raw))));
+    await once(socket, 'open'); socket.send(JSON.stringify({ t:'hello', room:f.room, role, name:'Phone', resume }));
+    await until(() => messages.some(m => m.t === 'error' && m.message === message));
+    expect(messages.some(m => m.t === 'welcome')).toBe(false); socket.terminate();
+  }
+  it('auto-links by durable GitHub ID, exposes only my own active display seat and consumes no slot', async () => {
+    const f = await setup(999, services), display = await f.connect('player', undefined, 'Alice display', 'alice');
+    const url = `${f.base}/api/rooms/${f.room}/my-seat`;
+    expect((await fetch(url)).status).toBe(401); expect((await fetch(url,{headers:{Cookie:'bob'}})).status).toBe(404);
+    const mine = await fetch(url,{headers:{Cookie:'renamed'}}); expect(mine.headers.get('cache-control')).toBe('no-store');
+    expect(await mine.json()).toEqual({ seatId:display.welcome.you, name:'Alice display', paired:false });
+    expect((await fetch(url,{method:'POST',headers:{Cookie:'alice'}})).status).toBe(405);
+    expect((await fetch(`${f.base}/api/rooms/A123/my-seat`,{headers:{Cookie:'alice'}})).status).toBe(400);
+    const phone = await f.connect('controller',undefined,'Not a seat','renamed');
+    expect(phone.welcome.controller).toBe(true); expect(phone.welcome.you).toBe(display.welcome.you); expect(phone.welcome.token).not.toBe(display.welcome.token);
+    expect(phone.welcome.lobby.players).toHaveLength(1); expect(phone.welcome.lobby.players[0].paired).toBe(true);
+    expect(await (await fetch(url,{headers:{Cookie:'alice'}})).json()).toEqual({ seatId:display.welcome.you, name:'Alice display', paired:true });
+    expect(JSON.stringify(phone.welcome.lobby)).not.toContain(phone.welcome.token); expect(JSON.stringify(phone.welcome.lobby)).not.toContain('github|42');
+    await refused(f,'controller',undefined,'Sign in with GitHub on both devices to use your phone as the controller.');
+    await refused(f,'controller','bob','Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.');
+    await refused(f,'player','alice','This token resumes a controller, not a player display.',phone.welcome.token);
+    await refused(f,'controller','alice','Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.',display.welcome.token);
+  });
+  it('does not link a screen-only or anonymous seat and restricts controller commands', async () => {
+    const f = await setup(999, services); await f.connect('screen',undefined,'Screen','alice'); await f.connect();
+    await refused(f,'controller','alice','Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.');
+    const display=await f.connect('player',undefined,'Player','alice'),phone=await f.connect('controller',undefined,'Phone','alice');
+    const forbidden: ClientMsg[]=[{t:'start'},{t:'kick',playerId:display.welcome.you},{t:'transferOwner',playerId:display.welcome.you},{t:'setRepo',repo:'alice/repo'},{t:'pause',paused:true},{t:'hello',room:f.room,role:'player',name:'Phone'}];
+    for(const message of forbidden)phone.send(message);
+    await until(()=>phone.messages.filter(m=>m.t==='error'&&m.message==='This phone is a controller').length===forbidden.length);
+    const closed=once(phone.socket,'close');phone.send({t:'leave'});expect((await closed)[0]).toBe(4002);
+    await until(()=>display.lobby()?.players.find(p=>p.id===display.welcome.you)?.paired===false);
+    expect(display.socket.readyState).toBe(WebSocket.OPEN);expect(display.lobby()?.players.some(p=>p.id===display.welcome.you)).toBe(true);
+  });
+  it('shares input by arrival with independent sequences/acks and clears phone input on disconnect', async () => {
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice');
+    display.send({t:'setRepo',repo:'test/repo'});display.send({t:'setBoss',repo:'test/boss'});
+    await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'tap-only'});
+    await until(()=>display.lobby()?.players[0].controlsReady===true);display.send({t:'start'});await until(()=>display.messages.some(m=>m.t==='snapshot'));
+    const frame=(seq:number,move:[number,number],source:'motion'|'keyboard'):ClientMsg=>({t:'input',frame:{seq,move,aim:null,fire:true,dash:false,skill:false,source}});
+    display.send(frame(100,[1,0],'keyboard'));await until(()=>f.observed.some(i=>i.seq===100));
+    phone.send(frame(1,[-1,0],'motion'));await until(()=>f.observed.some(i=>i.seq===1&&i.source==='motion'));
+    display.send(frame(101,[0,1],'keyboard'));await until(()=>f.observed.some(i=>i.seq===101));
+    phone.send(frame(2,[0,-1],'motion'));await until(()=>f.observed.some(i=>i.seq===2));
+    await until(()=>display.messages.filter(m=>m.t==='snapshot').at(-1)?.ack===101&&phone.messages.filter(m=>m.t==='snapshot').at(-1)?.ack===2);
+    const before=f.observed.length,closed=once(phone.socket,'close');phone.socket.close();await closed;
+    await until(()=>display.lobby()?.players[0].paired===false);expect(display.lobby()?.players[0].controlsReady).toBe(true);
+    await until(()=>f.observed.length>before+2);expect(f.observed.at(-1)?.fire).toBe(false);
+    display.send(frame(102,[1,0],'keyboard'));await until(()=>f.observed.some(i=>i.seq===102));
+  });
+  it('replaces old phones, revokes explicit unlink, and keeps the display token/ownership', async () => {
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice');
+    const first=await f.connect('controller',undefined,'Phone1','alice'),closed=once(first.socket,'close');
+    const second=await f.connect('controller',undefined,'Phone2','alice');expect((await closed)[0]).toBe(4001);
+    expect(first.messages).toContainEqual({t:'error',message:'Another phone took over the controls'});expect(second.welcome.token).not.toBe(first.welcome.token);
+    const secondClose=once(second.socket,'close');display.send({t:'pairEnd'});expect((await secondClose)[0]).toBe(4002);
+    await until(()=>display.lobby()?.players[0].paired===false);expect(display.lobby()?.ownerId).toBe(display.welcome.you);
+    const resumed=await f.connect('player',display.welcome.token,'Display','alice');expect(resumed.welcome.you).toBe(display.welcome.you);
+  });
+  it('keeps mobile readiness false after disconnect, resumes binding, and reconnects a full display without losing bots', async () => {
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice',undefined,'iPhone');
+    display.send({t:'setBots',count:7});await until(()=>display.lobby()?.players.length===8&&display.lobby()?.players.filter(p=>p.bot).every(p=>p.status==='ready'));
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players.find(p=>!p.bot)?.controlsReady===true);
+    phone.socket.close();await once(phone.socket,'close');await until(()=>display.lobby()?.players.find(p=>!p.bot)?.paired===false);
+    expect(display.lobby()?.players.find(p=>!p.bot)?.controlsReady).toBe(false);
+    const resumedPhone=await f.connect('controller',phone.welcome.token,'Phone','alice');expect(resumedPhone.welcome.you).toBe(display.welcome.you);
+    display.socket.close();await once(display.socket,'close');await until(()=>resumedPhone.lobby()?.players.length===8);
+    const resumedDisplay=await f.connect('player',display.welcome.token,'Display','alice');expect(resumedDisplay.welcome.lobby.players.filter(p=>p.bot)).toHaveLength(7);
+    expect(resumedDisplay.welcome.lobby.players.find(p=>!p.bot)?.paired).toBe(true);
+  });
+  it('kicks both sockets, refuses banned identities/my-seat lookup and persists controller resume across restart', async () => {
+    const file=persistenceFile(),f=await setup(999,services,{persistenceFile:file});
+    const owner=await f.connect('player',undefined,'Host'),display=await f.connect('player',undefined,'Display','alice'),phone=await f.connect('controller',undefined,'Phone','alice');
+    await f.close();const restarted=await setup(999,services,{persistenceFile:file},f.room);
+    const resumedPhone=await restarted.connect('controller',phone.welcome.token,'Phone','alice');expect(resumedPhone.welcome.controller).toBe(true);expect(resumedPhone.welcome.you).toBe(display.welcome.you);
+    const resumedDisplay=await restarted.connect('player',display.welcome.token,'Display','alice');const host=await restarted.connect('player',owner.welcome.token,'Host');
+    // The original owner reconnects after the display and explicitly takes over for this kick.
+    if(host.lobby()?.ownerId!==host.welcome.you){resumedDisplay.send({t:'transferOwner',playerId:host.welcome.you});await until(()=>host.lobby()?.ownerId===host.welcome.you);}
+    const closed=[once(resumedDisplay.socket,'close'),once(resumedPhone.socket,'close')];host.send({t:'kick',playerId:display.welcome.you});
+    for(const close of closed)expect((await close)[0]).toBe(4003);
+    for(const client of [resumedDisplay,resumedPhone])expect(client.messages).toContainEqual({t:'kicked',by:'Host'});
+    expect((await fetch(`${restarted.base}/api/rooms/${f.room}/my-seat`,{headers:{Cookie:'alice'}})).status).toBe(403);
+    await refused(restarted,'controller','alice','You were removed from this room by the host.');
+    const raw=readFileSync(file,'utf8');expect(raw).not.toContain('github|42');
   });
 });
 

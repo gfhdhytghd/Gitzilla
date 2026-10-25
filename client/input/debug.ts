@@ -14,14 +14,18 @@ export interface InputDebugState {
   angle: number;
   acceleration: { x: number; y: number; z: number };
   rotationRate: RotationRate | null;
+  dashTiltDegrees: number;
+  dashArmed: boolean;
   spinDegrees: number;
+  spinMagnitude: number;
+  spinGyroDegrees: number;
   move: [number, number];
   gestures: string[];
 }
 
 export const debugState: InputDebugState = {
   mode: 'uninitialized', permission: 'unknown', sensors: 'off', calibrating: false, profile: 'standard', beta: 0, gamma: 0, angle: 0,
-  acceleration: { x: 0, y: 0, z: 0 }, rotationRate: null, spinDegrees: 0, move: [0, 0], gestures: [],
+  acceleration: { x: 0, y: 0, z: 0 }, rotationRate: null, dashTiltDegrees:0, dashArmed:true, spinDegrees: 0, spinMagnitude: 0, spinGyroDegrees: 0, move: [0, 0], gestures: [],
 };
 
 export function recordGesture(gesture: string): void {
@@ -45,7 +49,8 @@ export function createInputDebugPanel(): HTMLDivElement & { dispose(): void } {
       `trace: ${trace.source} ${trace.status}${trace.error ? ' | ' + trace.error : ''}\n` +
       `beta ${s.beta.toFixed(1)} gamma ${s.gamma.toFixed(1)} screen ${s.angle}°\n` +
       `accel x ${a.x.toFixed(2)} y ${a.y.toFixed(2)} z ${a.z.toFixed(2)} |a| ${Math.hypot(a.x, a.y, a.z).toFixed(2)}\n` +
-      `gyro ${s.rotationRate ? Object.values(s.rotationRate).map(v => v.toFixed(0)).join(', ') + ' deg/s' : 'unavailable (double-tap dash)'} | spin ${s.spinDegrees.toFixed(0)}°\n` +
+      `gyro ${s.rotationRate ? Object.values(s.rotationRate).map(v => v.toFixed(0)).join(', ') + ' deg/s' : 'unavailable (tilt/double-tap dash)'} | circle ${s.spinDegrees.toFixed(0)}° @ ${s.spinMagnitude.toFixed(1)}m/s² gyroΣ ${s.spinGyroDegrees.toFixed(0)}°\n` +
+      `dash tilt ${s.dashTiltDegrees.toFixed(1)}° / 50° | ${s.dashArmed ? 'armed' : 'return below35°'}\n` +
       `move ${s.move.map(v => v.toFixed(2)).join(', ')}\n` + s.gestures.join('\n');
   };
   render();

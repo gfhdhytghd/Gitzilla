@@ -1,0 +1,13 @@
+/* Removed-from-classroom screen: calm, centred, readable type (not the pixel font for the explanation). */
+.ck { min-height: 100%; display: grid; place-items: center; padding: 24px 16px; }
+.ck-card { width: min(100%, 480px); display: grid; gap: 14px; justify-items: start; padding: 22px 20px; background: rgba(5, 12, 9, .92);
+  border: 1px solid var(--line, #1d3b2b); box-shadow: 0 0 0 4px rgba(0, 0, 0, .55); border-radius: 6px;
+  font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif; color: #e9fff3; }
+.ck-card p { margin: 0; }
+.ck-card h2 { margin: 0; font: 600 22px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif; color: #fff; }
+.ck-icon { font-size: 34px; line-height: 1; }
+.ck-lead { color: #fff; }
+.ck-code { display: grid; gap: 8px; justify-items: start; width: 100%; padding-top: 12px; border-top: 1px dashed var(--line, #1d3b2b); color: var(--dim, #8fb8a3); }
+.ck-card .btn { min-height: 44px; }
+/* removed from the classroom: the socket is closed on purpose, so no red "LINK LOST · RETRYING" */
+body:has(.cr-kicked) .link-status { display:none; }

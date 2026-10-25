@@ -10,3 +10,4 @@ docs/ux-shots
 qa/artifacts
 video/out
 video/raw
+qa/real-traces-*/

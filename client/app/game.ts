@@ -18,11 +18,15 @@ import { createLessonFeed, createQuizOverlay, type LessonFeed, type QuizOverlay 
 import { requestMotionPermission, saveMotionProfile, subscribeMotionPermission } from "../input";
 import { audio, muteBtn } from "./sound";
 import { createPauseOverlay } from "./pause";
+import { pairPanel } from "./pair";
+import { isHeadset, usesLocalControls } from "./device";
+import { type Stage25d, createStage, emulateXrIfAsked, floorAffine, onView25dChange, view25dWanted, xrSupported, xrView } from "./view25d";
 import { bossPortraitCanvas } from "./lobby";
 import { type InputHandle, R, X, createInput, loadModules, loaded, safe } from "./renderers";
 import { asciiBar, clamp, fmtTime, h, isPhone, isTouchDevice, lerp, vibrate } from "./util";
 
-const BUFFER = 0.1; // seconds of interpolation delay
+// interpolation delay: snapshot spacing + measured network jitter, between these bounds (seconds)
+const BUFFER_MIN = 0.07, BUFFER_MAX = 0.35;
 const RES = 1; // internal render scale (logical px -> canvas px)
 
 // Avoid replacing text nodes (and invalidating phone layout) when status is unchanged.
@@ -36,7 +40,9 @@ interface Snap {
 export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const spectator = app.role === "screen";
   const canvas = h("canvas.game-canvas", { "data-testid": "game-canvas", width: ARENA_W * RES, height: ARENA_H * RES }) as HTMLCanvasElement;
-  const ctx = canvas.getContext("2d", { alpha: false })!;
+  const ctx0 = canvas.getContext("2d", { alpha: false })!;
+  // the 2D drawing target: the opaque game canvas, or (3D view) a transparent overlay above the WebGL stage
+  let ctx = ctx0;
   ctx.imageSmoothingEnabled = false;
   const flash = h("div.fx-flash");
   const danger = h("div.fx-danger");
@@ -74,6 +80,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     onResume: () => sendPause(false),
     onLeave: () => app.leave(),
     onNewRoom: () => app.leave({ newRoom: true }),
+    // host: "Kick player…" (everyone in the room but you; bots are removed without a confirm)
+    kickTargets: () => (app.lobby?.players ?? []).filter((p) => p.id !== app.you).map((p) => ({ id: p.id, name: p.name, bot: p.bot })),
+    onKick: (id) => app.conn.send({ t: "kick", playerId: id }),
     onChange: (on) => {
       el.classList.toggle("paused", on);
       // match time stood still while paused: re-sync the interpolation clock so motion stays smooth after resume
@@ -100,10 +109,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       h(
         "div.term-body",
         null,
-        h("div", null, spectator ? "end the class / leave this screen?" : "leave the fight?"),
+        h("div", null, spectator ? (app.lobby?.mode === "edu" ? "end the class / leave this screen?" : "leave this screen?") : "leave the fight?"),
         h("div.dim", null, spectator ? "the match keeps running for everyone else." : app.lobby?.mode === "pvp" ? "leaving counts as an elimination." : "your hero drops out; the squad keeps fighting."),
         menuPauseBtn,
-        h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? "⏏ end class" : "⏏ leave the fight"),
+        h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? (app.lobby?.mode === "edu" ? "⏏ end class" : "⏏ leave room") : "⏏ leave the fight"),
         spectator ? h("button.btn", { "data-testid": "game-new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
         h("button.btn", { "data-testid": "game-settings", onclick: () => { menuSheet.hidden = true; openSettings(); } }, "Settings"),
         h("button.btn.btn-primary", { onclick: () => (menuSheet.hidden = true) }, "▶ resume"),
@@ -138,6 +147,138 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr, pauseBtn, pauseOv, menuSheet);
   stage.append(killFeed.el);
   overlay.append(spectate.el);
+
+  // ---------------- 3D view (client/render/stage25d through ./view25d; 2D whenever it's missing or off) ----------------
+  // The WebGL stage canvas + a transparent 2D overlay (YOU ring, zone pointer, edge arrows, postfx) sit under the game
+  // canvas, which stays on top at opacity 0 so mouse/touch input keeps landing on it. Classroom raids stay 2D.
+  // the Vision Pro panel: the headset spectator page, or any seat on a headset (shown prominently there)
+  const headset = isHeadset();
+  const isXr = (spectator && xrView()) || headset;
+  let st3d: Stage25d | null = null;
+  let ov3d: HTMLCanvasElement | null = null;
+  let octx: CanvasRenderingContext2D | null = null;
+  let on3d = false; // the last frame was drawn by the 3D stage
+  let starting3d = false;
+  let gone = false;
+  const size3d = (cssW: number, cssH: number) => {
+    if (ov3d && (ov3d.width !== canvas.width || ov3d.height !== canvas.height)) (ov3d.width = canvas.width), (ov3d.height = canvas.height);
+    st3d?.resize?.(cssW, cssH, devicePixelRatio || 1);
+  };
+  const start3d = async () => {
+    if (st3d || starting3d || gone) return;
+    starting3d = true;
+    // XR: while the headset presents, the page rAF can stop; the stage's XR loop pulls fresh interpolated state itself
+    const st = await createStage({
+      xr: isXr, spectator, scale: xrScale,
+      pull: () => {
+        if (offset === null) return null;
+        const now = performance.now() / 1000;
+        const state = interp(now - clockOffset(now) - delay - lag);
+        return state ? { state, time: visTime, extras: extras3d(state) } : null;
+      },
+      onXRChange: (active: boolean) => {
+        inXr = active;
+        syncXrPanel();
+      },
+      // XR frame counter for playtests (fps in the headset loop, where the page rAF may be paused)
+      onXRFrame: () => {
+        const g = globalThis as { __kaijuXrFrames?: number };
+        g.__kaijuXrFrames = (g.__kaijuXrFrames ?? 0) + 1;
+      },
+    });
+    starting3d = false;
+    xrStatus.textContent = st ? "" : "3D view unavailable here: showing 2D";
+    if (!st) return;
+    if (gone || !view25dWanted()) return st.destroy();
+    st3d = st;
+    if (st.canvas) {
+      st.canvas.classList.add("stage-3d");
+      ov3d = h("canvas.game-canvas.ov-3d", { width: canvas.width, height: canvas.height, "aria-hidden": "true" }) as HTMLCanvasElement;
+      octx = ov3d.getContext("2d")!;
+      stage.insertBefore(st.canvas, canvas);
+      stage.insertBefore(ov3d, canvas);
+    }
+    layout();
+    syncXrPanel();
+  };
+  const stop3d = () => {
+    if (!st3d) return;
+    st3d.destroy();
+    st3d.canvas?.remove();
+    ov3d?.remove();
+    st3d = null;
+    ov3d = octx = null;
+    on3d = false;
+    ctx = ctx0;
+    el.classList.remove("view-3d");
+    layout();
+    syncXrPanel();
+  };
+  const stopView3d = onView25dChange((on) => (on ? void start3d() : stop3d()));
+
+  // headset spectator (?screen=1&view=xr): DOM controls before entering XR (follow a hero, tabletop / life-size)
+  const xrStatus = h("div.xr-status", { role: "status" });
+  const xrEnter = h("button.btn.btn-primary.xr-enter", { "data-testid": "xr-enter", hidden: true, onclick: () => toggleXr() }, "Enter Vision Pro") as HTMLButtonElement;
+  let followPicked = false;
+  const xrFollow = h("select.xr-follow", { "data-testid": "xr-follow", "aria-label": "follow a hero", onchange: () => { followPicked = true; st3d?.setFollow?.(xrFollow.value || null); } }, h("option", { value: "" }, "overview")) as HTMLSelectElement;
+  let xrScale: "table" | "life" = "table";
+  const scaleBtn = (v: "table" | "life", label: string) =>
+    h("button.btn.btn-tiny.xr-scale", { "data-testid": `xr-scale-${v}`, "aria-pressed": String(v === xrScale), onclick: () => { xrScale = v; st3d?.setScale?.(v); syncXrPanel(); } }, label);
+  const xrScaleRow = h("div.xr-row", null, h("span.dim", null, "scale"), scaleBtn("table", "tabletop"), scaleBtn("life", "life-size"));
+  const xrPanel = isXr ? h(`div.xr-panel${headset ? ".prominent" : ""}`, { "data-testid": "xr-panel" }, h("div.xr-title", null, "Vision Pro"), xrEnter,
+    h("label.xr-row", null, h("span.dim", null, "follow"), xrFollow), xrScaleRow, xrStatus) : null;
+  let inXr = false;
+  const toggleXr = async () => {
+    if (!st3d) return;
+    try {
+      // enterXR runs synchronously inside the click (the browser needs the user gesture); onXRChange tracks the session
+      if (inXr) await st3d.exitXR?.();
+      else await st3d.enterXR?.();
+      inXr = st3d?.xrActive ?? !inXr;
+    } catch (e) {
+      xrStatus.textContent = `could not start XR: ${(e as Error).message}`;
+    }
+    syncXrPanel();
+  };
+  function syncXrPanel() {
+    if (!xrPanel) return;
+    xrEnter.textContent = inXr ? "Exit Vision Pro" : "Enter Vision Pro";
+    for (const b of xrScaleRow.querySelectorAll<HTMLButtonElement>(".xr-scale")) b.setAttribute("aria-pressed", String(b.dataset.testid === `xr-scale-${xrScale}`));
+    for (const n of [xrFollow, ...xrScaleRow.querySelectorAll("button")] as HTMLElement[]) (n as HTMLButtonElement).disabled = !st3d;
+  }
+  let followSig = "";
+  const syncFollow = (players: PlayerState[]) => {
+    if (!xrPanel) return;
+    const sig = players.map((p) => p.id + p.name).join("|");
+    if (sig === followSig) return;
+    followSig = sig;
+    const cur = xrFollow.value;
+    xrFollow.replaceChildren(h("option", { value: "" }, "overview"), ...players.map((p) => h("option", { value: p.id, translate: "no" }, p.name)));
+    xrFollow.value = players.some((p) => p.id === cur) ? cur : "";
+    // on a headset your own hero is the default viewpoint (until you pick another)
+    if (headset && !followPicked && app.you && players.some((p) => p.id === app.you) && xrFollow.value !== app.you) {
+      xrFollow.value = app.you;
+      st3d?.setFollow?.(app.you);
+    }
+  };
+  // display device: "use your phone as the controller" (claude-auth pair.ts) over the waiting / countdown screen and in the
+  // XR pre-entry panel; while fighting only a paired seat keeps the small "Phone connected ✓" line (CSS .in-fight)
+  const pair = pairPanel(app, { compact: true });
+  (xrPanel ?? overlay).append(pair.el);
+  let pairFight = false;
+  const syncPair = (s: MatchState | null) => {
+    pair.update(app);
+    const fight = s?.status === "fighting" && !s.paused;
+    if (fight !== pairFight) pair.el.classList.toggle("in-fight", (pairFight = fight));
+  };
+  if (xrPanel) {
+    overlay.append(xrPanel);
+    syncXrPanel();
+    xrStatus.textContent = view25dWanted() ? "loading the 3D scene…" : "";
+    // only offer the headset when the browser can actually open an immersive-vr session
+    void emulateXrIfAsked().then(xrSupported).then((ok) => (xrEnter.hidden = !ok));
+  }
+  if (view25dWanted()) void start3d();
 
   // ---------------- layout ----------------
   let cssScale = 1;
@@ -197,6 +338,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       Object.assign(stage.style, { width: `${w}px`, height: `${hh}px`, left: `${left}px`, top: `${Math.round(barH)}px` });
       if (canvas.width !== view.w * RES) canvas.width = view.w * RES;
       if (canvas.height !== view.h * RES) canvas.height = view.h * RES;
+      size3d(w, hh);
       for (const [k, v] of Object.entries({ "--gw": w, "--gh": hh, "--gx": left, "--gy": Math.round(barH), "--deck-top": Math.round(barH + hh) })) {
         el.style.setProperty(k, `${v}px`);
         document.body.style.setProperty(k, `${v}px`); // touch overlay + mute button live on <body>
@@ -206,7 +348,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     // Desktop/landscape players get a follow camera at 4/3 zoom (UI-6: heroes read tiny next to the kaiju when the
     // whole 480x288 arena is on screen). Spectators / the big screen keep the full arena.
-    const zoomCam = !spectator && !phone;
+    const zoomCam = !spectator && !phone && !st3d; // the 3D view frames the whole arena on desktop
+
     el.classList.toggle("cam", zoomCam);
     const VW = zoomCam ? Math.min(360, WW) : WW, VH = zoomCam ? Math.min(216, WH) : WH;
     if (!zoomCam) view.x = 0, view.y = 0;
@@ -220,6 +363,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if ((VH * cssScale) / H < 0.78 && (VW * cssScale) / W < 0.78) cssScale = Math.min(W / VW, H / VH);
     view.cssScale = cssScale;
     const w = Math.round(VW * cssScale), hh = Math.round(VH * cssScale);
+    size3d(w, hh);
     Object.assign(stage.style, { width: `${w}px`, height: `${hh}px`, left: `${Math.round((W - w) / 2)}px`, top: `${Math.round((H - hh) / 2)}px` });
     el.style.setProperty("--gw", `${w}px`);
     el.style.setProperty("--gh", `${hh}px`);
@@ -235,15 +379,29 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   };
   layout();
   addEventListener("resize", layout);
+  // aim: the 3D view inverts its floor projection (a click hits the floor point under the cursor)
   const toArena = (cx: number, cy: number): [number, number] => {
     const r = canvas.getBoundingClientRect();
-    return [view.x + ((cx - r.left) / r.width) * view.w, view.y + ((cy - r.top) / r.height) * view.h];
+    const sx = ((cx - r.left) / r.width) * view.w, sy = ((cy - r.top) / r.height) * view.h;
+    if (st3d && on3d) {
+      const w = st3d.screenToWorld(sx, sy);
+      return [w.x, w.y];
+    }
+    return [view.x + sx, view.y + sy];
   };
 
   // ---------------- snapshots / timeline ----------------
   const snaps: Snap[] = [];
   const pendingEvents: { t: number; e: GameEvent }[] = [];
-  let offset: number | null = null; // local seconds - server t
+  let offset: number | null = null; // local seconds - server t (fastest arrivals), at local time offsetAt
+  // Playout clock. A sim whose clock runs a little slower/faster than ours (timer drift, a busy server) made the old
+  // "min + 2% creep" offset run ahead of the data: the hero froze on the newest snapshot and stepped. Now: a line fit
+  // of arrival offset over the last 3 s gives the drift rate; the offset is that line shifted to its fastest packets
+  // and carried forward continuously. delay = snapshot spacing + p90 jitter around the line, smoothed, so 20 Hz
+  // through a 60–120 ms jittery tunnel still always has the next snapshot in hand.
+  const arrivals: { at: number; o: number; t: number }[] = [];
+  let delay = 0.1, drift = 0, offsetAt = 0;
+  const clockOffset = (now: number) => offset! + drift * (now - offsetAt);
   let lag = 0; // extra delay accumulated by hit-stop / slow-mo
   let latest: MatchState | null = null;
   let ownBullets = new Set<number>();
@@ -257,6 +415,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       snaps.length = 0;
       pendingEvents.length = 0;
       offset = null;
+      arrivals.length = 0;
       introStarted = false;
       outro = null;
       elims.reset();
@@ -283,8 +442,32 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       if (!outro && latest && (royaleOf(s)!.winner || s.status === "victory" || s.status === "defeat")) setTimeout(() => startOutro(true), 0);
     }
     const o = now - s.t;
-    if (offset === null || o < offset) offset = o;
-    else offset += (o - offset) * 0.02;
+    arrivals.push({ at: now, o, t: s.t });
+    while (arrivals.length > 2 && now - arrivals[0].at > 3) arrivals.shift();
+    // least-squares drift (d offset / d local time), clamped to a sane sim speed (±15%)
+    const n = arrivals.length;
+    let ma = 0, mo = 0;
+    for (const a of arrivals) (ma += a.at), (mo += a.o);
+    ma /= n; mo /= n;
+    let sxx = 0, sxy = 0;
+    for (const a of arrivals) (sxx += (a.at - ma) ** 2), (sxy += (a.at - ma) * (a.o - mo));
+    const slope = n >= 8 && sxx > 0 ? clamp(sxy / sxx, -0.15, 0.15) : 0;
+    const res = arrivals.map((a) => a.o - (mo + slope * (a.at - ma))).sort((x, y) => x - y);
+    const line = mo + slope * (now - ma) + res[0]; // fastest-packet offset, now
+    const jitter = res[Math.floor((n - 1) * 0.9)] - res[0];
+    const gaps: number[] = [];
+    for (let i = 1; i < n; i++) gaps.push(arrivals[i].t - arrivals[i - 1].t);
+    gaps.sort((x, y) => x - y);
+    const gap = gaps.length ? gaps[gaps.length >> 1] : 0.05;
+    const want = clamp(gap + jitter + 0.015, BUFFER_MIN, BUFFER_MAX);
+    if (offset === null) (offset = line), (delay = want), (drift = 0);
+    else {
+      const cur = clockOffset(now);
+      offset = cur + (line - cur) * 0.15; // ease, never jump the timeline
+      drift += (slope - drift) * 0.2;
+      delay += (want - delay) * (want > delay ? 0.2 : 0.03); // grow fast on bad links, shrink slowly
+    }
+    offsetAt = now;
     if (snaps.length && snaps[snaps.length - 1].t >= s.t) snaps[snaps.length - 1] = { t: s.t, s };
     else snaps.push({ t: s.t, s });
     if (snaps.length > 30) snaps.shift();
@@ -632,9 +815,29 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     result.outroDone = true;
     app.refresh();
   };
+  // Boss-raid victory BSOD: a real "press any key". It waits for a key / tap / click / gamepad button (a projector or
+  // spectator screen gives up after 60 s); defeat, royale and classroom endings keep their short auto-advance.
+  let bsodWait = false, bsodReadyAt = 0, padWasDown = true;
+  const continueOutro = (e?: KeyboardEvent) => {
+    if (!outro) return;
+    if (bsodWait) {
+      if (performance.now() < bsodReadyAt || e?.repeat) return; // a key still held from the fight is not a press
+      bsodWait = false;
+      finishOutro();
+    } else if (performance.now() - outro.at > 1200) finishOutro();
+  };
+  /** gamepads: any button going down while the BSOD waits (polled from the frame loop) */
+  const pollPadContinue = () => {
+    if (!bsodWait || performance.now() < bsodReadyAt) return;
+    let down = false;
+    for (const pad of navigator.getGamepads?.() ?? []) if (pad?.buttons.some((btn) => btn.pressed)) down = true;
+    if (down && !padWasDown) continueOutro();
+    padWasDown = down;
+  };
   const startOutro = (victory: boolean) => {
     if (outro) return;
     outro = { victory, at: performance.now() };
+    const bsod = victory && !!latest?.boss && !royaleOf(latest);
     const kit = latest?.boss?.kit;
     setTimeout(() => {
       const roy = royaleOf(latest);
@@ -680,7 +883,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
             h("p", null, "The current boss will be terminated."),
             h("p", null, "*  Segmentation fault (core dumped)"),
             h("p", null, `*  boss: exit 139 (segfault) · squad: exit 0 (victory) after ${fmtTime(latest?.t ?? 0)}`),
-            h("p.bsod-press", null, "Press any key to view the autopsy _"),
+            h("p.bsod-press", { "data-testid": "bsod-continue" }, isTouchDevice() ? "Tap anywhere to continue _" : "Press any key to continue _"),
           )
         : h(
             "div.defeat",
@@ -691,8 +894,14 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
             h("p.dim", null, "loading autopsy…"),
           );
       overlay.append(card);
+      if (bsod) {
+        bsodWait = true;
+        bsodReadyAt = performance.now() + 600;
+        padWasDown = true; // a button already held doesn't count until it's released
+      }
     }, victory ? 1000 : 500);
-    setTimeout(finishOutro, victory ? 3200 : 2000);
+    if (!bsod) setTimeout(finishOutro, victory ? 3200 : 2000);
+    else if (spectator) setTimeout(() => { if (bsodWait) (bsodWait = false), finishOutro(); }, 60_000);
   };
 
   // ---------------- input ----------------
@@ -706,7 +915,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
   const setupInput = async () => {
     void loadModules(); // Optional art must not delay sensor listeners or the input sender.
-    if (destroyed || spectator) return;
+    if (destroyed || spectator || !usesLocalControls()) return; // a headset is a display: its phone controller plays
     if (!loaded.input) {
       console.error("[kaiju] PHONE INPUT FAILURE: real input unavailable; refusing placeholder");
       return;
@@ -724,11 +933,21 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     let lastNoticeAt = 0;
     let wasFiring = false, lastAttackToast = 0;
+    let localActive = false;
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
       if (pausedNow()) return;
       if (watchingRoyale(latest)) return; // spectating
       const frame = input.sample();
+      // Paired seat: the phone controller drives this hero. This display only sends while its own keys/buttons are in
+      // use (mouse aim alone doesn't count, it would zero the phone's movement), plus one release frame when they stop;
+      // otherwise its 30 Hz neutral frames fight the phone's. (No local prediction here: the hero is always drawn
+      // from interpolated server snapshots.)
+      if (app.lobby?.players.find((p) => p.id === app.you)?.paired) {
+        const active = !!(frame.move[0] || frame.move[1] || frame.fire || frame.dash || frame.skill);
+        if (!active && !localActive) return;
+        localActive = active;
+      }
       app.conn.send({ t: "input", frame });
       if (el.dataset.input !== input.mode) el.dataset.input = input.mode;
       const notice = input.lastGesture;
@@ -780,12 +999,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     }
     if (e.key === "Escape") menuSheet.hidden = !menuSheet.hidden;
     if (e.key.toLowerCase() === "h" && hint) hint.classList.toggle("fade");
-    if (outro && performance.now() - outro.at > 1200) finishOutro();
+    continueOutro(e);
   };
   addEventListener("keydown", onKey);
-  overlay.addEventListener("pointerdown", () => {
-    if (outro && performance.now() - outro.at > 1200) finishOutro();
-  });
+  // tap / click anywhere (the BSOD covers the overlay; phones: tap anywhere)
+  overlay.addEventListener("pointerdown", () => continueOutro());
   stage.addEventListener("pointerdown", () => {
     if (!outro && watchingRoyale(latest)) cycleWatch(1);
   });
@@ -893,7 +1111,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // Rejoined phones can arrive directly in countdown; gate them before the first snapshot.
   let touchChosen = false; // "touch only" answers the gate for this page even if the permission state stays pending
   const stopPermission = subscribeMotionPermission(state => {
-    if (spectator || watchingRoyale(latest)) return;
+    if (spectator || watchingRoyale(latest) || !usesLocalControls()) return;
     if (state.ready || touchChosen) { motionOverlay?.remove(); motionOverlay = null; return; }
     if (!motionOverlay) {
       motionOverlay = h("div.motion-gate", { "data-testid": "motion-gate", role: "dialog", "aria-label": "enable controls" },
@@ -1154,7 +1372,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const span = b.t - a.t;
     const f = span > 0 ? clamp((rt - a.t) / span, 0, 1) : 1;
     const S = b.s, A = a.s;
+    // ran past the newest snapshot (late packet): keep heroes moving on their velocity for up to 100 ms instead of freezing
+    const ahead = a === b && rt > b.t ? Math.min(rt - b.t, 0.1) : 0;
     const players: PlayerState[] = S.players.map((p) => {
+      if (ahead) return p.alive && (p.vx || p.vy) ? { ...p, x: clamp(p.x + p.vx * ahead, 0, WW), y: clamp(p.y + p.vy * ahead, 0, WH) } : p;
       const q = A.players.find((x) => x.id === p.id);
       if (!q || Math.hypot(p.x - q.x, p.y - q.y) > 80) return p;
       return { ...p, x: lerp(q.x, p.x, f), y: lerp(q.y, p.y, f) };
@@ -1181,13 +1402,51 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     return { ...S, t: lerp(A.t, S.t, f), players, bullets, minions, hazards, boss };
   };
 
+  /** 3D frame: the stage draws the world (into its WebGL canvas, or into ctx), then the 2D floor overlays go on the
+   *  transparent overlay through the floor's local affine so they lie flat under the heroes. */
+  const extras3d = (s: MatchState, focusId: string | null = app.you) => ({
+    you: app.you, focusId, events: [] as GameEvent[], theme: arenaTheme(s), seed: s.boss?.kit.seed ?? arenaSeed,
+    variant: s.boss ? undefined : royaleOf(s) ? "royale" as const : undefined, world: { w: WW, h: WH }, shake: { x: 0, y: 0 },
+  });
+  const draw3d = (s: MatchState, me: PlayerState | null, watched: PlayerState | null, roy: ReturnType<typeof royaleOf>, now: number, sx: number, sy: number) => {
+    const st = st3d!;
+    if (octx) ctx.clearRect(0, 0, view.w, view.h);
+    else {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, view.w, view.h);
+    }
+    const variant = s.boss ? undefined : roy ? "royale" as const : undefined;
+    // shake moves the final composite (the WebGL canvas by CSS, the overlay by ctx), never the stage camera, so
+    // screenToWorld stays exact for aim while the picture shakes
+    const shakeCss = sx || sy ? `translate(${sx * cssScale}px, ${sy * cssScale}px)` : "";
+    if (st.canvas && st.canvas.style.transform !== shakeCss) st.canvas.style.transform = shakeCss;
+    ctx.save();
+    ctx.translate(sx, sy);
+    safe("stage25d", st.render.bind(st), ctx, s, visTime, view, { ...extras3d(s, watched?.id ?? me?.id ?? null), events: releasedEvents, variant });
+    ctx.restore();
+    const onFloor = (x: number, y: number, draw: () => void) => {
+      const [a, b, c, d, e, f] = floorAffine(st, x, y);
+      ctx.save();
+      ctx.setTransform(RES * a, RES * b, RES * c, RES * d, RES * e, RES * f);
+      draw();
+      ctx.restore();
+    };
+    const hs = s.heroScale ?? 1;
+    if (me && me.alive && !me.eliminated) onFloor(me.x, me.y, () => drawYouRing(me, now, hs, performance.now() < youRingUntil));
+    if (watched) onFloor(watched.x, watched.y, () => drawYouRing(watched, now, hs, true, watched.name, "61,232,255"));
+    if (roy && me && !me.eliminated && me.alive) onFloor(me.x, me.y, () => drawZonePointer(roy.zone, me, s, now));
+  };
+
   const frame = (nowMs: number) => {
     raf = requestAnimationFrame(frame);
+    pollPadContinue();
     if (document.hidden) { last = nowMs; return; }
     // Bound sustained phone CPU/GPU work instead of running the elaborate pixel
     // effects at the display's maximum refresh rate. The independent 30 Hz input
     // sender and authoritative snapshot stream are never throttled here.
-    if (phoneLayout && nowMs - last < 1000 / 30 - 1) return;
+    // 4 ms tolerance: every 2nd frame at 60 Hz / 4th at 120 Hz. (With 1 ms, normal rAF timestamp jitter made a 33 ms
+    // gap read as 32.x, skipped it, and the phone alternated 33/50 ms frames: ~22 fps judder.)
+    if (phoneLayout && nowMs - last < 1000 / 30 - 4) return;
     const dtReal = Math.min(0.1, (nowMs - last) / 1000);
     last = nowMs;
     const now = nowMs / 1000;
@@ -1214,7 +1473,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       drawWaiting(now);
       return;
     }
-    const rt = now - offset - BUFFER - lag;
+    const rt = now - clockOffset(now) - delay - lag;
     while (pendingEvents.length && pendingEvents[0].t <= rt) releasedEvents.push(pendingEvents.shift()!.e);
     const s = interp(rt);
     if (!s) return;
@@ -1222,6 +1481,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
     const me = s.players.find((p) => p.id === app.you);
     selfPos = me ? { x: me.x, y: me.y } : null;
+    // smoothness playtests: a page that defines globalThis.__kaijuTrace gets your hero per drawn frame
+    const tg = globalThis as { __kaijuTrace?: number[][]; __kaijuTraceId?: string };
+    const traced = tg.__kaijuTrace && (tg.__kaijuTraceId ? s.players.find((p) => p.id === tg.__kaijuTraceId) : me);
+    if (traced) tg.__kaijuTrace!.push([nowMs, traced.x, traced.y, rt - snaps[snaps.length - 1].t, rate]); // + how far past the newest snapshot, time rate
     // royale: an eliminated player's camera follows the hero they're watching (killer / leader, cycle with ◀ ▶ / arrows)
     const roy = royaleOf(s);
     const watching = watchingRoyale(s);
@@ -1254,45 +1517,57 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       view.x = Math.round(camX);
       view.y = Math.round(camY);
     }
+    const use3d = !!st3d && s.mode !== "edu";
+    if (use3d !== on3d) {
+      on3d = use3d;
+      el.classList.toggle("view-3d", use3d);
+    }
+    ctx = use3d && octx ? octx : ctx0;
     ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, view.w, view.h);
-    ctx.save();
-    {
-      const zx = zoom === 1 ? view.x + view.w / 2 : clamp(zoomTarget[0], view.w / 2 / zoom, WW - view.w / 2 / zoom);
-      const zy = zoom === 1 ? view.y + view.h / 2 : clamp(zoomTarget[1], view.h / 2 / zoom, WH - view.h / 2 / zoom);
-      ctx.translate(view.w / 2, view.h / 2);
-      if (zoom !== 1) ctx.scale(zoom, zoom);
-      ctx.translate(-zx, -zy);
+    if (use3d) {
+      draw3d(s, me ?? null, watched, roy, now, sx, sy);
+    } else {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, view.w, view.h);
+      ctx.save();
+      {
+        const zx = zoom === 1 ? view.x + view.w / 2 : clamp(zoomTarget[0], view.w / 2 / zoom, WW - view.w / 2 / zoom);
+        const zy = zoom === 1 ? view.y + view.h / 2 : clamp(zoomTarget[1], view.h / 2 / zoom, WH - view.h / 2 / zoom);
+        ctx.translate(view.w / 2, view.h / 2);
+        if (zoom !== 1) ctx.scale(zoom, zoom);
+        ctx.translate(-zx, -zy);
+      }
+      ctx.translate(sx, sy);
+      X.trackPlayers(s.players);
+      const tgt = s.boss ? s.players.find((p) => p.id === s.boss!.targetPlayer) : null;
+      if (tgt) X.bossLookAt(tgt.x, tgt.y);
+      const variant = s.boss ? undefined : roy ? "royale" as const : s.mode === "edu" ? "classroom" as const : undefined;
+      safe("drawArenaBackground", R.drawArenaBackground, ctx, arenaTheme(s), s.boss?.kit.seed ?? arenaSeed, visTime, variant, WW !== ARENA_W || WH !== ARENA_H ? { w: WW, h: WH } : undefined);
+      if (roy) safe("drawRoyaleZone", X.drawRoyaleZone, ctx, s.pvp, s.t, visTime, { w: WW, h: WH });
+      safe("drawPerkPads", R.drawPerkPads, ctx, s.perkOffer ?? null, s.players, visTime);
+      safe("drawObstacles", R.drawObstacles, ctx, s.obstacles ?? [], visTime);
+      safe("drawPickups", R.drawPickups, ctx, s.pickups ?? [], visTime);
+      safe("drawHazards", R.drawHazards, ctx, s.hazards, visTime);
+      safe("drawMinions", R.drawMinions, ctx, s.minions, visTime);
+      if (s.boss) safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
+      const order = [...s.players].sort((a, b) => a.y - b.y);
+      for (const p of order) safe("drawPlayer", R.drawPlayer, ctx, p, visTime, p.id === app.you);
+      if (me && me.alive && !me.eliminated) drawYouRing(me, now, s.heroScale ?? 1, performance.now() < youRingUntil);
+      if (watched) drawYouRing(watched, now, s.heroScale ?? 1, true, watched.name, "61,232,255");
+      if (roy && me && !me.eliminated && me.alive) drawZonePointer(roy.zone, me, s, now);
+      safe("drawBullets", R.drawBullets, ctx, s.bullets, visTime);
+      safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime, view);
+      ctx.restore();
     }
-    ctx.translate(sx, sy);
-    X.trackPlayers(s.players);
-    const tgt = s.boss ? s.players.find((p) => p.id === s.boss!.targetPlayer) : null;
-    if (tgt) X.bossLookAt(tgt.x, tgt.y);
-    const variant = s.boss ? undefined : roy ? "royale" as const : s.mode === "edu" ? "classroom" as const : undefined;
-    safe("drawArenaBackground", R.drawArenaBackground, ctx, arenaTheme(s), s.boss?.kit.seed ?? arenaSeed, visTime, variant, WW !== ARENA_W || WH !== ARENA_H ? { w: WW, h: WH } : undefined);
-    if (roy) safe("drawRoyaleZone", X.drawRoyaleZone, ctx, s.pvp, s.t, visTime, { w: WW, h: WH });
-    safe("drawPerkPads", R.drawPerkPads, ctx, s.perkOffer ?? null, s.players, visTime);
-    safe("drawObstacles", R.drawObstacles, ctx, s.obstacles ?? [], visTime);
-    safe("drawPickups", R.drawPickups, ctx, s.pickups ?? [], visTime);
-    safe("drawHazards", R.drawHazards, ctx, s.hazards, visTime);
-    safe("drawMinions", R.drawMinions, ctx, s.minions, visTime);
-    if (s.boss) safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
-    const order = [...s.players].sort((a, b) => a.y - b.y);
-    for (const p of order) safe("drawPlayer", R.drawPlayer, ctx, p, visTime, p.id === app.you);
-    if (me && me.alive && !me.eliminated) drawYouRing(me, now, s.heroScale ?? 1, performance.now() < youRingUntil);
-    if (watched) drawYouRing(watched, now, s.heroScale ?? 1, true, watched.name, "61,232,255");
-    if (roy && me && !me.eliminated && me.alive) drawZonePointer(roy.zone, me, s, now);
-    safe("drawBullets", R.drawBullets, ctx, s.bullets, visTime);
-    safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime, view);
-    ctx.restore();
-    safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, view);
+    // 3D: the overlay canvas is view-sized with no world offset (phones scroll view.x/y)
+    if (use3d) safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, { x: 0, y: 0, w: view.w, h: view.h }, { overlay: true });
+    else safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, view);
     if (portrait || view.w < WW) {
       drawIndicators(s, me ?? null, now);
       if ((miniTick = (miniTick + 1) % 2) === 0) drawMinimap(s, now);
     }
-    if (!portrait && (ambientTick = (ambientTick + 1) % 6) === 0) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height);
+    if (!portrait && !use3d && (ambientTick = (ambientTick + 1) % 6) === 0) actx.drawImage(canvas, 0, 0, ambient.width, ambient.height);
     releasedEvents.length = 0;
 
     // DOM fx
@@ -1324,6 +1599,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (!phoneLayout || nowMs - lastHudMs >= 1000 / 15) {
       lastHudMs = nowMs;
       hud.update(s, app.you, input?.mode ?? null);
+      syncFollow(s.players);
+      syncPair(s);
       if (me) {
         // on-screen DASH/SKILL buttons (touch fallback and motion-v2) get cooldown fill + countdown
         const sk = document.querySelector<HTMLElement>(".kj-touch-skill");
@@ -1369,8 +1646,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (showBubble) {
       const b = s.boss!;
       const top = b.regions?.length ? Math.min(...b.regions.map((r) => r.y - r.r)) : b.y - 50;
-      bubble.style.left = `${parseFloat(stage.style.left) + clamp(b.x - view.x, 30, view.w - 30) * cssScale}px`;
-      bubble.style.top = `${parseFloat(stage.style.top) + Math.max(20, top - view.y) * cssScale}px`;
+      // 3D: the bubble sits over the projected head (regions are at sprite height there)
+      const p = use3d && st3d ? st3d.worldToScreen(b.x, b.y, Math.max(0, b.y - top)) : { x: b.x - view.x, y: top - view.y };
+      bubble.style.left = `${parseFloat(stage.style.left) + clamp(p.x, 30, view.w - 30) * cssScale}px`;
+      bubble.style.top = `${parseFloat(stage.style.top) + Math.max(20, p.y) * cssScale}px`;
     }
 
   };
@@ -1389,6 +1668,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
   return Object.assign(result, {
     el,
+    update() {
+      syncPair(latest);
+    },
     onMsg(m: ServerMsg) {
       if (m.t === "snapshot") onSnapshot(m.state);
       if (m.t === "autopsy" && !outro) {
@@ -1401,6 +1683,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     },
     destroy() {
       destroyed = true;
+      gone = true;
+      stopView3d();
+      pair.destroy();
+      st3d?.destroy();
       stopPermission();
       cancelAnimationFrame(raf);
       removeEventListener("resize", layout);

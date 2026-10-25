@@ -33,8 +33,34 @@ export interface HeroColors {
   rim: string;  // light 1px rim around the outline so heroes pop off busy floors
 }
 
+/** Small elemental accent picked from the repo's real traits (via the kit's stat profile). */
+export type Element = "fire" | "ice" | "electric" | "void" | "nature" | "arcane";
+export const ELEMENTS: Record<Element, { c: string; cL: string; d: string }> = {
+  fire:     { c: "#ff7a2a", cL: "#ffd25a", d: "#a8320f" },
+  ice:      { c: "#7fe6ff", cL: "#e8fbff", d: "#2c78a8" },
+  electric: { c: "#ffe94a", cL: "#fffbd0", d: "#b08a10" },
+  void:     { c: "#a35cff", cL: "#e2c8ff", d: "#4a1f8a" },
+  nature:   { c: "#6dff7a", cL: "#d8ffcf", d: "#1f8a3a" },
+  arcane:   { c: "#ff5fd2", cL: "#ffd0f4", d: "#9a1f7c" },
+};
+
+/** Seeded gear roll: silhouette variant, armour sets, palette family, pattern, element and weapon skin. */
+export interface Gear {
+  body: 0 | 1 | 2;                                   // silhouette variant within the class
+  shoulders: "plate" | "spiked" | "round" | "mantle" | "none";
+  coat: "cape" | "longcoat" | "tabard" | "halfcape" | "none";
+  helm: "horned" | "great" | "sallet" | "skull" | "crowned";
+  armor: "tinted" | "obsidian" | "ivory" | "gunmetal" | "bronze" | "royal";
+  trim: "gold" | "silver" | "primary" | "copper";
+  scheme: "complement" | "triad" | "split" | "analog" | "mono";
+  pattern: "none" | "stripes" | "circuit" | "runes" | "chevron";
+  element: Element;
+  wskin: 0 | 1 | 2 | 3;                              // weapon skin: classic, light theme, neon, gilded
+}
+
 export interface HeroLook {
   key: string;
+  gear: Gear;
   cls: HeroClass;
   weapon: WeaponKind;
   lang: string;
@@ -177,6 +203,38 @@ function looksLikeSkin(hex: string): boolean {
   return l > 0.3 && l < 0.92 && ((h <= 50 || h >= 340) && s < 0.85);
 }
 
+/** Element from the kit's stat profile (real repo traits: tests -> armour, size -> hp, modularity -> speed ...). */
+export function elementFor(kit: PlayerKit, rnd: () => number): Element {
+  const dev: [Element, number][] = [
+    ["ice", kit.maxArmor / 5 - 1],           // well-tested repos: cold, clean armour
+    ["fire", kit.damageMul / 1.0 - 1],      // hard-hitting
+    ["electric", kit.speed / 90 - 1],       // fast / modular
+    ["void", kit.maxEnergy / 200 - 1],      // big energy pool
+    ["nature", kit.maxHp / 7 - 1],          // big, living codebase
+  ];
+  dev.sort((a, b) => b[1] - a[1]);
+  if (dev[0][1] < 0.04) return rnd() < 0.5 ? "arcane" : dev[0][0]; // balanced repos get arcane half the time
+  return dev[0][0];
+}
+
+function rollGear(kit: PlayerKit, cls: HeroClass, g: () => number): Gear {
+  const pk = <T,>(a: readonly T[]): T => a[Math.floor(g() * a.length) % a.length];
+  const heavyish = cls === "knight" || cls === "heavy";
+  return {
+    body: Math.floor(g() * 3) as 0 | 1 | 2,
+    shoulders: pk(heavyish ? ["plate", "spiked", "round", "mantle", "plate"] as const : ["plate", "round", "mantle", "none", "spiked"] as const),
+    coat: pk(cls === "mage" ? ["cape", "halfcape", "tabard", "cape"] as const : cls === "engineer" ? ["none", "longcoat", "tabard", "halfcape"] as const
+      : ["cape", "longcoat", "tabard", "halfcape", "none"] as const),
+    helm: pk(["horned", "great", "sallet", "skull", "crowned"] as const),
+    armor: pk(["tinted", "obsidian", "ivory", "gunmetal", "bronze", "royal", "tinted"] as const),
+    trim: pk(["gold", "silver", "primary", "copper"] as const),
+    scheme: pk(["complement", "triad", "split", "analog", "mono"] as const),
+    pattern: pk(["none", "stripes", "circuit", "runes", "chevron"] as const),
+    element: elementFor(kit, g),
+    wskin: Math.floor(g() * 4) as 0 | 1 | 2 | 3,
+  };
+}
+
 const lookCache = new Map<string, HeroLook>();
 const byKit = new WeakMap<PlayerKit, HeroLook>();
 
@@ -191,6 +249,7 @@ export function lookFor(kit: PlayerKit): HeroLook {
 function lookForKey(kit: PlayerKit): HeroLook {
   const d: HeroDesign | undefined = kit.design;
   const key = kit.seed + "|" + kit.weapon + "|" + kit.palette.join(",") + "|" + kit.title +
+    "|" + [kit.maxHp, kit.maxArmor, kit.maxEnergy, kit.speed, Math.round(kit.damageMul * 100)].join(",") +
     (d ? "|" + d.archetype + d.headgear + d.accessory + d.emblem + d.palette.join(",") : "") +
     (kit.code ? "|" + kit.code.tokens.slice(0, 4).join(" ") + "|" + kit.code.snippet + "|" + (kit.code.weapon?.name ?? "") : "");
   const hit = lookCache.get(key);
@@ -199,6 +258,9 @@ function lookForKey(kit: PlayerKit): HeroLook {
   const cls: HeroClass = (d && d.archetype in DEFAULT_HEADGEAR ? d.archetype : CLASS_OF[kit.weapon]) ?? "ranger";
   const words = (kit.title || "").trim().split(/\s+/);
   const lang = words.length > 1 ? words.slice(0, -1).join(" ") : words[0] || "code";
+
+  const gr = rng((kit.seed ^ 0x51ed27f3) >>> 0);
+  const gear = rollGear(kit, cls, gr);
 
   // ---- palette
   let primary: string, secondary: string, accent: string, skin: string;
@@ -225,11 +287,15 @@ function lookForKey(kit: PlayerKit): HeroLook {
     if (ps < 0.25 || bestScore < 0.12) { ph = kit.seed % 360; ps = 0.65; pl = 0.5; }
     ps = Math.max(0.5, Math.min(0.9, ps));
     pl = Math.max(0.42, Math.min(0.6, pl));
+    // same language != same colours: jitter the primary, then derive secondary/accent from a seeded scheme
+    ph += (gr() - 0.5) * 26; pl = Math.max(0.4, Math.min(0.64, pl + (gr() - 0.5) * 0.14));
     primary = hslToHex(ph, ps, pl);
-    const offs = [150, 180, 210, 40, -40, 120];
-    const sh = ph + pick(r, offs) + (r() - 0.5) * 20;
-    secondary = hslToHex(sh, 0.6 + r() * 0.25, 0.5 + r() * 0.08);
-    accent = hslToHex(ph + 180 + (r() - 0.5) * 60, 0.95, 0.62);
+    r(); r(); r(); r();
+    const sch = gear.scheme;
+    const sec = sch === "complement" ? 180 : sch === "triad" ? 120 : sch === "split" ? 150 : sch === "analog" ? 38 : 0;
+    const acc = sch === "complement" ? 160 : sch === "triad" ? 240 : sch === "split" ? 210 : sch === "analog" ? -40 : 180;
+    secondary = hslToHex(ph + sec, sch === "mono" ? 0.35 : 0.62 + gr() * 0.2, sch === "mono" ? 0.36 : 0.48 + gr() * 0.1);
+    accent = hslToHex(ph + acc + (gr() - 0.5) * 20, 0.95, 0.62);
     skin = sk;
   }
   const hair = pick(r, HAIRS);
@@ -268,6 +334,19 @@ function lookForKey(kit: PlayerKit): HeroLook {
   let back = pick(r, backChoices);
   const hoodie = (cls === "ranger" || cls === "engineer" || cls === "rogue") && r() < 0.4;
   let headgear: Headgear = DEFAULT_HEADGEAR[cls];
+  {
+    // more silhouettes per class: a seeded head (class default stays the most likely, so classes still read)
+    const HEADS: Record<HeroClass, Headgear[]> = {
+      knight: ["helmet", "helmet", "helmet", "hood"],
+      heavy: ["helmet", "helmet", "helmet", "hair"],
+      ranger: ["hood", "hood", "helmet", "goggles", "hair", "beanie"],
+      mage: ["wizard-hat", "wizard-hat", "hood", "hood"],
+      engineer: ["goggles", "goggles", "helmet", "hair"],
+      rogue: ["bandana", "hood", "hood", "bandana", "hair"],
+    };
+    const opts = HEADS[cls];
+    headgear = opts[Math.floor(gr() * opts.length) % opts.length];
+  }
   let mug = false, duck = false;
   let emblem = emblemForLang(lang);
   // Real code: the repo's most frequent short token (e.g. "=>", "fn", "::") goes on the chest.
@@ -299,7 +378,7 @@ function lookForKey(kit: PlayerKit): HeroLook {
   }
 
   const look: HeroLook = {
-    key, cls, weapon: kit.weapon, lang, c, hairStyle, headgear, crest, topper, back, mug, duck,
+    key, gear, cls, weapon: kit.weapon, lang, c, hairStyle, headgear, crest, topper, back, mug, duck,
     mask: cls === "rogue" && headgear === "bandana",
     hoodie, stickers: [], emblem,
     etch: (kit.code?.tokens ?? []).map((x) => (x ?? "").trim()).find((x) => x.length > 0) ?? "",

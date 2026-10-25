@@ -88,6 +88,8 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   const d = img.data;
   const lx = -0.45, ly = -0.68, lz = 0.58;
   const moss = L.growths.includes("moss");
+  // per-limb moss (variety.ts: docs / examples components) grows only around that limb, and not once it broke
+  const mossSpots = L.spots.filter((g) => g.kind === "moss" && g.size > 0 && !(g.owner >= 0 && broken[g.owner]));
   // bounding box for speed
   let x0 = size, y0 = size, x1 = 0, y1 = 0;
   for (const o of lobes) {
@@ -210,7 +212,7 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
       let c = art.mats[mat]?.[idx];
       if (!c) c = art.mats[mat][2];
       // moss on upward-facing surfaces
-      if (moss && ny < -0.25 && mat !== "sclera") {
+      if ((moss || (mossSpots.length && mossSpots.some((g) => (px - g.x) ** 2 + (py - g.y) ** 2 < g.size * g.size))) && ny < -0.25 && mat !== "sclera") {
         const mn = hash2(x >> 2, y >> 1, kit.seed + 11);
         if (mn > 0.45 && bayer(x, y) < (-ny - 0.2) * 1.6) c = mn > 0.8 ? [111, 150, 58] : idx > 2 ? [86, 120, 50] : [58, 86, 38];
       }
@@ -224,8 +226,8 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   bctx.translate(C, C);
   const organic = L.body === "blob" || L.body === "hydra" || L.body === "serpent" || L.body === "spider" || isKaiju;
   if (organic) drawVeins(bctx, L, art, R, tint);
-  if (L.body === "golem") drawCracks(bctx, L, art, R, tint);
-  if (L.body === "eye") drawScleraVeins(bctx, L, art, R);
+  if (L.body === "golem" || L.kaiju?.form === "golem" || L.kaiju?.form === "ironclad") drawCracks(bctx, L, art, R, tint);
+  if (L.body === "eye" || L.kaiju?.form === "eye") drawScleraVeins(bctx, L, art, R);
   if (L.body === "machine") drawPanels(bctx, L, art, R);
   const solid = (x: number, y: number) => {
     const ax = Math.round(x + C), ay = Math.round(y + C);
@@ -239,7 +241,7 @@ function buildBody(kit: BossKit, L: BossLayout, broken: boolean[], tint: number,
   // kaiju damage: cut ends (severed tail tip / forearm) and charred, cracked parts that stay attached
   if (isKaiju) drawKaijuDamage(bctx, kit, L, art, broken, cuts);
   // crescent veins (ref boss-5): the abyssal always glows; every archetype's veins flare when enraged / last stand
-  if (L.kaiju && (L.kaiju.kind === "abyssal" || tint > 0)) drawVeinCrescents(bctx, L, art, tint);
+  if (L.kaiju && (L.kaiju.kind === "abyssal" || L.kaiju.glowVeins || tint > 0)) drawVeinCrescents(bctx, L, art, tint);
   // broken stumps: charred
   if (!isKaiju) L.limbs.forEach((l, i) => {
     if (!broken[i]) return;
@@ -306,8 +308,9 @@ function drawKaijuDamage(ctx: CanvasRenderingContext2D, kit: BossKit, L: BossLay
 function drawVeinCrescents(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, tint: number) {
   const K = L.kaiju!;
   K.veins.forEach((v, i) => {
-    const cyan = tint === 0 ? true : tint === 2 ? i % 2 === 1 : false;
-    const core = cyan ? "#9ff8ff" : "#ffb0b8", mid = cyan ? "#2ee6ff" : "#ff2a3a";
+    // calm veins glow in the element's color (void = the original cyan); enraged red, last stand red / element
+    const calm = tint === 0 ? true : tint === 2 ? i % 2 === 1 : false;
+    const core = calm ? art.lit.mid : "#ffb0b8", mid = calm ? art.el.vein : "#ff2a3a";
     for (let k = 0; k <= 10; k++) {
       const a = v.a + (k / 10) * 2.3;
       const x = v.x + Math.cos(a) * v.r, y = v.y + Math.sin(a) * v.r;
@@ -315,7 +318,6 @@ function drawVeinCrescents(ctx: CanvasRenderingContext2D, L: BossLayout, art: Bo
       if (k > 2 && k < 8) { ctx.fillStyle = core; ctx.fillRect(Math.round(x), Math.round(y), 1, 1); }
     }
   });
-  void art;
 }
 
 function drawCutWires(ctx: CanvasRenderingContext2D, c: { x: number; y: number; r: number }, art: BossArt, seed: number) {
@@ -329,8 +331,9 @@ function drawCutWires(ctx: CanvasRenderingContext2D, c: { x: number; y: number; 
 }
 
 function drawCracks(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, R: () => number, tint: number) {
+  const big = L.lobes.filter((o) => o.r >= 8);
   for (let i = 0; i < 9; i++) {
-    const o = L.lobes[Math.floor(R() * L.lobes.length)];
+    const o = big[Math.floor(R() * big.length)] ?? L.lobes[0];
     let x = o.x + (R() - 0.5) * o.r, y = o.y + (R() - 0.5) * o.r;
     let a = R() * Math.PI * 2;
     for (let s = 0; s < 8 + R() * 8; s++) {
@@ -353,6 +356,7 @@ function drawCracks(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, 
 
 function drawScleraVeins(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, R: () => number) {
   for (const o of L.lobes) {
+    if (o.mat !== "sclera") continue;
     const n = Math.max(2, Math.round(o.r / 3));
     for (let i = 0; i < n; i++) {
       let a = R() * Math.PI * 2;

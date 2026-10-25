@@ -6,6 +6,7 @@ import { addShake, burst, emit, every, fx } from "../arena/fx.ts";
 import { bossArt, type BossArt } from "./art.ts";
 import { bossLayout, type Anchor, type BossLayout, type LegLayout, type PlateLayout, type TentacleLayout } from "./layout.ts";
 import { BREATH_FRAMES, getBodySprite, stumpOf, whiteOf } from "./sprite.ts";
+import type { FinColors, FinStyle } from "./variety.ts";
 
 export { bossLayout, bossHitRegions } from "./layout.ts";
 
@@ -48,7 +49,7 @@ export function drawBoss(ctx: CanvasRenderingContext2D, b: BossState | null, tim
 function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, opts: DrawOpts) {
   const kit = b.kit;
   const L = opts.portrait ? bossLayout(kit) : layoutFor(b);
-  if (!opts.portrait) fx.bossKind = L.body;
+  if (!opts.portrait) { fx.bossKind = L.body; const a0 = bossArt(kit, 0); fx.bossTint = { mid: a0.lit.mid, edge: a0.el.breath }; }
   const brokenById = new Map(b.limbs.map((l) => [l.id, l.broken]));
   const broken = L.limbs.map((l) => brokenById.get(l.id) ?? false);
   const tint = b.phase === 3 ? 2 : b.enraged || b.phase === 2 ? 1 : 0;
@@ -66,7 +67,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   const srcIdx = atk ? L.limbs.findIndex((l) => l.component === atk.source) : -1;
 
   const pm = poseMotion(b, L, time, !!opts.portrait);
-  const bob = L.kaiju ? (pm.still ? 0 : Math.round(Math.sin(time * 1.7) * 0.6)) : L.body === "machine" || L.body === "golem" ? Math.round(Math.sin(time * 1.7) * 0.6) : Math.round(Math.sin(time * 1.7) * 1.5);
+  const bob = L.kaiju?.hover ? Math.round(Math.sin(time * 1.4) * 2.5) - 2 : L.kaiju ? (pm.still ? 0 : Math.round(Math.sin(time * 1.7) * 0.6)) : L.body === "machine" || L.body === "golem" ? Math.round(Math.sin(time * 1.7) * 0.6) : Math.round(Math.sin(time * 1.7) * 1.5);
   let jx = 0, jy = 0;
   if (castP > 0.6) { jx = Math.round((hash2(Math.floor(time * 30), 1) - 0.5) * 2 * castP); jy = Math.round((hash2(Math.floor(time * 30), 2) - 0.5) * 2 * castP); }
   if (tint === 2 && hash2(Math.floor(time * 12), 7) < 0.15) jx += hash2(Math.floor(time * 12), 8) < 0.5 ? -2 : 2;
@@ -105,7 +106,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   else for (const g of L.spots) if (g.kind === "wings") drawWings(ctx, bx + g.x, by + g.y, g.size, art, time, tint);
 
   // ---- kaiju dorsal plates (behind the body so they grow out of the spine) ----
-  if (L.kaiju) drawKaijuPlates(ctx, L, kit, broken, bx, by, time, breathing ? 1 : breathCharge, tint);
+  if (L.kaiju) drawKaijuPlates(ctx, L, kit, art, broken, bx, by, time, breathing ? 1 : breathCharge, tint);
 
   // ---- legs + tentacles behind body ----
   for (const lg of L.legs) if (lg.limb < 0 || !broken[lg.limb]) drawLeg(ctx, lg, art, bx, by, time, castP, b);
@@ -211,7 +212,7 @@ function drawBossAt(ctx: CanvasRenderingContext2D, b: BossState, time: number, o
   L.eyes.forEach((e, k) => {
     if (e.limb >= 0 && broken[e.limb]) return;
     if (L.kaiju?.kind === "mecha" && k === 0) { drawVisor(ctx, bx + e.x, by + e.y, time, Math.max(castP, pm.charge)); return; }
-    if (L.kaiju) { drawKaijuEye(ctx, bx + e.x, by + e.y, e.r, e.phase + k, time, look, castP, tint); return; }
+    if (L.kaiju) { drawKaijuEye(ctx, bx + e.x, by + e.y, e.r, e.phase + k, time, look, castP, tint, art); return; }
     drawEye(ctx, bx + e.x, by + e.y, e.r, e.phase + k, art, time, look, tint, castP, L.body === "machine");
   });
 
@@ -807,24 +808,31 @@ function drawParasite(ctx: CanvasRenderingContext2D, x: number, y: number, dir: 
 
 // ---------- kaiju ----------
 
-type FinState = "idle" | "lit" | "dead" | "rage" | "rage2" | "mech" | "gold" | "abyss";
-const FIN_PAL: Record<FinState, { lo: string; mid: string; hi: string; glow: string }> = {
-  idle: { lo: "#1f8a80", mid: "#4fd2c2", hi: "#c8fff6", glow: "#3ee6d6" },   // mint crystal (refs boss-1/4)
-  lit: { lo: "#7fe8ff", mid: "#d8fbff", hi: "#ffffff", glow: "#3ee6ff" },    // charged: white-hot cyan
+type FinState = "idle" | "lit" | "dead" | "rage" | "rage2" | "mech";
+// calm (idle) and charged (lit) fins take the element's colors (variety.ts: jade = the original mint, void = the
+// original abyssal black crystal, gilded = the original hydra gold); broken / enraged states stay fixed for readability
+const FIN_FIXED: Record<"dead" | "rage" | "rage2", FinColors> = {
   dead: { lo: "#3e3a44", mid: "#77727f", hi: "#a8a3b0", glow: "#000000" },   // broken: cracked grey
   rage: { lo: "#7a0a1a", mid: "#ff3a4a", hi: "#ffc0c8", glow: "#ff2a3a" },   // phase 2: red (ref boss-5)
   rage2: { lo: "#0a5a6a", mid: "#2ee6ff", hi: "#d0ffff", glow: "#2ee6ff" },  // phase 3 alternates red / cyan
-  mech: { lo: "#4a4a50", mid: "#9a9aa2", hi: "#f0f0f4", glow: "#ff4a3a" },   // machine hint: steel (ref boss-3)
-  gold: { lo: "#8a5a10", mid: "#e0a828", hi: "#fff0a0", glow: "#ffc840" },   // hydra horns + neck spines (ref boss-2)
-  abyss: { lo: "#0a0a12", mid: "#2a2838", hi: "#2ee6ff", glow: "#2ee6ff" },  // black crystal with cyan edge (ref boss-5)
 };
+function finPal(state: FinState, art: BossArt): FinColors {
+  if (state === "idle") return art.fin;
+  if (state === "lit") return art.lit;
+  // machine: steel plates with an element edge (ref boss-3)
+  if (state === "mech") return { lo: "#4a4a50", mid: "#9a9aa2", hi: art.fin.hi, glow: art.fin.glow };
+  return FIN_FIXED[state];
+}
 
 const finCache = new Map<string, { c: HTMLCanvasElement; ox: number; oy: number }>();
 
-/** Rasterize one crystal fin (cluster of jagged spikes) along its outward normal; cached per state. */
-function finSprite(p: PlateLayout, state: FinState, mech: boolean): { c: HTMLCanvasElement; ox: number; oy: number } {
+/** Rasterize one fin along its outward normal; cached per state + colors + style.
+ *  crystal: jagged forked cluster (refs boss-1/4) · blade: one tall sharp spike · plate: a broad flat-topped plate
+ *  (stegosaur) · needle: a comb of thin quills · mech: flat-topped armor trapezoids (ref boss-3). */
+function finSprite(p: PlateLayout, state: FinState, style: FinStyle | "mech", pal: FinColors): { c: HTMLCanvasElement; ox: number; oy: number } {
+  const mech = style === "mech";
   const nx = Math.round(p.nx * 8) / 8, ny = Math.round(p.ny * 8) / 8;
-  const key = p.seed + "|" + p.scale + "|" + p.spikes + "|" + nx + "," + ny + "|" + state + "|" + (mech ? 1 : 0) + "|" + p.ch;
+  const key = p.seed + "|" + p.scale + "|" + p.spikes + "|" + nx + "," + ny + "|" + state + "|" + style + "|" + p.ch + "|" + pal.lo + pal.mid + pal.hi;
   let f = finCache.get(key);
   if (f) return f;
   if (finCache.size > 400) finCache.clear();
@@ -834,9 +842,9 @@ function finSprite(p: PlateLayout, state: FinState, mech: boolean): { c: HTMLCan
   const ox = size / 2, oy = size / 2;
   const tx = -ny, ty = nx; // tangent
   const R = (k: number) => hash2(p.seed, k, 31);
-  const pal = FIN_PAL[state];
-  const n = p.spikes;
-  const w = Math.max(3, H * 0.42);
+  const n = style === "blade" || style === "plate" ? 1 : style === "needle" ? p.spikes + 2 : p.spikes;
+  const w = style === "plate" ? Math.max(5, H * 0.95) : style === "blade" ? Math.max(4, H * 0.5) : style === "needle" ? Math.max(2, H * 0.2) : Math.max(3, H * 0.42);
+  const flatTop = mech ? 0.82 : style === "plate" ? 0.72 : 0;
   const inTri = (px: number, py: number, a: number[], b: number[], c2: number[]) => {
     const d1 = (px - b[0]) * (a[1] - b[1]) - (a[0] - b[0]) * (py - b[1]);
     const d2 = (px - c2[0]) * (b[1] - c2[1]) - (b[0] - c2[0]) * (py - c2[1]);
@@ -847,15 +855,15 @@ function finSprite(p: PlateLayout, state: FinState, mech: boolean): { c: HTMLCan
   for (let i = 0; i < n; i++) {
     const off = (i - (n - 1) / 2) * w * 0.7;
     const mid = Math.abs(i - (n - 1) / 2) / Math.max(1, (n - 1) / 2);
-    const len = mech ? H * (0.95 - mid * 0.3) : H * (1 - mid * 0.45) * (0.85 + R(i) * 0.3);
-    const lean = (i - (n - 1) / 2) * (mech ? 0.05 : 0.22) + (R(i + 9) - 0.5) * 0.15;
+    const len = mech ? H * (0.95 - mid * 0.3) : style === "blade" ? H * 1.12 : style === "plate" ? H * 1.05 : H * (1 - mid * 0.45) * (0.85 + R(i) * 0.3);
+    const lean = style === "blade" ? 0.18 : (i - (n - 1) / 2) * (mech ? 0.05 : style === "needle" ? 0.3 : 0.22) + (R(i + 9) - 0.5) * 0.15;
     const dx = nx + tx * lean, dy = ny + ty * lean;
     const bx = ox + tx * off, by = oy + ty * off;
-    const hw = (mech ? w * 0.62 : w * 0.5) * (1 - mid * 0.25);
+    const hw = (mech ? w * 0.62 : style === "needle" ? Math.max(1, w * 0.5) : w * 0.5) * (1 - mid * 0.25);
     const tip = [bx + dx * len, by + dy * len];
     tris.push({ a: [bx - tx * hw, by - ty * hw], b: [bx + tx * hw, by + ty * hw], c: tip, axis: [bx, by], tip });
     // forked side jag (boss-1's branching crystal tips)
-    if (!mech && len > 9) {
+    if (style === "crystal" && len > 9) {
       const s2 = 0.45 + R(i + 3) * 0.2, side = R(i + 5) < 0.5 ? -1 : 1;
       const jx = bx + dx * len * s2, jy = by + dy * len * s2;
       const jt = [jx + (dx + tx * side * 0.9) * len * 0.35, jy + (dy + ty * side * 0.9) * len * 0.35];
@@ -873,7 +881,7 @@ function finSprite(p: PlateLayout, state: FinState, mech: boolean): { c: HTMLCan
       const px = x + 0.5, py = y + 0.5;
       for (const t of tris) {
         if (!inTri(px, py, t.a, t.b, t.c)) continue;
-        if (mech && (px - ox) * nx + (py - oy) * ny > H * 0.82) break;
+        if (flatTop && (px - ox) * nx + (py - oy) * ny > H * flatTop) break;
         // facet: the half toward the light (left of the spike axis) is lighter; the tip is brightest
         const ax = t.tip[0] - t.axis[0], ay = t.tip[1] - t.axis[1];
         const side = (px - t.axis[0]) * ay - (py - t.axis[1]) * ax;
@@ -885,8 +893,8 @@ function finSprite(p: PlateLayout, state: FinState, mech: boolean): { c: HTMLCan
     }
   g.putImageData(img, 0, 0);
   // etched code bracket on the fin (code in spirit)
-  if (H >= 16 && !mech) {
-    g.fillStyle = state === "lit" ? "#3ee6ff" : state === "dead" ? "#2a2730" : "#0b2a2a";
+  if (H >= 16 && !mech && style !== "needle") {
+    g.fillStyle = state === "lit" ? pal.glow : state === "dead" ? "#2a2730" : "#0b0f14";
     drawTextRaw(g, p.ch, Math.round(ox + nx * H * 0.4) - 1, Math.round(oy + ny * H * 0.4) - 2);
   }
   outlineSprite(c, "#06110c");
@@ -895,7 +903,7 @@ function finSprite(p: PlateLayout, state: FinState, mech: boolean): { c: HTMLCan
   return f;
 }
 
-function drawKaijuPlates(ctx: CanvasRenderingContext2D, L: BossLayout, kit: BossKit, broken: boolean[], bx: number, by: number, time: number, charge: number, tint: number) {
+function drawKaijuPlates(ctx: CanvasRenderingContext2D, L: BossLayout, kit: BossKit, art: BossArt, broken: boolean[], bx: number, by: number, time: number, charge: number, tint: number) {
   const K = L.kaiju!;
   const n = K.plates.length;
   for (const p of K.plates) {
@@ -903,16 +911,19 @@ function drawKaijuPlates(ctx: CanvasRenderingContext2D, L: BossLayout, kit: Boss
     if (dead && p.order % 2 === 0) continue; // a broken fin row loses every other fin
     // the charge runs from the tail end (order 0) to the head
     const lit = !dead && charge > 0 && charge * 1.15 > (p.order + 1) / n;
-    const calm: FinState = K.mech ? "mech" : K.kind === "dragon" ? "gold" : K.kind === "abyssal" ? "abyss" : "idle";
-    const state: FinState = dead ? "dead" : lit ? "lit" : tint === 2 ? (p.order % 2 ? "rage" : "rage2") : tint && !K.mech ? "rage" : calm;
-    const f = finSprite(p, state, K.mech);
+    const style: FinStyle | "mech" = p.style ?? (K.mech ? "mech" : K.fins);
+    const calm: FinState = style === "mech" ? "mech" : "idle";
+    const state: FinState = dead ? "dead" : lit ? "lit" : tint === 2 ? (p.order % 2 ? "rage" : "rage2") : tint && style !== "mech" ? "rage" : calm;
+    const pal = finPal(state, art);
+    const f = finSprite(p, state, style, pal);
     // the fin root sinks into the hide (drawn behind the body)
     const sink = Math.min(5, p.scale * 0.22);
     const cx = Math.round(bx + p.x - p.nx * sink), cy = Math.round(by + p.y - p.ny * sink) + (dead ? 2 : 0);
     const pulse = 0.5 + 0.5 * Math.sin(time * 2.2 + p.order * 0.6);
-    if (!dead && state !== "mech" && state !== "abyss") drawGlow(ctx, cx + p.nx * p.scale * 0.5, cy + p.ny * p.scale * 0.5, FIN_PAL[state].glow, lit ? p.scale + 8 : p.scale * 0.6 + 3, lit ? 0.9 : 0.22 + pulse * 0.18);
+    // calm glow (dark elements like void keep their crystal unlit, as the original abyssal)
+    if (!dead && state !== "mech" && !(state === "idle" && art.el.id === "void")) drawGlow(ctx, cx + p.nx * p.scale * 0.5, cy + p.ny * p.scale * 0.5, pal.glow, lit ? p.scale + 8 : p.scale * 0.6 + 3, lit ? 0.9 : 0.22 + pulse * 0.18);
     ctx.drawImage(f.c, Math.round(cx - f.ox), Math.round(cy - f.oy));
-    if (lit && Math.random() < 0.12) emit({ kind: "px", x: cx + p.nx * p.scale, y: cy + p.ny * p.scale, vx: (Math.random() - 0.5) * 20, vy: -30, max: 0.4, color: "#3ee6ff", color2: "#ffffff", glow: true });
+    if (lit && Math.random() < 0.12) emit({ kind: "px", x: cx + p.nx * p.scale, y: cy + p.ny * p.scale, vx: (Math.random() - 0.5) * 20, vy: -30, max: 0.4, color: art.lit.glow, color2: "#ffffff", glow: true });
     if (dead && Math.random() < 0.02) emit({ kind: "spark", x: cx, y: cy, vx: (Math.random() - 0.5) * 50, vy: -40, grav: 160, max: 0.4, color: "#ffd23f", color2: "#ff5a2a" });
   }
   void kit;
@@ -920,8 +931,9 @@ function drawKaijuPlates(ctx: CanvasRenderingContext2D, L: BossLayout, kit: Boss
 
 function drawKaijuFront(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossArt, broken: boolean[], bx: number, by: number, time: number, charge: number, castP: number, tint: number, portrait?: boolean, headIdx = 0) {
   const K = L.kaiju!;
-  const ramp = (K.kind === "dragon" ? art.mats.gold : K.kind === "mecha" ? art.mats.metal : K.kind === "abyssal" ? art.mats.void : art.mats.obsidian).map((c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
-  const breathCol = K.kind === "dragon" ? "#ffd84a" : K.kind === "mecha" ? "#ff4a3a" : K.kind === "abyssal" ? (tint ? "#ff2a3a" : "#2ee6ff") : "#3ee6ff";
+  const ramp = art.mats[K.mat].map((c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
+  // the element's breath (mecha keeps its hot red visor laser; enraged abyssal goes red)
+  const breathCol = K.kind === "mecha" ? "#ff4a3a" : K.kind === "abyssal" && tint ? "#ff2a3a" : art.el.breath;
   K.jaws.forEach((J, ji) => {
     const jawBroken = J.limb >= 0 && broken[J.limb];
     if (jawBroken && K.kind === "dragon") return; // a severed hydra head is gone
@@ -969,8 +981,8 @@ function drawKaijuFront(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossA
       ctx.fillStyle = castP > 0.2 ? "#ffb02e" : "#5a2a1a"; ctx.fillRect(cx - 19, cy, 1, 1);
     }
   }
-  // claws on the little arms and the toes (bipeds only)
-  if (K.kind === "kaiju" || K.kind === "mecha") {
+  // claws on the little arms (the classic bipeds) and toes (every plan that stands on feet)
+  if (K.form === "kaiju" || K.form === "mecha") {
     ctx.fillStyle = K.kind === "mecha" ? "#c8ccd8" : "#f4f1e6";
     const armSlot = K.slots.findIndex((sl) => sl === "arms" || sl === "rocket-fist");
     if (!(armSlot >= 0 && broken[armSlot])) {
@@ -978,21 +990,23 @@ function drawKaijuFront(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossA
       if (K.hint === "spider") { ctx.fillRect(bx - 31, by + 13, 1, 2); ctx.fillRect(bx - 30, by + 15, 1, 2); }
     }
   }
-  ctx.fillStyle = "#f4f1e6";
-  for (const f of K.feet) for (const d of [-6, -2]) ctx.fillRect(bx + f.x + d, by + f.y, 2, 1);
+  ctx.fillStyle = K.form === "ironclad" ? "#c8ccd8" : "#f4f1e6";
+  if (K.form !== "eye" && K.form !== "insectoid") for (const f of K.feet) for (const d of [-6, -2]) ctx.fillRect(bx + f.x + d, by + f.y, 2, 1);
 }
 
-function drawKaijuEye(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, ph: number, time: number, look: [number, number], castP: number, tint: number) {
+function drawKaijuEye(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, ph: number, time: number, look: [number, number], castP: number, tint: number, art: BossArt) {
   x = Math.round(x); y = Math.round(y);
   const bt = (time + ph * 1.7) % (3.4 + (ph % 2));
   const closed = bt < 0.12;
-  drawGlow(ctx, x, y, "#ff2a3a", r + 5, 0.5 + castP * 0.5);
+  // the element's eye (jade = the original red eye with a cyan slit); enraged eyes burn red / yellow
+  const iris = tint ? (art.el.eye === "#ff2a3a" ? "#ffd23f" : "#ff2a3a") : art.el.eye;
+  drawGlow(ctx, x, y, iris, r + 5, 0.5 + castP * 0.5);
   ctx.fillStyle = "#06110c"; disc(ctx, x, y, r + 1);
-  if (closed) { ctx.fillStyle = "#ff2a3a"; ctx.fillRect(x - r, y, r * 2 + 1, 1); return; }
-  ctx.fillStyle = tint ? "#ffd23f" : "#ff2a3a"; disc(ctx, x, y, r);
+  if (closed) { ctx.fillStyle = iris; ctx.fillRect(x - r, y, r * 2 + 1, 1); return; }
+  ctx.fillStyle = iris; disc(ctx, x, y, r);
   const dx = look[0] - x, dy = look[1] - y, dl = Math.hypot(dx, dy) || 1;
   const px = Math.round(x + (dx / dl) * Math.max(0, r - 1.5)), py = Math.round(y + (dy / dl) * Math.max(0, r - 1.5));
-  ctx.fillStyle = "#3ee6ff"; ctx.fillRect(px, py - Math.max(1, r - 1), 1, Math.max(1, r * 2 - 1)); // cyan slit pupil
+  ctx.fillStyle = art.el.pupil; ctx.fillRect(px, py - Math.max(1, r - 1), 1, Math.max(1, r * 2 - 1)); // slit pupil
   ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 1, y - r + 1, 1, 1);
 }
 
@@ -1025,7 +1039,8 @@ function poseMotion(b: BossState, L: BossLayout, time: number, portrait: boolean
   const hop = (h: number) => -Math.sin(p * Math.PI) * h;
   switch (pose.name) {
     case "walk":
-      if (kind === "abyssal") { m.dx = Math.sin(time * 6) * 1.2; m.flap = 1; }
+      // abyssal slithers, the floating eye glides; the rest stomp
+      if (kind === "abyssal" || L.kaiju.hover || L.kaiju.glide) { m.dx = Math.sin(time * 6) * 1.2; m.flap = 1; }
       else { m.step = (p * 2) % 1; m.dy = -Math.round(Math.sin(m.step * Math.PI) * 2.5); m.still = true; }
       break;
     case "windup": m.dx = -ux * 2 * ease(p); m.dy = -1.5 * ease(p); m.charge = p; m.jaw = p * 0.4; m.jx = p > 0.7 ? Math.round((hash2(Math.floor(time * 30), 3) - 0.5) * 2) : 0; break;
@@ -1073,7 +1088,7 @@ function drawPoseFx(ctx: CanvasRenderingContext2D, b: BossState, L: BossLayout, 
   // roar: shockwave rings from the mouth
   if (pose === "roar" && every("roar" + b.kit.repo, 0.22, time)) {
     const m = K.mouths[pm.head % K.mouths.length] ?? K.mouth;
-    emit({ kind: "ring", x: bx + m.x, y: by + m.y, size: 34, max: 0.5, color: tint ? "#ff5a6a" : "#bfffff" });
+    emit({ kind: "ring", x: bx + m.x, y: by + m.y, size: 34, max: 0.5, color: tint ? "#ff5a6a" : art.lit.mid });
     addShake(2);
   }
   // mecha: vents glow while charging, steam on recover, jets on a hop
@@ -1087,17 +1102,17 @@ function drawPoseFx(ctx: CanvasRenderingContext2D, b: BossState, L: BossLayout, 
   }
   // veins pulse (abyssal always; everyone when enraged / charging)
   if (K.kind === "abyssal" || tint || pm.charge > 0.2) {
-    const col = tint ? "#ff2a3a" : "#2ee6ff";
+    const col = tint ? "#ff2a3a" : art.el.vein;
     K.veins.forEach((v, i) => { const p2 = 0.5 + 0.5 * Math.sin(time * 4 + i); drawGlow(ctx, bx + v.x, by + v.y, col, v.r + 4, (0.18 + p2 * 0.25) * (0.6 + pm.charge)); });
   }
   // hydra: the acting head glows while it winds up its own beam
   if (K.kind === "dragon" && pm.charge > 0) {
     const m = K.mouths[pm.head % K.mouths.length];
-    if (m) drawGlow(ctx, bx + m.x + 6, by + m.y, "#ffd84a", 6 + pm.charge * 12, 0.5 + pm.charge * 0.5);
+    if (m) drawGlow(ctx, bx + m.x + 6, by + m.y, art.el.breath, 6 + pm.charge * 12, 0.5 + pm.charge * 0.5);
   }
   // abyssal burrow / emerge: crystal shards burst from the ground line
   if ((pose === "burrow" || pose === "emerge") && every("dig" + b.kit.repo, 0.08, time)) {
-    burst(bx + (Math.random() - 0.5) * 60, Math.round(b.y) + 42, 3, { kind: "shard", speed: 70, max: 0.6, text: "/\\<>{}", spin: 12, color: "#2ee6ff", color2: "#2a2838", grav: 200 });
+    burst(bx + (Math.random() - 0.5) * 60, Math.round(b.y) + 42, 3, { kind: "shard", speed: 70, max: 0.6, text: "/\\<>{}", spin: 12, color: art.fin.glow, color2: "#2a2838", grav: 200 });
     addShake(1.5);
   }
 }
@@ -1128,22 +1143,29 @@ function drawDragonWing(ctx: CanvasRenderingContext2D, L: BossLayout, art: BossA
     tips.push([sx + Math.cos(a) * len, sy + Math.sin(a) * len]);
   }
   const gold = art.mats.gold.map((c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`);
-  const bright = tint === 2 ? ["#3a1a14", "#5a2a1e"] : tint ? ["#a8501c", "#d07a2a"] : [gold[3], gold[4]];
+  // wing style (variety.ts): membrane bands in the hide (the original), feathers (jagged trailing edge, more vanes),
+  // or a crystal sail in the element's fin colors
+  const style = W.style;
+  const bright = tint === 2 ? ["#3a1a14", "#5a2a1e"] : tint ? ["#a8501c", "#d07a2a"] : style === "crystal" ? [art.fin.mid, art.fin.hi] : [gold[3], gold[4]];
+  const sag = style === "feather" ? 3 : 7;
   for (let k = 0; k < ribs - 1; k++) {
     if (torn && k % 2 === 1) continue;
     const [x1, y1] = tips[k], [x2, y2] = tips[k + 1];
     for (let i = 0; i <= 26; i++) {
       const u = i / 26;
-      const ex = x1 + (x2 - x1) * u, ey = y1 + (y2 - y1) * u + Math.sin(u * Math.PI) * 7;
-      ctx.fillStyle = (i >> 2) % 2 ? bright[0] : bright[1];
+      // feathers: a saw-tooth trailing edge (each vane ends in a point)
+      const jag = style === "feather" ? ((i % 6) / 6) * 5 : 0;
+      const ex = x1 + (x2 - x1) * u, ey = y1 + (y2 - y1) * u + Math.sin(u * Math.PI) * sag + jag;
+      ctx.fillStyle = style === "feather" ? (i % 6 < 1 ? gold[2] : (i >> 3) % 2 ? bright[0] : bright[1]) : (i >> 2) % 2 ? bright[0] : bright[1];
       line(ctx, sx, sy, ex, ey);
     }
   }
   for (const [tx, ty] of tips) {
     ctx.fillStyle = art.outline; line(ctx, sx, sy, tx, ty, 3);
-    ctx.fillStyle = gold[1]; line(ctx, sx, sy, tx, ty, 1);
-    ctx.fillStyle = "#fff0a0"; ctx.fillRect(Math.round(tx), Math.round(ty), 1, 1);
+    ctx.fillStyle = style === "crystal" ? art.fin.lo : gold[1]; line(ctx, sx, sy, tx, ty, 1);
+    ctx.fillStyle = style === "crystal" ? art.fin.hi : art.lit.mid; ctx.fillRect(Math.round(tx), Math.round(ty), 1, 1);
   }
+  if (style === "crystal" && !torn) drawGlow(ctx, sx + (tips[2][0] - sx) * 0.6, sy + (tips[2][1] - sy) * 0.6, art.fin.glow, W.span * 0.4, 0.18);
 }
 
 function drawVisor(ctx: CanvasRenderingContext2D, x: number, y: number, time: number, charge: number) {

@@ -10,27 +10,28 @@ function trace(samples: [number, number, number, number][]) {
   });
 }
 
-describe('motion-v2 swing recognizer', () => {
+describe('circle-safe swing recognizer', () => {
   it.each([[15, 0, 0], [-15, 0, 0], [0, 15, 0], [0, -15, 0], [0, 0, 15], [0, 0, -15]])
     ('attacks for axis direction (%s, %s, %s), never dash/skill', (x, y, z) => {
-      const frames = trace([[0, x, y, z], [100, x, y, z], [599, 0, 0, 0], [600, 0, 0, 0]]);
-      expect(frames.map(f => f.fire)).toEqual([true, true, true, false]);
-      expect(frames.map(f => f.fired)).toEqual([true, false, false, false]);
+      const frames = trace([[0, x, y, z], [30, 0, 0, 0], [629, 0, 0, 0], [630, 0, 0, 0]]);
+      expect(frames.map(f => f.fire)).toEqual([false, true, true, false]);
+      expect(frames.map(f => f.fired)).toEqual([false, true, false, false]);
       expect(frames.every(f => !f.dash && !f.skill)).toBe(true);
     });
   it('uses vector magnitude for diagonal swings and ignores low jitter', () => {
-    expect(trace([[0, 8, 8, 8]])[0].fired).toBe(true);
-    expect(trace([[0, 3, 4, 2], [100, 11, 0, 0]]).some(f => f.fire)).toBe(false);
+    expect(trace([[0, 8, 8, 8], [30, 0, 0, 0]])[1].fired).toBe(true);
+    expect(trace([[0, 0.2, 0.1, 0.15], [100, 0.15, 0, 0]]).some(f => f.fire)).toBe(false);
   });
   it('debounces sustained peaks and requires 200ms between attacks', () => {
     const frames = trace([[0, 15, 0, 0], [80, 0, 0, 0], [100, 15, 0, 0], [150, 0, 0, 0],
-      [220, 15, 0, 0], [1000, 15, 0, 0]]);
-    expect(frames.map(f => f.fired)).toEqual([true, false, false, false, true, false]);
+      [300, 15, 0, 0], [330, 0, 0, 0], [1000, 0, 0, 0]]);
+    expect(frames.map(f => f.fired)).toEqual([false, true, false, false, false, true, false]);
     expect(frames.at(-1)?.fire).toBe(false);
   });
   it('recognizes direct reversals as attacks instead of shake skills', () => {
-    const frames = trace([[0, 15, 0, 0], [220, -15, 0, 0], [440, 15, 0, 0]]);
-    expect(frames.every(f => f.fired && !f.dash && !f.skill)).toBe(true);
+    const frames = trace([[0, 15, 0, 0], [130, 15, 0, 0], [350, -15, 0, 0], [480, -15, 0, 0], [700, 15, 0, 0], [830, 15, 0, 0]]);
+    expect(frames.filter(f => f.fired)).toHaveLength(3);
+    expect(frames.every(f => !f.dash && !f.skill)).toBe(true);
   });
   it('does not mutate previous state or sensor samples', () => {
     const previous = createGestureState();

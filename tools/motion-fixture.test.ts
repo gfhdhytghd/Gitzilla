@@ -28,3 +28,20 @@ it('fails rather than pretending to protect a snapshot copy or an unknown engine
   vi.stubEnv('NODE_ENV', 'test');
   expect(() => protectMotionProofPlayer({} as any, 'proof')).toThrow('Real simulation state missing');
 });
+
+it('keeps identity and controller discovery on the isolated room fixture, never the upstream UI', async () => {
+  vi.stubEnv('NODE_ENV', 'test');
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const directory = await mkdtemp(join(tmpdir(), 'motion-discovery-'));
+  const fixture = await startMotionFixture('http://127.0.0.1:1', directory);
+  try {
+    const identity = await fetch(`${fixture.url}/api/me`);
+    expect(await identity.json()).toEqual({ enabled: false, user: null });
+    const response = await fetch(`${fixture.url}/api/rooms/ABCD/my-seat`);
+    expect(response.status).toBe(401);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect((await response.json()).error).toContain('Sign in with GitHub');
+  } finally { await fixture.close(); await rm(directory, { recursive: true, force: true }); }
+});

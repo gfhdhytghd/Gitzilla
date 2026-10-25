@@ -7,7 +7,7 @@ import { ReceiptService, type FinishedReceiptMatch } from '../server/receipts/se
 import { ReceiptStore } from '../server/receipts/store';
 import { SolanaRpc, DEVNET_RPC, DEVNET_GENESIS } from '../server/receipts/rpc';
 if(!process.argv.includes('--send-devnet'))throw new Error('Pass --send-devnet to request free test SOL and send a synthetic test receipt.');
-const dir=resolve('.cache/solana-smoke'),seed=loadSeed(resolve(dir,'attestor.seed')),walletSeed=loadSeed(resolve(dir,'wallet.seed'));
+const dir=resolve(process.env.SOLANA_SMOKE_DIR||'.cache/solana-smoke'),seed=loadSeed(resolve(dir,'attestor.seed')),walletSeed=loadSeed(resolve(dir,'wallet.seed'));
 const attestor=base58(publicBytes(seed)),wallet=base58(publicBytes(walletSeed));
 async function rpc(method:string,params:unknown[]=[]){
   const r=await fetch(DEVNET_RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000)});
@@ -17,7 +17,7 @@ if(await rpc('getGenesisHash')!==DEVNET_GENESIS)throw new Error('Wrong network')
 let balance=(await rpc('getBalance',[attestor,{commitment:'confirmed'}])).value;
 if(balance<10000){
   try{await rpc('requestAirdrop',[attestor,100_000_000]);console.log('Free Devnet airdrop requested.');}
-  catch{console.log(JSON.stringify({status:'funding-unavailable',network:'solana:devnet',attestor,note:'No real funds used; a free Devnet faucet is required.'}));process.exit(2);}
+  catch(error){console.log(JSON.stringify({status:'funding-unavailable',network:'solana:devnet',attestor,reason:error instanceof Error?error.message:'Airdrop failed',note:'No real funds used; a free Devnet faucet is required. No retry attempted.'}));process.exit(2);}
   for(let i=0;i<20&&balance<10000;i++){await new Promise(r=>setTimeout(r,1500));balance=(await rpc('getBalance',[attestor,{commitment:'confirmed'}])).value;}
 }
 if(balance<10000)throw new Error('Devnet test funding not confirmed');

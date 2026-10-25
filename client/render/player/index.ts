@@ -1,7 +1,7 @@
 // Player renderer: Soul Knight-style chibi heroes generated from repo kits.
 // All drawing is in logical arena px; the caller applies integer scale + imageSmoothingEnabled=false.
 import type { GameEvent, PlayerKit, PlayerState, WeaponKind } from "../../../shared/types.ts";
-import { lookFor, syntaxColor, type HeroLook } from "./look.ts";
+import { lookFor, syntaxColor, ELEMENTS, type HeroLook } from "./look.ts";
 import { heroFrame, heroRim, heroCodeCells, heroHand, tinted, ANCHOR_X, SW, SH, SPRITE_FEET, type Expr, type FrameSpec } from "./sprite.ts";
 import { weaponSprite, drawMuzzle, boldGlyph, weaponWord } from "./weapons.ts";
 import { drawText, glyphBits, textCanvas, textWidth, GLYPH_W } from "./font.ts";
@@ -39,6 +39,7 @@ interface Mem {
   perks: Set<string>; perkT: Record<string, number>;
   muzzleT: number; impactT: number; stepFrame: number; stepN: number; moveT: number; clackT: number; sleepT: number;
   codeCv: HTMLCanvasElement | null; codeKey: string;
+  lastEl: number;
 }
 
 const mems = new Map<string, Mem>();
@@ -132,7 +133,7 @@ function memFor(p: PlayerState, t: number): Mem {
       lastGhost: 0, lastDust: 0, lastFlame: 0, lastPlus: 0, swingDir: 1, duckX: p.x - 12, duckY: p.y - 10, duckFlip: 1,
       kbT: -99, kbX: 0, kbY: 0, kbAmp: 0, crit: false,
       perks: new Set(p.perks ?? []), perkT: {},
-      muzzleT: -99, impactT: -99, stepFrame: -1, stepN: 0, moveT: t, clackT: 0, sleepT: 0, codeCv: null, codeKey: "",
+      muzzleT: -99, impactT: -99, stepFrame: -1, stepN: 0, moveT: t, clackT: 0, sleepT: 0, codeCv: null, codeKey: "", lastEl: 0,
       phase: (hashStr(p.id) % 1000) / 1000,
     };
     if (mems.size > 48) for (const [k, v] of mems) if (t - v.t > 5) mems.delete(k);
@@ -540,12 +541,17 @@ export interface DrawPlayerOpts {
   scale?: number;
   /** Classroom PvP (MatchState.mode === "edu"): every other hero is a rival -> name tags + own-color rings, no revive ring. */
   pvp?: boolean;
+  /** 3D stage billboards: hit flash as a white tint over the body instead of a solid white silhouette (and the
+   *  additive RGB-split ghosts are skipped: on a transparent sprite texture they'd turn into opaque white blobs). */
+  softFlash?: boolean;
 }
 
+let SOFT = false;
 export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: number, isYou: boolean, opts?: DrawPlayerOpts): void {
   S = Math.max(1, Math.min(3, opts?.scale ?? 1));
   RES = S >= 2 ? 2 : 1;
   PVP = !!opts?.pvp;
+  SOFT = !!opts?.softFlash;
   OX = Math.round(p.x); OY = Math.round(p.y);
   ctx.save();
   if (S !== 1) { ctx.translate(OX, OY); ctx.scale(S, S); ctx.translate(-OX, -OY); }
@@ -553,7 +559,7 @@ export function drawPlayer(ctx: CanvasRenderingContext2D, p: PlayerState, time: 
     drawPlayerLocal(ctx, p, time, isYou);
   } finally {
     ctx.restore();
-    S = 1; RES = 1; PVP = false;
+    S = 1; RES = 1; PVP = false; SOFT = false;
   }
 }
 
@@ -630,6 +636,19 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
       col: "#d9d0ec", sz: 1, mark: m.stepN % 2 ? ";" : "." }));
   }
   m.stepFrame = fr.pose === "run" ? fr.i : -1;
+
+  // --- element aura (picked from the repo's traits): a few motes in the element's colour
+  if (p.alive && t - m.lastEl > (isYou ? 0.16 : 0.32)) {
+    m.lastEl = t;
+    const el = L.gear.element, E = ELEMENTS[el];
+    const rx = (Math.random() - 0.5) * 22, ry = -Math.random() * 30;
+    if (el === "fire") spawn(m, 1, () => ({ x: WX(x + rx * 0.6), y: WY(feet - 2), vx: (Math.random() - 0.5) * 6, vy: -22 - Math.random() * 14, g: -8, life: 0.7, max: 0.7, col: Math.random() < 0.5 ? E.c : E.cL, sz: 1, add: true }));
+    else if (el === "ice") spawn(m, 1, () => ({ x: WX(x + rx), y: WY(feet + ry), vx: 0, vy: 4, g: 0, life: 0.5, max: 0.5, col: E.cL, sz: Math.random() < 0.3 ? 2 : 1, add: true, front: true }));
+    else if (el === "electric") spawn(m, 2, () => ({ x: WX(x + rx), y: WY(feet + ry), vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, g: 0, life: 0.14, max: 0.14, col: E.cL, sz: 1, add: true, front: true }));
+    else if (el === "void") spawn(m, 1, () => ({ x: WX(x + rx * 1.2), y: WY(feet + ry - 8), vx: -rx * 0.6, vy: 10, g: 0, life: 0.8, max: 0.8, col: E.c, sz: 1, add: true }));
+    else if (el === "nature") spawn(m, 1, () => ({ x: WX(x + rx), y: WY(feet - 4), vx: (Math.random() - 0.5) * 10, vy: -10, g: -2, life: 1.0, max: 1.0, col: Math.random() < 0.5 ? E.c : E.cL, sz: 1 }));
+    else spawn(m, 1, () => ({ x: WX(x + rx), y: WY(feet + ry), vx: 0, vy: -6, g: 0, life: 0.6, max: 0.6, col: Math.random() < 0.5 ? E.c : E.cL, sz: 1, add: true, front: true }));
+  }
 
   // --- emitters
   if (p.alive && sp > 25 && t - m.lastDust > 0.14 && !dashing) {
@@ -776,8 +795,16 @@ function drawPlayerLocal(ctx: CanvasRenderingContext2D, p: PlayerState, time: nu
     ctx.restore();
   }
 
-  if (since < flashT) {
+  if (since < flashT && SOFT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.45;
     drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "#ffffff");
+    ctx.restore();
+  } else if (since < flashT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "#ffffff");
+  } else if (since < 0.24 && SOFT) {
+    drawBody(ctx, L, fr, bx, bfeet, flip, sx, sy, "", scroll);
   } else if (since < 0.24) {
     // RGB split glitch
     const o = since < 0.15 ? 2 : 1;
@@ -1349,6 +1376,18 @@ export function playerPortrait(kit: PlayerKit, size: number, frame = 0, hires = 
   g.drawImage(wl.glow, 0, 0);
   g.restore();
   g.drawImage(wl.canvas, 0, 0);
+  // element motes (seeded, static) around the general
+  const E = ELEMENTS[L.gear.element];
+  g.save();
+  g.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 7; i++) {
+    const a = (((kit.seed >>> (i * 3)) & 63) / 63) * Math.PI * 2, rr = 0.55 + (((kit.seed >>> (i * 2 + 5)) & 15) / 15) * 0.5;
+    const mx = Math.round(G.cx + Math.cos(a) * 16 * G.r * rr), my = Math.round(G.fy - 20 * G.r + Math.sin(a) * 18 * G.r * rr);
+    g.globalAlpha = 0.5 + (i % 3) * 0.2;
+    g.fillStyle = i % 2 ? E.c : E.cL;
+    g.fillRect(mx, my, G.r, G.r);
+  }
+  g.restore();
   if (L.duck) {
     const d = duckSprite();
     g.drawImage(d, G.cx - 26 * G.r, G.fy - 30 * G.r, d.width * G.r, d.height * G.r);

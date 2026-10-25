@@ -2,7 +2,8 @@
 // ;;, [*], λ, /.*/, // + a selected-text blade) plus an editor "plate" that shows the repo's real top token
 // as readable letters. Pointing right; the hand is the pivot. Auto 1px outline; EPX 2x for edu heroes.
 import type { WeaponKind } from "../../../shared/types.ts";
-import type { HeroLook } from "./look.ts";
+import { ELEMENTS, type HeroLook } from "./look.ts";
+import { shade } from "./color.ts";
 import { glyphBits } from "./font.ts";
 import { scale2x, shadePass, outlinePass, rasterCells, type Cells } from "./hires.ts";
 
@@ -44,6 +45,19 @@ export function weaponWord(L: HeroLook, kind: WeaponKind, max: number): string {
   return (tok ?? DEFAULT_WORD[kind].slice(0, max)).toUpperCase();
 }
 
+// Weapon skin (set per build from L.gear.wskin): classic dark plate, light-theme plate, neon (element glyphs), gilded.
+let PLATE_BG = "#1d1f2b", PLATE_BOT = "#13141c", TEXT_DARKEN = false;
+let GLYPH_OVR = "", GLYPH_OVR_TOP = "";
+function setSkin(L: HeroLook | null) {
+  const sk = L?.gear?.wskin ?? 0;
+  const el = ELEMENTS[L?.gear?.element ?? "arcane"];
+  PLATE_BG = sk === 1 ? "#e6eaf3" : "#1d1f2b";
+  PLATE_BOT = sk === 1 ? "#aeb6c9" : "#13141c";
+  TEXT_DARKEN = sk === 1;
+  GLYPH_OVR = sk === 2 ? el.c : sk === 3 ? "#ffc94a" : "";
+  GLYPH_OVR_TOP = sk === 2 ? el.cL : sk === 3 ? "#fff2b0" : "";
+}
+
 class WGrid {
   cells: Cells;
   /** text stamps, re-drawn unmirrored on the left-facing variant so words stay readable */
@@ -53,6 +67,7 @@ class WGrid {
   rect(x: number, y: number, w: number, h: number, c: string) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, c); }
   /** Bold glyph with a lighter top row for a bit of bevel. Returns its width. */
   glyph(ch: string, x: number, y: number, c: string, top = c): number {
+    if (GLYPH_OVR) { c = GLYPH_OVR; top = GLYPH_OVR_TOP; }
     const rows = BOLD[ch];
     rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] === "X") this.set(x + i, y + j, j === 0 ? top : c); });
     return rows[0].length;
@@ -68,10 +83,10 @@ class WGrid {
   /** Dark editor plate (7 tall) with the word in syntax color; returns its width. */
   plate(word: string, x: number, y: number, txt: string, edge: string): number {
     const w = word.length * 4 + 3;
-    this.rect(x, y, w, 7, "#1d1f2b");
-    this.rect(x, y, w, 1, edge);
-    this.rect(x, y + 6, w, 1, "#13141c");
-    this.text(word, x + 2, y + 1, txt, "#1d1f2b");
+    this.rect(x, y, w, 7, PLATE_BG);
+    this.rect(x, y, w, 1, GLYPH_OVR || edge);
+    this.rect(x, y + 6, w, 1, PLATE_BOT);
+    this.text(word, x + 2, y + 1, TEXT_DARKEN ? shade(txt, 1.4) : txt, PLATE_BG);
     return w;
   }
 }
@@ -215,7 +230,9 @@ export function weaponSprite(L: HeroLook, kind: WeaponKind, res = 1, left = fals
   const key = L.key + "|w2|" + kind + "|" + L.etch + "|" + L.tokens.join(" ") + "|r" + res + (left ? "|L" : "");
   const hit = cache.get(key);
   if (hit) return hit;
+  setSkin(L);
   const { g, hand, tip } = build(L, kind);
+  setSkin(null);
   // crop to content (+margin) so canvases stay small
   let x1 = 0, y1 = 0;
   for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) if (g.cells[y * g.w + x]) { x1 = Math.max(x1, x); y1 = Math.max(y1, y); }

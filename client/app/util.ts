@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { getDevice, isHeadset } from './device';
 // Small DOM + misc helpers shared by the app screens.
 
 type Attrs = Record<string, string | number | boolean | EventListener | undefined | null>;
@@ -117,9 +118,9 @@ export function vibrate(pattern: number | number[]) {
 }
 
 /** Phones: coarse pointer and a short side under 600 CSS px. These play in PORTRAIT. */
-export const isPhone = () => matchMedia("(pointer: coarse)").matches && Math.min(innerWidth, innerHeight) < 600;
+export const isPhone = () => getDevice() !== null ? getDevice() === "phone" : matchMedia("(pointer: coarse)").matches && Math.min(innerWidth, innerHeight) < 600;
 
-export const isTouchDevice = () => matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+export const isTouchDevice = () => !isHeadset() && (getDevice() === "phone" || matchMedia("(pointer: coarse)").matches || "ontouchstart" in window);
 
 /** Typewriter effect into an element; returns a cancel fn. */
 export function typeInto(el: HTMLElement, text: string, cps = 40, done?: () => void): () => void {

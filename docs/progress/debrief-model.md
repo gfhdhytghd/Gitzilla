@@ -21,6 +21,13 @@ DONE (debrief model) — pure logic in `client/edu/debrief.ts` / `debrief.test.t
 - Standalone Vite browser library build of `client/edu/debrief.ts`, configFile:false/write:false: **PASS**, one ES output, no Node/browser-compatibility warnings and no files written. No DOM, student-source inspection, network, clock, storage or service changes in the model.
 - Touched-file whitespace check PASS. No commits, npm install, server changes, live actions or UI mounting edits.
 
+## Damage-budget follow-up (2026-10-25 03:34 local)
+- Production `debrief.ts` already reads frozen `round.bossBefore/bossAfter` for the boss-loss headline and frozen attack scores for grades; no runtime change was required for the new damage budget.
+- Removed the old score/4 formula from synthetic model fixtures. Their nominal damage is intentionally independent of server balancing; a new actual `ClassroomSession` regression verifies the real server's capped proportional damage sums to the boss loss, later steps retain health, an unchanged retry shows zero loss despite score 100, and the first round stays immutable. Submitted Python is only statically analyzed, never executed.
+- Updated focused `npx vitest run client/edu/debrief.test.ts`: **23 PASS / 1 file**. Latest root `npm run typecheck`: **PASS**. No repeat full-suite claim; the 1056-test snapshot above predates this additional regression.
+- Received codex-net's final independent server evidence: **204 PASS / 14 files**, root tsc PASS, DEV5175 three-step LLUH smoke HP40→20→0, enrolled-roster normalization/K1.85, equal weak-score improvement credit within budget, unchanged retry zero, protected future step HP and restart/legacy curves. Those server/live results are its evidence, separate from this module's direct-session test. No contract or frozen aggregate fields changed.
+- Follow-up changes only `client/edu/debrief.test.ts` and this progress report; no server/other client edits or service controls.
+
 ## UI integration notes
 - Import functions and types directly from `./debrief.ts`; this owner did not change `index.ts` or other client files.
 - Feed the exact frozen round plus teacher reports. Round scores never read mutable report.score, and a report from another step/attempt or a non-attacking participant never contributes check results.

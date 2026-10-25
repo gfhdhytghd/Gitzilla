@@ -242,11 +242,13 @@ function laser(ctx: CanvasRenderingContext2D, h: Hazard, p: number, left: number
     const w = h.r + Math.sin(time * 60) * 1.2;
     // the kaiju's atomic breath is cyan and made of </> glyphs; other bosses fire a red beam with the attack name
     // per-archetype beams: kaiju </> atomic breath (cyan), hydra gravity beams (gold), mecha eye laser (red 01), abyssal void ray (cyan/red)
+    // the boss's element (fx.bossTint) recolors the breath / beams; the mecha keeps its red eye laser
+    const T = fx.bossTint;
     const BEAM: Record<string, { mid: string; edge: string; text: string; ink: string }> = {
-      kaiju: { mid: "#9ff8ff", edge: "#3ee6ff", text: "</> ", ink: "#0a3a5a" },
-      dragon: { mid: "#fff0a0", edge: "#ffc030", text: "λ ", ink: "#6a4000" },
+      kaiju: { mid: T?.mid ?? "#9ff8ff", edge: T?.edge ?? "#3ee6ff", text: "</> ", ink: "#0a3a5a" },
+      dragon: { mid: T?.mid ?? "#fff0a0", edge: T?.edge ?? "#ffc030", text: "λ ", ink: "#6a4000" },
       mecha: { mid: "#ffb0a0", edge: "#ff3a1a", text: "01 ", ink: "#5a0a00" },
-      abyssal: { mid: "#c8fbff", edge: fx.boss?.phase === 3 ? "#ff2a3a" : "#2ee6ff", text: "<> ", ink: "#10061a" },
+      abyssal: { mid: T?.mid ?? "#c8fbff", edge: fx.boss?.phase === 3 ? "#ff2a3a" : T?.edge ?? "#2ee6ff", text: "<> ", ink: "#10061a" },
     };
     const beam = BEAM[fx.bossKind];
     const atomic = !!beam;

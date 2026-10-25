@@ -1,3 +1,41 @@
+DONE (hero variety comparison)
+
+## Hero-only AFTER measurement — complete
+- Coordinator confirmed hero variety committed at4ba4f40. Captured current working-tree hero source (git HEAD62d5388, includes4ba4f40) using the exact45 baseline profiles/kits, same Chromium154 and unchanged protocol/thresholds. No product edits, provider calls, commits or shared service actions.
+- Added --kind heroes|bosses|all: capture/import only the selected renderer and scope source fingerprints accordingly. Partial reports do not replace the full baseline/latest summary. Verified no boss source file was loaded; all baseline files and boss sheets are byte-for-byte unchanged from HEAD. Boss rerun remains pending claude-boss completion.
+- **Before→after (all45 /990 pairs):**
+
+| View | Min distance | Mean distance | Look-alike pairs / clusters | Shape-only pairs | Pooled palette entropy bits |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| heroes-portraits | 0.01410→0.21770 | 0.44753→0.49137 | 10 / 10→0 / 0 | 43→1 | 5.4861→6.1825 |
+| heroes-fight | 0.01917→0.18753 | 0.36255→0.39550 | 11 / 9→0 / 0 | 55→35 | 5.3256→5.8117 |
+
+- Fallback-only15: portrait min0.17747→0.27344; fight min0.11084→0.21483. Combined look-alike pairs remain0 for that subset. All90 hero images reproduced pixel-for-pixel in a second fresh Chromium context, browser errors0. Viewed both sheets; pre-existing S16 portrait edge touch remains, no new edge touches.
+- Output: docs/variety/after-heroes/{heroes-portraits.png,heroes-fight.png,summary.json,fixtures.json}; comparison/commands added to docs/variety/README.md. Original frozen source67cb5a9 and fixture SHA0c7618… remain unchanged.
+- **6/6 metric/selection tests PASS; workspace npx tsc --noEmit PASS; owned diff check PASS.** No boss capture or product changes. Run `--label after-bosses --kind bosses --fixtures docs/variety/baseline/fixtures.json --compare docs/variety/baseline/summary.json` only after its owner is finished.
+
+DONE (variety baseline)
+
+## Variety measurement tooling — baseline complete
+- Read docs/tasks/variety.md Measure first. Added tools/variety-sheet.ts plus5 meaningful metric/fixture tests. Scope stayed tooling/artifacts/this log; no product edits, provider calls, room creation, shared server actions or commits. Only existing DEV5175 browser origin is allowed;5173 is rejected.
+-45 frozen inputs:15 public fallback repos with current bundled Gemini designs +30 deterministic explicitly synthetic profiles spanning languages, LOC, ages, cycles, component count, tests and contributors. Synthetic paths include15 seed-only and15 deterministic-design kits. All6 hero classes/all4 boss archetypes represented.
+- Renderer owners began modifying files while this tool was built. Discarded the preliminary working-tree capture and pinned final BEFORE source to pre-variety task commit67cb5a9619e56be9c2018d134458e1d20b73b760. Read unchanged renderer/shared modules from git and compile them only inside the isolated browser fixture; no checkout/reset/product rewrites. Every renderer dependency is pinned; unknown render imports fail closed. Frozen profiles/kits/source hashes are saved for AFTER comparisons.
+- Actual headless Chromium154.0.8037.97 executes playerPortrait/drawPlayer and bossPortrait/drawBoss at idle t=.35, phase1/frame0. Four PNG sheets each contain45 images. No product app/room/3D/animation/hardware acceptance is claimed. Visually inspected all sheets; S16 hero portrait touches its canvas edge (existing potential duck/prop crop), recorded rather than patched.
+- Metric protocol: alpha≥128 foreground crop;64-bit9×8 dHash;512-bin RGB histogram total variation; combined distance=.5*dHash+.5*histogram. Same-class/archetype look-alike edges require≤8 bits AND≤.20 histogram distance; connected components≥2 define clusters. Also report shape-only matches at the same8-bit cutoff, pooled/per-image/between-image palette entropy, nearest pairs, origin subsets and all per-class/archetype groups. Scores exclude sheet labels/background.
+- **Baseline numbers (all45 inputs,990 pairs/view):**
+
+| View | Min combined | Mean combined | Look-alike pairs / clusters | Shape-only pairs | Pooled palette entropy bits |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| heroes-portraits | 0.01410 | 0.44753 | 10 / 10 | 43 | 5.4861 |
+| heroes-fight | 0.01917 | 0.36255 | 11 / 9 | 55 | 5.3256 |
+| bosses-portraits | 0.01365 | 0.41421 | 68 / 8 | 144 | 4.9532 |
+| bosses-fight | 0.01554 | 0.41145 | 67 / 8 | 150 | 4.9722 |
+
+- Fallback-only15: hero portraits min.17747 /0 look-alike pairs; hero fight.11084 /0; boss portraits.07916 /8 pairs in4 clusters; boss fight.07206 /10 pairs in4 clusters. Full per-group and nearest-pair data are in JSON.
+- Artifacts: docs/variety/summary.json (latest), docs/variety/baseline/summary.json, baseline/fixtures.json, baseline/{heroes-portraits,heroes-fight,bosses-portraits,bosses-fight}.png, baseline/repeat-check.json, docs/variety/README.md. Fixture SHA256:0c7618bfd91a29f2821beb2b6ddea24076c3ca42354ea94f36de007dbc7f55f2.
+- **Validation:**5/5 tool tests PASS; each capture's second fresh Chromium context reproduces all180 pixel hashes. Independent source-pinned --compare selfcheck also reproduces all180 pixels and all metric deltas are exactly0. Owned diff check PASS. Global tsc during active boss art edits had5 external diagnostics about PlateLayout.style / kaiju.fins / kaiju.mat in client/render/boss/index.ts; those files were left to their owner. Final workspace `npx tsc --noEmit` recheck PASS after the art owner’s concurrent updates. No product fixes were made by this tooling task.
+- AFTER handoff: `npx tsx tools/variety-sheet.ts --label after --fixtures docs/variety/baseline/fixtures.json --compare docs/variety/baseline/summary.json`. Uses a frozen snapshot of the current working-tree renderer source; baseline remains intact. Do not recapture new art with --label baseline. See README for exact before-source replay.
+
 DONE (flavor polish)
 
 ## Flavor line polish

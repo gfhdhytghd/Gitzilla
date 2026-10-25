@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Locator, type Page } from 'playwright';
 import { completeLandingOnboarding } from './onboarding';
+import { playtestClassroom } from './playtest-edu';
 import type { Autopsy, ClientMsg, GameMode, InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -72,6 +73,7 @@ interface Client {
 }
 
 export async function playtest(options: Options): Promise<number> {
+  if (options.mode === 'edu') return playtestClassroom(options, playtestBaseURL());
   const timestamp = `${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}`;
   const output = join(ROOT, 'docs', 'shots', timestamp);
   mkdirSync(output, { recursive: true });
@@ -290,13 +292,6 @@ export async function playtest(options: Options): Promise<number> {
     log('room', room, true);
     phase = 'joining';
     await optionalJoin(owner);
-    if (options.mode === 'edu') {
-      phase = 'classroom mode selection';
-      await click(owner, 'mode-edu');
-      const deadline = Date.now() + UI_TIMEOUT;
-      while (owner.telemetry.lobby?.mode !== 'edu' && Date.now() < deadline) await sleep(50);
-      if (owner.telemetry.lobby?.mode !== 'edu') throw new IncompleteUI('mode-edu did not change authoritative LobbyState.mode to edu');
-    }
     await Promise.all(clients.slice(1).map(async client => {
       await client.page.goto(`${baseURL}/r/${room}${client.spectator ? '?screen=1' : ''}`, { waitUntil: 'domcontentloaded' });
       await completeLandingOnboarding(client.page, { controls: 'touch', touch: client.phone });
@@ -316,11 +311,9 @@ export async function playtest(options: Options): Promise<number> {
         }
       }
     }));
-    if (options.mode === 'battle') {
-      await (await required(owner, 'boss-repo-input')).fill(options.boss);
-      await click(owner, 'boss-repo-submit');
-      await waitForReady(owner, 'boss-ready');
-    }
+    await (await required(owner, 'boss-repo-input')).fill(options.boss);
+    await click(owner, 'boss-repo-submit');
+    await waitForReady(owner, 'boss-ready');
     await capturePair('lobby');
     // Rendering and the Playwright WS observer can settle on adjacent event turns.
     const readyDeadline = Date.now() + 2000;
@@ -328,15 +321,13 @@ export async function playtest(options: Options): Promise<number> {
       && Date.now() < readyDeadline) await sleep(50);
     const readyCount = owner.telemetry.lobby?.players.filter(player => player.status === 'ready').length ?? 0;
     if (readyCount !== options.players) throw new IncompleteUI(`UI selected repos but server reports ${readyCount}/${options.players} ready players`);
-    phase = options.mode === 'edu' ? 'classroom PvP start' : 'boss intro';
+    phase = 'boss intro';
     await click(owner, 'start-match');
     startedAt = Date.now();
     await Promise.all(pair().map(async client => {
-      if (options.mode === 'battle') {
-        try { await client.page.getByTestId('boss-intro').waitFor({ state: 'visible', timeout: 2500 }); }
-        catch { note(`${client.name}: optional boss-intro overlay absent; capturing fight canvas instead`); await required(client, 'game-canvas'); }
-      } else await required(client, 'game-canvas');
-      await screenshot(client, options.mode === 'edu' ? 'classroom-start' : 'boss-intro');
+      try { await client.page.getByTestId('boss-intro').waitFor({ state: 'visible', timeout: 2500 }); }
+      catch { note(`${client.name}: optional boss-intro overlay absent; capturing fight canvas instead`); await required(client, 'game-canvas'); }
+      await screenshot(client, 'boss-intro');
     }));
     await Promise.all(clients.filter(c => !c.spectator).map(client => required(client, 'game-canvas')));
     phase = 'fight';
@@ -441,16 +432,6 @@ export async function playtest(options: Options): Promise<number> {
     }
     for (const client of fighters) {
       const t = client.telemetry;
-      if (options.mode === 'edu' && (t.snapshot?.mode !== 'edu' || t.snapshot.boss !== null || t.snapshot.heroScale !== 2 || !t.snapshot.pvp)) {
-        throw new IncompleteUI(`${client.name}: classroom snapshot must have mode=edu, boss=null, heroScale=2 and PvP scoring`);
-      }
-      if (options.mode === 'edu' && t.snapshot?.players.some(player => !player.kit.quality?.length)) {
-        throw new IncompleteUI(`${client.name}: classroom hero is missing its code-quality report card`);
-      }
-      if (options.mode === 'edu' && t.result && (t.result.mode !== 'edu' || t.result.boss !== null
-        || t.result.ranking?.length !== options.players)) {
-        throw new IncompleteUI(`${client.name}: classroom autopsy must have no boss and a ranking for every student`);
-      }
       if (!t.fightingSnapshots || !t.inputs || !t.moving || !t.firing || t.ack < 1) {
         throw new IncompleteUI(`${client.name}: missing end-to-end snapshot/ack/movement/fire evidence (${JSON.stringify(totals(t))})`);
       }

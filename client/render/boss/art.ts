@@ -6,6 +6,7 @@
 import type { BossKit } from "../../../shared/types.ts";
 import { hexToRgb, mix, ramp, rgbToHex, rgbToHsl, shiftHue, type RGB } from "../arena/pix.ts";
 import type { Material } from "./layout.ts";
+import { bossVariety, type ElementDef, type FinColors } from "./variety.ts";
 
 export interface BossArt {
   outline: string;
@@ -20,6 +21,11 @@ export interface BossArt {
   bone: string;        // teeth, sclera, horns
   boneRamp: string[];
   inside: string;      // maw / socket interior
+  /** element theme (variety.ts): fins, breath / FX tint, eyes, veins */
+  el: ElementDef;
+  /** calm / charged fin colors (element, hue-jittered like the hide) */
+  fin: FinColors;
+  lit: FinColors;
 }
 
 const cache = new Map<string, BossArt>();
@@ -31,7 +37,8 @@ function darkest(c: RGB): RGB {
 
 /** tint: 0 normal, 1 enraged (red), 2 last stand (dark, burning) */
 export function bossArt(kit: BossKit, tint = 0): BossArt {
-  const key = kit.seed + "|" + kit.palette.join(",") + "|" + tint + "|" + (kit.design ? 1 : 0);
+  const V = bossVariety(kit);
+  const key = kit.seed + "|" + kit.palette.join(",") + "|" + tint + "|" + (kit.design ? 1 : 0) + "|" + V.element.id + V.hue + V.form;
   const c = cache.get(key);
   if (c) return c;
   const p = kit.palette.length >= 5 ? kit.palette : ["#160f25", "#59365e", "#7cf2c8", "#ff527d", "#fff4c4"];
@@ -60,22 +67,31 @@ export function bossArt(kit: BossKit, tint = 0): BossArt {
   body[0] = mix(body[0], outlineRgb, 0.35);
   const mk = (c: RGB) => { const r = ramp(c, 6); r[0] = mix(r[0], outlineRgb, 0.35); return r; };
   const redden = (c: RGB) => (tint === 1 ? mix(c, [190, 30, 50], 0.35) : tint === 2 ? mix(c, [120, 10, 40], 0.3) : c);
+  // element hide (variety.ts): mostly the element, a little of the repo's own color, a per-repo hue jitter.
+  // Enraged it darkens toward red-black (refs boss-5); last stand near-black.
+  const el = V.element;
+  const jit = (c: RGB) => shiftHue(c, V.hue, 1, 0);
+  const hide0 = jit(mix(hexToRgb(el.hide), base, 0.12));
+  const hide = tint === 2 ? mix(hide0, [14, 12, 16], 0.7) : tint === 1 ? mix(hide0, [70, 12, 24], 0.45) : hide0;
+  const hide2 = mix(hide, jit(hexToRgb(el.hide2)), 0.5);
+  // brighter takes on the hide (painted mech hulls, the hydra's shining scales, an insect's glossy shell)
+  const atLeast = (c: RGB, l: number, sMul = 1.1): RGB => { const [, , l0] = rgbToHsl(c); return shiftHue(c, 0, sMul, Math.max(0, l - l0)); };
   const mats: Record<Material, RGB[]> = {
     flesh: body,
     scales: body,
-    chitin: mk(shiftHue(base, 0, 1.1, -0.05)),
-    stone: mk(redden(mix(base, [118, 116, 124], 0.55))),
-    metal: mk(redden(mix(base, [140, 144, 154], 0.82))),                       // mecha steel (ref boss-3)
+    chitin: mk(atLeast(mix(hide, hide2, 0.3), 0.3, 1.2)),                     // insectoid shell
+    stone: mk(mix(hide, [118, 116, 124], 0.4)),                              // golem rock in the element's tint
+    metal: mk(mix(atLeast(hide, 0.48, 1.35), [150, 154, 164], 0.2)),         // steel hull painted in the element (ref boss-3)
     bark: mk(redden(mix(base, [104, 72, 48], 0.65))),
     foliage: mk(redden(mix(base, [70, 150, 80], 0.72))),
     sclera: mk(tint ? mix(bone, danger, 0.35) : mix(bone, base, 0.12)),
-    // kaiju hide (refs boss-1/4): very dark teal with a hint of the repo hue; enraged it goes near-black (ref boss-5)
-    obsidian: mk(tint === 2 ? mix(base, [14, 12, 16], 0.9) : tint === 1 ? mix(base, [22, 20, 26], 0.86) : mix(base, [24, 53, 50], 0.8)),
-    // hydra dragon: golden scales (ref boss-2); abyssal: near-black crystal (ref boss-5)
-    gold: mk(tint === 2 ? mix(base, [40, 30, 20], 0.85) : tint === 1 ? mix(base, [150, 90, 30], 0.8) : mix(base, [196, 150, 48], 0.85)),
-    void: mk(mix(base, [18, 16, 24], 0.92)),
-    // pale grey-teal underside
-    belly: mk(tint ? mix(base, [74, 70, 76], 0.85) : mix(base, [106, 138, 135], 0.85)),
+    // kaiju / hydra hide: the element (jade = the original dark teal, gilded = the original hydra gold)
+    obsidian: mk(hide),
+    gold: mk(tint ? hide : atLeast(hide, 0.45, 1.25)),
+    // abyssal: a darker take on the element (void = the original near-black crystal)
+    void: mk(mix(hide, [10, 8, 14], 0.45)),
+    // underside
+    belly: mk(tint ? mix(hide, [74, 70, 76], 0.6) : jit(mix(hexToRgb(el.belly), base, 0.15))),
   };
   const flesh = ramp(shiftHue(base, -22, 1.1, -0.04), 4);
   const art: BossArt = {
@@ -91,9 +107,17 @@ export function bossArt(kit: BossKit, tint = 0): BossArt {
     bone: rgbToHex(bone),
     boneRamp: ramp(mix(bone, base, 0.15), 4).map(rgbToHex),
     inside: rgbToHex(mix(outlineRgb, danger, 0.18)),
+    el,
+    fin: jitFin(el.crystal, V.hue),
+    lit: el.lit,
   };
   cache.set(key, art);
   return art;
+}
+
+function jitFin(f: FinColors, hue: number): FinColors {
+  const j = (h: string) => rgbToHex(shiftHue(hexToRgb(h), hue, 1, 0));
+  return { lo: j(f.lo), mid: j(f.mid), hi: j(f.hi), glow: j(f.glow) };
 }
 
 export function matRamp(art: BossArt, m: Material): string[] {

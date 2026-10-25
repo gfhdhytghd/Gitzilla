@@ -14,6 +14,10 @@ export interface SavedPlayer {
   privateRepo?: boolean;
   botSeed?: number;
   identities?: string[]; // SHA-256 identity fingerprints; never provider credentials.
+  githubIdentity?: string; // SHA-256 of the authenticated GitHub ID, private to the server.
+  controllerToken?: string; // Room controller resume token; cannot resume a display/player.
+  needsController?: boolean; // Durable display policy, not a saved permission grant.
+  screenHostPending?: boolean; // Explicit creation reservation, consumed by its first screen hello.
   lobby: LobbyPlayer;
 }
 export interface SavedRoom {
@@ -45,7 +49,7 @@ export class RoomStore {
       const hashes = (values: unknown) => Array.isArray(values) ? values.filter((hash): hash is string => typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash)) : [];
       return data.rooms.filter(room => /^[A-Z]{4}$/.test(room.code) && Array.isArray(room.players)).map(room => ({ ...room,
         bans: { tokens: hashes(room.bans?.tokens), identities: hashes(room.bans?.identities) },
-        players: room.players.map(player => ({ ...player, identities: hashes(player.identities) })),
+        players: room.players.map(player => ({ ...player, identities: hashes(player.identities), needsController: player.needsController === true })),
       }));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') console.warn('Room persistence could not be restored; stale room codes can still be recreated.');

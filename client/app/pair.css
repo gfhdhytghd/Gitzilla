@@ -1,0 +1,232 @@
+/* Phone-as-controller visuals (claude-auth): display panel, phone offer card, controller screen. */
+
+/* ---------- display: "📱 use your phone as the controller" ---------- */
+.pair-panel {
+  margin-top: 12px; padding: 12px 14px 14px; position: relative;
+  border: 2px dashed rgba(255, 176, 0, .55); background: rgba(255, 176, 0, .05);
+  font-family: var(--term); color: var(--text); white-space: normal; overflow-wrap: anywhere;
+}
+.pair-panel[hidden] { display: none; }
+.pair-panel .pp-head { font-family: var(--pix); font-size: 11px; line-height: 1.5; color: var(--amber); letter-spacing: .5px; }
+.pair-panel .pp-head.ok { color: var(--green); text-shadow: 0 0 10px rgba(57, 255, 136, .45); }
+.pair-panel .pp-sub { margin-top: 6px; font-size: 16px; color: var(--dim); }
+.pair-panel .pp-row { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
+.pair-panel .pp-code {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; padding: 8px 12px 10px;
+  font-family: var(--pix); font-size: 26px; letter-spacing: 6px; color: #0b0f0a; background: var(--amber);
+  box-shadow: 0 0 0 3px #000, 0 0 22px rgba(255, 176, 0, .35); text-shadow: 2px 2px 0 rgba(255, 255, 255, .35);
+}
+.pair-panel .pp-code small { font-family: var(--small); font-size: 8px; letter-spacing: 2px; text-transform: uppercase; opacity: .7; margin-bottom: 4px; text-shadow: none; }
+.pair-panel .pp-text { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pair-panel .pp-open { font-size: 17px; line-height: 1.35; }
+.pair-panel .pp-url { color: var(--cyan); }
+.pair-panel .pp-login { color: var(--yellow); }
+.pair-panel .pp-copy { align-self: flex-start; }
+.pair-panel .pp-copy.copied { color: #04120a; background: var(--green); }
+.pair-panel .pp-connect { margin-top: 10px; }
+.pair-panel .gh-mark { font-size: 14px; }
+.pair-panel[data-state="paired"] { border-style: solid; border-color: rgba(57, 255, 136, .6); background: rgba(57, 255, 136, .06); }
+.pair-panel .pp-unlink { margin-top: 8px; }
+/* compact variant for the game / XR pre-entry overlay */
+.pair-panel.compact { max-width: 420px; margin: 10px auto 0; background: rgba(3, 8, 6, .92); }
+.pair-panel.compact .pp-code { font-size: 20px; letter-spacing: 4px; }
+
+/* ---------- headset (required) variant: Vision Pro Safari ----------
+   Read at arm's length through a headset: integer-scaled bitmap fonts (Unifont 2x = 32px, Press Start 3x = 24px),
+   near-white on near-black, no dim grey for anything you must read, >= 64px gaze/pinch targets, lots of air. */
+.pair-panel.required {
+  --hi: #f4fff8; --now: #ffc53d; --done: #4dff9a;
+  max-width: 1180px; margin: 10px auto 22px; padding: 32px 36px 34px; border: 4px solid var(--now); background: #05080a;
+  box-shadow: 0 0 0 4px #000, 0 0 48px rgba(255, 197, 61, .28); color: var(--hi); font-size: 32px; line-height: 1.35;
+}
+.pair-panel.required[data-state="paired"] { border-color: var(--done); box-shadow: 0 0 0 4px #000, 0 0 48px rgba(77, 255, 154, .28); }
+.pair-panel.required .pr-head { font-family: var(--pix); font-size: 24px; line-height: 1.5; color: var(--now); }
+.pair-panel.required[data-state="paired"] .pr-head { color: var(--done); }
+.pair-panel.required .pr-why { margin-top: 10px; color: #cfe9dc; }
+.pair-panel.required .pr-steps { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.pair-panel.required .pr-step { display: grid; grid-template-columns: 64px 1fr; gap: 22px; align-items: center; padding: 16px 22px; background: #0b1214; box-shadow: inset 0 0 0 2px #24343a; }
+.pair-panel.required .pr-num {
+  width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-family: var(--pix); font-size: 24px;
+  color: #05080a; background: #8fa7a0; box-shadow: 0 0 0 3px #000;
+}
+.pair-panel.required .pr-step[data-s="now"] { background: #1a1504; box-shadow: inset 0 0 0 3px var(--now); }
+.pair-panel.required .pr-step[data-s="now"] .pr-num { background: var(--now); animation: pr-pulse 1.6s ease-in-out infinite; }
+.pair-panel.required .pr-step[data-s="next"] .pr-num { background: #d9e6e1; }
+.pair-panel.required .pr-step[data-s="done"] .pr-num { background: var(--done); }
+.pair-panel.required .pr-step[data-s="done"] .pr-body { color: #bfe8d2; }
+.pair-panel.required .pr-step[data-s="todo"] { opacity: .78; }
+@keyframes pr-pulse { 50% { box-shadow: 0 0 0 3px #000, 0 0 26px var(--now); } }
+/* one wide row per step: text, then the URL / code / button inline, wrapping only when the window is narrow */
+.pair-panel.required .pr-body { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; overflow-wrap: anywhere; }
+.pair-panel.required .pr-login { color: #7fe7ff; font-weight: normal; }
+.pair-panel.required .pr-url { font-size: 32px; line-height: 1.2; color: #ffffff; letter-spacing: 1px; padding: 8px 14px; background: #10202a; box-shadow: inset 0 0 0 2px #2e5566; }
+.pair-panel.required .pr-code { margin-left: auto; display: flex; align-items: baseline; gap: 16px; font-family: var(--pix); font-size: 40px; letter-spacing: 8px; color: #05080a; background: var(--now); padding: 14px 22px; box-shadow: 0 0 0 4px #000; }
+.pair-panel.required .pr-code small { font-family: var(--small); font-size: 16px; letter-spacing: 3px; text-transform: uppercase; }
+.pair-panel.required .pr-btn, .pair-panel.required .pr-unlink { min-height: 72px; padding: 14px 28px; font-size: 20px; margin: 0; }
+.pair-panel.required .pr-btn { margin-left: auto; }
+.pair-panel.required .pr-status {
+  margin-top: 20px; padding: 20px 24px; display: flex; align-items: center; gap: 18px; font-size: 32px;
+  background: #1a1504; color: var(--now); box-shadow: inset 0 0 0 3px var(--now);
+}
+.pair-panel.required .pr-status[data-s="paired"] { background: #071a10; color: var(--done); box-shadow: inset 0 0 0 3px var(--done); }
+.pair-panel.required .pr-status[data-s="ready"] { background: var(--done); color: #04120a; box-shadow: 0 0 0 4px #000, 0 0 32px rgba(77, 255, 154, .45); }
+.pair-panel.required .pr-spin { width: 28px; height: 28px; flex: 0 0 auto; border: 5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: pr-spin 1s linear infinite; }
+@keyframes pr-spin { to { transform: rotate(360deg); } }
+.pair-panel.required .pr-unlink { margin-top: 18px; }
+/* compact required (game / XR pre-entry panel, ~420px wide): same steps at 1x bitmap sizes, no subtitle, scrolls inside
+   itself instead of running off a short viewport; once paired only the status + disconnect remain */
+.pair-panel.required.compact {
+  max-width: none; margin: 0; padding: 14px 16px; font-size: 16px; line-height: 1.4; border-width: 3px;
+  box-shadow: 0 0 0 3px #000, 0 0 24px rgba(255, 197, 61, .22);
+  max-height: max(220px, calc(100dvh - 330px)); overflow-y: auto; overscroll-behavior: contain;
+}
+.pair-panel.required.compact .pr-head { font-size: 12px; }
+.pair-panel.required.compact .pr-why { display: none; }
+.pair-panel.required.compact .pr-steps { margin-top: 12px; gap: 8px; }
+.pair-panel.required.compact .pr-step { grid-template-columns: 32px 1fr; gap: 12px; padding: 10px 12px; }
+.pair-panel.required.compact .pr-num { width: 32px; height: 32px; font-size: 12px; box-shadow: 0 0 0 2px #000; }
+.pair-panel.required.compact .pr-body { gap: 6px 10px; }
+.pair-panel.required.compact .pr-url { font-size: 16px; padding: 3px 8px; letter-spacing: 0; }
+.pair-panel.required.compact .pr-code { margin-left: 0; font-size: 20px; letter-spacing: 4px; padding: 6px 10px; gap: 10px; box-shadow: 0 0 0 3px #000; }
+.pair-panel.required.compact .pr-code small { font-size: 8px; letter-spacing: 2px; }
+.pair-panel.required.compact .pr-btn, .pair-panel.required.compact .pr-unlink { min-height: 48px; padding: 8px 14px; font-size: 12px; }
+.pair-panel.required.compact .pr-btn { margin-left: 0; }
+.pair-panel.required.compact .pr-status { margin-top: 12px; padding: 10px 12px; gap: 10px; font-size: 16px; }
+/* the live status stays visible when the card scrolls inside a short viewport */
+.pair-panel.required.compact .pr-status { position: sticky; bottom: -14px; z-index: 1; background-color: #1a1504; }
+.pair-panel.required.compact .pr-status[data-s="paired"] { background-color: #071a10; }
+.pair-panel.required.compact .pr-spin { width: 18px; height: 18px; border-width: 3px; }
+.pair-panel.required.compact[data-state="paired"] { padding: 10px 12px; }
+.pair-panel.required.compact[data-state="paired"] :is(.pr-head, .pr-why, .pr-steps) { display: none; }
+.pair-panel.required.compact[data-state="paired"] .pr-status { margin-top: 0; }
+.pair-panel.required.compact .pr-unlink { margin-top: 10px; }
+/* in the fight (game.ts toggles .in-fight): paired → just a small status pill; unpaired stays visible on a headset,
+   because without the phone that seat can't play (overrides the generic compact .in-fight rules in style.css) */
+.pair-panel.required.compact.in-fight:not([data-state="paired"]) { display: block; }
+.pair-panel.required.compact.in-fight[data-state="paired"] { padding: 4px; border-width: 2px; background: rgba(3, 8, 6, .85); }
+.pair-panel.required.compact.in-fight[data-state="paired"] > .pr-status { display: flex; padding: 6px 10px; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .pair-panel.required .pr-spin, .pair-panel.required .pr-step[data-s="now"] .pr-num { animation: none; } }
+
+/* ---------- phone: offer card ---------- */
+.screen.controller-offer {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255, 176, 0, .12), transparent 60%), var(--bg); overflow: auto;
+}
+.controller-offer .term-window { width: min(100%, 440px); }
+.controller-offer .co-body { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 18px 16px 20px; white-space: normal; overflow-wrap: anywhere; }
+.controller-offer .co-phone {
+  width: 64px; height: 108px; border-radius: 10px; border: 3px solid var(--amber); padding: 8px 5px 14px; position: relative;
+  box-shadow: 0 0 0 3px #000, 0 0 30px rgba(255, 176, 0, .3); animation: co-bob 2.4s ease-in-out infinite;
+}
+.controller-offer .co-phone::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 14px; height: 3px; margin-left: -7px; background: var(--amber); }
+.controller-offer .co-screen { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 28px; background: rgba(255, 176, 0, .14); }
+@keyframes co-bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
+.controller-offer .co-title { font-family: var(--pix); font-size: 14px; color: var(--amber); margin: 6px 0 0; line-height: 1.5; }
+.controller-offer .co-who { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 17px; color: var(--dim); }
+.controller-offer .co-avatar { width: 28px; height: 28px; image-rendering: pixelated; box-shadow: 0 0 0 2px var(--green-d); }
+.controller-offer .co-warn { font-size: 16px; color: var(--yellow); }
+.controller-offer .co-err { font-size: 16px; color: var(--red); }
+.controller-offer .co-use { align-self: stretch; min-height: 64px; margin-top: 6px; font-size: 12px; line-height: 1.6; white-space: normal; }
+.controller-offer .co-use[disabled] { opacity: .75; }
+.controller-offer .co-here { margin-top: 4px; font-size: 18px; }
+
+/* ---------- phone: controller screen ---------- */
+.screen.controller-screen {
+  position: fixed; inset: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  background:
+    repeating-linear-gradient(0deg, rgba(57, 255, 136, .035) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 100%, rgba(61, 232, 255, .10), transparent 55%), var(--bg);
+  font-family: var(--term); color: var(--text); user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.controller-screen .cs-head { display: flex; align-items: center; gap: 8px; font-family: var(--small); font-size: 10px; letter-spacing: 1px; }
+.controller-screen .cs-badge::before { content: "🎮"; font-size: 16px; }
+.controller-screen .cs-room { color: var(--amber); flex: 1; }
+.controller-screen .cs-link { color: var(--green); }
+.controller-screen .cs-link[data-status="connecting"], .controller-screen .cs-link[data-status="closed"] { color: var(--yellow); animation: cs-blink 1s steps(2) infinite; }
+@keyframes cs-blink { 50% { opacity: .35; } }
+
+.controller-screen .cs-hero { display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--panel); box-shadow: 0 0 0 2px var(--line); }
+.controller-screen .cs-pic { flex: 0 0 auto; }
+.controller-screen .pc-portrait { background: #0a1410; box-shadow: 0 0 0 2px var(--green-d); display: flex; align-items: center; justify-content: center; }
+.controller-screen .pc-portrait canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+.controller-screen .cs-hero-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.controller-screen .cs-name { font-family: var(--pix); font-size: 11px; color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.controller-screen .cs-title { font-size: 14px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.controller-screen .cs-bar { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 6px; font-family: var(--small); font-size: 8px; }
+.controller-screen .cs-bar[hidden] { display: none; }
+.controller-screen .cs-bar b { font-family: var(--term); font-size: 13px; font-weight: normal; color: var(--dim); min-width: 46px; text-align: right; }
+.controller-screen .cs-track { height: 9px; background: #10181a; box-shadow: 0 0 0 1px #000; overflow: hidden; }
+.controller-screen .cs-track i { display: block; height: 100%; width: 100%; transition: width .18s linear; }
+.controller-screen .cs-bar.hp i { background: var(--red); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .3); }
+.controller-screen .cs-bar.armor i { background: #9aa7b0; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .3); }
+.controller-screen .cs-bar.energy i { background: var(--cyan); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .3); }
+
+.controller-screen .cs-look { text-align: center; font-family: var(--pix); font-size: 12px; line-height: 1.5; color: var(--yellow); animation: cs-look 2.2s ease-in-out infinite; }
+@keyframes cs-look { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.controller-screen .cs-sub { text-align: center; font-size: 17px; color: var(--dim); min-height: 22px; }
+.controller-screen .cs-sub[data-tone="go"] { color: var(--green); }
+.controller-screen .cs-sub[data-tone="ok"] { color: var(--green); font-family: var(--pix); font-size: 14px; }
+.controller-screen .cs-sub[data-tone="bad"] { color: var(--red); }
+.controller-screen .cs-controls { overflow: auto; max-height: 52vh; flex: 0 0 auto; }
+.controller-screen .cs-controls[hidden] { display: none; }
+.controller-screen .cs-controls .controls-card { margin: 0; }
+.controller-screen .cs-sensor-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.controller-screen .cs-sensor { font-family: var(--small); font-size: 9px; color: var(--dim); }
+.controller-screen .cs-sensor[data-on="1"] { color: var(--green); }
+.controller-screen .cs-recal[hidden], .controller-screen .cs-sensor-row [hidden] { display: none; }
+.controller-screen[data-phase="lobby"] .cs-sensor-row, .controller-screen[data-phase="autopsy"] .cs-sensor-row { display: none; }
+
+/* move pad: the whole screen is the touch surface (client/input); the ring just shows the stick */
+.controller-screen .cs-pad { flex: 1 1 auto; min-height: 72px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background: radial-gradient(circle at 50% 50%, rgba(57, 255, 136, .06), transparent 65%); box-shadow: inset 0 0 0 1px rgba(57, 255, 136, .14); }
+.controller-screen .cs-ring { width: 108px; height: 108px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px rgba(57, 255, 136, .35), inset 0 0 24px rgba(57, 255, 136, .12); }
+.controller-screen .cs-knob { width: 40px; height: 40px; border-radius: 50%; background: var(--green-d); box-shadow: 0 0 0 3px #000, 0 0 16px rgba(57, 255, 136, .6); transition: transform .05s linear; }
+.controller-screen .cs-pad.firing .cs-ring { box-shadow: 0 0 0 2px var(--yellow), inset 0 0 28px rgba(255, 210, 61, .3); }
+.controller-screen .cs-pad-hint { font-size: 15px; color: var(--dim); text-align: center; }
+
+/* big DASH / SKILL: --cd 0..1 fills from the bottom; full = ready */
+.controller-screen .cs-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.controller-screen .cs-act {
+  --cd: 1; --c: var(--cyan); position: relative; min-height: 104px; border: 0; cursor: pointer; overflow: hidden; touch-action: manipulation;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #04120a;
+  font-family: var(--pix); font-size: 15px; background: #0e1a1c; box-shadow: 0 0 0 3px #000, inset 0 0 0 2px var(--c);
+}
+.controller-screen .cs-act.skill { --c: var(--magenta); }
+.controller-screen .cs-act::before { content: ""; position: absolute; inset: 0; transform-origin: bottom; transform: scaleY(var(--cd)); background: var(--c); opacity: .9; transition: transform .1s linear; }
+.controller-screen .cs-act > * { position: relative; }
+.controller-screen .cs-act small { font-family: var(--small); font-size: 9px; letter-spacing: 1px; }
+.controller-screen .cs-act[data-ready="0"] { color: var(--text); }
+.controller-screen .cs-act[data-ready="0"]::before { opacity: .35; }
+.controller-screen .cs-act[data-ready="1"] { box-shadow: 0 0 0 3px #000, 0 0 22px color-mix(in srgb, var(--c) 55%, transparent); }
+.controller-screen .cs-act.hit { animation: cs-press .18s ease-out; }
+@keyframes cs-press { 0% { transform: scale(.94); filter: brightness(1.6); } 100% { transform: scale(1); filter: none; } }
+.controller-screen .cs-unlink { align-self: center; font-size: 16px; }
+
+/* got hit: a red RGB-split edge flash */
+.controller-screen .cs-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; box-shadow: inset 0 0 0 6px var(--red), inset 4px 0 40px rgba(255, 51, 85, .5), inset -4px 0 40px rgba(61, 232, 255, .35); }
+.controller-screen .cs-flash.on { animation: cs-flash .32s ease-out; }
+@keyframes cs-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* end card (unlinked / taken over / removed) */
+.controller-screen .cs-end { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(2, 5, 4, .9); }
+.controller-screen .cs-end[hidden] { display: none; }
+.controller-screen .cs-end .term-window { width: min(100%, 420px); }
+.controller-screen .cs-end .term-body { white-space: normal; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 10px; }
+.controller-screen .cs-end h2 { font-family: var(--pix); font-size: 13px; line-height: 1.6; color: var(--amber); margin: 0; }
+.controller-screen .cs-end .btn { align-self: stretch; margin: 0; text-align: center; }
+.controller-screen.ended > :not(.cs-end):not(.cs-flash) { filter: grayscale(1) brightness(.5); }
+
+/* controls card open (lobby, or controls not chosen yet): the card takes the stick's room */
+.controller-screen.choosing .cs-pad { display: none; }
+.controller-screen.choosing .cs-controls { flex: 1 1 auto; max-height: none; min-height: 0; }
+.controller-screen.choosing .cs-act { min-height: 84px; }
+@media (max-height: 640px) {
+  .controller-screen .cs-act { min-height: 82px; }
+  .controller-screen .cs-ring { width: 84px; height: 84px; }
+  .controller-screen .pc-portrait { width: 56px !important; height: 56px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .controller-offer .co-phone, .controller-screen .cs-look { animation: none; }
+}

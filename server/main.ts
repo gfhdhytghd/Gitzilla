@@ -23,6 +23,9 @@ import { handleTraceRoute, TraceStore } from './traces.ts';
 import { handleEduRoute } from './edu-http.ts';
 import { defaultRubric, parseRubric, scoreRepo, buildFeedback } from '../rubric/index.ts';
 import { RoyaleHall } from './royale-hall.ts';
+import { resolveGithubIdentity } from './github-identity.ts';
+import { handleControllerRoute } from './controller-http.ts';
+import { handleRoomCreate } from './room-http.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const traces = new TraceStore(process.env.TRACES_DIR || resolve(root, '.cache/traces'));
@@ -53,6 +56,7 @@ server.on('upgrade', (request, socket, head) => {
 });
 const rooms = new RoomServer(wss, {
   recordReceipts: input => receiptService?.record(input) ?? {},
+  getGithubIdentity: (request, session) => resolveGithubIdentity(request, session, getGithubToken),
   analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
@@ -117,21 +121,14 @@ server.on('request', (req, res) => {
       return;
     }
     const url = new URL(req.url || '/', 'http://localhost');
+    if (await handleControllerRoute(req, res, url, rooms)) return;
     if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
       json(res, 404, { error: 'Not found' }); return;
     }
     if (await handleReceiptRoute(req, res, url, receiptService)) return;
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
     if (await handleEduRoute(req, res, url, rooms)) return;
-    if (url.pathname === '/api/room' && req.method === 'POST') {
-      req.resume();
-      const mode = url.searchParams.get('mode');
-      if (mode && mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') { json(res, 400, { error: 'Choose battle, classroom, or PvP mode' }); return; }
-      const room = rooms.createRoom(undefined, mode === 'edu' ? 'edu' : mode === 'pvp' ? 'pvp' : 'battle');
-      printRoomQr(room);
-      json(res, 201, { room });
-      return;
-    }
+    if (handleRoomCreate(req, res, url, rooms, printRoomQr)) return;
     if (url.pathname.startsWith('/api/room/') && req.method === 'GET') {
       const code = decodeURIComponent(url.pathname.slice('/api/room/'.length)).toUpperCase();
       if (!/^[A-Z]{4}$/.test(code)) { json(res, 400, { error: 'Use a four-letter room code (A–Z only; no digits).' }); return; }

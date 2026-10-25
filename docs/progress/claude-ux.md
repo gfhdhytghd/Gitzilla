@@ -1,3 +1,88 @@
+DONE (demo deck pass) — /demo is now a pure presentation:
+- no rooms, sockets or API calls;
+- "Play it yourself" slide with a bundled homepage QR;
+- motion slide gestures redrawn to the real semantics (incl. the new circle spin);
+- photosensitive-safe deck (WCAG 2.3.1);
+- labels fit their boxes.
+Checked in Chromium + WebKit at 1920/1280. Artifacts in docs/ux-shots/demo/. No commits.
+
+## Demo deck pass (coordinator corrections, 2026-10-25)
+- **No hands-on part.**
+  - Removed `client/demo/live.ts`, the join wall, START, the room creation and the big-screen handoff.
+  - Slide 7 is now "Play it yourself": a big QR to https://gitzilla.wilflin.me (bundled `client/demo/qr-home.svg`,
+    generated from server/qr.ts and verified by decoding), the typed URL, 3 steps, and real heroes.
+  - The close slide uses the same QR: "Scan to start playing".
+  - Vision Pro's bottom line is just "Open on Vision Pro".
+  - "Under the hood" no longer calls /api/hall. It shows static facts from code/data: 15 pre-analyzed repos (counted
+    from data/fallback), 4 archetypes, 8 players per raid, 4 UI languages.
+- **Network assertion** (`docs/ux-shots/demo/deckcheck.mjs`, whole deck by keyboard): 0 `/api/*` requests and 0 `/ws`
+  sockets in Chromium and WebKit at 1920 and 1280. The only socket is Vite's dev HMR (`/?token=`), which doesn't
+  exist in prod. The built demo chunk contains no `/api/`, `/ws` or `new WebSocket`.
+- **Motion slide**, each gesture per input/README and docs/tasks/spin-circle.md:
+  - **tilt:** a flat phone tips right / top-down / left / bottom-down, a level ball rolls downhill, and the hero
+    walks that way.
+  - **swing:** one sharp flick with a ghost trail and speed lines → attack.
+  - **twist:** a wrist turn around the long axis, out to ~80° and back → dash.
+  - **spin:** the phone travels a circle by translation only, upright every frame (`motion/spin-strip.png`), with a
+    lagging trail → skill on each completed circle.
+  - Hero inputs fire on the same beats as the animation.
+  - WebKit video: `motion/motion-slide-webkit.webm`.
+- **Overflow:**
+  - "authoritative sim" became "game server" (sub: "authoritative sim · 30 Hz"). The pixel-font word can't fit a
+    pipeline box at any wrap.
+  - The task card's expected output wraps on the slide (it was a scroll box).
+  - Automated check: every text element's scrollWidth ≤ clientWidth and its box stays inside its parent (2 px).
+    Elements still running an entrance animation are skipped. All 13 slides/beats pass in both engines at both sizes.
+- **Photosensitive safety** (always on, not only reduced motion):
+  - Removed screen shake (now a 0.6% smooth swell), glitch transitions (now fade/slide), CRT flicker (static
+    overlay), the title glitch (gentle float) and the close slide's white flash (the boss fades out). The cursor
+    blink is a soft fade.
+  - `flashcheck.mjs`: Chromium screencast ~30 fps for 3 s from each slide's entry (close: 7 s, through the
+    explosion), 64×36 luminance grid. A swing = >10% of the screen changing by >0.2.
+  - Result: every slide 0 swings, max 0 per 1 s, largest change 0–4.4% of the screen.
+  - Positive control (6 Hz full-screen white toggle): FAIL, 13 swings/s. The detector works.
+- **Checks:** root tsc clean; vitest 1285 passed; prod build OK (demo chunk 70 KB / 27.5 KB gzip).
+
+DONE (demo stage) — /demo live-demo slide page: client/demo/ (10 scenes, 13 beats) + one route line in client/app/main.ts. Verified in Chromium + WebKit at 1920 and 1280, Playwright run-through video, fps per scene, live join with 3 simulated phones on :5175. Artifacts in docs/ux-shots/demo/. root tsc clean; vitest 1218 pass. No commits.
+
+## Demo stage (docs/tasks/demo-stage.md)
+- **Open:** `https://gitzilla.wilflin.me/demo` (deep link `?scene=N&beat=B`). Keys: → Space PageDown Enter next ·
+  ← PageUp Backspace back · 1–9, 0 jump · F fullscreen · R next repo (redis → react → flask). Fixed 1920×1080 stage,
+  scaled to the window, so 1280×720 is the same picture.
+- **Scenes** (track badges = targets, never "winner"):
+  1. Title [Grand Prize] · 2. Genesis compile, rotating repos [Gemini] · 3. Repo → kaiju wiring [Gemini]
+  4. Phone motion: 4 gestures driving a real hero / 4 phones + projector royale with kill feed [Mystery Stack, Auth0]
+  5. Three ways to play (real sims) · 6. Classroom: task card + editor / class attack / debrief [Nittany AI]
+  7. Join now (live room, QR, hero wall, START) [Mystery Stack] · 8. Under the hood + live /api/hall [Gemini, Auth0]
+  9. Vision Pro tabletop (stage25d) · 10. Close: boss explodes, "Scan to keep playing" [Grand Prize]
+- **Real parts:** real sim + renderers, data/fallback analyses + data/design Gemini designs, createTaskCard,
+  highlight(), createDebriefCard, playGenesis, createStage25d, POST /api/room + net.ts, /api/qr, /api/hall.
+  Classroom slide uses a labelled sample class. Nothing calls Gemini at runtime; no tokens or private repos.
+- **Robustness:**
+  - Every scene's timers, listeners and frame callbacks go through a Life and die on exit. A probe over 3 full
+    keyboard cycles showed flat intervals (2), timeouts (1), sockets (2: live room + Vite HMR), DOM (98 nodes) and heap.
+  - Wi-Fi down: join shows a local recorded match; hall says "offline", never invented numbers. A dropped socket
+    shows "reconnecting…" and keeps the QR.
+  - The stage is pinned to English (session-only `setClassroomLanguage("en")` + `translate="no"`). The projector
+    laptop's locale can't translate the slides.
+  - Reduced motion: no shake, confetti, glitch or typing; entrances land instantly.
+- **fps** (Chromium headless on the real GPU, 1920): 60 on every scene except Genesis 46–53 (the existing cinematic)
+  and a one-off 110–160 ms hitch entering Vision Pro (3D shader compile). WebKit headless (software): 49–62.
+- **Live join on :5175** (with codex-net's screen host, `POST /api/room?mode=battle&host=screen` → `{room, hostToken}`;
+  the token goes only into the local screen-token slot, never into a URL):
+  - 3 phones joined *before* any action and the stage still hosts ("this screen hosts · ▶ START picks the boss and
+    starts the fight"). The wall showed the real heroes.
+  - START from the stage → setBoss (featured repo) → start → the stage becomes `/r/CODE?screen=1&view=25d`, running
+    the 3D fight (desktop players; `join/5-bigscreen-fight.png`, about 4 s from click to fight).
+  - Simulated iPhones (no sensors): the server refuses start. The stage stays on the wall and shows the reason
+    ("3 phones need to tap enable motion: maya, leo, sam · press START again"); START retries.
+  - Ownership moves to the first player if the stage's socket closes, so the stage only leaves /demo after the
+    match has started. Reloading /demo with phones in the room gives the host to the first phone.
+- **For claude-ui:** the big-screen lobby still says the first phone is host ("waiting for MAYA to start") even when
+  the screen owns the room.
+- **Note:** after START the big-screen page uses the laptop's own language (the English pin is per page).
+- **Checks:** root tsc passes; vitest 1218 passed.
+
 DONE (task text) — 27 preset steps × en/zh/es/fr have a StepBrief, a new title and summary instructions, per-step starter TODO comments and a README; the default lesson is rewritten; check labels are cleaned up. Proposed rewrites for student copy owned by other agents are in docs/classroom-copy.md. Full suite 998 pass, tsc clean, take-edu's 108-case brief validation passes. No commits.
 
 ## Task text: content mapping (for take-edu)

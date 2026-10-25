@@ -1,6 +1,7 @@
 import type { InputFrame, MotionProfile } from '../../shared/types';
 import { createGestureState, gravityMove, normalize, orientationGravity, recognizeGesture, removeGravity, screenTilt } from './gestures';
 import type { Acceleration, RotationRate } from './gestures';
+import { createTiltDashState, recognizeTiltDash } from './tilt-dash';
 import { loadThresholds, sanitizeThresholds, saveThresholds, type GestureThresholds } from './thresholds';
 import { createCalibrationRecorder, type CalibrationRecorder, type GestureNotice } from './calibration';
 import { createSensorTrace, startAutomaticTrace, type SensorTrace } from './trace';
@@ -83,6 +84,8 @@ export function createInput(opts: InputOptions): InputController {
   let disposed = false;
   let seq = 0;
   let dash = false;
+  let tiltDash = createTiltDashState();
+  let dashDirection: [number, number] | null = null;
   let skill = false;
   let mouseFire = false;
   let mouseSkill = false;
@@ -143,7 +146,7 @@ export function createInput(opts: InputOptions): InputController {
   });
   const notify = (kind: GestureNotice['kind'], via: string, at: number) => {
     lastGesture = { kind, via, at };
-    if (via === 'swing' || via === 'twist' || via === 'spin') steeringHoldUntil = at + 120;
+    if (via === 'swing' || via === 'spin') steeringHoldUntil = at + 120;
     calibration.observe({ at, gesture: lastGesture });
     trace.add({ type: 'gesture', at, kind, via });
     recordGesture(`${via} → ${kind}`); opts.onGesture?.(lastGesture);
@@ -159,6 +162,12 @@ export function createInput(opts: InputOptions): InputController {
     moveGravity = moveGravity ? { x: moveGravity.x + (next.x - moveGravity.x) * alpha,
       y: moveGravity.y + (next.y - moveGravity.y) * alpha, z: moveGravity.z + (next.z - moveGravity.z) * alpha } : next;
     lastGravityAt = now;
+    const result = recognizeTiltDash(tiltDash,next,now,angle());
+    tiltDash=result.state;
+    debugState.dashTiltDegrees=result.tilt; debugState.dashArmed=tiltDash.armed;
+    calibration.observe({at:now,dashTiltDegrees:result.tilt});
+    if(result.dash){dash=true;dashDirection=result.direction;notify('dash','tilt-dash',now);}
+
   };
   let settingsOpen = document.body?.classList?.contains('settings-open') ?? false;
   const reset = () => {
@@ -166,7 +175,7 @@ export function createInput(opts: InputOptions): InputController {
     mouseFire = false;
     mouseSkill = false;
     mouseAt = -Infinity;
-    dash = skill = false;
+    dash = skill = false; dashDirection=null; tiltDash=createTiltDashState();
     gestures = createGestureState();
     steeringHoldUntil = 0;
     touch?.clear();
@@ -282,20 +291,22 @@ export function createInput(opts: InputOptions): InputController {
     debugState.rotationRate = gyro;
     // Training uses permissive sane floors so low-motion users can record their own peaks.
     const step = calibration.meter().step;
-    const trainingThresholds = step ? { ...thresholds, swingThreshold: step === 'swing' ? 4 : thresholds.swingThreshold,
-      releaseThreshold: step === 'swing' ? 2 : thresholds.releaseThreshold,
-      twistThreshold: step === 'twist' ? 80 : thresholds.twistThreshold, spinAngle: step === 'spin' ? 220 : thresholds.spinAngle } : thresholds;
+    const trainingThresholds = step ? { ...thresholds, swingThreshold: step === 'swing' ? 0.6 : thresholds.swingThreshold,
+      releaseThreshold: step === 'swing' ? 0.2 : thresholds.releaseThreshold,
+      spinAngle: step === 'spin' ? 280 : thresholds.spinAngle, spinMagnitude: step === 'spin' ? 0.3 : thresholds.spinMagnitude } : thresholds;
     const result = recognizeGesture(gestures, acceleration, now, motionProfile, gyro, trainingThresholds);
     gestures = result.state;
     // Reject transient steering samples during a gesture, but keep moving in
     // the last clean tilt direction. Attacks must never zero movement.
-    if (gyro && Math.hypot(gyro.alpha, gyro.beta, gyro.gamma) >= 80) {
+    if (result.pendingSwing || result.circleActive) {
       steeringHoldUntil = now + 120;
     }
     debugState.spinDegrees = result.spinDegrees;
-    calibration.observe({ at: now, acceleration, rotationRate: gyro, spinDegrees: result.spinDegrees });
+    debugState.spinMagnitude = result.spinMagnitude;
+    debugState.spinGyroDegrees = result.spinGyroDegrees;
+    calibration.observe({ at: now, acceleration, rotationRate: gyro, spinDegrees: result.spinDegrees,
+      spinMagnitude: result.spinMagnitude, spinGyroDegrees: result.spinGyroDegrees, swingPeak: result.swingPeak });
     if (result.skill) { skill = true; notify('skill', 'spin', now); }
-    else if (result.dash) { dash = true; notify('dash', 'twist', now); }
     else if (result.fired) notify('attack', 'swing', now);
     if (valid(includingGravity) && now - lastOrientationAt > 250) {
       // Safari and Android can use opposite gravity polarity. A face-up initial
@@ -336,6 +347,7 @@ export function createInput(opts: InputOptions): InputController {
     get lastGesture() { return lastGesture; },
     setProfile(values) {
       thresholds = sanitizeThresholds(values, thresholds); saveThresholds(thresholds, motionProfile);
+      trace.add({type:'gesture',at:performance.now(),kind:'profile',profile:motionProfile,thresholds:{...thresholds}});
       reset(); resetCalibration(); moveGravity = null;
     },
     setMotionProfile(profile) {
@@ -409,9 +421,10 @@ export function createInput(opts: InputOptions): InputController {
       debugState.move = move;
       debugState.sensors = sensorStatus;
       debugState.calibrating = false;
+      if(dash && dashDirection) move=[...dashDirection];
       const frame: InputFrame = { seq: ++seq, move, aim, fire, dash: !disposed && dash, skill: !disposed && skill, source: mode };
-      dash = skill = false;
-      trace.add({ type: 'input', at: now, move, source: mode, sensitivity: tiltSensitivity, horizontalFullSpeed: TILT_FULL_SPEED[tiltSensitivity], sensorStatus, permission: permissionSession.getState(motionProfile).permission });
+      dash = skill = false; dashDirection=null;
+      trace.add({ type: 'input', at: now, move, source: mode, sensitivity: tiltSensitivity, horizontalFullSpeed: TILT_FULL_SPEED[tiltSensitivity], fire:frame.fire,dash:frame.dash,skill:frame.skill, sensorStatus, permission: permissionSession.getState(motionProfile).permission });
       return frame;
     },
     dispose() {
@@ -437,7 +450,7 @@ export function createInput(opts: InputOptions): InputController {
   cleanup.push(permissionSession.subscribe(applyPermissionState));
   if (mobile) startAutomaticTrace(trace, 'fight');
   else if (new URLSearchParams(window.location?.search).get('trace') === '1') trace.start();
-  if (trace.active) trace.add({ type: 'gesture', at: performance.now(), kind: 'settings', profile: motionProfile, sensitivity: tiltSensitivity, fullSpeed: TILT_FULL_SPEED[tiltSensitivity], movement: 'horizontal-gravity-linear' });
+  if (trace.active) trace.add({ type: 'gesture', at: performance.now(), kind: 'settings', thresholds:{...thresholds}, profile: motionProfile, sensitivity: tiltSensitivity, fullSpeed: TILT_FULL_SPEED[tiltSensitivity], movement: 'horizontal-gravity-linear' });
   on(window, 'gitzilla:settings', e => { settingsOpen = !!(e as CustomEvent).detail?.open; reset(); });
   on(window, 'kaiju:motion-profile', () => { const next = loadMotionProfile(); if (next !== motionProfile) controller.setMotionProfile(next); });
   on(window, 'kaiju:gesture-trained', () => { controller.setProfile(loadThresholds(motionProfile)); });

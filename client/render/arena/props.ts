@@ -79,7 +79,8 @@ function obstacleSprite(o: Obstacle): HTMLCanvasElement {
   return cv;
 }
 
-export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], time: number) {
+/** each (optional, 3D stage): called per obstacle with a draw callback so the caller can set a transform/slot first. */
+export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle[], time: number, each?: (o: Obstacle, draw: () => void) => void) {
   const seen = new Set<number>();
   for (const o of obstacles) {
     seen.add(o.id);
@@ -90,38 +91,42 @@ export function drawObstacles(ctx: CanvasRenderingContext2D, obstacles: Obstacle
       burst(o.x + (Math.random() - 0.5) * o.w * 0.6, o.y + (Math.random() - 0.5) * o.h * 0.6, 3, { kind: "px", speed: 50, max: 0.35, colors: ["#c3c8d8", extColor(o.label)], grav: 120 });
     }
     tr.hp = o.hp; tr.x = o.x; tr.y = o.y;
-    const s = obstacleSprite(o);
-    const x0 = Math.round(o.x - o.w / 2) - 1, y0 = Math.round(o.y - o.h / 2) - 1;
-    // shadow
-    ctx.globalAlpha = 0.35; ctx.fillStyle = "#000"; ctx.fillRect(x0 + 2, y0 + s.height - 1, s.width - 1, 3); ctx.globalAlpha = 1;
-    const shake = time - tr.flash < 0.1 ? Math.round((Math.random() - 0.5) * 2) : 0;
-    ctx.drawImage(s, x0 + shake, y0);
-    // screen glow
-    drawGlow(ctx, o.x, o.y, extColor(o.label), Math.max(8, o.w * 0.45), 0.12);
-    // filename tag under the block when the title bar is too narrow for it
-    const nm = baseName(o.label);
-    // small tag under the block (5px cap height, never upscaled: heroes and bullets must out-read it)
-    if (textWidth(nm) > o.w - (o.w >= 22 ? 10 : 3)) {
-      ctx.globalAlpha = 0.8;
-      drawText(ctx, nm.length > 14 ? nm.slice(0, 13) + "~" : nm, Math.round(o.x), y0 + s.height + 1, extColor(o.label), { align: "center" });
-      ctx.globalAlpha = 1;
-    }
-    // cracks grow as hp drops
-    const dmg = 1 - Math.max(0, o.hp) / Math.max(1, o.maxHp);
-    const cracks = Math.floor(dmg * 6);
-    for (let k = 0; k < cracks; k++) {
-      let cx = x0 + 1 + hash2(o.id, k) * o.w, cy = y0 + 1 + hash2(o.id, k + 20) * o.h;
-      let a = hash2(o.id, k + 40) * TAU;
-      for (let st = 0; st < 5; st++) {
-        const nx = cx + Math.cos(a) * 2.5, ny = cy + Math.sin(a) * 2.5;
-        if (nx < x0 + 1 || nx > x0 + o.w || ny < y0 + 1 || ny > y0 + o.h) break;
-        ctx.fillStyle = "#e8ecf8"; line(ctx, cx + shake, cy + 1, nx + shake, ny + 1);
-        ctx.fillStyle = "#000000"; line(ctx, cx + shake, cy, nx + shake, ny);
-        cx = nx; cy = ny; a += (hash2(o.id, k * 9 + st) - 0.5) * 1.6;
+    const T = tr;
+    const draw = () => {
+      const s = obstacleSprite(o);
+      const x0 = Math.round(o.x - o.w / 2) - 1, y0 = Math.round(o.y - o.h / 2) - 1;
+      // shadow
+      ctx.globalAlpha = 0.35; ctx.fillStyle = "#000"; ctx.fillRect(x0 + 2, y0 + s.height - 1, s.width - 1, 3); ctx.globalAlpha = 1;
+      const shake = time - T.flash < 0.1 ? Math.round((Math.random() - 0.5) * 2) : 0;
+      ctx.drawImage(s, x0 + shake, y0);
+      // screen glow
+      drawGlow(ctx, o.x, o.y, extColor(o.label), Math.max(8, o.w * 0.45), 0.12);
+      // filename tag under the block when the title bar is too narrow for it
+      const nm = baseName(o.label);
+      // small tag under the block (5px cap height, never upscaled: heroes and bullets must out-read it)
+      if (textWidth(nm) > o.w - (o.w >= 22 ? 10 : 3)) {
+        ctx.globalAlpha = 0.8;
+        drawText(ctx, nm.length > 14 ? nm.slice(0, 13) + "~" : nm, Math.round(o.x), y0 + s.height + 1, extColor(o.label), { align: "center" });
+        ctx.globalAlpha = 1;
       }
-    }
-    if (dmg > 0.6 && Math.floor(time * 6 + o.id) % 5 === 0) { ctx.fillStyle = "rgba(255,40,80,0.25)"; ctx.fillRect(x0 + 1 + shake, y0 + 1, Math.round(o.w), Math.round(o.h)); }
-    if (time - tr.flash < 0.06) { ctx.globalAlpha = 0.6; ctx.fillStyle = "#ffffff"; ctx.fillRect(x0 + shake, y0, s.width, s.height); ctx.globalAlpha = 1; }
+      // cracks grow as hp drops
+      const dmg = 1 - Math.max(0, o.hp) / Math.max(1, o.maxHp);
+      const cracks = Math.floor(dmg * 6);
+      for (let k = 0; k < cracks; k++) {
+        let cx = x0 + 1 + hash2(o.id, k) * o.w, cy = y0 + 1 + hash2(o.id, k + 20) * o.h;
+        let a = hash2(o.id, k + 40) * TAU;
+        for (let st = 0; st < 5; st++) {
+          const nx = cx + Math.cos(a) * 2.5, ny = cy + Math.sin(a) * 2.5;
+          if (nx < x0 + 1 || nx > x0 + o.w || ny < y0 + 1 || ny > y0 + o.h) break;
+          ctx.fillStyle = "#e8ecf8"; line(ctx, cx + shake, cy + 1, nx + shake, ny + 1);
+          ctx.fillStyle = "#000000"; line(ctx, cx + shake, cy, nx + shake, ny);
+          cx = nx; cy = ny; a += (hash2(o.id, k * 9 + st) - 0.5) * 1.6;
+        }
+      }
+      if (dmg > 0.6 && Math.floor(time * 6 + o.id) % 5 === 0) { ctx.fillStyle = "rgba(255,40,80,0.25)"; ctx.fillRect(x0 + 1 + shake, y0 + 1, Math.round(o.w), Math.round(o.h)); }
+      if (time - T.flash < 0.06) { ctx.globalAlpha = 0.6; ctx.fillStyle = "#ffffff"; ctx.fillRect(x0 + shake, y0, s.width, s.height); ctx.globalAlpha = 1; }
+    };
+    if (each) each(o, draw); else draw();
   }
   for (const [id, tr] of obsTracks) {
     if (seen.has(id)) continue;
@@ -171,7 +176,8 @@ function pickupSprite(kind: Pickup["kind"]): HTMLCanvasElement {
   return c;
 }
 
-export function drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], time: number) {
+/** each (optional, 3D stage): called per pickup with a draw callback so the caller can set a transform/slot first. */
+export function drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], time: number, each?: (p: Pickup, draw: () => void) => void) {
   const seen = new Set<number>();
   for (const p of pickups) {
     seen.add(p.id);
@@ -182,34 +188,38 @@ export function drawPickups(ctx: CanvasRenderingContext2D, pickups: Pickup[], ti
     }
     tr.vx = p.x - tr.x; tr.vy = p.y - tr.y;
     tr.x = p.x; tr.y = p.y;
-    const art = PICK_ART[p.kind];
-    const age = time - tr.born;
-    const pop = Math.min(1, age / 0.2);
-    const bob = Math.round(Math.sin(time * 4 + p.id) * 1.5);
-    const x = Math.round(p.x), y = Math.round(p.y);
-    // shadow + glow
-    ctx.globalAlpha = 0.35; ctx.fillStyle = "#000"; ctx.fillRect(x - 3, y + 4, 7, 1); ctx.globalAlpha = 1;
-    drawGlow(ctx, x, y + bob - 2, art.glow, 8, 0.45 + 0.2 * Math.sin(time * 6 + p.id));
-    // magnet streak toward the collector
-    const sp = Math.hypot(tr.vx, tr.vy);
-    if (sp > 0.25) {
-      ctx.fillStyle = art.glow;
-      for (let k = 1; k <= 6; k++) {
-        ctx.globalAlpha = 1 - k / 7;
-        ctx.fillRect(Math.round(x - (tr.vx / sp) * k * 2), Math.round(y - 2 - (tr.vy / sp) * k * 2), 1, 1);
+    const T = tr;
+    const draw = () => {
+      const art = PICK_ART[p.kind];
+      const age = time - T.born;
+      const pop = Math.min(1, age / 0.2);
+      const bob = Math.round(Math.sin(time * 4 + p.id) * 1.5);
+      const x = Math.round(p.x), y = Math.round(p.y);
+      // shadow + glow
+      ctx.globalAlpha = 0.35; ctx.fillStyle = "#000"; ctx.fillRect(x - 3, y + 4, 7, 1); ctx.globalAlpha = 1;
+      drawGlow(ctx, x, y + bob - 2, art.glow, 8, 0.45 + 0.2 * Math.sin(time * 6 + p.id));
+      // magnet streak toward the collector
+      const sp = Math.hypot(T.vx, T.vy);
+      if (sp > 0.25) {
+        ctx.fillStyle = art.glow;
+        for (let k = 1; k <= 6; k++) {
+          ctx.globalAlpha = 1 - k / 7;
+          ctx.fillRect(Math.round(x - (T.vx / sp) * k * 2), Math.round(y - 2 - (T.vy / sp) * k * 2), 1, 1);
+        }
+        ctx.globalAlpha = 1;
       }
-      ctx.globalAlpha = 1;
-    }
-    const s = pickupSprite(p.kind);
-    const sx = x - (s.width >> 1), sy = y - 6 + bob - (pop < 1 ? Math.round((1 - pop) * 6) : 0);
-    // blink before despawn (sim removes it at 15 s)
-    if (!(age > 12 && Math.floor(time * 10) % 2)) ctx.drawImage(s, sx, sy);
-    // coffee steam / sparkle
-    if (p.kind === "energy") {
-      ctx.fillStyle = "#e8e8f0";
-      for (let k = 0; k < 2; k++) { const f = (time * 1.5 + k * 0.5 + p.id * 0.3) % 1; ctx.globalAlpha = 1 - f; ctx.fillRect(sx + 2 + k * 2 + Math.round(Math.sin(f * 6 + k) * 1), sy - 1 - Math.round(f * 5), 1, 1); }
-      ctx.globalAlpha = 1;
-    } else if (Math.floor(time * 3 + p.id) % 4 === 0) { ctx.fillStyle = "#ffffff"; ctx.fillRect(sx + s.width - 2, sy, 1, 1); }
+      const s = pickupSprite(p.kind);
+      const sx = x - (s.width >> 1), sy = y - 6 + bob - (pop < 1 ? Math.round((1 - pop) * 6) : 0);
+      // blink before despawn (sim removes it at 15 s)
+      if (!(age > 12 && Math.floor(time * 10) % 2)) ctx.drawImage(s, sx, sy);
+      // coffee steam / sparkle
+      if (p.kind === "energy") {
+        ctx.fillStyle = "#e8e8f0";
+        for (let k = 0; k < 2; k++) { const f = (time * 1.5 + k * 0.5 + p.id * 0.3) % 1; ctx.globalAlpha = 1 - f; ctx.fillRect(sx + 2 + k * 2 + Math.round(Math.sin(f * 6 + k) * 1), sy - 1 - Math.round(f * 5), 1, 1); }
+        ctx.globalAlpha = 1;
+      } else if (Math.floor(time * 3 + p.id) % 4 === 0) { ctx.fillStyle = "#ffffff"; ctx.fillRect(sx + s.width - 2, sy, 1, 1); }
+    };
+    if (each) each(p, draw); else draw();
   }
   for (const [id, tr] of pickTracks) {
     if (seen.has(id)) continue;
@@ -294,7 +304,10 @@ export function drawPerkCards(ctx: CanvasRenderingContext2D, time: number) {
     const cw = Math.max(textWidth(name) + 8, 40);
     const ch = 16;
     const bob = Math.round(Math.sin(time * 2 + i * 2) * 1.5);
-    const cx = Math.max(Math.max(12, v.x + 2), Math.min(Math.min(ARENA_W - 12, v.x + v.w - 2) - cw, Math.round(x - cw / 2))), cy = Math.max(fy0 + 12, y - pad.r - ch - 2 + bob);
+    // 3D stage: anchor the card above the pad's projected position (screen space)
+    const pr = fx.project ? fx.project(pad.x, pad.y, 18) : null;
+    const ax = pr ? pr.x : x, ay = pr ? pr.y + ch : y - pad.r;
+    const cx = Math.max(Math.max(pr ? v.x + 2 : 12, v.x + 2), Math.min(Math.min(pr ? v.x + v.w - 2 : ARENA_W - 12, v.x + v.w - 2) - cw, Math.round(ax - cw / 2))), cy = Math.max(fy0 + 12, Math.round(ay - ch - 2 + bob));
     const edge = revealed ? (pad.correct ? "#3fb950" : "#f85149") : glow;
     ctx.globalAlpha = 0.92;
     ctx.fillStyle = "#07040c"; ctx.fillRect(cx - 1, cy - 1, cw + 2, ch + 2);
@@ -313,7 +326,7 @@ export function drawPerkCards(ctx: CanvasRenderingContext2D, time: number) {
     ctx.fillStyle = "#f85149"; ctx.fillRect(cx + cw - 7, cy + ch - 3, 3, 1);
     pickers.forEach((p, k) => {
       const idx = Math.max(0, players.findIndex((q) => q.id === p.id));
-      drawText(ctx, "@" + p.name.slice(0, 8).toUpperCase(), x, y + pad.r * 0.7 + 3 + k * 6, PLAYER_COLS[idx % PLAYER_COLS.length], { align: "center" });
+      drawText(ctx, "@" + p.name.slice(0, 8).toUpperCase(), pr ? ax : x, pr ? cy + ch + 3 + k * 6 : y + pad.r * 0.7 + 3 + k * 6, PLAYER_COLS[idx % PLAYER_COLS.length], { align: "center" });
     });
   });
 }

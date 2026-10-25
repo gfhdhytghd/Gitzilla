@@ -1,0 +1,43 @@
+{
+  "pass": true,
+  "baselineRendererRef": "67cb5a9619e56be9c2018d134458e1d20b73b760",
+  "rendererHash": "fda675fd6cc70c185b19925ad449954be0209b1a536ce22a16005f2147e59a29",
+  "fixtureHash": "0c7618bfd91a29f2821beb2b6ddea24076c3ca42354ea94f36de007dbc7f55f2",
+  "imagesCompared": 180,
+  "allPixelHashesMatch": true,
+  "allComparisonDeltasZero": true,
+  "comparison": {
+    "heroes-portraits": {
+      "minDistanceDelta": 0,
+      "meanDistanceDelta": 0,
+      "lookalikePairsDelta": 0,
+      "clusteredSamplesDelta": 0,
+      "shapeLookalikePairsDelta": 0,
+      "paletteBetweenImageBitsDelta": 0
+    },
+    "heroes-fight": {
+      "minDistanceDelta": 0,
+      "meanDistanceDelta": 0,
+      "lookalikePairsDelta": 0,
+      "clusteredSamplesDelta": 0,
+      "shapeLookalikePairsDelta": 0,
+      "paletteBetweenImageBitsDelta": 0
+    },
+    "bosses-portraits": {
+      "minDistanceDelta": 0,
+      "meanDistanceDelta": 0,
+      "lookalikePairsDelta": 0,
+      "clusteredSamplesDelta": 0,
+      "shapeLookalikePairsDelta": 0,
+      "paletteBetweenImageBitsDelta": 0
+    },
+    "bosses-fight": {
+      "minDistanceDelta": 0,
+      "meanDistanceDelta": 0,
+      "lookalikePairsDelta": 0,
+      "clusteredSamplesDelta": 0,
+      "shapeLookalikePairsDelta": 0,
+      "paletteBetweenImageBitsDelta": 0
+    }
+  }
+}

@@ -10,7 +10,13 @@ LIVE_PANE=${LIVE_PANE:-wQ:pS}
 pid_started() { local ticks btime; ticks=$(awk '{print $22}' "/proc/$1/stat"); btime=$(awk '/^btime/{print $2}' /proc/stat); echo $(( btime + ticks / $(getconf CLK_TCK) )); }
 listener() { ss -ltnp 2>/dev/null | awk '/:5173 /' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2 || true; }
 
+prev=$(git -C "$LIVE" rev-parse HEAD)
+git -C "$LIVE" checkout -q -- package-lock.json 2>/dev/null || true
 git -C "$LIVE" checkout --detach -q "$REF"
+# dependencies changed since the last deploy (e.g. three): install exactly what the lockfile pins
+if ! git -C "$LIVE" diff --quiet "$prev" HEAD -- package.json package-lock.json || [ ! -d "$LIVE/node_modules" ]; then
+  (cd "$LIVE" && npm ci --silent >/dev/null)
+fi
 (cd "$LIVE" && npm run build --silent >/dev/null)
 herdr pane send-keys "$LIVE_PANE" ctrl+c >/dev/null
 for _ in $(seq 10); do [ -z "$(listener)" ] && break; sleep 0.5; done

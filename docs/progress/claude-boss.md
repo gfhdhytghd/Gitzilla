@@ -1,3 +1,188 @@
+DONE (boss variety) — claude-boss
+
+## Round 6: boss variety (docs/tasks/variety.md, Bosses)
+No sim/contract changes: archetype choice, `bossAnchors` (hit regions, heart, mouths), poses and attacks are untouched. The new body plans are render-side **forms** drawn on the archetype's existing anchors. No new deps.
+- **`client/render/boss/variety.ts`** (pure, deterministic per repo): `bossVariety(kit)` → form + element + variants; `bossElement`, `limbPart`.
+  - **Forms (10, 6 new):**
+    - kaiju archetype: kaiju, **golem** (stone; block torso, huge fist on the arm anchor, pillar legs, an iron chain to a wrecking boulder on the tail anchors), **insectoid** (mantis-wasp; scythe arm, banded abdomen and stinger, thin jointed legs, antennae, mandibles), **eye** (repos with 3 or fewer limbs; floating eyeball whose iris is the heart, eye-pods, an eyestalk with a beak, tentacles; hovers, no stomps);
+    - mecha archetype: mecha, **ironclad** (iron golem with visor, vents and cannon);
+    - hydra archetype: dragon, **naga** (the necks rise from ground coils; slithers);
+    - abyssal archetype: abyssal, **wyrm** (banded chitin centipede with legs, mandibles and antennae).
+    - Kaiju forms come from repo traits: functional/test-heavy → insectoid, compact monolith → golem, big → kaiju. Other archetypes pick their form by repo hash.
+  - **Elements (13):**
+    - The full set: jade (original kaiju), molten, neon, sunset, arcane, frost, chrome, verdant, toxic, phosphor, storm, void (original abyssal), gilded (original hydra).
+    - Each defines hide, hide2, belly, calm and charged fin colours, breath/FX tint, eye/pupil and vein glow.
+    - Choice: the theme family (kernel → molten…, web → neon…, notebook → arcane…, enterprise → chrome…, legacy, terminal), then component-keyword affinity, a limb/cycle rotation, and a repo-hash tiebreak.
+    - Hide = element mixed with 12% of the repo palette, plus a per-repo hue jitter of ±18°. Mech hulls and hydra scales are lifted to stay bright.
+    - Heart, weak-point and enraged colours stay red for readability.
+  - **Variants:**
+    - fin style: crystal / blade / plate / needle (in `finSprite`);
+    - horns: none / brow / nose / crown / swept (kaiju, mecha antenna, per hydra head);
+    - tail tip: curl / club / spade / blade;
+    - dragon wing: membrane / feather / crystal;
+    - per-limb parts from the component name on the 3 biggest components: gears (engine/core), servers (data), crystals (tests), local moss (docs), cables (I/O). Parts are hidden when their limb breaks.
+- **Wiring:**
+  - `art.ts`: element-driven materials; `BossArt.el`, `.fin`, `.lit`.
+  - `index.ts`: element fins, breath, eyes, roar ring, veins and shards; hover/glide; claws and toes only on plans with feet; wing styles; `fx.bossTint`.
+  - `layout.ts`: forms and variants; `kaiju.{form, fins, mat, glowVeins, hover, glide}`; `PlateLayout.style`; dev hint `forceForm`.
+  - `sprite.ts`: element vein colours, golem cracks, sclera veins for the eye, per-limb moss.
+  - New `forms.ts` (golem / insectoid / eye builders and wyrm legs).
+  - Beams in 2D (`arena/hazards.ts`) and 3D (`stage25d/scene.ts`) take the element tint; the mecha keeps its red laser and the abyssal goes red in phase 3.
+  - Fixed along the way: the hydra's "neck" limb owned no art (now charred on break).
+- **Tests (`boss/variety.test.ts`):**
+  - deterministic per repo;
+  - the 15 designed fallbacks are unique by archetype + form + element (9 forms, 7 elements);
+  - every form at 2/3/5/8 limbs × 6 seeds keeps the limb positions and radii equal to `bossAnchors`, keeps the heart on the chest, and gives every limb owned art (lobe, plate, jaw or wing) on its hitbox;
+  - small repos become the eye; forms stay within their archetype.
+- **Galleries:**
+  - `boss/gallery.html?mode=variety`: the 15 fallbacks labelled form/element, every form forced, and 30 browser-side synthetic repos; `&form=` works in any mode.
+  - `stage25d/gallery.html?...&form=`.
+- **codex-gemini's tool** (`npx tsx tools/variety-sheet.ts --label after-bosses --kind bosses --fixtures docs/variety/baseline/fixtures.json --compare docs/variety/baseline/summary.json`; DEV 5175, output `docs/variety/after-bosses/`):
+
+  | View | Min distance ↑ | Mean distance ↑ | Look-alike pairs ↓ | Clusters ↓ | Shape-only pairs ↓ | Palette bits ↑ |
+  |---|---|---|---|---|---|---|
+  | portraits, all 45 | 0.0136 → 0.0982 | 0.414 → 0.442 | 68 → 6 | 8 → 4 | 144 → 74 | 4.95 → 5.62 |
+  | fight, all 45 | 0.0155 → 0.1112 | 0.412 → 0.448 | 67 → 3 | 8 → 2 | 150 → 79 | 4.97 → 5.62 |
+  | fallback 15 (portraits / fight) | 0.079 / 0.072 → 0.263 / 0.242 | | 8 / 10 → **0 / 0** | 4 / 4 → **0 / 0** | | |
+
+  - Remaining look-alikes are synthetic fixtures with identical generic traits (same archetype, theme and `src/module_N` names).
+  - 0 browser errors; pixel hashes repeat.
+- **3D:**
+  - Voxel depth works for every form (painted from slot owners).
+  - WebKit 1440: insectoid 62.2 fps / 6.3 ms; iron golem 61–62 / 6.8; eye 62.2 / 6.4.
+  - Hydras run 8.4–10.4 ms stage CPU, the same as the HEAD baseline (8.5–8.8, measured in a scratch worktree), so there's no regression.
+  - XR HUD check passes on the eye boss.
+- tsc clean; vitest 5013 passed / 20 skipped; build OK.
+- **For claude-ui (optional):** the lobby could show the form and element name (`bossVariety(kit).form`, `.element.label`).
+
+DONE (XR world-pinned table + 0.80 m height wiring) — claude-boss
+
+## Round 5 (urgent): XR table pinned in space
+- **Bug:** `getXRPlacement` got `follow: <followed hero>` every frame, so the arena root slid as the hero moved.
+- **Fix (index.ts):** the root and table are placed once per session and again only when the placement key changes. The key covers the scale mode, the `getTableHeightPlacement` tableY (so ▲/▼ changes it), the arena size, and the anchor `xrHome` (head x/z read once at session start, or on a SCALE press). It is never recomputed from the head or a hero per frame; `follow: null` always.
+- **FOLLOW** is now only a marker: a bobbing teal chevron (THREE.Sprite in root space, `LookExtras.follow`) about 74 px above the followed hero. It sits above the perk/"F" badges, which hid it at 52 px. Screen rendering is unaffected.
+- **Height:** take-ui's `getTableHeightPlacement({ referenceSpaceType, initialHeadY: rawHeadY captured ONCE per session, referenceOffsetY, userOffset })`. Its `tableY` feeds the pinned placement, and `baseTableY`, `estimatedEyeHeight` and `heightSource` are copied to `xr.debug`. The old `getComfortTableHeight` call is gone.
+- **Emulator checks (scratch `pincheck.mjs`; gallery xr=emulate, xrmode=vr):**
+  - local-floor: FOLLOW pressed via the controller and the hero ran 136 px; root matrix and table world position constant over 16 samples.
+  - Headset moved (0,1.6,0.4) → (0.45,1.3,0.1) and yawed 29°: root and table constant.
+  - ▲: table +0.100 m with x/z unchanged, then constant.
+  - local (local-floor removed, with tools/iwer-compat.ts): the same results; heightSource fallback-1.6m, head 1.6, table top 0.80 m.
+  - Without iwer-compat, IWER's `getOffsetReferenceSpace` does `mat4.clone(XRRigidTransform)` and drops the offset. That is an emulator bug; the pinning still held.
+  - take-ui's `npx tsx tools/xr-check.ts --height`, `--height --vision-pro` and `--height --local-only`: all pass.
+  - XR HUD check, AR placement and VR perf (update 1.4-1.5 ms) unchanged.
+- tsc clean, vitest 1271 passed / 10 skipped, build OK.
+
+
+## Round 4 (urgent): XR HUD boss HP was frozen on Vision Pro
+- **Root cause:** the HUD redraw was throttled on the caller's `time` (`time - hudAt < 0.25`). game.ts's `pull()` returns `visTime`, which only advances in the page rAF (game.ts:1444), and Vision Pro pauses that while immersive. So after the first draw, `time` never moved and the panel kept showing the HP from session start. The field and math were right (`boss.hp / boss.maxHp`, same as the 2D bar) and `needsUpdate` was set; the redraw just never ran.
+- **Fixes:**
+  - The panel redraws whenever what it shows changes (new pure `stage25d/hud.ts` → `hudInfo(state).key`), at most ~15×/s by the wall clock (`performance.now()`). It is never keyed on the caller's time.
+  - XR clock in `index.ts`: if `pull().time` stalls, the stage advances its own monotonic time from the XR frames, so boss/hero animations no longer freeze in the headset either.
+  - The panel now carries the same numbers as the 2D boss bar: `ceil(pct)%`, the phase label (PHASE 2 · ENRAGED / PHASE 3 · LAST STAND), limb pips in kit order (broken = grey with a red strike, weak points pink), alive count and timer.
+  - It sits above the boss's standing height. At the fixed 150 px the boss stood in front of it and hid the bar's right half and the %.
+- **▲ / ▼ table height:** two new XR buttons (row on top of the panel: SCALE FOLLOW EXIT ▲ ▼), shown in the VR tabletop only (not in life-size or AR). They call `stage.setTableHeightOffset(stage.getTableHeightOffset() ± TABLE_HEIGHT_STEP)`, which is codex-input's version (height.ts; absolute and persisted, so no stub was needed). Through the emulated controller-select path the table goes 1.428 → 1.528 → 1.628 → 1.528 m.
+- Added `debugXR` to the `Stage25d` interface (codex-input's getter wasn't typed), `debugCanvases.hud`, and gallery `&xrmode=vr|ar`.
+- **Checks:**
+  - `stage25d/hud.test.ts` compares against the 2D bar's math verbatim at 100 / 73.2 / 60 (limb break) / 50.5 (phase 2) / 14.9 (phase 3) / 0.4 / overkill. It also checks that each change redraws (a distinct key) and that the key ignores the clock.
+  - Gallery `?scene=raid&xr=emulate&xrmode=vr&hudcheck=1`: the pull time is frozen like game.ts, and the boss steps through full, 73%, a limb break, phase 2, phase 3 and 1%. The drawn bar px and broken pip are read back from the panel canvas into `window.__hudCheck`. All 6 levels OK for two bosses.
+- **Results:** XR update 1.38 ms (unchanged); screen WebKit 1440 at 62.2 fps. tsc clean, vitest 1239 passed / 10 skipped, build OK.
+- **For claude-ui (optional now):** in game.ts `pull()`, compute `time` fresh (e.g. from `performance.now()`) instead of `visTime`. The stage copes either way now.
+
+
+## Round 3: volumetric sprites, lighting, boss depth, LOD + codex-input's spatial handoff wired
+- **Voxel-extruded sprites (new `stage25d/voxel.ts`):** each sprite is one box, and a fragment shader walks its texel grid (2D DDA through a height field). Every opaque texel is a voxel column: the front face shows the exact pixel; side and top faces are lit.
+  - No CPU meshing and no readbacks, so animated atlases (heroes and boss redrawn every frame) stay volumetric.
+  - Depths: heroes/bugs/pickups 2 px, obstacles 6 px (short blocks), boss 5 px plus per-texel offsets, bullets 2 px (voxel glyphs, instanced).
+  - Empty-space skip: the atlas carries mipmaps and mip level 2 = 4×4 occupancy, so empty blocks are crossed in one step (software-GL XR went 22 → 29 fps from this alone).
+- **Lighting:**
+  - Key light (upper left) shades side/top faces (front faces stay exact).
+  - The boss heart is a point light: a pulsing color, stronger in phase 3, that tints nearby voxel sides (heroes, bullets, boss).
+  - Planar silhouette shadows: each sprite plane is projected along the key light onto the floor (crisp pixel silhouettes; blob contact shadows kept).
+  - Every shot puts an additive colored glint on the floor under its true 2D position.
+- **Boss depth:** a depth atlas painted from the layout lobes, so the arms (+9…10), front leg (+6), head/jaw (+5), chest/heart (+4) stand forward, while the back leg (−6), tail (−6, tip −9), fins (−3) and hydra wing (−11) sit behind. Hydra heads are staggered; abyssal coils front/back. Repainted only when the boss changes.
+- **LOD (`createStage25d({ voxels })`):** "auto" (default) = voxels on full-arena screens and in XR, flat billboards on the phone follow camera. In XR, "auto" adds an adaptive guard: if the moving-average frame time exceeds 12.5 ms after a 1 s warm-up, it drops to flat billboards for the rest of the session (one-way, no flapping). `voxels: true|false` forces it; `voxelBullets: false` keeps flat bullets.
+- **Measurements:**
+
+  | Scene | fps | Stage CPU per frame (update + draw submit) |
+  |---|---|---|
+  | WebKit raid 1440, voxels | 62.2 | 6.0 ms |
+  | WebKit raid 1440, flat | 62.2 | 5.8 ms |
+  | WebKit raid 1440, orbit views | 62.1–62.2 | 5.9–6.4 ms |
+  | WebKit royale 1920 | 62.1 | 6.9 ms |
+  | WebKit royale 1920, orbit | 62.1 | 6.5 ms |
+  | WebKit iPhone 15, LOD flat | 62.2 | 6.1 ms |
+  | WebKit iPhone 15, voxels forced | 62.1 | 5.9 ms |
+
+  - XR (Chromium + IWER, software GL, two eyes): voxels 32–34 fps vs flat 48 fps; scene update 1.3–1.5 ms per frame. The CPU side has ample 90 Hz headroom; GPU cost on a real M2 is unmeasured here (software rasterizer), which is what the adaptive guard is for.
+- **Spatial handoff (codex-input, 4f727e6) wired in index.ts:**
+  - `stage.enterXR(mode = "auto")` picks AR only where the runtime supports it (cached `detectSpatialSupport()`, no awaits before requestSession), else VR. Vision Pro stays VR.
+  - AR: `scene.background = null` and the void grid hidden; `createSurfacePlacement` is fed from onFrame, and onSelect runs the placement first. The arena shows only at status "placed" (root matrix = placement.matrix); a reticle shows while "candidate". The SCALE button calls `setTableWidth(1.2 | W*1.7/28)`.
+  - `stage.exportUSDZ()` = `exportSpatialUSDZ(look.root, { metersPerPixel: 1.2 / W })`; `xrMode` getter. Re-exports: `detectSpatialSupport`, `chooseSpatialMode`, `createModelPreview`.
+  - Emulator check: AR mode negotiated, status manual → controller pinch at the floor → placed on the estimated plane (0.9 m, 0.0025 m/px), passthrough background, arena visible. USDZ export: `model/vnd.usdz+zip`, 26.8 MB, 655 ms.
+  - **Note for codex-input:** the USDZ is heavy for a `<model>` preview; one baked voxel geometry is 14 MB. Probably cap `maxVoxelPixels` or skip the void grid.
+- **Gallery:** `&orbit=<deg>&zoom=<k>` (debug orbit camera to inspect volume), `&vox=0|1`, `&voxbul=0`. `window.__stats.stageCpuMs`.
+- **Tests:** `voxel.test.ts` (box extents/attributes); full suite 1221 passed.
+- **Dev note:** codex-input edits files in stage25d concurrently, so Vite HMR reloads invalidated XR runs. Measurements use a no-HMR, no-watch scratch config (restart the server after every edit: it caches modules).
+
+DONE (3d stage v2) — claude-boss
+
+## 3D stage fixes + finishes (coordinator review of the first shots)
+- **White heroes (bug):** this was claude-player's normal hit flash (a solid white body for 0.07 s per hit, plus additive RGB-split ghosts). Under royale fire that covered ~8% of hero frames, and on an alpha-tested billboard it reads as a white cut-out.
+  - Fix: a new backward-compatible `DrawPlayerOpts.softFlash` (client/render/player/index.ts, the default path is unchanged) draws the body plus a 45% white tint and skips the additive ghosts. The stage passes `{ softFlash: true }`.
+  - Measured on the sprite atlas: white-silhouette frames 8% → 0% in royale, 0% in raid.
+- **XR tabletop:** the arena is 1.2 m wide, centred 0.7 m in front of the viewer's head, top 0.15 m below eye height. It's anchored to the head pose at session start / scale change and waits for a tracked pose. Emulator readout: head (0, 1.6, 0.4) → table centre (-0.03, 1.43, -0.30), top 1.45 m, 1.28 × 0.8 m incl. rim. Life-size unchanged.
+- **Lasers:** armed laser hazards are elevated beams at chest height (additive glow tube in the archetype's beam color plus a white core, width from hazard.r, jittering), from the lifted origin (the boss's mouth on its plane) to the arena edge. The telegraph lane stays on the floor. Zero allocations (preallocated vectors/quaternion).
+- **Pickups and obstacles stand up:** standing billboards from new optional `each` callbacks on `drawObstacles` / `drawPickups` (same pattern as `drawMinions`), with floor shadows. Obstacles are anchored at their front edge; pickups get a 1.3× boost.
+- **XR damage numbers / sparks / taunts:** billboards at sprite height (`particleHeight` per kind: texts 14–20 px, sparks 10) lifted onto the boss plane, no longer floor decals. New fx exports: `drawParticle`, `forEachParticle`, `particleHeight`, `isTextParticle`; `drawEvents(..., view, { draw: false })` ingests/steps without drawing. They are instanced camera-facing quads from a 512×192 cell atlas, texts first.
+- **Postfx overlay mode (for claude-ui):** `drawPostFx(ctx, t, shake, view, { overlay: true })` skips the chromatic-aberration and glitch-slice passes (they copy/multiply the frame and paint a transparent overlay solid). Flash, danger vignette, scanlines, vignette and the end screens still draw. `glitchAmount()` / `caAmount()` are exported if claude-ui wants a CSS equivalent on the WebGL canvas. The gallery uses the overlay mode.
+- `onXRFrame(dtMs, updateMs)` now also reports the per-frame scene update time.
+- **fps** (Playwright, real sim, 0 page errors):
+  - WebKit raid + laser 1440: 62.2 fps, stage 5.9 ms.
+  - WebKit raid hydra 1440: 62.2, 7.8 ms.
+  - WebKit royale 8 bots 1920: 62.2, 6.0 ms.
+  - WebKit iPhone 15 raid / royale: 62.1 / 62.1, 6.2 / 6.3 ms.
+  - Chromium + IWER XR raid / royale: 48 / 40 fps in the software-GL headless emulator (two eye views; scene update 1.7 / 1.4 ms per frame, so the CPU side fits 90 Hz with room; GPU/90 Hz to confirm on device).
+- **Shots:** scratchpad `shots/v2/` (desk.png, xr.png, phones.png, raid_hydra.png, plus the singles).
+
+DONE (3d stage) — claude-boss
+
+## 3D stage: three.js 2.5D screens + Vision Pro WebXR (docs/tasks/view-25d.md, claude-boss = look + index.ts)
+- **Deps (exact pins):** `three@0.186.1` (dependency); `@types/three@0.186.0`, `iwer@2.5.0` (dev only; the gallery's emulated headset). The stage is a lazy chunk (552 kB / 140 kB gzip), loaded only when 3D is on.
+- **Files (mine):**
+  - `client/render/stage25d/index.ts`: wiring, `createStage25d`.
+  - `scene.ts`: the look.
+  - `staging.ts`: boss-plane lift, pure, with `staging.test.ts`.
+  - `gallery.html` / `gallery.ts`.
+- **Files (codex-input, used as-is):** `types.ts`, `projection.ts` (camera rig, XR placement), `xr.ts` (session), `pool.ts` (not used yet).
+- **Look:**
+  - Floor: a NearestFilter texture of the existing ground renderers (arena, royale zone, perk pads, hazards incl. telegraphs, obstacles, pickups).
+  - Standing billboards for heroes (1.35× visual boost around the feet; hitboxes unchanged), the boss and bug minions. All are drawn by the existing 2D renderers into one sprite atlas (1024×512, glows off, alphaTest cutout) and anchored at their feet, with blob shadows.
+  - Boss: a vertical plane at its feet line. `staging.lift()` maps 2D points inside its footprint onto that plane, so limb hits, sparks, damage numbers and shots line up with the drawn limbs (unit-tested; continuous, no jumps).
+  - Bullets: their own glyph sprites (drawBullets per cell into a 512×384 atlas) as instanced camera-facing quads at chest height (12 px), plus additive glow quads and floor shadows under the true 2D position.
+  - GC zone: a translucent red wall cylinder plus a ring line (the `RM -RF` ring stays on the floor).
+  - Void room: dark background with a faint grid.
+  - XR: a table under the diorama and a floating HUD panel (boss HP, alive/heroes up, timer) with SCALE / FOLLOW / EXIT buttons (transient-pointer select via xr.ts → raycast; UI only).
+- **Screen FX:** particles, damage numbers, banners and perk cards are drawn on the caller's overlay ctx through the new `fx.project` hook (projected and lifted). In XR they become floor decals.
+- **Small backward-compatible hooks:** `fx.project` (arena/fx.ts), `glowState.off` (pix.ts), `drawMinions(ctx, m, t, each?)`, perk-card anchoring under `fx.project`. Hits with amount ≤ 0 (spawn shield) no longer show "-0".
+- **API (index.ts):** `createStage25d(opts?)` → `{ canvas, resize(cssW, cssH, dpr), render(ctx, state, time, view?, extras?), screenToWorld, worldToScreen, setFollow, setScale, xrSupported, enterXR, exitXR, xrActive, destroy }`. The module also exports `xrSupported`.
+  - opts: `{ xr?, spectator?, pull?, scale?, onXRChange?, onXRFrame? }`.
+  - extras: `{ you, focusId, events, theme, seed, variant, world, shake: number | {x,y} }`.
+  - Screen coords = logical view px (0..view.w × 0..view.h).
+  - With `canvas` mounted (resize called) the world renders there and `ctx` only gets the FX overlay; otherwise it blits into ctx. The stage does NOT draw postfx (the caller does).
+- **For claude-ui:**
+  - (a) Pass `opts.pull` (latest interpolated state/time/events/extras). While a Vision Pro session presents, window rAF can stop, and the XR loop pulls from it.
+  - (b) In 3D, call drawPostFx with `{ x: 0, y: 0, w: view.w, h: view.h }`: the overlay is in logical view px, and the phone `view.x` offset would shift it.
+- **Verified (Playwright, scratch scripts):**
+  - WebKit raid desktop 1440: 62.1 fps, stage 5.5–8 ms/frame.
+  - WebKit royale 8 bots projector 1920: 62.2 fps, 5.6–6.2 ms.
+  - WebKit iPhone 15 portrait raid/royale follow: 61.6 / 62.2 fps, 6.5 ms.
+  - 0 page errors.
+  - Chromium + IWER emulated headset: Enter → immersive-vr session, 317–319 XR frames in 5 s (~62–63 fps; the emulator runs on headless 60 Hz rAF, so 90 Hz is only verifiable on device); tabletop and life-size both render; exit returns to the screen loop.
+- **Not verified / limits:**
+  - Real Vision Pro (90 Hz, transient-pointer pinch on the buttons; the select→raycast path isn't exercised by the emulator test).
+  - Lasers stay on the floor (no elevated beam).
+  - Pickups and obstacles are floor decals, not billboards.
+
 DONE (royale) — claude-boss
 
 ## PvP royale (docs/tasks/pvp-royale.md, my section)
