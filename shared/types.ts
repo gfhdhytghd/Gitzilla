@@ -504,6 +504,8 @@ export type ClientMsg =
   | { t: "setRubric"; rubric: Rubric }      // owner only, edu, lobby (after previewing POST /api/rubric/parse)
   | { t: "pause"; paused: boolean }        // owner only, during a match: true = pause now, false = resume after 3s
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
+  | { t: "kick"; playerId: string }         // owner only: remove a member (human or bot) and ban that seat from rejoining this room
+  | { t: "transferOwner"; playerId: string } // owner only, battle/pvp lobby: hand the room to another connected human
   | { t: "start" }                          // owner only, needs >=1 ready player (4+ recommended)
   | { t: "input"; frame: InputFrame }
   | { t: "rematch" };                       // owner only
@@ -515,7 +517,8 @@ export type ServerMsg =
   | { t: "snapshot"; state: MatchState; ack: number }
   | { t: "autopsy"; result: Autopsy }
   | { t: "feedback"; items: StudentFeedback[] }  // edu, after the match: a student gets only their own; owner/screen get all
-  | { t: "error"; message: string };
+  | { t: "error"; message: string }
+  | { t: "kicked"; by: string };                  // sent to a removed member just before the server closes its socket; by = owner name
 
 export interface Autopsy {
   mode: GameMode;
