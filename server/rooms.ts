@@ -30,7 +30,7 @@ export interface GameServices {
   feedbackForPlayer?(profile: RepoProfile, rubric: Rubric, stats: StudentFeedback['match'] & { playerId: string; name: string }): StudentFeedback;
   applyRubric?(profile: RepoProfile, kit: PlayerKit, rubric: Rubric): PlayerKit;
   analyzeRepo(repo: string, options?: { token?: string; onProgress?: (progress: GenesisProgress) => void }): Promise<RepoProfile>;
-  getSession?(request: IncomingMessage): Promise<{ login: string } | null>;
+  getSession?(request: IncomingMessage): Promise<{ login: string; userId?: string } | null>;
   getGithubToken?(request: IncomingMessage): Promise<string | null>;
   buildGenesis?(profile: RepoProfile, kit: PlayerKit | BossKit, kind: 'hero' | 'boss'): Genesis;
   listFallbackRepos(): string[];
@@ -57,6 +57,7 @@ interface Member {
   namedByUser?: boolean;
   privateRepo?: boolean;
   pvpAccess?: PvpAccess; // Memory-only; invalidated on reconnect and mode changes.
+  identities?: string[];
   profile?: RepoProfile; // Memory-only, never part of the room-store whitelist.
   socket: WebSocket | null;
   lobby: LobbyPlayer;
@@ -83,6 +84,7 @@ interface Room {
   feedback?: StudentFeedback[];
   feedbackProfiles?: Map<string, RepoProfile>;
   members: Map<string, Member>;
+  bans: { tokens: Set<string>; identities: Set<string> };
   boss: LobbyState['boss'];
   bossProfile?: RepoProfile;
   privateBoss?: boolean;
@@ -107,6 +109,7 @@ interface Room {
 
 const idle = (seq = 0): InputFrame => ({ seq, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard' });
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
+const removedMessage = 'You were removed from this room by the host.';
 const connectedPlayers = (room: Room) => [...room.members.values()].filter(m => m.role === 'player' && m.socket !== null);
 const capacity = (room: Room) => room.mode === 'edu' ? 30 : 8;
 const bots = (room: Room) => [...room.members.values()].filter(m => m.lobby.bot);
@@ -170,6 +173,7 @@ export class RoomServer {
         : { ...saved.boss };
       if (boss.status === 'analyzing') { boss.status = 'error'; boss.error = 'Server restarted during analysis. Choose the boss again.'; }
       const room: Room = { locale: isLocale(saved.locale) ? saved.locale : 'en', code: saved.code, ownerId: saved.ownerId, mode: saved.mode === 'edu' ? 'edu' : saved.mode === 'pvp' ? 'pvp' : 'battle', teacherId: saved.teacherId, members, boss,
+        bans: { tokens: new Set(saved.bans?.tokens), identities: new Set(saved.bans?.identities) },
         privateBoss: saved.privateBoss, bossProfile: saved.privateBoss ? undefined : saved.bossProfile,
         bossRevision: 0, phase: 'lobby', events: [],
         restartNotice: saved.phase === 'match'
@@ -189,8 +193,9 @@ export class RoomServer {
 
   private savedRooms(): SavedRoom[] {
     return [...this.rooms.values()].map(room => ({ code: room.code, ownerId: room.ownerId, mode: room.mode, teacherId: room.teacherId, locale: room.locale, rubric: room.rubric, classroom: room.classroom?.save(),
+      bans: { tokens: [...room.bans.tokens], identities: [...room.bans.identities] },
       players: [...room.members.values()].filter(m => m.role === 'player' || m.id === room.ownerId || m.id === room.teacherId).map(m => ({
-        id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed,
+        id: m.id, token: m.token, name: m.name, role: m.role, namedByUser: m.namedByUser, privateRepo: m.privateRepo, botSeed: m.botSeed, identities: m.identities,
         lobby: this.persistedLobby(m),
       })),
       boss: room.privateBoss
@@ -236,7 +241,7 @@ export class RoomServer {
     if (code && this.rooms.has(code)) return code;
     if (!code) do { code = Array.from(randomBytes(4), byte => String.fromCharCode(65 + byte % 26)).join(''); } while (this.rooms.has(code));
     const room: Room = { code, ownerId: '', mode, rubric: mode === 'edu' ? this.services.defaultRubric?.() : undefined,
-      members: new Map(), boss: { repo: null, status: 'empty', kit: null }, bossRevision: 0, phase: 'lobby', events: [] };
+      members: new Map(), bans: { tokens: new Set(), identities: new Set() }, boss: { repo: null, status: 'empty', kit: null }, bossRevision: 0, phase: 'lobby', events: [] };
     this.rooms.set(code, room);
     this.scheduleCleanup(room);
     this.persist();
@@ -361,6 +366,23 @@ export class RoomServer {
     if (!session || session.member.socket !== socket) throw new Error('Send hello first');
     const { room, member } = session;
     if (msg.t === 'leave') { this.leave(socket, room, member); return; }
+    if (msg.t === 'kick' || msg.t === 'transferOwner') {
+      if (room.ownerId !== member.id) throw new Error('Only the room owner can do that');
+      if (msg.t === 'transferOwner' && room.mode === 'edu') throw new Error("The teacher can't hand over a classroom.");
+      if (msg.t === 'transferOwner' && room.phase === 'match') throw new Error('Hand over the room after the match.');
+      if (typeof msg.playerId !== 'string') throw new Error('Choose a room member');
+      const target = room.members.get(msg.playerId);
+      if (!target) throw new Error('That member is no longer in this room');
+      if (target.id === member.id) throw new Error(msg.t === 'kick' ? "You can't kick yourself." : 'Choose someone else to host.');
+      if (msg.t === 'kick') {
+        this.kickMember(room, target, member.name);
+      } else {
+        if (target.lobby.bot || !target.socket || target.socket.readyState !== WebSocket.OPEN) throw new Error('Choose a connected human to host.');
+        room.ownerId = target.id;
+        this.broadcastLobby(room); this.flushPersistence();
+      }
+      return;
+    }
     if (msg.t === 'pause') {
       if (room.ownerId !== member.id) throw new Error('Only the room owner can pause or resume');
       if (typeof msg.paused !== 'boolean') throw new Error('Choose pause or resume');
@@ -442,6 +464,12 @@ export class RoomServer {
           if (!token || !this.services.verifyPvpAccess) throw new Error('Connect GitHub before choosing a PvP repository.');
           const access = await this.services.verifyPvpAccess(msg.repo, token);
           if (revision !== member.revision || member.socket !== socket) return;
+          const identity = tokenHash(`github:${access.userId}`);
+          member.identities = [...new Set([...(member.identities ?? []), identity])];
+          if (room.bans.identities.has(identity)) {
+            send(socket, { t: 'error', message: removedMessage });
+            this.kickMember(room, member, room.members.get(room.ownerId)?.name ?? 'the host'); return;
+          }
           if ([...room.members.values()].some(m => m.id !== member.id && m.socket && m.pvpAccess?.userId === access.userId)) throw new Error('PvP needs different GitHub accounts.');
           member.pvpAccess = access;
           // Public eligibility was just verified using the owner's token. Analyze
@@ -665,22 +693,30 @@ export class RoomServer {
     if (msg.role !== 'screen' && msg.role !== 'player') throw new Error('Choose player or screen');
     const code = String(msg.room).toUpperCase();
     if (!/^[A-Z]{4}$/.test(code)) throw new Error('Use a four-letter room code (A–Z only; no digits).');
-    if (typeof msg.resume === 'string' && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'left'); return; }
     let room = this.rooms.get(code);
+    if (room && typeof msg.resume === 'string' && room.bans.tokens.has(tokenHash(msg.resume))) { this.rejectBan(socket); return; }
+    if (typeof msg.resume === 'string' && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'left'); return; }
     if (!room && typeof msg.resume === 'string' && msg.resume.length > 0) room = this.rooms.get(this.createRoom(code));
     if (!room) throw new Error('Room not found. Check the room code and try again.');
     const suppliedName = String(msg.name || '').trim().slice(0, 32);
     let githubName: string | undefined;
+    let identity: string | undefined;
     const request = this.requests.get(socket);
-    if (!suppliedName && msg.role === 'player' && request && this.services.getSession) {
-      try { githubName = (await this.services.getSession(request))?.login; }
+    if (request && this.services.getSession) {
+      try {
+        const session = await this.services.getSession(request);
+        githubName = msg.role === 'player' ? session?.login : undefined;
+        if (session?.userId) identity = tokenHash(`auth0:${session.userId}`);
+      }
       catch { /* Anonymous play works if session resolution is unavailable. */ }
     }
     if (this.closing || socket.readyState !== WebSocket.OPEN) return;
+    if ((typeof msg.resume === 'string' && room.bans.tokens.has(tokenHash(msg.resume))) || (identity && room.bans.identities.has(identity))) { this.rejectBan(socket); return; }
     if (typeof msg.resume === 'string' && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'left'); return; }
     if (this.rooms.get(code) !== room) throw new Error('Room not found. Check the room code and try again.');
     const previousOwner = room.ownerId;
     let member = msg.resume ? [...room.members.values()].find(m => m.token === msg.resume && m.role === msg.role) : undefined;
+    if ((member?.identities ?? []).some(key => room.bans.identities.has(key))) { this.rejectBan(socket); return; }
     if (!member) {
       if (msg.role === 'player' && room.phase !== 'lobby') throw new Error('A match is in progress. Join as a screen or wait for the lobby.');
       if (msg.role === 'player' && room.classroom && room.classroom.state.rows.length >= 30) throw new Error('This lesson already has 30 students; reconnect with your existing session');
@@ -696,6 +732,7 @@ export class RoomServer {
       this.sessions.delete(member.socket);
       member.socket.close(4001, 'Resumed in another tab');
     }
+    if (identity) member.identities = [...new Set([...(member.identities ?? []), identity])];
     // The lobby's rename control reconnects with the same token and a new hello name.
     if (member.role === 'player' && !member.socket) this.makeRoomForHuman(room);
     member.name = suppliedName || (!member.namedByUser && githubName?.slice(0, 32)) || member.name;
@@ -751,15 +788,33 @@ export class RoomServer {
   }
 
   private leave(socket: WebSocket, room: Room, member: Member) {
+    this.removeMember(room, member, 'left');
+  }
+
+  private rejectBan(socket: WebSocket) {
+    send(socket, { t: 'error', message: removedMessage }); socket.close(4003, 'kicked');
+  }
+
+  private kickMember(room: Room, member: Member, by: string) {
+    if (!member.lobby.bot) {
+      room.bans.tokens.add(tokenHash(member.token));
+      for (const identity of member.identities ?? []) room.bans.identities.add(identity);
+      if (member.pvpAccess) room.bans.identities.add(tokenHash(`github:${member.pvpAccess.userId}`));
+    }
+    this.removeMember(room, member, 'kicked', by);
+  }
+
+  private removeMember(room: Room, member: Member, reason: 'left' | 'kicked', by?: string) {
+    const socket = member.socket;
     const previousOwner = room.ownerId;
-    this.revokedTokens.add(tokenHash(member.token));
+    if (reason === 'left') this.revokedTokens.add(tokenHash(member.token));
     ++member.revision;
     member.input = undefined; member.profile = undefined; member.preview = undefined; member.socket = null;
     room.members.delete(member.id); room.pendingProgress?.delete(member.id);
     room.feedbackProfiles?.delete(member.id);
     if (room.feedback) room.feedback = room.feedback.filter(item => item.playerId !== member.id);
-    this.sessions.delete(socket); this.requests.delete(socket);
-    room.classroom?.remove(member.id);
+    if (socket) { this.sessions.delete(socket); this.requests.delete(socket); }
+    if (reason === 'kicked') room.classroom?.kick(member.id); else room.classroom?.remove(member.id);
     if (room.classroom && room.teacherId === member.id) { room.classroom.end(); this.clearPause(room); }
     if (!room.classroom && room.teacherId === member.id) room.teacherId = undefined;
     const humans = [...room.members.values()].filter(m => !m.lobby.bot && m.socket);
@@ -781,7 +836,10 @@ export class RoomServer {
       this.publishFeedback(room);
     }
     this.flushPersistence(); // Durable leave/revocation before acknowledging by closing.
-    socket.close(4002, 'left');
+    if (socket) {
+      if (reason === 'kicked') send(socket, { t: 'kicked', by: by ?? 'the host' });
+      socket.close(reason === 'kicked' ? 4003 : 4002, reason);
+    }
   }
 
   private activeResult(room: Room, result: Autopsy): Autopsy {
@@ -833,7 +891,9 @@ export class RoomServer {
         try { token = request ? await this.services.getGithubToken?.(request) : null; }
         catch { throw new Error('GitHub connection unavailable. Reconnect GitHub and retry.'); }
         if (!token || !this.services.verifyPvpAccess) throw new Error('Reconnect GitHub and reselect an eligible repository.');
-        return await this.services.verifyPvpAccess(c.access.repo, token);
+        const access = await this.services.verifyPvpAccess(c.access.repo, token);
+        if (room.bans.identities.has(tokenHash(`github:${access.userId}`))) throw new Error(removedMessage);
+        return access;
       } catch (error) { throw new Error(`PvP cannot start: ${c.member.name}: ${error instanceof Error ? error.message : 'GitHub eligibility verification failed.'}`); }
     }));
     if (room.mode !== 'pvp' || room.phase !== 'lobby' || room.ownerId !== owner.id || !owner.socket || owner.socket !== ownerSocket

@@ -16,6 +16,15 @@ function lesson() {
   return {s, advance:(ms:number)=>{time+=ms;}, plan};
 }
 describe('staged classroom lesson',()=>{
+  it('drops kicked queued submissions/live rows but preserves attacks that already earned credit', () => {
+    const {s} = lesson(); s.control('start');
+    const pending = s.begin('a', 'demo/repo'); s.accept(s.begin('b', 'demo/repo'), source);
+    s.kick('a'); expect(s.valid(pending)).toBe(false); s.accept(pending, source);
+    expect(s.state.rows.map(r => r.id)).toEqual(['b']); expect(s.privatePayload('a', true).reports.a).toBeUndefined();
+    s.control('attack'); const rounds = structuredClone(s.state.rounds), exported = classroomExport(s.publicState(), 'csv');
+    s.kick('b'); expect(s.state.rows).toEqual([]); expect(s.state.rounds).toEqual(rounds);
+    expect(classroomExport(s.publicState(), 'csv')).toBe(exported); expect(s.privatePayload('teacher', true).reports).toEqual({});
+  });
   it('freezes the host raid clock and shifts its deadline without replaying attacks', () => {
     const {s, advance} = lesson();
     s.control('start'); s.accept(s.begin('a','demo/repo'), source); s.control('attack');

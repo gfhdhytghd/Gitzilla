@@ -99,6 +99,13 @@ export class ClassroomSession {
     this.scaleBoss();
     this.reports.delete(id); this.errors.delete(id);
   }
+  kick(id: string) {
+    this.remove(id); // Invalidates queued grading before removing its live row.
+    this.state.rows = this.state.rows.filter(row => row.id !== id);
+    this.previous.delete(id); this.submittedAt.delete(id);
+    for (const key of this.credited.keys()) if (key.endsWith(`:${id}`)) this.credited.delete(key);
+    this.scaleBoss(); // Frozen attack rounds and started-lesson HP stay unchanged.
+  }
   privatePayload(id: string, teacher: boolean): { reports: Record<string, ClassroomReport>; errors: Record<string, string> } {
     const reports = [...this.reports].filter(([key]) => teacher || key === id).map(([key, report]) => {
       if (teacher) return [key, report] as const;

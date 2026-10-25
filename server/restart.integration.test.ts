@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import type { ClientMsg, ServerMsg } from '../shared/types.ts';
+import { defaultClassroomPlan } from '../shared/classroom-defaults';
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function until<T>(get: () => T | false | undefined): Promise<T> {
@@ -108,8 +109,19 @@ it.skipIf(process.env.ROOM_RESTART_TEST !== '1')('recovers real main.ts processe
     await until(() => teacher.lobby()?.rubric?.title === 'Restored classroom rubric');
     const studentA = await joinRoom(third.base, classroom);
     const studentB = await joinRoom(third.base, classroom);
-    studentA.send({ t: 'setRepo', repo: repos[0] }); studentB.send({ t: 'setRepo', repo: repos[1] });
-    await until(() => teacher.lobby()?.players.length === 2 && teacher.lobby()?.players.every(p => p.status === 'ready' && p.kit?.quality?.length));
+    const lastClass = (client: typeof teacher) => client.messages.filter(m => m.t === 'classroom').at(-1);
+    const plan = defaultClassroomPlan(); plan.steps = plan.steps.slice(0, 1); delete plan.steps[0].brief;
+    Object.assign(plan.steps[0], { rubric, durationSec: 0, checksWeight: 100, checks: [{ id: 'file', kind: 'file', path: 'main.py', label: 'Python' }] });
+    teacher.send({ t: 'classroomPlan', plan }); await until(() => lastClass(teacher)?.state.rows.length === 2);
+    teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => lastClass(teacher)?.state.phase === 'coding');
+    for (const student of [studentA, studentB]) student.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42\n# PRIVATE_RESTART_SOURCE' }] });
+    await until(() => lastClass(teacher)?.state.rows.every(row => row.status === 'submitted'));
+    teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => lastClass(teacher)?.state.phase === 'raid');
+    const exportPath = `/api/room/${classroom}/classroom.csv`, teacherHeaders = { 'X-Room-Token': teacher.welcome.token };
+    const frozenExport = await (await fetch(third.base + exportPath, { headers: teacherHeaders })).text();
+    const kicked = once(studentB.ws, 'close'); teacher.send({ t: 'kick', playerId: studentB.welcome.you }); expect((await kicked)[0]).toBe(4003);
+    await until(() => lastClass(teacher)?.state.rows.length === 1);
+    expect(studentB.messages.some(m => m.t === 'kicked')).toBe(true);
     await stop(third.child);
     const fourth = await boot();
     const restoredTeacher = await joinRoom(fourth.base, classroom, teacher.welcome.token, 'screen');
@@ -118,22 +130,24 @@ it.skipIf(process.env.ROOM_RESTART_TEST !== '1')('recovers real main.ts processe
     expect(restoredTeacher.welcome.lobby.mode).toBe('edu');
     expect(restoredTeacher.welcome.lobby.rubric?.title).toBe('Restored classroom rubric');
     const restoredA = await joinRoom(fourth.base, classroom, studentA.welcome.token);
-    const restoredB = await joinRoom(fourth.base, classroom, studentB.welcome.token);
-    expect(restoredA.welcome.lobby.players.find(p => p.id === studentA.welcome.you)?.kit?.quality?.length).toBeGreaterThan(0);
-    await until(() => restoredTeacher.lobby()?.players.length === 2 && restoredTeacher.lobby()?.players.every(p => p.status === 'ready'));
-    restoredTeacher.send({ t: 'start' });
-    const pvp = await until(() => restoredTeacher.messages.find(m => m.t === 'snapshot'));
-    expect(pvp.state.mode).toBe('edu'); expect(pvp.state.boss).toBeNull(); expect(pvp.state.heroScale).toBe(2);
+    const restoredClass = await until(() => lastClass(restoredTeacher));
+    expect(restoredClass.state.phase).toBe('feedback'); expect(restoredClass.state.rows.map(r => r.id)).toEqual([studentA.welcome.you]);
+    expect(restoredClass.reports).toEqual({}); expect(restoredClass.state.rounds[0].attacks).toHaveLength(2);
+    expect(await (await fetch(fourth.base + exportPath, { headers: teacherHeaders })).text()).toBe(frozenExport);
+    const bannedSocket = new WebSocket(fourth.base.replace('http:', 'ws:') + '/ws'); sockets.push(bannedSocket);
+    const bannedMessages: ServerMsg[] = []; bannedSocket.on('message', raw => bannedMessages.push(JSON.parse(String(raw))));
+    await once(bannedSocket, 'open'); const banClose = once(bannedSocket, 'close');
+    bannedSocket.send(JSON.stringify({ t: 'hello', room: classroom, role: 'player', name: 'Banned after restart', resume: studentB.welcome.token }));
+    expect((await banClose)[0]).toBe(4003); expect(bannedMessages).toContainEqual({ t: 'error', message: 'You were removed from this room by the host.' });
 
     let closed = once(restoredA.ws, 'close'); restoredA.send({ t: 'leave' });
     expect((await closed)[0]).toBe(4002);
-    await until(() => restoredTeacher.messages.find(m => m.t === 'snapshot' && m.state.players.length === 1));
-    closed = once(restoredB.ws, 'close'); restoredB.send({ t: 'leave' }); await closed;
+    await until(() => restoredTeacher.lobby()?.players.length === 0);
     closed = once(restoredTeacher.ws, 'close'); restoredTeacher.send({ t: 'leave' }); await closed;
     expect(await (await fetch(fourth.base + '/api/room/' + classroom)).json()).toEqual({ exists: false, players: 0, phase: null });
     await stop(fourth.child);
     const fifth = await boot();
-    for (const resume of [studentA.welcome.token, studentB.welcome.token, teacher.welcome.token]) {
+    for (const resume of [studentA.welcome.token, teacher.welcome.token]) {
       const ws = new WebSocket(fifth.base.replace('http:', 'ws:') + '/ws'); sockets.push(ws);
       await once(ws, 'open'); const denied = once(ws, 'close');
       ws.send(JSON.stringify({ t: 'hello', room: classroom, role: resume === teacher.welcome.token ? 'screen' : 'player', resume }));

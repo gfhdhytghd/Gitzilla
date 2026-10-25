@@ -13,6 +13,7 @@ export interface SavedPlayer {
   namedByUser?: boolean;
   privateRepo?: boolean;
   botSeed?: number;
+  identities?: string[]; // SHA-256 identity fingerprints; never provider credentials.
   lobby: LobbyPlayer;
 }
 export interface SavedRoom {
@@ -29,6 +30,7 @@ export interface SavedRoom {
   privateBoss?: boolean;
   phase: LobbyState['phase'];
   restartNotice?: string;
+  bans?: { tokens: string[]; identities: string[] };
 }
 
 export class RoomStore {
@@ -40,7 +42,11 @@ export class RoomStore {
       const data = JSON.parse(readFileSync(this.file, 'utf8')) as { version: number; rooms: SavedRoom[]; revokedTokens?: string[] };
       if (data.version !== 1 || !Array.isArray(data.rooms)) throw new Error('Unknown room store version');
       this.revokedTokens = Array.isArray(data.revokedTokens) ? data.revokedTokens.filter(hash => typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash)) : [];
-      return data.rooms.filter(room => /^[A-Z]{4}$/.test(room.code) && Array.isArray(room.players));
+      const hashes = (values: unknown) => Array.isArray(values) ? values.filter((hash): hash is string => typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash)) : [];
+      return data.rooms.filter(room => /^[A-Z]{4}$/.test(room.code) && Array.isArray(room.players)).map(room => ({ ...room,
+        bans: { tokens: hashes(room.bans?.tokens), identities: hashes(room.bans?.identities) },
+        players: room.players.map(player => ({ ...player, identities: hashes(player.identities) })),
+      }));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') console.warn('Room persistence could not be restored; stale room codes can still be recreated.');
       return [];

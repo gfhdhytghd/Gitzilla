@@ -1799,6 +1799,140 @@ it('only the classroom host can switch language, including before a lesson is pu
   const resumed=await test.connect('player',student.welcome.token);expect(resumed.welcome.lobby.locale).toBe('es');
 });
 
+describe('host kick and transfer authority', () => {
+  async function denied(f: Awaited<ReturnType<typeof setup>>, resume?: string, cookie?: string, role: 'player' | 'screen' = 'player') {
+    const socket = new WebSocket(f.wsUrl, { headers: cookie ? { Cookie: cookie } : {} });
+    const messages: ServerMsg[] = []; socket.on('message', raw => messages.push(JSON.parse(raw.toString())));
+    await once(socket, 'open'); const closed = once(socket, 'close');
+    socket.send(JSON.stringify({ t: 'hello', room: f.room, role, name: 'Rejoin', resume }));
+    const [code, reason] = await closed;
+    expect(code).toBe(4003); expect(String(reason)).toBe('kicked');
+    expect(messages).toContainEqual({ t: 'error', message: 'You were removed from this room by the host.' });
+    expect(messages.some(m => m.t === 'welcome')).toBe(false);
+  }
+  async function kick(owner: Awaited<ReturnType<Awaited<ReturnType<typeof setup>>['connect']>>, target: typeof owner) {
+    const closed = once(target.socket, 'close'); owner.send({ t: 'kick', playerId: target.welcome.you });
+    const [code, reason] = await closed;
+    expect(code).toBe(4003); expect(String(reason)).toBe('kicked');
+    expect(target.messages).toContainEqual({ t: 'kicked', by: owner.welcome.lobby.players.find(p => p.id === owner.welcome.you)?.name ?? 'Host' });
+  }
+  it('restricts moderation to the owner, removes a bot/human seat, denies resume and permits fresh anonymous raids', async () => {
+    const f = await setup(), owner = await f.connect('player', undefined, 'Host'), other = await f.connect();
+    other.send({ t: 'kick', playerId: owner.welcome.you }); other.send({ t: 'transferOwner', playerId: owner.welcome.you });
+    await until(() => other.messages.filter(m => m.t === 'error').length === 2);
+    owner.send({ t: 'kick', playerId: owner.welcome.you }); owner.send({ t: 'kick', playerId: 'missing' });
+    await until(() => owner.messages.filter(m => m.t === 'error').length === 2);
+    owner.send({ t: 'setBots', count: 1 }); await until(() => owner.lobby()?.players.some(p => p.bot && p.status === 'ready'));
+    const bot = owner.lobby()!.players.find(p => p.bot)!; owner.send({ t: 'kick', playerId: bot.id });
+    await until(() => !owner.lobby()?.players.some(p => p.id === bot.id));
+    await kick(owner, other); await until(() => owner.lobby()?.players.length === 1); await denied(f, other.welcome.token);
+    const fresh = await f.connect(); expect(fresh.welcome.lobby.players).toHaveLength(2);
+  });
+  it('persists room-scoped identity/token bans across restart and checks signed-in named screens too', async () => {
+    const file = persistenceFile();
+    const services = { getSession: async (request: http.IncomingMessage) => request.headers.cookie === 'victim' ? { login: 'old-login', userId: 'auth0|PRIVATE_SUBJECT' } : null };
+    const f = await setup(999, services, { persistenceFile: file });
+    const owner = await f.connect('player', undefined, 'Host'), victim = await f.connect('player', undefined, 'Named player', 'victim');
+    await kick(owner, victim); await denied(f, undefined, 'victim'); await denied(f, undefined, 'victim', 'screen');
+    await f.close(); const raw = readFileSync(file, 'utf8'), saved = JSON.parse(raw).rooms[0];
+    expect(saved.bans.tokens).toHaveLength(1); expect(saved.bans.identities).toHaveLength(1);
+    expect(saved.bans.tokens[0]).toMatch(/^[a-f0-9]{64}$/); expect(raw).not.toContain('PRIVATE_SUBJECT'); expect(raw).not.toContain(victim.welcome.token);
+    const restarted = await setup(999, services, { persistenceFile: file }, f.room);
+    await denied(restarted, victim.welcome.token); await denied(restarted, undefined, 'victim');
+    const anotherRoom = restarted.rooms.createRoom(), socket = new WebSocket(restarted.wsUrl);
+    await once(socket, 'open'); const message = once(socket, 'message');
+    socket.send(JSON.stringify({ t: 'hello', room: anotherRoom, role: 'player', name: 'Allowed in another room' }));
+    expect(JSON.parse(String((await message)[0])).t).toBe('welcome'); socket.close();
+  });
+  it('also enforces a banned GitHub identity if it returns through a different Auth0 session', async () => {
+    const f = await setup(999, { getSession: async req => req.headers.cookie ? { userId: `subject:${req.headers.cookie}`, login: 'account' } : null,
+      getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async repo => ({ repo, userId: 42, login: 'account', private: false }) }, {}, undefined, 'pvp');
+    const host = await f.connect('player', undefined, 'Host'), victim = await f.connect('player', undefined, 'Victim', 'old-session');
+    victim.send({ t: 'setRepo', repo: 'account/owned' }); await until(() => host.lobby()?.players.find(p => p.id === victim.welcome.you)?.status === 'ready');
+    await kick(host, victim);
+    const alias = await f.connect('player', undefined, 'Alias', 'other-session'), closed = once(alias.socket, 'close');
+    alias.send({ t: 'setRepo', repo: 'account/other' }); expect((await closed)[0]).toBe(4003);
+    expect(alias.messages).toContainEqual({ t: 'error', message: 'You were removed from this room by the host.' });
+    await until(() => host.lobby()?.players.length === 1); await denied(f, undefined, 'other-session');
+  });
+  it.each(['lobby', 'autopsy'] as const)('transfers ownership in %s, keeps the old member, persists it and preserves auto-transfer on leave', async phase => {
+    const file = persistenceFile(), f = await setup(0.1, {}, { persistenceFile: file });
+    const a = await f.connect('player', undefined, 'Alice'), b = await f.connect('player', undefined, 'Bob'), gone = await f.connect();
+    gone.socket.close(); await once(gone.socket, 'close'); await until(() => a.lobby()?.players.length === 2);
+    a.send({ t: 'setBots', count: 1 }); await until(() => a.lobby()?.players.some(p => p.bot && p.status === 'ready'));
+    const bot = a.lobby()!.players.find(p => p.bot)!;
+    for (const playerId of [a.welcome.you, bot.id, gone.welcome.you, 'missing']) a.send({ t: 'transferOwner', playerId });
+    await until(() => a.messages.filter(m => m.t === 'error').length === 4);
+    if (phase === 'autopsy') {
+      for (const p of [a, b]) p.send({ t: 'setRepo', repo: 'demo/hero' }); a.send({ t: 'setBoss', repo: 'demo/boss' });
+      await until(() => a.lobby()?.players.every(p => p.status === 'ready') && a.lobby()?.boss.status === 'ready');
+      a.send({ t: 'start' }); await until(() => a.lobby()?.phase === 'autopsy');
+    }
+    a.send({ t: 'transferOwner', playerId: b.welcome.you }); await until(() => a.lobby()?.ownerId === b.welcome.you);
+    expect(a.lobby()?.players.some(p => p.id === a.welcome.you)).toBe(true);
+    expect(JSON.parse(readFileSync(file, 'utf8')).rooms[0].ownerId).toBe(b.welcome.you);
+    a.send({ t: 'kick', playerId: b.welcome.you }); await until(() => a.messages.filter(m => m.t === 'error').length === 5);
+    const closed = once(b.socket, 'close'); b.send({ t: 'leave' }); await closed;
+    await until(() => a.lobby()?.ownerId === a.welcome.you);
+  });
+  it.each(['battle', 'pvp'] as const)('kicks a fighter during real %s, refuses transfer, and keeps teammates running', async mode => {
+    const f = await setup(999, { ...genesisServices, createMatch, createBot, getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async (repo, token) => ({ repo, userId: token === 'alice' ? 1 : 2, login: token, private: false }) }, {}, undefined, mode);
+    const a = await f.connect('player', undefined, 'Host', 'alice'), b = await f.connect('player', undefined, 'Bob', 'bob');
+    for (const p of [a, b]) p.send({ t: 'setRepo', repo: 'pallets/flask' }); a.send({ t: 'setBots', count: 1 });
+    if (mode === 'battle') a.send({ t: 'setBoss', repo: 'pallets/flask' });
+    await until(() => a.lobby()?.players.every(p => p.status === 'ready') && (mode === 'pvp' || a.lobby()?.boss.status === 'ready'));
+    a.send({ t: 'start' }); await until(() => a.messages.find(m => m.t === 'snapshot'));
+    a.send({ t: 'transferOwner', playerId: b.welcome.you }); await until(() => a.messages.some(m => m.t === 'error' && m.message === 'Hand over the room after the match.'));
+    await kick(a, b); await until(() => !a.messages.filter(m => m.t === 'snapshot').at(-1)?.state.players.some(p => p.id === b.welcome.you));
+    const state = a.messages.filter(m => m.t === 'snapshot').at(-1)!.state;
+    expect(state.players).toHaveLength(2); await until(() => (a.messages.filter(m => m.t === 'snapshot').at(-1)?.state.t ?? 0) > state.t);
+    if (mode === 'pvp') expect(state.pvp?.royale?.eliminations).toContainEqual(expect.objectContaining({ player: b.welcome.you, by: null, reason: 'left', placement: 3 }));
+    await denied(f, b.welcome.token);
+  });
+  it('reevaluates the new PvP owner as a spectator without changing either fighter kit', async () => {
+    const f = await setup(999, { ...genesisServices, getGithubToken: async req => req.headers.cookie ?? null,
+      verifyPvpAccess: async repo => ({ repo, userId: 1, login: 'alice', private: false }) }, {}, undefined, 'pvp');
+    const a = await f.connect('player', undefined, 'Alice', 'alice'), b = await f.connect('player', undefined, 'New host');
+    a.send({ t: 'setRepo', repo: 'pallets/flask' }); a.send({ t: 'setBots', count: 1 });
+    await until(() => a.lobby()?.players.filter(p => p.status === 'ready').length === 2);
+    const kits = a.lobby()!.players.filter(p => p.status === 'ready').map(p => p.kit);
+    a.send({ t: 'transferOwner', playerId: b.welcome.you }); await until(() => b.lobby()?.ownerId === b.welcome.you);
+    b.send({ t: 'start' }); const snapshot = await until(() => b.messages.find(m => m.t === 'snapshot'));
+    expect(snapshot.state.players.some(p => p.id === b.welcome.you)).toBe(false); expect(snapshot.state.players.map(p => p.kit)).toEqual(kits);
+  });
+  it.each(['setup', 'coding', 'raid', 'feedback', 'complete'] as const)('removes a classroom student during %s but keeps frozen exports and teacher ownership', async phase => {
+    let now = Date.now(); vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const f = await setup(999, { analyzeFiles }, { allowLegacyEdu: false }, undefined, 'edu');
+    const teacher = await f.connect('screen', undefined, 'Host'), a = await f.connect('player', undefined, 'Alice'), b = await f.connect('player', undefined, 'Bob');
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const plan = defaultClassroomPlan(); plan.steps = plan.steps.slice(0, 1); delete plan.steps[0].brief;
+    plan.steps[0].checksWeight = 100; plan.steps[0].checks = [{ id: 'file', kind: 'file', path: 'main.py', label: 'Python' }];
+    const latest = () => teacher.messages.filter(m => m.t === 'classroom').at(-1)!;
+    teacher.send({ t: 'classroomPlan', plan }); await until(() => latest()?.state.rows.length === 2);
+    teacher.send({ t: 'transferOwner', playerId: a.welcome.you }); await until(() => teacher.messages.some(m => m.t === 'error' && m.message === "The teacher can't hand over a classroom."));
+    if (phase !== 'setup') {
+      teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest()?.state.phase === 'coding');
+      for (const p of [a, b]) p.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42' }] });
+      await until(() => latest()?.state.rows.every(r => r.status === 'submitted'));
+      if (phase !== 'coding') {
+        teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => latest()?.state.phase === 'raid');
+        if (phase !== 'raid') { now += 10_001; await until(() => latest()?.state.phase === 'feedback'); }
+        if (phase === 'complete') { teacher.send({ t: 'classroomControl', action: 'finish' }); await until(() => latest()?.state.phase === 'complete'); }
+      }
+    }
+    const rounds = structuredClone(latest().state.rounds);
+    const exportUrl = `${f.base}/api/room/${f.room}/classroom.csv`, headers = { 'X-Room-Token': teacher.welcome.token };
+    const before = await (await fetch(exportUrl, { headers })).text();
+    await kick(teacher, a); await until(() => latest()?.state.rows.length === 1);
+    expect(latest().reports[a.welcome.you]).toBeUndefined(); expect(latest().state.rows[0].id).toBe(b.welcome.you); expect(latest().state.rounds).toEqual(rounds);
+    expect(await (await fetch(exportUrl, { headers })).text()).toBe(before); expect(teacher.lobby()?.ownerId).toBe(teacher.welcome.you);
+    if (phase === 'coding') { teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => latest()?.state.phase === 'raid'); expect(latest().state.rounds[0].attacks.map(a => a.id)).toEqual([b.welcome.you]); }
+    await denied(f, a.welcome.token);
+  });
+});
+
 it('persists the host-selected classroom language across server restarts', async () => {
   const file=persistenceFile(),test=await setup(999,{}, {persistenceFile:file},undefined,'edu');
   const teacher=await test.connect('screen');teacher.send({t:'classroomLanguage',locale:'zh'});
