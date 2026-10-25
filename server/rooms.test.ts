@@ -1758,8 +1758,8 @@ describe('PvP royale authority and isolation', () => {
     a.send({t:'start'});const result=await until(()=>a.messages.find(m=>m.t==='autopsy'));
     expect(result.t).toBe('autopsy');expect(recordReceipts).toHaveBeenCalledTimes(privateRepo?0:1);if(privateRepo)return;
     expect(recordReceipts.mock.calls[0][0].participants).toEqual([
-      {id:a.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(a.welcome.token)},
-      {id:b.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(b.welcome.token)}
+      {id:a.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(a.welcome.token),publicKey:'github:1'},
+      {id:b.welcome.you,tokenHash:(await import('./receipts/crypto')).hash(b.welcome.token),publicKey:'github:2'}
     ]);
     expect(recordReceipts.mock.calls[0][0].result.mode).toBe('pvp');
     expect(result.t==='autopsy'&&result.result.receiptIds).toBeUndefined();

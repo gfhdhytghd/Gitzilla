@@ -8,7 +8,7 @@ import { base58, from58, hash, loadSeed, publicBytes, signReceipt, verifyEd25519
 import { ReceiptStore, type ReceiptRecord } from './store';
 import { SolanaRpc, type AnchorRpc, type MemoBinding } from './rpc';
 export interface FinishedReceiptMatch {
-  eligible:boolean; result:Autopsy; participants:{id:string;tokenHash:string}[];
+  eligible:boolean; result:Autopsy; participants:{id:string;tokenHash:string;publicKey?:string}[];
   winner:string|null; placements:Record<string,number>;
 }
 export class ReceiptError extends Error {constructor(public status:number,message:string){super(message);}}
@@ -19,6 +19,16 @@ export class ReceiptService {
   constructor(readonly store:ReceiptStore,private seed:Uint8Array,readonly origin:string,private rpc:AnchorRpc=new SolanaRpc(),private now:()=>number=Date.now) {
     this.attestor=base58(publicBytes(seed));
     const u=new URL(origin);if(u.origin!==origin || origin.length>100)throw new Error('Configure a short application origin');
+  }
+  boardAnchor() {
+    return {
+      attestor: this.attestor,
+      balance: () => this.rpc.balance(this.attestor),
+      prepare: (memo: string) => this.rpc.prepare(this.seed, this.attestor, memo),
+      send: (wire: string) => this.rpc.send(wire),
+      inspect: (signature: string, attestor: string, memo: string, height: number) => this.rpc.inspect(signature, attestor, memo, height),
+      slot: (signature: string) => this.rpc.slot?.(signature) ?? Promise.resolve(undefined),
+    };
   }
   /** Called once after a public PvP result is frozen. Never accepts a client result. */
   record(input:FinishedReceiptMatch):Record<string,string> {

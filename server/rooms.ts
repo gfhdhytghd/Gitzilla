@@ -107,7 +107,7 @@ interface Room {
   match?: Match;
   departed?: Set<string>;
   privateMatch?: boolean;
-  receiptParticipants?: {id:string;tokenHash:string}[];
+  receiptParticipants?: {id:string;tokenHash:string;publicKey?:string}[];
   receiptEligible?: boolean;
   restartNotice?: string;
   pendingProgress?: Map<string, () => boolean>;
@@ -1108,7 +1108,7 @@ export class RoomServer {
     room.restartNotice = undefined;
     room.privateMatch = (room.mode === 'battle' && !!room.privateBoss) || players.some(p => p.privateRepo);
     room.receiptEligible = room.mode === 'pvp' && !room.privateMatch && players.filter(p => !p.lobby.bot).length >= 2;
-    room.receiptParticipants = room.receiptEligible ? players.filter(p => !p.lobby.bot).map(p => ({id:p.id,tokenHash:tokenHash(p.token)})) : undefined;
+    room.receiptParticipants = room.receiptEligible ? players.filter(p => !p.lobby.bot).map(p => ({id:p.id,tokenHash:tokenHash(p.token),publicKey:p.pvpAccess ? `github:${p.pvpAccess.userId}` : undefined})) : undefined;
     if (boss) room.boss.kit = boss;
     room.match = match; room.departed = new Set(); room.phase = 'match'; room.events = [];
     this.clearPause(room);

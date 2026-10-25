@@ -1,3 +1,6 @@
+import { ChainBoardStore } from './chain-board/store';
+import { ChainBoardService } from './chain-board/service';
+import { handleChainBoardRoute } from './chain-board/http';
 import { createReceiptService, type ReceiptService } from './receipts/service';
 import { handleReceiptRoute } from './receipts/http';
 import { verifyPvpAccess } from './pvp-access.ts';
@@ -42,6 +45,12 @@ let publicBase = '';
 let receiptService: ReceiptService | undefined;
 if(process.env.SOLANA_RECEIPTS_ENABLED !== '0')try { receiptService=createReceiptService(root,new URL(process.env.PUBLIC_URL||`http://localhost:${port}`).origin); }
 catch { console.warn('Match receipts are unavailable; gameplay continues.'); }
+let chainBoard: ChainBoardService | undefined;
+try {
+  const directory = resolve(process.env.SOLANA_RECEIPTS_DIR || resolve(root, '.cache/solana'));
+  if (/^(?:dist|public)(?:[\\/]|$)/.test(directory.slice(root.length + 1))) throw new Error('Unsafe state directory');
+  chainBoard = new ChainBoardService(new ChainBoardStore(resolve(directory, 'chain-board.sqlite')), receiptService?.store, receiptService?.boardAnchor());
+} catch { console.warn('Chain board is unavailable; gameplay continues.'); }
 function printRoomQr(room: string) {
   const url = `${publicBase}/r/${room}`;
   console.log(`\n  Join room ${room}: ${url}`);
@@ -56,7 +65,12 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
-  recordReceipts: input => receiptService?.record(input) ?? {},
+  recordReceipts: input => {
+    let ids: Record<string, string> = {};
+    try { ids = receiptService?.record(input) ?? {}; }
+    finally { try { chainBoard?.record(input, ids); } catch { console.warn('Chain board result could not be saved.'); } }
+    return ids;
+  },
   getGithubIdentity: (request, session) => resolveGithubIdentity(request, session, getGithubToken),
   analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
@@ -126,6 +140,7 @@ server.on('request', (req, res) => {
     if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
       json(res, 404, { error: 'Not found' }); return;
     }
+    if (handleChainBoardRoute(req, res, url, chainBoard)) return;
     if (await handleReceiptRoute(req, res, url, receiptService)) return;
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
     if (await handleEduRoute(req, res, url, rooms)) return;

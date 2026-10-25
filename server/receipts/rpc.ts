@@ -8,6 +8,7 @@ export const MEMO_PROGRAM='MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 export interface MemoBinding { v:1; id:string; d:string; w:string; o:string; n:string; e:number; s:string }
 export interface AnchorRpc {
   balance(attestor:string):Promise<number>;
+  slot?(signature:string):Promise<number | undefined>;
   prepare(seed:Uint8Array,attestor:string,memo:string):Promise<{wire:string;signature:string;lastValidHeight:number}>;
   send(wire:string):Promise<string>;
   inspect(signature:string,attestor:string,memo:string,lastValidHeight:number):Promise<'pending'|'finalized'|'expired'|'failed'>;
@@ -33,6 +34,12 @@ export class SolanaRpc implements AnchorRpc {
   async balance(attestor:string) {
     await this.check();
     return (await this.raw<{value:number}>('getBalance',[attestor,{commitment:'confirmed'}])).value;
+  }
+  async slot(signature:string) {
+    await this.check();
+    const result=await this.raw<{value:({slot:number;confirmationStatus:string}|null)[]}>('getSignatureStatuses',[[signature],{searchTransactionHistory:true}]);
+    const status=result.value[0];
+    return status?.confirmationStatus==='finalized' && Number.isSafeInteger(status.slot) ? status.slot : undefined;
   }
   async prepare(seed:Uint8Array,attestor:string,memo:string) {
     await this.check();
