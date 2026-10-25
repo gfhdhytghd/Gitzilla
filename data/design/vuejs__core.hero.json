@@ -1,15 +1,15 @@
 {
-  "title": "render Branch Ranger",
-  "archetype": "ranger",
-  "headgear": "hood",
-  "accessory": "scarf",
-  "emblem": "{",
+  "title": "Reactive Engineer Vuelet",
+  "archetype": "engineer",
+  "headgear": "goggles",
+  "accessory": "sticker-shield",
+  "emblem": "=>",
   "palette": [
-    "#315aa5",
-    "#71b5ff",
-    "#f5deb4",
-    "#a7f3dc"
+    "#42b883",
+    "#35495e",
+    "#ffdfba",
+    "#42d392"
   ],
-  "catchphrase": "render() saves the party.",
-  "weaponName": "await fire(data)"
+  "catchphrase": "TODO: infer the correct keys on nextTick",
+  "weaponName": "<Blaster>render()"
 }

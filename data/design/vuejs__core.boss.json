@@ -1,55 +1,51 @@
 {
-  "name": "CORE, THE BASE CREATE RENDERER UNDERCURRENT",
-  "epithet": "A black-crystalline abyssal serpent; render() fuels the veined coil core.",
+  "name": "Reactive Wyrm",
+  "epithet": "The Abyssal Reconciliation Dread",
   "body": "serpent",
-  "eyes": 12,
-  "mouth": "zipper",
+  "eyes": 8,
+  "mouth": "brackets",
   "growths": [
     "crystals",
-    "tentacles",
     "spikes"
   ],
   "palette": [
-    "#100f1d",
-    "#363349",
-    "#ef426b",
-    "#38dfef",
-    "#aefaff"
+    "#090d14",
+    "#1c2b3a",
+    "#00f0ff",
+    "#ff2a5f",
+    "#42b883"
   ],
   "theme": "web",
   "intro": [
-    "$ git clone vuejs/core",
-    "[##########] crystal coils stir beneath the floor",
-    "FATAL: crystal eruption :: packages/shared/index.js",
-    "export interface ComponentCustomProps {}"
+    "CRITICAL: setCurrentInstance invoked without matching unsetCurrentInstance.",
+    "A massive black crystalline serpent slithers upward from the depths of the virtu",
+    "Bioluminescent cyan and crimson telemetry veins pulse across its jagged armored"
   ],
   "taunts": [
-    "Buried debt: TODO: check for cases where using innerHTML will re",
-    "Vein scars: chore(deps): update playground (#15685)",
-    "I coil around render() beneath the floor.",
-    "Crystal eruption breaches render().",
-    "Red veins pulse through render().",
-    "Burrow. Emerge. Shatter the call stack."
+    "TODO infer the correct keys before you are crushed into uncollec",
+    "fix(server-renderer): propagate async setup errors directly into",
+    "[ErrorCodes.X_V_MODEL_ON_PROPS]: v-model cannot bind to your sev",
+    "Your reactive dependencies form an inescapable cyclic knot insid"
   ],
   "attackNames": {
-    "0-cascade-0": "render() Merge Conflict",
-    "0-ring-1": "h() while(true) Loop",
-    "1-slam-0": "foo() OOM Crash",
-    "2-fan-0": "test() Null Pointer",
-    "3-charge-0": "resolve() git push --force",
-    "4-cascade-0": "ref() Memory Leak",
-    "5-ring-0": "Child() Infinite Scroll",
-    "6-slam-0": "nextTick() Stack Overflow",
-    "7-fan-0": "Comp() throw"
+    "0-cascade-0": "render() h(Comp) VNode Crystal Cascade",
+    "0-ring-1": "h() Reconciliation Vein Pulse Ring",
+    "1-slam-0": "foo() NodeTypes.ROOT AST Ground Slam",
+    "2-fan-0": "test() ref(test) Reactive Shard Fan",
+    "3-charge-0": "resolve() SFC Burrowing Crest Charge",
+    "4-cascade-0": "ref() Reactive Mutation Cascade",
+    "5-ring-0": "Child() Hydration Ring Shockwave",
+    "6-slam-0": "nextTick() Full-Bundle Obsidian Slam",
+    "7-fan-0": "Comp() packages-private Comp Test Tail Fan"
   },
   "limbNames": {
-    "limb-0": "content() Plating",
-    "limb-1": "compile() Root",
-    "limb-2": "click() Claw",
-    "limb-3": "parse() Lens",
-    "limb-4": "watch() Mandible",
-    "limb-5": "get() Tendril",
-    "limb-6": "timeout() Coil",
-    "limb-7": "set() Antenna"
+    "limb-0": "Spinal Segment [render::Comp]",
+    "limb-1": "Jagged Mandibles [compile::NodeT",
+    "limb-2": "Burrowing Sub-Coil [ref::test]",
+    "limb-3": "SFC Dorsal Ridge [resolve::compi",
+    "limb-4": "Reactive Nexus Core [watch::next",
+    "limb-5": "Substrate Anchor Claws [resolve:",
+    "limb-6": "Crown Crystal Spikes [compile::t",
+    "limb-7": "Armored Tail Barb [Comp::test]"
   }
 }

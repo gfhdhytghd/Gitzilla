@@ -1,55 +1,52 @@
 {
-  "name": "DJANGO, SKYBORNE DB DEVOURER",
-  "epithet": "A gold-scaled winged hydra; __init__() fuels the shared heart between branching necks.",
+  "name": "ConnectionProxy",
+  "epithet": "The Perfectionist Deadline Hydra",
   "body": "hydra",
-  "eyes": 12,
+  "eyes": 8,
   "mouth": "maw",
   "growths": [
     "wings",
     "horns",
-    "crystals"
+    "cables"
   ],
   "palette": [
-    "#302011",
-    "#a97b22",
-    "#ffdf68",
-    "#f5b83e",
-    "#fff3be"
+    "#1f160e",
+    "#c4902b",
+    "#ffe57f",
+    "#8b6214",
+    "#ffdd33"
   ],
-  "theme": "notebook",
+  "theme": "web",
   "intro": [
-    "$ git clone django/django",
-    "[##########] branching necks awake; wings unfurl",
-    "FATAL: head beam :: django/db/__init__.py",
-    "connections = ConnectionHandler()"
+    "django.db.connections initializing ConnectionHandler...",
+    "Three crowned draconic heads spread ribbed golden wings across the deadline sky.",
+    "Pale lightning crackles along as_sql junctions: signals.request_started fired!"
   ],
   "taunts": [
-    "Wing gust: XXX Is this used at all?",
-    "Neck scars: Fixed #37449 -- Corrected local name for Punjabi in",
-    "Three throats call __init__() in turn.",
-    "Wings unfurl: __init__() takes the gust.",
-    "Dive bomb queued for __init__().",
-    "One head returns. Two more recurse."
+    "TODO: this should be handled by some parameter to the Change!",
+    "Your queries cannot escape router = ConnectionRouter().",
+    "conn.close_if_unusable_or_obsolete() — purge the unoptimized!",
+    "XXX: The deletion UX can be confusing when dealing with casc!"
   ],
   "attackNames": {
-    "0-laser-0": "__init__() </> Breath",
-    "0-fan-1": "get() Null Pointer",
-    "1-charge-0": "name() Branch Crash",
-    "2-spiral-0": "clean() Stack Trace",
-    "3-laser-0": "value() Race Condition",
-    "4-fan-0": "path() throw",
-    "5-charge-0": "create() History Rewrite",
-    "6-spiral-0": "request() Recursive Descent",
-    "7-laser-0": "render() grep Beam"
+    "0-laser-0": "__init__() tests.clean: Assertion Piercing Beam",
+    "0-fan-1": "get() tests.value: Fixture Spread Barrage",
+    "1-charge-0": "name() django/db.as_sql: Migration Dive Slam",
+    "2-spiral-0": "clean() django/contrib.clean: Admin CSRF Cyclone",
+    "3-laser-0": "value() misc.as_sql: Artifact Ray Cannon",
+    "4-fan-0": "path() django/core.path: URL Dispatcher Gust",
+    "5-charge-0": "create() django/utils.deconstruct: Functional Cache Charge",
+    "6-spiral-0": "request() django/test.request: Client Session Vortex",
+    "7-laser-0": "render() django/template.render: Context Render Ray"
   },
   "limbNames": {
-    "limb-0": "deconstruct() Coil",
-    "limb-1": "check() Antenna",
-    "limb-2": "filter() Plating",
-    "limb-3": "save() Root",
-    "limb-4": "func() Claw",
-    "limb-5": "Person() Lens",
-    "limb-6": "output_field() Mandible",
-    "limb-7": "choices() Tendril"
+    "limb-0": "tests.get: Suite Wing Strut",
+    "limb-1": "django/db.__init__: Core Handler",
+    "limb-2": "django/contrib.name: Auth Plated",
+    "limb-3": "misc.clean: Artifact Tail Rib",
+    "limb-4": "django/core.clean: Dispatch Vent",
+    "limb-5": "django/utils.create: Lazy Serial",
+    "limb-6": "django/test.test: Test Runner Cr",
+    "limb-7": "django/template.check: Template"
   }
 }

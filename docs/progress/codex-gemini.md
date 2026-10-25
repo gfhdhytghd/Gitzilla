@@ -1,3 +1,96 @@
+DONE (gemini live)
+
+## Gemini Interactions API migration — complete
+- Checked current official [structured output guide](https://ai.google.dev/gemini-api/docs/structured-output) and [Interactions REST reference](https://ai.google.dev/api/interactions-api). Primary POST /v1beta/interactions uses model/input, store:false and response_format:{type:text,mime_type:application/json,schema}. Parse only completed model_output text steps, plus earlier outputs[] compatibility; ignore thought/input/tool blocks and reject partial/malformed results.
+- Retained lite model retry, legacy generateContent compatibility, auth/quota cooldown, existing DeepSeek JSON fallback and deterministic fallback. Requests retain abort deadlines, no response/key logging, and actual source/model/API provenance in cache/manifest. Private/credentialed flags still bypass shared jobs, caches, credentials, both providers and observers before any work.
+- Precompute --offline now disables BOTH providers. Added --require-gemini to require fresh Gemini hero+boss results before publishing each repo; fallback results cannot overwrite bundles under that flag. Explicit precomputation allows60s per request; interactive requests retain8s.
+- Initial live verification:6/6 hero+boss results across Flask, React and Ripgrep were gemini-3.8-flash. One validated hero and boss JSON plus the3-repo verification table are below. Ran all-repo force generation; a temporary403 made Django boss fall through to DeepSeek, and the gate correctly preserved its old bundles. Exact parent-key match confirmed without exposing values. Minimal Interactions and all4 field-format probes subsequently completed, confirming intermittent permission failure. Django retry succeeded; remaining repos were force-generated individually with bounded retry. No fallback output was relabeled.
+- **Final manifest audit:15 repos /30 designs, ALL source=gemini, model=gemini-3.8-flash, api=interactions.** All keys match the frozen current kits. No DeepSeek/deterministic bundles remain. Archetype distribution:4 kaiju /3 hydra /3 mecha /5 abyssal.
+- **All30 artifacts equal their validated form.15 distinct complete code-expression weapon names, each≤24 chars;15 distinct boss epithets; all attack/limb maps contain every required ID with distinct names.** Boss body hints stay within kit.archetype; canonical real attack-source prefixes are preserved. Gin model title Engine-Prime collided with the existing no-repo-substring rule; validation now repairs only that title with its source-DNA fallback while retaining Gemini's remaining art, covered by a regression test.
+- **92 design tests PASS; focused design tsc PASS; workspace npm run typecheck PASS; owned diff check PASS.** Transport tests cover current/earlier response shapes, reasoning exclusion, completion status, malformed output, legacy compatibility, timeouts, quota/DeepSeek fallback and actual API provenance. Existing cache/private/credentialed/code-name and all15 bundled checks remain active.
+- Full npm test at21:31 local: **894 PASS /9 skipped /1 FAIL** (79 passing files /4 skipped), solely server/traces.test.ts:94 oldest-trace retention. Read-only inspection suggests an mtime-tie/random-ID ordering issue; exact failed-file timestamps were not captured. This is outside design ownership and was not edited. Focused rerun of design/ plus server/traces.test.ts passed97/97. Final full-suite rerun at21:32 local **895 PASS /9 skipped** (80 passed files /4 skipped); keep the initial intermittent retention failure visible for the server owner. Final workspace typecheck and owned diff check PASS.
+- Credential-value audit scanned46 owned source/data/progress files:0 matches. No credential values printed or tracked. Only design/, data/design/ and this required progress log changed; no private content sent, shared/sim/server/client edits, new dependencies, external messages, commits/pushes, service start/stop, deployment or live5173 access.
+
+### Initial live verification — three public repos
+| Repo | Hero title | Validated code weapon (chars) | Boss / body | Provenance |
+| --- | --- | --- | --- | --- |
+| pallets/flask | Micro Route Mage | `yield from create_app()` (23) | LocalProxy / serpent (abyssal) | hero+boss gemini-3.8-flash |
+| facebook/react | Root Renderer | `emit(create())` (14) | Reconcilokai / hydra | hero+boss gemini-3.8-flash |
+| burntsushi/ripgrep | Ripgrep Ranger | `unsafe { matcher() }` (20) | BURNT-AUTOMATON Ω / machine (mecha) | hero+boss gemini-3.8-flash |
+These describe the initial6/6 successful live requests. Subsequent full-bundle generation may choose new art labels; final manifest records the actual model/API for every result.
+
+### Live verification sample — pallets/flask
+Both returned live gemini-3.8-flash output in the initial6/6 verification batch and passed design validation. JSON below is the bounded/validated output, including canonical source-name repairs and any invalid weapon-name fallback.
+
+Hero:
+```json
+{
+  "title": "Micro Route Mage",
+  "archetype": "mage",
+  "headgear": "wizard-hat",
+  "accessory": "cape",
+  "emblem": "->",
+  "palette": [
+    "#1e293b",
+    "#06b6d4",
+    "#fde68a",
+    "#ffffff"
+  ],
+  "catchphrase": "Note we do this without checking if stat",
+  "weaponName": "yield from create_app()"
+}
+```
+
+Boss:
+```json
+{
+  "name": "LocalProxy",
+  "epithet": "Abyssal WSGI Devourer",
+  "body": "serpent",
+  "eyes": 8,
+  "mouth": "maw",
+  "growths": [
+    "crystals",
+    "spikes",
+    "cables"
+  ],
+  "palette": [
+    "#0d1117",
+    "#21262d",
+    "#00e5ff",
+    "#ff1744",
+    "#39ff14"
+  ],
+  "theme": "web",
+  "intro": [
+    ">> WSGI_SUBTERRANEAN: Tunneling beneath http://127.0.0.1:5000...",
+    ">> Thread-local context severed; crystalline serpent coils in the fault line.",
+    ">> ProxyMixin awakens with glowing red and cyan veins. Press CTRL+C to flee!"
+  ],
+  "taunts": [
+    "Note this is a duplicate of the same method in the Flask!",
+    "drop support for Python 3.10 (#6168) — and all mortal runtimes!",
+    "def _get_current_object(self) -> T: You cannot resolve this refe",
+    "raise AttributeError(name): No registered route survives my maw!"
+  ],
+  "attackNames": {
+    "0-cascade-0": "app() ProxyMixin Crystal Spire Cascade",
+    "0-ring-1": "get() LocalProxy Vein Pulse Ring",
+    "1-slam-0": "index() assert client.get Segment Slam",
+    "2-fan-0": "client() create_app Route Shard Fan",
+    "3-charge-0": "github_link() github_link Abyssal Burrow Charge",
+    "4-cascade-0": "create_app() devcontainer Void Rupture Cascade"
+  },
+  "limbNames": {
+    "limb-0": "ProxyMixin Crystalline Carapace",
+    "limb-1": "TestClient Barbed Segments",
+    "limb-2": "create_app Dorsal Spines",
+    "limb-3": "github_link Prowling Crest",
+    "limb-4": "Devcontainer Abyssal Claws"
+  }
+}
+```
+
 DONE (archetypes)
 DONE (offline bundle refresh)
 

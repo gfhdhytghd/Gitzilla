@@ -1,15 +1,15 @@
 {
-  "title": "app Byte Mage",
+  "title": "Flask Routecaster",
   "archetype": "mage",
-  "headgear": "bandana",
-  "accessory": "rubber-duck",
-  "emblem": "=",
+  "headgear": "wizard-hat",
+  "accessory": "coffee-mug",
+  "emblem": "->",
   "palette": [
-    "#355b99",
-    "#65b8ed",
-    "#ffdda1",
-    "#ffe36c"
+    "#181a1b",
+    "#f7f9fa",
+    "#ffcca7",
+    "#00d084"
   ],
-  "catchphrase": "app() saves the party.",
+  "catchphrase": "Running on 127.0.0.1:5000 — @app.route('",
   "weaponName": "yield from create_app()"
 }

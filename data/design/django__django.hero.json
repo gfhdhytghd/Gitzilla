@@ -1,15 +1,15 @@
 {
-  "title": "__init__ Byte Mage",
+  "title": "Perfectionist Mage",
   "archetype": "mage",
-  "headgear": "antenna",
-  "accessory": "rubber-duck",
-  "emblem": "=",
+  "headgear": "wizard-hat",
+  "accessory": "coffee-mug",
+  "emblem": "{}",
   "palette": [
-    "#355b99",
-    "#65b8ed",
-    "#ffdda1",
-    "#ffe36c"
+    "#092e20",
+    "#44b78b",
+    "#ffe0bd",
+    "#f5ba42"
   ],
-  "catchphrase": "__init__() saves the party.",
-  "weaponName": "yield from value()"
+  "catchphrase": "TODO: this should be handled by clean()",
+  "weaponName": "yield from render()"
 }

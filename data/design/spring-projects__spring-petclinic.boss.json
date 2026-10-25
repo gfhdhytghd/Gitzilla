@@ -1,42 +1,39 @@
 {
-  "name": "SPRING-PETCLINIC, THE NAMED ENTITY COLOSSUS",
-  "epithet": "A dorsal-crowned kaiju; Owner() fuels the chest reactor.",
-  "body": "tree",
-  "eyes": 12,
-  "mouth": "maw",
+  "name": "NamedEntity",
+  "epithet": "The Boundless Entity",
+  "body": "golem",
+  "eyes": 6,
+  "mouth": "brackets",
   "growths": [
-    "moss",
     "crystals",
-    "spikes"
+    "servers"
   ],
   "palette": [
-    "#09292c",
-    "#346769",
-    "#51f5df",
-    "#207eac",
-    "#fff4bd"
+    "#162a2c",
+    "#2f5c5e",
+    "#00f0ff",
+    "#59ff9b",
+    "#c8ffff"
   ],
-  "theme": "legacy",
+  "theme": "enterprise",
   "intro": [
-    "$ git clone spring-projects/spring-petclinic",
-    "[##########] dorsal fins charged; kaiju rising",
-    "FATAL: </> breath :: src/main/java/org/springframework/samples/petclinic/model/N",
-    "@MappedSuperclass"
+    "LOG: Initializing @MappedSuperclass schema...",
+    "WARN: fix relation 'unique_owner_pet_name' already exists in PostgreSQL",
+    "ERROR: BaseEntity mutated into predatory state."
   ],
   "taunts": [
-    "Dorsal scars: adding integer overflow mitigations from user cont",
-    "ROAR! Owner() shakes beneath my feet.",
-    "Dorsal fins charging: Owner()",
-    "</> breath burns Owner().",
-    "STOMP! My tail will git push --force."
+    "Prevent HTTP 500 when owner city/address exceed column length!",
+    "return name != null ? name : '<null>';",
+    "No escape from addPaginationModel out-of-bounds redirect!",
+    "Validate visit description length before your defeat!"
   ],
   "attackNames": {
-    "0-laser-0": "Owner() </> Breath",
-    "0-slam-1": "Pet() Stack Smash",
-    "1-fan-0": "validate() Panic!"
+    "0-laser-0": "Owner() PetType::toString Crystalline Breath",
+    "0-slam-1": "Pet() OwnerRepository::findAll Tail Quake",
+    "1-fan-0": "validate() EntityUtils::validate Cluster Burst"
   },
   "limbNames": {
-    "limb-0": "Visit() Root",
-    "limb-1": "EntityUtils() Claw"
+    "limb-0": "Left Foreleg [src/main: Owner::g",
+    "limb-1": "Right Tail Fluke [src/test: init"
   }
 }

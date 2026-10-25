@@ -10,6 +10,7 @@ const args = process.argv.slice(2);
 const force = args.includes('--force');
 const offline = args.includes('--offline');
 const requireDNA = args.includes('--require-dna');
+const requireGemini = args.includes('--require-gemini');
 const slugs = args.filter(arg => !arg.startsWith('--'));
 const outputDir = join(root, 'data/design');
 await mkdir(outputDir, { recursive: true });
@@ -20,7 +21,7 @@ try { entries = JSON.parse(await readFile(manifestPath, 'utf8')).entries ?? {}; 
 const results = new Map<string, DesignResult>();
 const service = createDesignService({
   rootDir: root, readCache: !force, assetDir: force ? false : outputDir,
-  ...(offline ? { apiKey: '' } : {}),
+  ...(offline ? { apiKey: '', deepseekApiKey: '' } : { timeoutMs: 60000 }),
   onResult(result) { results.set(`${result.slug}:${result.kind}`, result); },
 });
 const files = (await readdir(join(root, 'data/fallback'))).filter(file => file.endsWith('.json')).sort();
@@ -42,6 +43,9 @@ for (const profile of profiles) {
   ]);
   const heroResult = results.get(`${profile.slug}:hero`)!;
   const bossResult = results.get(`${profile.slug}:boss`)!;
+  if (requireGemini && (heroResult.source !== 'gemini' || bossResult.source !== 'gemini')) {
+    throw new Error(`${profile.slug}: expected fresh Gemini output, got hero=${heroResult.source}, boss=${bossResult.source}; bundles were not overwritten.`);
+  }
   const previous = entries[profile.slug];
   entries[profile.slug] = {
     seed: profile.seed,

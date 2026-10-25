@@ -1,55 +1,52 @@
 {
-  "name": "RIPGREP, THE DIRS OVERCLOCK",
-  "epithet": "A silver-armored mecha; new() fuels the red-visor reactor.",
+  "name": "BURNT-TITAN-MK1",
+  "epithet": "Iron Colossus of the Recursive Scan",
   "body": "machine",
-  "eyes": 12,
-  "mouth": "maw",
+  "eyes": 1,
+  "mouth": "brackets",
   "growths": [
-    "gears",
+    "cables",
     "pipes",
-    "servers"
+    "gears"
   ],
   "palette": [
-    "#202936",
-    "#a3b3c2",
-    "#ff5368",
-    "#5ce5ef",
-    "#ffaf8a"
+    "#1e222a",
+    "#c2c8d6",
+    "#ff3344",
+    "#f59e0b",
+    "#ff0033"
   ],
-  "theme": "legacy",
+  "theme": "terminal",
   "intro": [
-    "$ git clone burntsushi/ripgrep",
-    "[##########] red visor online; jet vents armed",
-    "FATAL: missile barrage :: crates/ignore/src/gitignore.rs",
-    "fn strip<'a, P: 'a + AsRef<Path> + ?Size"
+    "crates/core::main.rs: Locking red monovisor on target directory.",
+    "RECURSIVE SCAN INITIALIZED: Calibrating gitignore exclusion matrix.",
+    "Servo actuators whine as jet vents dump supercritical coolant steam."
   ],
   "taunts": [
-    "Rocket-fist fault: TODO: In the next semver breaking release, we",
-    "Panel scars: cargo: remove the `homepage` field",
-    "Target lock: new(); rocket fist armed.",
-    "Eye laser compiling new().",
-    "Missile barrage seeks new().",
-    "Vents open. Cooling with git reset --hard."
+    "TODO: In theory, it should be possible to amortize your destruct",
+    "FIXME: This works around a bug in grep-regex where it does not m",
+    "ignore: skip empty absolute parent matchers (#3557).",
+    "Return value evaluated: Some(Err(FatalMismatch))!"
   ],
   "attackNames": {
-    "0-fan-0": "new() Null Pointer",
-    "0-charge-1": "path() git push --force",
-    "1-ring-0": "build() while(true) Loop",
-    "2-laser-0": "matched() </> Breath",
-    "3-summon-0": "matcher() Transitive Swarm",
-    "4-fan-0": "args() throw",
-    "5-charge-0": "len() rm -rf",
-    "6-ring-0": "is_empty() Infinite Scroll",
-    "7-laser-0": "Error() Race Condition"
+    "0-fan-0": "new() crates/core::args: Multi-Rocket Fan Salvo",
+    "0-charge-1": "path() crates/core::build: Overclocked Jet Ram",
+    "1-ring-0": "build() crates/ignore::matched: Gitignore Perimeter Burst",
+    "2-laser-0": "matched() crates/printer::stdout: High-Intensity Visor Beam",
+    "3-summon-0": "matcher() crates/searcher::matcher: Sub-Worker Drone Deployment",
+    "4-fan-0": "args() tests::bytes: Regression Shrapnel Spray",
+    "5-charge-0": "len() misc::len: Hydraulic Piston Charge",
+    "6-ring-0": "is_empty() crates/globset::write: Pattern Ring Shockwave",
+    "7-laser-0": "Error() crates/regex::Error: Heavy Shoulder Cannon Laser"
   },
   "limbNames": {
-    "limb-0": "line_number() Mandible",
-    "limb-1": "name_long() Tendril",
-    "limb-2": "from() Coil",
-    "limb-3": "builder() Antenna",
-    "limb-4": "stats() Plating",
-    "limb-5": "stdout() Root",
-    "limb-6": "write() Claw",
-    "limb-7": "lines() Lens"
+    "limb-0": "crates/core::args Central Torso",
+    "limb-1": "crates/ignore::matched Left Miss",
+    "limb-2": "crates/printer::build Right Shou",
+    "limb-3": "crates/searcher::matcher Portsid",
+    "limb-4": "tests::bytes Starboard Detachabl",
+    "limb-5": "misc::len Twin Jet Exhaust Vent",
+    "limb-6": "crates/globset::write Heavy Serv",
+    "limb-7": "crates/regex::Error Heavy Servo"
   }
 }

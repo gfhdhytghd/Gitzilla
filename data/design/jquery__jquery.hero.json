@@ -1,15 +1,15 @@
 {
-  "title": "get Branch Ranger",
-  "archetype": "ranger",
-  "headgear": "hood",
-  "accessory": "sticker-shield",
-  "emblem": ";",
+  "title": "New Wave Enchanter",
+  "archetype": "mage",
+  "headgear": "wizard-hat",
+  "accessory": "cape",
+  "emblem": "{",
   "palette": [
-    "#96712d",
-    "#f3d75c",
-    "#ffdeb0",
-    "#82f4d2"
+    "#0769ad",
+    "#1b3a5b",
+    "#fbf0d9",
+    "#eea228"
   ],
-  "catchphrase": "get() saves the party.",
-  "weaponName": "await setup()"
+  "catchphrase": "TODO: uncrowd this—time to trigger(event",
+  "weaponName": "await trigger(event)"
 }

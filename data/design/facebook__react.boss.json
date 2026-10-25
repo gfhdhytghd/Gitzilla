@@ -1,55 +1,52 @@
 {
-  "name": "REACT, MANY MAWS OF SHARED RUNTIME",
-  "epithet": "A gold-scaled winged hydra; render() fuels the shared heart between branching necks.",
+  "name": "Reconcilagon",
+  "epithet": "The Sovereign of Concurrent Mutation",
   "body": "hydra",
-  "eyes": 12,
-  "mouth": "maw",
+  "eyes": 6,
+  "mouth": "brackets",
   "growths": [
     "wings",
-    "horns",
+    "cables",
     "crystals"
   ],
   "palette": [
-    "#302011",
-    "#a97b22",
-    "#ffdf68",
-    "#f5b83e",
-    "#fff3be"
+    "#21190e",
+    "#cca028",
+    "#fff3a1",
+    "#61dafb",
+    "#d8f8ff"
   ],
   "theme": "web",
   "intro": [
-    "$ git clone facebook/react",
-    "[##########] branching necks awake; wings unfurl",
-    "FATAL: head beam :: compiler/packages/snap/src/sprout/shared-runtime.ts",
-    "export function mutateAndReturnNewValue<"
+    "FATAL: Virtual DOM mutated across 21,740 commits.",
+    "Reconcilagon unfurls golden ribbed wings above the root container!",
+    "Three bracket-mawed heads charge pale lightning from <mutateAndReturnNewValue>."
   ],
   "taunts": [
-    "Wing gust: Todo is Hint",
-    "Neck scars: Allow resumeAndPrerender to postpone an existing bou",
-    "Three throats call render() in turn.",
-    "Wings unfurl: render() takes the gust.",
-    "Dive bomb queued for render().",
-    "One head returns. Two more recurse."
+    "TODO: Prettier doesn't handle long strings or long comments.",
+    "Preserve the rendered shell on synchronous prerender abort!",
+    "TODO should be ERROR!",
+    "[compiler] Retain declared Freeze effects on already-frozen valu"
   ],
   "attackNames": {
-    "0-laser-0": "render() </> Breath",
-    "0-fan-1": "Component() Panic!",
-    "1-charge-0": "App() History Rewrite",
-    "2-spiral-0": "fn() Recursion",
-    "3-laser-0": "Foo() Race Condition",
-    "4-fan-0": "Child() Unhandled Error",
-    "5-charge-0": "get() git push --force",
-    "6-spiral-0": "callback() Callback Hell",
-    "7-laser-0": "create() grep Beam"
+    "0-laser-0": "render() Prismatic HIR Beam",
+    "0-fan-1": "Component() Scope Dependency Fanout",
+    "1-charge-0": "App() Golden Dive Bomb",
+    "2-spiral-0": "fn() Fiber Ring Spiral",
+    "3-laser-0": "Foo() Lane-Piercing Ray",
+    "4-fan-0": "Child() Ribbed Wing Buffet",
+    "5-charge-0": "get() Swooping Hydration Slam",
+    "6-spiral-0": "callback() Microtask Vortex",
+    "7-laser-0": "create() Exhaustive Dep Beam"
   },
   "limbNames": {
-    "limb-0": "x() Antenna",
-    "limb-1": "Parent() Plating",
-    "limb-2": "push() Root",
-    "limb-3": "act() Claw",
-    "limb-4": "env() Lens",
-    "limb-5": "Hello() Mandible",
-    "limb-6": "resolve() Tendril",
-    "limb-7": "Identifier() Coil"
+    "limb-0": "compiler BuildHIR Primary Crest",
+    "limb-1": "react-dom Golden Left Wing",
+    "limb-2": "misc Concurrent Tail Coil",
+    "limb-3": "reconciler Central Fiber Neck",
+    "limb-4": "env() Antenna",
+    "limb-5": "Hello() Plating",
+    "limb-6": "dom-bindings Event System Talons",
+    "limb-7": "react-hooks Exhaustive Right Nec"
   }
 }

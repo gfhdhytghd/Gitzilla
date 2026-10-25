@@ -1,51 +1,50 @@
 {
   "name": "GIN, THE BYTESCONV OVERCLOCK",
-  "epithet": "A silver-armored mecha; Render() fuels the red-visor reactor.",
+  "epithet": "The High-Throughput Radix Behemoth",
   "body": "machine",
-  "eyes": 12,
+  "eyes": 1,
   "mouth": "maw",
   "growths": [
-    "gears",
+    "cables",
     "pipes",
     "servers"
   ],
   "palette": [
-    "#202936",
-    "#a3b3c2",
-    "#ff5368",
-    "#5ce5ef",
-    "#ffaf8a"
+    "#1c2026",
+    "#d4d8dd",
+    "#00e5ff",
+    "#ff8800",
+    "#ff003b"
   ],
-  "theme": "legacy",
+  "theme": "web",
   "intro": [
-    "$ git clone gin-gonic/gin",
-    "[##########] red visor online; jet vents armed",
-    "FATAL: missile barrage :: internal/bytesconv/bytesconv.go",
-    "type Core interface {"
+    "[GIN-debug] Listening and serving HTTP on 0.0.0.0:8080...",
+    "Red visor locks targeting coordinate := (*Context).Request.URL.",
+    "Hydraulic servos grind as jet vents unleash superheated recovery steam.",
+    "Engine.Run() spins up shoulder missile bays with zero memory allocation!"
   ],
   "taunts": [
-    "Rocket-fist fault: TODO",
-    "Panel scars: docs: include HTTP QUERY method in RouterGroup.Any",
-    "Target lock: Render(); rocket fist armed.",
-    "Eye laser compiling Render().",
-    "Missile barrage seeks Render().",
-    "Vents open. Cooling with git reset --hard."
+    "TODO: XXX should resolve to /prefix/xxx, not match :id)!",
+    "ReadHeaderTimeout expired; preparing full payload jettison!",
+    "Zero allocations, zero mercy: your packets drop right here.",
+    "Recovery middleware caught your strike and converted it to heat!",
+    "assert.Equal(t, status, http.StatusTeapot) -- scrap metal incomi"
   ],
   "attackNames": {
-    "0-fan-0": "Render() Throw Storm",
-    "0-charge-1": "Bind() History Rewrite",
-    "1-ring-0": "Name() Infinite Scroll",
-    "2-laser-0": "String() </> Breath",
-    "3-summon-0": "GET() Lockfile Storm",
-    "4-fan-0": "Open() Null Pointer",
-    "5-charge-0": "Marshal() git push --force"
+    "0-fan-0": "Render() root: Context.Render Shrapnel Spread",
+    "0-charge-1": "Bind() root: Engine.Run Hydraulic Ram",
+    "1-ring-0": "Name() binding: BindBody Pressure Wave",
+    "2-laser-0": "String() render: WriteContentType Thermal Ray",
+    "3-summon-0": "GET() ginS: Run Micro-Drone Deployment",
+    "4-fan-0": "Open() internal: StringToBytes Exhaust Flak",
+    "5-charge-0": "Marshal() codec: Marshal Rocket Fist Thrust"
   },
   "limbNames": {
-    "limb-0": "Header() Antenna",
-    "limb-1": "Engine() Plating",
-    "limb-2": "WriteContentType() Root",
-    "limb-3": "Use() Claw",
-    "limb-4": "Context() Lens",
-    "limb-5": "NewEncoder() Mandible"
+    "limb-0": "Armored Torso [root.Engine]",
+    "limb-1": "Left Missile Pod [binding.Bind]",
+    "limb-2": "Shoulder Laser Turret [render.Wr",
+    "limb-3": "Venting Jet Pack [ginS.Run]",
+    "limb-4": "Grounded Right Piston [internal.",
+    "limb-5": "Left Rocket Gauntlet [codec.Mars"
   }
 }

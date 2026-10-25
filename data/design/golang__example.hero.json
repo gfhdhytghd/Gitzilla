@@ -1,15 +1,15 @@
 {
-  "title": "main Branch Ranger",
-  "archetype": "ranger",
-  "headgear": "none",
-  "accessory": "jetpack",
-  "emblem": "}",
+  "title": "Example Gopher",
+  "archetype": "engineer",
+  "headgear": "goggles",
+  "accessory": "laptop-backpack",
+  "emblem": ":=",
   "palette": [
-    "#267f8c",
-    "#65e0df",
-    "#ffe4ba",
-    "#f8f7d6"
+    "#00add8",
+    "#002d3f",
+    "#ffe0b2",
+    "#ce3262"
   ],
-  "catchphrase": "main() saves the party.",
-  "weaponName": "go repeat(groupOrAttrs)"
+  "catchphrase": "TODO: implement. Let's run reverse.Strin",
+  "weaponName": "for { go Handle() }"
 }

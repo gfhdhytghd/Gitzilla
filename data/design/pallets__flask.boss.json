@@ -1,49 +1,46 @@
 {
-  "name": "FLASK, BURROWER OF MAKE RESPONSE",
-  "epithet": "A black-crystalline abyssal serpent; app() fuels the veined coil core.",
+  "name": "WSGI-Ouroboros",
+  "epithet": "The Boundless Request Serpent",
   "body": "serpent",
-  "eyes": 12,
+  "eyes": 8,
   "mouth": "maw",
   "growths": [
     "crystals",
-    "tentacles",
+    "cables",
     "spikes"
   ],
   "palette": [
-    "#100f1d",
-    "#363349",
-    "#ef426b",
-    "#38dfef",
-    "#aefaff"
+    "#0b0f19",
+    "#1e293b",
+    "#00f5d4",
+    "#ff2a5f",
+    "#38bdf8"
   ],
-  "theme": "notebook",
+  "theme": "web",
   "intro": [
-    "$ git clone pallets/flask",
-    "[##########] crystal coils stir beneath the floor",
-    "FATAL: crystal eruption :: src/flask/__init__.py",
-    "class ProxyMixin(t.Protocol[T]):"
+    "* Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)",
+    "Black crystalline segments breach the runtime floor, coiled in LocalProxy binds.",
+    "A piercing cyan vein pulses down the spine as @app.route('/') locks the socket."
   ],
   "taunts": [
-    "Buried debt: Note that if you are testing for assertions or exce",
-    "Vein scars: explain seek",
-    "I coil around app() beneath the floor.",
-    "Crystal eruption breaches app().",
-    "Red veins pulse through app().",
-    "Burrow. Emerge. Shatter the call stack."
+    "Note we do this without checking if static_folder exists.",
+    "raise AttributeError(name): your session context was lost beneat",
+    "def _get_current_object(self) -> T: you cannot dereference the a",
+    "drop support for Python 3.10: obsolete clients will be purged."
   ],
   "attackNames": {
-    "0-cascade-0": "app() Rebase Hell",
-    "0-ring-1": "get() Spin Lock",
-    "1-slam-0": "index() OOM Crash",
-    "2-fan-0": "client() Exception Spray",
-    "3-charge-0": "github_link() git push --force",
-    "4-cascade-0": "create_app() Circular Import"
+    "0-cascade-0": "app() ProxyMixin Crystal Cascade",
+    "0-ring-1": "get() LocalProxy Context Shockwave",
+    "1-slam-0": "index() TestClient Assertion Smash",
+    "2-fan-0": "client() Scatter",
+    "3-charge-0": "github_link() docs.github_link Piercing Dash",
+    "4-cascade-0": "create_app() DevContainer Shell Drop"
   },
   "limbNames": {
-    "limb-0": "b() Claw",
-    "limb-1": "response() Lens",
-    "limb-2": "cli() Mandible",
-    "limb-3": "setup() Tendril",
-    "limb-4": "Module() Coil"
+    "limb-0": "Core App Context Segment",
+    "limb-1": "Pytest TestClient Ridge",
+    "limb-2": "Tutorial Flaskr Tail Coil",
+    "limb-3": "Sphinx Docs Spire Horn",
+    "limb-4": "DevContainer Substrate Fin"
   }
 }

@@ -1,15 +1,15 @@
 {
-  "title": "render Branch Ranger",
-  "archetype": "ranger",
-  "headgear": "cat-ears",
-  "accessory": "scarf",
-  "emblem": ";",
+  "title": "React Root Reconciler",
+  "archetype": "engineer",
+  "headgear": "goggles",
+  "accessory": "sticker-shield",
+  "emblem": "{}",
   "palette": [
-    "#96712d",
-    "#f3d75c",
-    "#ffdeb0",
-    "#82f4d2"
+    "#61dafb",
+    "#20232a",
+    "#ffe0bd",
+    "#ffffff"
   ],
-  "catchphrase": "render() saves the party.",
+  "catchphrase": "TODO should be WARNING: Component is rea",
   "weaponName": "emit(create())"
 }

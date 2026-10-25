@@ -1,44 +1,44 @@
 {
-  "name": "NANOGPT, THE FROM PRETRAINED STACK CRUSHER",
-  "epithet": "A dorsal-crowned kaiju; __init__() fuels the chest reactor.",
-  "body": "spider",
-  "eyes": 12,
-  "mouth": "none",
+  "name": "Causalzilla",
+  "epithet": "The Autoregressive Maw of 124M Tensors",
+  "body": "golem",
+  "eyes": 6,
+  "mouth": "brackets",
   "growths": [
     "crystals",
-    "spikes"
+    "servers",
+    "cables"
   ],
   "palette": [
-    "#09292c",
-    "#346769",
-    "#51f5df",
-    "#207eac",
-    "#fff4bd"
+    "#09171e",
+    "#194b54",
+    "#00f0ff",
+    "#ff4365",
+    "#7df9ff"
   ],
-  "theme": "notebook",
+  "theme": "terminal",
   "intro": [
-    "$ git clone karpathy/nanogpt",
-    "[##########] dorsal fins charged; kaiju rising",
-    "FATAL: </> breath :: model.py",
-    "class LayerNorm(nn.Module):"
+    "[ALLOC] 8XA100 node locked: mounting model.py weights into tensor core...",
+    "Dorsal bracket fins hum tail-to-head with cyan scaled_dot_product_attention!",
+    "<< Causalzilla >> stomps forward: prioritizes teeth over education!",
+    "ROAR: Initializing forward pass across the time dimension!"
   ],
   "taunts": [
-    "Tail stomp: note: this is a CPU-GPU sync point",
-    "Dorsal scars: Merge branch 'master' into test1",
-    "ROAR! __init__() shakes beneath my feet.",
-    "Dorsal fins charging: __init__()",
-    "</> breath burns __init__().",
-    "STOMP! My tail will git push --force."
+    "TODO investigate",
+    "TODO want to make this more general to arbitrary encoder/dec",
+    "fix: ensure non-zero learning rate during warmup at iteration 0",
+    "dtype = 'bfloat16' if torch.cuda.is_available() else CRUSH",
+    "ctx = nullcontext() -- your validation loss will never converge!"
   ],
   "attackNames": {
-    "0-laser-0": "__init__() </> Breath",
-    "0-slam-1": "get_batch() Stack Overflow",
-    "1-fan-0": "encode() Throw Storm",
-    "2-charge-0": "GPT() Force Push"
+    "0-laser-0": "__init__() Bracket Ray: CausalSelfAttention Meltdown",
+    "0-slam-1": "get_batch() Quake: 8XA100 Tensor Stomp",
+    "1-fan-0": "encode() Token Burst: itos Character Scatter",
+    "2-charge-0": "GPT() Rampage: 256-Stride Headlong Charge"
   },
   "limbNames": {
-    "limb-0": "LayerNorm() Antenna",
-    "limb-1": "process() Plating",
-    "limb-2": "configure_optimizers() Root"
+    "limb-0": "GPTConfig Armored Chest Core",
+    "limb-1": "encode/decode Sharded Tail Cleav",
+    "limb-2": "train_shakespeare_char Stomp Pyl"
   }
 }

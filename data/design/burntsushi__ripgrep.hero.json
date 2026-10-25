@@ -1,15 +1,15 @@
 {
-  "title": "new Compile Guardian",
-  "archetype": "heavy",
-  "headgear": "beanie",
-  "accessory": "none",
-  "emblem": ";",
+  "title": "Regex Ranger",
+  "archetype": "ranger",
+  "headgear": "goggles",
+  "accessory": "scarf",
+  "emblem": "::",
   "palette": [
-    "#ac583c",
-    "#f3a76c",
-    "#ffdeb0",
-    "#77f2cd"
+    "#d34826",
+    "#212529",
+    "#4dd0e1",
+    "#f9a825"
   ],
-  "catchphrase": "new() saves the party.",
-  "weaponName": "alloc(name_long())"
+  "catchphrase": "TODO: This should not return a `Result`",
+  "weaponName": "unsafe { build() }"
 }

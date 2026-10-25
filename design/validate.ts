@@ -38,10 +38,14 @@ export function validateHero(value: unknown, profile: RepoProfile, kit: PlayerKi
 
 export function validateBoss(value: unknown, profile: RepoProfile, kit: BossKit): BossDesign {
   const source = record(value), fallback = fallbackBoss(profile, kit);
+  const name = text(source.name, fallback.name, 64);
+  const suffix = name.slice(name.indexOf(',') + 1);
+  const compact = (value: string) => value.replace(/[^a-z0-9]/gi, '').toLowerCase();
+  const repo = compact(profile.slug.split('/').pop() ?? '');
   const attackNames = record(source.attackNames), limbNames = record(source.limbNames);
   const selectedGrowths = Array.isArray(source.growths) ? [...new Set(source.growths.filter((g): g is typeof growths[number] => growths.includes(g)))].slice(0, 3) : [];
   const design: BossDesign = {
-    name: text(source.name, fallback.name, 64), epithet: text(source.epithet, fallback.epithet, 120),
+    name: repo && compact(suffix).includes(repo) ? fallback.name : name, epithet: text(source.epithet, fallback.epithet, 120),
     body: enumeration(source.body, bossArt[kit.archetype].bodies, fallback.body),
     eyes: typeof source.eyes === 'number' && Number.isFinite(source.eyes) ? Math.max(1, Math.min(12, Math.round(source.eyes))) : fallback.eyes,
     mouth: enumeration(source.mouth, mouths, fallback.mouth), growths: selectedGrowths.length ? selectedGrowths : fallback.growths,

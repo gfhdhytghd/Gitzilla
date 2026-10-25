@@ -1,55 +1,52 @@
 {
-  "name": "RUSTLINGS, DEEP VEINS OF DIRS",
-  "epithet": "A black-crystalline abyssal serpent; new() fuels the veined coil core.",
+  "name": "Borrowscourge",
+  "epithet": "Abyssal Devourer of Mutable Lifetimes",
   "body": "serpent",
-  "eyes": 12,
+  "eyes": 8,
   "mouth": "brackets",
   "growths": [
     "crystals",
-    "tentacles",
     "spikes"
   ],
   "palette": [
-    "#100f1d",
-    "#363349",
-    "#ef426b",
-    "#38dfef",
-    "#aefaff"
+    "#0d1117",
+    "#21262d",
+    "#00f5d4",
+    "#ff0055",
+    "#00e5ff"
   ],
-  "theme": "legacy",
+  "theme": "terminal",
   "intro": [
-    "$ git clone rust-lang/rustlings",
-    "[##########] crystal coils stir beneath the floor",
-    "FATAL: crystal eruption :: src/exercise.rs",
-    "fn name(&self) -> &str;"
+    ">> cargo watch: subterranean tremors detected beneath src/exercise.rs",
+    "Obsidian crystalline segments grind against the terminal substrate as Borrowscou",
+    "A jagged maw of '{' brackets yawns open, venting strict_clippy warnings from the"
   ],
   "taunts": [
-    "Buried debt: TODO: Fix the function call.",
-    "Vein scars: write input files to disk before running exercise",
-    "I coil around new() beneath the floor.",
-    "Crystal eruption breaches new().",
-    "Red veins pulse through new().",
-    "Burrow. Emerge. Shatter the call stack."
+    "TODO: Change the line below to fix the compiler error.",
+    "cannot borrow (*self) as mutable more than once at a time!",
+    "write input files to disk before running exercise... too late.",
+    "strict_clippy(&self) evaluated to true: prepare to shatter!",
+    "parse command output consistently or sink into the chasm."
   ],
   "attackNames": {
-    "0-cascade-0": "new() Merge Conflict",
-    "0-ring-1": "Command() Busy Wait",
-    "1-slam-0": "parse() OOM Crash",
-    "2-fan-0": "path() Unhandled Error",
-    "3-charge-0": "check() Hard Reset",
-    "4-cascade-0": "selected() Memory Leak",
-    "5-ring-0": "done() Event Loop",
-    "6-slam-0": "args() Stack Overflow",
-    "7-fan-0": "test() Throw Storm"
+    "0-cascade-0": "new() solutions::transformer Crystal Cascade",
+    "0-ring-1": "Command() solutions::Command Subterranean Pulse Ring",
+    "1-slam-0": "parse() exercises::make_sausage Heavy Crest Slam",
+    "2-fan-0": "path() src::path Jagged Shard Fan",
+    "3-charge-0": "check() src/dev::SolutionCheck Abyssal Charge",
+    "4-cascade-0": "selected() src/list::filter Crystal Eruption Cascade",
+    "5-ring-0": "done() src/watch::check_all_exercises Vein-Pulse Shockwave",
+    "6-slam-0": "args() misc::ExerciseInfo Faultline Tail Slam",
+    "7-fan-0": "test() website::templates Shard Sweep Fan"
   },
   "limbNames": {
-    "limb-0": "transformer() Plating",
-    "limb-1": "make_sausage() Root",
-    "limb-2": "Message() Claw",
-    "limb-3": "update() Lens",
-    "limb-4": "build() Mandible",
-    "limb-5": "InputEvent() Tendril",
-    "limb-6": "ExerciseInfo() Coil",
-    "limb-7": "CreationError() Antenna"
+    "limb-0": "solutions::transformer Dorsal Sh",
+    "limb-1": "exercises::make_sausage Spire Ri",
+    "limb-2": "src::path Core Segment",
+    "limb-3": "src/dev::SolutionCheck Dread Nod",
+    "limb-4": "src/list::selected Crystal Clust",
+    "limb-5": "src/watch::InputEvent Pulse Hear",
+    "limb-6": "misc::InfoFile Thorax Armor",
+    "limb-7": "website::templates Tail Fluke"
   }
 }

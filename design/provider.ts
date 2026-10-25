@@ -20,6 +20,55 @@ export async function readProviderSetting(rootDir: string, ...names: string[]): 
     catch { /* Optional configuration. */ }
   }
 }
+
+export type GeminiApi = 'interactions' | 'generateContent';
+export class GeminiHttpError extends Error {
+  constructor(public status: number) { super(`Gemini HTTP ${status}`); }
+}
+
+/** Plain REST, no conversation state. Never include response bodies or credentials in errors. */
+export async function geminiJson(prompt: string, schema: object, options: {
+  apiKey: string; model: string; api: GeminiApi; timeoutMs?: number; fetch?: typeof globalThis.fetch;
+}): Promise<unknown> {
+  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 8000);
+  try {
+    const interactions = options.api === 'interactions';
+    const url = interactions ? 'https://generativelanguage.googleapis.com/v1beta/interactions'
+      : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(options.model)}:generateContent`;
+    const response = await (options.fetch ?? globalThis.fetch)(url, {
+      method: 'POST', signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': options.apiKey },
+      body: JSON.stringify(interactions ? {
+        model: options.model, input: prompt, store: false,
+        response_format: { type: 'text', mime_type: 'application/json', schema },
+        generation_config: { max_output_tokens: 4096 },
+      } : {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json', responseJsonSchema: schema },
+      }),
+    });
+    if (!response.ok) throw new GeminiHttpError(response.status);
+    const payload = await response.json();
+    let content: string;
+    if (interactions) {
+      if (payload.status !== 'completed') throw new Error('Incomplete Gemini interaction');
+      // Current REST uses model_output steps; earlier Interactions responses use outputs.
+      const blocks = Array.isArray(payload.steps)
+        ? payload.steps.filter((step: { type?: string }) => step.type === 'model_output')
+          .flatMap((step: { content?: unknown[] }) => Array.isArray(step.content) ? step.content : [])
+        : Array.isArray(payload.outputs) ? payload.outputs : [];
+      content = blocks.filter((block: { type?: string; text?: string; thought?: boolean }) => block.type === 'text' && typeof block.text === 'string' && !block.thought)
+        .map((block: { text: string }) => block.text).join('');
+    } else {
+      const candidate = payload.candidates?.[0];
+      if (candidate?.finishReason && candidate.finishReason !== 'STOP') throw new Error('Incomplete Gemini generation');
+      content = candidate?.content?.parts?.filter((part: { text?: string; thought?: boolean }) => typeof part.text === 'string' && !part.thought)
+        .map((part: { text: string }) => part.text).join('') ?? '';
+    }
+    return JSON.parse(content);
+  } finally { clearTimeout(timer); }
+}
+
 export const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
 export const DEEPSEEK_MODEL = 'deepseek-flash';
 export async function deepseekJson(prompt: string, options: {

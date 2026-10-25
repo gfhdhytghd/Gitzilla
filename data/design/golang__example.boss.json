@@ -1,55 +1,52 @@
 {
-  "name": "EXAMPLE, TAILBREAKER OF REVERSE",
-  "epithet": "A dorsal-crowned kaiju; main() fuels the chest reactor.",
-  "body": "tree",
-  "eyes": 12,
-  "mouth": "maw",
+  "name": "Runezilla",
+  "epithet": "The Canonical Type-Saurian",
+  "body": "golem",
+  "eyes": 8,
+  "mouth": "brackets",
   "growths": [
-    "moss",
     "crystals",
+    "servers",
     "spikes"
   ],
   "palette": [
-    "#09292c",
-    "#346769",
-    "#51f5df",
-    "#207eac",
-    "#fff4bd"
+    "#0b242a",
+    "#1c5c68",
+    "#00f5ff",
+    "#38b2ac",
+    "#e2f8ff"
   ],
-  "theme": "legacy",
+  "theme": "terminal",
   "intro": [
-    "$ git clone golang/example",
-    "[##########] dorsal fins charged; kaiju rising",
-    "FATAL: </> breath :: hello/reverse/reverse.go",
-    "func usage() {"
+    ">> ./hello -r -g=\"DOOM\"",
+    ">> [ALERT] Canonical reverse.String core activated: dorsal brackets charging tai",
+    ">> </> BREATH EMISSION ONLINE: Stomp-quake approaching target goroutines"
   ],
   "taunts": [
-    "Tail stomp: TODO(adonovan): escape /^```/ in s",
-    "Dorsal scars: go.mod: update golang.org/x dependencies",
-    "ROAR! main() shakes beneath my feet.",
-    "Dorsal fins charging: main()",
-    "</> breath burns main().",
-    "STOMP! My tail will git push --force."
+    "TODO: state for WithGroup and WithAttrs — you cannot segment my",
+    "if name == \"\" { // hello '' is an error, and so is your survival",
+    "Optimize to minimize allocation — your memory will be reclaimed!",
+    "internal/cmd/weave: fix missing newline before I crush your stac"
   ],
   "attackNames": {
-    "0-laser-0": "appendAttr() </> Breath",
-    "0-slam-1": "New() Core Dump",
-    "1-fan-0": "main() Unhandled Error",
-    "2-charge-0": "CheckNilFuncComparison() Hard Reset",
-    "3-ring-0": "cleanListing() Busy Wait",
-    "4-laser-0": "NewServer() Race Condition",
-    "5-slam-0": "usage() Stack Smash",
-    "6-fan-0": "String() Throw Storm",
-    "7-charge-0": "imageHandler() Force Push"
+    "0-laser-0": "appendAttr() Cyan Bracket Beam",
+    "0-slam-1": "New() Dorsal Quake",
+    "1-fan-0": "main() Vector Fragment Spray",
+    "2-charge-0": "CheckNilFuncComparison() Bipedal Rush",
+    "3-ring-0": "cleanListing() Indentation Shockwave Ring",
+    "4-laser-0": "NewServer() Version Release Piercer",
+    "5-slam-0": "usage() Default Flag Tail Smash",
+    "6-fan-0": "String() Rune Shard Volley",
+    "7-charge-0": "imageHandler() Block-Template Trample"
   },
   "limbNames": {
-    "limb-0": "parseLogEntries() Mandible",
-    "limb-1": "readRequestJSON() Tendril",
-    "limb-2": "isValidIdentifier() Coil",
-    "limb-3": "include() Antenna",
-    "limb-4": "ServeHTTP() Plating",
-    "limb-5": "version() Root",
-    "limb-6": "document() Claw",
-    "limb-7": "indexHandler() Lens"
+    "limb-0": "IndentHandler Dorsal Plates",
+    "limb-1": "addDocumentsHandler Vector Claw",
+    "limb-2": "isValidIdentifier Type Horn",
+    "limb-3": "leadingTabs Rigid Backbone",
+    "limb-4": "NewServer Polling Strider Leg",
+    "limb-5": "version Heavy Sweeper Tail",
+    "limb-6": "reverse.String Rune-Carved Thigh",
+    "limb-7": "imageHandler Crystalline Chest C"
   }
 }

@@ -1,15 +1,15 @@
 {
-  "title": "Render Branch Ranger",
+  "title": "The Zero-Alloc Router",
   "archetype": "ranger",
-  "headgear": "crown",
-  "accessory": "laptop-backpack",
-  "emblem": "{",
+  "headgear": "goggles",
+  "accessory": "jetpack",
+  "emblem": ":=",
   "palette": [
-    "#267f8c",
-    "#65e0df",
-    "#ffe4ba",
-    "#f8f7d6"
+    "#00add8",
+    "#1e293b",
+    "#e0f2fe",
+    "#ff6b4a"
   ],
-  "catchphrase": "Render() saves the party.",
-  "weaponName": "go burst(Data)"
+  "catchphrase": "Note: this method will block the calling",
+  "weaponName": "for { go Run() }"
 }

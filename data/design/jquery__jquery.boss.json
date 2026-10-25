@@ -1,55 +1,53 @@
 {
-  "name": "JQUERY, THE AJAX CRYSTAL MAW",
-  "epithet": "A black-crystalline abyssal serpent; get() fuels the veined coil core.",
+  "name": "Expando-Ouroboros",
+  "epithet": "Abyssal Defiler of the Shadow DOM",
   "body": "serpent",
-  "eyes": 12,
-  "mouth": "none",
+  "eyes": 8,
+  "mouth": "maw",
   "growths": [
     "crystals",
-    "tentacles",
-    "spikes"
+    "spikes",
+    "cables"
   ],
   "palette": [
-    "#100f1d",
-    "#363349",
-    "#ef426b",
-    "#38dfef",
-    "#aefaff"
+    "#090d16",
+    "#1b2333",
+    "#00f0ff",
+    "#ff2a5f",
+    "#ffe600"
   ],
   "theme": "web",
   "intro": [
-    "$ git clone jquery/jquery",
-    "[##########] crystal coils stir beneath the floor",
-    "FATAL: crystal eruption :: src/core.js",
-    "pushStack: function( elems ) {"
+    ">> CRITICAL: Corrupted event bus detected in sub-level nodes...",
+    ">> SEGMENTATION FAULT: pushStack() loop breached array bounds!",
+    ">> Expando-Ouroboros coils through document fragments and burrows deep."
   ],
   "taunts": [
-    "Buried debt: FIXME why is this double only when run with other t",
-    "Vein scars: Build: Run `brew update` before installing Safari TP",
-    "I coil around get() beneath the floor.",
-    "Crystal eruption breaches get().",
-    "Red veins pulse through get().",
-    "Burrow. Emerge. Shatter the call stack."
+    "TODO: Drop _data, _removeData) — you cannot detach my spines!",
+    "FIXME why is this double only when run with other tests?!",
+    "assert.equal( yourLife, 0 ) // match failed permanently",
+    "You cannot traverse beyond my siblings without breaking the chai",
+    "TODO: Now that all calls to _data have been excised, bleed!"
   ],
   "attackNames": {
-    "0-cascade-0": "nodeName() Merge Conflict",
-    "0-ring-1": "Deferred() while(true) Loop",
-    "1-slam-0": "jQueryFactory() Core Dump",
-    "2-fan-0": "dir() Null Pointer",
-    "3-charge-0": "get() Branch Crash",
-    "4-cascade-0": "camelCase() Memory Leak",
-    "5-ring-0": "assert() Infinite Scroll",
-    "6-slam-0": "tokenize() Stack Smash",
-    "7-fan-0": "showHide() throw"
+    "0-cascade-0": "nodeName() test.nodeName.CascadeOfAssertions",
+    "0-ring-1": "Deferred() test.Deferred.ResolveRingPulse",
+    "1-slam-0": "jQueryFactory() src.jQueryFactory.CoilGroundSlam",
+    "2-fan-0": "dir() misc.getAll.FragmentSprayFan",
+    "3-charge-0": "get() attributes.propSet.SubterraneanCharge",
+    "4-cascade-0": "camelCase() core.pushStack.EruptionCascade",
+    "5-ring-0": "assert() root.buildAll.ShockwaveRing",
+    "6-slam-0": "tokenize() selector.tokenize.BrutalSelectorSlam",
+    "7-fan-0": "showHide() css.showHide.CrystallineFanSpread"
   },
   "limbNames": {
-    "limb-0": "trigger() Plating",
-    "limb-1": "css() Root",
-    "limb-2": "createElement() Claw",
-    "limb-3": "set() Lens",
-    "limb-4": "stripAndCollapse() Mandible",
-    "limb-5": "remove() Tendril",
-    "limb-6": "toSelector() Coil",
-    "limb-7": "finalPropName() Antenna"
+    "limb-0": "Segment 0 (test: siblings Harnes",
+    "limb-1": "Segment 1 (src: jQueryFactory Co",
+    "limb-2": "Segment 2 (misc: createElement T",
+    "limb-3": "Segment 3 (attributes: prop/attr",
+    "limb-4": "Segment 4 (core: camelCase Spine",
+    "limb-5": "Segment 5 (root: package Mantle)",
+    "limb-6": "Segment 6 (selector: tokenize Ta",
+    "limb-7": "Segment 7 (css: isHiddenWithinTr"
   }
 }

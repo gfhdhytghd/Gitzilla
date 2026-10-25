@@ -1,49 +1,47 @@
 {
   "name": "LODASH, DORSAL KING OF RUN IN CONTEXT",
-  "epithet": "A dorsal-crowned kaiju; Foo() fuels the chest reactor.",
-  "body": "tree",
-  "eyes": 12,
-  "mouth": "maw",
+  "epithet": "Colossus of the Curried Monolith",
+  "body": "golem",
+  "eyes": 6,
+  "mouth": "brackets",
   "growths": [
-    "moss",
     "crystals",
-    "spikes"
+    "spikes",
+    "cables"
   ],
   "palette": [
-    "#09292c",
-    "#346769",
-    "#51f5df",
-    "#207eac",
-    "#fff4bd"
+    "#0b1e22",
+    "#1a474f",
+    "#00f0ff",
+    "#0288d1",
+    "#ffe600"
   ],
   "theme": "web",
   "intro": [
-    "$ git clone lodash/lodash",
-    "[##########] dorsal fins charged; kaiju rising",
-    "FATAL: </> breath :: lodash.js",
-    "function arrayReduceRight(array, iterate"
+    "CRITICAL: Seismic payload detected loading ./dist/lodash.js",
+    "Bracket-shaped dorsal fins ignite cyan from tail to skull...",
+    "The 42,959-LOC monolith unleashes a deafening <baseReduce> roar!"
   ],
   "taunts": [
-    "Tail stomp: bug in Safari 9.",
-    "Dorsal scars: ci: update actions to latest versions (#6279)",
-    "ROAR! Foo() shakes beneath my feet.",
-    "Dorsal fins charging: Foo()",
-    "</> breath burns Foo().",
-    "STOMP! My tail will git push --force."
+    "Note:** This method mutates array — and your entire squad!",
+    "ci(playwright): fix browser test flake from test timeout shorter",
+    "function arrayReduceRight will flatten you down to depth 0!",
+    "isBuffer(value) || isTypedArray(value) — nothing withstands crea",
+    "bug in Safari 9 cannot save you from the curried iteration!"
   ],
   "attackNames": {
-    "0-laser-0": "iteratee() </> Breath",
-    "0-slam-1": "message() OOM Crash",
-    "1-fan-0": "apply() Exception Spray",
-    "2-charge-0": "log() Branch Crash",
-    "3-ring-0": "wrap() while(true) Loop",
-    "4-laser-0": "build() Race Condition"
+    "0-laser-0": "iteratee() iteratee message Concentrated Ray",
+    "0-slam-1": "message() before/after Assertive Ground Slam",
+    "1-fan-0": "apply() baseRest Arity-Burst Shards",
+    "2-charge-0": "log() perf.run High-Frequency Ram",
+    "3-ring-0": "wrap() baseConvert Immutable Shockwave",
+    "4-laser-0": "build() lib.build Minified Thermal Beam"
   },
   "limbNames": {
-    "limb-0": "object() Claw",
-    "limb-1": "curry() Lens",
-    "limb-2": "run() Mandible",
-    "limb-3": "baseConvert() Tendril",
-    "limb-4": "min() Coil"
+    "limb-0": "test: iteratee-Testing Heavy Tal",
+    "limb-1": "root: baseRest Armored Breastpla",
+    "limb-2": "perf: eventHandler Tremor Struts",
+    "limb-3": "fp: baseConvert Dorsal Bracket S",
+    "limb-4": "lib: Hash-Chained Sweeping Tail"
   }
 }

@@ -1,15 +1,15 @@
 {
-  "title": "Foo Branch Ranger",
-  "archetype": "ranger",
-  "headgear": "none",
-  "accessory": "sticker-shield",
-  "emblem": ";",
+  "title": "Modular Utility Engineer",
+  "archetype": "engineer",
+  "headgear": "goggles",
+  "accessory": "laptop-backpack",
+  "emblem": "_",
   "palette": [
-    "#96712d",
-    "#f3d75c",
-    "#ffdeb0",
-    "#82f4d2"
+    "#0f172a",
+    "#38bdf8",
+    "#f8fafc",
+    "#0284c7"
   ],
-  "catchphrase": "Foo() saves the party.",
+  "catchphrase": "Note: If this iteratee becomes hot, curr",
   "weaponName": "await fetch(add)"
 }

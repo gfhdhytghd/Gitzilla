@@ -1,15 +1,15 @@
 {
-  "title": "app Byte Mage",
+  "title": "FastAPI Endpoint Mage",
   "archetype": "mage",
   "headgear": "hood",
-  "accessory": "laptop-backpack",
-  "emblem": "{",
+  "accessory": "cape",
+  "emblem": "{}",
   "palette": [
-    "#355b99",
-    "#65b8ed",
-    "#ffdda1",
-    "#ffe36c"
+    "#009688",
+    "#1e293b",
+    "#e6fffa",
+    "#22c55e"
   ],
-  "catchphrase": "app() saves the party.",
-  "weaponName": "yield from alias()"
+  "catchphrase": "TODO: remove this hack once @app.get('/v",
+  "weaponName": "yield from app()"
 }

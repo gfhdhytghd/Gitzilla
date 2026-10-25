@@ -1,53 +1,50 @@
 {
   "name": "REDIS, ARMORED QUICKLIST TEST EXECUTOR",
-  "epithet": "A silver-armored mecha; sdslen() fuels the red-visor reactor.",
+  "epithet": "The In-Memory Annihilator",
   "body": "machine",
-  "eyes": 12,
-  "mouth": "brackets",
+  "eyes": 6,
+  "mouth": "maw",
   "growths": [
-    "gears",
-    "pipes",
-    "servers"
+    "servers",
+    "cables",
+    "pipes"
   ],
   "palette": [
-    "#202936",
-    "#a3b3c2",
-    "#ff5368",
-    "#5ce5ef",
-    "#ffaf8a"
+    "#1a1d24",
+    "#c5cbd3",
+    "#ff2a2a",
+    "#d84315",
+    "#ff003c"
   ],
-  "theme": "legacy",
+  "theme": "terminal",
   "intro": [
-    "$ git clone redis/redis",
-    "[##########] red visor online; jet vents armed",
-    "FATAL: missile barrage :: src/server.h",
-    "static inline void kvSpecInit(kvSpec *sp"
+    "INIT: server.c booting memory engine...",
+    "WARN: HIGH TOTAL RSS DETECTED ON PORT 6379",
+    "REDIS-TITAN SYSTEM READY. PROTOCOL ONLINE."
   ],
   "taunts": [
-    "Rocket-fist fault: TODO: Use separate misses stats and notify ev",
-    "Panel scars: Redis cli cmddocs hardening (#16034)",
-    "Target lock: sdslen(); rocket fist armed.",
-    "Eye laser compiling sdslen().",
-    "Missile barrage seeks sdslen().",
-    "Vents open. Cooling with git reset --hard."
+    "XXX Technically in Redis-land we don't have out of memory, only",
+    "TODO: make this a dict for better performance, but you will not",
+    "OOM command rejected. Evicting intruders from memory heap!",
+    "Fix use-after-free in cluster bus FORGOTTEN_NODE handling!"
   ],
   "attackNames": {
-    "0-fan-0": "main() Unhandled Error",
-    "0-charge-1": "crc64() Hard Reset",
-    "1-ring-0": "strlen() Spin Lock",
-    "2-laser-0": "test() </> Breath",
-    "3-summon-0": "fullname() Version Drift",
-    "4-fan-0": "manifest_modules() Throw Storm",
-    "5-charge-0": "RedisModule_OnLoad() Force Push",
-    "6-ring-0": "resp() Retry Storm"
+    "0-fan-0": "main() connSetWriteHandler Missile Fan",
+    "0-charge-1": "crc64() crc64 Hydraulic Ram Charge",
+    "1-ring-0": "strlen() MemBlock Burst Protocol Ring",
+    "2-laser-0": "test() generate_random_vector Coherent Lance",
+    "3-summon-0": "fullname() struct_code Minion Deployment",
+    "4-fan-0": "manifest_modules() manifest_modules Scatter Barrage",
+    "5-charge-0": "RedisModule_OnLoad() HelloBlock_Timeout Overdrive Ram",
+    "6-ring-0": "resp() Workload Radial Compression Wave"
   },
   "limbNames": {
-    "limb-0": "size_t() Claw",
-    "limb-1": "cleanup() Lens",
-    "limb-2": "main Mandible",
-    "limb-3": "write() Tendril",
-    "limb-4": "manifest_field() Coil",
-    "limb-5": "HelloBlock_FreeData() Antenna",
-    "limb-6": "run() Plating"
+    "limb-0": "connSetReadHandler Servo Leg",
+    "limb-1": "cleanup Scissor Clamp",
+    "limb-2": "TestCase Vector Projector",
+    "limb-3": "fullname Auxiliary Engine",
+    "limb-4": "manifest_field Shoulder Pod",
+    "limb-5": "HelloBlock_Reply Rocket Fist",
+    "limb-6": "Workload Core Exhaust"
   }
 }

@@ -1,15 +1,15 @@
 {
-  "title": "sdslen Hotfix Engineer",
-  "archetype": "engineer",
-  "headgear": "antenna",
-  "accessory": "scarf",
-  "emblem": ";",
+  "title": "In-Memory Cache Knight",
+  "archetype": "knight",
+  "headgear": "helmet",
+  "accessory": "cape",
+  "emblem": "->",
   "palette": [
-    "#476987",
-    "#99d8d4",
-    "#ffe1b5",
-    "#f7a6d8"
+    "#d82c20",
+    "#22252a",
+    "#70e1e8",
+    "#ffca28"
   ],
-  "catchphrase": "sdslen() saves the party.",
+  "catchphrase": "TODO: make this a dict for better perfor",
   "weaponName": "#define SPRAY(list)"
 }

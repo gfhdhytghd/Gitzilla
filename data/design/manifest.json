@@ -10,12 +10,16 @@
       "hero": {
         "slug": "burntsushi/ripgrep",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "burntsushi/ripgrep",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "facebook/react": {
@@ -27,12 +31,16 @@
       "hero": {
         "slug": "facebook/react",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "facebook/react",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "pallets/flask": {
@@ -44,12 +52,16 @@
       "hero": {
         "slug": "pallets/flask",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "pallets/flask",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "django/django": {
@@ -61,12 +73,16 @@
       "hero": {
         "slug": "django/django",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "django/django",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "expressjs/express": {
@@ -78,12 +94,16 @@
       "hero": {
         "slug": "expressjs/express",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "expressjs/express",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "fastapi/fastapi": {
@@ -95,12 +115,16 @@
       "hero": {
         "slug": "fastapi/fastapi",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "fastapi/fastapi",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "gin-gonic/gin": {
@@ -112,12 +136,16 @@
       "hero": {
         "slug": "gin-gonic/gin",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "gin-gonic/gin",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "golang/example": {
@@ -129,12 +157,16 @@
       "hero": {
         "slug": "golang/example",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "golang/example",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "jquery/jquery": {
@@ -146,12 +178,16 @@
       "hero": {
         "slug": "jquery/jquery",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "jquery/jquery",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "karpathy/nanogpt": {
@@ -163,12 +199,16 @@
       "hero": {
         "slug": "karpathy/nanogpt",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "karpathy/nanogpt",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "lodash/lodash": {
@@ -180,12 +220,16 @@
       "hero": {
         "slug": "lodash/lodash",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "lodash/lodash",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "redis/redis": {
@@ -197,12 +241,16 @@
       "hero": {
         "slug": "redis/redis",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "redis/redis",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "rust-lang/rustlings": {
@@ -214,12 +262,16 @@
       "hero": {
         "slug": "rust-lang/rustlings",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "rust-lang/rustlings",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "spring-projects/spring-petclinic": {
@@ -231,12 +283,16 @@
       "hero": {
         "slug": "spring-projects/spring-petclinic",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "spring-projects/spring-petclinic",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     },
     "vuejs/core": {
@@ -248,12 +304,16 @@
       "hero": {
         "slug": "vuejs/core",
         "kind": "hero",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       },
       "boss": {
         "slug": "vuejs/core",
         "kind": "boss",
-        "source": "fallback"
+        "source": "gemini",
+        "model": "gemini-3.8-flash",
+        "api": "interactions"
       }
     }
   }

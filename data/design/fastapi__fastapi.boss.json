@@ -1,55 +1,53 @@
 {
-  "name": "FASTAPI, THE TEST OPENAPI NECKSTORM",
-  "epithet": "A gold-scaled winged hydra; app() fuels the shared heart between branching necks.",
+  "name": "Tri-Route Typhoeus",
+  "epithet": "Gilded Sovereign of the Starlette Core",
   "body": "hydra",
-  "eyes": 12,
+  "eyes": 7,
   "mouth": "brackets",
   "growths": [
     "wings",
-    "horns",
-    "crystals"
+    "servers",
+    "horns"
   ],
   "palette": [
-    "#302011",
-    "#a97b22",
-    "#ffdf68",
-    "#f5b83e",
-    "#fff3be"
+    "#261d16",
+    "#d9a74a",
+    "#fef08a",
+    "#009485",
+    "#38bdf8"
   ],
-  "theme": "notebook",
+  "theme": "web",
   "intro": [
-    "$ git clone fastapi/fastapi",
-    "[##########] branching necks awake; wings unfurl",
-    "FATAL: head beam :: fastapi/__init__.py",
-    "needs_py310 = pytest.mark.skipif("
+    "> uv run fastapi dev --host 0.0.0.0 --port 8000",
+    "> Triple gilded necks unfurl above broad ribbed wings: Serving at http://127.0.0",
+    "> Dark ochre scales discharge pale lightning as ASGI routing cores lock onto tar"
   ],
   "taunts": [
-    "Wing gust: TODO remove when deprecating Pydantic v1",
-    "Neck scars: 🐛 Restore default handling for omitted boolean form",
-    "Three throats call app() in turn.",
-    "Wings unfurl: app() takes the gust.",
-    "Dive bomb queued for app().",
-    "One head returns. Two more recurse."
+    "TODO: remove when dropping support for Pydantic < v2.12.3!",
+    "Dive bomb incoming: 🐛 Fix OpenAPI schemas for standalone nullab",
+    "Each neck fires in turn—can your schema survive @app.get('/items",
+    "assert == True or perish before the tripartite beam array!",
+    "Wings gusting at 300% increased velocity—taste production throug"
   ],
   "attackNames": {
-    "0-laser-0": "app() </> Breath",
-    "0-fan-1": "Item() Unhandled Error",
-    "1-charge-0": "get() git push --force",
-    "2-spiral-0": "User() Nested Promises",
-    "3-laser-0": "__init__() Race Condition",
-    "4-fan-0": "lifespan() Throw Storm",
-    "5-charge-0": "Header() rm -rf",
-    "6-spiral-0": "__call__() Recursion",
-    "7-laser-0": "main() grep Beam"
+    "0-laser-0": "app() tests.client.assert_beam_zero",
+    "0-fan-1": "Item() tests.Item.get_concurrency_barrage",
+    "1-charge-0": "get() fastapi.endpoint.post_dive_bomb",
+    "2-spiral-0": "User() docs_src.read_items.User_spiral_helix",
+    "3-laser-0": "__init__() scripts.Settings.run_annihilation_ray",
+    "4-fan-0": "lifespan() misc.lifespan.default_alias_scatter",
+    "5-charge-0": "Header() openapi.HTTPBearer.Response_supersonic_dive",
+    "6-spiral-0": "__call__() security.make_not_authenticated_error_vortex",
+    "7-laser-0": "main() docs.Termynal.main_monochrome_lance"
   },
   "limbNames": {
-    "limb-0": "get_client() Coil",
-    "limb-1": "FastAPI() Antenna",
-    "limb-2": "read_items() Plating",
-    "limb-3": "run() Root",
-    "limb-4": "default() Claw",
-    "limb-5": "Response() Lens",
-    "limb-6": "make_not_authenticated_error Man",
-    "limb-7": "configure() Tendril"
+    "limb-0": "tests.client.runner_talon",
+    "limb-1": "fastapi.app.dispatcher_neck",
+    "limb-2": "docs_src.read_items.schema_rib",
+    "limb-3": "scripts.run.Settings_wing",
+    "limb-4": "misc.lifespan.cycle_knot",
+    "limb-5": "openapi.HTTPBearer.crest_neck",
+    "limb-6": "security.make_not_authenticated_",
+    "limb-7": "docs.Termynal.configure_tail"
   }
 }

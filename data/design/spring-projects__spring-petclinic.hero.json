@@ -1,15 +1,15 @@
 {
-  "title": "Owner Hotfix Engineer",
-  "archetype": "engineer",
-  "headgear": "helmet",
-  "accessory": "coffee-mug",
-  "emblem": ";",
+  "title": "PetClinic Paladin",
+  "archetype": "knight",
+  "headgear": "cat-ears",
+  "accessory": "tail",
+  "emblem": "{}",
   "palette": [
-    "#8e405a",
-    "#f08c73",
-    "#f8d8a4",
-    "#9bd8ff"
+    "#6db33f",
+    "#2c3e50",
+    "#ffe4c4",
+    "#85ea2d"
   ],
-  "catchphrase": "Owner() saves the party.",
-  "weaponName": "addVisit.stream()"
+  "catchphrase": "Validate visit description length—no Pet",
+  "weaponName": "getPets().stream()"
 }

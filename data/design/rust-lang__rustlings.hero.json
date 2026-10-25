@@ -1,15 +1,15 @@
 {
-  "title": "new Compile Guardian",
-  "archetype": "heavy",
-  "headgear": "bandana",
-  "accessory": "jetpack",
-  "emblem": ";",
+  "title": "Rustling Knight",
+  "archetype": "knight",
+  "headgear": "helmet",
+  "accessory": "sticker-shield",
+  "emblem": "::",
   "palette": [
-    "#ac583c",
-    "#f3a76c",
-    "#ffdeb0",
-    "#77f2cd"
+    "#ce422b",
+    "#2b2d42",
+    "#8ddbe0",
+    "#f7a41d"
   ],
-  "catchphrase": "new() saves the party.",
-  "weaponName": "alloc(stdout())"
+  "catchphrase": "TODO: Fix the compiler error before chec",
+  "weaponName": "unsafe { check() }"
 }

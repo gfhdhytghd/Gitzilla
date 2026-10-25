@@ -1,15 +1,15 @@
 {
-  "title": "__init__ Byte Mage",
+  "title": "NanoGPT Apprentice",
   "archetype": "mage",
-  "headgear": "hood",
-  "accessory": "jetpack",
-  "emblem": "=",
+  "headgear": "wizard-hat",
+  "accessory": "cape",
+  "emblem": "<3",
   "palette": [
-    "#355b99",
-    "#65b8ed",
-    "#ffdda1",
-    "#ffe36c"
+    "#ee4c2c",
+    "#1e293b",
+    "#ffe4c4",
+    "#ffd43b"
   ],
-  "catchphrase": "__init__() saves the party.",
-  "weaponName": "yield process()"
+  "catchphrase": "TODO investigate: feel the magic with ge",
+  "weaponName": "yield from generate()"
 }

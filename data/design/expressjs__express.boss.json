@@ -1,47 +1,44 @@
 {
-  "name": "EXPRESS, THE SEND CRYSTAL MAW",
-  "epithet": "A black-crystalline abyssal serpent; app() fuels the veined coil core.",
+  "name": "Dispatcher Wyrm",
+  "epithet": "Subterranean Devourer of Unhandled Routes",
   "body": "serpent",
-  "eyes": 12,
+  "eyes": 8,
   "mouth": "brackets",
   "growths": [
     "crystals",
-    "tentacles",
-    "spikes"
+    "spikes",
+    "cables"
   ],
   "palette": [
-    "#100f1d",
-    "#363349",
-    "#ef426b",
-    "#38dfef",
-    "#aefaff"
+    "#0b0e14",
+    "#1e293b",
+    "#00f0ff",
+    "#ff1744",
+    "#ffea00"
   ],
   "theme": "web",
   "intro": [
-    "$ git clone expressjs/express",
-    "[##########] crystal coils stir beneath the floor",
-    "FATAL: crystal eruption :: index.js",
-    "function shouldHaveBody (buf) {"
+    "> app.listen(3000): subterranean stream bound to 0.0.0.0",
+    "> obsidian crystalline segments burrow beneath the event loop...",
+    "> res.send() hangs as dark middleware coils breach the floor!"
   ],
   "taunts": [
-    "Buried debt: NOTE: This is not a real part of the API, but",
-    "Vein scars: docs: correct crossed names in the emeritus triagers",
-    "I coil around app() beneath the floor.",
-    "Crystal eruption breaches app().",
-    "Red veins pulse through app().",
-    "Burrow. Emerge. Shatter the call stack."
+    "note that this may not always work",
+    "NOTE: This is not a real part of the API, but it ends here.",
+    "function shouldNotHaveBody(): your buffers cannot hold!",
+    "Revert 'bump supertest': your assertions shatter across my spine"
   ],
   "attackNames": {
-    "0-cascade-0": "createApp() Circular Import",
-    "0-ring-1": "send() Event Loop",
-    "1-slam-0": "app() Stack Smash",
-    "2-fan-0": "get() Throw Storm",
-    "3-charge-0": "use() rm -rf"
+    "0-cascade-0": "createApp() test.createApp: Crystalline Eruption Cascade",
+    "0-ring-1": "send() test.send: Cyan Vein-Pulse Shock Ring",
+    "1-slam-0": "app() lib.use: Segmented Middleware Coil Slam",
+    "2-fan-0": "get() examples.html: Content-Negotiation Shard Fan",
+    "3-charge-0": "use() index.js: getMajorVersion Subterranean Burrow Charge"
   },
   "limbNames": {
-    "limb-0": "render() Tendril",
-    "limb-1": "fn() Coil",
-    "limb-2": "html() Antenna",
-    "limb-3": "accept() Plating"
+    "limb-0": "test.json Jagged Crystal Spine R",
+    "limb-1": "lib.app Heavily Armored Ventral",
+    "limb-2": "examples.text Serrated Route Cre",
+    "limb-3": "index.js Heart Node Core Plates"
   }
 }

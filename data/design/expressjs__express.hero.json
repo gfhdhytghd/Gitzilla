@@ -1,15 +1,15 @@
 {
-  "title": "app Branch Ranger",
+  "title": "The Route Dispatcher",
   "archetype": "ranger",
-  "headgear": "beanie",
-  "accessory": "cape",
-  "emblem": ";",
+  "headgear": "headphones",
+  "accessory": "laptop-backpack",
+  "emblem": "ap",
   "palette": [
-    "#96712d",
-    "#f3d75c",
-    "#ffdeb0",
-    "#82f4d2"
+    "#2d3139",
+    "#e6edf3",
+    "#ffc09f",
+    "#f7df1e"
   ],
-  "catchphrase": "app() saves the party.",
-  "weaponName": "accept().then(fire)"
+  "catchphrase": "app.listen(3000) — note that this may no",
+  "weaponName": "accept().then(send)"
 }

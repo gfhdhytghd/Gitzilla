@@ -20,7 +20,7 @@ const hero = fallbackHero(profile, heroKit);
 const boss = fallbackBoss(profile, bossKit);
 const roots: string[] = [];
 const root = async () => { const dir = await mkdtemp(join(tmpdir(), 'kaiju-design-')); roots.push(dir); return dir; };
-const response = (value: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(value) }] } }] }), { status: 200 });
+const response = (value: unknown) => new Response(JSON.stringify({ status: 'completed', steps: [{ type: 'model_output', content: [{ type: 'text', text: JSON.stringify(value) }] }] }), { status: 200 });
 const service = (fetcher = vi.fn().mockResolvedValue(response(hero)), options = {}) => createDesignService({ apiKey: 'test-secret', deepseekApiKey: '', cacheDir: false, assetDir: false, fetch: fetcher, ...options });
 
 afterEach(async () => { vi.unstubAllEnvs(); vi.restoreAllMocks(); await Promise.all(roots.splice(0).map(dir => rm(dir, { recursive: true, force: true }))); });
@@ -72,6 +72,15 @@ describe('appearance only', () => {
     }
     expect(Object.values(legacy.attackNames).every(name => name.startsWith('app()'))).toBe(true);
   });
+  it('repairs model boss epithets that repeat the repo name, including embedded source words', () => {
+    expect(validateBoss({ ...boss, name: 'FLASK, SOVEREIGN OF FLASK' }, profile, bossKit).name).toBe(boss.name);
+    const gin = { ...profile, slug: 'owner/gin' };
+    const model = { ...boss, name: 'EnginePrime', epithet: 'A silver missile beast', palette: ['#111111', '#222222', '#333333', '#444444', '#555555'] };
+    const fixed = validateBoss(model, gin, bossKit);
+    expect(fixed.name).toBe(fallbackBoss(gin, bossKit).name);
+    expect(fixed.epithet).toBe(model.epithet); expect(fixed.palette).toEqual(model.palette);
+    expect(validateBoss({ ...boss, name: 'LocalProxy' }, profile, bossKit).name).toBe('LocalProxy');
+  });
 });
 
 describe('credentials', () => {
@@ -104,25 +113,27 @@ describe('Gemini REST', () => {
     const fetcher = vi.fn().mockResolvedValue(response(fallbackBoss(profile, kit)));
     await service(fetcher).designBoss(profile, kit);
     const request = JSON.parse(fetcher.mock.calls[0][1].body);
-    const prompt = request.contents[0].parts[0].text;
+    const prompt = request.input;
     expect(prompt).toContain(`archetype=${archetype}`);
     expect(prompt).toContain(`"archetype":"${archetype}"`);
     expect(prompt).toContain(bossArt[archetype].direction);
     for (const text of ['phase 3', 'dark crystalline corruption', 'real identifiers', 'TODOs', 'commit subjects', 'selected archetype', 'sim pose']) expect(prompt).toContain(text);
     expect(prompt).not.toContain('Always one upright');
-    expect(request.generationConfig.responseJsonSchema.properties.body.enum).toEqual(bossArt[archetype].bodies);
+    expect(request.response_format.schema.properties.body.enum).toEqual(bossArt[archetype].bodies);
   });
   it('sends JSON schemas, context and the key only in a header; validates the result', async () => {
     const fetcher = vi.fn().mockResolvedValue(response({ ...hero, title: 'Flask Spellguard' }));
-    const result = await service(fetcher).designHero({ ...profile, readme: 'A micro web framework', tree: ['src/flask/app.py'] }, heroKit);
+    const onResult = vi.fn();
+    const result = await service(fetcher, { onResult }).designHero({ ...profile, readme: 'A micro web framework', tree: ['src/flask/app.py'] }, heroKit);
     expect(result.title).toBe('Flask Spellguard');
     const [url, request] = fetcher.mock.calls[0];
-    expect(url).toContain('gemini-3.8-flash:generateContent'); expect(url).not.toContain('test-secret');
+    expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/interactions'); expect(url).not.toContain('test-secret');
     expect(request.headers['x-goog-api-key']).toBe('test-secret');
     const body = JSON.parse(request.body);
-    expect(body.generationConfig).toEqual({ responseMimeType: 'application/json', responseJsonSchema: heroSchema });
-    expect(body.contents[0].parts[0].text).toContain('A micro web framework');
-    expect(body.contents[0].parts[0].text).toContain('src/flask/app.py');
+    expect(body).toMatchObject({ model: 'gemini-3.8-flash', store: false, response_format: { type: 'text', mime_type: 'application/json', schema: heroSchema } });
+    expect(body.input).toContain('A micro web framework');
+    expect(body.input).toContain('src/flask/app.py');
+    expect(onResult).toHaveBeenCalledWith({ slug: profile.slug, kind: 'hero', source: 'gemini', model: 'gemini-3.8-flash', api: 'interactions' });
   });
   it('requires every boss ID and keeps prompt independent of playerCount', async () => {
     const fetcher = vi.fn().mockImplementation(async () => response(boss));
@@ -130,26 +141,38 @@ describe('Gemini REST', () => {
     await service(fetcher).designBoss(profile, bossKitFromProfile(profile, 8));
     const bodies = fetcher.mock.calls.map(call => JSON.parse(call[1].body));
     expect(bodies[0]).toEqual(bodies[1]);
-    expect(bodies[0].generationConfig.responseJsonSchema).toEqual(bossSchema(bossKit));
-    expect(bodies[0].generationConfig.responseJsonSchema.properties.attackNames.required).toEqual(bossKit.attacks.map(a => a.id));
+    expect(bodies[0].response_format.schema).toEqual(bossSchema(bossKit));
+    expect(bodies[0].response_format.schema.properties.attackNames.required).toEqual(bossKit.attacks.map(a => a.id));
+  });
+  it('uses legacy generateContent only after both Interactions models fail', async () => {
+    const legacy = () => new Response(JSON.stringify({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(hero) }] } }] }));
+    const fetcher = vi.fn().mockImplementation(async (url: string) => url.endsWith('/interactions') ? new Response('', { status: 404 }) : legacy());
+    const onResult = vi.fn();
+    expect(await service(fetcher, { deepseekApiKey: 'test', onResult }).designHero(profile, heroKit)).toEqual(hero);
+    expect(fetcher.mock.calls.map(call => call[0])).toEqual([
+      'https://generativelanguage.googleapis.com/v1beta/interactions',
+      'https://generativelanguage.googleapis.com/v1beta/interactions',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+    ]);
+    expect(onResult).toHaveBeenCalledWith({ slug: profile.slug, kind: 'hero', source: 'gemini', model: 'gemini-3.8-flash', api: 'generateContent' });
   });
   it('retries lite once on HTTP error and honors a custom primary model', async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(new Response('', { status: 503 })).mockResolvedValueOnce(response(hero));
     expect(await service(fetcher, { model: 'custom-flash' }).designHero(profile, heroKit)).toEqual(hero);
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(fetcher.mock.calls[0][0]).toContain('custom-flash');
-    expect(fetcher.mock.calls[1][0]).toContain('gemini-3.1-flash-lite');
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).model).toBe('custom-flash');
+    expect(JSON.parse(fetcher.mock.calls[1][1].body).model).toBe('gemini-3.1-flash-lite');
   });
-  it('falls back after two malformed or empty responses', async () => {
+  it('falls back after Interactions and legacy APIs return malformed or empty responses', async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(response([])).mockResolvedValueOnce(new Response('{}', { status: 200 }));
     expect(await service(fetcher).designBoss(profile, bossKit)).toEqual(boss);
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledTimes(4);
   });
   it('does not cache an empty JSON object as a successful design', async () => {
     const cacheDir = await root(), onResult = vi.fn();
     const fetcher = vi.fn().mockImplementation(async () => response({}));
     expect(await service(fetcher, { cacheDir, onResult }).designHero(profile, heroKit)).toEqual(hero);
-    expect(fetcher).toHaveBeenCalledTimes(2); expect(await readdir(cacheDir)).toEqual([]);
+    expect(fetcher).toHaveBeenCalledTimes(4); expect(await readdir(cacheDir)).toEqual([]);
     expect(onResult).toHaveBeenCalledWith({ slug: profile.slug, kind: 'hero', source: 'fallback' });
   });
   it('does not let a result callback failure repeat requests or reject usable art', async () => {
@@ -157,10 +180,10 @@ describe('Gemini REST', () => {
     expect(await service(fetcher, { onResult() { throw new Error('observer failed'); } }).designHero(profile, heroKit)).toEqual(hero);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
-  it('aborts timed out calls and retries once before deterministic fallback', async () => {
+  it('aborts each timed out transport/model attempt before deterministic fallback', async () => {
     const fetcher = vi.fn().mockImplementation((_url, options) => new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted')))));
     expect(await service(fetcher, { timeoutMs: 5 }).designHero(profile, heroKit)).toEqual(hero);
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledTimes(4);
   });
 });
 
@@ -286,6 +309,9 @@ describe('cache and offline assets', () => {
       expect(suffix.replace(/[^a-z0-9]/gi, '').toLowerCase()).not.toContain(p.slug.split('/').pop()!.replace(/[^a-z0-9]/gi, '').toLowerCase());
       savedEpithets.push(suffix);
       expect(h).toEqual(validateHero(h, p, pk)); expect(b).toEqual(validateBoss(b, p, bk));
+      expect(bossArt[bk.archetype].bodies).toContain(b.body);
+      const limbNames = bk.limbs.map(limb => b.limbNames[limb.id]);
+      expect(limbNames.every(Boolean)).toBe(true); expect(new Set(limbNames).size).toBe(bk.limbs.length);
       savedArchetypes.add(bk.archetype);
       if (manifest.entries[p.slug].boss.source === 'fallback') {
         const expected = fallbackBoss(p, bk);
@@ -445,7 +471,7 @@ describe('code weapon names', () => {
     const fetcher = vi.fn().mockResolvedValue(response({ ...hero, weaponName: 'emit(shot)' }));
     const design = await service(fetcher).designHero(p, kit);
     expect(applyHeroDesign(kit, design).code!.weapon!.name).toBe('emit(shot)');
-    const prompt = JSON.parse(fetcher.mock.calls[0][1].body).contents[0].parts[0].text;
+    const prompt = JSON.parse(fetcher.mock.calls[0][1].body).input;
     expect(prompt).toContain('Optional weaponName'); expect(prompt).toContain('24 characters'); expect(prompt).toContain('CODE EXPRESSION');
     expect(prompt).toContain(JSON.stringify(weapon));
   });
@@ -537,7 +563,7 @@ describe('real source DNA (round 2)', () => {
     await service(fetcher).designHero(p, heroKit);
     await service(fetcher).designBoss(p, bossKit);
     for (const [, request] of fetcher.mock.calls) {
-      const prompt = JSON.parse(request.body).contents[0].parts[0].text;
+      const prompt = JSON.parse(request.body).input;
       for (const value of ['renderForest', 'meshReady', 'TODO: remove this hack', 'fix fern recursion', 'return renderForest(tree);', '=>']) expect(prompt).toContain(value);
       expect(prompt).toContain('Quote real identifiers');
       expect(prompt).not.toContain('maxHp'); expect(prompt).not.toContain('damageMul'); expect(prompt).not.toContain('cooldown');
