@@ -540,7 +540,7 @@ export interface Autopsy {
 export interface RepoSuggestion {
   slug: string;                       // owner/name
   language: string | null;
-  stars: number;
+  stars?: number;                     // omitted when unknown (UI hides ★)
   description?: string;               // ≤ 140 chars, plain text
   source: "curated" | "trending";     // trending = fetched live from GitHub (recently created / fast-rising)
   fallback?: boolean;                 // pre-analyzed offline profile exists (instant summon)

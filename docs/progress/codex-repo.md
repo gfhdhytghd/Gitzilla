@@ -1,3 +1,13 @@
+DONE (curated stars fix)
+
+Backfilled real positive counts for all 85 curated repos, added one shared hourly metadata refresh alongside rising search, retained the static snapshot/last-known values on failure, and omitted unknown counts. Suggestions checks: 36 PASS; active workspace: 1387 PASS / 8 skipped; root typecheck and isolated HTTP smoke PASS. Shared optional-stars declaration / UI type-guard handoff is recorded below. No commits or deployment.
+
+### Contract request and handoff to coordinator / claude-ui
+
+`RepoSuggestion.stars` in shared/types.ts is still required. Please change it to `stars?: number` (unknown is omitted, never 0). Analysis/server will use a local optional-stars response type until that shared declaration lands. No shared edit by codex-repo.
+
+claude-ui: `client/app/suggestions.ts` currently guards with `s.stars > 0`, so undefined is already hidden at runtime; once the shared contract is optional, use `typeof s.stars === 'number' && s.stars > 0` for type safety, and ensure other/new chip renderers hide the star label when the value is absent. The client fallback/mock adapters still make stars:0; omit that property for unknown counts. No client files edited here.
+
 DONE (suggestions server)
 
 Suggestions server complete: 85 curated repos / 21 languages / 15 fallbacks; nonblocking public GitHub rising search, hourly single-flight cache, rate-limit/offline behavior, shuffled session-aware mixes, and GET /api/suggestions wired with two main.ts lines. Suggestions tests 14/14 PASS; broader targeted run 534 PASS; full workspace 5033 PASS / 20 skipped; root typecheck PASS; isolated production-main HTTP smoke PASS. No commits or deployment.
@@ -499,3 +509,22 @@ DONE (blank-line boundary fix)
 - Full workspace `npm test`: **5033 PASS / 20 skipped**, **414 passed / 14 skipped files**, 39.83s. No failing checks remain from this run.
 
 DONE (suggestions server)
+
+## Curated star-count correction delivered
+
+- Added `analysis/suggestion-stars.json`: a real public GitHub GraphQL metadata snapshot for **all 85 catalog repos**, fetched 2026-10-25. Every saved count is a positive integer; no estimated values or zero placeholders. `git/git` snapshot = **63,995**, `jesseduffield/lazygit` = **83,407**. Snapshot includes timestamp and resolved names for the three repository redirects.
+- Fixed the invalid curated slug `raylib/raylib` → **raysan5/raylib**, verified by GitHub. Kept existing working aliases (including facebook/react's offline identity) while recording public redirects. No fallback analysis JSON changed.
+- `analysis/suggestion-pool.ts` now attaches counts from the static snapshot rather than inlining zeros. Unknown future additions omit the property. `server/suggestions.ts` sanitizes all seed values and never emits zero/negative/invalid counts.
+- The existing hourly background workflow now includes **one GraphQL metadata batch for the complete curated pool**, single-flight across language filters. Runtime uses the configured GITHUB_TOKEN only, remains nonblocking, and updates only validated public positive integer counts. Fresh counts may decrease. Failed/missing/private/zero/invalid results preserve last-known counts (or omit unknown); restart/offline responses use the checked-in snapshot.
+- Curated metadata and rising-repo requests share HTTP auth/error/backoff handling. GraphQL RATE_LIMITED replies also honor the global rate-limit fallback; server credentials/upstream errors never appear in responses. No additional server/main.ts edit was required.
+- Kept `SuggestedRepo` / `SuggestionResult` locally typed with optional stars while the coordinator-owned shared declaration is still required. See the contract/UI handoff at the top; **no shared or client files edited by codex-repo**. Current UI already suppresses undefined at runtime; its comparison needs the stated guard when the shared type becomes optional.
+- Snapshot acquisition used a read-only authenticated `gh api graphql` call over the fixed public curated names. No raw token was read, printed, written, or exposed in a command; runtime code still reads only its server token. No commits, deployment or live-port access.
+
+### Curated stars verification
+
+- Suggestions-focused tests (including client tests selected by the filename filter): **36 PASS / 3 files**. Eight new star-metadata cases cover snapshot completeness, missing-field omission, positive-only output, nonblocking global batch/single-flight, one-hour refresh, partial/private/malformed data, legitimate decreases, failure persistence and offline behavior.
+- Broader analysis/Hall/suggestions filter: **686 PASS / 93 files** (this default filter also finds archived QA copies). Root `npm run typecheck`: **PASS**. `git diff --check`: **PASS**.
+- Independent production-main smoke on **PORT=0** and temporary stores, GITHUB_TOKEN empty: API returned git/git=63,995 and jesseduffield/lazygit=83,407, all C/Go suggestions positive, and trendingAt:null. This proves the static offline snapshot reaches the real HTTP route. Only that dedicated child/temp directory was cleaned up; ports 5173/5175 untouched.
+- Unfiltered `npm test` discovered archived QA copies: 6,389 passed, with archived missing receipt-verifier, archived cookie-tamper failure and an archived blank-line timeout. A simultaneous active-only run also hit blank-line/PvP deadlines under CPU contention. No archived tests or unrelated product code were modified. Final isolated active-only rerun, `npx vitest run --exclude 'qa/**' --maxWorkers=4`: **1387 PASS / 8 skipped**, **117 passed / 4 skipped files**, 38.70s. Both active blank-line and PvP cases passed unchanged. Archived QA copies were deliberately excluded from that active-source verification, not repaired or suppressed in configuration.
+
+DONE (curated stars fix)

@@ -2,9 +2,9 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { readdirSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import type { RepoSuggestion, SuggestionsResponse } from '../shared/types.ts';
+import type { RepoSuggestion } from '../shared/types.ts';
 import { CURATED_REPOS } from '../analysis/suggestion-pool.ts';
-import { createSuggestions, handleSuggestionsRoute, SUGGESTIONS_TTL } from './suggestions.ts';
+import { createSuggestions, handleSuggestionsRoute, SUGGESTIONS_TTL, type SuggestionResult } from './suggestions.ts';
 
 const instant = Date.parse('2026-10-25T12:00:00Z');
 const pool = Array.from({ length: 48 }, (_, i): RepoSuggestion => ({ slug: `curated/python-${i}`, language: 'Python', stars: i * 100, source: 'curated' }));
@@ -12,10 +12,11 @@ const row = (i: number) => ({ full_name: `rising/repo-${i}`, language: 'Python',
 const response = (items = Array.from({ length: 32 }, (_, i) => row(i))) => new Response(JSON.stringify({ items }));
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const deferred = <T>() => { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; };
-const slugs = (r: SuggestionsResponse) => r.repos.map(repo => repo.slug);
-const trendCount = (r: SuggestionsResponse) => r.repos.filter(repo => repo.source === 'trending').length;
+const slugs = (r: SuggestionResult) => r.repos.map(repo => repo.slug);
+const trendCount = (r: SuggestionResult) => r.repos.filter(repo => repo.source === 'trending').length;
 function fixture(fetcher = vi.fn(async () => response()), extra: Parameters<typeof createSuggestions>[0] = {}) {
-  return createSuggestions({ fetcher: fetcher as typeof fetch, getToken: () => 'server-secret-fixture', pool, now: () => instant, random: () => 0.5, ...extra });
+  const routed = ((input, init) => String(input).endsWith('/graphql') ? Promise.resolve(new Response(JSON.stringify({ data: {} }))) : (fetcher as typeof fetch)(input, init)) as typeof fetch;
+  return createSuggestions({ fetcher: routed, getToken: () => 'server-secret-fixture', pool, now: () => instant, random: () => 0.5, ...extra });
 }
 async function warm(service: ReturnType<typeof fixture>) { service.get(); await tick(); return service.get(); }
 
@@ -28,7 +29,7 @@ describe('suggestions curated catalog', () => {
     expect(CURATED_REPOS.filter(repo => repo.fallback).map(repo => repo.slug).sort()).toEqual(fallbacks);
     for (const repo of CURATED_REPOS) {
       expect(repo.slug).toMatch(/^[a-z\d-]+\/[a-z\d_.-]+$/); expect(repo.source).toBe('curated');
-      expect(repo.stars).toBeGreaterThanOrEqual(0); expect(repo.description!.length).toBeLessThanOrEqual(140);
+      expect(repo.stars).toBeGreaterThan(0); expect(repo.description!.length).toBeLessThanOrEqual(140);
       expect(repo.description).not.toMatch(/<[^>]*>/);
     }
   });
@@ -160,12 +161,12 @@ it('serves real HTTP responses with a private session cookie, no-store, language
   try {
     const first = await fetch(base + '/api/suggestions?n=8'); expect(first.status).toBe(200); expect(first.headers.get('cache-control')).toBe('no-store');
     expect(first.headers.get('set-cookie')).toMatch(/gitzilla_suggestions=[a-f0-9]{32};.*HttpOnly; SameSite=Lax/);
-    const cookie = first.headers.get('set-cookie')!.split(';')[0], a = await first.json() as SuggestionsResponse;
-    const b = await (await fetch(base + '/api/suggestions?n=8', { headers: { Cookie: cookie } })).json() as SuggestionsResponse;
-    const c = await (await fetch(base + '/api/suggestions?n=8', { headers: { Cookie: cookie } })).json() as SuggestionsResponse;
+    const cookie = first.headers.get('set-cookie')!.split(';')[0], a = await first.json() as SuggestionResult;
+    const b = await (await fetch(base + '/api/suggestions?n=8', { headers: { Cookie: cookie } })).json() as SuggestionResult;
+    const c = await (await fetch(base + '/api/suggestions?n=8', { headers: { Cookie: cookie } })).json() as SuggestionResult;
     expect(new Set([...slugs(a), ...slugs(b), ...slugs(c)]).size).toBe(24);
     const py = await fetch(base + '/api/suggestions?n=4&lang=py');
-    expect(((await py.json()) as SuggestionsResponse).repos.every(repo => repo.language === 'Python')).toBe(true);
+    expect(((await py.json()) as SuggestionResult).repos.every(repo => repo.language === 'Python')).toBe(true);
     const method = await fetch(base + '/api/suggestions', { method: 'POST' }); expect(method.status).toBe(405); expect(method.headers.get('allow')).toBe('GET');
     expect((await fetch(base + '/elsewhere')).status).toBe(404);
   } finally { server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }

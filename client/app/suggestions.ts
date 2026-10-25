@@ -23,7 +23,7 @@ async function fetchSuggestions(mock: boolean): Promise<RepoSuggestion[]> {
     const r = await fetch("/api/fallbacks");
     const j: unknown = r.ok ? await r.json() : [];
     const list = Array.isArray(j) ? (j as string[]) : (j as { repos?: string[] })?.repos ?? [];
-    return shuffle(list).slice(0, N + 1).map((slug) => ({ slug, language: null, stars: 0, source: "curated" as const, fallback: true }));
+    return shuffle(list).slice(0, N + 1).map((slug) => ({ slug, language: null, source: "curated" as const, fallback: true }));
   } catch {
     return [];
   }
@@ -104,7 +104,7 @@ export function createSuggestionChips(container: HTMLElement, opts: { mock: bool
         } },
       h("i.lang-dot", { style: `background:${(s.language && LANG_COLOR[s.language]) || "#6b7a72"}`, title: s.language ?? "", "aria-hidden": "true" }),
       h("span.sugg-slug", { translate: "no" }, s.slug),
-      s.stars > 0 ? h("span.sugg-stars", { "aria-label": `${s.stars} stars` }, `★${compactStars(s.stars)}`) : null,
+      s.stars ? h("span.sugg-stars", { "aria-label": `${s.stars} stars` }, `★${compactStars(s.stars)}`) : null, // unknown / 0: no ★
       s.source === "trending" ? h("span.sugg-new", { "data-testid": "suggestion-new" }, "🔥 new") : null,
     );
     // long-press (phones): show the description, don't pick

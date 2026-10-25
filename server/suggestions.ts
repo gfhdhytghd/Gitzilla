@@ -4,6 +4,10 @@ import type { RepoSuggestion, SuggestionsResponse } from '../shared/types.ts';
 import { CURATED_REPOS } from '../analysis/suggestion-pool.ts';
 import { selectPrimaryLanguage } from '../analysis/files.ts';
 
+// Until the coordinator makes shared RepoSuggestion.stars optional, model unknown counts explicitly.
+export type SuggestedRepo = Omit<RepoSuggestion, 'stars'> & { stars?: number };
+export type SuggestionResult = Omit<SuggestionsResponse, 'repos'> & { repos: SuggestedRepo[] };
+
 export const SUGGESTIONS_TTL = 60 * 60 * 1000;
 const RETRY_MS = 60_000;
 const MAX_SIZE_KIB = 200 * 1024;
@@ -48,10 +52,10 @@ function searchRepo(value: SearchRepo, lang?: string): RepoSuggestion | undefine
 interface CacheEntry { repos: RepoSuggestion[]; fetchedAt: number | null; refreshAfter: number; pending?: Promise<void> }
 interface Recent { requests: string[][]; expires: number }
 export interface SuggestionRequest { n?: number | string | null; lang?: string | null; session?: string }
-export interface SuggestionsService { get(request?: SuggestionRequest): SuggestionsResponse }
+export interface SuggestionsService { get(request?: SuggestionRequest): SuggestionResult }
 interface Options {
   fetcher?: typeof fetch; now?: () => number; random?: () => number; getToken?: () => string | undefined;
-  pool?: readonly RepoSuggestion[];
+  pool?: readonly SuggestedRepo[];
 }
 class SearchUnavailable extends Error {
   constructor(readonly limited: boolean, readonly retryAt: number) { super('GitHub suggestions unavailable'); }
@@ -63,12 +67,52 @@ export function createSuggestions(options: Options = {}): SuggestionsService {
   const getToken = options.getToken ?? (() => process.env.GITHUB_TOKEN);
   const pool = [...new Map((options.pool ?? CURATED_REPOS).map(repo => [repo.slug.toLowerCase(), { ...repo, slug: repo.slug.toLowerCase() }])).values()];
   const curatedSlugs = new Set(pool.map(repo => repo.slug));
+  const curatedStars = new Map(pool.flatMap(repo => Number.isSafeInteger(repo.stars) && repo.stars! > 0 ? [[repo.slug, repo.stars!] as const] : []));
+  const starJobs = new Map<string, { refreshAfter: number; pending?: Promise<void> }>();
   const cache = new Map<string, CacheEntry>(), recent = new Map<string, Recent>(), blocked = new Map<string, number>();
   const shuffled = <T>(items: readonly T[]): T[] => {
     const result = [...items];
     for (let i = result.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [result[i], result[j]] = [result[j], result[i]]; }
     return result;
   };
+  async function github(url: URL | string, token: string, body?: unknown): Promise<unknown> {
+    const response = await fetcher(url, {
+      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'Gitzilla-Suggestions', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      ...(body ? { method: 'POST', body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      const reset = Number(response.headers.get('x-ratelimit-reset')) * 1000;
+      const after = Number(response.headers.get('retry-after')) * 1000 + now();
+      throw new SearchUnavailable([401, 403, 429].includes(response.status), now() + Math.min(SUGGESTIONS_TTL, Math.max(RETRY_MS, Number.isFinite(reset) ? reset - now() : 0, Number.isFinite(after) ? after - now() : 0)));
+    }
+    return response.json();
+  }
+  function failed(entry: { refreshAfter: number }, credential: string, error: unknown) {
+    entry.refreshAfter = error instanceof SearchUnavailable ? error.retryAt : now() + RETRY_MS;
+    if (error instanceof SearchUnavailable && error.limited) blocked.set(credential, entry.refreshAfter);
+  }
+  async function refreshStars(job: { refreshAfter: number }, token: string, credential: string) {
+    try {
+      // One public metadata batch for the entire pool, shared across all language/search requests.
+      const fields = pool.map((repo, i) => {
+        const [owner, name] = repo.slug.split('/');
+        return `r${i}:repository(owner:${JSON.stringify(owner)},name:${JSON.stringify(name)}){nameWithOwner isPrivate stargazerCount}`;
+      }).join(' ');
+      const body = await github('https://api.github.com/graphql', token, { query: `query { ${fields} }` }) as {
+        data?: Record<string, { nameWithOwner?: unknown; isPrivate?: unknown; stargazerCount?: unknown } | null>;
+        errors?: { type?: string }[];
+      };
+      if (body.errors?.some(error => error.type === 'RATE_LIMITED')) throw new SearchUnavailable(true, now() + SUGGESTIONS_TTL);
+      if (!body.data || typeof body.data !== 'object') throw new Error('Curated metadata unavailable');
+      pool.forEach((repo, i) => {
+        const item = body.data![`r${i}`], stars = item?.stargazerCount;
+        // GraphQL resolves old slugs after repository transfers; retain our requested identity/fallback marker.
+        if (item?.isPrivate === false && typeof item.nameWithOwner === 'string' && typeof stars === 'number' && Number.isSafeInteger(stars) && stars > 0) curatedStars.set(repo.slug, stars);
+      });
+      job.refreshAfter = now() + SUGGESTIONS_TTL;
+    } catch (error) { failed(job, credential, error); }
+  }
   async function refresh(entry: CacheEntry, token: string, credential: string, lang?: string) {
     try {
       const day = (days: number) => new Date(now() - days * 86400_000).toISOString().slice(0, 10);
@@ -80,15 +124,7 @@ export function createSuggestions(options: Options = {}): SuggestionsService {
       const pages = await Promise.all(queries.map(async query => {
         const url = new URL('https://api.github.com/search/repositories');
         url.searchParams.set('q', query); url.searchParams.set('sort', 'stars'); url.searchParams.set('order', 'desc'); url.searchParams.set('per_page', '100');
-        const response = await fetcher(url, { headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${token}`, 'User-Agent': 'Gitzilla-Suggestions' }, signal: AbortSignal.timeout(5000) });
-        if (!response.ok) {
-          await response.body?.cancel();
-          const limited = [401, 403, 429].includes(response.status);
-          const reset = Number(response.headers.get('x-ratelimit-reset')) * 1000;
-          const after = Number(response.headers.get('retry-after')) * 1000 + now();
-          throw new SearchUnavailable(limited, now() + Math.min(SUGGESTIONS_TTL, Math.max(RETRY_MS, Number.isFinite(reset) ? reset - now() : 0, Number.isFinite(after) ? after - now() : 0)));
-        }
-        const body = await response.json() as { items?: SearchRepo[] };
+        const body = await github(url, token) as { items?: SearchRepo[] };
         if (!Array.isArray(body.items)) throw new SearchUnavailable(false, now() + RETRY_MS);
         return body.items;
       }));
@@ -100,8 +136,7 @@ export function createSuggestions(options: Options = {}): SuggestionsService {
       }
       entry.repos = [...repos.values()]; entry.fetchedAt = now(); entry.refreshAfter = now() + SUGGESTIONS_TTL;
     } catch (error) {
-      entry.refreshAfter = error instanceof SearchUnavailable ? error.retryAt : now() + RETRY_MS;
-      if (error instanceof SearchUnavailable && error.limited) blocked.set(credential, entry.refreshAfter);
+      failed(entry, credential, error);
       // Ordinary transport/5xx failures keep stale public results. Rate-limit/auth failures hide them globally.
     }
   }
@@ -115,6 +150,12 @@ export function createSuggestions(options: Options = {}): SuggestionsService {
     if (token) {
       const credential = createHash('sha256').update(token).digest('hex');
       if ((blocked.get(credential) ?? 0) <= now()) {
+        let starJob = starJobs.get(credential);
+        if (!starJob) { starJob = { refreshAfter: 0 }; starJobs.set(credential, starJob); }
+        if (!starJob.pending && now() >= starJob.refreshAfter) {
+          const job = starJob;
+          job.pending = refreshStars(job, token, credential).finally(() => { job.pending = undefined; });
+        }
         const key = credential + ':' + (lang?.toLowerCase() ?? '');
         let entry = cache.get(key);
         if (!entry) { entry = { repos: [], fetchedAt: null, refreshAfter: 0 }; cache.set(key, entry); }
@@ -125,15 +166,19 @@ export function createSuggestions(options: Options = {}): SuggestionsService {
         trending = entry.repos; trendingAt = entry.fetchedAt;
       }
     }
-    const curated = pool.filter(repo => !lang || repo.language?.toLowerCase() === lang.toLowerCase());
+    const curated: SuggestedRepo[] = pool.filter(repo => !lang || repo.language?.toLowerCase() === lang.toLowerCase()).map(repo => {
+      const { stars: _unknown, ...identity } = repo;
+      const stars = curatedStars.get(repo.slug);
+      return stars !== undefined ? { ...identity, stars } : identity;
+    });
     const history = request.session ? recent.get(request.session) : undefined;
     const previous = history && history.expires > now() ? history.requests : [];
     const forbidden = new Set(previous.flat());
-    const picked: RepoSuggestion[] = [], used = new Set<string>();
-    const take = (from: RepoSuggestion[], count: number) => {
+    const picked: SuggestedRepo[] = [], used = new Set<string>();
+    const take = (from: SuggestedRepo[], count: number) => {
       for (const repo of shuffled(from)) { if (count <= 0 || picked.length >= n) break; if (!used.has(repo.slug)) { picked.push(repo); used.add(repo.slug); count--; } }
     };
-    const fresh = (repos: RepoSuggestion[]) => repos.filter(repo => !forbidden.has(repo.slug));
+    const fresh = (repos: SuggestedRepo[]) => repos.filter(repo => !forbidden.has(repo.slug));
     const targetTrending = Math.round(n / 3);
     take(fresh(curated), n - targetTrending); take(fresh(trending), targetTrending);
     take(fresh([...curated, ...trending]), n - picked.length);
