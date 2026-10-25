@@ -1,3 +1,37 @@
+DONE (royale contact)
+
+## Final royale contact delivery
+- **Final checks:** root `npx tsc --noEmit` PASS; scoped `npx tsc --noEmit -p sim/tsconfig.json` PASS; `npx vitest run sim/` **200PASS /17files** (10 new contact cases + existing royale/PvP/power/edu/battle tests); owned `git diff --check` PASS. Temporary parallel server smoke diagnostics seen during editing are resolved in the final root run. Onlysim/ + this progress log edited, no commits/shared/client/server/service changes.
+- **Acceptance met:** motion4p/8p player-attributed eliminations100%/100% (weapon94.44%/96.67%); uncredited zone match deciders0%/0%; mean87.08/99.62s. Perfect-reference means80.01/84.30/94.35s (all>45s). Every final measured profile/size mean is60–150s;2p motion62.97s after its separate timing refinement.
+- Close40px, undefended focused fire: blaster5.10s,SMG5.40,shotgun5.17,cannon5.10,staff5.00,laser5.30,blade4.93, from first damaging hit after spawn protection. Final impacts5–29; all hit events remain capped≤40% target maxHP. Repo score/stats/3x cap and AI20% power handicap untouched. Spawn protection, dash/escape and regen stay active.
+- Final270 paired after-games +270 before-games saved in `sim/royale-results.json`, with per-match attribution logs, both summaries, exact tuning and acceptance flags. Reproduce final: `npx tsx sim/royale-bots.ts 30 --contact`. Motion controls were frozen before baseline; public15 fallback roster/seed/spawn schedule unchanged. Mixed alternates motion humans/production soft AI. This is synthetic input evidence, not measured phone players.
+- Final human assistance is authoritative for all human input sources, not client-only: forward±35deg acquisition, ≤6deg launch correction, ≤0.5rad/s locked-target homing, preserving speed/lifetime. The added assist acquires only forward targets and excludes AI; native staff retains its existing fallback homing when a lock is lost. PvP damage.11 is close-range only; travelled-distance falloff15→90px reaches7%, deliberately keeping ranged poke escapable while close fights decide. This additional falloff was necessary: damage+strong assist alone made matches9–33s and was rejected.
+- Final GC start27/27/32s, end97/102/112s at2/4/8 (countdown clock); final radius20px before full collapse. Damage starts0.08 and reaches0.43 DPS at closure, then+0.06/s. Contact precedes lethal cleanup. Existing hard deadlines132/152/162s remain. 2p closure was slowed separately to bring motion mean58.41→62.97s;4p/8p final parameters/results unchanged.
+- Actual player hits track last damaging attacker for8s. Zone deaths keep reason `zone` and set `by`; KO score/archived departed ranking also get credit once. Old hits expire; GC does not refresh attacker age. Timeout retains its existing `timeout` reason and same recent-damage policy. No contract change needed.
+
+| Profile | Players | Weapon KOs before→after | Credited GC | Uncredited GC | Mean seconds | Uncredited deciders |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| perfect | 2 | 24→30 | 0→0 | 6→0 | 73.9→80.0 | 20.0%→0.0% |
+| perfect | 4 | 86→89 | 0→1 | 4→0 | 102.5→84.3 | 10.0%→0.0% |
+| perfect | 8 | 194→207 | 0→3 | 16→0 | 131.5→94.4 | 36.7%→0.0% |
+| motion | 2 | 19→29 | 0→1 | 11→0 | 78.5→63.0 | 36.7%→0.0% |
+| motion | 4 | 50→85 | 0→5 | 40→0 | 116.1→87.1 | 50.0%→0.0% |
+| motion | 8 | 130→203 | 0→7 | 80→0 | 141.2→99.6 | 60.0%→0.0% |
+| mixed | 2 | 22→29 | 0→1 | 8→0 | 65.1→81.1 | 26.7%→0.0% |
+| mixed | 4 | 75→90 | 0→0 | 15→0 | 113.0→87.2 | 20.0%→0.0% |
+| mixed | 8 | 176→206 | 0→4 | 34→0 | 139.4→99.4 | 26.7%→0.0% |
+
+
+## Contact calibration notes (superseded by final results above)
+- Baseline30 trials/cell,2/4/8 x perfect/motion/mixed=270 matches, saved `/tmp/gitzilla-contact-before.json` before combat tuning. Perfect archived reference reproduced86 weapon/4 GC at4p. Motion:4p50weapon/40uncreditedGC, mean116.05s,50% uncredited match deciders;8p130weapon/80GC,141.24s,60% uncredited deciders. It reproduces the *direction* of the report, not a claim that every human match has zero weapon KOs.
+- Motion policy frozen before tuning:270–350ms stale input, uniform signed25–35deg error envelope, imperfect/wrong lead,0.65–1.45s bursts/0.35–1s pauses, wandering movement and intermittent dash/skills; no bullet-threat oracle or perfect target tracking. Mixed alternates motion humans and production soft AI (honest power×.8); perfect=historical sustained reference with reaction/dodge/retreat, not literally a stationary aimbot. Real15 fallback kits, same seeds/slots, no health/outcome injection.
+- Current candidate: PvP damage.11 with close full damage and travelled-distance falloff15→90px down to7% (muzzle/body radii make full damage actual point-blank spacing); aimed human cone±35deg, snap≤6deg, locked forward homing≤0.5rad/s, range≤260px/weapon reach, unchanged speed/lifetime. Bot-ID/kit-AI excluded; all input sources use same server policy. No rear acquisition or turnarounds. Stationary40px TTK4.93–5.4s across7 weapons,5+ impacts (40%-HP per-hit cap retained). Human motion initially overpowered with stronger assist/full damage range; rejected those short9–38s pilots rather than accepting kill counts alone.
+- Zone starts22/27/32s, closes to20px by87/102/112s, gentle0.08→0.43 DPS before final closure, then+0.06/s; cleanup deadlines unchanged132/152/162. Recent actual player damage within8s earns zone credit, reason stays zone; also scores KO once, including an already-departed attacker via archived ranking. Expired hits stay uncredited.
+- Candidate pilot6/cell: motion4/8p85.33/100.70s,100% weapon KOs,0% uncredited deciders; perfect2/4/8p71.35/86.64/96.34s. Final30/cell paired sweep subsequently completed; use the final acceptance section above.
+- Root tsc PASS after explicit contact-run typing; full sim198PASS/17files (including8 new contact cases). Final checks/results are recorded above. Battle/edu values untouched; no shared/client/server edits or services/commits.
+
+- New task: reproduce phone-motion misses before tuning; add authoritative human cone/homing, 4–6s stationary focused TTK, earlier gentle contact zone, 8s zone assist credit. No contract changes, no client/shared edits. Paired perfect/motion/mixed public-repo measurements at2/4/8; run root tsc + all sim tests. Prior results below are historical.
+
 DONE (softer pvp ai)
 
 ## Final sim delivery / acceptance

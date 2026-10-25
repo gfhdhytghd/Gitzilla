@@ -26,11 +26,12 @@ export interface RoyaleReport { winner: string | null; placements: Record<string
 export type ClassroomAutopsy = Omit<Autopsy, 'ranking'> & { ranking: ClassroomRankingRow[]; royale?: RoyaleReport };
 type Student = { id: string; name: string; kit: PlayerKit };
 interface Runtime {
+  attacker?: { id: string; at: number };
   shot: number; lastHit: number; armor: number; dash: number; direction: [number, number];
   buff: number; respawn: number; streak: number; slow: boolean;
   history: { t: number; x: number; y: number }[];
 }
-interface Shot { damage: number; life: number }
+interface Shot { damage: number; life: number; travelled: number; target?: string }
 
 export function pvpArenaSize(count: number, mode: 'edu' | 'pvp' = 'edu') {
   if (mode === 'pvp') {
@@ -104,7 +105,7 @@ export class ClassroomMatch implements Match {
       const timeline = royaleTimeline(students.length);
       this.state.pvp.rounds = 1; this.state.pvp.roundEndsAt = timeline.limit;
       this.state.pvp.royale = { alive: students.map(p => p.id), placements: {}, winner: null, eliminations: [],
-        zone: { cx, cy, r: this.zoneRadius, targetR: 24, shrinkStart: timeline.start, shrinkEnd: timeline.end, dps: 0 } };
+        zone: { cx, cy, r: this.zoneRadius, targetR: 20, shrinkStart: timeline.start, shrinkEnd: timeline.end, dps: 0 } };
       for (const p of this.state.players) { this.zoneOrder.set(p.id, this.rng()); p.eliminated = false; p.killedBy = null; }
     }
     this.state.players.forEach((p, i) => this.resetPlayer(p, this.spawnPoints()[i]));
@@ -178,7 +179,7 @@ export class ClassroomMatch implements Match {
     p.x = position.x; p.y = position.y; p.vx = p.vy = 0;
     p.hp = p.kit.maxHp; p.armor = p.kit.maxArmor; p.energy = p.kit.maxEnergy;
     p.alive = true; p.downedFor = p.reviveProgress = p.dashCd = p.skillCd = 0; p.invuln = 2; p.buffs = [];
-    r.shot = 0; r.lastHit = this.state.t; r.armor = r.dash = r.buff = r.respawn = 0; r.streak = 0; r.slow = false; r.history = [];
+    r.shot = 0; r.lastHit = this.state.t; r.armor = r.dash = r.buff = r.respawn = 0; r.streak = 0; r.slow = false; r.history = []; r.attacker = undefined;
   }
   private respawn(p: PlayerState) {
     const others = this.state.players.filter(other => other.id !== p.id && other.alive);
@@ -246,13 +247,22 @@ export class ClassroomMatch implements Match {
     const w = WEAPONS[p.kit.weapon], r = this.runtime.get(p.id)!;
     if (p.energy < w.cost) return;
     p.energy -= w.cost; r.shot += w.interval / (p.buffs.includes('overclock') ? 1.35 : 1);
-    const angle = Math.atan2(p.facing[1], p.facing[0]);
+    let angle = Math.atan2(p.facing[1], p.facing[0]);
+    // Authoritative human assistance: only an intentional forward cone, never an enemy behind.
+    // Lock the launch target privately; no client/shared contract and no AI aim upgrade.
+    const human = this.royale && !p.id.startsWith('bot-') && !(p.kit as ClassroomKit).pvpAi;
+    const delta = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
+    const target = human ? this.state.players.filter(q => q.alive && q.id !== p.id &&
+      distance(p, q) <= Math.min(260, w.speed * w.life * 1.35) &&
+      Math.abs(delta(Math.atan2(q.y - p.y, q.x - p.x), angle)) <= ROYALE_TUNING.assistCone)
+      .sort((a, b) => distance(p, a) - distance(p, b))[0] : undefined;
+    if (target) angle += clamp(delta(Math.atan2(target.y - p.y, target.x - p.x), angle), -ROYALE_TUNING.assistSnap, ROYALE_TUNING.assistSnap);
     for (let i = 0; i < w.count && this.state.bullets.length < 1200; i++) {
       const a = angle + (w.count === 1 ? (this.rng() - 0.5) * w.spread : (i / (w.count - 1) - 0.5) * w.spread);
       const id = this.id++;
       this.state.bullets.push({ id, owner: p.id, kind: p.kit.weapon, x: p.x + Math.cos(a) * 15, y: p.y + Math.sin(a) * 15,
         vx: Math.cos(a) * w.speed * 1.35, vy: Math.sin(a) * w.speed * 1.35, r: w.r * 1.35 });
-      this.shots.set(id, { damage: w.damage * p.kit.damageMul * (this.royale ? ROYALE_TUNING.weaponDamage : 0.14) * (p.perks.includes('quiz-boost') ? 1.1 : 1), life: w.life });
+      this.shots.set(id, { damage: w.damage * p.kit.damageMul * (this.royale ? ROYALE_TUNING.weaponDamage : 0.14) * (p.perks.includes('quiz-boost') ? 1.1 : 1), life: w.life, travelled: 0, target: target?.id });
     }
   }
   private updateBullets(dt: number) {
@@ -261,18 +271,36 @@ export class ClassroomMatch implements Match {
       if (this.over) return;
       if (this.royale && !this.byId.get(b.owner)?.alive) { this.shots.delete(b.id); continue; }
       const shot = this.shots.get(b.id)!; shot.life -= dt;
-      if (b.kind === 'staff') {
+      const assisted = shot.target ? this.byId.get(shot.target) : undefined;
+      if (assisted?.alive) {
+        const speed = Math.hypot(b.vx, b.vy), a = Math.atan2(b.vy, b.vx);
+        const lead = Math.min(0.18, distance(b, assisted) / speed) * 0.5;
+        const desired = Math.atan2(assisted.y + assisted.vy * lead - b.y, assisted.x + assisted.vx * lead - b.x);
+        const difference = Math.atan2(Math.sin(desired - a), Math.cos(desired - a));
+        // Preserve projectile speed/lifetime/spread. It cannot turn around to chase a missed shot.
+        if (Math.abs(difference) < Math.PI / 3) {
+          const turn = clamp(difference, -ROYALE_TUNING.assistTurn * dt, ROYALE_TUNING.assistTurn * dt);
+          b.vx = Math.cos(a + turn) * speed; b.vy = Math.sin(a + turn) * speed;
+        }
+      } else if (b.kind === 'staff') {
         const foe = this.state.players.filter(p => p.alive && p.id !== b.owner).sort((a, c) => distance(b, a) - distance(b, c))[0];
         if (foe) { const [x, y] = unit(foe.x - b.x, foe.y - b.y), turn = this.royale ? ROYALE_TUNING.homingTurn : 4;
           b.vx += (x * 216 - b.vx) * dt * turn; b.vy += (y * 216 - b.vy) * dt * turn; }
       }
       const x0 = b.x, y0 = b.y; b.x += b.vx * dt; b.y += b.vy * dt;
+      shot.travelled += Math.hypot(b.x - x0, b.y - y0);
       let victim: PlayerState | undefined, first = Infinity, shielded = false;
       for (const p of this.state.players) {
         if (!p.alive || p.id === b.owner || (!this.royale && p.invuln > 0)) continue;
         const t = segmentCircle(b, x0, y0, p); if (t !== null && t < first) { first = t; victim = p; shielded = p.invuln > 0; }
       }
-      if (victim && !shielded) this.hurt(victim, this.byId.get(b.owner)!, shot.damage, unit(b.vx, b.vy));
+      if (victim && !shielded) {
+        // Close exchanges are decisive; long-range pokes let a moving opponent disengage.
+        const travel = shot.travelled - Math.hypot(b.x - x0, b.y - y0) * (1 - first);
+        const falloff = this.royale ? 1 - (1 - ROYALE_TUNING.rangedDamage) * clamp(
+          (travel - ROYALE_TUNING.fullDamageRange) / (ROYALE_TUNING.falloffRange - ROYALE_TUNING.fullDamageRange), 0, 1) : 1;
+        this.hurt(victim, this.byId.get(b.owner)!, shot.damage * falloff, unit(b.vx, b.vy));
+      }
       else if (victim && shielded) {
         // Recharge requires actual disengagement; standing in a projectile stream behind i-frames
         // must not regenerate a whole shield between slow cannon shots.
@@ -290,6 +318,7 @@ export class ClassroomMatch implements Match {
     const armor = Math.min(target.armor, amount); target.armor -= armor; target.hp = Math.max(0, target.hp - amount + armor);
     if (this.royale && armor > 0 && target.armor <= 1e-8) target.invuln = Math.max(target.invuln, ROYALE_TUNING.armorBreakShield);
     const r = this.runtime.get(target.id)!; r.lastHit = this.state.t; r.armor = 0;
+    if (this.royale && amount > 0) r.attacker = { id: source.id, at: this.state.t };
     source.stats.damage += amount; this.state.pvp.scores[source.id].damage += amount; this.roundScores.get(source.id)!.damage += amount;
     this.emit({ type: 'hit', target: target.id, source: source.id, amount, x: target.x, y: target.y, direction, crit: weakness > 0, impact: clamp(amount / 4, 0.1, 1), hitStop: amount >= 3 ? 40 : 0 });
     const facts = this.royale ? undefined : (source.kit as ClassroomKit).classroom, damage = source.kit.quality?.find(q => q.stat === 'damage');
@@ -362,10 +391,10 @@ export class ClassroomMatch implements Match {
       this.emit({ type: 'telegraph', attackId: 'gc-sweep', name: 'GC sweep: enter the safe circle', targetPlayer: null });
     if (s.t < zone.shrinkStart) return;
     const progress = clamp((s.t - zone.shrinkStart) / (zone.shrinkEnd - zone.shrinkStart), 0, 1);
-    // Preview the24px final circle from countdown; then collapse it fully over30s so camping also ends.
+    // Compress into mutual weapon range before damage becomes serious; camping still has a deadline.
     zone.r = s.t <= zone.shrinkEnd ? this.zoneRadius + (zone.targetR - this.zoneRadius) * progress
       : Math.max(0, zone.targetR * (1 - (s.t - zone.shrinkEnd) / Math.min(30, s.pvp.roundEndsAt - zone.shrinkEnd - 3)));
-    zone.dps = 0.6 + progress * 2.4 + Math.max(0, s.t - zone.shrinkEnd) * 0.35;
+    zone.dps = 0.08 + progress * progress * 0.35 + Math.max(0, s.t - zone.shrinkEnd) * 0.06;
     const deadline = s.t >= s.pvp.roundEndsAt;
     // Resolve a genuinely simultaneous zone death by a seeded tie order, independent of roster iteration.
     const outside = s.players.filter(p => p.alive && (deadline || distance(p, { x: zone.cx, y: zone.cy }) + 10 > zone.r))
@@ -375,9 +404,18 @@ export class ClassroomMatch implements Match {
       const amount = Math.min(p.hp + p.armor, p.kit.maxHp * 0.4, deadline ? p.hp + p.armor : zone.dps * dt);
       const armor = Math.min(p.armor, amount); p.armor -= armor; p.hp = Math.max(0, p.hp - amount + armor);
       const r = this.runtime.get(p.id)!; r.lastHit = s.t; r.armor = 0;
-      // GC is environmental damage: no killer credit and no dash/rollback invulnerability exploit.
+      // Environmental damage bypasses shields; recent player pressure can earn the elimination.
       this.emit({ type: 'hit', target: p.id, source: 'gc-sweep', amount, x: p.x, y: p.y, impact: 0.1, direction: unit(p.x - zone.cx, p.y - zone.cy) });
-      if (p.hp <= 1e-8) this.eliminate(p, null, deadline ? 'timeout' : 'zone');
+      if (p.hp <= 1e-8) {
+        const by = r.attacker && s.t - r.attacker.at <= ROYALE_TUNING.assistCredit ? r.attacker.id : null;
+        if (by) {
+          const score = s.pvp.scores[by], attacker = this.byId.get(by), runtime = this.runtime.get(by);
+          if (score) { score.kos++; this.roundScores.get(by)!.kos++; }
+          else { const departed = this.departed.get(by); if (departed) departed.kos++; }
+          if (attacker && runtime) { runtime.streak++; attacker.stats.bestCombo = Math.max(attacker.stats.bestCombo, runtime.streak); }
+        }
+        this.eliminate(p, by, deadline ? 'timeout' : 'zone');
+      }
     }
   }
   private updatePickups() {

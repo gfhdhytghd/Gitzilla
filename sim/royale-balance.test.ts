@@ -13,9 +13,9 @@ const advance = (m: ReturnType<typeof createMatch>, seconds: number) => { for (l
 const raw = (m: ReturnType<typeof createMatch>) => m as unknown as { state: ClassroomState; hurt(p: PlayerState, source: PlayerState, base: number, dir: [number, number]): void };
 
 describe('PvP defensive balance', () => {
-  for (const result of focusedFireTrials()) it(`${result.weapon} needs8–15s of sustained focused fire, with no two-hit kills`, () => {
-    expect(result.eliminated).toBe(true); expect(result.seconds).toBeGreaterThanOrEqual(8); expect(result.seconds).toBeLessThanOrEqual(15);
-    expect(result.impacts).toBeGreaterThan(8);
+  for (const result of focusedFireTrials()) it(`${result.weapon} needs4–6s of close sustained focused fire, with no two-hit kills`, () => {
+    expect(result.eliminated).toBe(true); expect(result.seconds).toBeGreaterThanOrEqual(4); expect(result.seconds).toBeLessThanOrEqual(6);
+    expect(result.impacts).toBeGreaterThanOrEqual(4);
   });
   it('a dash absorbs an incoming shot, keeps resources intact, and recovers on the PvP cooldown', () => {
     const m = createMatch(roster(), null, { mode: 'pvp' }); advance(m, 4.1); const r = raw(m), [a, b] = r.state.players;
@@ -43,7 +43,7 @@ describe('PvP defensive balance', () => {
     };
     const before = play(), saved = { ...ROYALE_TUNING };
     try {
-      Object.assign(ROYALE_TUNING, { weaponDamage: 5, armorDelay: 0, armorInterval: 0, dashCooldown: 0.1, dashShield: 8, armorBreakShield: 9, homingTurn: 20 });
+      Object.assign(ROYALE_TUNING, { weaponDamage: 5, armorDelay: 0, armorInterval: 0, dashCooldown: 0.1, dashShield: 8, armorBreakShield: 9, homingTurn: 20, assistCone: 3, assistSnap: 3, assistTurn: 20, assistCredit: 100, fullDamageRange: 100, falloffRange: 200, rangedDamage: 0 });
       expect(play()).toEqual(before);
     } finally { Object.assign(ROYALE_TUNING, saved); }
   });
