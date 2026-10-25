@@ -92,8 +92,8 @@ export interface Stage25d {
   readonly xrLodFlat: boolean;
   /** debug: the XR session's tracking/height debug info (null outside XR) */
   readonly debugXR: XRHandle["debug"] | null;
-  /** debug: the XR end screen (null when none is playing) */
-  readonly debugEnding: { kind: string; ready: boolean } | null;
+  /** debug: the XR end screen (null when none is playing); kind "dissolve" while the boss disintegrates before the result */
+  readonly debugEnding: { kind: string; ready: boolean; cubes: number } | null;
   /** debug: AR surface placement state (null outside AR) */
   readonly debugPlacement: { status: string; source: string; pos: number[]; scale: number; cam: number[] } | null;
   destroy(): void;
@@ -421,7 +421,7 @@ export function createStage25d(opts: Stage25dOptions = {}): Stage25d {
     exportUSDZ: () => exportSpatialUSDZ(look.root, { metersPerPixel: 1.2 / (last?.extras?.world?.w ?? 480) }),
     get xrMode() { return xr?.mode ?? null; },
     get debugXR() { return xr?.debug ?? null; },
-    get debugEnding() { return look.ending.kind ? { kind: look.ending.kind, ready: look.ending.ready(lookTime) } : null; },
+    get debugEnding() { return look.ending.active ? { kind: look.ending.kind ?? "dissolve", ready: look.ending.ready(lookTime), cubes: look.ending.cubeCount } : null; },
     /** debug: AR placement state */
     get debugPlacement() {
       if (!placement) return null;

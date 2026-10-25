@@ -2,7 +2,7 @@
 //   ?scene=raid|royale  &boss=<slug> &form=<body plan>  &phone=1 (portrait follow camera)  &scale=<int>  &xr=emulate (IWER headset) &xrmode=vr|ar
 // window.__stats = { fps, frameMs, renderMs } for automated checks.
 // ?end=victory|defeat &endat=<s> (default 4): freeze the sim then and declare the result (the XR end screen; screen view
-//   too with &endscreen=1). window.__continued counts onContinue (a pinch on the ready end screen). &slowend=N plays
+//   too with &endscreen=1; &death=1: like the sim, HP 0 + a 2 s death pose while still fighting, then the victory). window.__continued counts onContinue (a pinch on the ready end screen). &slowend=N plays
 //   everything after the end N times slower (frame-by-frame captures of the dissolve on software GL).
 // ?hudcheck=1 (with xr=emulate): the XR HUD panel check. The pull() time is frozen (like game.ts while a headset pauses
 //   the page rAF) and the boss steps through scripted HP levels / a limb break / phases 2-3; each settled level logs the
@@ -103,7 +103,7 @@ async function main() {
   let last = performance.now(), acc = 0, camX = 0, endAt = 0;
   const intervals: number[] = [], renders: number[] = [], cpus: number[] = [];
   const endKind = q.get("end") as "victory" | "defeat" | null, forceEndMs = Number(q.get("endat") ?? 4) * 1000;
-  let started = -1, ended = false, endedMs = 0;
+  let started = -1, ended = false, endedMs = 0, dying = -1;
   const slow = Math.max(1, Number(q.get("slowend") ?? 1));
   // the time the stage sees: real time, slowed down after a forced end (&slowend)
   function galleryTime(nowMs: number) { return (ended && slow > 1 ? endedMs + (nowMs - endedMs) / slow : nowMs) / 1000; }
@@ -112,7 +112,17 @@ async function main() {
     last = now;
     if (endKind && scene !== "royale") {
       if (started < 0) started = now;
-      if (ended) return;
+      if (ended) {
+        // &death=1: the death pose runs its 2 s, then the result (sim/match.ts emits victory after the pose)
+        if (dying >= 0 && state.boss) {
+          const t = Math.min(2, (now - dying) / 1000);
+          const s = { ...state, boss: { ...state.boss, pose: { ...state.boss.pose, name: "death", t, total: 2 } } } as MatchState;
+          if (t >= 2) { s.status = "victory"; s.events = [{ type: "victory" }]; pending = pending.concat(s.events); dying = -1; }
+          else s.events = [];
+          state = s;
+        }
+        return;
+      }
       if (now - started > forceEndMs) {
         // the result is in: freeze the fight as it stood and declare it (with its event, like the server)
         ended = true;
@@ -120,6 +130,12 @@ async function main() {
         const s = structuredClone(state) as MatchState;
         s.status = endKind;
         if (endKind === "victory" && s.boss) s.boss.hp = 0;
+        if (endKind === "victory" && s.boss && q.get("death") === "1") {
+          s.status = "fighting"; s.boss.pose = { ...s.boss.pose, name: "death", t: 0, total: 2 };
+          s.bullets = []; s.hazards = []; s.events = [];
+          dying = now; state = s;
+          return;
+        }
         if (endKind === "defeat") s.players.forEach((p) => (p.alive = false));
         s.bullets = []; s.hazards = [];
         s.events = [{ type: endKind }];

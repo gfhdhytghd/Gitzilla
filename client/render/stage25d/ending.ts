@@ -1,7 +1,8 @@
 // XR end screen (claude-boss): the 3D take on the 2D BSOD / KERNEL PANIC for the headset diorama.
-//   victory: the boss disintegrates into its own voxels (they break off along a sweeping dissolve front, scatter, fall
-//            and shrink, ~1.8 s), then a smooth blue wipe spreads over the arena floor from where it died, with the
-//            BSOD on the table and on a floating panel; "PINCH ANYWHERE TO CONTINUE" pulses gently.
+//   victory: the boss disintegrates into its own voxels as it dies (dissolve(): at the start of the sim's 2 s death pose,
+//            while it is still drawn; they break off along a sweeping dissolve front, scatter, fall and shrink, ~1.8 s),
+//            then at the victory a smooth blue wipe spreads over the arena floor from where it died, with the BSOD on
+//            the table and on a floating panel; "PINCH ANYWHERE TO CONTINUE" pulses gently.
 //   defeat:  a calmer dark red / grey KERNEL PANIC wipe and panel (the boss stays: it won).
 // Photosensitivity (WCAG 2.3.1): nothing flashes. The wipe is a slow, smooth spread to a dark blue, text appears line by
 // line, the prompt breathes at 0.6 Hz between 60 % and 100 % opacity.
@@ -13,7 +14,7 @@ export type EndKind = "victory" | "defeat";
 
 /** seconds after the end before a pinch continues (the dissolve + wipe play first) */
 export const CONTINUE_AFTER = 2.2;
-const DISSOLVE = 1.8, WIPE_START = 0.35, WIPE_DUR = 1.4;
+const DISSOLVE = 2.45, WIPE_START = 0.35, WIPE_DUR = 1.4;
 const MAX_CUBES = 4000;
 
 /** A text line as a sprite that fits `maxW`: the pixel font at `sc`, or (a localized line in the native fallback font,
@@ -61,14 +62,24 @@ export interface EndingStart {
   /** boss name (the BSOD copy; the repo name stands in when it isn't plain ASCII, the pixel font's range), arena size,
    *  where the wipe starts (2D world coords) */
   name: string; repo?: string; w: number; h: number; origin: { x: number; y: number };
-  /** victory: the boss sprite to disintegrate: its atlas pixels, slot rect + anchor, and the billboard's placement */
-  boss?: { atlas: HTMLCanvasElement; slot: { x: number; y: number; w: number; h: number; ax: number; ay: number }; x: number; z: number; yaw: number; scale: number };
+  /** victory: the boss to disintegrate (if dissolve() hasn't already run at its death) */
+  boss?: BossCapture;
+}
+
+/** The boss sprite to disintegrate: its atlas pixels, slot rect + anchor, the billboard's placement, and the last
+ *  visible frame (slot-sized, at 0,0) for when the atlas slot is already empty (the 2D death sequence removed it). */
+export interface BossCapture {
+  atlas: HTMLCanvasElement; slot: { x: number; y: number; w: number; h: number; ax: number; ay: number };
+  x: number; z: number; yaw: number; scale: number;
+  last?: HTMLCanvasElement | null;
 }
 
 export class XREnding {
   readonly group = new THREE.Group();
   kind: EndKind | null = null;
   private t0 = 0;
+  /** when the dissolve started (-1 = not yet) */
+  private dT0 = -1;
   private w = 480; private h = 288;
   private cubes: THREE.InstancedMesh;
   private n = 0;
@@ -113,7 +124,11 @@ export class XREnding {
     this.group.add(this.cubes, this.wipe, this.panel, this.prompt);
   }
 
-  get active() { return this.kind !== null; }
+  get active() { return this.kind !== null || this.dT0 >= 0; }
+  /** the boss is (or was) disintegrating: its billboard stays hidden */
+  get dissolving() { return this.dT0 >= 0; }
+  /** debug / QA: cubes in the current dissolve */
+  get cubeCount() { return this.cubes.count; }
   /** a pinch now continues (the dissolve and the wipe have played) */
   ready(time: number) { return this.kind !== null && time - this.t0 >= CONTINUE_AFTER; }
 
@@ -134,24 +149,38 @@ export class XREnding {
     this.panel.position.set(o.w / 2, 176, -12);
     this.prompt.position.set(o.w / 2, 64, -12);
     this.paintFloor(o.kind, o.w, o.h);
+    this.wipe.visible = true;
+    if (o.boss && this.dT0 < 0) this.dissolve(o.boss, o.time);
+  }
+
+  /** Disintegrate the boss now (once per match). Returns the number of voxel cubes. */
+  dissolve(b: BossCapture, time: number): number {
+    if (this.dT0 >= 0) return this.n;
+    this.dT0 = time;
+    this.group.visible = true;
+    if (!this.kind) { this.wipe.visible = false; this.panel.visible = false; this.prompt.visible = false; }
     this.n = 0;
-    if (o.boss) this.shatter(o.boss);
+    this.shatter(b);
     this.cubes.count = this.n;
+    return this.n;
   }
 
   stop() {
     this.kind = null;
+    this.dT0 = -1;
     this.group.visible = false;
     this.cubes.count = 0;
     this.n = 0;
   }
 
   /** victory: every 2nd opaque texel of the boss sprite becomes a voxel cube at its spot on the billboard */
-  private shatter(b: NonNullable<EndingStart["boss"]>) {
+  private shatter(b: BossCapture) {
     const { slot: S } = b;
-    const img = b.atlas.getContext("2d")!.getImageData(S.x, S.y, S.w, S.h).data;
-    let opaque = 0;
-    for (let i = 3; i < img.length; i += 4) if (img[i] > 128) opaque++;
+    const count = (d: Uint8ClampedArray) => { let o = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 128) o++; return o; };
+    let img = b.atlas.getContext("2d")!.getImageData(S.x, S.y, S.w, S.h).data;
+    let opaque = count(img);
+    // the slot can already be empty (the 2D death sequence stops drawing the boss): use its last visible frame
+    if (!opaque && b.last) { img = b.last.getContext("2d")!.getImageData(0, 0, S.w, S.h).data; opaque = count(img); }
     const step = Math.max(2, Math.ceil(Math.sqrt(opaque / MAX_CUBES)));
     const cos = Math.cos(b.yaw), sin = Math.sin(b.yaw);
     const col = this.cubes.instanceColor!;
@@ -172,7 +201,9 @@ export class XREnding {
         this.data[o + 3] = (ox * cos) * out + (Math.random() - 0.5) * 18;
         this.data[o + 4] = 20 + oy * 40 + Math.random() * 35;
         this.data[o + 5] = (-ox * sin) * out + (Math.random() - 0.4) * 30;
-        this.data[o + 6] = 0.05 + 0.85 * ((u / S.w) * 0.55 + (v / S.h) * 0.45) + Math.random() * 0.15;
+        // break-off time: it starts at the death (sim death pose, 2 s before the victory) and its tail overlaps the start
+        // of the victory wipe, so the disintegration flows into the blue screen (last voxels gone ~2.45 s after death)
+        this.data[o + 6] = 0.25 + 1.2 * ((u / S.w) * 0.55 + (v / S.h) * 0.45) + Math.random() * 0.15;
         this.data[o + 7] = (Math.random() - 0.5) * 12;
         this.data[o + 8] = step * b.scale * (0.85 + Math.random() * 0.3);
         this.base.set([img[k] / 255, img[k + 1] / 255, img[k + 2] / 255], i * 3);
@@ -222,16 +253,17 @@ export class XREnding {
   }
 
   update(time: number) {
-    if (!this.kind) return;
+    if (!this.active) return;
     const t = time - this.t0;
+    const td = time - this.dT0;
     // ---- voxels: hold, then break off along the front, fly, fall, shrink ----
-    if (this.n) {
+    if (this.n && this.dT0 >= 0) {
       const G = 160;
       const blue: [number, number, number] = [10 / 255, 63 / 255, 176 / 255];
       const col = this.cubes.instanceColor!;
       for (let i = 0; i < this.n; i++) {
         const o = i * 9, d = this.data[o + 6];
-        const a = Math.max(0, t - d);
+        const a = Math.max(0, td - d);
         const life = Math.min(1, a / 0.85);
         const size = this.data[o + 8] * (1 - life);
         this.p.set(this.data[o] + this.data[o + 3] * a, Math.max(0.5, this.data[o + 1] + this.data[o + 4] * a - 0.5 * G * a * a), this.data[o + 2] + this.data[o + 5] * a);
@@ -248,8 +280,9 @@ export class XREnding {
       }
       this.cubes.instanceMatrix.needsUpdate = true;
       col.needsUpdate = true;
-      if (t > DISSOLVE + 1) this.cubes.count = 0;
+      if (td > DISSOLVE + 1) this.cubes.count = 0;
     }
+    if (!this.kind) return;
     // ---- floor wipe: a smooth spread from the origin to the farthest corner ----
     const w = Math.min(1, Math.max(0, (t - WIPE_START) / WIPE_DUR));
     const ease = w * w * (3 - 2 * w);

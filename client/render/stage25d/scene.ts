@@ -134,6 +134,9 @@ export class StageLook {
   private xrOn = false;
   /** debug (gallery): play the end screen outside XR too */
   endingOnScreen = false;
+  /** the boss's last visible frame (its atlas slot, refreshed ~5x/s while it is alive and drawn): the dissolve's source
+   *  if the slot is already empty when the boss dies (the 2D death sequence stops drawing it) */
+  private bossLast: HTMLCanvasElement | null = null; private bossLastAt = -1;
   private w = 480; private h = 288;
   plane: BossPlane | null = null;
   private tmpM = new THREE.Matrix4(); private tmpQ = new THREE.Quaternion(); private tmpP = new THREE.Vector3(); private tmpS = new THREE.Vector3();
@@ -386,20 +389,32 @@ export class StageLook {
       }
       shadow(boss.x + 20, p.feetY, 70, 14);
     }
-    // ---- end screen (XR): the boss raid ended -> disintegrate / wipe; a new fight (rematch) clears it ----
-    const endKind: EndKind | null = boss && !state.pvp && (state.status === "victory" || state.status === "defeat") ? state.status : null;
-    if (endKind && (this.xrOn || this.endingOnScreen) && this.ending.kind !== endKind) {
+    // ---- end screen (XR): the boss dies -> it disintegrates (during the sim's death pose, while still drawn); the raid
+    //      ended -> wipe + panel; a new fight (rematch) clears it ----
+    const playEnding = this.xrOn || this.endingOnScreen;
+    const raid = !!boss && !state.pvp;
+    const dead = raid && boss!.hp <= 0 && (boss!.pose?.name === "death" || state.status === "victory");
+    if (raid && !dead && this.bossMesh.visible && this.plane && time - this.bossLastAt > 0.2) {
+      if (!this.bossLast) [this.bossLast] = makeCanvas(BOSS_SLOT.w, BOSS_SLOT.h);
+      const g = this.bossLast.getContext("2d")!;
+      g.clearRect(0, 0, BOSS_SLOT.w, BOSS_SLOT.h);
+      g.drawImage(this.atlas, BOSS_SLOT.x, BOSS_SLOT.y, BOSS_SLOT.w, BOSS_SLOT.h, 0, 0, BOSS_SLOT.w, BOSS_SLOT.h);
+      this.bossLastAt = time;
+    }
+    const capture = () => this.plane ? { atlas: this.atlas, slot: BOSS_SLOT, x: boss!.x, z: this.plane.feetY, yaw, scale: this.bossMesh.scale.x || 1, last: this.bossLast } : undefined;
+    if (dead && playEnding && !this.ending.dissolving) { const c = capture(); if (c) this.ending.dissolve(c, time); }
+    const endKind: EndKind | null = raid && (state.status === "victory" || state.status === "defeat") ? state.status : null;
+    if (endKind && playEnding && this.ending.kind !== endKind) {
       const p = this.plane;
       this.ending.start({
         kind: endKind, time, name: boss!.kit.name, repo: boss!.kit.repo, w: W, h: H,
         origin: p ? { x: boss!.x, y: p.feetY } : { x: W / 2, y: H / 2 },
-        // the boss was just drawn into its atlas slot this frame (the 2D death sequence has barely begun)
-        boss: endKind === "victory" && p && this.bossMesh.visible ? { atlas: this.atlas, slot: BOSS_SLOT, x: boss!.x, z: p.feetY, yaw, scale: this.bossMesh.scale.x } : undefined,
+        boss: endKind === "victory" ? capture() : undefined,
       });
-    } else if (!endKind && this.ending.active) this.ending.stop();
+    } else if (!endKind && !dead && this.ending.active) { this.ending.stop(); this.bossLastAt = -1; }
     if (this.ending.active) {
       this.ending.update(time);
-      if (this.ending.kind === "victory") {
+      if (this.ending.dissolving) {
         // the boss is its voxels now: no billboard, shadow or heart light
         this.bossMesh.visible = false;
         const sp = this.sprites.get(this.bossMesh);

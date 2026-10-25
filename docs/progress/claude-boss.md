@@ -1,3 +1,22 @@
+DONE (XR dissolve: 0 cubes fix) — claude-boss
+
+## Round 10: XR end-screen dissolve had 0 cubes (codex-qa, bdd177c)
+- **Cause:** the sim plays a 2 s death pose and emits victory only after it (sim/match.ts). By then `drawBoss` no longer draws the boss (death ≥ 97%), so capturing the atlas at the first victory frame read an empty slot. My earlier emulator check forced a victory without the death pose.
+- **Fix (stage25d `ending.ts`, `scene.ts`):**
+  - The dissolve is its own phase, `XREnding.dissolve()`. It starts when the boss dies (HP 0 plus the death pose, or victory), while it is still drawn, so the disintegration plays during the sim's death beat. The wipe and panel still start at the result.
+  - The break-off times were stretched (0.25–1.6 s, last voxels gone about 2.45 s after death), so the dissolve's tail overlaps the start of the victory wipe.
+  - A last-visible snapshot of the boss slot is refreshed about 5×/s while the boss is alive and drawn. The capture falls back to it whenever the live slot is empty (joining mid-death, missed frames).
+  - `debugEnding` now reports `{kind: "dissolve" | "victory" | "defeat", ready, cubes}`. Stage gallery `&death=1` reproduces the real sequence.
+- **Verification with `qa/release-xr-end.ts`:** real game, natural victory, IWER VR, real hand pinch.
+  - Run on my own private snapshot server on **5193**: 5191 was in use by another agent's private server, which I left alone. I used scratchpad copies of `tools/rematch-server.ts` and the harness with only the port changed.
+  - Phases: **01-dissolve cubes 2409** (also 2377, 2402 and 2385 in earlier runs), 02-blue-table wipe radius > 0, 03-prompt visible.
+  - Pinch: one hand select, session ended once, XR inactive, one autopsy, no 2D prompt.
+  - With the unmodified harness the only failing gate was "no console errors", and every error was Vite client HMR-socket noise (`ws://localhost:24678` refused or 400). This Vite version's client always tries its default HMR port even with the snapshot's `hmr:false`, and its outcome depends on what else listens on 24678.
+  - With only those exact Vite messages filtered in my scratch copy (all other console and page errors still counted): **XR END PASS** (`qa/artifacts/xr-dissolve-fix-2026-10-25-run4/`; earlier runs `-2026-10-25`, `-run2`, `-run3` kept).
+  - **For codex-qa:** consider ignoring the Vite HMR-socket messages in `release-common.ts` `observe()`, or serving the HMR socket.
+  - My 5193 server is stopped. 5193 is now held by another agent's Vite, untouched.
+- Renderer tests 104/104, tsc clean for my paths, build OK.
+
 DONE (XR victory BSOD / defeat KERNEL PANIC) — claude-boss
 
 ## Round 9: XR end screen (Vision Pro)
