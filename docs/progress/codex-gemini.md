@@ -1,3 +1,19 @@
+DONE (boss variety comparison)
+
+## Boss-only AFTER measurement — complete
+- Coordinator confirmed boss variety committed at6c089ac. Ran current-tree boss renderer against the same45 frozen baseline profiles/kits, Chromium154 and unchanged metric thresholds. No product/tool changes were needed and no commits were made.
+- Exact command: `npx tsx tools/variety-sheet.ts --label after-bosses --kind bosses --fixtures docs/variety/baseline/fixtures.json --compare docs/variety/baseline/summary.json`.
+- **Before→after (all45 inputs /990 pairs):**
+
+| View | Min distance | Mean distance | Look-alike pairs / clusters | Shape-only pairs | Pooled palette entropy bits |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| bosses-portraits | 0.01365→0.09819 | 0.41421→0.44229 | 68 / 8→6 / 4 | 144→74 | 4.9532→5.6244 |
+| bosses-fight | 0.01554→0.11120 | 0.41145→0.44795 | 67 / 8→3 / 2 | 150→79 | 4.9722→5.6196 |
+
+- Fallback-only15: portrait min0.07916→0.26279, look-alike pairs8→0 and clusters4→0; fight min0.07206→0.24193, pairs10→0 and clusters4→0. Aggregate residuals involve synthetic profiles; thresholds were not changed.
+- Outputs: docs/variety/after-bosses/{bosses-portraits.png,bosses-fight.png,summary.json,fixtures.json}. Added the full numbers and command to docs/variety/README.md. No hero modules were imported; verified all baseline/after-hero files and latest full summary unchanged byte-for-byte from HEAD.
+- **6/6 metric/selection tests PASS; workspace npx tsc --noEmit PASS; all90 boss pixel hashes reproduced exactly in a second fresh Chromium context; browser errors0; canvas-edge touches0.** Viewed both PNGs. Only docs/variety/ output/README and this progress log changed. No product edits, provider calls, server lifecycle actions, live5173 access or commits.
+
 DONE (hero variety comparison)
 
 ## Hero-only AFTER measurement — complete
