@@ -601,7 +601,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
           "div.in-text",
           null,
           h("div.in-line.dim", null, s.mode === "pvp" ? `$ make royale ROOM=${app.room}` : `$ make class ROOM=${app.room}`),
-          h("div.in-line.green", null, s.mode === "pvp" ? `${s.players.length} repositories compiled · equal stat budget` : `${s.players.length} heroes compiled · stats graded from code quality`),
+          h("div.in-line.green", null, s.mode === "pvp" ? `${s.players.length} repositories compiled · stats from repo power` : `${s.players.length} heroes compiled · stats graded from code quality`),
           h("div.in-name", null, s.mode === "pvp" ? "PVP ROYALE" : "CLASSROOM BRAWL"),
           h("div.in-line.in-epithet", null, royaleOf(s) ? "last hero standing · no respawns" : s.pvp ? `best of ${s.pvp.rounds} rounds · most KOs wins` : "free-for-all"),
         ),

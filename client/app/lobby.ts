@@ -758,7 +758,7 @@ export function createLobby(app: AppCtx): Screen {
       eduInfo.replaceChildren(
         h("p.royale-rules", null, h("b", null, "2–8 heroes · free-for-all · no respawns."), " ", h("span", null, "A knockout is final; the last hero standing wins.")),
         h("p.royale-rules", null, h("b.zone-word", null, "GC sweep:"), " ", h("span", null, "the safe circle starts shrinking after 0:45–1:40 (more heroes, later). Outside it the garbage collector eats your HP.")),
-        h("p.royale-rules", null, h("span", null, "Everyone gets the same stat budget. Knockouts drop a heart and energy.")),
+        h("p.royale-rules", null, h("span", null, "Stronger repos make stronger heroes: POWER comes from tests, modularity, docs, stars and contributors. No one-shots."), " ", h("span", null, "Knockouts drop a heart and energy.")),
         h("p.dim", null, "Connect GitHub. Use your own non-fork repository, or a public repository you maintain or administer. Your own forks are not eligible."),
       );
       for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = true;

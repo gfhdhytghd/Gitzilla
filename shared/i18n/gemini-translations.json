@@ -18231,5 +18231,208 @@
     "zh": "· 本局没有你的英雄",
     "es": "· sin héroe en esta partida",
     "fr": "· pas de héros dans ce match"
+  },
+  {
+    "id": "10149aa571ab7f5f",
+    "en": "POWER",
+    "zh": "战力",
+    "es": "PODER",
+    "fr": "PUISSANCE"
+  },
+  {
+    "id": "6f1f1c8e01856e8b",
+    "en": "👑 STRONGEST",
+    "zh": "👑 最强",
+    "es": "👑 EL MÁS FUERTE",
+    "fr": "👑 LE PLUS FORT"
+  },
+  {
+    "id": "ca5c8915605a345c",
+    "en": "strongest repo in this room (highest power)",
+    "zh": "本房间最强的仓库（战力最高）",
+    "es": "el repo más fuerte de la sala (mayor poder)",
+    "fr": "le dépôt le plus fort de la salle (puissance max)"
+  },
+  {
+    "id": "b371cd185c08893a",
+    "en": "👑 strongest repo in this room",
+    "zh": "👑 本房间最强的仓库",
+    "es": "👑 el repo más fuerte de la sala",
+    "fr": "👑 le dépôt le plus fort de la salle"
+  },
+  {
+    "id": "85c2dea25d69bd82",
+    "en": "stats scale with power",
+    "zh": "属性随战力提升",
+    "es": "las stats crecen con el poder",
+    "fr": "les stats suivent la puissance"
+  },
+  {
+    "id": "c9698322353a723f",
+    "en": "underdog win:",
+    "zh": "以弱胜强：",
+    "es": "victoria sorpresa:",
+    "fr": "victoire de l'outsider :"
+  },
+  {
+    "id": "f9eeb63bf773f4b0",
+    "en": "beat",
+    "zh": "击败了",
+    "es": "venció a",
+    "fr": "a battu"
+  },
+  {
+    "id": "07d715edb696fb5f",
+    "en": "power",
+    "zh": "战力",
+    "es": "poder",
+    "fr": "puissance"
+  },
+  {
+    "id": "d5659f1b4ff3ee29",
+    "en": "repo power {0}",
+    "zh": "仓库战力 {0}",
+    "es": "poder del repo {0}",
+    "fr": "puissance du dépôt {0}"
+  },
+  {
+    "id": "f9d581920a0bbc78",
+    "en": "repo power: code quality + stars, contributors and size · tap for what counts most",
+    "zh": "仓库战力：代码质量 + 星标、贡献者和规模 · 点按查看影响最大的项",
+    "es": "poder del repo: calidad del código + estrellas, colaboradores y tamaño · toca para ver lo que más cuenta",
+    "fr": "puissance du dépôt : qualité du code + étoiles, contributeurs et taille · touche pour voir ce qui compte le plus"
+  },
+  {
+    "id": "8c334a6fdbc04a01",
+    "en": "Tests ({0}% files)",
+    "zh": "测试（{0}% 的文件）",
+    "es": "Tests ({0}% de archivos)",
+    "fr": "Tests ({0} % des fichiers)"
+  },
+  {
+    "id": "d37593510d939955",
+    "en": "Modularity (fan-out {0}, depth {1})",
+    "zh": "模块化（扇出 {0}，深度 {1}）",
+    "es": "Modularidad (fan-out {0}, profundidad {1})",
+    "fr": "Modularité (fan-out {0}, profondeur {1})"
+  },
+  {
+    "id": "ed45855d916fba7c",
+    "en": "Cohesion (unmeasured; neutral)",
+    "zh": "内聚（未测量；中性）",
+    "es": "Cohesión (sin medir; neutral)",
+    "fr": "Cohésion (non mesurée ; neutre)"
+  },
+  {
+    "id": "afda5726f96cce2f",
+    "en": "Cohesion ({0} definitions/file)",
+    "zh": "内聚（每文件 {0} 个定义）",
+    "es": "Cohesión ({0} definiciones/archivo)",
+    "fr": "Cohésion ({0} définitions/fichier)"
+  },
+  {
+    "id": "bbcd70400ebbb806",
+    "en": "Docs (README present; comments {0}%)",
+    "zh": "文档（有 README；注释 {0}%）",
+    "es": "Docs (README presente; comentarios {0}%)",
+    "fr": "Docs (README présent ; commentaires {0} %)"
+  },
+  {
+    "id": "c5b699d039816051",
+    "en": "Docs (README not found; comments {0}%)",
+    "zh": "文档（未找到 README；注释 {0}%）",
+    "es": "Docs (sin README; comentarios {0}%)",
+    "fr": "Docs (README absent ; commentaires {0} %)"
+  },
+  {
+    "id": "f87af5b5fb06ce90",
+    "en": "Docs (README present; comments unmeasured)",
+    "zh": "文档（有 README；注释未测量）",
+    "es": "Docs (README presente; comentarios sin medir)",
+    "fr": "Docs (README présent ; commentaires non mesurés)"
+  },
+  {
+    "id": "668ea7fe01d90a0e",
+    "en": "Docs (README not found; comments unmeasured)",
+    "zh": "文档（未找到 README；注释未测量）",
+    "es": "Docs (sin README; comentarios sin medir)",
+    "fr": "Docs (README absent ; commentaires non mesurés)"
+  },
+  {
+    "id": "82bdd104a820d991",
+    "en": "Debt hygiene ({0} cycles; {1} TODO/kLOC)",
+    "zh": "技术债卫生（{0} 个循环依赖；每千行 {1} 个 TODO）",
+    "es": "Higiene de deuda ({0} ciclos; {1} TODO/kLOC)",
+    "fr": "Hygiène de dette ({0} cycles ; {1} TODO/kLOC)"
+  },
+  {
+    "id": "0f0bbceb804eed01",
+    "en": "Debt hygiene ({0} cycles; TODOs unmeasured)",
+    "zh": "技术债卫生（{0} 个循环依赖；TODO 未测量）",
+    "es": "Higiene de deuda ({0} ciclos; TODOs sin medir)",
+    "fr": "Hygiène de dette ({0} cycles ; TODO non mesurés)"
+  },
+  {
+    "id": "27550b0398d943cf",
+    "en": "Stars ({0})",
+    "zh": "星标（{0}）",
+    "es": "Estrellas ({0})",
+    "fr": "Étoiles ({0})"
+  },
+  {
+    "id": "647ee21f0173d849",
+    "en": "Contributors ({0})",
+    "zh": "贡献者（{0}）",
+    "es": "Colaboradores ({0})",
+    "fr": "Contributeurs ({0})"
+  },
+  {
+    "id": "42bc900eb99bbee3",
+    "en": "Analyzed LOC ({0})",
+    "zh": "已分析代码行（{0}）",
+    "es": "LOC analizadas ({0})",
+    "fr": "Lignes analysées ({0})"
+  },
+  {
+    "id": "5ad02ced0afd69cd",
+    "en": "Commit activity ({0} commits/{1} days)",
+    "zh": "提交活跃度（{0} 次提交/{1} 天）",
+    "es": "Actividad de commits ({0} commits/{1} días)",
+    "fr": "Activité des commits ({0} commits/{1} jours)"
+  },
+  {
+    "id": "83f957dffbb4b0c1",
+    "en": "Commit activity (unmeasured; neutral)",
+    "zh": "提交活跃度（未测量；中性）",
+    "es": "Actividad de commits (sin medir; neutral)",
+    "fr": "Activité des commits (non mesurée ; neutre)"
+  },
+  {
+    "id": "32ead88f776ab97e",
+    "en": "Source analysis unavailable; neutral",
+    "zh": "源码分析不可用；中性",
+    "es": "Análisis del código no disponible; neutral",
+    "fr": "Analyse du code indisponible ; neutre"
+  },
+  {
+    "id": "c1de3a09f7ffc2ad",
+    "en": "Stronger repos make stronger heroes: POWER comes from tests, modularity, docs, stars and contributors. No one-shots.",
+    "zh": "仓库越强，英雄越强：战力来自测试、模块化、文档、星标和贡献者。不会被一击秒杀。",
+    "es": "Repos más fuertes, héroes más fuertes: el PODER sale de los tests, la modularidad, la documentación, las estrellas y los colaboradores. Nada de muertes de un golpe.",
+    "fr": "Dépôt plus fort, héros plus fort : la PUISSANCE vient des tests, de la modularité, de la doc, des étoiles et des contributeurs. Pas de one-shot."
+  },
+  {
+    "id": "852494f8d03835a1",
+    "en": "Knockouts drop a heart and energy.",
+    "zh": "击倒对手会掉落一颗心和能量。",
+    "es": "Los KO sueltan un corazón y energía.",
+    "fr": "Les KO lâchent un cœur et de l'énergie."
+  },
+  {
+    "id": "a5d960becaef3d1b",
+    "en": "{0} repositories compiled · stats from repo power",
+    "zh": "已编译 {0} 个仓库 · 属性来自仓库战力",
+    "es": "{0} repositorios compilados · stats según el poder del repo",
+    "fr": "{0} dépôts compilés · stats selon la puissance du dépôt"
   }
 ]

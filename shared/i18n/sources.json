@@ -10813,5 +10813,150 @@
     "id": "891cf063003ae0fe",
     "source": "· no hero in this match",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "10149aa571ab7f5f",
+    "source": "POWER",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "6f1f1c8e01856e8b",
+    "source": "👑 STRONGEST",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ca5c8915605a345c",
+    "source": "strongest repo in this room (highest power)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b371cd185c08893a",
+    "source": "👑 strongest repo in this room",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "85c2dea25d69bd82",
+    "source": "stats scale with power",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c9698322353a723f",
+    "source": "underdog win:",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f9eeb63bf773f4b0",
+    "source": "beat",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "07d715edb696fb5f",
+    "source": "power",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "d5659f1b4ff3ee29",
+    "source": "repo power {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f9d581920a0bbc78",
+    "source": "repo power: code quality + stars, contributors and size · tap for what counts most",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "8c334a6fdbc04a01",
+    "source": "Tests ({0}% files)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "d37593510d939955",
+    "source": "Modularity (fan-out {0}, depth {1})",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ed45855d916fba7c",
+    "source": "Cohesion (unmeasured; neutral)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "afda5726f96cce2f",
+    "source": "Cohesion ({0} definitions/file)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "bbcd70400ebbb806",
+    "source": "Docs (README present; comments {0}%)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c5b699d039816051",
+    "source": "Docs (README not found; comments {0}%)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f87af5b5fb06ce90",
+    "source": "Docs (README present; comments unmeasured)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "668ea7fe01d90a0e",
+    "source": "Docs (README not found; comments unmeasured)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "82bdd104a820d991",
+    "source": "Debt hygiene ({0} cycles; {1} TODO/kLOC)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "0f0bbceb804eed01",
+    "source": "Debt hygiene ({0} cycles; TODOs unmeasured)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "27550b0398d943cf",
+    "source": "Stars ({0})",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "647ee21f0173d849",
+    "source": "Contributors ({0})",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "42bc900eb99bbee3",
+    "source": "Analyzed LOC ({0})",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "5ad02ced0afd69cd",
+    "source": "Commit activity ({0} commits/{1} days)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "83f957dffbb4b0c1",
+    "source": "Commit activity (unmeasured; neutral)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "32ead88f776ab97e",
+    "source": "Source analysis unavailable; neutral",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c1de3a09f7ffc2ad",
+    "source": "Stronger repos make stronger heroes: POWER comes from tests, modularity, docs, stars and contributors. No one-shots.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "852494f8d03835a1",
+    "source": "Knockouts drop a heart and energy.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "a5d960becaef3d1b",
+    "source": "{0} repositories compiled · stats from repo power",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]
