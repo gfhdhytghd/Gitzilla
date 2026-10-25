@@ -6,12 +6,16 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import type { InputFrame, LobbyState, MatchState, ServerMsg } from '../shared/types';
 import { playtestBaseURL } from './playtest';
+import { startMotionFixture } from './motion-fixture';
 import { completeLandingOnboarding, openControlSettings, closeControlSettings } from './onboarding';
 
-const base = playtestBaseURL(process.env.MOTION_URL || process.env.PLAYTEST_URL);
+const appBase = playtestBaseURL(process.env.MOTION_URL || process.env.PLAYTEST_URL);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const output = join(root, 'docs/shots', `${new Date().toISOString().replace(/[:.]/g, '-')}-motion-v3`);
 mkdirSync(output, { recursive: true });
+// Default isolates input proofs from combat damage. Opt-in combat mode remains diagnostic.
+const fixture = process.env.MOTION_COMBAT === '1' ? null : await startMotionFixture(appBase, join(output, 'traces'));
+const base = fixture?.url ?? appBase;
 const browser = await chromium.launch({ headless: true,
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || (existsSync(chromium.executablePath()) ? chromium.executablePath() : '/usr/bin/chromium') });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
@@ -49,12 +53,13 @@ async function attackEvidence(label: string, trigger: () => Promise<unknown>) {
   await trigger();
   const packet = await until(() => inputs.find(input => input.frame.seq > seq && input.frame.fire)?.frame, `${label} fire frame`);
   await until(() => ack >= packet.seq, `${label} server acknowledgement`);
-  await until(() => [...bullets].some(id => !oldBullets.has(id)) || me()?.alive === false, `${label} authoritative shot or player downed`);
+  assert(me()?.alive, `${label}: authoritative proof requires the protected player alive`);
+  await until(() => [...bullets].some(id => !oldBullets.has(id)), `${label} authoritative shot`);
   assert.equal(packet.source, 'motion'); assert.equal(packet.aim, null);
   assert(!packet.dash && !packet.skill, 'attacks must never trigger dash or skill');
   if (label.startsWith('any-axis swing')) assert(Math.hypot(...packet.move) < 0.1, 'swing orientation noise must be frozen');
   check(label, { seq: packet.seq, ack, newOwnBullets: [...bullets].filter(id => !oldBullets.has(id)).length,
-    alive: me()?.alive, shotProof: [...bullets].some(id => !oldBullets.has(id)) ? 'authoritative projectile' : 'downed player: acknowledged input only' });
+    alive: me()?.alive, shotProof: 'authoritative projectile' });
 }
 
 try {
@@ -208,6 +213,11 @@ try {
   await page.locator('[data-testid="input-sensors"][data-status="on"]').waitFor();
   await until(() => state?.status === 'fighting', 'real fighting snapshots');
   assert.equal(starts.length, 1);
+  if (fixture) {
+    assert(fixture.protectedPlayers.includes(selfId));
+    assert(me()?.alive && me()!.invuln > 0, 'test-only protection must be active in real authoritative simulation');
+    check('isolated test-only player protection is active', { appBase, backend: base, protected: selfId });
+  }
   assert.equal(await page.evaluate(() => (window as any).__permissionCalls.length), expectedNativeCalls, 'lobby grant must carry into game without a new native request');
   assert(!(await page.getByTestId('motion-gate').isVisible()), 'ready lobby entry must not show countdown permission overlay');
   check('only ready lobby entry starts match and carries native grant into game', { starts: starts.length, source: inputs.at(-1)?.frame.source, nativeCalls: expectedNativeCalls });
@@ -345,10 +355,12 @@ try {
   await page.screenshot({ path: join(output, 'failure.png'), timeout: 4000 }).catch(() => {});
 } finally {
   const result = { pass, failure, base, viewport: { width: 390, height: 844, dpr: 3 },
-    proof: 'real lobby native permission -> controlsReady -> enabled START -> game input -> WebSocket -> authoritative simulation snapshots; no ready bypass; strict trusted touchend/click permission mocks + synthetic sensors, no physical phone; Vite HMR held inert in this tab only',
+    appBase, deterministicFixture: fixture ? { protection: fixture.protection, protectedPlayers: fixture.protectedPlayers, productionEnabled: false } : null,
+    proof: 'staging UI + real isolated RoomServer/simulation with explicit test-only player protection (unless MOTION_COMBAT=1); real lobby native permission -> controlsReady -> enabled START -> game input -> WebSocket -> authoritative simulation snapshots; no ready bypass; strict trusted touchend/click permission mocks + synthetic sensors, no physical phone; Vite HMR held inert in this tab only',
     checks, errors, snapshots, inputs: inputs.length, ack, lobby, starts, controls, player: me(), consoleLog, traceUploads };
   writeFileSync(join(output, 'summary.json'), `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(join(output, 'inputs.json'), `${JSON.stringify(inputs, null, 2)}\n`);
   console.log(JSON.stringify({ output, pass, failure, checks: checks.length, snapshots, inputs: inputs.length, errors }, null, 2));
   await browser.close();
+  await fixture?.close();
 }
