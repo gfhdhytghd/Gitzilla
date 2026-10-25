@@ -23,10 +23,10 @@
     ">> Expando-Ouroboros coils through document fragments and burrows deep."
   ],
   "taunts": [
-    "TODO: Drop _data, _removeData) — you cannot detach my spines!",
+    "TODO: Drop _data…",
     "FIXME why is this double only when run with other tests?!",
     "assert.equal( yourLife, 0 ) // match failed permanently",
-    "You cannot traverse beyond my siblings without breaking the chai",
+    "You cannot traverse beyond my siblings without breaking the…",
     "TODO: Now that all calls to _data have been excised, bleed!"
   ],
   "attackNames": {

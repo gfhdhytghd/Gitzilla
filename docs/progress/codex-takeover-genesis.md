@@ -1,5 +1,10 @@
 DONE — take-genesis (local repairs + final visual verification)
 
+## Ownership returned to Claude — current handoff
+- Claude owns `client/app/`, `client/edu/`, `client/render/`, and `client/genesis/` again. Codex will not edit those directories from this point onward.
+- Current `git status --short` for all four UI directories is **clean**: no uncommitted UI work remains to hand off. The earlier Genesis changes below are preserved in the committed workspace.
+- This agent retains only its original server-side `genesis/` responsibility when assigned further work. The takeover implementation/validation notes below are historical evidence, not continuing UI ownership.
+
 ## 接手与边界
 依据 `/tmp/herdr-codex-takeover-20261024/genesis-TASK.md`，已读 brief、相关 Genesis/portrait/edu/archetype cards、原 claude-genesis progress、terminal/source 与原 session 最新用户消息。负责 `client/genesis/` + 原 `genesis/` server builder；UI mount 交 take-ui，edu 组件交 take-edu，renderer 的唯一 frame 集成由 take-lead 完成。保留共享脏改动；未 commit/push/deploy、未读 .env、未触碰其他 owner 实现，未重启 5175/5173。
 

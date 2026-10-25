@@ -180,3 +180,19 @@ describe("genesis narration + architecture summary (real fallback repos)", () =>
     expect(help[0].issues[0].number).toBe(7);
   });
 });
+
+describe("projector summary of classroom step instructions", async () => {
+  const { stepSummary } = await import("./summary.ts");
+  const { pythonClassroomPlan } = await import("../../shared/classroom-presets.ts");
+  it("skips headings and keeps it short for every preset step (4 locales)", () => {
+    for (const lang of ["en", "zh", "es", "fr"] as const) {
+      for (const st of pythonClassroomPlan("01-hello", lang).steps) {
+        const s = stepSummary(st.instructions);
+        expect(s.length, `${lang}: ${s}`).toBeGreaterThan(10);
+        expect(s.length).toBeLessThanOrEqual(221);
+        expect(s).not.toMatch(/^#|```/);
+      }
+    }
+    expect(stepSummary("Learning Objectives\n\nCreate a personal introduction card using print, variables, and f-strings.\n\n## Task\n- Print your name.")).toBe("Create a personal introduction card using print, variables, and f-strings. Print your name.");
+  });
+});

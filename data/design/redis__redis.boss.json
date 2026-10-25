@@ -23,8 +23,8 @@
     "REDIS-TITAN SYSTEM READY. PROTOCOL ONLINE."
   ],
   "taunts": [
-    "XXX Technically in Redis-land we don't have out of memory, only",
-    "TODO: make this a dict for better performance, but you will not",
+    "XXX Technically in Redis-land we don't have out of memory…",
+    "TODO: make this a dict for better performance, but you will…",
     "OOM command rejected. Evicting intruders from memory heap!",
     "Fix use-after-free in cluster bus FORGOTTEN_NODE handling!"
   ],

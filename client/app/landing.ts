@@ -151,7 +151,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
         ),
         joinMsg,
         h("button.btn.btn-ghost.host-big", { onclick: () => create(true) }, "[ host on big screen + QR ]"),
-        h("button.btn.btn-ghost.nowrap-label", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP: challenge a friend ]"),
+        h("button.btn.btn-ghost.nowrap-label", { "data-testid": "create-pvp", onclick: () => create(false, "pvp") }, "[ PvP royale: up to 8 ]"),
         h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 classroom: code together, raid together ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),

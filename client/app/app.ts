@@ -20,6 +20,8 @@ export interface AppCtx {
   mock: boolean;
   /** claude-edu LessonEngine from the last edu match (glossary ✓ + quiz scores for the class report). */
   eduEngine?: unknown;
+  /** PvP royale: eliminations seen during the match (autopsy fallback when the result has no elimination feed). */
+  royaleLog?: import("./royale").Elim[];
   /** Re-run the router after a state change. */
   refresh(): void;
   /** Rename and reconnect (hello carries the name). */

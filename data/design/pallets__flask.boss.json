@@ -24,9 +24,9 @@
   ],
   "taunts": [
     "Note we do this without checking if static_folder exists.",
-    "raise AttributeError(name): your session context was lost beneat",
-    "def _get_current_object(self) -> T: you cannot dereference the a",
-    "drop support for Python 3.10: obsolete clients will be purged."
+    "raise AttributeError(name): your session context was lost…",
+    "def _get_current_object(self) -> T: you cannot dereference…",
+    "drop support for Python 3.10: obsolete clients will be…"
   ],
   "attackNames": {
     "0-cascade-0": "app() ProxyMixin Crystal Cascade",

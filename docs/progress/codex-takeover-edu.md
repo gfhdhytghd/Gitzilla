@@ -1,5 +1,7 @@
 DONE — take-edu completed `client/edu/` takeover; runtime re-frozen after authorized teacher-export delta at 2026-10-24 21:26:01 UTC (17:26:01 local). No commits/push/deploy.
 
+**UI ownership returned to Claude coordinator.** No further edits by this agent to `client/app/`, `client/edu/`, `client/render/`, or `client/genesis/`. Current `git status --short` for those directories is clean; **no remaining uncommitted UI work to hand off** (including no untracked files under `client/edu/`). Earlier delivered changes and verification are documented below; this agent made no commits itself.
+
 Read `/tmp/herdr-codex-takeover-20261024/edu-TASK.md`, `edu-terminal.txt`, `edu-source.json`, BRIEF, edu/rubric cards, claude-edu and codex-rubric progress. Preserve the shared dirty workspace. No commit/push/deploy, shared service restarts, or edits to `client/app/`, `client/style.css`, server, sim, or shared contracts.
 
 ## Authorized freeze exception — teacher projector exports (latest stage B delta)

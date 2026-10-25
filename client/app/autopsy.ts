@@ -10,7 +10,8 @@ import { ARCH } from "./archetype";
 import { reportCard } from "./report";
 import { createFeedbackView, createClassFeedback, localDefaultRubric, createArchitectureReport, createClassReport, type LessonEngine } from "../edu";
 import { bossPortraitCanvas, heroPortrait } from "./lobby";
-import { fmtTime, fontsReady, h, isPhone, shortRepo, humanComponent } from "./util";
+import { fmtTime, fontsReady, h, isPhone, shortRepo, humanComponent, hash32 } from "./util";
+import { handle, royaleAutopsy } from "./royale";
 
 function brag(a: Autopsy, pid: string, bossRepo: string): string {
   const p = a.players.find((x) => x.id === pid);
@@ -166,7 +167,7 @@ function exitButtons(app: AppCtx): HTMLElement {
 
 export function createAutopsy(app: AppCtx): Screen {
   const a0 = app.autopsy!;
-  if (a0.mode === "pvp") return createDuelAutopsy(app);
+  if (a0.mode === "pvp") return createRoyaleAutopsy(app);
   if (!a0.boss) return createPvpAutopsy(app);
   const a = { ...a0, boss: a0.boss };
   const lobby = app.lobby;
@@ -425,16 +426,100 @@ function createPvpAutopsy(app: AppCtx): Screen {
   };
 }
 
-function createDuelAutopsy(app: AppCtx): Screen {
-  const a = app.autopsy!, ranking = a.ranking ?? [];
+/** PvP royale autopsy: winner card, placement ranking 1..N, and the eliminations as a git log. */
+function createRoyaleAutopsy(app: AppCtx): Screen {
+  const a = app.autopsy!;
+  const { rows, winner, elims } = royaleAutopsy(a, app.royaleLog);
+  const lobby = app.lobby;
+  const kitOf = (id: string | null) => (id ? lobby?.players.find((p) => p.id === id)?.kit ?? null : null);
+  const nameOf = (id: string | null) => (id === app.you ? t("you") : rows.find((r) => r.id === id)?.name ?? "?"); // names sit in translate="no" spans
   const backdrop = createBackdrop({ dim: 0.85 });
-  const el = h("div.screen.autopsy", { "data-testid": "autopsy" }, backdrop.canvas,
-    h("div.ap-scroll", null, h("header.ap-head", null,
-      h("div.ap-verdict.win", null, "PVP RESULTS"),
-      h("div.ap-sub", null, a.mvp ? `Winner: ${ranking.find(p => p.id === a.mvp)?.name ?? "Player"}` : "Draw"),
-      h("p", null, "Round wins, then KOs, then damage decide the ranking."),
-      ...ranking.map((p, i) => h("div.rp-card", null, `#${i + 1} ${p.name} · ${p.repo} · ${p.roundWins} round wins · ${p.kos} KOs · ${p.damage.toFixed(1)} damage`)),
-      isOwner(app) ? h("button.btn.btn-big.btn-primary", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "Rematch") : h("p", null, "Waiting for the host to start a rematch"),
-      exitButtons(app))));
+  const w = rows.find((r) => r.id === winner);
+  const wKit = kitOf(winner);
+  const mine = rows.find((r) => r.id === app.you);
+  const owner = isOwner(app);
+  const sha = (s: string) => (hash32(s) >>> 0).toString(16).padStart(8, "0").slice(0, 7);
+
+  const winCard = w
+    ? h(
+        "div.mvp-card.royale-win",
+        { "data-testid": "royale-winner" },
+        wKit ? h("div.mvp-port", null, heroPortrait(wKit, 64)) : null,
+        h(
+          "div",
+          null,
+          h("div.mvp-label", null, "★ LAST ONE STANDING"),
+          h("div.mvp-name", { translate: "no" }, w.id === app.you ? t("you") : handle(w.name)),
+          h("div.mvp-brag", null, h("span", null, "survived the merge"), " · ", h("span", { translate: "no" }, shortRepo(w.repo)), wKit?.code?.weapon?.name ? h("span", null, " · ", codeSpan(wKit.code.weapon.name)) : null),
+          h("div.dim", null, `${w.kos} KO · ${Math.round(w.damage)} dmg`),
+        ),
+      )
+    : h("div.mvp-card", null, h("div.mvp-label", null, "no survivors · the GC took everyone"));
+
+  const header = h("div.ap-row.ap-header.ry-row", null, h("span.rank", null, "#"), h("span.ap-port"), h("span.ap-name", null, "dev"), h("span.ry-ko", null, "KOs"), h("span.ry-dmg", null, "damage"), h("span.ry-by", null, "eliminated by"));
+  const table = rows.map((r, i) => {
+    const kit = kitOf(r.id);
+    return h(
+      `div.ap-row.ry-row${r.id === app.you ? ".you" : ""}${r.id === winner ? ".mvp" : ""}`,
+      { style: `animation-delay:${0.15 + i * 0.06}s`, "data-testid": "royale-row" },
+      h("span.rank", null, `#${r.place}`),
+      kit ? h("span.ap-port", null, heroPortrait(kit, 32)) : h("span.ap-port"),
+      h("span.ap-name", { translate: "no" }, r.name, h("small", null, ` ${shortRepo(r.repo)}`)),
+      h("span.ry-ko", null, String(r.kos)),
+      h("span.ry-dmg", null, String(Math.round(r.damage))),
+      h("span.ry-by", { translate: r.killedBy ? "no" : undefined }, r.id === winner ? "★ winner" : r.left ? "left" : r.killedBy ? nameOf(r.killedBy) : "GC sweep"),
+    );
+  });
+
+  // git log --oneline of the match: newest first, like the real thing
+  const log = [...elims].sort((x, y) => y.t - x.t || (x.place ?? 0) - (y.place ?? 0)).map((e) =>
+    h(
+      `div.gl-row${e.id === app.you || e.by === app.you ? ".me" : ""}`,
+      null,
+      h("span.gl-sha", null, sha(`${e.id}:${e.by}:${e.t}`)),
+      e.t > 0 ? h("span.gl-t", null, fmtTime(e.t)) : null,
+      e.left
+        ? h("span.gl-msg", { translate: "no" }, `${nameOf(e.id)} `, h("b", null, "git checkout --detach"), " (left)")
+        : h("span.gl-msg", { translate: "no" }, e.by ? `${nameOf(e.by)} ` : "GC ", h("b", null, "rm -rf"), ` ${nameOf(e.id)}`),
+      e.weapon ? h("span.gl-w", null, codeSpan(e.weapon, 20)) : null,
+      e.place ? h("span.gl-place", null, `#${e.place}`) : null,
+    ),
+  );
+  const head = w ? h("div.gl-row.head", null, h("span.gl-sha", null, sha(`win:${w.id}`)), h("span.gl-ref", null, "(HEAD -> main)"), h("span.gl-msg", { translate: "no" }, `${w.id === app.you ? t("you") : w.name} `), h("span", null, "survived the merge")) : null;
+
+  const el = h(
+    "div.screen.autopsy.royale-autopsy",
+    { "data-testid": "autopsy" },
+    backdrop.canvas,
+    h("div.crt"),
+    h(
+      "div.ap-scroll",
+      null,
+      h(
+        "header.ap-head",
+        null,
+        h(`div.ap-verdict.${mine && mine.place === 1 ? "win" : mine ? "loss" : "win"}`, null, mine ? (mine.place === 1 ? "LAST ONE STANDING" : `#${mine.place} / ${rows.length}`) : "PVP ROYALE"),
+        h("div.ap-sub", null, `$ git log --royale · ${rows.length} heroes · ${fmtTime(a.duration)}`),
+        mine && mine.place !== 1
+          ? h("div.ap-sub.ry-you", null, h("span", null, "you placed"), ` #${mine.place} · `, ...(mine.killedBy ? [h("span", null, "killed by"), " ", h("b", { translate: "no" }, handle(nameOf(mine.killedBy)))] : [h("span", null, "swept by the garbage collector")]))
+          : null,
+        h("div.ap-top-actions", null,
+          owner ? h("button.btn.btn-big.btn-start", { "data-testid": "rematch", onclick: () => app.conn.send({ t: "rematch" }) }, "$ git reset --hard && REMATCH") : h("div.dim", null, "waiting for the owner to rematch…"),
+          exitButtons(app),
+        ),
+      ),
+      h(
+        "div.ap-grid",
+        null,
+        h("section.panel.ap-players", null, h("h2.panel-title", null, "PLACEMENTS"), winCard, header, ...table),
+        h("section.panel.ap-gitlog", { "data-testid": "royale-log" }, h("h2.panel-title.red", null, "$ git log --eliminations"), head, ...log, log.length ? null : h("div.dim", null, "—")),
+        (() => {
+          const hb = createHallBoard(app.mock, { rows: 5, highlight: rows.map((r) => r.name) });
+          hb.classList.add("ap-hall");
+          return hb;
+        })(),
+      ),
+    ),
+  );
   return { el, update() {}, destroy() { backdrop.destroy(); el.remove(); } };
 }

@@ -1,3 +1,4 @@
+DONE (spectator host + PvP repo eligibility)
 DONE (in-app editor)
 DONE (royale)
 
@@ -406,3 +407,34 @@ DONE
 
 ## Contract requests (optional report typing)
 - Coordinator: please add `ClassroomReport.files?: InAppFile[]` for the already-wired readonly editor viewer. Local server and claude-edu structural extensions agree today. This field is memory-only private report data for submitter + reserved teacher; never public state/other students/Hall/rooms.json. `ClassroomReport.source` is already committed and used directly.
+
+## DONE — ClassroomReport.files teacher-only (supersedes earlier submitter+teacher notes)
+- Coordinator committed shared ClassroomReport.files and explicitly reopened the server window for this restriction. Removed local structural type extensions; now use the shared report type directly.
+- privatePayload strips `files` from every non-teacher report, including the submitting student's own feedback and reconnect replay. Teacher authorization at the WS boundary requires the reserved teacher id, screen role, and current room ownership. Ordinary students still get their own score/checks/criteria/advice; peers and other projector screens receive no submitted source.
+- Teacher readonly viewer still receives full submitted files. Source remains memory-only and absent from rooms.json; public starter persistence is unchanged. The earlier optional contract request is RESOLVED; the earlier submitter+teacher source policy is superseded by this owner/teacher-only policy.
+- Validation: unit/classroom + actual production-main integration **29 PASS /3files** (EDITOR_SERVER_TEST=1; PORT=0); dedicated real-WS privacy/reconnect/other-screen test **1 PASS**. Root typecheck PASS; touched-file whitespace PASS.
+- SOURCE FROZEN again after this small correction. No shared service restart, fixed-port/live tests, shared edits, commits or deployment.
+
+## DONE — spectator host + PvP repo picker eligibility
+- Coordinator explicitly reopened the freeze. Decision aligned with preferred behavior: unconfigured/error host may spectate; needs2–8 actual ready fighters including bots, with no minimum human fighter. All participating humans still require distinct authenticated GitHub accounts and the existing ownership/maintain/admin repo rule. Pending analyses block with names; empty/error humans spectate. A first big screen in a PvP room may own/host it.
+- Server excludes non-fighter inputs and rechecks the actual fighters' GitHub eligibility at START while guarding all human/bot roster revisions. Refusals name missing counts, pending analysis, failed bots, unverified people, revoked permissions or changed roster. UI owner notified.
+- Additional explicit authorization: extend auth/ repo listing/tests with fork/permission/pvpEligible and optional eligible-only filtering, using same helper as authoritative PvP validation; preserve stars ordering.
+
+### Handoff → claude-ui / auth: repo picker fields ready
+- `/api/me/repos` now adds mandatory `fork:boolean`, `permission:'admin'|'maintain'|'push'|'read'`, `pvpEligible:boolean` to the existing name/full_name/private/language/stars/pushed_at rows. `?pvp=1` returns eligible rows only, preserving stars-descending then pushed-time order across up to3 GitHub pages.
+- Both picker and match authority call the exact same `pvpRepoEligible` helper: authenticated GitHub durable user ID owns a non-fork public/private repo, OR a public repo grants maintain/admin; owned forks remain excluded even with admin; private collaborators/read/write/triage/missing metadata are excluded. No policy tightening beyond coordinator's explicit definition.
+- Picker resolves `/user` with the user's GitHub token, not the Auth0 subject/login string; only public boolean/permission fields leave server. Tokens still only go to GitHub and never in rows. Auth0 session/provider setup unchanged.
+- `auth/index.test.ts` + `server/pvp-access.test.ts`:13PASS. Tests cover complete login/callback/list/logout, field matrix, eligible-only authenticated HTTP response, no token disclosure, identity failure, star/timestamp sorting across pages. UI owner notified to request ?pvp=1 and require pvpEligible===true when filtering client-side.
+- Initial spectator-host dedicated authority run17PASS, including player/screen hosts with0/1/2 eligible humans +bot fill, anonymous host never reauthenticated, host motion/input ignored when spectating, exact missing counts/named wait/revocation errors. A real bot-only sim integration and final broader regressions are running next.
+
+### Final spectator-host / picker evidence — SOURCE FROZEN
+- Full targeted regression `npx vitest run server/rooms.test.ts auth/index.test.ts server/pvp-access.test.ts`: **97 PASS /3files**, 23.10s. Final root `npm run typecheck` PASS and touched-file whitespace PASS.
+- Added real sim bot-only royale: anonymous screen host owns room, starts2bots, receives snapshots/autopsy, stays connected, is absent from match players, observes exactly1survivor and placements1/2, and public winner records once. No host GitHub-token request. Actual-human source privacy/Hall exclusions remain covered by existing real2/4/8 regressions.
+- Named precise refusals are plain ServerMsg.error messages: insufficient fighters reports eligible-human +AI counts; pending analysis lists names; failed AI suggests remove/re-add; unverified humans name reselection; GitHub access failure names the fighter and eligibility reason; changed roster asks verify/retry. Non-fighter host phone readiness/input cannot block/influence the fight. Actual fighters retain existing sensor readiness gate.
+- UI handoff delivered: request `/api/me/repos?pvp=1`; exact fields fork/permission/pvpEligible; fallback client filtering must require pvpEligible===true. claude-ui is implementing the UI/picker/host-spectator flow and owns browser evidence. Server tests use mocked GitHub responses and ephemeral loopback/actual sim; no real GitHub/Auth0 provider or device/UI verification is claimed here.
+- Server/auth source window is finished and FROZEN again. Coordinator explicitly authorized auth/ index/tests scope; no changes to other owners' client/shared/sim/analysis files, tenant settings or credentials. No service restarts, 5173/5175/live/tunnel tests, commits/push/deploy, or repeated whole-workspace fullsuite.
+
+## DONE — repo-power test compatibility (source remains frozen)
+- User's merged930PASS/2FAIL report identified the obsolete server PvP-vs-battle maxHp/damage equality assertion. Updated only server/rooms.test.ts + this progress log; no runtime server/sim/genesis behavior changes.
+- The8-human WS authority test now expects all5 stats from sim's exported statsFromPower(pvpPowerFromProfile(actual fixture).score), verifies the exact pvpPower breakdown crosses the lobby, and retains the absence of classroom-only quality grades. No duplicated power formula or old equal-budget assumption.
+- Dedicated PvP authority integration regression:18PASS (66 unrelated filtered skips),6.90s; root npm run typecheck PASS; touched-file whitespace PASS. This is not a claim to rerun the user's full suite or resolve the other non-server failure. SOURCE FROZEN; no services/commits/deployments touched.

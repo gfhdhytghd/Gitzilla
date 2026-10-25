@@ -8,6 +8,7 @@ import type { GameEvent, MatchState, PlayerState, ServerMsg } from "../../shared
 import { ARENA_H, ARENA_W } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner } from "./app";
 import { createHud, rankPvp } from "./hud";
+import { createElimTracker, createKillFeed, createSpectateBanner, handle, royaleOf, worldSize } from "./royale";
 import { ARCH, archetypeWhy } from "./archetype";
 import { markCanvas } from "./mark";
 import { loadGestureProfile, toThresholds } from "./training";
@@ -99,7 +100,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         "div.term-body",
         null,
         h("div", null, spectator ? "end the class / leave this screen?" : "leave the fight?"),
-        h("div.dim", null, spectator ? "the match keeps running for everyone else." : "your hero drops out; the squad keeps fighting."),
+        h("div.dim", null, spectator ? "the match keeps running for everyone else." : app.lobby?.mode === "pvp" ? "leaving counts as an elimination." : "your hero drops out; the squad keeps fighting."),
         menuPauseBtn,
         h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? "⏏ end class" : "⏏ leave the fight"),
         spectator ? h("button.btn", { "data-testid": "game-new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
@@ -109,12 +110,40 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ),
   );
   const menuBtn = h("button.btn.btn-tiny.menu-btn", { "data-testid": "game-menu-open", "aria-label": "menu", onclick: (e: Event) => (e.stopPropagation(), (menuSheet.hidden = false)) }, "☰ menu");
+  // ---------------- PvP royale: kill feed, eliminations, spectating ----------------
+  const elims = createElimTracker();
+  const killFeed = createKillFeed();
+  let watchId: string | null = null;
+  /** Keep watching the same hero while they're alive; otherwise your killer, else the KO leader. */
+  const pickWatch = (s: MatchState) => {
+    const r = royaleOf(s);
+    if (!r || (watchId && r.alive.includes(watchId))) return;
+    const me = s.players.find((p) => p.id === app.you);
+    const sc = s.pvp?.scores ?? {};
+    const lead = [...r.alive].sort((a, b) => (sc[b]?.kos ?? 0) - (sc[a]?.kos ?? 0))[0] ?? null;
+    watchId = me?.killedBy && r.alive.includes(me.killedBy) ? me.killedBy : lead;
+  };
+  const cycleWatch = (dir: -1 | 1) => {
+    const r = royaleOf(latest);
+    if (!r?.alive.length) return;
+    const order = latest!.players.filter((p) => r.alive.includes(p.id)).map((p) => p.id);
+    const i = Math.max(0, order.indexOf(watchId ?? ""));
+    watchId = order[(i + dir + order.length) % order.length];
+    vibrate(10);
+  };
+  const spectate = createSpectateBanner(cycleWatch);
+  /** royale: knocked out, or a player who isn't fighting at all (e.g. a host without an eligible repo) */
+  const watchingRoyale = (s: MatchState | null) => !spectator && !!royaleOf(s) && !(s!.players.find((p) => p.id === app.you) && !s!.players.find((p) => p.id === app.you)!.eliminated);
   const el = h("div.screen.game.waiting", null, ambient, stage, hud.el, deck, overlay, lateQr, pauseBtn, pauseOv, menuSheet);
+  stage.append(killFeed.el);
+  overlay.append(spectate.el);
 
   // ---------------- layout ----------------
   let cssScale = 1;
   // visible window into the arena, in logical px (camera); landscape = whole arena
   const view = { x: 0, y: 0, w: ARENA_W, h: ARENA_H, cssScale: 1 };
+  // world = logical arena size; battle is 480x288, PvP sims may size it for the player count (royale.worldSize)
+  let WW = ARENA_W, WH = ARENA_H;
   let portrait = false;
   let phoneLayout = isPhone();
   const safeProbe = h("div.safe-probe");
@@ -159,9 +188,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       // keep at least ~200 logical px of arena visible across the width
       cssScale = Math.min(cssScale, W / 200);
       view.cssScale = cssScale;
-      view.w = Math.min(ARENA_W, Math.floor(W / cssScale));
-      view.h = ARENA_H;
-      const w = view.w < ARENA_W ? W : Math.round(view.w * cssScale), hh = Math.round(view.h * cssScale);
+      view.w = Math.min(WW, Math.floor(W / cssScale));
+      view.h = Math.min(WH, ARENA_H); // taller PvP arenas scroll vertically too
+      const w = view.w < WW ? W : Math.round(view.w * cssScale), hh = Math.round(view.h * cssScale);
       const left = Math.round((W - w) / 2);
       el.classList.toggle("deck-compact", H - barH - hh - safeBot < 290);
       Object.assign(stage.style, { width: `${w}px`, height: `${hh}px`, left: `${left}px`, top: `${Math.round(barH)}px` });
@@ -178,7 +207,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     // whole 480x288 arena is on screen). Spectators / the big screen keep the full arena.
     const zoomCam = !spectator && !phone;
     el.classList.toggle("cam", zoomCam);
-    const VW = zoomCam ? 360 : ARENA_W, VH = zoomCam ? 216 : ARENA_H;
+    const VW = zoomCam ? Math.min(360, WW) : WW, VH = zoomCam ? Math.min(216, WH) : WH;
     if (!zoomCam) view.x = 0, view.y = 0;
     view.w = VW;
     view.h = VH;
@@ -229,6 +258,28 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       offset = null;
       introStarted = false;
       outro = null;
+      elims.reset();
+      watchId = null;
+    }
+    const world = worldSize(s);
+    if (world.w !== WW || world.h !== WH) {
+      WW = world.w;
+      WH = world.h;
+      minimap.width = Math.round(WW / 4);
+      minimap.height = Math.round(WH / 4);
+      layout();
+    }
+    if (royaleOf(s)) {
+      for (const e of elims.update(s)) {
+        killFeed.push(e, app.you);
+        if (e.id === app.you) {
+          vibrate([80, 40, 140]);
+          doFlash(0.5, "255,20,40");
+        }
+      }
+      app.royaleLog = elims.log;
+      // the winner card plays as soon as the last hero stands (the autopsy follows from the server)
+      if (!outro && latest && (royaleOf(s)!.winner || s.status === "victory" || s.status === "defeat")) setTimeout(() => startOutro(true), 0);
     }
     const o = now - s.t;
     if (offset === null || o < offset) offset = o;
@@ -549,10 +600,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         h(
           "div.in-text",
           null,
-          h("div.in-line.dim", null, s.mode === "pvp" ? `$ make duel ROOM=${app.room}` : `$ make class ROOM=${app.room}`),
-          h("div.in-line.green", null, s.mode === "pvp" ? "Two repositories compiled into balanced heroes" : `${s.players.length} heroes compiled · stats graded from code quality`),
-          h("div.in-name", null, s.mode === "pvp" ? "PVP DUEL" : "CLASSROOM BRAWL"),
-          h("div.in-line.in-epithet", null, s.pvp ? `best of ${s.pvp.rounds} rounds · most KOs wins` : "free-for-all"),
+          h("div.in-line.dim", null, s.mode === "pvp" ? `$ make royale ROOM=${app.room}` : `$ make class ROOM=${app.room}`),
+          h("div.in-line.green", null, s.mode === "pvp" ? `${s.players.length} repositories compiled · equal stat budget` : `${s.players.length} heroes compiled · stats graded from code quality`),
+          h("div.in-name", null, s.mode === "pvp" ? "PVP ROYALE" : "CLASSROOM BRAWL"),
+          h("div.in-line.in-epithet", null, royaleOf(s) ? "last hero standing · no respawns" : s.pvp ? `best of ${s.pvp.rounds} rounds · most KOs wins` : "free-for-all"),
         ),
       ),
     );
@@ -564,7 +615,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         clearInterval(iv);
         intro.classList.add("out");
         el.classList.remove("intro-on");
-        const go = h("div.fight-flash", null, "$ ./fight --pvp");
+        const go = h("div.fight-flash", null, royaleOf(latest) ? "$ ./royale --last-one-standing" : "$ ./fight --pvp");
         overlay.append(go);
         setTimeout(() => go.remove(), 1100);
         setTimeout(() => (intro.remove(), disposeIntroGenesis()), 500);
@@ -585,6 +636,25 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     outro = { victory, at: performance.now() };
     const kit = latest?.boss?.kit;
     setTimeout(() => {
+      const roy = royaleOf(latest);
+      if (latest && roy) {
+        const winnerId = roy.winner ?? roy.alive[0] ?? null;
+        const winner = latest.players.find((p) => p.id === winnerId);
+        const place = app.you ? (app.you === winnerId ? 1 : roy.placements[app.you]) : undefined;
+        overlay.append(
+          h(
+            "div.defeat.pvp-end.royale-end",
+            { "data-testid": "royale-end" },
+            h("div.df-title", null, winnerId && winnerId === app.you ? "LAST PROCESS RUNNING" : "MERGE COMPLETE"),
+            winner
+              ? h("p", null, "★ ", h("b", { translate: "no" }, winnerId === app.you ? t("you") : handle(winner.name)), " ", h("span", null, "survived the merge"))
+              : h("p", null, "no survivors · the GC took everyone"),
+            place ? h("p", null, h("span", null, "you placed"), " ", h("b", null, `#${place} / ${latest.players.length}`)) : null,
+            h("p.dim", null, "loading results…"),
+          ),
+        );
+        return;
+      }
       if (latest && !latest.boss) {
         const ranked = rankPvp(latest);
         const meIdx = ranked.findIndex((r) => r.id === app.you);
@@ -656,6 +726,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     sendIv = setInterval(() => {
       if (!input || !latest || latest.status === "victory" || latest.status === "defeat") return;
       if (pausedNow()) return;
+      if (watchingRoyale(latest)) return; // spectating
       const frame = input.sample();
       app.conn.send({ t: "input", frame });
       if (el.dataset.input !== input.mode) el.dataset.input = input.mode;
@@ -702,6 +773,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       else if (pauseState.resumeAt === null) sendPause(false);
       return;
     }
+    if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && watchingRoyale(latest)) {
+      cycleWatch(e.key === "ArrowLeft" ? -1 : 1);
+      return;
+    }
     if (e.key === "Escape") menuSheet.hidden = !menuSheet.hidden;
     if (e.key.toLowerCase() === "h" && hint) hint.classList.toggle("fade");
     if (outro && performance.now() - outro.at > 1200) finishOutro();
@@ -709,6 +784,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   addEventListener("keydown", onKey);
   overlay.addEventListener("pointerdown", () => {
     if (outro && performance.now() - outro.at > 1200) finishOutro();
+  });
+  stage.addEventListener("pointerdown", () => {
+    if (!outro && watchingRoyale(latest)) cycleWatch(1);
   });
   // phones: first tap goes fullscreen and tries to lock portrait (both may fail; that's fine)
   const lockPortrait = () => {
@@ -814,7 +892,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   // Rejoined phones can arrive directly in countdown; gate them before the first snapshot.
   let touchChosen = false; // "touch only" answers the gate for this page even if the permission state stays pending
   const stopPermission = subscribeMotionPermission(state => {
-    if (spectator) return;
+    if (spectator || watchingRoyale(latest)) return;
     if (state.ready || touchChosen) { motionOverlay?.remove(); motionOverlay = null; return; }
     if (!motionOverlay) {
       motionOverlay = h("div.motion-gate", { "data-testid": "motion-gate", role: "dialog", "aria-label": "enable controls" },
@@ -843,7 +921,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
   let youRingStarted = false;
   let meWasDown = false;
   // strong = pulsing ring + YOU label (first seconds, after respawn); otherwise a steady ring so you never lose yourself
-  const drawYouRing = (me: PlayerState, now: number, scale: number, strong = true) => {
+  const drawYouRing = (me: PlayerState, now: number, scale: number, strong = true, label = "YOU", rgb = "255,210,61") => {
     if (!strong) {
       ctx.save();
       ctx.strokeStyle = "rgba(255,210,61,.7)";
@@ -857,7 +935,7 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     const pulse = 0.5 + 0.5 * Math.sin(now * 8);
     const rx = (10 + pulse * 3) * scale, ry = (4 + pulse) * scale;
     ctx.save();
-    ctx.strokeStyle = `rgba(255,210,61,${0.55 + 0.45 * pulse})`;
+    ctx.strokeStyle = `rgba(${rgb},${0.55 + 0.45 * pulse})`;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.ellipse(Math.round(me.x) + 0.5, Math.round(me.y + 8 * scale) + 0.5, rx, ry, 0, 0, Math.PI * 2);
@@ -865,9 +943,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ctx.font = '8px "Press Start 2P", monospace';
     ctx.textAlign = "center";
     ctx.fillStyle = "#000";
-    ctx.fillText(t("YOU"), Math.round(me.x) + 1, Math.round(me.y + 22 * scale) + 1);
-    ctx.fillStyle = "#ffd23d";
-    ctx.fillText(t("YOU"), Math.round(me.x), Math.round(me.y + 22 * scale));
+    ctx.fillText(t(label), Math.round(me.x) + 1, Math.round(me.y + 22 * scale) + 1);
+    ctx.fillStyle = `rgb(${rgb})`;
+    ctx.fillText(t(label), Math.round(me.x), Math.round(me.y + 22 * scale));
     ctx.textAlign = "left";
     ctx.restore();
   };
@@ -926,6 +1004,17 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         edgeLabel(dir < 0 ? ex + 10 : ex - 4, ey, dir, b.airborne ? (b.kit.archetype === "abyssal" ? "BOSS ⇣" : "BOSS ✈") : "BOSS", "#ffd0d8");
       }
     }
+    // royale: the nearest off-screen rivals (still alive)
+    if (royaleOf(s)) {
+      const from = me && !me.eliminated ? me : { x: view.x + view.w / 2, y: view.y + view.h / 2 };
+      const rivals = s.players.filter((p) => p.id !== app.you && !p.eliminated && p.alive && offscreen(p.x)).sort((a, b) => Math.hypot(a.x - from.x, a.y - from.y) - Math.hypot(b.x - from.x, b.y - from.y));
+      for (const p of rivals.slice(0, 2)) {
+        const { ex, ey, dir } = place(p.x, p.y);
+        arrow(dir < 0 ? ex + 6 : ex, ey, dir, "#ff8fa0");
+        edgeLabel(dir < 0 ? ex + 6 : ex, ey, dir, p.name.slice(0, 8), "#ffd0d8");
+      }
+      return;
+    }
     // downed teammates
     for (const p of s.players) {
       if (p.alive || p.id === app.you || !offscreen(p.x)) continue;
@@ -934,6 +1023,39 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       edgeLabel(dir < 0 ? ex + 6 : ex, ey, dir, `${p.name.slice(0, 8)} ${Math.round(p.reviveProgress * 100)}%`, "#39ff88");
     }
     void me;
+  };
+  // royale: outside (or about to be outside) the GC zone, a chevron next to your hero points at the safe circle
+  const drawZonePointer = (z: NonNullable<NonNullable<MatchState["pvp"]>["royale"]>["zone"], me: PlayerState, s: MatchState, now: number) => {
+    if (!z) return;
+    const d = Math.hypot(me.x - z.cx, me.y - z.cy);
+    const outNow = d > z.r - 2;
+    const outNext = !outNow && z.targetR < z.r - 0.5 && s.t < z.shrinkEnd && d > z.targetR;
+    if (!outNow && !outNext) return;
+    const a = Math.atan2(z.cy - me.y, z.cx - me.x);
+    const sc = s.heroScale ?? 1;
+    const R0 = 16 * sc + 4 * Math.sin(now * 8);
+    const px = Math.round(me.x + Math.cos(a) * R0), py = Math.round(me.y - 4 * sc + Math.sin(a) * R0);
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(a);
+    const col = outNow ? (Math.floor(now * 6) % 2 ? "#ff3355" : "#ffd23d") : "#ffd23d";
+    ctx.fillStyle = "#000";
+    ctx.fillRect(-2, -5, 3, 11);
+    for (let i = 0; i < 5; i++) ctx.fillRect(i, -5 + i, 2, 11 - i * 2);
+    ctx.fillStyle = col;
+    for (let i = 0; i < 4; i++) ctx.fillRect(i, -4 + i, 1, 9 - i * 2);
+    ctx.restore();
+    if (outNow) {
+      ctx.font = FONT8;
+      ctx.textAlign = "center";
+      const label = t("GC ZONE");
+      const lx = Math.round(me.x + Math.cos(a) * (R0 + 14)), ly = Math.round(me.y - 4 * sc + Math.sin(a) * (R0 + 14)) + 3;
+      ctx.fillStyle = "#000";
+      ctx.fillText(label, lx + 1, ly + 1);
+      ctx.fillStyle = col;
+      ctx.fillText(label, lx, ly);
+      ctx.textAlign = "left";
+    }
   };
   const drawMinimap = (s: MatchState, now: number) => {
     const g = mctx, k = 0.25;
@@ -976,6 +1098,27 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     for (const r of s.boss?.regions ?? []) g.fillRect(Math.round((r.x - r.r) * k), Math.round((r.y - r.r) * k), Math.max(2, Math.round(r.r * 2 * k)), Math.max(2, Math.round(r.r * 2 * k)));
     g.fillStyle = "#ff3355";
     if (s.boss) g.fillRect(Math.round(s.boss.x * k) - 1, Math.round(s.boss.y * k) - 1, 3, 3);
+    const zone = royaleOf(s)?.zone;
+    if (zone) {
+      g.save();
+      g.beginPath();
+      g.rect(0, 0, minimap.width, minimap.height);
+      g.arc(zone.cx * k, zone.cy * k, Math.max(0, zone.r * k), 0, Math.PI * 2, true);
+      g.fillStyle = "rgba(40,0,30,.55)";
+      g.fill("evenodd");
+      g.strokeStyle = "#ff3d7f";
+      g.beginPath();
+      g.arc(zone.cx * k, zone.cy * k, Math.max(0, zone.r * k), 0, Math.PI * 2);
+      g.stroke();
+      if (zone.targetR < zone.r - 0.5) {
+        g.setLineDash([2, 2]);
+        g.strokeStyle = "#ffd23d";
+        g.beginPath();
+        g.arc(zone.cx * k, zone.cy * k, Math.max(0, zone.targetR * k), 0, Math.PI * 2);
+        g.stroke();
+      }
+      g.restore();
+    }
     for (const p of s.players) {
       if (p.id === app.you) continue;
       g.fillStyle = "#000";
@@ -1078,6 +1221,12 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
 
     const me = s.players.find((p) => p.id === app.you);
     selfPos = me ? { x: me.x, y: me.y } : null;
+    // royale: an eliminated player's camera follows the hero they're watching (killer / leader, cycle with ◀ ▶ / arrows)
+    const roy = royaleOf(s);
+    const watching = watchingRoyale(s);
+    if (watching) pickWatch(s);
+    const watched = watching ? s.players.find((p) => p.id === watchId) ?? null : null;
+    const focus = watched ?? me ?? null;
     if (me && me.alive && meWasDown) youRingUntil = Math.max(youRingUntil, performance.now() + 3000); // respawn / revive
     meWasDown = !!me && !me.alive;
 
@@ -1092,11 +1241,11 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (zoom < 1.003) zoom = 1;
 
     // camera: portrait follows the hero (slight lead in the move direction); the intro looks at the boss first
-    if (view.w < ARENA_W || view.h < ARENA_H) {
+    if (view.w < WW || view.h < WH) {
       const introLook = (performance.now() < introEnd - 600 || !me) && !!s.boss;
-      const fx = introLook ? s.boss!.x : me ? me.x + clamp(me.vx * 0.35, -36, 36) : ARENA_W / 2;
-      const fy = introLook ? s.boss!.y : me ? me.y + clamp(me.vy * 0.25, -24, 24) : ARENA_H / 2;
-      const tx = clamp(fx - view.w / 2, 0, ARENA_W - view.w), ty = clamp(fy - view.h / 2, 0, ARENA_H - view.h);
+      const fx = introLook ? s.boss!.x : focus ? focus.x + clamp(focus.vx * 0.35, -36, 36) : WW / 2;
+      const fy = introLook ? s.boss!.y : focus ? focus.y + clamp(focus.vy * 0.25, -24, 24) : WH / 2;
+      const tx = clamp(fx - view.w / 2, 0, WW - view.w), ty = clamp(fy - view.h / 2, 0, WH - view.h);
       const k = 1 - Math.exp(-dtReal * 5);
       camX = camInit ? camX + (tx - camX) * k : tx;
       camY = camInit ? camY + (ty - camY) * k : ty;
@@ -1110,8 +1259,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     ctx.fillRect(0, 0, view.w, view.h);
     ctx.save();
     {
-      const zx = zoom === 1 ? view.x + view.w / 2 : clamp(zoomTarget[0], view.w / 2 / zoom, ARENA_W - view.w / 2 / zoom);
-      const zy = zoom === 1 ? view.y + view.h / 2 : clamp(zoomTarget[1], view.h / 2 / zoom, ARENA_H - view.h / 2 / zoom);
+      const zx = zoom === 1 ? view.x + view.w / 2 : clamp(zoomTarget[0], view.w / 2 / zoom, WW - view.w / 2 / zoom);
+      const zy = zoom === 1 ? view.y + view.h / 2 : clamp(zoomTarget[1], view.h / 2 / zoom, WH - view.h / 2 / zoom);
       ctx.translate(view.w / 2, view.h / 2);
       if (zoom !== 1) ctx.scale(zoom, zoom);
       ctx.translate(-zx, -zy);
@@ -1120,7 +1269,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     X.trackPlayers(s.players);
     const tgt = s.boss ? s.players.find((p) => p.id === s.boss!.targetPlayer) : null;
     if (tgt) X.bossLookAt(tgt.x, tgt.y);
-    safe("drawArenaBackground", R.drawArenaBackground, ctx, arenaTheme(s), s.boss?.kit.seed ?? arenaSeed, visTime);
+    const variant = s.boss ? undefined : roy ? "royale" as const : s.mode === "edu" ? "classroom" as const : undefined;
+    safe("drawArenaBackground", R.drawArenaBackground, ctx, arenaTheme(s), s.boss?.kit.seed ?? arenaSeed, visTime, variant, WW !== ARENA_W || WH !== ARENA_H ? { w: WW, h: WH } : undefined);
+    if (roy) safe("drawRoyaleZone", X.drawRoyaleZone, ctx, s.pvp, s.t, visTime, { w: WW, h: WH });
     safe("drawPerkPads", R.drawPerkPads, ctx, s.perkOffer ?? null, s.players, visTime);
     safe("drawObstacles", R.drawObstacles, ctx, s.obstacles ?? [], visTime);
     safe("drawPickups", R.drawPickups, ctx, s.pickups ?? [], visTime);
@@ -1129,12 +1280,14 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     if (s.boss) safe("drawBoss", R.drawBoss, ctx, s.boss, visTime);
     const order = [...s.players].sort((a, b) => a.y - b.y);
     for (const p of order) safe("drawPlayer", R.drawPlayer, ctx, p, visTime, p.id === app.you);
-    if (me && me.alive) drawYouRing(me, now, s.heroScale ?? 1, performance.now() < youRingUntil);
+    if (me && me.alive && !me.eliminated) drawYouRing(me, now, s.heroScale ?? 1, performance.now() < youRingUntil);
+    if (watched) drawYouRing(watched, now, s.heroScale ?? 1, true, watched.name, "61,232,255");
+    if (roy && me && !me.eliminated && me.alive) drawZonePointer(roy.zone, me, s, now);
     safe("drawBullets", R.drawBullets, ctx, s.bullets, visTime);
     safe("drawEvents", R.drawEvents, ctx, releasedEvents, visTime, view);
     ctx.restore();
     safe("drawPostFx", R.drawPostFx, ctx, visTime, sh, view);
-    if (portrait || view.w < ARENA_W) {
+    if (portrait || view.w < WW) {
       drawIndicators(s, me ?? null, now);
       if ((miniTick = (miniTick + 1) % 2) === 0) drawMinimap(s, now);
     }
@@ -1146,6 +1299,8 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
     flash.style.background = flashA > 0.01 ? `rgba(${flashCol},${flashA.toFixed(3)})` : "transparent";
     stage.classList.toggle("glitch", performance.now() < glitchUntil);
     let inDanger = false;
+    const z0 = roy?.zone;
+    if (z0 && me && me.alive && !me.eliminated && Math.hypot(me.x - z0.cx, me.y - z0.cy) > z0.r) inDanger = true; // outside the GC zone
     if (me && me.alive)
       for (const z of s.hazards) {
         if (z.armed || z.kind === "firewall") continue;
@@ -1157,6 +1312,9 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
         } else if (Math.hypot(me.x - z.x, me.y - z.y) < z.r + 6) inDanger = true;
       }
     danger.classList.toggle("on", inDanger);
+    spectate.update(s, me ?? null, watchId, watching);
+    el.classList.toggle("spectating", watching);
+    if (watching && motionOverlay) (motionOverlay.remove(), (motionOverlay = null)); // knocked out: no controls to enable
     stage.classList.toggle("enraged", !!s.boss && (s.boss.enraged || s.boss.phase >= 2));
 
     // Cooldown text and status bars don't need the canvas refresh rate. Keep

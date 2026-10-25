@@ -1,3 +1,110 @@
+# DONE (teacher ux)
+
+docs/ux-audit-teacher.md: P0-T1…T5 and the top-5 quick wins done. P1s done where they're client work; the rest are
+requests below. Not committed.
+
+## What changed (client/app/classroom.ts + .css, client/edu)
+- **P0-T1 privacy / split views:**
+  - **Projector window:** "Open projector window ↗" on the console opens `?screen=1&view=projector`, a separate
+    spectator screen with its own token key in net.ts, so it doesn't kick the console. It fits one screen:
+    - join QR/link/code;
+    - step title + a 2-line summary (`stepSummary`, headings skipped) + "the full task is on your phone";
+    - a big "N of M submitted" + bar;
+    - the boss and the class attack;
+    - no names with scores, no roster, no feedback.
+    Any non-owner big screen is "class-facing" with the same rules.
+  - **Console:** a sticky control bar with Pause / +2 min / Launch class attack / Next / Retry, a ⋯ menu
+    (Export CSV, Export Markdown, End lesson…), "Projecting: hide scores & feedback" (default on, remembered per
+    device: blurs scores and hides feedback/code/notes until "Show details") and the hint line.
+  - **"Class ranking" → "Submissions":** sorted stuck → not submitted → checking → submitted, then by name. Never
+    ranked by score.
+- **P0-T2:** until the teacher reviews, rows show "checks 2/2 · submitted · needs your review", not /100. One-tap
+  verdicts per row: ✓ works (100), ✗ not yet (≤40), ? ask me (unchanged), each with a note. Students see "These
+  checks look at your files, not at what your program prints. Your teacher will confirm…".
+- **P0-T3:** during the class attack the boss takes over the screen (fixed, full screen) on the console and the
+  projector, with the console bar still on top. Long instructions are clamped on the console ("show all instructions")
+  and summarized on class-facing screens.
+- **P0-T4:**
+  - End lesson is in the ⋯ menu, danger-styled, with a confirm ("Students' work is kept and you can still export").
+  - The classroom pause sheet has Resume only (no "end match · new room").
+  - Remove step asks first.
+  - The teacher's header Leave closes the screen and the lesson keeps running.
+- **P0-T5:**
+  - The pause reads "⏸ Paused by your teacher · The clock is frozen for the whole class" and "Resuming in 3…"
+    (`createPauseOverlay({ classroom: true })` in pause.ts).
+  - Server-restart notice in classrooms: a green "Reconnected. Everything is saved." (main.ts); nothing on the
+    projector window. This was seen live: DEV restarted during my run.
+- **P1:**
+  - **T2:** "Use this lesson" (load + publish) primary, "Customize first" secondary. Step editors are collapsed to
+    "Step 1 · title · 10 min · 2 checks · in-app editor" (step 1 open). "👁 Preview as a student" opens a modal with
+    each step's instructions, read-only starter code and scoring.
+  - **T3:** plain labels ("Minutes (0: you decide when to stop)", "How much the automatic checks count (%) · the
+    rest is the rubric", "Name of the class monster"). "+ File exists / + File contains text / + GitHub CI check" insert
+    correct lines using the step's real file, and an example legend explains each kind. **Partial:** the text format
+    stays, because the smoke checks raw-text and identity preservation across a language switch. The rubric editor has
+    `context: 'classroom'`: "HOW THIS STEP IS SCORED", step-appropriate signals only, and no lobby-card wording.
+  - **T4 (client part):** offline students who never submitted leave "N of M submitted" ("· 1 offline").
+  - **T6:** students' instructions are clamped with "Read the full task", so the editor starts at ~930px on an iPhone
+    SE (was ~2,670).
+  - **T7:** whole numbers everywhere (scores, HP, damage). Advice lines that only repeat a failed check are dropped.
+  - **T9:** class-facing text at least 18px: the clock is 34–64px and "N of M submitted" is 22–44px.
+  - **P2:** "Coding time" for in-app steps; "Only improvements add extra damage"; after the attack the console
+    suggests a line to say ("Say: 2 of 3 of you submitted, … Next: …").
+- **Join card + hint line** (pre-audit) as before.
+
+## Files outside client/edu + classroom.* (small, noted for their owners)
+- `client/app/pause.ts` (claude-ui): optional `classroom` flag (wording, Resume only). Battle/duel unchanged.
+- `client/app/main.ts` (claude-ui): the edu restart notice is a green toast, hidden in the projector window.
+- `client/app/net.ts` (claude-ui): `?view=projector` uses `kaiju.projectorToken.<room>`.
+- `tools/classroom-smoke.ts`:
+  - reveal before review, open the ⋯ menu before export;
+  - the owner redirect replaces the "open teacher" click;
+  - integer scores; "30 of 30".
+  - **PASS**: 30 students, full flow.
+- `client/edu/summary.ts` `stepSummary` (+ test); `client/edu/rubric.ts` classroom context.
+
+## Requests (not client work)
+- **codex-net:**
+  - **P1-T4:** roster commands Rename · Remove · Merge with… (new `ClassroomCommand`s or a `classroomRoster` msg).
+  - **P1-T5:** light student status (`typing · ran ✓ · ran ✗ NameError · idle 3m`) plus "✋ I need help"; the
+    client already knows edits and Run results. Needs a contract (e.g. `classroomStatus`) and `ClassroomRow.activity`.
+  - **P1-T7:** advice wording, e.g. "Checks found the file and a print() call. Ask your teacher to check the output"
+    instead of "The measured criteria look strong", and plain check details instead of "static evidence found",
+    "(not execution output)", "in the analyzed archive".
+  - **P1-T8:** export with one row per student × step including "not submitted", columns name · step title ·
+    final · auto · teacher score · teacher note · submitted at (local) · attempts, with UUID/damage last.
+  - **P0-T4:** an "undo End lesson" window (e.g. 10 s), if you want an Undo toast.
+- **take-edu:** preset 01 needs `contains: python/01_hello.py :: Hello, Python!` (any `print(` scores 100 today), and
+  similar expected-output literals in every step. Don't paste the starter code into the instructions, because the
+  editor already shows it.
+- **claude-ui:**
+  - **P1-T1:** a "🎓 Teaching a class? Start a classroom →" line on the landing page, visible on phones too
+    (`.host-big` hides it today) and clear of the Hall panel.
+  - Let a teacher skip the controls sheet.
+  - **P1-T4:** the name prompt in classroom rooms should say "Your name" (placeholder "First name + last initial")
+    instead of the ssh/kaiju shell.
+  - I didn't edit landing.ts: it has someone else's uncommitted changes.
+
+## Verified (Playwright WebKit on DEV :5175, real server; I looked at every shot)
+Script: `/tmp/claude-1000/-home-wilf-data-HackPSU-repo-kaiju/df7be22c-36dc-409c-9e61-ef019d47acc6/scratchpad/teacher-shots.mts`.
+Setup: a 1440 console, plus a projector window opened from the console button (1920), plus iPhone SE, iPhone 15 and
+desktop students submitting real in-app code.
+- **Projector window:** no student names anywhere, no roster, 0 vertical/horizontal overflow at 1920.
+- **Submissions:** "Submissions" sorted [ben (writing), ana, chloe], chips "checks 2/2" / "checks 1/2".
+- **Verdicts:** one-tap ✓ gives "reviewed by you". The unreviewed note shows on the student.
+- **End lesson:** asks first; dismissing keeps "Coding time".
+- **Class attack:** the boss is `position: fixed`, full screen on both screens.
+- **Pause:** classroom text with no "new room".
+- **Setup:** step summaries, the student preview, "Use this lesson" publishes.
+- **iPhone SE student:** the editor is at ~930px; "Read the full task" is there.
+- **Narrow 393px console:** no overflow.
+- **Errors:** 0 page errors.
+- `npx tsx tools/classroom-smoke.ts`: passed (30 students, full flow). `npm run typecheck` PASS.
+  `npx vitest run`: **905 passed / 9 skipped**.
+
+---
+
+
 # DONE (in-app editor)
 
 Classroom in-app Python editor (docs/tasks/inapp-editor.md, claude-edu section). Not committed.
@@ -25,8 +132,8 @@ Classroom in-app Python editor (docs/tasks/inapp-editor.md, claude-edu section).
   - The editor gets a wider column on desktop.
   - Status and submit labels are in-app aware ("Checking your code…", "Scored your code (4f43b3)…").
   - The roster shows "in-app 4f43b3". The report shows "in-app code · <hash>".
-  - The teacher gets "View submitted code (N files)", a read-only editor of `report.files`. That uses a structural
-    cast until `ClassroomReport.files` is typed in shared/; codex-net requested it.
+  - The teacher gets "View submitted code (N files)", a read-only editor of `report.files`. It reads the typed
+    `ClassroomReport.files` from shared/.
 - **`classroom.css`:** the feedback header wraps and the score shrinks at ≤360px (it overflowed the iPhone SE by 19px).
 
 **Verified** with Playwright **WebKit** on DEV :5175 against the real server (codex-net handler + take-edu presets, no

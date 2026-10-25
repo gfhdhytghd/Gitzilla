@@ -26,7 +26,7 @@
     "note that this may not always work",
     "NOTE: This is not a real part of the API, but it ends here.",
     "function shouldNotHaveBody(): your buffers cannot hold!",
-    "Revert 'bump supertest': your assertions shatter across my spine"
+    "Revert 'bump supertest': your assertions shatter across my…"
   ],
   "attackNames": {
     "0-cascade-0": "createApp() test.createApp: Crystalline Eruption Cascade",

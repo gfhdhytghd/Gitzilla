@@ -281,6 +281,9 @@ function startRoom(room: string, role: Role, name: string) {
             screen?.destroy();
             screen = null;
             root.replaceChildren(fatalScreen("can't join this room", m.message));
+          } else if (app.lobby?.mode === "edu" && /server restarted/i.test(m.message)) {
+            // classroom: the restore worked; a red ERR on the projector reads as "it broke"
+            if (new URLSearchParams(location.search).get("view") !== "projector") toast("Reconnected. Everything is saved.", "ok");
           } else toast(m.message, "err");
           break;
       }

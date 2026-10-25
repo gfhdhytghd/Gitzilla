@@ -52,19 +52,21 @@ try {
   await teacher.getByTestId('classroom-start').click();
   for(const p of [a,b]){await p.getByTestId('classroom-repo').fill('demo/repo');await p.getByTestId('classroom-submit').click();await p.getByTestId('classroom-own-score').waitFor();}
   for(const ws of sockets)ws.send(JSON.stringify({t:'classroomSubmit',repo:'demo/repo',ref:'improved'}));
-  await teacher.waitForFunction(()=>document.querySelector('[data-testid="classroom-progress"]')?.textContent?.startsWith('30 / 30'));
+  await teacher.waitForFunction(()=>document.querySelector('[data-testid="classroom-progress"]')?.textContent?.startsWith('30 of 30'));
   await teacher.screenshot({path:`${out}/projector-30.png`,fullPage:true});
-  if(await a.getByTestId('classroom-own-score').innerText()!=='0.0 /100')throw new Error('Expected unmet file check score');
+  if(await a.getByTestId('classroom-own-score').innerText()!=='0 /100')throw new Error('Expected unmet file check score');
   await a.getByTestId('classroom-feedback').scrollIntoViewIfNeeded(); await a.screenshot({path:`${out}/phone-feedback.png`});
-  await teacher.locator('.cr-student').filter({hasText:'Ada'}).first().click();
+  await teacher.locator('.cr-student').filter({hasText:'Ada'}).first().locator('.cr-row-pick').click();
+  // projector-safe (default on): private feedback is revealed explicitly per student
+  if (await teacher.getByTestId('classroom-reveal').isVisible().catch(()=>false)) await teacher.getByTestId('classroom-reveal').click();
   await teacher.getByTestId('classroom-review-score').fill('60');await teacher.getByTestId('classroom-review-note').fill('Verified the answer, documentation still needed.');await teacher.getByTestId('classroom-review-submit').click();
   await teacher.getByTestId('classroom-pause').click();await a.waitForFunction(()=>document.querySelector('.cr-phase')?.textContent==='Coding paused');
   await teacher.getByTestId('classroom-attack').click();await teacher.waitForFunction(()=>document.querySelector('.cr-phase')?.textContent==='Class attack');
   await teacher.screenshot({path:`${out}/projector-attack.png`,fullPage:true});
   await teacher.getByTestId('classroom-retry').waitFor({timeout:15000});
-  const download=teacher.waitForEvent('download');await teacher.getByTestId('classroom-export-csv').click();await(await download).saveAs(`${out}/rounds.csv`);
+  const download=teacher.waitForEvent('download');await teacher.locator('[data-testid="classroom-more"] > summary').click();await teacher.getByTestId('classroom-export-csv').click();await(await download).saveAs(`${out}/rounds.csv`);
   await teacher.getByTestId('classroom-retry').click();await a.getByTestId('classroom-ref').fill('improved');await a.getByTestId('classroom-submit').click();
-  await a.waitForFunction(()=>document.querySelector('[data-testid="classroom-own-score"]')?.textContent==='100.0 /100');
+  await a.waitForFunction(()=>document.querySelector('[data-testid="classroom-own-score"]')?.textContent==='100 /100');
   await a.reload();await a.getByTestId('classroom-own-score').waitFor();
   await teacher.reload();await teacher.getByTestId('classroom-attack').waitFor();await teacher.getByTestId('classroom-attack').click();await teacher.getByTestId('classroom-next').waitFor({timeout:15000});await teacher.getByTestId('classroom-next').click();
   await a.waitForFunction(()=>document.querySelector('.cr-task h2')?.textContent?.startsWith('2.'));
@@ -74,7 +76,8 @@ try {
   if(errors.length)throw new Error(errors.join('\n'));
   const oldRoom=rooms.createRoom(undefined,'edu');
   const migration=await desktop.newPage();await migration.goto(`${base}/r/${oldRoom}`);
-  await migration.getByTestId('classroom-open-teacher').click();
+  // the room owner is taken to the teacher screen automatically (no link to find)
+  await migration.waitForURL(/screen=1/,{timeout:15000});
   await migration.getByTestId('classroom-plan-editor').waitFor();
   if((await migration.locator('body').innerText()).includes('most KOs wins'))throw new Error('Old classroom PvP copy remains');
   for (const id of ['01-hello','02-numbers','03-strings','04-conditions','05-for','06-while','07-lists','08-functions','09-dict']) {

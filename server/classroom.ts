@@ -1,5 +1,5 @@
 import type { RepoProfile } from '../shared/types';
-import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand, InAppFile } from '../shared/classroom';
+import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand } from '../shared/classroom';
 import { normalizeRubric } from './rubrics';
 import { scoreRepo, weightedScore } from '../rubric';
 import { normalizeEditorFiles } from './in-app';
@@ -41,7 +41,7 @@ export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
 
 export class ClassroomSession {
   state: ClassroomState;
-  private reports = new Map<string, ClassroomReport & { files?: InAppFile[] }>();
+  private reports = new Map<string, ClassroomReport>();
   private errors = new Map<string, string>();
   private generation = 0;
   private revisions = new Map<string, number>();
@@ -80,8 +80,13 @@ export class ClassroomSession {
     this.scaleBoss();
     this.reports.delete(id); this.errors.delete(id);
   }
-  privatePayload(id: string, teacher: boolean) {
-    return { reports: Object.fromEntries([...this.reports].filter(([key]) => teacher || key === id)), errors: Object.fromEntries([...this.errors].filter(([key]) => teacher || key === id)) };
+  privatePayload(id: string, teacher: boolean): { reports: Record<string, ClassroomReport>; errors: Record<string, string> } {
+    const reports = [...this.reports].filter(([key]) => teacher || key === id).map(([key, report]) => {
+      if (teacher) return [key, report] as const;
+      const { files: _files, ...feedback } = report;
+      return [key, feedback] as const;
+    });
+    return { reports: Object.fromEntries(reports), errors: Object.fromEntries([...this.errors].filter(([key]) => teacher || key === id)) };
   }
   setPlan(plan: ClassroomPlan) {
     if (this.state.phase !== 'setup') throw new Error('The lesson is already running; start a new room to change its plan');
@@ -120,7 +125,7 @@ export class ClassroomSession {
     const advice = [...checks.filter(c => !c.passed).map(c => `Review ${c.label}: ${c.detail}.`), ...criteria.filter(c => c.score < 0.8 && c.tip).sort((a, b) => a.score - b.score).map(c => c.tip!)].slice(0, 3);
     if (!advice.length) advice.push('The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.');
     const repo = inApp ? 'in-app' : source.profile.slug;
-    const report: ClassroomReport & { files?: InAppFile[] } = { stepId: step.id, attempt: this.state.attempt, repo, commit: source.commit, source: inApp ? 'in-app' : 'github', submittedAt: this.now(), score, improvement, criteria, checks, advice,
+    const report: ClassroomReport = { stepId: step.id, attempt: this.state.attempt, repo, commit: source.commit, source: inApp ? 'in-app' : 'github', submittedAt: this.now(), score, improvement, criteria, checks, advice,
       ...(inApp ? { files: source.files.map(f => ({ path: f.path, content: f.text })) } : {}) };
     this.reports.set(ticket.id, report); this.errors.delete(ticket.id);
     Object.assign(this.row(ticket.id), { status: 'submitted', repo, commit: source.commit, score, improvement });

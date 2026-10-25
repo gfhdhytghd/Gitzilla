@@ -1,3 +1,12 @@
+DONE (flavor polish)
+
+## Flavor line polish
+- Prompt explicitly requests complete taunts≤60 chars and catchphrases≤40 chars (shared hero limit); taunt JSON schema/validator now share the60-char limit. Added clampText: reserves an ellipsis, backs up to a complete whitespace-delimited word/code token with balanced quotes/calls/brackets, handles escapes/contractions/possessives, and repairs clipped cached prose. Complete source excerpts and complete code weapon names keep their own behavior.
+- Revalidated all30 designs across15 repos without provider calls.28 files changed, exclusively catchphrase/taunts; artwork, names, code weapons, stats and Gemini source/model/API manifest unchanged. Flask now says `Running on 127.0.0.1:5000…` and `raise AttributeError(name): your session context was lost…`; Ripgrep ends `amortize your…`.
+- **Focused design suite98 PASS; workspace npm run typecheck PASS; owned diff check PASS.** Includes6 truncation regression cases (whole words, nested/quoted calls, previously clipped prose, contractions/possessives, escaped/smart quotes, idempotence/source excerpts), prompt/schema limits and all15 bundled repos.
+- Extra full merged suite at21:44 local:929 PASS /9 skipped /3 FAIL, all outside design: auth/index.test.ts:38 tampered-cookie assertion; sim/royale.test.ts:47 equal-budget/mode-switch expectations; server/rooms.test.ts:1626 PvP lobby stat expectations. No edits to those files. No claim of current global green while these other-owner checks fail.
+- Only design/, data/design/ and this required progress log changed. No provider calls, shared/sim/server/client edits, new dependencies, commits/pushes, deployment, service actions or live5173 access.
+
 DONE (gemini live)
 
 ## Gemini Interactions API migration — complete

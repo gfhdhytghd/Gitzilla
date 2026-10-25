@@ -17699,5 +17699,537 @@
     "zh": "把你自己的仓库召唤为首领 🔒",
     "es": "invoca uno de tus propios repos como jefe 🔒",
     "fr": "invoquez l'un de vos dépôts comme boss 🔒"
+  },
+  {
+    "id": "dd9c8bf1d0dc4915",
+    "en": "GC idle",
+    "zh": "GC 空闲",
+    "es": "GC inactivo",
+    "fr": "GC inactif"
+  },
+  {
+    "id": "9ccafa8ec6a547d4",
+    "en": "GC final sweep",
+    "zh": "GC 最终清扫",
+    "es": "barrido final del GC",
+    "fr": "balayage final du GC"
+  },
+  {
+    "id": "55459ff091c5ae19",
+    "en": "GC sweep in {0}",
+    "zh": "GC 清扫倒计时 {0}",
+    "es": "barrido del GC en {0}",
+    "fr": "balayage du GC dans {0}"
+  },
+  {
+    "id": "52564ab41692b1df",
+    "en": "GC sweeping {0}",
+    "zh": "GC 清扫中 {0}",
+    "es": "GC barriendo {0}",
+    "fr": "GC en balayage {0}"
+  },
+  {
+    "id": "360f84035942243c",
+    "en": "left",
+    "zh": "已离开",
+    "es": "salió",
+    "fr": "parti"
+  },
+  {
+    "id": "508600c7181f5fd4",
+    "en": "segfault",
+    "zh": "段错误",
+    "es": "segfault",
+    "fr": "segfault"
+  },
+  {
+    "id": "493c86ee8d64e3cf",
+    "en": "you placed",
+    "zh": "你的名次",
+    "es": "quedaste",
+    "fr": "ta place"
+  },
+  {
+    "id": "96f93056988dd5fa",
+    "en": "killed by",
+    "zh": "击败者",
+    "es": "eliminado por",
+    "fr": "éliminé par"
+  },
+  {
+    "id": "f2629554fa641100",
+    "en": "swept by the garbage collector",
+    "zh": "被垃圾回收器清除",
+    "es": "barrido por el recolector de basura",
+    "fr": "balayé par le ramasse-miettes"
+  },
+  {
+    "id": "19bda4aa00eaf9a1",
+    "en": "watching",
+    "zh": "观战",
+    "es": "viendo a",
+    "fr": "tu regardes"
+  },
+  {
+    "id": "1c5b9cc9c4e67d85",
+    "en": "left:",
+    "zh": "剩余：",
+    "es": "quedan:",
+    "fr": "restants :"
+  },
+  {
+    "id": "ca2e14ad0000cd1f",
+    "en": "previous player",
+    "zh": "上一位玩家",
+    "es": "jugador anterior",
+    "fr": "joueur précédent"
+  },
+  {
+    "id": "623e61b1b1ac2e1e",
+    "en": "next player",
+    "zh": "下一位玩家",
+    "es": "siguiente jugador",
+    "fr": "joueur suivant"
+  },
+  {
+    "id": "9a49f9088fa34a25",
+    "en": "{0}/{1} alive",
+    "zh": "{0}/{1} 存活",
+    "es": "{0}/{1} vivos",
+    "fr": "{0}/{1} en vie"
+  },
+  {
+    "id": "fa59b80cf41eed6f",
+    "en": "⚠ outside the GC zone · -{0}♥/s",
+    "zh": "⚠ 在 GC 安全区外 · -{0}♥/秒",
+    "es": "⚠ fuera de la zona del GC · -{0}♥/s",
+    "fr": "⚠ hors de la zone du GC · -{0}♥/s"
+  },
+  {
+    "id": "90d8b091ed1d4b56",
+    "en": "⚠ outside the GC zone",
+    "zh": "⚠ 在 GC 安全区外",
+    "es": "⚠ fuera de la zona del GC",
+    "fr": "⚠ hors de la zone du GC"
+  },
+  {
+    "id": "ae55fb99f39e5f5d",
+    "en": "★ {0} survived the merge",
+    "zh": "★ {0} 挺过了合并",
+    "es": "★ {0} sobrevivió al merge",
+    "fr": "★ {0} a survécu au merge"
+  },
+  {
+    "id": "bd83946fcd8be80b",
+    "en": "★ you survived the merge",
+    "zh": "★ 你挺过了合并",
+    "es": "★ sobreviviste al merge",
+    "fr": "★ tu as survécu au merge"
+  },
+  {
+    "id": "4acea2c0311053a1",
+    "en": "★ most KOs: {0} · {1} KO",
+    "zh": "★ 击倒最多：{0} · {1} 次击倒",
+    "es": "★ más KOs: {0} · {1} KO",
+    "fr": "★ le plus de KO : {0} · {1} KO"
+  },
+  {
+    "id": "5a7fc5984f9fb8a4",
+    "en": "★ most KOs: you · {0} KO",
+    "zh": "★ 击倒最多：你 · {0} 次击倒",
+    "es": "★ más KOs: tú · {0} KO",
+    "fr": "★ le plus de KO : toi · {0} KO"
+  },
+  {
+    "id": "5fc4e7380b87a2d0",
+    "en": "you: alive · {0} KO · {1} dmg",
+    "zh": "你：存活 · {0} 次击倒 · {1} 伤害",
+    "es": "tú: vivo · {0} KO · {1} daño",
+    "fr": "toi : en vie · {0} KO · {1} dégâts"
+  },
+  {
+    "id": "23ccd11df7dac1a7",
+    "en": "you: #{0} · {1} KO · spectating",
+    "zh": "你：第 {0} 名 · {1} 次击倒 · 观战中",
+    "es": "tú: #{0} · {1} KO · espectador",
+    "fr": "toi : #{0} · {1} KO · spectateur"
+  },
+  {
+    "id": "4cfbd7f204e3ef28",
+    "en": "eliminated by {0}",
+    "zh": "被 {0} 淘汰",
+    "es": "eliminado por {0}",
+    "fr": "éliminé par {0}"
+  },
+  {
+    "id": "4fb33f47845560dd",
+    "en": "eliminated by the GC sweep",
+    "zh": "被 GC 清扫淘汰",
+    "es": "eliminado por el barrido del GC",
+    "fr": "éliminé par le balayage du GC"
+  },
+  {
+    "id": "af4edea7121c56e5",
+    "en": "PVP ROYALE",
+    "zh": "PVP 大逃杀",
+    "es": "PVP ROYALE",
+    "fr": "PVP ROYALE"
+  },
+  {
+    "id": "f89eb97a2c5382b4",
+    "en": "{0} repositories compiled · equal stat budget",
+    "zh": "已编译 {0} 个仓库 · 属性预算相同",
+    "es": "{0} repositorios compilados · mismo presupuesto de stats",
+    "fr": "{0} dépôts compilés · même budget de stats"
+  },
+  {
+    "id": "cce151c4d2016ef4",
+    "en": "last hero standing · no respawns",
+    "zh": "最后存活的英雄获胜 · 不复活",
+    "es": "gana el último héroe en pie · sin reapariciones",
+    "fr": "le dernier héros debout gagne · pas de réapparition"
+  },
+  {
+    "id": "7f481071be5155ab",
+    "en": "LAST PROCESS RUNNING",
+    "zh": "最后一个进程仍在运行",
+    "es": "ÚLTIMO PROCESO EN EJECUCIÓN",
+    "fr": "DERNIER PROCESSUS EN COURS"
+  },
+  {
+    "id": "b40a32f7a71501e0",
+    "en": "MERGE COMPLETE",
+    "zh": "合并完成",
+    "es": "MERGE COMPLETADO",
+    "fr": "MERGE TERMINÉ"
+  },
+  {
+    "id": "c6a3796d97bf16cd",
+    "en": "survived the merge",
+    "zh": "挺过了合并",
+    "es": "sobrevivió al merge",
+    "fr": "a survécu au merge"
+  },
+  {
+    "id": "b439845b8d965018",
+    "en": "no survivors · the GC took everyone",
+    "zh": "无人幸存 · GC 清除了所有人",
+    "es": "sin supervivientes · el GC se llevó a todos",
+    "fr": "aucun survivant · le GC a tout emporté"
+  },
+  {
+    "id": "9c1ae675c2703bff",
+    "en": "loading results…",
+    "zh": "正在加载结果…",
+    "es": "cargando resultados…",
+    "fr": "chargement des résultats…"
+  },
+  {
+    "id": "13b02bd801084d6b",
+    "en": "leaving counts as an elimination.",
+    "zh": "离开将被视为淘汰。",
+    "es": "salir cuenta como eliminación.",
+    "fr": "partir compte comme une élimination."
+  },
+  {
+    "id": "3ca66b99bb8187de",
+    "en": "GC ZONE",
+    "zh": "GC 安全区",
+    "es": "ZONA GC",
+    "fr": "ZONE GC"
+  },
+  {
+    "id": "c4f4afbc475d72ed",
+    "en": "☠ PvP royale",
+    "zh": "☠ PvP 大逃杀",
+    "es": "☠ PvP royale",
+    "fr": "☠ PvP royale"
+  },
+  {
+    "id": "fe996b78ea44a8f4",
+    "en": "AI rivals: ",
+    "zh": "AI 对手：",
+    "es": "rivales IA: ",
+    "fr": "rivaux IA : "
+  },
+  {
+    "id": "a09e8f232e7ae0dc",
+    "en": "2–8 heroes · free-for-all · no respawns.",
+    "zh": "2–8 名英雄 · 混战 · 不复活。",
+    "es": "2–8 héroes · todos contra todos · sin reapariciones.",
+    "fr": "2–8 héros · chacun pour soi · pas de réapparition."
+  },
+  {
+    "id": "c8ed03b60973f770",
+    "en": "A knockout is final; the last hero standing wins.",
+    "zh": "被击倒即出局；最后存活的英雄获胜。",
+    "es": "Un KO es definitivo; gana el último héroe en pie.",
+    "fr": "Un KO est définitif ; le dernier héros debout gagne."
+  },
+  {
+    "id": "226af09665b248ef",
+    "en": "GC sweep:",
+    "zh": "GC 清扫：",
+    "es": "Barrido del GC:",
+    "fr": "Balayage du GC :"
+  },
+  {
+    "id": "24a4fc03f64f2801",
+    "en": "the safe circle starts shrinking after 0:45–1:40 (more heroes, later). Outside it the garbage collector eats your HP.",
+    "zh": "安全圈会在 0:45–1:40 后开始缩小（英雄越多越晚）。圈外的垃圾回收器会吞噬你的生命值。",
+    "es": "el círculo seguro empieza a encogerse tras 0:45–1:40 (más héroes, más tarde). Fuera, el recolector de basura se come tu vida.",
+    "fr": "le cercle sûr commence à rétrécir après 0:45–1:40 (plus de héros, plus tard). Dehors, le ramasse-miettes dévore tes PV."
+  },
+  {
+    "id": "518145b443818e61",
+    "en": "Everyone gets the same stat budget. Knockouts drop a heart and energy.",
+    "zh": "所有人的属性预算相同。击倒对手会掉落一颗心和能量。",
+    "es": "Todos tienen el mismo presupuesto de stats. Los KO sueltan un corazón y energía.",
+    "fr": "Tout le monde a le même budget de stats. Les KO lâchent un cœur et de l'énergie."
+  },
+  {
+    "id": "8efb0323d1adaca2",
+    "en": "▶ START ROYALE ({0} heroes)",
+    "zh": "▶ 开始大逃杀（{0} 名英雄）",
+    "es": "▶ EMPEZAR ROYALE ({0} héroes)",
+    "fr": "▶ LANCER LE ROYALE ({0} héros)"
+  },
+  {
+    "id": "2b08f826e5133346",
+    "en": "▶ START ROYALE",
+    "zh": "▶ 开始大逃杀",
+    "es": "▶ EMPEZAR ROYALE",
+    "fr": "▶ LANCER LE ROYALE"
+  },
+  {
+    "id": "f63da6b0dfb9620a",
+    "en": "{0}/8 heroes ready. Last one standing wins.",
+    "zh": "{0}/8 名英雄已就绪。最后存活者获胜。",
+    "es": "{0}/8 héroes listos. Gana el último en pie.",
+    "fr": "{0}/8 héros prêts. Le dernier debout gagne."
+  },
+  {
+    "id": "673755eddeadb5c2",
+    "en": "Invite up to 7 friends (or add AI rivals) — at least 2 heroes.",
+    "zh": "最多邀请 7 位好友（或添加 AI 对手）— 至少需要 2 名英雄。",
+    "es": "Invita hasta 7 amigos (o añade rivales IA): al menos 2 héroes.",
+    "fr": "Invite jusqu'à 7 amis (ou ajoute des rivaux IA) — au moins 2 héros."
+  },
+  {
+    "id": "abe743e82b484722",
+    "en": "waiting for a 2nd hero — invite friends or add AI rivals",
+    "zh": "正在等待第 2 名英雄 — 邀请好友或添加 AI 对手",
+    "es": "esperando un 2.º héroe: invita amigos o añade rivales IA",
+    "fr": "en attente d'un 2e héros — invite des amis ou ajoute des rivaux IA"
+  },
+  {
+    "id": "8fa1aae58ab556d9",
+    "en": "[ PvP royale: up to 8 ]",
+    "zh": "[ PvP 大逃杀：最多 8 人 ]",
+    "es": "[ PvP royale: hasta 8 ]",
+    "fr": "[ PvP royale : jusqu'à 8 ]"
+  },
+  {
+    "id": "2f73214d42603d6d",
+    "en": "LAST ONE STANDING",
+    "zh": "最后的幸存者",
+    "es": "EL ÚLTIMO EN PIE",
+    "fr": "LE DERNIER DEBOUT"
+  },
+  {
+    "id": "aa948f79d1d47bef",
+    "en": "★ LAST ONE STANDING",
+    "zh": "★ 最后的幸存者",
+    "es": "★ EL ÚLTIMO EN PIE",
+    "fr": "★ LE DERNIER DEBOUT"
+  },
+  {
+    "id": "20e7d53fb45e51b0",
+    "en": "PLACEMENTS",
+    "zh": "排名",
+    "es": "CLASIFICACIÓN",
+    "fr": "CLASSEMENT"
+  },
+  {
+    "id": "483905ef24ceeed9",
+    "en": "eliminated by",
+    "zh": "淘汰者",
+    "es": "eliminado por",
+    "fr": "éliminé par"
+  },
+  {
+    "id": "21a08b49895943d5",
+    "en": "★ winner",
+    "zh": "★ 胜者",
+    "es": "★ ganador",
+    "fr": "★ gagnant"
+  },
+  {
+    "id": "40b0e4de15d0018d",
+    "en": "GC sweep",
+    "zh": "GC 清扫",
+    "es": "barrido del GC",
+    "fr": "balayage du GC"
+  },
+  {
+    "id": "0b9a6d8ac7afd062",
+    "en": "$ git log --royale · {0} heroes · {1}",
+    "zh": "$ git log --royale · {0} 名英雄 · {1}",
+    "es": "$ git log --royale · {0} héroes · {1}",
+    "fr": "$ git log --royale · {0} héros · {1}"
+  },
+  {
+    "id": "fa11aaec1d069d72",
+    "en": "(left)",
+    "zh": "（已离开）",
+    "es": "(salió)",
+    "fr": "(parti)"
+  },
+  {
+    "id": "2d2467cf1ec51d26",
+    "en": "$ royale wins",
+    "zh": "$ 大逃杀胜场",
+    "es": "$ victorias royale",
+    "fr": "$ victoires royale"
+  },
+  {
+    "id": "c437f8439909e9a3",
+    "en": "{0}× #1",
+    "zh": "{0}× 第一",
+    "es": "{0}× #1",
+    "fr": "{0}× #1"
+  },
+  {
+    "id": "8848aa40dffbad09",
+    "en": "▶ START ROYALE ({0} fighters)",
+    "zh": "▶ 开始大逃杀（{0} 名参战者）",
+    "es": "▶ EMPEZAR ROYALE ({0} luchadores)",
+    "fr": "▶ LANCER LE ROYALE ({0} combattants)"
+  },
+  {
+    "id": "f2e055cbb9508333",
+    "en": "▶ START ROYALE · you'll spectate ({0} fighters)",
+    "zh": "▶ 开始大逃杀 · 你将观战（{0} 名参战者）",
+    "es": "▶ EMPEZAR ROYALE · serás espectador ({0} luchadores)",
+    "fr": "▶ LANCER LE ROYALE · tu regarderas ({0} combattants)"
+  },
+  {
+    "id": "4e28b1b82fce684d",
+    "en": "waiting for {0} to finish verifying",
+    "zh": "正在等待 {0} 完成验证",
+    "es": "esperando a que {0} termine la verificación",
+    "fr": "en attente de la vérification de {0}"
+  },
+  {
+    "id": "eea9093987ece134",
+    "en": "need at least 2 fighters — invite friends or add AI rivals",
+    "zh": "至少需要 2 名参战者 — 邀请好友或添加 AI 对手",
+    "es": "se necesitan al menos 2 luchadores: invita amigos o añade rivales IA",
+    "fr": "il faut au moins 2 combattants — invite des amis ou ajoute des rivaux IA"
+  },
+  {
+    "id": "153ef12c20ae4b57",
+    "en": "need at least 2 fighters — add AI rivals, or connect GitHub and pick a repo you own to fight",
+    "zh": "至少需要 2 名参战者 — 添加 AI 对手，或连接 GitHub 并选择一个你拥有的仓库参战",
+    "es": "se necesitan al menos 2 luchadores: añade rivales IA, o conecta GitHub y elige un repo tuyo para luchar",
+    "fr": "il faut au moins 2 combattants — ajoute des rivaux IA, ou connecte GitHub et choisis un dépôt à toi pour combattre"
+  },
+  {
+    "id": "e12a48d9bfcd4d21",
+    "en": "max 8 fighters — remove AI rivals",
+    "zh": "最多 8 名参战者 — 请移除 AI 对手",
+    "es": "máximo 8 luchadores: quita rivales IA",
+    "fr": "8 combattants maximum — retire des rivaux IA"
+  },
+  {
+    "id": "10e821a29c1a9bed",
+    "en": "{0}/8 fighters ready. Last one standing wins.",
+    "zh": "{0}/8 名参战者已就绪。最后存活者获胜。",
+    "es": "{0}/8 luchadores listos. Gana el último en pie.",
+    "fr": "{0}/8 combattants prêts. Le dernier debout gagne."
+  },
+  {
+    "id": "5f923ae51c0c30d8",
+    "en": "no eligible repo: you'll watch. Connect GitHub and pick a repo you own to fight.",
+    "zh": "没有符合条件的仓库：你将观战。连接 GitHub 并选择一个你拥有的仓库即可参战。",
+    "es": "sin repo válido: mirarás. Conecta GitHub y elige un repo tuyo para luchar.",
+    "fr": "aucun dépôt éligible : tu regarderas. Connecte GitHub et choisis un dépôt à toi pour combattre."
+  },
+  {
+    "id": "d9b690976a0ec230",
+    "en": "{0} will spectate.",
+    "zh": "{0} 将观战。",
+    "es": "{0} mirará.",
+    "fr": "{0} regardera."
+  },
+  {
+    "id": "11e4f7f7f4cf5934",
+    "en": "verifying repo ownership…",
+    "zh": "正在验证仓库所有权…",
+    "es": "verificando que el repo es suyo…",
+    "fr": "vérification de la propriété du dépôt…"
+  },
+  {
+    "id": "f9f63bb8571c11b8",
+    "en": "spectating · pick a repo you own to fight",
+    "zh": "观战中 · 选择一个你拥有的仓库参战",
+    "es": "espectador · elige un repo tuyo para luchar",
+    "fr": "spectateur · choisis un dépôt à toi pour combattre"
+  },
+  {
+    "id": "9a53224f4cd7a2a0",
+    "en": "spectating",
+    "zh": "观战中",
+    "es": "espectador",
+    "fr": "spectateur"
+  },
+  {
+    "id": "1bc8cadbfd889f71",
+    "en": "checking that this repo is yours…",
+    "zh": "正在确认这个仓库属于你…",
+    "es": "comprobando que este repo es tuyo…",
+    "fr": "vérification que ce dépôt est à toi…"
+  },
+  {
+    "id": "109ba41960e1162d",
+    "en": "👁 spectating · pick a repo you own to fight",
+    "zh": "👁 观战中 · 选择一个你拥有的仓库参战",
+    "es": "👁 espectador · elige un repo tuyo para luchar",
+    "fr": "👁 spectateur · choisis un dépôt à toi pour combattre"
+  },
+  {
+    "id": "09c63bce7007c0f4",
+    "en": "👁 you'll spectate — pick a repo you own to fight",
+    "zh": "👁 你将观战 — 选择一个你拥有的仓库参战",
+    "es": "👁 serás espectador: elige un repo tuyo para luchar",
+    "fr": "👁 tu regarderas — choisis un dépôt à toi pour combattre"
+  },
+  {
+    "id": "9d9eb3d2ba6fe144",
+    "en": " fight with a repo you own (forks don't count) 🔒",
+    "zh": " 用你拥有的仓库参战（fork 不算）🔒",
+    "es": " lucha con un repo tuyo (los forks no cuentan) 🔒",
+    "fr": " combats avec un dépôt à toi (les forks ne comptent pas) 🔒"
+  },
+  {
+    "id": "d8bea84a803d07c0",
+    "en": "no eligible repos — PvP needs a repo you own (forks don't count)",
+    "zh": "没有符合条件的仓库 — PvP 需要你拥有的仓库（fork 不算）",
+    "es": "no hay repos válidos: PvP necesita un repo tuyo (los forks no cuentan)",
+    "fr": "aucun dépôt éligible — le PvP demande un dépôt à toi (les forks ne comptent pas)"
+  },
+  {
+    "id": "61aaf0ef6ebe389c",
+    "en": "👁 spectating",
+    "zh": "👁 观战中",
+    "es": "👁 espectador",
+    "fr": "👁 spectateur"
+  },
+  {
+    "id": "891cf063003ae0fe",
+    "en": "· no hero in this match",
+    "zh": "· 本局没有你的英雄",
+    "es": "· sin héroe en esta partida",
+    "fr": "· pas de héros dans ce match"
   }
 ]

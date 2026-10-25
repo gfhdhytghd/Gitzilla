@@ -25,10 +25,10 @@
   ],
   "taunts": [
     "TODO investigate",
-    "TODO want to make this more general to arbitrary encoder/dec",
-    "fix: ensure non-zero learning rate during warmup at iteration 0",
+    "TODO want to make this more general to arbitrary…",
+    "fix: ensure non-zero learning rate during warmup at…",
     "dtype = 'bfloat16' if torch.cuda.is_available() else CRUSH",
-    "ctx = nullcontext() -- your validation loss will never converge!"
+    "ctx = nullcontext() -- your validation loss will never…"
   ],
   "attackNames": {
     "0-laser-0": "__init__() Bracket Ray: CausalSelfAttention Meltdown",

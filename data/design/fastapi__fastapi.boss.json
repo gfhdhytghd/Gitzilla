@@ -24,10 +24,10 @@
   ],
   "taunts": [
     "TODO: remove when dropping support for Pydantic < v2.12.3!",
-    "Dive bomb incoming: 🐛 Fix OpenAPI schemas for standalone nullab",
-    "Each neck fires in turn—can your schema survive @app.get('/items",
+    "Dive bomb incoming: 🐛 Fix OpenAPI schemas for standalone…",
+    "Each neck fires in turn—can your schema survive…",
     "assert == True or perish before the tripartite beam array!",
-    "Wings gusting at 300% increased velocity—taste production throug"
+    "Wings gusting at 300% increased velocity—taste production…"
   ],
   "attackNames": {
     "0-laser-0": "app() tests.client.assert_beam_zero",

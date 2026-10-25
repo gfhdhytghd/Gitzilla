@@ -1,3 +1,8 @@
+## Ownership returned to Claude — coordinator handback
+- **Uncommitted UI work: none at handback.** `git status --short -- client/app client/style.css client/edu client/render client/genesis` returned no entries in the current shared checkout.
+- Claude owns these UI directories again. Codex will not edit `client/app/`, `client/edu/`, `client/render/`, `client/genesis/`, or `client/style.css` after this handback without renewed coordination.
+- Completed takeover work and evidence remain documented below: fresh-page permission/controls gate, sensitivity, rubric/feedback mounts, dynamic ownership/export permissions, Safari autopsy and teacher natural-flow/export verification. This handback edits only this progress file.
+
 DONE — take-ui implementation and local WebKit/visual verification complete. Runtime refrozen after the CSS-only footer repair.
 
 ## Implemented

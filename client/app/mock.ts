@@ -13,7 +13,7 @@ import { defaultClassroomPlan } from "../../shared/classroom-defaults";
 interface SimMod {
   playerKitFromProfile(p: RepoProfile): PlayerKit;
   bossKitFromProfile(p: RepoProfile, n: number): BossKit;
-  createMatch(players: { id: string; name: string; kit: PlayerKit }[], boss: BossKit): {
+  createMatch(players: { id: string; name: string; kit: PlayerKit }[], boss: BossKit | null, options?: { mode?: "battle" | "edu" | "pvp" }): {
     step(dt: number, inputs: Map<string, InputFrame>): void;
     snapshot(): MatchState;
     autopsy(): Autopsy;
@@ -21,6 +21,9 @@ interface SimMod {
   };
 }
 const simGlob = import.meta.glob("../../sim/index.ts");
+// ?mock=royale&real=1: the real sim royale + the sim's normal-input bots (bots.ts imports node:fs for its balance
+// tooling; createBot itself doesn't touch it, so a failed import just falls back to random mock inputs)
+const botsGlob = import.meta.glob("../../sim/bots.ts");
 const fallbackGlob = import.meta.glob("../../data/fallback/*.json", { import: "default" });
 
 export const MOCK_REPOS = ["facebook/react", "torvalds/linux", "pallets/flask", "rust-lang/rust", "lodash/lodash", "django/django", "vuejs/core", "golang/go"];
@@ -207,6 +210,23 @@ export function createMockConn(opts: ConnOpts): Conn {
       const st = (match as unknown as { state?: MatchState }).state;
       if (st?.boss) st.boss.hp = st.boss.maxHp * 0.505;
     }
+    const realRoyale = lobby.mode === "pvp" && !!sim && new URLSearchParams(location.search).has("real");
+    type BotFactory = (seed: number) => (s: MatchState, p: PlayerState) => InputFrame;
+    let createBot = null as BotFactory | null;
+    if (realRoyale) {
+      try {
+        match = sim!.createMatch(ps.map((p) => ({ id: p.id, name: p.name, kit: p.kit! })), null, { mode: "pvp" });
+        const load = Object.values(botsGlob)[0];
+        if (load) createBot = ((await load()) as { createBot: BotFactory }).createBot;
+      } catch (e) {
+        console.warn("mock: real royale unavailable", e);
+      }
+    }
+    const bots = new Map(ps.filter((p) => p.id !== "you").map((p, i) => [p.id, createBot?.(i + 1) ?? null]));
+    // ?mock=royale: dress the boss sim as a last-one-standing royale (scripted knockouts + shrinking GC zone)
+    // you go out ~25s in (spectator view) unless &win=1
+    const royale = lobby.mode === "pvp" && !realRoyale ? mockRoyale(ps.map((p) => ({ id: p.id, name: p.name, repo: p.repo ?? p.kit!.repo, kit: p.kit! })), !new URLSearchParams(location.search).has("win")) : null;
+    let royaleEnded = false;
     const rnd = mulberry32(7);
     const botMove = new Map<string, [number, number]>();
     let tick = 0;
@@ -216,6 +236,10 @@ export function createMockConn(opts: ConnOpts): Conn {
       const inputs = new Map<string, InputFrame>();
       for (const p of ps) {
         if (p.id === "you" && lastInput) { inputs.set(p.id, lastInput); continue; }
+        // read the sim's live state (snapshot() would drain its event queue)
+        const bot = bots.get(p.id), st = bot ? (match as unknown as { state?: MatchState }).state : null;
+        const self = st?.players.find((x) => x.id === p.id);
+        if (bot && st && self) { inputs.set(p.id, bot(st, self)); continue; }
         if (tick % 30 === 0 || !botMove.has(p.id)) botMove.set(p.id, [rnd() * 2 - 1, rnd() * 2 - 1]);
         inputs.set(p.id, { seq: seq++, move: botMove.get(p.id)!, aim: null, fire: true, dash: rnd() < 0.01, skill: rnd() < 0.005, source: "keyboard" });
       }
@@ -228,11 +252,21 @@ export function createMockConn(opts: ConnOpts): Conn {
       // 20 Hz: send 2 of every 3 ticks
       if (tick % 3 !== 2) {
         // edu mock: dress the fake boss match as a classroom brawl (no boss, PvP scoreboard, 2x heroes)
-        const st = edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap;
+        const st = royale ? royale.dress(snap) : edu ? { ...snap, mode: "edu" as const, boss: null, heroScale: 2, pvp: mockPvp(snap) } : snap;
         emit({ t: "snapshot", state: { ...st, events: evBuf }, ack: lastInput?.seq ?? 0 });
         evBuf = [];
       }
-      if (match.over) {
+      if (royale?.winner && !royaleEnded) {
+        royaleEnded = true;
+        setTimeout(() => {
+          clearInterval(loop!);
+          loop = null;
+          lobby.phase = "autopsy";
+          emit({ t: "autopsy", result: royale.autopsy() });
+          pushLobby();
+        }, 2600);
+      }
+      if (match.over && !royale) {
         clearInterval(loop!);
         loop = null;
         setTimeout(() => {
@@ -274,6 +308,26 @@ export function createMockConn(opts: ConnOpts): Conn {
             } else startMatch();
           }, 100);
         }
+        if (mode === "royale" || mode === "royale-autopsy" || mode === "royale-lobby") {
+          lobby.mode = "pvp";
+          for (let i = 0; i < 4; i++) {
+            const repo = MOCK_REPOS[(i + 3) % MOCK_REPOS.length];
+            lobby.players.push({ id: `bot${i}`, name: `bot-${i + 1}`, repo, status: "analyzing", kit: null, bot: true });
+          }
+          setTimeout(async () => {
+            await ready;
+            // &norepo=1: the host has no eligible repo -> they spectate (the server allows a 2+ fighter royale without them)
+            if (opts.role === "player" && !new URLSearchParams(location.search).has("norepo")) Object.assign(lobby.players[0], { repo: "octocat/hackpsu-kaiju", status: "ready", kit: pkit("octocat/hackpsu-kaiju") });
+            for (const p of lobby.players) if (p.repo && !p.kit) Object.assign(p, { status: "ready", kit: pkit(p.repo) });
+            if (mode === "royale-autopsy") {
+              const r = mockRoyale(lobby.players.map((p) => ({ id: p.id, name: p.name, repo: p.repo!, kit: p.kit! })), true);
+              lobby.phase = "autopsy";
+              pushLobby();
+              emit({ t: "autopsy", result: r.finish() });
+            } else if (mode === "royale") startMatch();
+            else pushLobby();
+          }, 100);
+        }
         if (mode === "match" || mode === "autopsy" || mode === "review") {
           setTimeout(async () => {
             await ready;
@@ -289,15 +343,36 @@ export function createMockConn(opts: ConnOpts): Conn {
           }, 100);
         }
         break;
-      case "setRepo":
-        setRepo("you", normalizeRepo(m.repo), 2200);
+      case "setRepo": {
+        const repo = normalizeRepo(m.repo);
+        // PvP: like the server, verify ownership first (mock: octocat/* is yours, except the fork dotfiles)
+        if (lobby.mode === "pvp" && (!repo.startsWith("octocat/") || repo === "octocat/dotfiles")) {
+          const me = lobby.players.find((p) => p.id === "you");
+          if (!me) break;
+          Object.assign(me, { repo, status: "analyzing", kit: null, error: undefined, progress: { stage: "clone", pct: 0 } });
+          pushLobby();
+          setTimeout(() => {
+            Object.assign(me, { status: "error", progress: undefined, error: repo === "octocat/dotfiles" ? "PvP needs your own non-fork repository: forks don't count." : "That repository is not yours. PvP needs your own non-fork repository, or a public repository you maintain or administer." });
+            pushLobby();
+          }, 900);
+          break;
+        }
+        setRepo("you", repo, 2200);
         break;
+      }
       case "setBoss":
         setBoss(normalizeRepo(m.repo), 2600);
         break;
-      case "start":
+      case "start": {
+        if (lobby.mode === "pvp") {
+          const pending = lobby.players.filter((p) => p.status === "analyzing");
+          const fighters = lobby.players.filter((p) => p.status === "ready" && p.kit).length;
+          const err = pending.length ? `Wait for ${pending.map((p) => p.name).join(", ")} to finish analysis.` : fighters < 2 || fighters > 8 ? "PvP needs 2–8 ready fighters." : "";
+          if (err) { emit({ t: "error", message: err }); break; }
+        }
         startMatch();
         break;
+      }
       case "input":
         lastInput = m.frame;
         break;
@@ -370,6 +445,70 @@ function mockPvp(s: MatchState): PvpState {
   const round = Math.min(3, 1 + Math.floor(s.t / 75));
   return { round, rounds: 3, roundEndsAt: round * 75, scores, leader: null };
 }
+/** Mock PvP royale on top of any match snapshot: a knockout every 5s from 0:10 (you at ~0:25 unless &win=1, then you win),
+ *  a GC zone that shrinks 300 → 80 px over 0:12–0:40, KOs / placements / killedBy and a royale autopsy. */
+function mockRoyale(heroes: { id: string; name: string; repo: string; kit: PlayerKit }[], youDie: boolean) {
+  const rnd = mulberry32(99);
+  const alive = heroes.map((p) => p.id);
+  const placements: Record<string, number> = {};
+  const killedBy: Record<string, string | null> = {};
+  const kos: Record<string, number> = {};
+  const elims: { id: string; by: string | null; t: number; weapon?: string }[] = [];
+  let next = 10;
+  let winner: string | null = null;
+  let t = 0;
+  const knockOut = (now: number) => {
+    const others = alive.filter((id) => id !== "you");
+    const victim = youDie && alive.includes("you") && now >= 24.5 ? "you" : others[Math.floor(rnd() * others.length)];
+    if (!victim) return;
+    const killers = alive.filter((id) => id !== victim);
+    const by = rnd() < 0.2 ? null : killers[Math.floor(rnd() * killers.length)] ?? null;
+    placements[victim] = alive.length;
+    alive.splice(alive.indexOf(victim), 1);
+    killedBy[victim] = by;
+    if (by) kos[by] = (kos[by] ?? 0) + 1;
+    elims.push({ id: victim, by, t: now, weapon: by ? heroes.find((h) => h.id === by)?.kit.code?.weapon?.name : undefined });
+    if (alive.length === 1) (winner = alive[0]), (placements[winner] = 1);
+  };
+  const zoneAt = (now: number) => ({ cx: 250, cy: 150, r: now < 12 ? 300 : now < 40 ? 300 - (220 * (now - 12)) / 28 : 80, targetR: 80, shrinkStart: 12, shrinkEnd: 40, dps: 1 });
+  const autopsy = (): Autopsy => ({
+    mode: "pvp", victory: true, duration: t, boss: null, mvp: winner,
+    players: heroes.map((p) => ({ id: p.id, name: p.name, repo: p.repo, stats: { damage: 120 + (kos[p.id] ?? 0) * 160 + Math.round(rnd() * 90), bestCombo: 0, limbsBroken: 0, revives: 0, killingBlow: false } })),
+    ranking: heroes
+      .map((p) => ({ id: p.id, name: p.name, repo: p.repo, kos: kos[p.id] ?? 0, damage: 120 + (kos[p.id] ?? 0) * 160, roundWins: 0, quality: [], place: placements[p.id] ?? 1, killedBy: killedBy[p.id] ?? null }))
+      .sort((a, b) => a.place - b.place),
+    royale: { placements, eliminations: elims, winner },
+  } as Autopsy);
+  return {
+    get winner() { return winner; },
+    dress(snap: MatchState): MatchState {
+      t = snap.t;
+      if (snap.status === "fighting" && t >= next && alive.length > 1) {
+        next = t + 5;
+        knockOut(t);
+      }
+      const out = new Set(heroes.map((p) => p.id).filter((id) => !alive.includes(id)));
+      const players = snap.players.map((p) => (out.has(p.id) ? { ...p, alive: false, eliminated: true, killedBy: killedBy[p.id], hp: 0 } : { ...p, alive: true, eliminated: false, hp: Math.max(1, p.hp) }));
+      const scores: PvpState["scores"] = {};
+      for (const p of players) scores[p.id] = { kos: kos[p.id] ?? 0, downs: 0, damage: p.stats.damage, roundWins: 0 };
+      const leader = [...alive].sort((a, b) => (kos[b] ?? 0) - (kos[a] ?? 0))[0] ?? null;
+      return {
+        ...snap, mode: "pvp", boss: null, heroScale: 1, hazards: [], minions: [], perkOffer: null, players,
+        bullets: snap.bullets.filter((b) => b.owner !== "boss"),
+        events: snap.events.filter((e) => e.type === "hit" && e.target !== "boss"),
+        status: winner ? "victory" : snap.status,
+        pvp: { round: 1, rounds: 1, roundEndsAt: 999, scores, leader, royale: { alive: [...alive], placements: { ...placements }, zone: zoneAt(t), winner } },
+      };
+    },
+    autopsy,
+    /** Play the whole thing instantly (royale-autopsy). */
+    finish(): Autopsy {
+      while (alive.length > 1) knockOut((t += 9));
+      return autopsy();
+    },
+  };
+}
+
 function fakeEduAutopsy(lobby: LobbyState): Autopsy {
   const ps = lobby.players.filter((p) => p.kit);
   return {

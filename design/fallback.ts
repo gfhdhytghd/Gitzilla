@@ -6,9 +6,10 @@ import { artDNA, dnaEmblem } from './code.ts';
 import { bossEpithet } from './names.ts';
 import { fallbackWeaponName, type HeroDesignWithWeapon } from './weapon.ts';
 import { bossArt, chooseBossBody } from './archetypes.ts';
+import { clampText } from './text.ts';
 
 const choose = <T>(values: readonly T[], seed: number, shift = 0): T => values[((seed >>> shift) >>> 0) % values.length];
-const short = (value: string, length: number) => value.slice(0, length).trimEnd();
+const short = (value: string, length: number) => clampText(value, length);
 const palettes = {
   rust: ['#ac583c', '#f3a76c', '#ffdeb0', '#77f2cd'],
   python: ['#355b99', '#65b8ed', '#ffdda1', '#ffe36c'],
@@ -30,7 +31,7 @@ export function fallbackHero(profile: RepoProfile, kit: PlayerKit): HeroDesignWi
     title: short(`${identifier || profile.slug.split('/').pop()} ${names[archetype]}`, 24), archetype,
     headgear: choose(headgear, seed, 3), accessory: choose(accessories, seed, 8),
     emblem: dnaEmblem(dna.tokens) ?? choose(['{}', '++', '#', '<>', '*', 'R'], seed, 12), palette: [...palette],
-    catchphrase: identifier ? short(`${identifier}() saves the party.`, 40) : choose(['Small hero. Clean commits.', 'One more patch saves the party.', 'Tests green. Sword ready.', 'I brought a rollback.'], seed, 16),
+    catchphrase: identifier ? clampText(`${identifier}() saves the party.`, 40, true) : choose(['Small hero. Clean commits.', 'One more patch saves the party.', 'Tests green. Sword ready.', 'I brought a rollback.'], seed, 16),
     weaponName: fallbackWeaponName(profile, kit),
   };
 }
@@ -52,9 +53,9 @@ export function fallbackBoss(profile: RepoProfile, kit: BossKit): BossDesign {
   const symbol = dna.identifiers.find(id => id.length <= 24);
   const target = symbol ? `${symbol}()` : 'your stack';
   const taunts = [
-    ...(dna.todos.length ? [short(`${art.todo}: ${choose(dna.todos, seed)}`, 64)] : []),
-    ...(dna.commits.length ? [short(`${art.commit}: ${choose(dna.commits, seed, 4)}`, 64)] : []),
-    ...art.taunts(target).map(line => short(line, 64)),
+    ...(dna.todos.length ? [clampText(`${art.todo}: ${choose(dna.todos, seed)}`, 60, true)] : []),
+    ...(dna.commits.length ? [clampText(`${art.commit}: ${choose(dna.commits, seed, 4)}`, 60, true)] : []),
+    ...art.taunts(target).map(line => clampText(line, 60, true)),
   ];
   return {
     name: short(`${repo}, ${suffix}`, 64),

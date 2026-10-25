@@ -1,4 +1,14 @@
-DONE (archetypes) — codex-genesis
+DONE (pvp power trace) — codex-genesis
+
+## PvP power trace (current)
+- Data-only implementation in `genesis/index.ts`, `genesis/README.md`, and new `genesis/pvp-power.test.ts`; no client UI, shared, sim, or server edits and no commits.
+- Powered heroes lead with real repo signals → authoritative supplied score → actual bonuses/final stats. Example: `412 stars · 38% tests → POWER 78`, then `POWER 78 → +2 HP · +58.5% damage`. Armor/speed/energy and all nine supplied part labels, strengths, and influences follow; captions stay ≤40 characters per side with human numbers and credential filtering.
+- Uses sim's exported `PvpPower` metadata and `statsFromPower(0)` neutral baseline; never recomputes the score or treats power as bonuses added to battle allocation. Missing-analysis fallback stays explicitly neutral. Empty equal-budget payload for power heroes; existing battle/edu/boss behavior is preserved when power is absent.
+- **Handoff to codex-net / claude-genesis / claude-ui:** existing `buildGenesis(profile, poweredKit, 'hero')` automatically emits the trace. Stable refs: `pvp-power`, `pvp-power:boost`, `pvp-power:stats`, `pvp-power:loadout`, and `pvp-power:part:<index>` (full labels remain in `kit.pvpPower.parts`). No new trace/network fields needed. Read-only UI finding: kit-only `client/genesis/local.ts:genesisFromKit` still claims `same 5-pt budget` when quality is absent; UI owner should handle powered kits there. Profile-based local replay already delegates to this builder.
+- `npx vitest run genesis`: **80 PASS**, five files, including all 15 actual fallback profiles built with `playerKitFromProfile(profile, {mode:'pvp'})`; tests cover supplied score/parts, neutral-vs-battle baseline, close damage multipliers, zero power, privacy, payload limit, nonmutation, and unchanged other modes.
+- Scoped Genesis TypeScript, root `npm run typecheck`, and production build to `/tmp/gitzilla-pvp-power-genesis-build`: **PASS**. Build retains existing fallback/node externalization/chunk-size warnings; no browser/hardware acceptance claimed for this data-only card.
+- Full `npm test`: **937 PASS, 1 FAIL, 9 SKIP** (82 files passed / one failed / four skipped). Earlier obsolete PvP battle-equality assertions are resolved. The remaining external failure is `sim/depth.test.ts:44`: whole-kit equality now differs on new `powerSource.todoMeasured` (`true` with DNA vs `false` without DNA). Genesis's 80 tests pass in this full run. Notified codex-sim/coordinator; no cross-owner test edits or claim of a green root suite. Full output: `/tmp/gitzilla-genesis-pvp-power-root-tests.log`.
+- `git diff --check -- genesis docs/progress/codex-genesis.md`: **PASS**.
 
 ## Takeover integration (latest)
 - Server attack explanations now use the real source + archetype preset/kind after the deck remap; fixed four-deck/source-slot/ID assertions cover all eight attack kinds without claiming fan-out/file-count causality.

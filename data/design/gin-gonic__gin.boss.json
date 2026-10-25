@@ -24,11 +24,11 @@
     "Engine.Run() spins up shoulder missile bays with zero memory allocation!"
   ],
   "taunts": [
-    "TODO: XXX should resolve to /prefix/xxx, not match :id)!",
+    "TODO: XXX should resolve to /prefix/xxx, not match…",
     "ReadHeaderTimeout expired; preparing full payload jettison!",
     "Zero allocations, zero mercy: your packets drop right here.",
-    "Recovery middleware caught your strike and converted it to heat!",
-    "assert.Equal(t, status, http.StatusTeapot) -- scrap metal incomi"
+    "Recovery middleware caught your strike and converted it to…",
+    "assert.Equal(t, status, http.StatusTeapot) -- scrap metal…"
   ],
   "attackNames": {
     "0-fan-0": "Render() root: Context.Render Shrapnel Spread",

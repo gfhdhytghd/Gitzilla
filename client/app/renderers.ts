@@ -1,7 +1,7 @@
 // Late-bound renderer + input modules. Other agents build client/render/* and client/input/* in parallel;
 // import.meta.glob resolves to {} while a file doesn't exist, so the app runs on placeholders until they land.
 import type {
-  ArenaTheme, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, Minion, Obstacle, PerkOffer, Pickup, PlayerKit, PlayerState,
+  ArenaTheme, PvpState, BossKit, BossState, Bullet, GameEvent, Hazard, InputFrame, Minion, Obstacle, PerkOffer, Pickup, PlayerKit, PlayerState,
 } from "../../shared/types";
 import * as ph from "./placeholders";
 // Essential input is eager: a failed optional chunk must never leave phones on a placeholder.
@@ -14,7 +14,8 @@ export interface Renderers {
   playerPortrait(kit: PlayerKit, size: number): HTMLCanvasElement;
   drawBoss(ctx: CanvasRenderingContext2D, b: BossState, time: number): void;
   bossPortrait(kit: BossKit, size: number): HTMLCanvasElement;
-  drawArenaBackground(ctx: CanvasRenderingContext2D, theme: ArenaTheme, seed: number, time: number): void;
+  /** variant/size: PvP arenas (per-player bullet colors, no boss FX; sim may size the arena for the player count). */
+  drawArenaBackground(ctx: CanvasRenderingContext2D, theme: ArenaTheme, seed: number, time: number, variant?: "classroom" | "royale", size?: { w: number; h: number }): void;
   drawBullets(ctx: CanvasRenderingContext2D, bullets: Bullet[], time: number): void;
   drawHazards(ctx: CanvasRenderingContext2D, hazards: Hazard[], time: number): void;
   drawMinions(ctx: CanvasRenderingContext2D, minions: Minion[], time: number): void;
@@ -37,6 +38,8 @@ export interface Extras {
   notePlayerShot(playerId: string): void;
   trackPlayers(ps: PlayerState[]): void;
   bossLookAt(x: number, y: number): void;
+  /** PvP royale GC-sweep zone in world space (claude-boss arena module); matchT = MatchState.t, time = render clock. */
+  drawRoyaleZone(ctx: CanvasRenderingContext2D, pvp: PvpState | null | undefined, matchT: number, time: number, world?: { w: number; h: number }): void;
 }
 export const X: Extras = {
   playerPortraitFrame: () => 0,
@@ -44,6 +47,22 @@ export const X: Extras = {
   notePlayerShot: () => {},
   trackPlayers: () => {},
   bossLookAt: () => {},
+  drawRoyaleZone: (ctx, pvp) => {
+    // fallback until the arena module lands: a dim outside + the safe ring
+    const z = pvp?.royale?.zone;
+    if (!z) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-8, -8, 4000, 4000);
+    ctx.arc(z.cx, z.cy, Math.max(0, z.r), 0, Math.PI * 2, true);
+    ctx.fillStyle = "rgba(20,0,16,.45)";
+    ctx.fill("evenodd");
+    ctx.strokeStyle = "#ff3d7f";
+    ctx.beginPath();
+    ctx.arc(z.cx, z.cy, Math.max(0, z.r), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  },
 };
 
 /** Mutable table: starts as placeholders, real implementations are patched in by loadModules(). */
@@ -68,7 +87,7 @@ async function pull(glob: Record<string, () => Promise<unknown>>, names: (keyof 
       }
     }
     loaded[flag] = loaded[flag] || any;
-    for (const n of ["playerPortraitFrame", "notePlayerShot", "trackPlayers", "bossLookAt"] as const)
+    for (const n of ["playerPortraitFrame", "notePlayerShot", "trackPlayers", "bossLookAt", "drawRoyaleZone"] as const)
       if (typeof m[n] === "function") (X as unknown as Record<string, unknown>)[n] = m[n];
     if (flag === "player" && typeof m.playerPortrait === "function") {
       const pp = m.playerPortrait as (k: PlayerKit, s: number, f?: number) => HTMLCanvasElement;

@@ -48,7 +48,8 @@ describe('appearance only', () => {
   });
   it('repairs malformed fields, clamps lengths/colors/eyes, and strips unknown IDs', () => {
     const h = validateHero({ ...hero, title: 'x'.repeat(100), archetype: 'monster', headgear: 'invalid', palette: ['#aAbBcC', 'red'], emblem: 'λ{}', catchphrase: 'z'.repeat(100) }, profile, heroKit);
-    expect(h.title).toHaveLength(24); expect(h.catchphrase).toHaveLength(40);
+    expect(h.title.length).toBeLessThanOrEqual(24); expect(h.catchphrase.length).toBeLessThanOrEqual(40);
+    expect(h.title).toBe('…'); expect(h.catchphrase).toBe('…');
     expect(h.archetype).toBe(hero.archetype); expect(h.headgear).toBe(hero.headgear);
     expect(h.emblem).toBe('{}'); expect(h.palette).toEqual(['#aabbcc', ...hero.palette.slice(1)]);
     const b = validateBoss({ body: 'cute knight', eyes: 99, growths: ['cables', 'bad', 'cables', 'moss', 'gears', 'pipes'], intro: ['hi'], taunts: [], attackNames: { extra: 'bad', [bossKit.attacks[0].id]: 'x'.repeat(100) } }, profile, bossKit);
@@ -133,6 +134,7 @@ describe('Gemini REST', () => {
     expect(body).toMatchObject({ model: 'gemini-3.8-flash', store: false, response_format: { type: 'text', mime_type: 'application/json', schema: heroSchema } });
     expect(body.input).toContain('A micro web framework');
     expect(body.input).toContain('src/flask/app.py');
+    expect(body.input).toContain('complete catchphrase of at most 40 characters');
     expect(onResult).toHaveBeenCalledWith({ slug: profile.slug, kind: 'hero', source: 'gemini', model: 'gemini-3.8-flash', api: 'interactions' });
   });
   it('requires every boss ID and keeps prompt independent of playerCount', async () => {
@@ -143,6 +145,8 @@ describe('Gemini REST', () => {
     expect(bodies[0]).toEqual(bodies[1]);
     expect(bodies[0].response_format.schema).toEqual(bossSchema(bossKit));
     expect(bodies[0].response_format.schema.properties.attackNames.required).toEqual(bossKit.attacks.map(a => a.id));
+    expect(bodies[0].input).toContain('each taunt as a complete short line of at most 60 characters');
+    expect(bodies[0].response_format.schema.properties.taunts.items.maxLength).toBe(60);
   });
   it('uses legacy generateContent only after both Interactions models fail', async () => {
     const legacy = () => new Response(JSON.stringify({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(hero) }] } }] }));

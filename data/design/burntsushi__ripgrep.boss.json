@@ -23,8 +23,8 @@
     "Servo actuators whine as jet vents dump supercritical coolant steam."
   ],
   "taunts": [
-    "TODO: In theory, it should be possible to amortize your destruct",
-    "FIXME: This works around a bug in grep-regex where it does not m",
+    "TODO: In theory, it should be possible to amortize your…",
+    "FIXME: This works around a bug in grep-regex where it does…",
     "ignore: skip empty absolute parent matchers (#3557).",
     "Return value evaluated: Some(Err(FatalMismatch))!"
   ],

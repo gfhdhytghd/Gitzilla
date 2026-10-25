@@ -130,3 +130,134 @@ body.classroom-active .rotate-guard, body.classroom-active .mute-btn { display:n
 .cr-preset-meta { color:var(--cr-muted); font-size:18px; }
 .cr-preset-library summary { cursor:pointer; color:var(--cr-cyan); padding:5px 0; }
 .cr-teacher-guide { white-space:pre-wrap; overflow-wrap:anywhere; font:18px/1.5 var(--term); color:var(--cr-text); margin:10px 0 0; }
+/* ---------- teacher: how students join (projector) ---------- */
+.cr-join { margin:6px 6px 22px; padding:18px 22px; background:var(--cr-panel); box-shadow:0 0 0 3px var(--cr-amber), 0 0 0 6px rgba(0,0,0,.55); }
+.cr-join>h2 { font:14px/1.5 var(--pix); color:var(--cr-amber); text-transform:uppercase; margin-bottom:14px; }
+.cr-join-body { display:flex; gap:26px; align-items:center; flex-wrap:wrap; }
+.cr-join-qr { width:clamp(150px, 16vw, 240px); height:auto; aspect-ratio:1; image-rendering:pixelated; background:#fff; padding:8px; flex:none; }
+.cr-join-text { display:grid; gap:10px; min-width:0; flex:1 1 320px; }
+.cr-join-step { font-size:clamp(20px, 1.6vw, 28px); color:var(--cr-text); }
+.cr-join-url { font:clamp(18px, 2vw, 34px)/1.3 var(--pix); color:var(--cr-cyan); overflow-wrap:anywhere; text-shadow:3px 3px 0 #000; }
+.cr-join-code { display:flex; align-items:baseline; gap:14px; }
+.cr-join-code span { font:10px var(--small); letter-spacing:1px; text-transform:uppercase; color:var(--cr-muted); }
+.cr-join-code b { font:clamp(26px, 3vw, 48px)/1 var(--pix); letter-spacing:6px; color:var(--cr-amber); text-shadow:3px 3px 0 #000; }
+.cr-join-overlay { position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:4vh 4vw; background:rgba(0,0,0,.82); }
+.cr-join-overlay .cr-join { width:min(1100px, 100%); }
+.cr-join-overlay .btn { margin-top:16px; }
+.cr-room-btn { background:none; border:0; padding:4px 8px; color:inherit; font:inherit; cursor:pointer; box-shadow:0 0 0 2px transparent; }
+.cr-room-btn:hover, .cr-room-btn:focus-visible { box-shadow:0 0 0 2px var(--cr-amber); }
+.cr-room-btn small { font:9px var(--small); letter-spacing:1px; text-transform:uppercase; color:var(--cr-cyan); margin-top:4px; }
+.cr-controls-hint { margin:-8px 6px 18px; font-size:19px; color:#fff4c4; border-left:3px solid var(--cr-amber); padding:4px 10px; }
+.cr-safe { display:flex; gap:8px; align-items:center; margin-top:6px; font-size:16px; color:var(--cr-muted); cursor:pointer; }
+.cr-safe input { width:18px; height:18px; accent-color:var(--cr-green); flex:none; }
+.cr-private { padding:10px 12px; border-left:3px solid var(--cr-cyan); background:rgba(61,232,255,.06); }
+.cr-exports { margin-left:auto; display:flex; align-items:center; gap:4px; }
+.cr-exports small { font:9px var(--small); letter-spacing:1px; text-transform:uppercase; }
+.cr-exports .btn { min-height:36px; font-size:10px; padding:6px 8px; }
+.cr-projector .cr-class-progress { font-size:13px; color:var(--cr-cyan); }
+
+/* ---------- teacher console: sticky control bar ---------- */
+.cr-console-bar { position:sticky; top:0; z-index:40; margin:0 -28px 18px; padding:10px 28px 6px; background:rgba(4,10,8,.96); border-bottom:2px solid var(--cr-line); box-shadow:0 8px 18px rgba(0,0,0,.45); }
+.cr-console-bar[hidden] { display:none !important; }
+.cr-console-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; }
+.cr-console-bar .cr-controls { padding:0; flex:1 1 auto; }
+.cr-console-bar .cr-controls-hint { margin:8px 0 2px; }
+.cr-console-tools { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin-left:auto; }
+.cr-console-tools .cr-safe { margin:0; }
+.cr-open-projector { font-size:10px; min-height:38px; }
+.cr-more { position:relative; }
+.cr-more > summary { list-style:none; cursor:pointer; font:16px/1 var(--pix); color:var(--cr-green); padding:10px 12px; box-shadow:0 0 0 2px var(--cr-line); min-height:44px; display:flex; align-items:center; }
+.cr-more > summary::-webkit-details-marker { display:none; }
+.cr-more[open] > summary { box-shadow:0 0 0 2px var(--cr-green); }
+.cr-more-menu { position:absolute; z-index:45; top:calc(100% + 8px); left:0; display:grid; gap:8px; min-width:230px; padding:12px; background:#05100b; box-shadow:0 0 0 2px var(--cr-green), 0 10px 30px rgba(0,0,0,.6); }
+.cr-more-menu small { font:9px var(--small); letter-spacing:1px; text-transform:uppercase; }
+.cr-more-menu .btn { width:calc(100% - 6px); }
+
+/* ---------- Submissions (console): status first, verdicts in one tap ---------- */
+.cr-student { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:8px; padding:0 10px 0 0; border-bottom:1px dotted var(--cr-line); }
+.cr-student:hover { background:rgba(57,255,136,.05); }
+.cr-row-pick { display:flex; align-items:center; gap:10px; min-width:0; padding:9px 4px 9px 14px; border:0; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.cr-row-pick:focus-visible { outline:2px solid var(--cr-amber); outline-offset:-2px; }
+.cr-status-dot { width:10px; height:10px; flex:none; box-shadow:0 0 0 2px #000; background:#4a5a52; }
+.cr-status-dot.st-error { background:var(--cr-red); } .cr-status-dot.st-empty { background:#6f9b85; } .cr-status-dot.st-queued { background:var(--cr-amber); } .cr-status-dot.st-submitted { background:var(--cr-green); } .cr-status-dot.st-offline { background:#26302c; }
+.cr-checks-chip { font:10px/1 var(--small); letter-spacing:.5px; text-transform:uppercase; color:var(--cr-cyan); white-space:nowrap; }
+.cr-verdicts { display:flex; gap:4px; }
+.cr-verdict { width:34px; height:34px; display:grid; place-items:center; font:15px/1 var(--pix); color:var(--cr-text); background:#07140d; border:0; box-shadow:0 0 0 2px var(--cr-line); cursor:pointer; }
+.cr-verdict:hover, .cr-verdict:focus-visible { box-shadow:0 0 0 2px var(--cr-green); color:var(--cr-green); outline:none; }
+.cr-verdicts .cr-verdict:nth-child(2):hover { box-shadow:0 0 0 2px var(--cr-red); color:var(--cr-red); }
+.cr-safe-on .cr-student .cr-points, .cr-safe-on .cr-student .cr-checks-chip { filter:blur(6px); }
+.cr-dense .cr-student { height:auto; padding:0 8px 0 0; grid-template-columns:minmax(0,1fr) auto auto; }
+.cr-dense .cr-row-pick { padding:3px 4px 3px 12px; }
+.cr-dense .cr-verdict { width:26px; height:26px; font-size:11px; }
+.cr-unreviewed { padding:8px 12px; border-left:3px solid var(--cr-cyan); background:rgba(61,232,255,.06); color:#d9f6ff; }
+
+/* long instructions: clamped on the console with "show all" */
+.cr-more-text { justify-self:start; font:16px var(--term); color:var(--cr-cyan); background:none; border:0; padding:0; text-decoration:underline dotted; cursor:pointer; }
+.cr-task-long:not(.cr-task-open) .cr-instructions { max-height:8.2em; overflow:hidden; -webkit-mask-image:linear-gradient(#000 65%, transparent); mask-image:linear-gradient(#000 65%, transparent); }
+.cr-progress-bar { height:12px; padding:2px; background:#0a1a12; box-shadow:0 0 0 2px var(--cr-line); max-width:640px; }
+.cr-progress-bar i { display:block; height:100%; width:0; background:repeating-linear-gradient(90deg, var(--cr-green) 0 8px, var(--green-d) 8px 10px); transition:width .6s steps(8); }
+.cr-phone-note { font:10px var(--small); letter-spacing:1px; text-transform:uppercase; color:var(--cr-amber); }
+
+/* ---------- class-facing screens (projector window, spectator screens): no names with scores, no feedback ---------- */
+.cr-class-facing .cr-roster, .cr-class-facing .cr-feedback { display:none !important; }
+.cr-class-facing .cr-host-board { grid-template-columns:1fr; }
+.cr-class-facing .cr-task-long .cr-instructions { max-height:none; overflow:visible; -webkit-mask-image:none; mask-image:none; }
+
+/* the projector window fits one screen: header / [join + task | boss] */
+.classroom-screen.cr-pv { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); grid-template-rows:auto auto 1fr; column-gap:32px; overflow:hidden; padding-bottom:22px; }
+.cr-pv > .cr-header { grid-column:1 / -1; }
+.cr-pv > .cr-join, .cr-pv > .cr-task { grid-column:1; min-width:0; }
+.cr-pv > .cr-host-board { grid-column:2; grid-row:2 / span 2; display:block; min-height:0; }
+.cr-pv .cr-host-main, .cr-pv .cr-boss { height:100%; }
+.cr-pv .cr-boss { display:flex; flex-direction:column; justify-content:center; min-height:0; }
+.cr-pv .cr-boss-stage { height:clamp(240px, 46vh, 520px); }
+.cr-pv .cr-join { margin-bottom:16px; }
+.cr-pv .cr-join-body { gap:16px; }
+.cr-pv .cr-join-qr { width:clamp(120px, 12vw, 200px); }
+.cr-pv .cr-task>h2 { font-size:clamp(26px, 2.2vw, 40px); }
+.cr-pv .cr-instructions { font-size:clamp(20px, 1.5vw, 28px); }
+
+/* ---------- class attack: the boss takes over the screen for its ~10 s ---------- */
+.cr-raid-takeover .cr-boss { position:fixed; inset:0; z-index:30; margin:0; display:flex; flex-direction:column; justify-content:center; padding:4vh 4vw; }
+.cr-raid-takeover .cr-boss-stage { height:min(56vh, 620px); }
+.cr-raid-takeover .cr-boss-heading h2 { font-size:clamp(20px, 2.4vw, 40px); }
+.cr-raid-takeover .cr-attack-total { font-size:clamp(18px, 1.8vw, 30px); }
+@media(max-width:800px) {
+  .cr-console-bar { margin:0 -14px 16px; padding:8px 14px 6px; }
+  .cr-console-tools { margin-left:0; }
+  .cr-room-btn > span, .cr-room-btn > small { display:none; }
+}
+
+/* ---------- class-facing text is read from the back row: ≥18px status, big clock and submitted count ---------- */
+.cr-class-facing .cr-phase { font:clamp(14px, 1.2vw, 22px)/1.3 var(--pix); letter-spacing:1px; }
+.cr-class-facing .cr-clock { font-size:clamp(34px, 3.4vw, 64px); min-width:0; }
+.cr-class-facing .cr-clock.cr-clock-text { font:clamp(16px, 1.3vw, 24px)/1.3 var(--pix); text-transform:none; max-width:none; }
+.cr-class-facing .cr-steps>span { font-size:clamp(12px, 0.9vw, 16px); padding:10px 12px; }
+.cr-class-facing .cr-room span, .cr-class-facing .cr-room small { font-size:clamp(11px, 0.8vw, 15px); }
+.cr-class-facing .cr-class-progress { font:clamp(22px, 2.2vw, 44px)/1.2 var(--pix); text-transform:none; letter-spacing:0; color:var(--cr-green); text-shadow:3px 3px 0 #000; }
+.cr-class-facing .cr-progress-bar { height:20px; padding:3px; }
+.cr-class-facing .cr-phone-note { font-size:clamp(12px, 0.9vw, 16px); }
+.cr-class-facing .cr-header>.btn { font-size:12px; }
+.cr-check-adders { display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; margin-top:-6px; }
+.cr-check-adders small { font:9px var(--small); letter-spacing:1px; text-transform:uppercase; }
+.cr-check-adders .btn { min-height:34px; font-size:10px; padding:6px 8px; }
+/* collapsed step editors: one line per step, expand to edit */
+details.cr-step-editor > summary { cursor:pointer; list-style:none; font:11px/1.6 var(--pix); color:var(--cr-amber); padding:4px 0; }
+details.cr-step-editor > summary::-webkit-details-marker { display:none; }
+details.cr-step-editor > summary::before { content:"▸ "; color:var(--cr-green); }
+details.cr-step-editor[open] > summary::before { content:"▾ "; }
+details.cr-step-editor:not([open]) { gap:0; }
+/* student preview */
+.cr-preview-card { width:min(980px, 100%); max-height:90vh; overflow:auto; }
+.cr-preview-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+.cr-preview-head h2 { margin:0 !important; }
+.cr-preview-nav { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.cr-preview-body { display:grid; gap:12px; }
+.cr-preview-body h3 { margin-top:6px; }
+.cr-editor-intro .btn { margin-top:10px; }
+
+/* the task column never grows to the step rail's max-content width (it scrolls inside instead) */
+.cr-task { grid-template-columns:minmax(0,1fr); min-width:0; }
+.cr-steps { max-width:100%; overflow-x:auto; scrollbar-width:none; }
+.cr-steps::-webkit-scrollbar { display:none; }
+.cr-steps>span { white-space:nowrap; }

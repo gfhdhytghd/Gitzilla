@@ -47,9 +47,10 @@ describe('bounded static editor submissions and starters', () => {
     const report = session.privatePayload('a', false).reports.a;
     expect(report.source).toBe('in-app'); expect(report.repo).toBe('in-app'); expect(report.score).toBe(66.7);
     expect(report.criteria.length).toBeGreaterThan(0); expect(report.checks.map(c => c.passed)).toEqual([true, true, false]);
-    expect(report.files).toEqual(files);
+    expect(report).not.toHaveProperty('files');
     expect(session.privatePayload('b', false).reports).toEqual({});
-    expect(session.privatePayload('teacher', true).reports.a).toBe(report);
+    expect(session.privatePayload('teacher', true).reports.a.files).toEqual(files);
+    expect(session.privatePayload('a', false).reports.a).not.toHaveProperty('files');
     const saved = JSON.stringify(session.save()); expect(saved).not.toContain('PRIVATE_STUDENT_SOURCE'); expect(saved).not.toContain('"reports"');
     expect(ClassroomSession.restore(session.save()).privatePayload('teacher', true).reports).toEqual({});
   });

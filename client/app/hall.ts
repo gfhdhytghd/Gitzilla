@@ -5,6 +5,8 @@ interface Hall {
   fastestKills: { boss: string; squad: string[]; seconds: number }[];
   topDamage: { name: string; repo: string; damage: number; boss: string }[];
   bossRecords: { boss: string; wins: number; losses: number }[];
+  /** PvP royale: last-one-standing wins per player (codex-net; optional until the server records them). */
+  royaleWins?: { name: string; repo: string; wins: number }[];
 }
 
 const MOCK_HALL: Hall = {
@@ -18,6 +20,10 @@ const MOCK_HALL: Hall = {
     { name: "octocat", repo: "facebook/react", damage: 2650, boss: "pallets/flask" },
   ],
   bossRecords: [{ boss: "pallets/flask", wins: 3, losses: 2 }],
+  royaleWins: [
+    { name: "ada", repo: "rust-lang/rust", wins: 4 },
+    { name: "linus", repo: "torvalds/linux", wins: 2 },
+  ],
 };
 
 export async function fetchHall(mock: boolean): Promise<Hall | null> {
@@ -35,13 +41,14 @@ export function createHallBoard(mock: boolean, opts: { rows?: number; highlight?
   const body = h("div.hall-body", null, h("div.dim.blink", null, "querying hall…"));
   const el = h("section.panel.hall", null, h("h2.panel-title", null, "☠ HALL OF MONSTERS"), body);
   fetchHall(mock).then((hall) => {
-    if (!hall || (!hall.fastestKills?.length && !hall.topDamage?.length)) {
+    if (!hall || (!hall.fastestKills?.length && !hall.topDamage?.length && !hall.royaleWins?.length)) {
       body.replaceChildren(h("div.dim", null, "no kills recorded yet. be the first."));
       return;
     }
     const hi = new Set(opts.highlight ?? []);
     const kills = (hall.fastestKills ?? []).slice(0, n);
     const dmg = (hall.topDamage ?? []).slice(0, n);
+    const royale = (hall.royaleWins ?? []).slice(0, n);
     body.replaceChildren(
       h("div.hall-col", null,
         h("div.hall-h", null, "$ fastest kills"),
@@ -55,6 +62,12 @@ export function createHallBoard(mock: boolean, opts: { rows?: number; highlight?
           h(`div.hall-row${hi.has(d.name) ? ".hi" : ""}`, null, h("span.hr-rank", null, `${i + 1}.`), h("span.hr-dmg", null, `${Math.round(d.damage)} dmg`), h("span.hr-main", { title: d.repo, translate: "no" }, d.name), h("span.hr-sub", null, `vs ${shortRepo(d.boss)}`)),
         ) : [h("div.dim", null, "—")]),
       ),
+      ...(royale.length ? [h("div.hall-col", { "data-testid": "hall-royale" },
+        h("div.hall-h", null, "$ royale wins"),
+        ...royale.map((r, i) =>
+          h(`div.hall-row${hi.has(r.name) ? ".hi" : ""}`, null, h("span.hr-rank", null, `${i + 1}.`), h("span.hr-dmg", null, `${r.wins}× #1`), h("span.hr-main", { title: r.repo, translate: "no" }, r.name), h("span.hr-sub", null, shortRepo(r.repo))),
+        ),
+      )] : []),
     );
   });
   return el;

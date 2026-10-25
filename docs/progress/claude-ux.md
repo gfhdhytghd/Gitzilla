@@ -1,3 +1,5 @@
+DONE (teacher audit) — docs/ux-audit-teacher.md: quick wins, P0-T1..T5, P1-T1..T9, P2, failure cases. Re-check after claude-edu ships fixes.
+
 DONE — pass 1 audit, portrait re-audit, P0 re-check and edu-mode audit are all in docs/ux-audit.md.
 
 # claude-ux progress (independent UX audit)
@@ -5,6 +7,12 @@ DONE — pass 1 audit, portrait re-audit, P0 re-check and edu-mode audit are all
 ## Status
 - [x] Pass 1: full journey audit (phone portrait 390x844 / 360x640, desktop 1280x720 / 1920x1080, big screen) → docs/ux-audit.md
 - [x] Pass 2: portrait re-audit after claude-ui writes DONE (portrait), plus edu mode (teacher projector + student phone, report cards) when it lands
+
+## Status (teacher audit, docs/tasks/teacher-ux.md)
+- [x] Full teacher journey run live (t-* shots): 1440 Chromium teacher + 3 WebKit iPhone students
+- [x] P0 section written in docs/ux-audit-teacher.md
+- [x] P1/P2, quick wins, failure cases (second tab, reload, late joiner, teacher on phone)
+- [ ] Re-check after claude-edu fixes
 
 ## Log
 - Started. Read BRIEF, portrait card, claude-ui progress. Shots go to docs/ux-shots/ (gitignored).
@@ -23,3 +31,4 @@ DONE — pass 1 audit, portrait re-audit, P0 re-check and edu-mode audit are all
 - Portrait re-audit appended: PR-0 (match silently back to lobby / owner silently changed, likely dev-server restart) + PR-1..PR-6.
 - Edu audit appended (teacher projector + 2 student phones live, plus edu mocks): EDU-1 report-card jargon/no scale (P0), EDU-2..EDU-7. Quiz never appeared in any run, so it was not verified.
 - Transient page errors seen while claude-ui was hot-editing: `pvpPanel is not defined`, `Cannot access 'menuSheet' before initialization` (both gone on the next reload).
+- Teacher audit (docs/tasks/teacher-ux.md): live run room NMIL (teacher 1440 Chromium + 3 WebKit iPhones) and JNBC (second tab, other-device projector, reload, late joiner, phone teacher). P0s: console=projector privacy, 100/100 for any print(, raid off-screen, one-click End lesson / new room, kill -STOP + red ERR copy. Not verified: GitHub path, rubric upload, 30 students, two teachers.

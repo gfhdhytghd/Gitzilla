@@ -3,6 +3,8 @@ import type { BossKit, GameEvent, MatchState, PlayerState } from "../../shared/t
 import { fmtTime, h, shortRepo, humanComponent } from "./util";
 import { codeSpan } from "./codefmt";
 import { ARCH, bossStateHint } from "./archetype";
+import { royaleOf, royaleRank, zoneLine } from "./royale";
+import { t } from "../i18n";
 
 const setText = (el: HTMLElement, s: string) => {
   if (el.textContent !== s) el.textContent = s;
@@ -28,8 +30,9 @@ const shortComp = (c: string) => {
   return parts[parts.length - 1] || c;
 };
 
-/** PvP standings: round wins, then KOs, then damage. */
+/** PvP standings: round wins, then KOs, then damage (royale: survivors first, then by placement). */
 export function rankPvp(s: MatchState) {
+  if (royaleOf(s)) return royaleRank(s);
   const sc = s.pvp?.scores ?? {};
   return s.players
     .map((p) => ({ id: p.id, name: p.name, kos: sc[p.id]?.kos ?? 0, damage: sc[p.id]?.damage ?? 0, roundWins: sc[p.id]?.roundWins ?? 0, downs: sc[p.id]?.downs ?? 0 }))
@@ -83,18 +86,41 @@ export function createHud(spectator: boolean): Hud {
   );
   let limbEls: { id: string; el: HTMLElement; fill: HTMLElement }[] = [];
 
-  // --- edu PvP scoreboard (replaces the boss bar when there is no boss) ---
+  // --- PvP scoreboard (replaces the boss bar when there is no boss): edu rounds, or the royale's alive count + GC zone ---
   const pvRound = h("span.pv-round"), pvClock = h("span.pv-clock"), pvLeader = h("div.pv-leader"), pvYou = h("div.pv-you");
+  const pvPrompt = h("span.prompt", null, "$ ./brawl ");
   const pvpPanel = h(
     "div.hud-boss.hud-pvp.term.hidden",
     null,
-    h("div.hb-top", null, h("span.prompt", null, "$ ./brawl "), pvRound, h("span.hb-phase", null, pvClock)),
+    h("div.hb-top", null, pvPrompt, pvRound, h("span.hb-phase", null, pvClock)),
     pvLeader,
     pvYou,
   );
+  const updateRoyale = (s: MatchState, you: string | null) => {
+    const r = royaleOf(s)!;
+    setText(pvPrompt, "$ ./royale ");
+    setText(pvRound, `${r.alive.length}/${s.players.length} alive`);
+    pvRound.dataset.testid = "royale-alive";
+    const me = s.players.find((p) => p.id === you);
+    const z = r.zone;
+    const zl = zoneLine(s.t, z);
+    const out = !!me && !me.eliminated && !!z && Math.hypot(me.x - z.cx, me.y - z.cy) > z.r;
+    setText(pvClock, out ? (z!.dps > 0 ? `⚠ outside the GC zone · -${z!.dps}♥/s` : "⚠ outside the GC zone") : zl.text);
+    pvClock.dataset.testid = "royale-zone";
+    toggle(pvClock, "urgent", out || zl.urgent);
+    toggle(pvpPanel, "out-zone", out);
+    const ranked = royaleRank(s);
+    const lead = ranked.filter((x) => x.alive).sort((a, b) => b.kos - a.kos || b.damage - a.damage)[0];
+    // "you" is localized before it goes into the {0} pattern (names stay as they are)
+    setText(pvLeader, r.winner ? (r.winner === you ? "★ you survived the merge" : `★ ${s.players.find((p) => p.id === r.winner)?.name ?? "—"} survived the merge`) : lead ? `★ most KOs: ${lead.id === you ? t("you") : lead.name} · ${lead.kos} KO` : "");
+    const mine = ranked.find((x) => x.id === you);
+    if (mine) setText(pvYou, mine.alive ? `you: alive · ${mine.kos} KO · ${Math.round(mine.damage)} dmg` : `you: #${mine.place ?? "?"} · ${mine.kos} KO · spectating`);
+    toggle(pvYou, "hidden", !mine);
+  };
   const updatePvp = (s: MatchState, you: string | null) => {
     const pv = s.pvp;
     if (!pv) return;
+    if (pv.royale && s.mode === "pvp") return updateRoyale(s, you);
     setText(pvRound, `round ${pv.round}/${pv.rounds}`);
     const left = Math.max(0, pv.roundEndsAt - s.t);
     setText(pvClock, `${fmtTime(left)} left`);
@@ -232,7 +258,7 @@ export function createHud(spectator: boolean): Hud {
         setText(dashState, me.dashCd > 0 ? `${me.dashCd.toFixed(1)}s` : "READY");
         toggle(dashEl, "ready", me.dashCd <= 0);
         setStyle(dashFill, "height", `${me.dashCd > 0 ? Math.max(0, 1 - me.dashCd / 1.2) * 100 : 100}%`);
-        toggle(downed, "show", !me.alive && s.status === "fighting");
+        toggle(downed, "show", !me.alive && s.status === "fighting" && !royaleOf(s)); // royale: the spectate banner instead
         setText(downed.querySelector(".dn-sub")!, s.pvp ? "Respawning shortly. Get ready for the next exchange." : "you're down · a teammate standing next to you runs systemctl restart (revive)");
         if (!me.alive) {
           setStyle(dnBar, "--p", String(me.reviveProgress));
@@ -300,7 +326,7 @@ export function createHud(spectator: boolean): Hud {
       // team
       // PvP: a live leaderboard (top N by standing, 30-student classes don't fit a full list)
       const others = s.pvp
-        ? rankPvp(s).slice(0, spectator ? 10 : 6).map((r) => s.players.find((p) => p.id === r.id)!).filter(Boolean)
+        ? rankPvp(s).slice(0, spectator || royaleOf(s) ? 10 : 6).map((r) => s.players.find((p) => p.id === r.id)!).filter(Boolean)
         : s.players.filter((p) => spectator || p.id !== you);
       const seen = new Set<string>();
       for (const p of others) {
@@ -321,8 +347,16 @@ export function createHud(spectator: boolean): Hud {
         if (s.pvp && team.children[rank - 1] !== r.row) team.insertBefore(r.row, team.children[rank - 1] ?? null); // move only when rank changes
         toggle(r.row, "me", p.id === you);
         const sc = s.pvp?.scores[p.id];
-        setText(r.st, sc ? `${sc.kos} KO` : p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");
-        r.st.title = p.alive ? "health" : s.pvp ? "Respawning shortly" : "downed: stand next to them to revive (systemctl restart)";
+        const roy = royaleOf(s);
+        toggle(r.row, "out", !!p.eliminated);
+        if (roy && p.eliminated) {
+          setText(r.st, `#${roy.placements[p.id] ?? "?"} ✗`);
+          const k = s.players.find((x) => x.id === p.killedBy);
+          r.st.title = k ? `eliminated by ${k.name}` : "eliminated by the GC sweep";
+        } else {
+          setText(r.st, sc ? `${sc.kos} KO` : p.alive ? `${Math.ceil(p.hp)}♥` : p.reviveProgress > 0 ? `restart ${Math.round(p.reviveProgress * 100)}%` : "segfault");
+          r.st.title = p.alive ? "health" : s.pvp ? "Respawning shortly" : "downed: stand next to them to revive (systemctl restart)";
+        }
       }
       for (const [id, r] of teamRows) if (!seen.has(id)) (r.row.remove(), teamRows.delete(id));
 

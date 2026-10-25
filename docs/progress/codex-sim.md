@@ -1,3 +1,12 @@
+IN PROGRESS — repo power (ordinary PvP only)
+
+## Exact contract request / genesis handoff
+- Coordinator: add optional `PlayerKit.pvpPower?: { score:number; parts:{label:string;value:number;weight:number}[] }`. Both score and each part.value are normalized0–100; weights are normalized fractions summing1. `score = sum(part.value * part.weight)` (one decimal). No duplicate scoring algorithm needed in genesis/UI.
+-9 parts, in order: tests.16, modularity.12, cohesion.12, documentation.12, cycles/debt hygiene.08 (=60% real edu quality signals); log stars.12, log contributors.10, log analyzed LOC.10, log lifetime commits/day.08 (=40%). Labels include actual measured counts/ratios; missing activity age/count is explicitly neutral/unmeasured. No title/design/seed/slug boost.
+- **Final PvP stats relative to a fixed neutral baseline**, not relative to the battle kit allocation. Let s=score/100: `maxHp=6+round(3s)`, `maxArmor=4+round(2s)`, `damageMul=1+.75s`, `speed=85+10s`, `maxEnergy=185+round(60s)`. Score0 →6HP/4armor/1damage/85speed/185energy;100→9/6/1.75/95/245. Thus+HP is0..3 and+damage is0..75% relative to that baseline. Vitality×damage×speed has max/weakest ratio2.934 (<~3); RAM is a reserve. All mapped stats are monotone in score.
+- Ordinary PvP factory/constructor will apply these stats once; default battle retains equal-budget allocation, edu keeps its report-card/rubric stats. Mode switches restore/reapply the correct mode. Spawn shields and ≤40% max-HP per impact remain mandatory.
+- Implementing in sim/ only, then normal-input fallback sweeps with global power quartiles and a controlled equal-controller/weapon comparison; report durations and observed win rates. Latest user relaxes prior equal-PvP budget; old equal-budget tests/report descriptions will be superseded, not imposed on this card.
+
 DONE (boss easier)
 DONE (royale balance)
 

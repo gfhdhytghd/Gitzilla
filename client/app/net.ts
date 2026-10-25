@@ -26,7 +26,10 @@ export interface ConnOpts {
 }
 
 // players and the teacher's projector screen resume separately (a teacher may also have a phone in the same browser)
-const tokenKey = (room: string, role: Role = "player") => (role === "screen" ? `kaiju.screenToken.${room}` : `kaiju.token.${room}`);
+// The classroom projector window (?view=projector) is a separate spectator screen: it must not resume (and kick)
+// the teacher's console session opened from the same browser.
+const tokenKey = (room: string, role: Role = "player") =>
+  role === "screen" ? (new URLSearchParams(location.search).get("view") === "projector" ? `kaiju.projectorToken.${room}` : `kaiju.screenToken.${room}`) : `kaiju.token.${room}`;
 
 export function connect(opts: ConnOpts): Conn {
   const msgFns: ((m: ServerMsg) => void)[] = [];

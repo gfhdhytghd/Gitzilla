@@ -24,9 +24,9 @@
   ],
   "taunts": [
     "Note:** This method mutates array — and your entire squad!",
-    "ci(playwright): fix browser test flake from test timeout shorter",
+    "ci(playwright): fix browser test flake from test timeout…",
     "function arrayReduceRight will flatten you down to depth 0!",
-    "isBuffer(value) || isTypedArray(value) — nothing withstands crea",
+    "isBuffer(value) || isTypedArray(value) — nothing withstands…",
     "bug in Safari 9 cannot save you from the curried iteration!"
   ],
   "attackNames": {

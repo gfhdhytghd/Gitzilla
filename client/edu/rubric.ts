@@ -67,7 +67,13 @@ export interface RubricEditor {
   dispose(): void;
 }
 
-export function createRubricEditor(opts: { current?: Rubric | null; parse?: ParseFn; onUse(r: Rubric): void; room?: string; token?: string }): RubricEditor {
+/** Signals that make sense for a short classroom exercise (the rest are about whole GitHub projects). */
+const CLASSROOM_SIGNALS: RubricSignal[] = ["tests", "documentation", "readme", "function-length", "cohesion", "tech-debt", "size", "typing", "check"];
+
+export function createRubricEditor(opts: { current?: Rubric | null; parse?: ParseFn; onUse(r: Rubric): void; room?: string; token?: string;
+  /** classroom step: wording for a lesson step (no lobby card), and only signals that fit a small exercise */
+  context?: "classroom" }): RubricEditor {
+  const classroom = opts.context === "classroom";
   const parse = opts.parse ?? serverParse({ room: opts.room, token: opts.token });
   let current: Rubric | null = opts.current ?? null;
   let draft: Rubric = editableRubric(current ?? localDefaultRubric());
@@ -131,8 +137,8 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
     const rows = draft.criteria.map((c, i) => criterionRow(c, pct[i], i));
     el.replaceChildren(...([
       h("div.rb-head", null,
-        h("div", null, h("div.rb-kicker", null, "HOW REPOS ARE JUDGED"), h("input.rb-title", { value: draft.title, "aria-label": "rubric title", oninput: (e: Event) => { draft.title = (e.target as HTMLInputElement).value; markEdited(); foot(); } })),
-        h("span.rb-source", null, draft.source === "doc" ? "custom rubric" : "default rubric")),
+        h("div", null, h("div.rb-kicker", null, classroom ? "HOW THIS STEP IS SCORED" : "HOW REPOS ARE JUDGED"), h("input.rb-title", { value: draft.title, "aria-label": "rubric title", oninput: (e: Event) => { draft.title = (e.target as HTMLInputElement).value; markEdited(); foot(); } })),
+        h("span.rb-source", null, draft.source === "doc" ? (classroom ? "edited for this step" : "custom rubric") : classroom ? "lesson default" : "default rubric")),
       drop,
       status.text ? h(`div.rb-status.${status.kind || "info"}`, null, status.text) : null,
       h("div.rb-criteria", null, ...rows),
@@ -156,7 +162,7 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
     footer.replaceChildren(
       h("button.btn.btn-primary", { type: "button", disabled: !ok || same(), onclick: () => { opts.onUse(clone(draft)); } }, same() ? "✓ in use" : "$ use this rubric"),
       h("button.btn.btn-ghost", { type: "button", onclick: () => { draft = editableRubric(localDefaultRubric()); touched = true; status = { text: "", kind: "" }; render(); } }, "reset to default"),
-      h("span.rb-foot-note", null, ok ? "Students see this on their lobby card as “how you'll be judged”." : "Add at least one criterion with weight > 0."),
+      h("span.rb-foot-note", null, ok ? (classroom ? "Students see these criteria under “How this task is scored”." : "Students see this on their lobby card as “how you'll be judged”.") : "Add at least one criterion with weight > 0."),
     );
   }
 
@@ -176,7 +182,7 @@ export function createRubricEditor(opts: { current?: Rubric | null; parse?: Pars
         h("input.rb-weight", { type: "range", min: 0, max: 100, step: 5, value: Math.round(c.weight), "aria-label": `weight of ${c.name}`, onchange: (e: Event) => { c.weight = Number((e.target as HTMLInputElement).value); changed(); } }),
         (() => {
           const sel = h("select.rb-signal", { "aria-label": "what is measured", onchange: (e: Event) => { c.signal = (e.target as HTMLSelectElement).value as RubricSignal; if (c.signal !== "check") delete c.check; changed(); } },
-            ...SIGNAL_ORDER.map((s) => h("option", { value: s, selected: s === c.signal }, SIGNALS[s].label))) as HTMLSelectElement;
+            ...(classroom ? SIGNAL_ORDER.filter((x) => CLASSROOM_SIGNALS.includes(x) || x === c.signal) : SIGNAL_ORDER).map((s) => h("option", { value: s, selected: s === c.signal }, SIGNALS[s].label))) as HTMLSelectElement;
           return sel;
         })(),
         c.check

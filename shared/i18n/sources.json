@@ -10433,5 +10433,385 @@
     "id": "69dc8996414fad56",
     "source": "summon one of your own repos as the boss 🔒",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "dd9c8bf1d0dc4915",
+    "source": "GC idle",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9ccafa8ec6a547d4",
+    "source": "GC final sweep",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "55459ff091c5ae19",
+    "source": "GC sweep in {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "52564ab41692b1df",
+    "source": "GC sweeping {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "360f84035942243c",
+    "source": "left",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "508600c7181f5fd4",
+    "source": "segfault",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "493c86ee8d64e3cf",
+    "source": "you placed",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "96f93056988dd5fa",
+    "source": "killed by",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f2629554fa641100",
+    "source": "swept by the garbage collector",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "19bda4aa00eaf9a1",
+    "source": "watching",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "1c5b9cc9c4e67d85",
+    "source": "left:",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ca2e14ad0000cd1f",
+    "source": "previous player",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "623e61b1b1ac2e1e",
+    "source": "next player",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9a49f9088fa34a25",
+    "source": "{0}/{1} alive",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "fa59b80cf41eed6f",
+    "source": "⚠ outside the GC zone · -{0}♥/s",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "90d8b091ed1d4b56",
+    "source": "⚠ outside the GC zone",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ae55fb99f39e5f5d",
+    "source": "★ {0} survived the merge",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "bd83946fcd8be80b",
+    "source": "★ you survived the merge",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "4acea2c0311053a1",
+    "source": "★ most KOs: {0} · {1} KO",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "5a7fc5984f9fb8a4",
+    "source": "★ most KOs: you · {0} KO",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "5fc4e7380b87a2d0",
+    "source": "you: alive · {0} KO · {1} dmg",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "23ccd11df7dac1a7",
+    "source": "you: #{0} · {1} KO · spectating",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "4cfbd7f204e3ef28",
+    "source": "eliminated by {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "4fb33f47845560dd",
+    "source": "eliminated by the GC sweep",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "af4edea7121c56e5",
+    "source": "PVP ROYALE",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f89eb97a2c5382b4",
+    "source": "{0} repositories compiled · equal stat budget",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "cce151c4d2016ef4",
+    "source": "last hero standing · no respawns",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "7f481071be5155ab",
+    "source": "LAST PROCESS RUNNING",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b40a32f7a71501e0",
+    "source": "MERGE COMPLETE",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c6a3796d97bf16cd",
+    "source": "survived the merge",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "b439845b8d965018",
+    "source": "no survivors · the GC took everyone",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9c1ae675c2703bff",
+    "source": "loading results…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "13b02bd801084d6b",
+    "source": "leaving counts as an elimination.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "3ca66b99bb8187de",
+    "source": "GC ZONE",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c4f4afbc475d72ed",
+    "source": "☠ PvP royale",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "fe996b78ea44a8f4",
+    "source": "AI rivals: ",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "a09e8f232e7ae0dc",
+    "source": "2–8 heroes · free-for-all · no respawns.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c8ed03b60973f770",
+    "source": "A knockout is final; the last hero standing wins.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "226af09665b248ef",
+    "source": "GC sweep:",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "24a4fc03f64f2801",
+    "source": "the safe circle starts shrinking after 0:45–1:40 (more heroes, later). Outside it the garbage collector eats your HP.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "518145b443818e61",
+    "source": "Everyone gets the same stat budget. Knockouts drop a heart and energy.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "8efb0323d1adaca2",
+    "source": "▶ START ROYALE ({0} heroes)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "2b08f826e5133346",
+    "source": "▶ START ROYALE",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f63da6b0dfb9620a",
+    "source": "{0}/8 heroes ready. Last one standing wins.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "673755eddeadb5c2",
+    "source": "Invite up to 7 friends (or add AI rivals) — at least 2 heroes.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "abe743e82b484722",
+    "source": "waiting for a 2nd hero — invite friends or add AI rivals",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "8fa1aae58ab556d9",
+    "source": "[ PvP royale: up to 8 ]",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "2f73214d42603d6d",
+    "source": "LAST ONE STANDING",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "aa948f79d1d47bef",
+    "source": "★ LAST ONE STANDING",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "20e7d53fb45e51b0",
+    "source": "PLACEMENTS",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "483905ef24ceeed9",
+    "source": "eliminated by",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "21a08b49895943d5",
+    "source": "★ winner",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "40b0e4de15d0018d",
+    "source": "GC sweep",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "0b9a6d8ac7afd062",
+    "source": "$ git log --royale · {0} heroes · {1}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "fa11aaec1d069d72",
+    "source": "(left)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "2d2467cf1ec51d26",
+    "source": "$ royale wins",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "c437f8439909e9a3",
+    "source": "{0}× #1",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "8848aa40dffbad09",
+    "source": "▶ START ROYALE ({0} fighters)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f2e055cbb9508333",
+    "source": "▶ START ROYALE · you'll spectate ({0} fighters)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "4e28b1b82fce684d",
+    "source": "waiting for {0} to finish verifying",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "eea9093987ece134",
+    "source": "need at least 2 fighters — invite friends or add AI rivals",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "153ef12c20ae4b57",
+    "source": "need at least 2 fighters — add AI rivals, or connect GitHub and pick a repo you own to fight",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "e12a48d9bfcd4d21",
+    "source": "max 8 fighters — remove AI rivals",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "10e821a29c1a9bed",
+    "source": "{0}/8 fighters ready. Last one standing wins.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "5f923ae51c0c30d8",
+    "source": "no eligible repo: you'll watch. Connect GitHub and pick a repo you own to fight.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "d9b690976a0ec230",
+    "source": "{0} will spectate.",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "11e4f7f7f4cf5934",
+    "source": "verifying repo ownership…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f9f63bb8571c11b8",
+    "source": "spectating · pick a repo you own to fight",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9a53224f4cd7a2a0",
+    "source": "spectating",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "1bc8cadbfd889f71",
+    "source": "checking that this repo is yours…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "109ba41960e1162d",
+    "source": "👁 spectating · pick a repo you own to fight",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "09c63bce7007c0f4",
+    "source": "👁 you'll spectate — pick a repo you own to fight",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9d9eb3d2ba6fe144",
+    "source": " fight with a repo you own (forks don't count) 🔒",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "d8bea84a803d07c0",
+    "source": "no eligible repos — PvP needs a repo you own (forks don't count)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "61aaf0ef6ebe389c",
+    "source": "👁 spectating",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "891cf063003ae0fe",
+    "source": "· no hero in this match",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]

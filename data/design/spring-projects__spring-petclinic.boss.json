@@ -22,7 +22,7 @@
     "ERROR: BaseEntity mutated into predatory state."
   ],
   "taunts": [
-    "Prevent HTTP 500 when owner city/address exceed column length!",
+    "Prevent HTTP 500 when owner city/address exceed column…",
     "return name != null ? name : '<null>';",
     "No escape from addPaginationModel out-of-bounds redirect!",
     "Validate visit description length before your defeat!"

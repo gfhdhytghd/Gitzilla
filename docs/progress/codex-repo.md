@@ -1,3 +1,7 @@
+DONE (blank-line boundary fix)
+
+Fixed the valid 200 KiB blank-line submission stall by keeping whole-text multiline regex indentation horizontal. Full owned analysis/Hall regression: **130/130 PASS**, 18 files, 1.92s. Strict owned-module TypeScript PASS. Independent exact-boundary calls completed in **775 / 655 / 645 ms**. Dedicated child-process regression enforces a 7.5s kill deadline; no teammate processes or servers touched.
+
 DONE (in-app editor)
 
 Completed owner work: add synchronous `analyzeFiles(files: InAppFile[], name: string): RepoProfile` to analysis/index.ts. Reuse the graph/DNA/README/tree/quality pipeline entirely in memory; no GitHub, OSV, credential lookup, cache or source execution. Server owner keeps submission validation, hashing and rubric/check scoring.
@@ -456,3 +460,15 @@ DONE (osv fix)
 - No git commits, dependencies, shared edits, screenshots, code execution or live/dev server actions. This completes the codex-repo analysis section; editor UI/Run and server submission handling remain their assigned owners' work.
 
 DONE (in-app editor)
+
+## Blank-line boundary CPU fix — independent analysis verification
+
+- Confirmed the failure mechanism on the original comment-strip regex with small bounded probes: 4,096 blank lines took 4.3 ms; 8,192 took 17.2 ms; 16,384 took 97.8 ms. Whole-text `/m` anchors plus leading `\s*` repeatedly scan newline suffixes.
+- Replaced whole-text multiline-leading whitespace with `[ \t]*` in `analysis/graph.ts` comment removal, Python import/from-import, C includes, Go modules, Cargo package/lib names, Java packages and JSONC comment lines. Python keyword separators and single-line payloads also stay on the current physical line; parenthesized multiline from-imports remain supported.
+- Applied the same fix to README reference/fence/heading starts in `analysis/context.ts`, and Cargo.lock field assignments / Go replacement starts in `analysis/dependencies.ts`. Per-line DNA scans are already split before their regexes and did not need this whole-text fix.
+- Added `analysis/blank-lines.test.ts`: a dedicated Node+tsx child verifies the **exact 204,796-newline body + a.py path = 204,800-byte** case, CRLF, indented empty lines, imports surrounded by 200,000 blank lines, a blank README, blank Go manifest, padded Cargo manifest and Cargo.lock missing fields. It checks actual graph/LOC/DNA/no-fallback results as well as byte bounds. The child is killed with SIGKILL at 7.5s on a future synchronous stall; the enclosing test has a 10s deadline. A Vitest async timeout alone would not interrupt the stalled regex, so the process isolation is deliberate.
+- **Own verification:** `npx vitest run analysis hall` → **130 PASS / 18 files / 1.92s**. Explicit strict TypeScript check for analysis/*.ts + hall/*.ts + shared/types.ts → **PASS**. Three independent direct `analyzeFiles([{path:'a.py', content:'\n'.repeat(204796)}], 'in-app')` runs → **775, 655, 645 ms**, each one source file / zero LOC / no fallback. `git diff --check` PASS.
+- **Separate coordinator evidence (reported, not rerun by codex-repo):** server real-WebSocket exact-200-KiB all-newline and quote-heavy boundary tests both PASS, targeted run 953 ms; coordinator's final root tsc PASS. Server source frozen/DONE. No server files edited or server jobs started/stopped here.
+- Only analysis/ implementation/test files plus this progress log changed. No shared edits, snapshots, presets, package changes, commits, production/dev server access, or student code execution. Existing fallback artifacts need no regeneration for this whitespace scanning fix.
+
+DONE (blank-line boundary fix)

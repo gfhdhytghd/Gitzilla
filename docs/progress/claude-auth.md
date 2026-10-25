@@ -1,26 +1,31 @@
-IN PROGRESS: the tenant is configured and the code is tested. Waiting on (1) one real browser login to confirm the GitHub token works with Auth0 dev keys and (2) codex-net wiring. Not blocked.
+DONE — Auth0 "Connect GitHub" is shipped and wired (scope frozen by the coordinator).
+Summary:
+- `auth/index.ts`: OIDC code flow + PKCE, AES-GCM `HttpOnly` session cookie (`Secure` on https), `/auth/login|callback|logout|logged-out`, `GET /api/me`, `GET /api/me/repos` (+ PvP fields from codex-net), `getSession` / `getGithubToken` for the ws upgrade. Zero deps.
+- Tenant `dev-gw4sxogh75t0p48l.us.auth0.com` (Free plan): app "Gitzilla", M2M "Gitzilla Server" (`read:users read:user_idp_tokens`), GitHub connection (`read:user repo`). Secrets are only in gitignored `.env` (live worktree symlinks it).
+- Verified: auth tests pass. On the dev server http://localhost:5175, `/api/me` → `{enabled:true}` and `/auth/login` → Auth0 authorize with a `localhost:5175` callback → GitHub (`scope=read:user,repo`). The real M2M token works against the Management API.
+- Not verified by me: a full human GitHub sign-in (it needs a browser login). See USER ACTION.
 
-## USER ACTION
-1. **Test the real login (2 min).** The standalone harness is running. If it isn't, start it with `npx tsx auth/demo.ts`. Open **http://localhost:5174**, click *Connect GitHub*, and approve. You should see your `@login`, "token on server: **yes**", and your repo list, including private repos marked 🔒. Tell the coordinator whether it says yes or no.
-2. **Recommended: your own GitHub OAuth App.** Without it, GitHub's consent screen says "Auth0" while asking for full `repo` access. If step 1 shows "token: no", this step is required.
+## USER ACTION (optional but recommended)
+1. **Smoke a real login:** on http://localhost:5175 (dev), join a room, click *Connect GitHub*, approve, and confirm that your repos (incl. 🔒 private) appear. Or use the standalone harness: `npx tsx auth/demo.ts` → http://localhost:5174. If the repo list returns 401 "No GitHub token", do step 2.
+2. **Own GitHub OAuth App**, so GitHub's consent says "Gitzilla" instead of "Auth0" (required if step 1 gets no token):
    - Go to https://github.com/settings/developers → **OAuth Apps** → **New OAuth App**.
    - Application name: `Gitzilla`
    - Homepage URL: `https://gitzilla.wilflin.me`
    - Authorization callback URL: `https://dev-gw4sxogh75t0p48l.us.auth0.com/login/callback` (exactly this)
-   - Leave "Enable Device Flow" off → **Register application** → **Generate a new client secret**.
-   - Then either (a) add `AUTH0_GITHUB_CLIENT_ID=…` and `AUTH0_GITHUB_CLIENT_SECRET=…` to `repo-kaiju/.env` and tell claude-auth "github keys in .env" then run `npx tsx auth/setup-github.ts` (patches the connection via the Auth0 CLI without printing the secret), or (b) paste them yourself in the Auth0 Dashboard → Authentication → Social → **github** → Client ID / Client Secret → Save. Keep the "repo" permission checked.
+   - **Register application** → **Generate a new client secret**.
+   - Then either add `AUTH0_GITHUB_CLIENT_ID=…` / `AUTH0_GITHUB_CLIENT_SECRET=…` to `repo-kaiju/.env` and run `npx tsx auth/setup-github.ts` (patches the connection via the Auth0 CLI without printing the secret), or paste them in Auth0 Dashboard → Authentication → Social → **github** and Save (keep "repo" checked).
 
 # claude-auth — Connect GitHub via Auth0 (Gitzilla)
 
 ## Status
 - [x] `auth/index.ts` — login/callback/logout, sealed cookie session, `/api/me`, `/api/me/repos`, GitHub token lookup. Zero new deps.
 - [x] `auth/index.test.ts` — 7 tests (seal/unseal, returnTo sanitizing, dotenv parse, full login→callback→session→repos→logout flow with mocked Auth0/GitHub, bad state). `npx vitest run auth/` PASS.
-- [x] `auth/demo.ts` — standalone harness on :5174 that runs against the real tenant (dev-only callback).
+- [x] `auth/demo.ts` — standalone harness on :5174 that runs against the real tenant (dev-only callback). It's stopped now; start it on demand.
 - [x] Tenant `dev-gw4sxogh75t0p48l.us.auth0.com` (Free plan) configured via CLI, see below.
 - [x] `.env` (repo root, gitignored, mode 600): `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_MGMT_CLIENT_ID`, `AUTH0_MGMT_CLIENT_SECRET`, `AUTH0_COOKIE_SECRET`. The auth module reads them itself (root `.env`, then `../.env`; `process.env` wins), so no dotenv dependency is needed.
 - [x] Live checks: the M2M client-credentials token works against the Management API (unknown user → 404 as expected). `/auth/login` → Auth0 `/authorize` → 302 to `github.com/login/oauth/authorize` with `scope=read:user,repo`, for both `http://localhost:5173` and `https://gitzilla.wilflin.me` origins. The session cookie gets `Secure` on https / `X-Forwarded-Proto: https`.
-- [ ] Real browser login confirming the IdP token (USER ACTION 1)
-- [ ] codex-net wiring into server/main.ts (handoff below), then a check on the dev server http://localhost:5175 (never 5173). The coordinator deploys to live.
+- [ ] Real browser login confirming the IdP token (USER ACTION 1, optional)
+- [x] codex-net wired it into server/main.ts + rooms.ts. Checked on the dev server http://localhost:5175 (never 5173). The coordinator deploys to live.
 
 ## Tenant config (Free-plan check)
 Checked against the skill's `feature-audit-pricing`. Free includes unlimited social connections and 1,000 M2M tokens/month. Token Vault on Free has a count limit of 2 and needs refresh tokens, the token-exchange grant and Connected Accounts, so I skipped it. No custom domain, no add-ons, no extra tenant.
@@ -61,7 +66,7 @@ Also add `"auth"` to tsconfig.json `include` (coordinator), so `npm run typechec
 ## Handoff → claude-ui (lobby)
 Endpoints (same origin, cookie auth, no tokens exposed):
 - `GET /api/me` → `{ enabled: boolean, user: { userId, login, avatar } | null }`. Hide the button when `enabled` is false.
-- `GET /api/me/repos` → `200 [{ name, full_name, private, language, stars, pushed_at }]`, most recently pushed first (owned + collaborator + org, up to 300). `401` → show "Connect GitHub" again; `502` → GitHub error, show a retry.
+- `GET /api/me/repos` → `200 [{ name, full_name, private, language, stars, pushed_at, fork, permission: 'admin'|'maintain'|'push'|'read', pvpEligible }]`, sorted by stars, then most recently pushed (owned + collaborator + org, up to 300). `?pvp=1` returns only `pvpEligible` rows; the eligibility rules are in `server/pvp-access.ts` (codex-net, coordinator-authorized). `401` → show "Connect GitHub" again; `502` → GitHub error, show a retry.
 - Sign in: full-page navigate to `/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`. Afterwards you land back on the same `/r/ABCD` URL. On failure it returns with `?auth_error=<message>`; show it as a toast.
 - Switch account: `/auth/login?switch=1&returnTo=…` (forces the Auth0 login prompt; GitHub may still remember its own session).
 - Sign out: navigate to `/auth/logout?returnTo=${encodeURIComponent(location.pathname)}`.
@@ -71,6 +76,9 @@ UI sketch for the repo picker in the lobby card:
 - Signed out: a `[ Connect GitHub ]` button next to the paste-link input.
 - Signed in: `avatar` (16 px, pixelated) + `@login` + a small "sign out" link. Below that, a scrollable terminal list with one row per repo: `full_name`, a 🔒 if `private`, a `language` chip, `★stars`, and the relative `pushed_at`. Add a filter box on top.
 - Clicking a row sends the existing `{ t: "setRepo", repo: full_name }`. The server attaches the token itself.
+
+## Co-owned changes
+- codex-net (coordinator-authorized) extended `auth/index.ts` + tests: added the `fork` / `permission` / `pvpEligible` fields to the repo rows and the `?pvp=1` filter, using `server/pvp-access.ts` and the authenticated `/user` ID. No tenant/config changes. `npx vitest run auth/`: 9/9 PASS after their change.
 
 ## Contract requests
 None. The token stays server-side; `setRepo` is unchanged.

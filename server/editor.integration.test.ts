@@ -41,7 +41,9 @@ it.skipIf(process.env.EDITOR_SERVER_TEST !== '1')('wires real main.ts editor ana
     student.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42\nraise RuntimeError("PRIVATE_MAIN_EDITOR")' }] });
     const report = await until(() => student.latest()?.reports[student.welcome.you]);
     expect(report.source).toBe('in-app'); expect(report.commit).toMatch(/^inapp:[a-f\d]{8}$/); expect(report.score).toBe(100); expect(report.criteria.length).toBeGreaterThan(0);
-    await until(() => teacher.latest()?.reports[student.welcome.you]);
+    expect(report).not.toHaveProperty('files');
+    const teacherReport = await until(() => teacher.latest()?.reports[student.welcome.you]);
+    expect(teacherReport.files?.[0].content).toContain('PRIVATE_MAIN_EDITOR');
   } finally {
     for (const socket of sockets) socket.terminate();
     if (child.exitCode === null && child.signalCode === null) {

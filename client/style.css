@@ -608,7 +608,7 @@ body:has(.kj-touch-overlay) .hud-skill { display: none; }
 
 /* hall of monsters */
 .hall { font-size: 17px; }
-.hall-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.hall-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .hall-h { color: var(--green); margin-bottom: 2px; }
 .hall-row { display: grid; grid-template-columns: 20px 52px minmax(0, 1fr) auto; gap: 6px; line-height: 1.15; }
 .hall-row.hi { background: rgba(255,210,61,.12); }
@@ -1594,3 +1594,73 @@ select option { color: #e8edf7; background: #101a2b; }
 .pz-host-row .btn { flex: 1 1 140px; }
 .pz-win { background: #04080a; box-shadow: 0 0 0 3px var(--green-d), 0 0 0 6px #000, 0 0 40px rgba(57,255,136,.2); }
 .classroom-screen .pause-ov { position: fixed; z-index: 1100; }
+
+/* ---------------- PvP royale (claude-ui): kill feed, spectate, GC zone warning, placements autopsy ---------------- */
+.kill-feed { position: absolute; left: 6px; top: 6px; z-index: 3; display: flex; flex-direction: column; gap: 3px; pointer-events: none; max-width: min(62%, 340px); }
+.kf-row { display: flex; align-items: center; gap: 6px; padding: 2px 6px; background: rgba(4,6,8,.82); box-shadow: inset 2px 0 0 var(--red); font-size: 15px; line-height: 1.1; white-space: nowrap; animation: line-in .25s steps(3) both; transition: opacity .8s; }
+.kf-row.me { box-shadow: inset 2px 0 0 var(--yellow), 0 0 0 1px rgba(255,210,61,.35); }
+.kf-row.old { opacity: 0; }
+.kf-k { color: var(--cyan); max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
+.kf-k.gc, .kf-w.gc { color: var(--magenta); }
+.kf-v { color: #ff8fa0; text-decoration: line-through; max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
+.kf-x { color: var(--red); }
+.kf-w { font-size: 13px; color: var(--dim); max-width: 11em; overflow: hidden; }
+.screen.game.phone-portrait .kf-row { font-size: 12px; padding: 1px 4px; }
+.screen.game.phone-portrait .kf-w { display: none; }
+body.bigscreen .kf-row { font-size: 22px; }
+
+.spectate { position: absolute; left: calc(var(--gx) + var(--gw) / 2); top: calc(var(--gy) + var(--gh) - 8px); transform: translate(-50%, -100%); z-index: 9;
+  width: min(calc(var(--gw) - 16px), 520px); padding: 8px 12px; background: rgba(8,4,8,.9); box-shadow: 0 0 0 2px var(--red-d), 0 0 0 4px rgba(0,0,0,.7); text-align: center; font-size: 16px; color: var(--text); }
+.spectate[hidden] { display: none; }
+.sp-title { font-family: var(--pix); font-size: 12px; color: #ffb3c0; line-height: 1.6; }
+.sp-seg { color: var(--red); }
+.sp-place { color: var(--yellow); }
+.sp-killer { margin-top: 2px; color: #ffd0d8; display: flex; gap: 6px; justify-content: center; align-items: baseline; flex-wrap: wrap; }
+.sp-killer b { color: var(--cyan); }
+.sp-watch { margin-top: 6px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+.sp-watch .btn { min-width: 40px; min-height: 32px; }
+.sp-lbl { color: var(--dim); }
+.sp-who { color: var(--cyan); font-family: var(--pix); font-size: 11px; max-width: 12em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-left { margin-top: 4px; color: var(--dim); font-size: 14px; }
+.sp-left b { color: var(--green); }
+.screen.game.phone-portrait .spectate { font-size: 14px; padding: 6px 8px; }
+.screen.game.phone-portrait .sp-title { font-size: 10px; }
+.screen.game.phone-portrait .sp-left { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; margin-top: 2px; }
+.screen.game.phone-portrait .sp-watch { margin-top: 3px; }
+.screen.game.phone-portrait .sp-watch .btn { min-height: 28px; min-width: 44px; padding: 2px 8px; }
+.screen.game.phone-portrait.deck-compact .spectate { padding: 4px 6px; font-size: 13px; }
+.screen.game.phone-portrait.deck-compact .sp-killer .codex, .screen.game.phone-portrait.deck-compact .sp-pos { display: none; }
+.screen.game.spectating .deck .gest-status, .screen.game.spectating .hud-skill, .screen.game.spectating .hud-self { opacity: .3; }
+body.bigscreen .spectate { display: none; }
+
+.hud-pvp.out-zone { box-shadow: 0 0 0 2px var(--red), 0 0 0 4px rgba(0,0,0,.6), 0 0 18px rgba(255,51,85,.45); }
+.tm-row.out .tm-name { text-decoration: line-through; color: #777; }
+.tm-row.out .tm-st { color: var(--red); animation: none; }
+.royale-end .df-title { color: var(--yellow); animation: none; }
+.royale-end b { color: var(--cyan); }
+.royale-rules { margin: 0 0 6px; }
+.royale-rules .zone-word { color: var(--magenta); }
+
+.royale-autopsy .ry-row { grid-template-columns: 34px 36px minmax(0, 1fr) 44px 64px minmax(0, 150px); }
+.royale-autopsy .ry-by { padding-left: 6px; }
+.royale-autopsy .ry-ko, .royale-autopsy .ry-dmg { text-align: right; }
+.royale-autopsy .ry-by { color: #ff8fa0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.royale-autopsy .ry-row.mvp .ry-by { color: var(--yellow); }
+.royale-autopsy .royale-win { margin: 0 0 10px; }
+.ry-you b { color: var(--cyan); }
+.ap-gitlog { font-size: 16px; }
+.gl-row { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; padding: 2px 0; border-bottom: 1px dashed rgba(29,59,43,.6); animation: line-in .3s steps(3) both; }
+.gl-row.me { background: rgba(255,210,61,.08); }
+.gl-row.head .gl-msg { color: var(--green); }
+.gl-sha { color: var(--yellow); }
+.gl-ref { color: var(--cyan); }
+.gl-t { color: var(--dim); }
+.gl-msg b { color: var(--red); font-weight: normal; }
+.gl-w { font-size: 13px; }
+.gl-place { margin-left: auto; color: var(--dim); }
+@media (max-width: 600px) {
+  .royale-autopsy .ry-row { grid-template-columns: 28px 30px minmax(0, 1fr) 30px 44px minmax(0, 84px); font-size: 15px; }
+  .ap-gitlog { font-size: 14px; }
+}
+.royale-autopsy .ap-name { text-align: left; }
+.screen.game.spectating .key-hint { display: none; }

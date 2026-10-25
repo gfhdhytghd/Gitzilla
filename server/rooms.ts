@@ -387,7 +387,10 @@ export class RoomServer {
     if (msg.t === 'input') {
       if (member.role !== 'player' || room.phase !== 'match') return;
       if (room.paused) return;
-      if (room.mode === 'pvp' && room.state?.players.find(p => p.id === member.id)?.eliminated) return;
+      if (room.mode === 'pvp') {
+        const fighter = room.state?.players.find(p => p.id === member.id);
+        if (!fighter || fighter.eliminated) return;
+      }
       const f = sanitizeInputFrame(msg.frame);
       if (!f) return;
       if (member.input && f.seq <= member.input.seq) return;
@@ -703,7 +706,7 @@ export class RoomServer {
     member.controlsReady = !phoneRequest(request); member.controlsMode = undefined;
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
-    if (!room.classroom && (member.role === 'player' || room.mode === 'edu') && (!room.ownerId || !room.members.get(room.ownerId)?.socket)) room.ownerId = member.id;
+    if (!room.classroom && (member.role === 'player' || room.mode === 'edu' || room.mode === 'pvp') && (!room.ownerId || !room.members.get(room.ownerId)?.socket)) room.ownerId = member.id;
     if (!room.classroom && room.mode === 'edu' && member.role === 'screen' && (!room.teacherId || room.teacherId === member.id || room.ownerId === member.id)) {
       room.teacherId = member.id; room.ownerId = member.id;
     }
@@ -796,19 +799,41 @@ export class RoomServer {
     room.cleanupTimer.unref();
   }
 
+  private pvpFighters(room: Room) {
+    const humans = connectedPlayers(room);
+    const loading = [...humans, ...bots(room)].filter(m => m.lobby.status === 'analyzing');
+    if (loading.length) throw new Error(`PvP is waiting for repository analysis: ${loading.map(m => m.name).join(', ')}.`);
+    const failedBots = bots(room).filter(m => m.lobby.status !== 'ready' || !m.lobby.kit);
+    if (failedBots.length) throw new Error(`PvP AI rivals are not ready: ${failedBots.map(m => m.name).join(', ')}. Remove and add them again.`);
+    const fighters = humans.filter(m => m.lobby.status === 'ready' && m.lobby.kit);
+    const unverified = fighters.filter(m => !m.pvpAccess);
+    if (unverified.length) throw new Error(`PvP repository eligibility must be verified for: ${unverified.map(m => m.name).join(', ')}. Reconnect GitHub and reselect an eligible repository.`);
+    const count = fighters.length + bots(room).length;
+    if (count < 2) throw new Error(`PvP needs at least 2 ready fighters; found ${fighters.length} eligible human${fighters.length === 1 ? '' : 's'} and ${bots(room).length} AI rival${bots(room).length === 1 ? '' : 's'}. Add AI rivals or invite eligible players. A host without an eligible repository spectates.`);
+    if (count > 8) throw new Error(`PvP supports at most 8 fighters; ${count} are ready. Remove AI rivals or reduce the roster.`);
+    if (new Set(fighters.map(m => m.pvpAccess!.userId)).size !== fighters.length) throw new Error('PvP needs different GitHub accounts for every human fighter.');
+    return fighters;
+  }
+
   private async validatePvpStart(room: Room, owner: Member) {
-    const roster = connectedPlayers(room);
+    const roster = this.pvpFighters(room);
+    const ownerSocket = owner.socket;
+    const connections = connectedPlayers(room).map(member => ({ member, socket: member.socket, revision: member.revision }));
     const botRoster = bots(room).map(m => ({ id: m.id, revision: m.revision }));
-    if (!roster.length || roster.length + botRoster.length < 2 || roster.length + botRoster.length > 8 || roster.some(m => m.lobby.status !== 'ready' || !m.pvpAccess)) throw new Error('PvP needs 2–8 ready fighters, including at least one verified human.');
     const captured = roster.map(m => ({ member: m, socket: m.socket, revision: m.revision, access: m.pvpAccess! }));
     const verified = await Promise.all(captured.map(async c => {
-      const request = c.socket ? this.requests.get(c.socket) : undefined;
-      const token = request ? await this.services.getGithubToken?.(request) : null;
-      if (!token || !this.services.verifyPvpAccess) throw new Error('Reconnect GitHub before starting PvP.');
-      return this.services.verifyPvpAccess(c.access.repo, token);
+      try {
+        const request = c.socket ? this.requests.get(c.socket) : undefined;
+        let token: string | null | undefined;
+        try { token = request ? await this.services.getGithubToken?.(request) : null; }
+        catch { throw new Error('GitHub connection unavailable. Reconnect GitHub and retry.'); }
+        if (!token || !this.services.verifyPvpAccess) throw new Error('Reconnect GitHub and reselect an eligible repository.');
+        return await this.services.verifyPvpAccess(c.access.repo, token);
+      } catch (error) { throw new Error(`PvP cannot start: ${c.member.name}: ${error instanceof Error ? error.message : 'GitHub eligibility verification failed.'}`); }
     }));
-    if (room.mode !== 'pvp' || room.phase !== 'lobby' || room.ownerId !== owner.id || !owner.socket
-        || connectedPlayers(room).length !== roster.length || bots(room).length !== botRoster.length
+    if (room.mode !== 'pvp' || room.phase !== 'lobby' || room.ownerId !== owner.id || !owner.socket || owner.socket !== ownerSocket
+        || connectedPlayers(room).length !== connections.length || bots(room).length !== botRoster.length
+        || connections.some(c => room.members.get(c.member.id) !== c.member || c.member.socket !== c.socket || c.member.revision !== c.revision)
         || botRoster.some(c => room.members.get(c.id)?.revision !== c.revision)
         || captured.some((c, i) => c.member.socket !== c.socket || c.member.revision !== c.revision
           || c.member.pvpAccess !== c.access || verified[i].userId !== c.access.userId || verified[i].private !== c.access.private || verified[i].repo !== c.access.repo)) throw new Error('The PvP roster changed. Verify repositories and try again.');
@@ -816,13 +841,12 @@ export class RoomServer {
   }
 
   private start(room: Room) {
-    const humans = connectedPlayers(room).filter(p => p.lobby.status === 'ready' && p.lobby.kit);
+    const humans = room.mode === 'pvp' ? this.pvpFighters(room) : connectedPlayers(room).filter(p => p.lobby.status === 'ready' && p.lobby.kit);
     if (bots(room).some(p => p.lobby.status !== 'ready' || !p.lobby.kit)) throw new Error('Wait for AI teammates to finish loading');
     const players = [...humans, ...bots(room)];
     let boss: BossKit | null = null;
     if (room.mode === 'pvp') {
-      if (!humans.length || humans.length !== connectedPlayers(room).length || players.length < 2 || players.length > 8) throw new Error('PvP needs 2–8 ready fighters, including at least one verified human.');
-      if (humans.some(p => !p.pvpAccess) || new Set(humans.map(p => p.pvpAccess!.userId)).size !== humans.length) throw new Error('All humans must verify eligible repositories with different GitHub accounts.');
+      // The owner may be an unconfigured/error player or screen and spectate.
     } else if (room.mode === 'edu') {
       if (players.length < 2) throw new Error('Classroom PvP needs at least 2 ready students or bots');
       if (players.some(p => !p.lobby.kit?.quality?.length)) throw new Error('Classroom quality stats are still loading. Reselect repos after the update.');
@@ -867,7 +891,10 @@ export class RoomServer {
         const inputs = new Map<string, InputFrame>();
         for (const m of room.members.values()) {
           if (m.role !== 'player') continue;
-          if (room.mode === 'pvp' && room.state?.players.find(p => p.id === m.id)?.eliminated) { m.input = m.input ? idle(m.input.seq) : undefined; m.inputAt = 0; continue; }
+          if (room.mode === 'pvp') {
+            const fighter = room.state?.players.find(p => p.id === m.id);
+            if (!fighter || fighter.eliminated) { m.input = m.input ? idle(m.input.seq) : undefined; m.inputAt = 0; continue; }
+          }
           if (m.lobby.bot && m.botInput && room.state) {
             const player = room.state.players.find(p => p.id === m.id);
             if (player) inputs.set(m.id, sanitizeInputFrame(m.botInput(room.state, player)) ?? idle());
@@ -977,7 +1004,8 @@ export class RoomServer {
   private publishClassroom(room: Room, persist = true) {
     if (!room.classroom || this.closing) return;
     const state = { ...room.classroom.publicState(), paused: room.paused ?? null };
-    for (const member of room.members.values()) send(member.socket, { t: 'classroom', state, ...room.classroom.privatePayload(member.id, member.id === room.teacherId) });
+    for (const member of room.members.values()) send(member.socket, { t: 'classroom', state, ...room.classroom.privatePayload(member.id,
+      member.role === 'screen' && member.id === room.teacherId && member.id === room.ownerId) });
     if (persist) this.persist();
   }
   private armClassroom(room: Room) {

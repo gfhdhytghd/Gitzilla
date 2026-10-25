@@ -104,3 +104,12 @@ export function repoStats(g: Genesis, label: string): RepoStats {
     coupling: Math.round(couplingDensity(g) * 100),
   };
 }
+
+/** Projector summary of long classroom step instructions: the first two real lines (headings, list markers and
+ *  code fences skipped; short title-like lines without punctuation skipped), at most 220 characters. */
+export function stepSummary(text: string): string {
+  const lines = text.split("\n").map((l) => l.trim().replace(/^[-*>]\s+/, ""))
+    .filter((l) => l && !/^#/.test(l) && !/^```/.test(l) && !(l.length <= 32 && !/[.!?。！？:：]$/.test(l)));
+  const out = lines.slice(0, 2).join(" ");
+  return out.length > 220 ? `${out.slice(0, 217).replace(/\s+\S*$/, "")}…` : out;
+}

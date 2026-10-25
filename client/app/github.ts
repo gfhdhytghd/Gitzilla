@@ -3,7 +3,11 @@ import { toast } from "./app";
 import { h } from "./util";
 
 export interface GhUser { userId: string; login: string; avatar: string }
-interface GhRepo { name: string; full_name: string; private: boolean; language: string | null; stars: number; pushed_at: string }
+interface GhRepo {
+  name: string; full_name: string; private: boolean; language: string | null; stars: number; pushed_at: string;
+  // PvP eligibility (auth/): your own non-fork repo, or a public repo you maintain/administer
+  fork?: boolean; permission?: "admin" | "maintain" | "push" | "read"; pvpEligible?: boolean;
+}
 
 const LANG_COL: Record<string, string> = {
   TypeScript: "#3178c6", JavaScript: "#f1e05a", Python: "#3572a5", Rust: "#dea584", Go: "#00add8", C: "#8a8a8a", "C++": "#f34b7d",
@@ -22,19 +26,23 @@ export function fetchMe(): Promise<{ enabled: boolean; user: GhUser | null }> {
     .catch(() => ({ enabled: false, user: null })));
 }
 
-async function fetchRepos(): Promise<GhRepo[] | 401 | 502> {
+/** pvp: only repos you may fight with (?pvp=1 returns eligible rows only; anything not marked eligible is dropped too). */
+async function fetchRepos(pvp = false): Promise<GhRepo[] | 401 | 502> {
+  const eligible = (rows: GhRepo[]) => (pvp ? rows.filter((r) => r.pvpEligible === true) : rows); // unknown = not shown
   if (mockOn()) {
     const now = Date.now();
-    return ["hackpsu-kaiju", "dotfiles", "secret-startup", "advent-of-code", "thesis-latex", "tiny-raytracer"].map((n, i) => ({
-      name: n, full_name: `octocat/${n}`, private: i % 3 === 2, language: ["TypeScript", "Shell", "Rust", "Python", "TeX", "C++"][i], stars: [42, 3, 0, 17, 0, 128][i],
+    // dotfiles is a fork, advent-of-code a public repo you can only read: neither is PvP-eligible
+    return eligible(["hackpsu-kaiju", "dotfiles", "secret-startup", "advent-of-code", "thesis-latex", "tiny-raytracer"].map((n, i) => ({
+      name: n, full_name: `${i === 3 ? "adventofcode" : "octocat"}/${n}`, private: i % 3 === 2, language: ["TypeScript", "Shell", "Rust", "Python", "TeX", "C++"][i], stars: [42, 3, 0, 17, 0, 128][i],
       pushed_at: new Date(now - i * 86400000 * (i + 1) - 3600000).toISOString(),
-    }));
+      fork: i === 1, permission: i === 3 ? "read" as const : "admin" as const, pvpEligible: i !== 1 && i !== 3,
+    })));
   }
   try {
-    const r = await fetch("/api/me/repos", { credentials: "same-origin" });
+    const r = await fetch(pvp ? "/api/me/repos?pvp=1" : "/api/me/repos", { credentials: "same-origin" });
     if (r.status === 401) return 401;
     if (!r.ok) return 502;
-    return (await r.json()) as GhRepo[];
+    return eligible((await r.json()) as GhRepo[]);
   } catch {
     return 502;
   }
@@ -66,22 +74,37 @@ export function consumeAuthError() {
   history.replaceState(null, "", location.pathname + (q ? `?${q}` : ""));
 }
 
+export type GithubPicker = HTMLElement & { /** PvP lists only eligible repos (owner-only rule); re-renders when it flips. */ setPvp(on: boolean): void };
+
 /** Lobby widget: hidden when auth is disabled; Connect button when signed out; picker when signed in. */
-export function createGithubPicker(onPick: (fullName: string) => void, opts: { kind?: "hero" | "boss" } = {}): HTMLElement {
+export function createGithubPicker(onPick: (fullName: string) => void, opts: { kind?: "hero" | "boss"; pvp?: boolean } = {}): GithubPicker {
   const boss = opts.kind === "boss";
   const tid = (id: string) => (boss ? `boss-${id}` : id); // unique test ids when both pickers are on screen
-  const el = h(`div.gh${boss ? ".gh-boss" : ""}`, { style: "display:none" });
-  fetchMe().then(({ enabled, user }) => {
+  const el: GithubPicker = Object.assign(h(`div.gh${boss ? ".gh-boss" : ""}`, { style: "display:none" }), { setPvp: (on: boolean) => setPvp(on) });
+  let pvp = !!opts.pvp;
+  let user: GhUser | null = null;
+  let enabled = false;
+  const show = () => {
     if (!enabled) return;
     el.style.display = "";
-    if (!user) return signedOut();
-    signedIn(user);
+    if (!user) signedOut();
+    else signedIn(user);
+  };
+  const setPvp = (on: boolean) => {
+    if (on === pvp) return;
+    pvp = on;
+    show();
+  };
+  fetchMe().then((me) => {
+    enabled = me.enabled;
+    user = me.user;
+    show();
   });
 
   function signedOut() {
     el.replaceChildren(
       h("button.btn.btn-gh", { "data-testid": tid("github-connect"), onclick: () => login() }, h("span.gh-mark", null, "◉"), " Connect GitHub"),
-      h("span.gh-hint.dim", null, boss ? " summon one of your own repos as the boss 🔒" : " pick from your own repos, private too 🔒"),
+      h("span.gh-hint.dim", null, boss ? " summon one of your own repos as the boss 🔒" : pvp ? " fight with a repo you own (forks don't count) 🔒" : " pick from your own repos, private too 🔒"),
     );
   }
 
@@ -106,7 +129,7 @@ export function createGithubPicker(onPick: (fullName: string) => void, opts: { k
       const q = filter.value.trim().toLowerCase();
       const rows = repos.filter((r) => !q || r.full_name.toLowerCase().includes(q) || (r.language ?? "").toLowerCase().includes(q)).slice(0, 120);
       if (!rows.length) {
-        list.replaceChildren(h("div.dim", null, repos.length ? "no match" : "no repos found"));
+        list.replaceChildren(h("div.dim", { "data-testid": tid("github-empty") }, repos.length ? "no match" : pvp ? "no eligible repos — PvP needs a repo you own (forks don't count)" : "no repos found"));
         return;
       }
       list.replaceChildren(
@@ -126,8 +149,10 @@ export function createGithubPicker(onPick: (fullName: string) => void, opts: { k
     filter.addEventListener("keydown", (e) => {
       if (e.key === "Enter") list.querySelector<HTMLButtonElement>(".gh-row")?.click();
     });
+    const wantPvp = pvp;
     const load = async () => {
-      const res = await fetchRepos();
+      const res = await fetchRepos(wantPvp);
+      if (wantPvp !== pvp) return; // the mode flipped while loading; setPvp() already reloaded
       if (res === 401) return signedOut();
       if (res === 502) {
         list.replaceChildren(h("div.pcard-err", null, "github said no (502). "), h("button.btn-link", { onclick: load }, "retry"));

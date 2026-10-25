@@ -10,6 +10,6 @@
     "#ffcca7",
     "#00d084"
   ],
-  "catchphrase": "Running on 127.0.0.1:5000 — @app.route('",
+  "catchphrase": "Running on 127.0.0.1:5000…",
   "weaponName": "yield from create_app()"
 }

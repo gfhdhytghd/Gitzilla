@@ -71,6 +71,28 @@ An empty quality array never invents grades; absent quality retains battle behav
 Rebuild the kit and Genesis when the room mode changes. Edu needs only a hero kit;
 this builder never reads `MatchState.boss` or `Autopsy.boss` and needs no boss state.
 
+Ordinary PvP heroes carry sim-owned `kit.pvpPower = {score, parts}`. The same
+`buildGenesis(profile, kit, 'hero')` call leads with short power captions:
+
+```
+412 stars · 38% tests → POWER 78
+POWER 78 → +2 HP · +58.5% damage
+POWER 78 → 8 HP · 1.585× damage
+```
+
+Then it shows armor/speed/energy and every supplied part's source label,
+0–100 strength and percentage influence. It reads the supplied total and part
+metadata; it never reimplements the scoring formula. Bonuses compare final kit
+values with sim's `statsFromPower(0)` neutral baseline, **not** the battle kit.
+Unmeasured parts and the neutral missing-analysis fallback stay explicitly labelled.
+
+`pvpPowerTrace(profile, kit)` is exported. Refs are `pvp-power`,
+`pvp-power:boost`, `pvp-power:stats`, `pvp-power:loadout`, and
+`pvp-power:part:<index>`. Resolve part refs against `kit.pvpPower.parts` for full
+labels. Captions keep the 40-character limit and credential filtering. Power
+heroes have an empty equal-budget payload; absent power preserves battle/edu
+behavior. No client/UI changes or new network fields are needed for the trace.
+
 Payloads target at most 12 KiB UTF-8 JSON: optional file/snippet samples are reduced
 first, then trace captions shortened while retaining each mapping step. Current
 15 fallback repos, base and fallback-designed hero/boss kits (60 payloads), range

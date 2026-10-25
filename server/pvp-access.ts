@@ -3,6 +3,18 @@
  * https://docs.github.com/en/rest/repos/repos#get-a-repository
  */
 export interface PvpAccess { userId: number; login: string; repo: string; private: boolean }
+export interface PvpRepoMetadata {
+  owner?: { id?: number }; private?: boolean; fork?: boolean;
+  permissions?: { admin?: unknown; maintain?: unknown; push?: unknown; pull?: unknown; triage?: unknown };
+}
+/** Shared by the authenticated picker and authoritative per-fighter START verification. */
+export function pvpRepoEligible(repo: PvpRepoMetadata, userId: number): boolean {
+  const ownerId = repo.owner?.id;
+  if (!Number.isSafeInteger(userId) || userId <= 0 || typeof ownerId !== 'number' || !Number.isSafeInteger(ownerId) || ownerId <= 0
+      || typeof repo.private !== 'boolean' || typeof repo.fork !== 'boolean') return false;
+  if (ownerId === userId) return !repo.fork;
+  return !repo.private && (repo.permissions?.maintain === true || repo.permissions?.admin === true);
+}
 export async function verifyPvpAccess(repo: string, token: string, fetcher: typeof fetch = fetch): Promise<PvpAccess> {
   if (!token) throw new Error('Connect GitHub before choosing a PvP repository.');
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error('Use a GitHub owner/repository name.');
@@ -19,7 +31,7 @@ export async function verifyPvpAccess(repo: string, token: string, fetcher: type
       || metadata.full_name.toLowerCase() !== repo.toLowerCase()) throw new Error('GitHub returned incomplete repository eligibility.');
   const own = metadata.owner.id === user.id;
   if (own && metadata.fork) throw new Error('Your own fork is not eligible for PvP. Choose an original repository.');
-  if (!(own && !metadata.fork) && !(metadata.private === false && (metadata.permissions?.maintain === true || metadata.permissions?.admin === true))) {
+  if (!pvpRepoEligible(metadata, user.id)) {
     throw new Error('PvP requires your own non-fork repository or a public repository you maintain or administer.');
   }
   return { userId: user.id, login: user.login, repo: metadata.full_name, private: metadata.private };

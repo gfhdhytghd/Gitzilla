@@ -26,7 +26,7 @@
     "TODO: Prettier doesn't handle long strings or long comments.",
     "Preserve the rendered shell on synchronous prerender abort!",
     "TODO should be ERROR!",
-    "[compiler] Retain declared Freeze effects on already-frozen valu"
+    "[compiler] Retain declared Freeze effects on already-frozen…"
   ],
   "attackNames": {
     "0-laser-0": "render() Prismatic HIR Beam",

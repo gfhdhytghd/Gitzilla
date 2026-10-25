@@ -23,10 +23,10 @@
     "Pale lightning crackles along as_sql junctions: signals.request_started fired!"
   ],
   "taunts": [
-    "TODO: this should be handled by some parameter to the Change!",
+    "TODO: this should be handled by some parameter to the…",
     "Your queries cannot escape router = ConnectionRouter().",
-    "conn.close_if_unusable_or_obsolete() — purge the unoptimized!",
-    "XXX: The deletion UX can be confusing when dealing with casc!"
+    "conn.close_if_unusable_or_obsolete() — purge the…",
+    "XXX: The deletion UX can be confusing when dealing with…"
   ],
   "attackNames": {
     "0-laser-0": "__init__() tests.clean: Assertion Piercing Beam",

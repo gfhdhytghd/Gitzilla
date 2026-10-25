@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 // Lobby: your hero setup, squad cards that "spin up" as repos are analyzed, the boss panel
 // (owner sets the boss repo; silhouette -> reveal), START. Big-screen mode (?screen=1) shows a huge QR.
-import type { BossKit, LobbyPlayer, LobbyState, PlayerKit } from "../../shared/types";
+import type { BossKit, LobbyPlayer, LobbyState, PlayerKit, ServerMsg } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from "./app";
 import { createBackdrop } from "./backdrop";
 import { createGithubPicker } from "./github";
@@ -262,6 +262,11 @@ export function createLobby(app: AppCtx): Screen {
   // repo picker; collapses to one line once your hero is summoned (tap "change" to reopen)
   let changingRepo = false;
   const summonBtn = h("button.btn.btn-primary", { "data-testid": "player-repo-submit", onclick: submitRepo }, "▶ summon hero");
+  // PvP lists only repos you may fight with (your own non-fork, or a public repo you maintain/administer)
+  const ghPicker = createGithubPicker((full) => {
+    repoInput.value = full;
+    submitRepo();
+  });
   const pickerBox = h(
     "div.picker",
     null,
@@ -269,10 +274,7 @@ export function createLobby(app: AppCtx): Screen {
     repoErr,
     summonBtn,
     youChips,
-    createGithubPicker((full) => {
-      repoInput.value = full;
-      submitRepo();
-    }),
+    ghPicker,
   );
   const pickerDoneRepo = h("b");
   const pickerDone = h(
@@ -380,8 +382,34 @@ export function createLobby(app: AppCtx): Screen {
   let startArmedAt = 0;
   const startArmed = () => startArmedAt > 0 && performance.now() - startArmedAt < 4000;
   const pendingControls = () => app.lobby?.players.filter(p => !p.bot && p.status === "ready" && !!p.kit && p.controlsReady === false) ?? [];
+  // ---- PvP royale start rule (server: 2–8 ready fighters incl. bots; humans without an eligible repo spectate, the host too;
+  // any repo/bot still being verified or analyzed blocks the start) ----
+  /** A pasted PvP repo is checked for ownership first: until analysis really starts nothing about it is shown. */
+  const pvpVerifying = (p: LobbyPlayer, lobby: LobbyState) =>
+    lobby.mode === "pvp" && p.status === "analyzing" && (!p.progress || (p.progress.stage === "clone" && p.progress.pct === 0));
+  const pvpStart = (lobby: LobbyState) => {
+    const fighters = lobby.players.filter((p) => p.status === "ready" && !!p.kit);
+    const pending = lobby.players.filter((p) => p.status === "analyzing");
+    const watchers = lobby.players.filter((p) => !p.bot && (p.status === "empty" || p.status === "error"));
+    const me = lobby.players.find((p) => p.id === app.you);
+    const hostFights = me?.status === "ready";
+    const n = fighters.length;
+    const reason = pending.length
+      ? `waiting for ${pending.map((p) => p.name).join(", ")} to finish verifying`
+      : n < 2
+        ? hostFights ? "need at least 2 fighters — invite friends or add AI rivals" : "need at least 2 fighters — add AI rivals, or connect GitHub and pick a repo you own to fight"
+        : n > 8 ? "max 8 fighters — remove AI rivals" : "";
+    const label = hostFights ? `▶ START ROYALE (${n} fighters)` : `▶ START ROYALE · you'll spectate (${n} fighters)`;
+    const others = watchers.filter((p) => p.id !== app.you).map((p) => p.name);
+    // separate sentences = separate text nodes, so each one translates on its own
+    const hint = reason ? [reason] : [hostFights ? `${n}/8 fighters ready. Last one standing wins.` : "no eligible repo: you'll watch. Connect GitHub and pick a repo you own to fight.",
+      ...(others.length ? [`${others.join(", ")} will spectate.`] : [])];
+    return { n, reason, label, hint, hostFights };
+  };
   const tryStart = () => {
-    if (pendingControls().length || (!screen && !getMotionPermissionState().ready)) return;
+    const spectating = app.lobby?.mode === "pvp" && !pvpStart(app.lobby).hostFights; // a watching host needs no controls
+    if (pendingControls().length || (!screen && !spectating && !getMotionPermissionState().ready)) return;
+    if (app.lobby?.mode === "pvp" && pvpStart(app.lobby).reason) return;
     const cloning = app.lobby?.players.filter((p) => p.status === "analyzing") ?? [];
     if (cloning.length && !startArmed()) {
       startArmedAt = performance.now();
@@ -394,6 +422,7 @@ export function createLobby(app: AppCtx): Screen {
   };
   const startBtn = h("button.btn.btn-big.btn-start", { "data-testid": "start-match", onclick: () => tryStart() }, "$ ./fight.sh") as HTMLButtonElement;
   const startHint = h("div.start-hint");
+  let startError = "";
   const bossPanel = h(
     "section.panel.boss-panel",
     null,
@@ -453,7 +482,7 @@ export function createLobby(app: AppCtx): Screen {
         location.assign(`/r/${room}?screen=1`);
       } catch { toast("Could not open the teacher classroom. Please try again.", "err"); }
     } }, label);
-  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: code together and attack one shared Boss" }, modeBtn("battle", "⚔ boss raid"), modeBtn("pvp", "PvP duel"), modeBtn("edu", "🎓 classroom"));
+  const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: code together and attack one shared Boss" }, modeBtn("battle", "⚔ boss raid"), modeBtn("pvp", "☠ PvP royale"), modeBtn("edu", "🎓 classroom"));
   // ⏏ leave room (owner: one extra tap that says who inherits the room); projector: end class / new room
   let leaveArmedAt = 0;
   const leaveMsg = h("span.leave-msg", { role: "status" });
@@ -565,6 +594,14 @@ export function createLobby(app: AppCtx): Screen {
     const portrait = h("div.pcard-portrait");
     const info = h("div.pcard-info");
     const name = h("div.pcard-name", null, h("span", { translate: "no" }, p.name), owner ? h("span.badge.owner", null, "★ OWNER") : null, you ? h("span.badge.you", null, "YOU") : null, p.bot ? h("span.badge.bot", null, "BOT") : null);
+    const pvp = lobby.mode === "pvp";
+    // PvP: never show a card for a repo that isn't (yet) verified as yours; those players spectate
+    if (pvp && !p.bot && (p.status === "empty" || p.status === "error" || pvpVerifying(p, lobby))) {
+      const verifying = p.status === "analyzing";
+      portrait.append(h("div.portrait-empty", null, verifying ? "…" : "👁"));
+      info.append(name, h("div.pcard-repo.dim", null, verifying ? "verifying repo ownership…" : you ? "spectating · pick a repo you own to fight" : "spectating"));
+      return h(`div.pcard.st-${verifying ? "analyzing" : "spectate"}${you ? ".is-you" : ""}`, { "data-testid": "pvp-spectator" }, portrait, info);
+    }
     const repo = h("div.pcard-repo", null, p.repo ? h("span", { translate: "no" }, `⎇ ${p.repo}`) : "awaiting repo…");
     info.append(name, repo);
     if (!p.bot) info.append(h("div.controls-state", { "data-testid": "player-controls", "data-ready": p.controlsReady !== false }, p.controlsReady === false ? "📱 waiting for controls" : "✓ controls ready"));
@@ -599,7 +636,7 @@ export function createLobby(app: AppCtx): Screen {
     squadCount.textContent = `${nReady}/${lobby.players.length} ready`;
     const edu = lobby.mode === "edu";
     // classroom copy on the projector: the teacher's screen is the host; bots are opponents in PvP
-    botLabel.textContent = edu ? "AI classmates (bots): " : "AI teammates: ";
+    botLabel.textContent = edu ? "AI classmates (bots): " : lobby.mode === "pvp" ? "AI rivals: " : "AI teammates: ";
     qrHelp1.textContent = edu ? "students: scan to join · hold your phone upright" : "scan with your phone (hold it upright)";
     qrHelp2.textContent = edu ? "★ the teacher launches the class attack" : "★ the first phone to join is the host";
     classCounter.hidden = !(screen && edu);
@@ -607,7 +644,7 @@ export function createLobby(app: AppCtx): Screen {
     const seen = new Set<string>();
     lobby.players.forEach((p, i) => {
       seen.add(p.id);
-      const sig = [p.name, p.repo, p.status, p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
+      const sig = [p.name, p.repo, p.status, pvpVerifying(p, lobby), p.kit?.seed, p.error, p.id === lobby.ownerId, p.id === app.you, p.bot, p.controlsReady, dsig(p.kit), lobby.mode, p.kit?.quality?.map((q) => q.grade).join("")].join("|");
       if (p.status === "analyzing" && !analyzingSince.has(p.id)) analyzingSince.set(p.id, performance.now());
       if (p.status !== "analyzing") analyzingSince.delete(p.id);
       let card = cardEls.get(p.id);
@@ -628,7 +665,8 @@ export function createLobby(app: AppCtx): Screen {
     for (const [id, c] of cardEls) if (!seen.has(id)) (c.remove(), cardEls.delete(id), cardSig.delete(id));
     // empty slots up to 4 to make the "4+ players" target visible
     squadList.querySelectorAll(".pcard-slot").forEach((e) => e.remove());
-    if (!(screen && lobby.mode === "edu")) for (let i = lobby.players.length; i < (lobby.mode === "pvp" ? 2 : screen ? 8 : 4); i++)
+    // royale: show the whole 8-seat roster so "up to eight" reads at a glance
+    if (!(screen && lobby.mode === "edu")) for (let i = lobby.players.length; i < (lobby.mode === "pvp" || screen ? 8 : 4); i++)
       squadList.append(h("div.pcard.pcard-slot", null, h("div.pcard-portrait", null, h("div.portrait-empty", null, "+")), h("div.pcard-info", null, h("div.dim", null, `slot ${i + 1} · scan to join`))));
     backdrop.setHeroes(lobby.players.filter((p) => p.kit).map((p) => p.kit!));
   }
@@ -636,7 +674,11 @@ export function createLobby(app: AppCtx): Screen {
   function renderYou(lobby: LobbyState) {
     nameEl.textContent = app.name;
     const me = lobby.players.find((p) => p.id === app.you);
-    const live = !!me && heroGenesis.sync({ repo: me.repo, status: me.status, progress: me.progress, genesis: me.genesis, kit: me.kit }, lobby.mode);
+    const hideRepo = !!me && lobby.mode === "pvp" && (me.status === "error" || pvpVerifying(me, lobby));
+    const live = !!me && !hideRepo && heroGenesis.sync({ repo: me.repo, status: me.status, progress: me.progress, genesis: me.genesis, kit: me.kit }, lobby.mode);
+    if (hideRepo) heroGenesis.sync({ repo: null, status: "empty", kit: null }, lobby.mode);
+    // PvP: the server's refusal ("not your repo", "forks don't count", …) shows inline under the input, never as a card
+    if (lobby.mode === "pvp" && me?.status === "error" && me.error) repoErr.textContent = me.error;
     youPanel.classList.toggle("has-genesis", live);
     const collapse = !!me && me.status === "ready" && !changingRepo;
     pickerBox.hidden = collapse;
@@ -650,7 +692,9 @@ export function createLobby(app: AppCtx): Screen {
     nameEl.textContent = me.name;
     if (me.repo && document.activeElement !== repoInput && !repoInput.value) repoInput.value = me.repo;
     const st = me.status;
-    const label = st === "ready" ? "✓ hero summoned" : st === "analyzing" ? "analyzing repo…" : st === "error" ? `✗ ${me.error ?? "error"}` : "no repo yet";
+    const pvp = lobby.mode === "pvp";
+    const label = st === "ready" ? "✓ hero summoned" : st === "analyzing" ? (pvp && pvpVerifying(me, lobby) ? "checking that this repo is yours…" : "analyzing repo…")
+      : pvp ? "👁 spectating · pick a repo you own to fight" : st === "error" ? `✗ ${me.error ?? "error"}` : "no repo yet";
     youStatus.replaceChildren(statusMarker("player-ready", st, label));
     const edu = lobby.mode === "edu";
     const sig = `${st}|${me.kit?.seed}|${me.kit?.repo}|${dsig(me.kit)}|${edu}|${me.kit?.quality?.map((q) => q.grade).join("")}`;
@@ -697,15 +741,23 @@ export function createLobby(app: AppCtx): Screen {
     bossTitle.textContent = lobby.mode === "edu" ? "CLASSROOM BRAWL" : "BOSS KAIJU";
     if (lobby.mode === "edu") return renderClassroom(lobby, owner);
     if (lobby.mode === "pvp") {
-      bossTitle.textContent = "PVP DUEL";
+      bossTitle.textContent = "PVP ROYALE";
       eduInfo.hidden = false;
-      eduInfo.replaceChildren(h("p", null, "Two players. Best of three rounds. Most KOs wins; damage breaks ties."), h("p", null, "Connect GitHub. Use your own non-fork repository, or a public repository you maintain or administer. Your own forks are not eligible."));
+      eduInfo.replaceChildren(
+        h("p.royale-rules", null, h("b", null, "2–8 heroes · free-for-all · no respawns."), " ", h("span", null, "A knockout is final; the last hero standing wins.")),
+        h("p.royale-rules", null, h("b.zone-word", null, "GC sweep:"), " ", h("span", null, "the safe circle starts shrinking after 0:45–1:40 (more heroes, later). Outside it the garbage collector eats your HP.")),
+        h("p.royale-rules", null, h("span", null, "Everyone gets the same stat budget. Knockouts drop a heart and energy.")),
+        h("p.dim", null, "Connect GitHub. Use your own non-fork repository, or a public repository you maintain or administer. Your own forks are not eligible."),
+      );
       for (const n of [bossStage, bossStatus, bossInfo]) n.hidden = true;
       bossOwnerCtl.style.display = "none"; changeBossLink.style.display = "none";
       startBtn.style.display = owner ? "" : "none";
-      const ready = lobby.players.filter(p => p.status === "ready").length;
-      startBtn.disabled = ready !== 2; startBtn.textContent = "START PVP DUEL";
-      startHint.textContent = ready === 2 ? "Both repositories verified. Ready to fight." : "Invite a friend and verify both repositories.";
+      const st = pvpStart(lobby);
+      startBtn.disabled = !!st.reason;
+      startBtn.textContent = st.label;
+      if (startError) startHint.textContent = startError;
+      else startHint.replaceChildren(...st.hint.flatMap((x, i) => (i ? [" ", h("span", null, x)] : [h("span", null, x)])));
+      startHint.classList.toggle("warn", !!startError || !!st.reason);
       return;
     }
     eduInfo.hidden = true;
@@ -860,15 +912,17 @@ export function createLobby(app: AppCtx): Screen {
       b.disabled = !isOwner(app);
     }
     ownerBadge.textContent = isOwner(app) ? "★ you own this room" : "";
-    botCtl.style.display = isOwner(app) && lobby.mode !== "pvp" ? "" : "none";
-    youChips.hidden = lobby.mode === "pvp";
+    botCtl.style.display = isOwner(app) ? "" : "none";
+    youChips.hidden = lobby.mode === "pvp"; // PvP: no famous-repo quick picks (you can only fight with your own)
+    ghPicker.setPvp(lobby.mode === "pvp");
+    if (lobby.mode !== "pvp" || lobby.phase !== "lobby") startError = "";
     botCount.textContent = String(lobby.players.filter((p) => p.bot).length);
     renderRubric(lobby);
     renderSquad(lobby);
     if (!screen) renderYou(lobby);
     renderBoss(lobby);
     const pending = pendingControls();
-    const localPending = !screen && !getMotionPermissionState().ready;
+    const localPending = !screen && !getMotionPermissionState().ready && !(lobby.mode === "pvp" && !pvpStart(lobby).hostFights);
     if (pending.length || localPending) {
       startBtn.disabled = true;
       startHint.textContent = localPending ? "📱 tap to enable motion or choose touch only" : `waiting for controls: ${pending.map(p => p.name).join(", ")}`;
@@ -886,6 +940,26 @@ export function createLobby(app: AppCtx): Screen {
     const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? (edu ? "the teacher" : "the host");
     let text = "", cls = "", act: (() => void) | null = null;
     const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
+    if (lobby.mode === "pvp" && (owner || !me || me.status !== "ready")) {
+      const st = pvpStart(lobby);
+      if (owner) {
+        text = st.reason || st.label;
+        cls = st.reason ? "busy" : "go";
+        act = st.reason ? (st.hostFights ? null : toTop) : tryStart;
+      } else {
+        text = me?.status === "analyzing" ? "checking that this repo is yours…" : "👁 you'll spectate — pick a repo you own to fight";
+        cls = me?.status === "analyzing" ? "busy" : "";
+        act = toTop;
+      }
+      nextBar.textContent = text;
+      nextBar.className = `next-bar ${cls}`;
+      nextAction = act;
+      const barIsStart = phoneLobby() && owner;
+      nextBar.disabled = barIsStart && cls !== "go";
+      nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
+      startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
+      return;
+    }
     if (!me || me.status === "empty" || me.status === "error") {
       text = me?.status === "error" ? "✗ that repo failed — pick another above" : "① pick your repo above (or tap a chip)";
       act = toTop;
@@ -905,13 +979,13 @@ export function createLobby(app: AppCtx): Screen {
       text = lobby.boss.status === "analyzing" ? "⟳ summoning the boss…" : "② pick the BOSS repo ↓";
       cls = lobby.boss.status === "analyzing" ? "busy" : "";
       act = () => (bossPanel.scrollIntoView({ behavior: "smooth", block: "start" }), bossInput.focus());
-    } else if (lobby.mode === "pvp" && ready !== 2) {
-      text = "Waiting for two verified GitHub repositories"; cls = "busy";
+    } else if (lobby.mode === "pvp" && ready < 2) {
+      text = "waiting for a 2nd hero — invite friends or add AI rivals"; cls = "busy";
     } else if (edu && ready < 2) {
       text = `waiting for classmates (${ready} ready) — or add AI teammates`;
       cls = "busy";
     } else {
-      text = lobby.mode === "pvp" ? "START PVP DUEL" : edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
+      text = lobby.mode === "pvp" ? `▶ START ROYALE (${ready} heroes)` : edu ? `▶ START BRAWL (${ready} students)` : `▶ START FIGHT (${ready} hero${ready === 1 ? "" : "es"})`;
       cls = "go";
       act = tryStart;
     }
@@ -920,7 +994,7 @@ export function createLobby(app: AppCtx): Screen {
     nextAction = act;
     // data-testid="start-match" always belongs to the VISIBLE start control: the sticky bar on phone-portrait
     // (where the panel button is hidden by CSS), the panel button everywhere else
-    const barIsStart = phoneLobby() && owner && me?.status === "ready" && bossOk && (!edu || ready >= 2) && (lobby.mode !== "pvp" || ready === 2);
+    const barIsStart = phoneLobby() && owner && me?.status === "ready" && bossOk && (!edu || ready >= 2) && (lobby.mode !== "pvp" || ready >= 2);
     nextBar.disabled = !!barIsStart && cls !== "go";
     nextBar.dataset.testid = barIsStart ? "start-match" : "next-step";
     startBtn.dataset.testid = phoneLobby() ? "start-match-panel" : "start-match";
@@ -966,6 +1040,10 @@ export function createLobby(app: AppCtx): Screen {
   return {
     el,
     update: render,
+    onMsg(m: ServerMsg) {
+      // PvP: show the server's start refusal right under START (it's also a toast)
+      if (m.t === "error" && app.lobby?.mode === "pvp" && app.lobby.phase === "lobby") startError = m.message;
+    },
     destroy() {
       stopPermission();
       rubricEditor?.dispose();

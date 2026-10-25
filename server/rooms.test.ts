@@ -14,7 +14,7 @@ import { analyzeFiles, offlineProfile } from '../analysis/index.ts';
 import { replayProfileProgress } from '../analysis/progress.ts';
 import { handleEduRoute, MAX_RUBRIC_BYTES } from './edu-http.ts';
 import { buildFeedback, defaultRubric, parseRubric, scoreRepo } from '../rubric/index.ts';
-import { playerKitFromProfile, bossKitFromProfile, createMatch, qualityFromRubric } from '../sim/index.ts';
+import { playerKitFromProfile, bossKitFromProfile, createMatch, pvpPowerFromProfile, statsFromPower, qualityFromRubric } from '../sim/index.ts';
 import { createBot } from '../sim/bots.ts';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1415,7 +1415,7 @@ describe('cooperative staged classroom protocol', () => {
     const file = persistenceFile(), analyzer = vi.fn(analyzeFiles);
     const github = vi.fn(async (): Promise<never> => { throw new Error('Editor must not fetch GitHub'); });
     const f = await setup(999, { analyzeFiles: analyzer, analyzeClassroomSubmission: github, getGithubToken: github }, { allowLegacyEdu: false, persistenceFile: file }, undefined, 'edu');
-    const teacher = await f.connect('screen'), a = await f.connect(), b = await f.connect();
+    const teacher = await f.connect('screen'), a = await f.connect(), b = await f.connect(), spectator = await f.connect('screen');
     const latest = (client: typeof a) => client.messages.filter(m => m.t === 'classroom').at(-1);
     const plan = defaultClassroomPlan(); plan.steps[0].language = 'python';
     plan.steps[0].starter = [{ path: 'python/main.py', content: '# TEACHER_STARTER\n' }];
@@ -1430,11 +1430,17 @@ describe('cooperative staged classroom protocol', () => {
     a.send({ t: 'classroomSubmitCode', files }); await until(() => latest(a)?.reports[a.welcome.you]);
     const report = latest(a)!.reports[a.welcome.you];
     expect(report.source).toBe('in-app'); expect(report.repo).toBe('in-app'); expect(report.commit).toBe(editorCommit(files)); expect(report.score).toBe(100);
+    expect(report).not.toHaveProperty('files'); expect(JSON.stringify(latest(a))).not.toContain('PRIVATE_EDITOR_SOURCE');
     expect(analyzer).toHaveBeenCalledExactlyOnceWith(files, 'in-app'); expect(github).not.toHaveBeenCalled();
     await until(() => latest(teacher)?.reports[a.welcome.you]);
-    expect((latest(teacher)!.reports[a.welcome.you] as typeof report & { files: unknown }).files).toEqual(files);
+    expect(latest(teacher)!.reports[a.welcome.you].files).toEqual(files);
     expect(latest(b)!.reports).toEqual({}); expect(JSON.stringify(latest(b))).not.toContain('PRIVATE_EDITOR_SOURCE');
-    a.send({ t: 'classroomSubmitCode', files }); await until(() => a.messages.some(m => m.t === 'error' && m.message.includes('5 seconds')));
+    expect(latest(spectator)!.reports).toEqual({}); expect(JSON.stringify(latest(spectator))).not.toContain('PRIVATE_EDITOR_SOURCE');
+    const rejoinedStudent = await f.connect('player', a.welcome.token);
+    const replay = await until(() => latest(rejoinedStudent)?.reports[a.welcome.you]);
+    expect(replay.score).toBe(100); expect(replay).not.toHaveProperty('files');
+    expect(JSON.stringify(latest(rejoinedStudent))).not.toContain('PRIVATE_EDITOR_SOURCE');
+    rejoinedStudent.send({ t: 'classroomSubmitCode', files }); await until(() => rejoinedStudent.messages.some(m => m.t === 'error' && m.message.includes('5 seconds')));
     await f.close(); const saved = readFileSync(file, 'utf8');
     expect(saved).not.toContain('PRIVATE_EDITOR_SOURCE'); expect(saved).toContain('TEACHER_STARTER'); expect(saved).toContain(editorCommit(files));
     const resumed = await setup(999, {}, { allowLegacyEdu: false, persistenceFile: file }, f.room, 'edu');
@@ -1514,7 +1520,7 @@ it('rejects legacy PvP start commands in production classroom mode', async () =>
   expect(teacher.messages.some(m => m.t === 'snapshot')).toBe(false);
 });
 
-describe('PvP duel authority and isolation', () => {
+describe('PvP royale authority and isolation', () => {
   function accessServices() {
     let revoked = false;
     const verify = vi.fn(async (repo: string, token: string) => {
@@ -1526,6 +1532,65 @@ describe('PvP duel authority and isolation', () => {
       verifyPvpAccess: verify,
     } };
   }
+  it.each([
+    ['player', 0], ['player', 1], ['player', 2], ['screen', 0], ['screen', 2],
+  ] as const)('lets an ineligible %s host spectate a royale with %i eligible humans and AI fill', async (role, humanCount) => {
+    const auth = accessServices(), f = await setup(999, { ...genesisServices, ...auth.services }, {}, undefined, 'pvp');
+    const owner = await f.connect(role, undefined, 'Spectator host', undefined, undefined, 'iPhone');
+    expect(owner.welcome.lobby.ownerId).toBe(owner.welcome.you);
+    if (role === 'player') {
+      owner.send({ t: 'setRepo', repo: 'not/eligible' });
+      await until(() => owner.lobby()?.players.find(p => p.id === owner.welcome.you)?.status === 'error');
+    }
+    const humans: Awaited<ReturnType<typeof f.connect>>[] = [];
+    for (let i = 0; i < humanCount; i++) {
+      const human = await f.connect('player', undefined, ['Alice', 'Bob'][i], ['alice', 'bob'][i]); humans.push(human);
+      human.send({ t: 'setRepo', repo: ['alice/own', 'bob/own'][i] });
+    }
+    owner.send({ t: 'setBots', count: 2 - humanCount });
+    await until(() => owner.lobby()?.players.filter(p => p.status === 'ready').length === 2);
+    owner.send({ t: 'start' }); const snapshot = await until(() => owner.messages.find(m => m.t === 'snapshot'));
+    expect(snapshot.state.players).toHaveLength(2); expect(snapshot.state.players.some(p => p.id === owner.welcome.you)).toBe(false);
+    expect(owner.socket.readyState).toBe(WebSocket.OPEN); expect(owner.lobby()?.phase).toBe('match');
+    expect(auth.verify).toHaveBeenCalledTimes(humanCount * 2);
+    owner.send({ t: 'input', frame: { seq: 9876, move: [1, 0], aim: null, fire: true, dash: true, skill: true, source: 'motion' } });
+    await wait(80); expect(f.observed.some(input => input.seq === 9876)).toBe(false);
+    expect(owner.messages.filter(m => m.t === 'snapshot').length).toBeGreaterThan(1);
+  });
+  it('returns exact fighter counts and a named analysis wait reason for a spectator host', async () => {
+    let release!: () => void;
+    const blocked = new Promise<void>(resolve => { release = resolve; });
+    const auth = accessServices(), f = await setup(999, { ...auth.services, analyzeRepo: async repo => { await blocked; return offlineProfile(repo); } }, {}, undefined, 'pvp');
+    const host = await f.connect('player', undefined, 'Host');
+    host.send({ t: 'start' }); await until(() => host.messages.find(m => m.t === 'error' && m.message.includes('found 0 eligible humans and 0 AI rivals')));
+    host.send({ t: 'setBots', count: 1 });
+    await until(() => host.lobby()?.players.some(p => p.bot && p.status === 'analyzing'));
+    host.send({ t: 'start' }); await until(() => host.messages.find(m => m.t === 'error' && m.message.includes('waiting for repository analysis: [BOT]')));
+    release(); await until(() => host.lobby()?.players.some(p => p.bot && p.status === 'ready'));
+    host.send({ t: 'start' }); await until(() => host.messages.find(m => m.t === 'error' && m.message.includes('found 0 eligible humans and 1 AI rival.')));
+    const human = await f.connect('player', undefined, 'Alice', 'alice'); human.send({ t: 'setRepo', repo: 'alice/own' });
+    await until(() => host.lobby()?.players.find(p => p.id === human.welcome.you)?.status === 'ready');
+    auth.revoke(); host.send({ t: 'start' });
+    await until(() => host.messages.find(m => m.t === 'error' && m.message.includes('PvP cannot start: Alice: Access revoked')));
+    expect(host.lobby()?.phase).toBe('lobby'); expect(host.messages.some(m => m.t === 'snapshot')).toBe(false);
+  });
+  it('runs a real bot-only royale while its anonymous screen host spectates', async () => {
+    const tokens = vi.fn(async () => null);
+    const f = await setup(999, { ...genesisServices, getGithubToken: tokens, createBot,
+      createMatch: (players, boss, options) => {
+        const match = createMatch(players, boss, options);
+        return { removePlayer: id => match.removePlayer(id), snapshot: () => match.snapshot(), autopsy: () => match.autopsy(), get over() { return match.over; },
+          step: (dt, inputs) => { for (let i = 0; i < 90 && !match.over; i++) match.step(dt, inputs); } };
+      },
+    }, {}, undefined, 'pvp');
+    const host = await f.connect('screen'); host.send({ t: 'setBots', count: 2 });
+    await until(() => host.lobby()?.players.length === 2 && host.lobby()?.players.every(p => p.bot && p.status === 'ready'));
+    host.send({ t: 'start' }); const result = await until(() => host.messages.find(m => m.t === 'autopsy'), 1500);
+    expect(result.result.players).toHaveLength(2); expect(result.result.players.every(p => p.id.startsWith('bot-'))).toBe(true);
+    const final = host.messages.filter(m => m.t === 'snapshot').at(-1)!.state;
+    expect(final.pvp?.royale?.alive).toHaveLength(1); expect(Object.values(final.pvp!.royale!.placements).sort()).toEqual([1, 2]);
+    expect(tokens).not.toHaveBeenCalled(); expect(f.royaleRecorded).toHaveLength(1); expect(host.socket.readyState).toBe(WebSocket.OPEN);
+  }, 20_000);
   it('requires eligible distinct accounts, permits bots but no boss, and rechecks permissions at start', async () => {
     const auth = accessServices(), f = await setup(999, auth.services, {}, undefined, 'pvp');
     const a = await f.connect('player', undefined, 'Alice', 'alice');
@@ -1557,8 +1622,11 @@ describe('PvP duel authority and isolation', () => {
     const ninth = new WebSocket(f.wsUrl); await once(ninth, 'open'); const response = once(ninth, 'message');
     ninth.send(JSON.stringify({ t: 'hello', room: f.room, role: 'player', name: 'Ninth' }));
     expect(JSON.parse(String((await response)[0]))).toMatchObject({ t: 'error', message: 'Room is full (8 players)' }); ninth.close();
-    const base = playerKitFromProfile(offlineProfile('pallets/flask'), { mode: 'battle' });
-    expect(people[0].lobby()?.players.every(p => p.kit?.maxHp === base.maxHp && p.kit.damageMul === base.damageMul && !p.kit.quality)).toBe(true);
+    const power = pvpPowerFromProfile(offlineProfile('pallets/flask'));
+    for (const player of people[0].lobby()!.players) {
+      expect(player.kit).toMatchObject({ ...statsFromPower(power.score), pvpPower: power });
+      expect(player.kit?.quality).toBeUndefined();
+    }
     people[0].send({ t: 'start' }); const snapshot = await until(() => people[0].messages.find(m => m.t === 'snapshot'));
     expect(snapshot.state.players).toHaveLength(8); expect(snapshot.state.boss).toBeNull();
   });

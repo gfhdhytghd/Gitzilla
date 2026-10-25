@@ -7,9 +7,13 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pvpRepoEligible, type PvpRepoMetadata } from '../server/pvp-access';
 
 export interface Session { userId: string; login: string; avatar: string }
-export interface MyRepo { name: string; full_name: string; private: boolean; language: string | null; stars: number; pushed_at: string }
+export interface MyRepo {
+  name: string; full_name: string; private: boolean; language: string | null; stars: number; pushed_at: string;
+  fork: boolean; permission: 'admin' | 'maintain' | 'push' | 'read'; pvpEligible: boolean;
+}
 
 const SESSION_COOKIE = 'rk_session';
 const TX_COOKIE = 'rk_auth_tx';
@@ -158,16 +162,23 @@ export async function getGithubToken(req: IncomingMessage): Promise<string | nul
   return session ? githubTokenForUser(session.userId) : null;
 }
 
-/** Repos the user owns, collaborates on, or can see via an org; most recently pushed first. */
+/** Repos the user can see, sorted by stars; eligibility uses the same authenticated GitHub ID as PvP. */
 export async function listGithubRepos(token: string): Promise<MyRepo[]> {
+  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'gitzilla', 'X-GitHub-Api-Version': '2022-11-28' };
+  const identity = await fetch('https://api.github.com/user', { headers, redirect: 'error', signal: AbortSignal.timeout(8000) });
+  if (!identity.ok) throw new Error('GitHub could not verify your identity. Reconnect GitHub and retry.');
+  const user = await identity.json() as { id?: number };
+  if (!Number.isSafeInteger(user.id) || user.id! <= 0) throw new Error('GitHub returned incomplete repository eligibility.');
   const repos: MyRepo[] = [];
   for (let page = 1; page <= 3; page++) {
     const r = await fetch(`https://api.github.com/user/repos?per_page=100&page=${page}&sort=pushed&affiliation=owner,collaborator,organization_member`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'gitzilla', 'X-GitHub-Api-Version': '2022-11-28' },
+      headers, redirect: 'error', signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) throw new Error(`GitHub /user/repos ${r.status}`);
-    const batch = await r.json() as { name: string; full_name: string; private: boolean; language: string | null; stargazers_count: number; pushed_at: string | null }[];
-    for (const x of batch) repos.push({ name: x.name, full_name: x.full_name, private: x.private, language: x.language, stars: x.stargazers_count, pushed_at: x.pushed_at ?? '' });
+    const batch = await r.json() as (PvpRepoMetadata & { name: string; full_name: string; private: boolean; language: string | null; stargazers_count: number; pushed_at: string | null })[];
+    for (const x of batch) repos.push({ name: x.name, full_name: x.full_name, private: x.private, language: x.language, stars: x.stargazers_count, pushed_at: x.pushed_at ?? '',
+      fork: x.fork === true, permission: x.permissions?.admin === true ? 'admin' : x.permissions?.maintain === true ? 'maintain' : x.permissions?.push === true ? 'push' : 'read',
+      pvpEligible: pvpRepoEligible(x, user.id!) });
     if (batch.length < 100) break;
   }
   // Most-starred first (ties: most recently pushed).
@@ -194,7 +205,7 @@ export async function handleAuthRoute(req: IncomingMessage, res: ServerResponse)
     if (!session) { json(res, 401, { error: 'Not signed in' }); return true; }
     const token = await githubTokenForUser(session.userId);
     if (!token) { json(res, 401, { error: 'No GitHub token; sign in again' }); return true; }
-    try { json(res, 200, await listGithubRepos(token)); }
+    try { const repos = await listGithubRepos(token); json(res, 200, url.searchParams.get('pvp') === '1' ? repos.filter(repo => repo.pvpEligible) : repos); }
     catch (error) { githubTokens.delete(session.userId); json(res, 502, { error: error instanceof Error ? error.message : 'GitHub error' }); }
     return true;
   }

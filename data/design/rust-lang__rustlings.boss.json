@@ -24,7 +24,7 @@
   "taunts": [
     "TODO: Change the line below to fix the compiler error.",
     "cannot borrow (*self) as mutable more than once at a time!",
-    "write input files to disk before running exercise... too late.",
+    "write input files to disk before running exercise... too…",
     "strict_clippy(&self) evaluated to true: prepare to shatter!",
     "parse command output consistently or sink into the chasm."
   ],

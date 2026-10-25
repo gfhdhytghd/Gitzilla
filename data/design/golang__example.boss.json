@@ -23,10 +23,10 @@
     ">> </> BREATH EMISSION ONLINE: Stomp-quake approaching target goroutines"
   ],
   "taunts": [
-    "TODO: state for WithGroup and WithAttrs — you cannot segment my",
-    "if name == \"\" { // hello '' is an error, and so is your survival",
-    "Optimize to minimize allocation — your memory will be reclaimed!",
-    "internal/cmd/weave: fix missing newline before I crush your stac"
+    "TODO: state for WithGroup and WithAttrs — you cannot…",
+    "if name == \"\"…",
+    "Optimize to minimize allocation — your memory will be…",
+    "internal/cmd/weave: fix missing newline before I crush your…"
   ],
   "attackNames": {
     "0-laser-0": "appendAttr() Cyan Bracket Beam",

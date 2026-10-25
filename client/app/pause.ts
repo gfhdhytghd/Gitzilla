@@ -17,19 +17,21 @@ export interface PauseOverlay {
   dispose(): void;
 }
 
-export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; onNewRoom(): void; hostHint?: string; waitHint?: string; onChange?(paused: boolean): void }): PauseOverlay {
+export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; onNewRoom(): void; hostHint?: string; waitHint?: string; onChange?(paused: boolean): void;
+  /** classroom: plain words for a projector ("Paused by your teacher"), Resume only (no leave / new room in a lesson) */
+  classroom?: boolean }): PauseOverlay {
   const by = h("div.pz-line.dim"), count = h("div.pz-count"), hint = h("div.pz-hint");
   const host = h("div.pz-host", { hidden: true },
-    h("button.btn.btn-big.btn-start", { "data-testid": "resume-match", onclick: () => opts.onResume() }, "▶ RESUME"),
-    h("div.pz-host-row", null,
+    h("button.btn.btn-big.btn-start", { "data-testid": "resume-match", onclick: () => opts.onResume() }, opts.classroom ? "▶ Resume (P)" : "▶ RESUME"),
+    opts.classroom ? null : h("div.pz-host-row", null,
       h("button.btn", { "data-testid": "pause-leave", onclick: () => opts.onLeave() }, "⏏ leave"),
       h("button.btn", { "data-testid": "pause-new-room", onclick: () => opts.onNewRoom() }, "end match · new room")));
   const el = h("div.pause-ov", { "data-testid": "paused-overlay", hidden: true },
     h("div.term-window.pz-win", null,
       h("div.term-title", null, h("span.dots", null, "● ● ●"), " gitzilla"),
       h("div.term-body", null,
-        h("div.pz-line", null, h("span.prompt", null, "$ "), "kill -STOP gitzilla"),
-        h("div.pz-line.pz-stopped", null, "^Z"),
+        opts.classroom ? h("div.pz-line.pz-classroom", null, "⏸ Paused by your teacher") : h("div.pz-line", null, h("span.prompt", null, "$ "), "kill -STOP gitzilla"),
+        opts.classroom ? null : h("div.pz-line.pz-stopped", null, "^Z"),
         by, count, hint, host)));
   let state: PauseInfo = null;
   let resumeLocalEnd = 0;
@@ -59,7 +61,8 @@ export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; on
       if (state.resumeAt === null || performance.now() < resumeLocalEnd) setShown(true);
       // English source in the DOM; the i18n catalog has an exact row for "you" and a {0} pattern for names.
       // Generic role names are localized first so the pattern yields a fully translated line.
-      by.textContent = byName === "you"
+      if (opts.classroom) by.textContent = "The clock is frozen for the whole class.";
+      else by.textContent = byName === "you"
         ? "[1]+  Stopped    gitzilla    (suspended by you)"
         : `[1]+  Stopped    gitzilla    (suspended by ${byName === "the host" || byName === "the teacher" ? t(byName) : byName})`;
       host.hidden = !isHost || state.resumeAt !== null;
@@ -68,7 +71,7 @@ export function createPauseOverlay(opts: { onResume(): void; onLeave(): void; on
     tick() {
       if (state && state.resumeAt !== null) {
         const left = Math.max(0, resumeLocalEnd - performance.now());
-        count.textContent = left > 0 ? `$ fg %1   ${Math.ceil(left / 1000)}` : "$ fg %1";
+        count.textContent = opts.classroom ? (left > 0 ? `Resuming in ${Math.ceil(left / 1000)}…` : "Resuming…") : left > 0 ? `$ fg %1   ${Math.ceil(left / 1000)}` : "$ fg %1";
         if (left <= 0) setShown(false); // don't wait for the server's next update to drop the card
       } else count.textContent = "";
       return frozen();
