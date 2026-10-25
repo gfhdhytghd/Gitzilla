@@ -389,6 +389,11 @@ export function createLobby(app: AppCtx): Screen {
   const bossStage = h("div.boss-stage");
   const bossInfo = h("div.boss-info");
   const bossStatus = h("div.boss-status");
+  /** The room owner is a screen (POST /api/room?host=screen, /demo; or a big-screen classroom), not a player seat. */
+  const screenOwns = (lobby: LobbyState) => !!lobby.ownerId && !lobby.players.some((p) => p.id === lobby.ownerId);
+  /** Who starts the match, for "waiting for … to start". */
+  const starterName = (lobby: LobbyState) =>
+    lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? (lobby.mode === "edu" ? "the teacher" : screenOwns(lobby) ? "the big screen" : "the host");
   let startArmedAt = 0;
   const startArmed = () => startArmedAt > 0 && performance.now() - startArmedAt < 4000;
   const pendingControls = () => app.lobby?.players.filter(p => !p.bot && p.status === "ready" && !!p.kit && p.controlsReady === false) ?? [];
@@ -516,8 +521,9 @@ export function createLobby(app: AppCtx): Screen {
       } catch { toast("Could not open the teacher classroom. Please try again.", "err"); }
     } }, label);
   const modeCtl = h("div.mode-ctl", { role: "group", "aria-label": "game mode", title: "classroom: code together and attack one shared Boss" }, modeBtn("battle", "⚔ boss raid"), modeBtn("pvp", "☠ PvP royale"), modeBtn("edu", "🎓 classroom"));
-  // ⏏ leave room (owner: one extra tap that says who inherits the room); projector: end class / new room
+  // ⏏ leave room (owner: one extra tap that says who inherits the room); a classroom projector says "end class"
   let leaveArmedAt = 0;
+  const leaveLabel = () => (screen && app.lobby?.mode === "edu" ? "⏏ end class" : "⏏ leave room");
   const leaveMsg = h("span.leave-msg", { role: "status" });
   const leaveBtn = h("button.btn.btn-tiny.btn-leave", {
     "data-testid": "leave-room",
@@ -534,14 +540,14 @@ export function createLobby(app: AppCtx): Screen {
           if (leaveArmedAt > 0 && performance.now() - leaveArmedAt >= 4000) {
             leaveArmedAt = 0;
             leaveMsg.textContent = "";
-            leaveBtn.textContent = screen ? "⏏ end class" : "⏏ leave room";
+            leaveBtn.textContent = leaveLabel();
           }
         }, 4100);
         return;
       }
       app.leave();
     },
-  }, screen ? "⏏ end class" : "⏏ leave room");
+  }, leaveLabel());
   const leaveCtl = h(
     "div.leave-ctl",
     null,
@@ -725,7 +731,9 @@ export function createLobby(app: AppCtx): Screen {
     // classroom copy on the projector: the teacher's screen is the host; bots are opponents in PvP
     botLabel.textContent = edu ? "AI classmates (bots): " : lobby.mode === "pvp" ? "AI rivals: " : "AI teammates: ";
     qrHelp1.textContent = edu ? "students: scan to join · hold your phone upright" : "scan with your phone (hold it upright)";
-    qrHelp2.textContent = edu ? "★ the teacher launches the class attack" : "★ the first phone to join is the host";
+    qrHelp2.textContent = edu ? "★ the teacher launches the class attack"
+      : screenOwns(lobby) ? (isOwner(app) ? "★ this screen is the host: start the match here" : "★ the host screen will start the match")
+      : "★ the first phone to join is the host";
     classCounter.hidden = !(screen && edu);
     classCounter.textContent = `${lobby.players.filter((p) => !p.bot).length} / 30 joined · ${nReady} ready`;
     const seen = new Set<string>();
@@ -950,7 +958,7 @@ export function createLobby(app: AppCtx): Screen {
           : readyPlayers < 4
             ? `${readyPlayers} ready · 4+ recommended`
             : `${readyPlayers} heroes ready. go.`
-      : `waiting for ${lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "owner"} to start…`;
+      : `waiting for ${starterName(lobby)} to start…`;
   }
 
   function syncBossGenesis(lobby: LobbyState) {
@@ -993,7 +1001,7 @@ export function createLobby(app: AppCtx): Screen {
     startHint.classList.remove("warn");
     startHint.textContent = owner
       ? "Refresh to open the cooperative teacher classroom."
-      : `waiting for ${lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? "the teacher"} to start…`;
+      : `waiting for ${starterName(lobby)} to start…`;
   }
 
   function render() {
@@ -1008,6 +1016,7 @@ export function createLobby(app: AppCtx): Screen {
       b.disabled = !isOwner(app);
     }
     ownerBadge.textContent = isOwner(app) ? "★ you own this room" : "";
+    if (!leaveArmedAt && leaveBtn.textContent !== leaveLabel()) leaveBtn.textContent = leaveLabel(); // follows mode changes
     botCtl.style.display = isOwner(app) ? "" : "none";
     youChips.hidden = lobby.mode === "pvp"; // PvP: no famous-repo quick picks (you can only fight with your own)
     ghPicker.setPvp(lobby.mode === "pvp");
@@ -1060,7 +1069,7 @@ export function createLobby(app: AppCtx): Screen {
     const ready = lobby.players.filter((p) => p.status === "ready").length;
     const edu = lobby.mode === "edu";
     const bossOk = edu || lobby.mode === "pvp" || lobby.boss.status === "ready";
-    const ownerName = lobby.players.find((p) => p.id === lobby.ownerId)?.name ?? (edu ? "the teacher" : "the host");
+    const ownerName = starterName(lobby);
     let text = "", cls = "", act: (() => void) | null = null;
     const toTop = () => (youPanel.scrollIntoView({ behavior: "smooth", block: "start" }), repoInput.focus());
     nextBar.removeAttribute("aria-disabled");

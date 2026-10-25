@@ -109,10 +109,10 @@ export function createGame(app: AppCtx): Screen & { outroDone: boolean } {
       h(
         "div.term-body",
         null,
-        h("div", null, spectator ? "end the class / leave this screen?" : "leave the fight?"),
+        h("div", null, spectator ? (app.lobby?.mode === "edu" ? "end the class / leave this screen?" : "leave this screen?") : "leave the fight?"),
         h("div.dim", null, spectator ? "the match keeps running for everyone else." : app.lobby?.mode === "pvp" ? "leaving counts as an elimination." : "your hero drops out; the squad keeps fighting."),
         menuPauseBtn,
-        h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? "⏏ end class" : "⏏ leave the fight"),
+        h("button.btn.btn-danger", { "data-testid": "game-leave", onclick: () => app.leave() }, spectator ? (app.lobby?.mode === "edu" ? "⏏ end class" : "⏏ leave room") : "⏏ leave the fight"),
         spectator ? h("button.btn", { "data-testid": "game-new-room", onclick: () => app.leave({ newRoom: true }) }, "new room") : null,
         h("button.btn", { "data-testid": "game-settings", onclick: () => { menuSheet.hidden = true; openSettings(); } }, "Settings"),
         h("button.btn.btn-primary", { onclick: () => (menuSheet.hidden = true) }, "▶ resume"),

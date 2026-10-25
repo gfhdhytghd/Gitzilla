@@ -20485,5 +20485,40 @@
     "zh": "下方复盘里的“重试这一步”让大家再做一次；“下一步”开始第 {0} 步。",
     "es": "«Repetir este paso» (en el resumen de abajo) da a todos otra oportunidad; «Siguiente paso» empieza el paso {0}.",
     "fr": "« Refaire cette étape » (dans le bilan ci-dessous) redonne une chance à tous ; « Étape suivante » lance l’étape {0}."
+  },
+  {
+    "id": "7b66279423408fb0",
+    "en": "waiting for the big screen to start…",
+    "zh": "正在等待大屏幕开始…",
+    "es": "esperando a que la pantalla grande empiece…",
+    "fr": "en attente du grand écran pour lancer…"
+  },
+  {
+    "id": "a7cece0cbccb6218",
+    "en": "✓ ready as {0} · waiting for the big screen to start ({1} in)",
+    "zh": "✓ 已作为 {0} 就绪 · 等待大屏幕开始（已加入 {1} 人）",
+    "es": "✓ listo como {0} · esperando a que la pantalla grande empiece ({1} dentro)",
+    "fr": "✓ prêt en tant que {0} · en attente du grand écran ({1} présents)"
+  },
+  {
+    "id": "9ab893689f37469e",
+    "en": "★ this screen is the host: start the match here",
+    "zh": "★ 这块屏幕是房主：在这里开始比赛",
+    "es": "★ esta pantalla es el anfitrión: empieza la partida aquí",
+    "fr": "★ cet écran est l'hôte : lancez la partie ici"
+  },
+  {
+    "id": "5e380c364f251dda",
+    "en": "★ the host screen will start the match",
+    "zh": "★ 由房主屏幕开始比赛",
+    "es": "★ la pantalla anfitriona empezará la partida",
+    "fr": "★ l'écran hôte lancera la partie"
+  },
+  {
+    "id": "ab48c571dc178b2f",
+    "en": "leave this screen?",
+    "zh": "离开此界面？",
+    "es": "¿salir de esta pantalla?",
+    "fr": "quitter cet écran ?"
   }
 ]

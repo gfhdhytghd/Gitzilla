@@ -166,14 +166,14 @@ function adoptOrgan(boss: AutopsyBoss, big: boolean): HTMLElement {
   );
 }
 
-/** [ new room ] [ leave ] next to REMATCH (projector: end class / new room). */
+/** [ new room ] [ leave ] next to REMATCH (classroom projector: end class / new room). */
 function exitButtons(app: AppCtx): HTMLElement {
   const screen = app.role === "screen";
   return h(
     "div.ap-exit",
     null,
     h("button.btn", { "data-testid": "autopsy-new-room", onclick: () => app.leave({ newRoom: true }) }, "[ new room ]"),
-    h("button.btn.btn-ghost", { "data-testid": "autopsy-leave", onclick: () => app.leave() }, screen ? "[ end class ]" : "[ leave ]"),
+    h("button.btn.btn-ghost", { "data-testid": "autopsy-leave", onclick: () => app.leave() }, screen && app.lobby?.mode === "edu" ? "[ end class ]" : "[ leave ]"),
   );
 }
 

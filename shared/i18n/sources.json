@@ -12423,5 +12423,30 @@
     "id": "276e74f4057942ba",
     "source": "“Retry this step” (in the debrief below) gives everyone another go; “Next step” starts step {0}.",
     "context": "client/app/classroom.ts (claude-edu, hand-translated)"
+  },
+  {
+    "id": "7b66279423408fb0",
+    "source": "waiting for the big screen to start…",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "a7cece0cbccb6218",
+    "source": "✓ ready as {0} · waiting for the big screen to start ({1} in)",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "9ab893689f37469e",
+    "source": "★ this screen is the host: start the match here",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "5e380c364f251dda",
+    "source": "★ the host screen will start the match",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "ab48c571dc178b2f",
+    "source": "leave this screen?",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]
