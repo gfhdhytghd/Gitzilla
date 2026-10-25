@@ -26,6 +26,7 @@ Manual status checks and bounded identical-byte resends keep background activity
 - Eight-human durable batch benchmark on this host: 20 batches / 160 receipts, median 11.20 ms, worst 15.07 ms (SQLite FULL/WAL, one transaction per match). Host measurement only.
 - Browser acceptance: 390×844, EN/ZH/ES/FR, no page errors; private-file denial, no-wallet download, independent signature verifier, late wallet registration, rejection, pending timeout, same-wire refresh, finalization UI, disposal.
 - i18n audit: zero errors, all 36 Python starter variants parse. Gemini via AGY generated new copy; DeepSeek completed timed-out batches.
+- Actual production main entry on OS-assigned port with private temporary state: attestor metadata matches its seed; ordinary, encoded, `/@fs/` and backslash private paths all return 404; public root 200 and unknown receipt 404. `tools/receipt-main-check.ts` makes no chain requests.
 - Actual Devnet genesis verified; faucet funding unavailable, so finalized-chain proof and real wallet compatibility remain unverified. No real funds used.
 
 ## Original Claude output

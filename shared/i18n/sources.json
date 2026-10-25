@@ -10985,6 +10985,11 @@
     "context": "server/receipts/service.ts"
   },
   {
+    "id": "c51d6f7d1e2f274a",
+    "source": "Receipt database must be outside served asset directories",
+    "context": "server/receipts/service.ts"
+  },
+  {
     "id": "ea9e609d89574695",
     "source": "Restore the existing attestor key before reopening its database",
     "context": "server/receipts/service.ts"

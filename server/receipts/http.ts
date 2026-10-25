@@ -42,6 +42,8 @@ export async function handleReceiptRoute(req:IncomingMessage,res:ServerResponse,
     if(action==='challenge'){json(res,200,await service.challenge(id,token,input.wallet));return true;}
     if(typeof input.signature!=='string'||input.signature.length>100)throw new ReceiptError(400,'Provide the wallet signature');
     json(res,200,await service.publish(id,token,input.wallet,input.signature));
-  }catch(error){req.resume();json(res,error instanceof ReceiptError?error.status:503,{error:error instanceof ReceiptError?error.message:'Devnet anchoring is temporarily unavailable. You can download the signed receipt.'});}
+  }catch(error){
+    if(error instanceof ReceiptError&&[408,413].includes(error.status)){res.setHeader('Connection','close');res.once('finish',()=>req.destroy());}
+    req.resume();json(res,error instanceof ReceiptError?error.status:503,{error:error instanceof ReceiptError?error.message:'Devnet anchoring is temporarily unavailable. You can download the signed receipt.'});}
   return true;
 }

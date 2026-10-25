@@ -21819,5 +21819,14 @@
     "fr": "La clé de l'attestateur doit être en dehors des répertoires de ressources servis",
     "provider": "Gemini via AGY",
     "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c51d6f7d1e2f274a",
+    "en": "Receipt database must be outside served asset directories",
+    "zh": "收据数据库必须位于所提供的资源目录之外",
+    "es": "La base de datos de recibos debe estar fuera de los directorios de recursos servidos",
+    "fr": "La base de données des reçus doit être en dehors des répertoires de ressources servies",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
   }
 ]

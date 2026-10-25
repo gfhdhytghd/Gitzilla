@@ -116,14 +116,16 @@ export class ReceiptService {
   }
 }
 export function createReceiptService(root:string,origin:string) {
-  const path=resolve(process.env.SOLANA_ATTESTOR_KEY_FILE||resolve(root,'.cache/solana/attestor.seed'));
+  const directory=resolve(process.env.SOLANA_RECEIPTS_DIR||resolve(root,'.cache/solana'));
+  const path=resolve(process.env.SOLANA_ATTESTOR_KEY_FILE||resolve(directory,'attestor.seed'));
   const rel=relative(root,path);
   if(!rel.startsWith('..')) {
     if(/^(?:dist|public)(?:[\\/]|$)/.test(rel))throw new Error('Attestor key must be outside served asset directories');
     if(spawnSync('git',['ls-files','--error-unmatch','--',rel],{cwd:root,stdio:'ignore'}).status===0)throw new Error('Attestor keys must not be tracked');
     if(spawnSync('git',['check-ignore','--quiet','--',rel],{cwd:root,stdio:'ignore'}).status!==0)throw new Error('Attestor key path must be ignored by Git');
   }
-  const database=resolve(root,'.cache/solana/receipts.sqlite');
+  const database=resolve(directory,'receipts.sqlite');
+  if(/^(?:dist|public)(?:[\\/]|$)/.test(relative(root,database)))throw new Error('Receipt database must be outside served asset directories');
   if(existsSync(database)&&!existsSync(path))throw new Error('Restore the existing attestor key before reopening its database');
   const rpc=new SolanaRpc(process.env.SOLANA_DEVNET_RPC_URL),seed=loadSeed(path),store=new ReceiptStore(database);
   try{return new ReceiptService(store,seed,origin,rpc);}catch(error){store.close();throw error;}
