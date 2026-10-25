@@ -1,3 +1,4 @@
+import type { FinishedReceiptMatch } from './receipts/service';
 import type { PvpAccess } from './pvp-access';
 import { isLocale, type Locale } from '../shared/i18n/locale';
 import { ClassroomSession, type ClassroomSource } from './classroom';
@@ -22,6 +23,7 @@ export interface Match {
   readonly over: boolean;
 }
 export interface GameServices {
+  recordReceipts?(input: FinishedReceiptMatch): Record<string,string>;
   analyzeFiles?(files: InAppFile[], name: string): RepoProfile;
   verifyPvpAccess?(repo: string, token: string): Promise<PvpAccess>;
   analyzeClassroomSubmission?(repo: string, ref: string, token: string, needsChecks: boolean): Promise<ClassroomSource>;
@@ -105,6 +107,8 @@ interface Room {
   match?: Match;
   departed?: Set<string>;
   privateMatch?: boolean;
+  receiptParticipants?: {id:string;tokenHash:string}[];
+  receiptEligible?: boolean;
   restartNotice?: string;
   pendingProgress?: Map<string, () => boolean>;
   progressTimer?: ReturnType<typeof setTimeout>;
@@ -348,7 +352,19 @@ export class RoomServer {
     return results;
   }
 
+  private receiptResult(member:Member,result:Autopsy,controller=false):Autopsy {
+    if(!result.receiptIds)return result;
+    const id=!controller&&member.role==='player'?result.receiptIds[member.id]:undefined;
+    return {...result,receiptIds:id?{[member.id]:id}:undefined};
+  }
   private broadcast(room: Room, message: ServerMsg) {
+    if(message.t==='autopsy'&&message.result.receiptIds){
+      for(const member of room.members.values()) {
+        send(member.socket,{t:'autopsy',result:this.receiptResult(member,message.result)});
+        send(member.controllerSocket??null,{t:'autopsy',result:this.receiptResult(member,message.result,true)});
+      }
+      return;
+    }
     const packet = JSON.stringify(message);
     for (const m of room.members.values()) { if (m.socket?.readyState === WebSocket.OPEN) m.socket.send(packet); if (m.controllerSocket?.readyState === WebSocket.OPEN) m.controllerSocket.send(packet); }
   }
@@ -856,7 +872,7 @@ export class RoomServer {
       member.restartNotified = true;
     }
     if (room.state) send(socket, { t: 'snapshot', state: { ...room.state, paused: room.paused ?? null, events: [] }, ack: -1 });
-    if (room.result) send(socket, { t: 'autopsy', result: room.result });
+    if (room.result) send(socket, { t: 'autopsy', result: this.receiptResult(member,room.result) });
     this.sendFeedback(room, member);
   }
 
@@ -910,7 +926,7 @@ export class RoomServer {
     send(socket, { t: 'welcome', you: member.id, token: member.controllerToken!, controller: true, lobby: this.lobby(room) });
     this.broadcastLobby(room); this.flushPersistence();
     if (room.state) send(socket, { t: 'snapshot', state: { ...room.state, paused: room.paused ?? null, events: [] }, ack: -1 });
-    if (room.result) send(socket, { t: 'autopsy', result: room.result });
+    if (room.result) send(socket, { t: 'autopsy', result: this.receiptResult(member,room.result,true) });
     if (room.classroom) this.publishClassroom(room);
   }
 
@@ -1091,6 +1107,8 @@ export class RoomServer {
     const match = this.services.createMatch(players.map(p => ({ id: p.id, name: p.name, kit: p.lobby.kit! })), boss, { mode: room.mode });
     room.restartNotice = undefined;
     room.privateMatch = (room.mode === 'battle' && !!room.privateBoss) || players.some(p => p.privateRepo);
+    room.receiptEligible = room.mode === 'pvp' && !room.privateMatch && players.filter(p => !p.lobby.bot).length >= 2;
+    room.receiptParticipants = room.receiptEligible ? players.filter(p => !p.lobby.bot).map(p => ({id:p.id,tokenHash:tokenHash(p.token)})) : undefined;
     if (boss) room.boss.kit = boss;
     room.match = match; room.departed = new Set(); room.phase = 'match'; room.events = [];
     this.clearPause(room);
@@ -1135,6 +1153,11 @@ export class RoomServer {
           this.stopMatch(room);
           this.publishSnapshot(room);
           room.result = this.activeResult(room, match.autopsy());
+          if (room.receiptEligible && this.services.recordReceipts) try {
+            room.result.receiptIds = this.services.recordReceipts({eligible:true,result:structuredClone(room.result),participants:room.receiptParticipants??[],
+              winner:room.state?.pvp?.royale ? room.state.pvp.royale.winner : room.result.mvp,placements:room.state?.pvp?.royale?.placements??{}});
+          } catch { console.warn('Match receipt could not be saved; gameplay results remain available.'); }
+
           // Retain the source profile's exact heart file path for the autopsy.
           if (room.bossProfile && room.result.boss) room.result.boss.heart = room.bossProfile.heart;
           // Authenticated analysis has no visibility flag yet: conservatively keep

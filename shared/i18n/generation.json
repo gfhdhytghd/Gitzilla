@@ -2,12 +2,17 @@
   "provider": "Gemini via AGY with DeepSeek fallback",
   "model": "gemini-3.8-flash-high",
   "providers": {
-    "Gemini via AGY": 1978,
-    "DeepSeek": 90
+    "Gemini via AGY": 2628,
+    "DeepSeek": 140
   },
-  "entries": 2068,
-  "translated": 2068,
-  "bundled": 1746,
+  "entries": 2768,
+  "translated": 2768,
+  "bundled": 2345,
   "failed": 0,
-  "generatedAt": "2026-10-24T23:12:20.189Z"
+  "generatedAt": "2026-10-25T07:08:36.964Z",
+  "mergedFrom": [
+    "5d75eeb995fba73959b5ffbfb9ffccc73d3ee340",
+    "14d894b55af576525b25a548c8a3155fff4881e6",
+    "85209989054fb336fc6a6dbf5d46b0c1c9146582"
+  ]
 }

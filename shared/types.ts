@@ -523,6 +523,7 @@ export type ServerMsg =
   | { t: "kicked"; by: string };                  // sent to a removed member just before the server closes its socket; by = owner name
 
 export interface Autopsy {
+  receiptIds?: Record<string, string>; // Optional source-free receipts, authenticated per participant.
   mode: GameMode;
   victory: boolean;          // battle: squad beat the boss; edu: always false, read `ranking`
   ranking?: { id: string; name: string; repo: string; kos: number; damage: number; roundWins: number; quality: QualityStat[] }[];

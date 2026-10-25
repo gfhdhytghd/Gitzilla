@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { createReceiptEntry } from '../receipts/entry';
 // Autopsy: boss dissection as a git diff, per-player stats, MVP, shareable victory card (PNG), owner REMATCH.
 import type { Autopsy, BossKit, PlayerKit } from "../../shared/types";
 import { type AppCtx, type Screen, isOwner } from "./app";
@@ -443,6 +444,8 @@ function createPvpAutopsy(app: AppCtx): Screen {
 /** PvP royale autopsy: winner card, placement ranking 1..N, and the eliminations as a git log. */
 function createRoyaleAutopsy(app: AppCtx): Screen {
   const a = app.autopsy!;
+  const receiptId=app.you ? a.receiptIds?.[app.you] : undefined;
+  const receipt=receiptId && app.token && app.role==='player' ? createReceiptEntry(receiptId,app.token) : undefined;
   const { rows, winner, elims } = royaleAutopsy(a, app.royaleLog);
   const lobby = app.lobby;
   const kitOf = (id: string | null) => (id ? lobby?.players.find((p) => p.id === id)?.kit ?? null : null);
@@ -543,6 +546,7 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
         "div.ap-grid",
         null,
         h("section.panel.ap-players", null, h("h2.panel-title", null, "PLACEMENTS"), winCard, header, ...table),
+        receipt?.el ?? null,
         h("section.panel.ap-gitlog", { "data-testid": "royale-log" }, h("h2.panel-title.red", null, "$ git log --eliminations"), head, ...log, log.length ? null : h("div.dim", null, "—")),
         (() => {
           const hb = createHallBoard(app.mock, { rows: 5, highlight: rows.map((r) => r.name) });
@@ -552,5 +556,5 @@ function createRoyaleAutopsy(app: AppCtx): Screen {
       ),
     ),
   );
-  return { el, update() {}, destroy() { backdrop.destroy(); el.remove(); } };
+  return { el, update() {}, destroy() { receipt?.destroy(); backdrop.destroy(); el.remove(); } };
 }

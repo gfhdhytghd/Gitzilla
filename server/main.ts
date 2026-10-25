@@ -1,3 +1,5 @@
+import { createReceiptService, type ReceiptService } from './receipts/service';
+import { handleReceiptRoute } from './receipts/http';
 import { verifyPvpAccess } from './pvp-access.ts';
 import { analyzeClassroomSubmission } from '../analysis/classroom.ts';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
@@ -37,6 +39,9 @@ const tls = !!certificate;
 const server = certificate ? https.createServer(certificate) : http.createServer();
 let redirect: http.Server | undefined;
 let publicBase = '';
+let receiptService: ReceiptService | undefined;
+if(process.env.SOLANA_RECEIPTS_ENABLED !== '0')try { receiptService=createReceiptService(root,new URL(process.env.PUBLIC_URL||`http://localhost:${port}`).origin); }
+catch { console.warn('Match receipts are unavailable; gameplay continues.'); }
 function printRoomQr(room: string) {
   const url = `${publicBase}/r/${room}`;
   console.log(`\n  Join room ${room}: ${url}`);
@@ -51,6 +56,7 @@ server.on('upgrade', (request, socket, head) => {
   } else if (production) socket.destroy();
 });
 const rooms = new RoomServer(wss, {
+  recordReceipts: input => receiptService?.record(input) ?? {},
   getGithubIdentity: (request, session) => resolveGithubIdentity(request, session, getGithubToken),
   analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
@@ -79,7 +85,7 @@ const vite = production ? null : await (await import('vite')).createServer({
   // Vite's fallback target uses server.port. Leave the browser port/protocol inferred
   // from /@vite/client so localhost:5175 and HTTPS tunnels share the same origin.
   server: { port, middlewareMode: true, hmr: { server }, fs: { deny: [
-    '.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.cache/**',
+    '.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/.cache/**', '**/*.seed', '**/*.sqlite*', ...(process.env.SOLANA_ATTESTOR_KEY_FILE ? [process.env.SOLANA_ATTESTOR_KEY_FILE] : []),
   ] } },
   appType: 'spa',
 });
@@ -120,6 +126,7 @@ server.on('request', (req, res) => {
     if (decodeURIComponent(url.pathname).replaceAll('\\', '/').split('/').includes('.cache')) {
       json(res, 404, { error: 'Not found' }); return;
     }
+    if (await handleReceiptRoute(req, res, url, receiptService)) return;
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
     if (await handleEduRoute(req, res, url, rooms)) return;
     if (handleRoomCreate(req, res, url, rooms, printRoomQr)) return;
