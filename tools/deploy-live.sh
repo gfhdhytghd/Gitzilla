@@ -23,7 +23,9 @@ for _ in $(seq 10); do [ -z "$(listener)" ] && break; sleep 0.5; done
 old=$(listener)
 if [ -n "$old" ]; then echo "killing stale :5173 listener pid $old"; kill "$old"; sleep 1; fi
 started=$(date +%s)
-herdr pane run "$LIVE_PANE" "PORT=5173 PUBLIC_URL=https://gitzilla.wilflin.me npm start" >/dev/null
+# optional private runtime settings (e.g. Solana receipts), kept outside the checkout
+LIVE_ENV=${LIVE_ENV:-$HOME/.config/gitzilla/live.env}
+herdr pane run "$LIVE_PANE" "set -a; [ -f '$LIVE_ENV' ] && . '$LIVE_ENV'; set +a; PORT=5173 PUBLIC_URL=https://gitzilla.wilflin.me npm start" >/dev/null
 for _ in $(seq 40); do
   pid=$(listener)
   # process start time in epoch seconds, locale-independent: boot time + start ticks / CLK_TCK
