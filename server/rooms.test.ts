@@ -1,10 +1,10 @@
 import http from 'node:http';
 import { once } from 'node:events';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { Autopsy, BossDesign, BossKit, ClientMsg, GameMode, InputFrame, MatchState, PlayerKit, RepoProfile, ServerMsg } from '../shared/types.ts';
 import { RoomServer, type GameServices, type RoomServerOptions } from './rooms.ts';
@@ -25,6 +25,8 @@ async function until<T>(fn: () => T | undefined | false, attempts = 150): Promis
 }
 const cleanup: (() => Promise<void>)[] = [];
 const directories: string[] = [];
+const cadenceMeasurements: object[] = [];
+afterAll(() => { if (process.env.INPUT_CADENCE_REPORT) writeFileSync(process.env.INPUT_CADENCE_REPORT, JSON.stringify(cadenceMeasurements, null, 2) + '\n'); });
 afterEach(async () => {
   for (const close of cleanup.splice(0)) await close();
   for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
@@ -1941,6 +1943,53 @@ describe('GitHub account phone controller', () => {
     const cookie = request.headers.cookie;
     return cookie === 'alice' || cookie === 'renamed' ? { userId: 'github|42', login: cookie } : cookie === 'bob' ? { userId: 'github|99', login: 'alice' } : null;
   } };
+  it.each([true,false])('advances every real sim tick for3s of30Hz tilt (linked display neutral: %s)', async linked => {
+    let measuring=false,lastT=-1,lastPosition=0;
+    const ticks:{at:number;dx:number}[]=[],displaySnapshots:number[]=[],phoneSnapshots:number[]=[];
+    const f=await setup(999,{...genesisServices,...services,createMatch:(players,boss,options)=>{
+      const match=createMatch(players.map(p=>({...p,kit:{...p.kit,speed:30,maxHp:999,maxArmor:999}})),boss?{...boss,attacks:[],speed:0}:null,options);
+      return{removePlayer:id=>match.removePlayer(id),step:(dt,input)=>match.step(dt,input),autopsy:()=>match.autopsy(),get over(){return match.over;},snapshot:()=>{
+        const state=match.snapshot(),position=state.players[0].y; // Clear vertical lane at spawn x=64.
+        if(measuring&&state.t>lastT)ticks.push({at:performance.now(),dx:position-lastPosition});lastT=state.t;lastPosition=position;return state;
+      }};
+    }});
+    const display=await f.connect('player',undefined,'Display','alice');
+    display.send({t:'setRepo',repo:'pallets/flask'});display.send({t:'setBoss',repo:'pallets/flask'});
+    await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    const phone=linked?await f.connect('controller',undefined,'Phone','alice'):display;
+    phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'start'});await until(()=>display.messages.filter(m=>m.t==='snapshot').at(-1)?.state.status==='fighting',500);
+    display.socket.on('message',raw=>{if(measuring&&JSON.parse(String(raw)).t==='snapshot')displaySnapshots.push(performance.now());});
+    if(linked)phone.socket.on('message',raw=>{if(measuring&&JSON.parse(String(raw)).t==='snapshot')phoneSnapshots.push(performance.now());});
+    let seq=0;
+    const send=()=>{phone.send({t:'input',frame:{seq:++seq,move:[0,1],aim:null,fire:false,dash:false,skill:false,source:'motion'}});
+      if(linked)display.send({t:'input',frame:{seq:10_000+seq,move:[0,0],aim:[1,0],fire:false,dash:false,skill:false,source:'keyboard'}});};
+    send();await wait(80);measuring=true;const timer=setInterval(send,1000/30);
+    try{await wait(3000);}finally{clearInterval(timer);measuring=false;}
+    expect(ticks.length).toBeGreaterThanOrEqual(75);expect(ticks.filter(t=>t.dx<=0)).toHaveLength(0);
+    expect(ticks.every(t=>Math.abs(t.dx-1)<0.00001)).toBe(true);
+    const summarize=(times:number[])=>{const gaps=times.slice(1).map((time,i)=>time-times[i]).sort((a,b)=>a-b);return{samples:times.length,p50:gaps[Math.floor(gaps.length*.5)]??0,p95:gaps[Math.floor(gaps.length*.95)]??0,p99:gaps[Math.floor(gaps.length*.99)]??0,max:gaps.at(-1)??0};};
+    const report={kind:linked?'controller+neutral-display':'single-device',seconds:3,ticks:summarize(ticks.map(t=>t.at)),stops:0,distance:ticks.reduce((sum,t)=>sum+t.dx,0),displaySnapshots:summarize(displaySnapshots),...(linked?{phoneSnapshots:summarize(phoneSnapshots)}:{})};
+    cadenceMeasurements.push(report);expect(report.ticks.max).toBeLessThan(250);
+    if(linked)expect(display.messages.filter(m=>m.t==='snapshot').at(-1)!.ack).toBeGreaterThan(10_000);
+  },10_000);
+  it('acks ignored display frames but lets phone input expire safely after a long gap',async()=>{
+    const f=await setup(999,services),display=await f.connect('player',undefined,'Display','alice');
+    display.send({t:'setRepo',repo:'test/repo'});display.send({t:'setBoss',repo:'test/boss'});await until(()=>display.lobby()?.players[0].status==='ready'&&display.lobby()?.boss.status==='ready');
+    const phone=await f.connect('controller',undefined,'Phone','alice');phone.send({t:'controls',ready:true,mode:'standard'});await until(()=>display.lobby()?.players[0].controlsReady===true);
+    display.send({t:'start'});await until(()=>phone.messages.some(m=>m.t==='snapshot'));
+    phone.send({t:'input',frame:{seq:1,move:[1,0],aim:null,fire:false,dash:false,skill:false,source:'motion'}});
+    await until(()=>f.observed.some(i=>i.seq===1&&i.move[0]===1));let seq=1000;
+    const timer=setInterval(()=>display.send({t:'input',frame:{seq:++seq,move:[0,0],aim:null,fire:false,dash:false,skill:false,source:'keyboard'}}),1000/30);
+    try{
+      await wait(180);expect(f.observed.at(-1)?.move).toEqual([1,0]);
+      await wait(220);expect(f.observed.at(-1)?.move).toEqual([0,0]);
+      expect(display.messages.filter(m=>m.t==='snapshot').at(-1)!.ack).toBeGreaterThan(1000);
+      expect(phone.messages.filter(m=>m.t==='snapshot').at(-1)!.ack).toBe(1);
+      phone.send({t:'input',frame:{seq:2,move:[1,0],aim:null,fire:false,dash:false,skill:false,source:'motion'}});
+      await until(()=>f.observed.at(-1)?.seq===2&&f.observed.at(-1)?.move[0]===1);
+    }finally{clearInterval(timer);}
+  });
   async function refused(f: Awaited<ReturnType<typeof setup>>, role: 'player' | 'controller', cookie: string | undefined, message: string, resume?: string) {
     const socket = new WebSocket(f.wsUrl, { headers: cookie ? { Cookie: cookie } : {} }), messages: ServerMsg[] = [];
     socket.on('message', raw => messages.push(JSON.parse(String(raw))));

@@ -117,6 +117,7 @@ interface Room {
 }
 
 const idle = (seq = 0): InputFrame => ({ seq, move: [0, 0], aim: null, fire: false, dash: false, skill: false, source: 'keyboard' });
+const INPUT_TIMEOUT_MS = 300; // Nine missing 30 Hz frames before releasing stale controls.
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const removedMessage = 'You were removed from this room by the host.';
 const controllerSignIn = 'Sign in with GitHub on both devices to use your phone as the controller.';
@@ -460,7 +461,11 @@ export class RoomServer {
       if (seq !== undefined && f.seq <= seq) return;
       if (session.controller) member.controllerSeq = f.seq; else {
         member.displaySeq = f.seq;
-        if (f.source === 'keyboard') member.displayKeyboardReady = true;
+        const activeKeyboard = f.source === 'keyboard' && (f.move[0] !== 0 || f.move[1] !== 0 || f.fire || f.dash || f.skill);
+        if (activeKeyboard) member.displayKeyboardReady = true;
+        // The phone owns a linked seat. Display heartbeat/auto-aim frames are
+        // acknowledged, but must neither replace tilt nor renew its stale timer.
+        if (member.controllerSocket && !activeKeyboard) return;
       }
       const pending = member.input;
       member.input = { ...f, dash: !!f.dash || !!pending?.dash, skill: !!f.skill || !!pending?.skill };
@@ -1086,7 +1091,7 @@ export class RoomServer {
             if (player) inputs.set(m.id, sanitizeInputFrame(m.botInput(room.state, player)) ?? idle());
             continue;
           }
-          inputs.set(m.id, online(m) && m.input && now - m.inputAt < 300 ? { ...m.input } : idle(m.input?.seq));
+          inputs.set(m.id, online(m) && m.input && now - m.inputAt < INPUT_TIMEOUT_MS ? { ...m.input } : idle(m.input?.seq));
           if (m.input) { m.input.dash = false; m.input.skill = false; }
         }
         try { match.step(1 / 30, inputs); }
