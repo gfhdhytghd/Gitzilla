@@ -1,0 +1,10 @@
+{
+  "name": "gitzilla-pitch-video",
+  "private": true,
+  "type": "module",
+  "description": "Remotion edit of the Gitzilla Devpost pitch. node_modules is a symlink to ~/promo-video/node_modules.",
+  "scripts": {
+    "still": "remotion still src/index.jsx Pitch",
+    "render": "remotion render src/index.jsx Pitch out/gitzilla-pitch-raw.mp4"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "voice": "Puck",
+  "style": "Read this like an energetic but clear game-trailer narrator for a hackathon demo. Confident, warm, a little playful, medium pace. Read only the line below:",
+  "lines": {
+    "00-hook": "Your codebase is a monster. Now make it fight.",
+    "01-genesis": "Paste any public repo. Gitzilla reads its real import graph, its cycles, tests and language D.N.A., and compiles it into a boss. Your own repo becomes your hero.",
+    "02-raid": "Everyone joins from their phone. No app, no account. Tilt to move, swing to attack, twist to dash. Break the boss's limbs, each one a real module, and dodge attacks made from its own code. Every repo grows a different monster.",
+    "03-organ": "After the fight, the autopsy tells the truth: only two people maintain this. So we hand you real good-first issues from the repo you just beat.",
+    "04-royale": "Or fight each other. Up to eight repos, battle royale. Stronger repo, stronger hero, but the garbage collector closes in on everyone.",
+    "05-class": "For teachers: pick a Python lesson and put the room code on the projector. Students write and run code right in the browser, get instant feedback against your rubric, and then the whole class attacks the boss together.",
+    "06-built": "Under the hood: real static analysis, Gemini art direction, a Web Audio chiptune engine, all running in the browser on any phone.",
+    "07-end": "Gitzilla. Your codebase is a monster. Come fight it."
+  }
+}

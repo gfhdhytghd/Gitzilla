@@ -1,3 +1,7 @@
+DONE (pitch video v2) — video/out/gitzilla-pitch.mp4 re-rendered (2:16): every join link/QR now says gitzilla.wilflin.me, and the class attack shows the boss taking a hit. Watched and re-sampled.
+
+DONE (pitch video) — video/out/gitzilla-pitch.mp4 (2:16, 1080p30, -14 LUFS) rendered and watched end to end; review frames in video/out/frames/; storyboard + rebuild steps in video/STORYBOARD.md.
+
 DONE (teacher audit) — docs/ux-audit-teacher.md: quick wins, P0-T1..T5, P1-T1..T9, P2, failure cases. Re-check after claude-edu ships fixes.
 
 DONE — pass 1 audit, portrait re-audit, P0 re-check and edu-mode audit are all in docs/ux-audit.md.
@@ -32,3 +36,15 @@ DONE — pass 1 audit, portrait re-audit, P0 re-check and edu-mode audit are all
 - Edu audit appended (teacher projector + 2 student phones live, plus edu mocks): EDU-1 report-card jargon/no scale (P0), EDU-2..EDU-7. Quiz never appeared in any run, so it was not verified.
 - Transient page errors seen while claude-ui was hot-editing: `pvpPanel is not defined`, `Cannot access 'menuSheet' before initialization` (both gone on the next reload).
 - Teacher audit (docs/tasks/teacher-ux.md): live run room NMIL (teacher 1440 Chromium + 3 WebKit iPhones) and JNBC (second tab, other-device projector, reload, late joiner, phone teacher). P0s: console=projector privacy, 100/100 for any print(, raid off-screen, one-click End lesson / new room, kill -STOP + red ERR copy. Not verified: GitHub path, rubric upload, 30 students, two teachers.
+- Pitch video (docs/tasks/pitch-video.md): recorder video/capture/rec.mjs (CDP screencast, forced DSF → 1920x1080 / 780x1688 @60fps). Scouted all mock modes (video/raw/scout). STORYBOARD.md written (2:16, 68 bars @120 BPM). Coordinator HOLD: no final footage/title cards until 'logo is live'.
+- Pitch video done after 'logo is live': captured headless (stepped mock takes + real :5175 rooms with synthetic motion sensors), Gemini TTS VO (transcription-verified), original 120 BPM chiptune, Remotion edit in video/src. Two watch/fix passes. No teaser cut. Nothing uploaded, no commits.
+- Pitch video v2 (coordinator fixes):
+  - (1) Dev URL: the capture browser now maps gitzilla.wilflin.me to the local dev server with Chromium
+    --host-rules (video/capture/rec.mjs). The page origin, join text and QR all read gitzilla.wilflin.me, and the
+    live site was never touched. Re-shot the classroom and the raid split; the mock takes show no room origin.
+  - (2) The "no boss" class attack was not a render bug. All 4 students submitted, and their 60 damage equalled the
+    preset boss's 60 HP, so the first attack one-shot it. The projector then correctly played the defeat dissolve,
+    leaving an empty arena with dots.
+  - Re-shot with 2 of 4 submissions (38 damage, boss at 23/60), so the boss stays on screen.
+  - Note for claude-edu/take-edu: with a full class, the preset boss (60 HP) dies on the very first class attack of
+    step 1. Consider scaling boss HP so it lasts across steps.

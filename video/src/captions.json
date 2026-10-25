@@ -1,0 +1,242 @@
+{
+ "00-hook": {
+  "dur": 3.77,
+  "chunks": [
+   {
+    "text": "Your codebase is a monster.",
+    "from": 0,
+    "to": 2.43
+   },
+   {
+    "text": "Now make it fight.",
+    "from": 2.43,
+    "to": 3.77
+   }
+  ]
+ },
+ "01-genesis": {
+  "dur": 12.37,
+  "chunks": [
+   {
+    "text": "Paste any public repo.",
+    "from": 0,
+    "to": 2.17
+   },
+   {
+    "text": "Gitzilla reads its real import graph,",
+    "from": 2.17,
+    "to": 4.82
+   },
+   {
+    "text": "its cycles, tests and language DNA,",
+    "from": 4.82,
+    "to": 7.79
+   },
+   {
+    "text": "and compiles it into a boss.",
+    "from": 7.79,
+    "to": 9.91
+   },
+   {
+    "text": "Your own repo becomes your hero.",
+    "from": 9.91,
+    "to": 12.37
+   }
+  ]
+ },
+ "02-raid": {
+  "dur": 17.33,
+  "chunks": [
+   {
+    "text": "Everyone joins from their phone.",
+    "from": 0,
+    "to": 2.93
+   },
+   {
+    "text": "No app, no account.",
+    "from": 2.93,
+    "to": 3.88
+   },
+   {
+    "text": "Tilt to move, swing to attack,",
+    "from": 3.88,
+    "to": 6.35
+   },
+   {
+    "text": "twist to dash.",
+    "from": 6.35,
+    "to": 7.71
+   },
+   {
+    "text": "Break the boss's limbs,",
+    "from": 7.71,
+    "to": 9.6
+   },
+   {
+    "text": "each one a real module,",
+    "from": 9.6,
+    "to": 11.04
+   },
+   {
+    "text": "and dodge attacks made from its own code.",
+    "from": 11.04,
+    "to": 14.45
+   },
+   {
+    "text": "Every repo grows a different monster.",
+    "from": 14.45,
+    "to": 17.33
+   }
+  ]
+ },
+ "03-organ": {
+  "dur": 9.73,
+  "chunks": [
+   {
+    "text": "After the fight,",
+    "from": 0,
+    "to": 1.39
+   },
+   {
+    "text": "the autopsy tells the truth:",
+    "from": 1.39,
+    "to": 3.35
+   },
+   {
+    "text": "only two people maintain this.",
+    "from": 3.35,
+    "to": 5.61
+   },
+   {
+    "text": "So we hand you real good-first issues",
+    "from": 5.61,
+    "to": 7.83
+   },
+   {
+    "text": "from the repo you just beat.",
+    "from": 7.83,
+    "to": 9.73
+   }
+  ]
+ },
+ "04-royale": {
+  "dur": 9.97,
+  "chunks": [
+   {
+    "text": "Or fight each other.",
+    "from": 0,
+    "to": 1.87
+   },
+   {
+    "text": "Up to eight repos, battle royale.",
+    "from": 1.87,
+    "to": 4.57
+   },
+   {
+    "text": "Stronger repo, stronger hero,",
+    "from": 4.57,
+    "to": 6.28
+   },
+   {
+    "text": "but the garbage collector",
+    "from": 6.28,
+    "to": 8.1
+   },
+   {
+    "text": "closes in on everyone.",
+    "from": 8.1,
+    "to": 9.97
+   }
+  ]
+ },
+ "05-class": {
+  "dur": 13.53,
+  "chunks": [
+   {
+    "text": "For teachers:",
+    "from": 0,
+    "to": 1.19
+   },
+   {
+    "text": "pick a Python lesson and put the",
+    "from": 1.19,
+    "to": 3.03
+   },
+   {
+    "text": "room code on the projector.",
+    "from": 3.03,
+    "to": 4.9
+   },
+   {
+    "text": "Students write and run code",
+    "from": 4.9,
+    "to": 6.38
+   },
+   {
+    "text": "right in the browser,",
+    "from": 6.38,
+    "to": 8.07
+   },
+   {
+    "text": "get instant feedback against your rubric,",
+    "from": 8.07,
+    "to": 10.39
+   },
+   {
+    "text": "and then the whole class",
+    "from": 10.39,
+    "to": 11.71
+   },
+   {
+    "text": "attacks the boss together.",
+    "from": 11.71,
+    "to": 13.53
+   }
+  ]
+ },
+ "06-built": {
+  "dur": 10.01,
+  "chunks": [
+   {
+    "text": "Under the hood:",
+    "from": 0,
+    "to": 1.26
+   },
+   {
+    "text": "real static analysis, Gemini art direction,",
+    "from": 1.26,
+    "to": 4.83
+   },
+   {
+    "text": "a Web Audio chiptune engine,",
+    "from": 4.83,
+    "to": 7
+   },
+   {
+    "text": "all running in the browser on any phone.",
+    "from": 7,
+    "to": 10.01
+   }
+  ]
+ },
+ "07-end": {
+  "dur": 4.49,
+  "chunks": [
+   {
+    "text": "Gitzilla.",
+    "from": 0,
+    "to": 1.06
+   },
+   {
+    "text": "Your codebase is a monster.",
+    "from": 1.06,
+    "to": 3.32
+   },
+   {
+    "text": "Come fight it.",
+    "from": 3.32,
+    "to": 4.49
+   }
+  ]
+ }
+}
