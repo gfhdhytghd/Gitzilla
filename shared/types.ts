@@ -501,7 +501,7 @@ export type ClientMsg =
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
   | { t: "setMode"; mode: GameMode }        // owner only, lobby only
-  | { t: "controls"; ready: boolean; mode: MotionProfile }  // phone reports: motion permission granted & sensors live (or touch chosen)
+  | { t: "controls"; ready: boolean; mode: MotionProfile; needsController?: boolean }  // phone reports motion/touch readiness; needsController (headset display): this seat is ready only via a linked phone controller
   | { t: "setRubric"; rubric: Rubric }      // owner only, edu, lobby (after previewing POST /api/rubric/parse)
   | { t: "pause"; paused: boolean }        // owner only, during a match: true = pause now, false = resume after 3s
   | { t: "leave" }                          // leave for good: free the slot, transfer ownership, forget the resume token
