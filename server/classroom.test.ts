@@ -16,6 +16,38 @@ function lesson() {
   return {s, advance:(ms:number)=>{time+=ms;}, plan};
 }
 describe('staged classroom lesson',()=>{
+  it('freezes roster and positional check totals from this round scored reports only', () => {
+    const {s} = lesson(); s.roster([{ id:'a', name:'Alice', connected:true }, { id:'b', name:'Bob', connected:true }, { id:'c', name:'Missing', connected:true }, { id:'d', name:'Removed', connected:true }]);
+    s.control('start'); s.accept(s.begin('a','demo/repo'),source);
+    s.accept(s.begin('b','demo/repo'),{ ...source, commit:'b'.repeat(40), files:files.slice(0,1) });
+    s.accept(s.begin('d','demo/repo'),source); s.kick('d');
+    s.roster([{ id:'a', name:'Alice', connected:true }, { id:'b', name:'Bob', connected:false }, { id:'c', name:'Missing', connected:true }]);
+    s.review('b',100,'Reviewed separately; static check evidence stays unchanged.'); s.control('attack');
+    const frozen = structuredClone(s.state.rounds[0]);
+    expect(frozen.roster).toBe(3); expect(frozen.attacks).toHaveLength(2);
+    expect(frozen.checkStats).toEqual([{label:'Documentation',passed:1,total:2},{label:'Answer',passed:2,total:2}]);
+    expect(JSON.stringify(frozen.checkStats)).not.toContain('Alice');
+    s.kick('a'); s.roster([{ id:'e', name:'Late student', connected:true }]);
+    expect(s.state.rounds[0]).toEqual(frozen);
+    expect(ClassroomSession.restore(JSON.parse(JSON.stringify(s.save()))).state.rounds[0]).toEqual(frozen);
+  });
+  it('records fresh check totals on retries and supports checkless rounds', () => {
+    const {s,advance}=lesson(); s.control('start'); s.accept(s.begin('a','demo/repo'),source); s.control('attack');
+    const first=structuredClone(s.state.rounds[0]); advance(10001);s.tick();s.control('retry');
+    s.accept(s.begin('b','demo/repo'),{...source,files:files.slice(0,1)});s.control('attack');
+    expect(s.state.rounds[0]).toEqual(first); expect(s.state.rounds[1].checkStats).toEqual([{label:'Documentation',passed:0,total:1},{label:'Answer',passed:1,total:1}]);
+    advance(10001);s.tick();s.control('next');
+    s.accept(s.begin('a','demo/repo'),source);s.control('attack'); expect(s.state.rounds[2].roster).toBe(2);expect(s.state.rounds[2].checkStats).toEqual([]);
+  });
+  it('preserves absent legacy aggregates and never guesses checks from restored scores', () => {
+    const {s}=lesson(); s.control('start');s.accept(s.begin('a','demo/repo'),source);
+    const coding=JSON.parse(JSON.stringify(s.save())); const restoredCoding=ClassroomSession.restore(coding);
+    restoredCoding.control('attack'); expect(restoredCoding.state.rounds[0].roster).toBe(2);
+    expect(restoredCoding.state.rounds[0]).not.toHaveProperty('checkStats');
+    s.control('attack');const legacy=JSON.parse(JSON.stringify(s.save()));delete legacy.rounds[0].roster;delete legacy.rounds[0].checkStats;
+    const restored=ClassroomSession.restore(legacy);expect(restored.state.rounds[0]).not.toHaveProperty('roster');expect(restored.state.rounds[0]).not.toHaveProperty('checkStats');
+    expect(JSON.parse(JSON.stringify(restored.save())).rounds[0]).toEqual(legacy.rounds[0]);
+  });
   it('drops kicked queued submissions/live rows but preserves attacks that already earned credit', () => {
     const {s} = lesson(); s.control('start');
     const pending = s.begin('a', 'demo/repo'); s.accept(s.begin('b', 'demo/repo'), source);

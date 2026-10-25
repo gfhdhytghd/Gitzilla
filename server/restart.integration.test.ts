@@ -117,6 +117,8 @@ it.skipIf(process.env.ROOM_RESTART_TEST !== '1')('recovers real main.ts processe
     for (const student of [studentA, studentB]) student.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42\n# PRIVATE_RESTART_SOURCE' }] });
     await until(() => lastClass(teacher)?.state.rows.every(row => row.status === 'submitted'));
     teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => lastClass(teacher)?.state.phase === 'raid');
+    const frozenRound = structuredClone(lastClass(teacher)!.state.rounds[0]);
+    expect(frozenRound.roster).toBe(2); expect(frozenRound.checkStats).toEqual([{label:'Python',passed:2,total:2}]);
     const exportPath = `/api/room/${classroom}/classroom.csv`, teacherHeaders = { 'X-Room-Token': teacher.welcome.token };
     const frozenExport = await (await fetch(third.base + exportPath, { headers: teacherHeaders })).text();
     const kicked = once(studentB.ws, 'close'); teacher.send({ t: 'kick', playerId: studentB.welcome.you }); expect((await kicked)[0]).toBe(4003);
@@ -133,6 +135,7 @@ it.skipIf(process.env.ROOM_RESTART_TEST !== '1')('recovers real main.ts processe
     const restoredClass = await until(() => lastClass(restoredTeacher));
     expect(restoredClass.state.phase).toBe('feedback'); expect(restoredClass.state.rows.map(r => r.id)).toEqual([studentA.welcome.you]);
     expect(restoredClass.reports).toEqual({}); expect(restoredClass.state.rounds[0].attacks).toHaveLength(2);
+    expect(restoredClass.state.rounds[0]).toEqual(frozenRound);
     expect(await (await fetch(fourth.base + exportPath, { headers: teacherHeaders })).text()).toBe(frozenExport);
     const bannedSocket = new WebSocket(fourth.base.replace('http:', 'ws:') + '/ws'); sockets.push(bannedSocket);
     const bannedMessages: ServerMsg[] = []; bannedSocket.on('message', raw => bannedMessages.push(JSON.parse(String(raw))));

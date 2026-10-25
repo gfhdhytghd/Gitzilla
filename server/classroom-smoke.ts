@@ -95,6 +95,10 @@ try {
   }
   assert.ok(Object.values(teacher.classroom!.reports).every(r => r.files?.[0].content.includes('DEV_SMOKE_STUDENT_SOURCE')));
   teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => peers.every(p => p.classroom?.state.phase === 'raid'), 'class raid');
+  const frozenRound = structuredClone(teacher.classroom!.state.rounds[0]);
+  assert.equal(frozenRound.roster, students);
+  assert.deepEqual(frozenRound.checkStats, [{ label:'Python file', passed:students, total:students }, { label:'Answer', passed:students, total:students }]);
+  for (const peer of peers) assert.deepEqual(peer.classroom!.state.rounds[0].checkStats, frozenRound.checkStats);
   await pause(5000); assert.ok(!teacher.closed && peers.every(p => !p.closed));
   const exportUrl = `${base}/api/room/${room}/classroom.csv`, headers = { 'X-Room-Token': teacher.welcome!.token };
   const before = await (await fetch(exportUrl, { headers })).text();
@@ -104,6 +108,7 @@ try {
   assert.deepEqual(kicked.kicked, { t: 'kicked', by: 'DEV classroom teacher' });
   await until(() => teacher.classroom?.state.rows.length === students - 1, 'kicked student removed');
   assert.equal(teacher.classroom!.reports[kicked.welcome!.you], undefined);
+  assert.deepEqual(teacher.classroom!.state.rounds[0], frozenRound, 'Frozen roster/check totals survive removal');
   assert.equal(await (await fetch(exportUrl, { headers })).text(), before, 'Frozen earned results survive the kick');
   const probe = new WebSocket(base.replace(/^http/, 'ws') + '/ws'); sockets.push(probe);
   const errors: string[] = []; probe.on('message', raw => { const msg = JSON.parse(String(raw)) as ServerMsg; if (msg.t === 'error') errors.push(msg.message); });

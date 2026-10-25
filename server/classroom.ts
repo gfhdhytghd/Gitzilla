@@ -225,6 +225,12 @@ export class ClassroomSession {
     if (s.rows.some(r => r.status === 'queued')) throw new Error('Wait for queued submissions before launching the raid');
     const submitted = s.rows.filter(r => r.status === 'submitted');
     if (!submitted.length) throw new Error('At least one student must submit this step');
+    const step = s.plan.steps[s.stepIndex];
+    const reports = submitted.map(row => this.reports.get(row.id)).filter((report): report is ClassroomReport =>
+      !!report && report.stepId === step.id && report.attempt === s.attempt);
+    // Aggregate-only restored submissions have no check evidence: leave stats unavailable.
+    const checkStats = reports.length === submitted.length ? step.checks.map((check, index) => ({ label: check.label,
+      passed: reports.filter(report => report.checks[index]?.passed === true).length, total: reports.length })) : undefined;
     const attacks = submitted.map(r => {
       const key = `${s.plan.steps[s.stepIndex].id}:${r.id}`;
       const before = this.credited.get(key) ?? 0, score = r.score ?? 0;
@@ -233,7 +239,9 @@ export class ClassroomSession {
       return { id: r.id, name: r.name, score, improvement: r.improvement, damage, commit: r.commit! };
     });
     const bossBefore = s.bossHp; s.bossHp = Math.max(0, round(s.bossHp - attacks.reduce((sum, a) => sum + a.damage, 0)));
-    s.rounds.push({ stepId: s.plan.steps[s.stepIndex].id, attempt: s.attempt, at: this.now(), bossBefore, bossAfter: s.bossHp, attacks });
+    // Freeze the enrolled roster and anonymous measurements; later joins/kicks/retries cannot rewrite them.
+    s.rounds.push({ stepId: step.id, attempt: s.attempt, at: this.now(), bossBefore, bossAfter: s.bossHp, attacks, roster: s.rows.length,
+      ...(checkStats !== undefined ? { checkStats } : {}) });
     s.phase = 'raid'; s.deadline = null; s.remainingMs = null; s.raidEndsAt = this.now() + 10000; this.generation++;
   }
 }
