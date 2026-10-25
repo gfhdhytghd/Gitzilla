@@ -18,10 +18,11 @@ function mergeTemplate(current: unknown, from: unknown, to: unknown): unknown {
   }
   return current;
 }
+// Step titles/instructions come hand-written per locale from defaultClassroomPlan(lang); the rest uses the catalog.
 function translateDefault(plan: ClassroomPlan, lang: Locale): ClassroomPlan {
   const text = (value: string) => translate(value, lang);
   return { ...plan, title: text(plan.title), bossName: text(plan.bossName), steps: plan.steps.map(step => ({
-    ...step, title: text(step.title), instructions: text(step.instructions),
+    ...step,
     checks: step.checks.map(check => ({ ...check, label: text(check.label) })),
     rubric: { ...step.rubric, title: text(step.rubric.title), criteria: step.rubric.criteria.map(criterion => ({
       ...criterion, name: text(criterion.name), description: text(criterion.description),
@@ -35,8 +36,8 @@ export function localizeClassroomPlan(plan: ClassroomPlan, lang: Locale): Classr
   let result = structuredClone(plan);
   const preset = pythonClassroomPresets.find(p => plan.steps.some(step => step.id.startsWith(`${p.id}-`)));
   for (const from of LOCALES) {
-    const original = preset ? pythonClassroomPlan(preset.id, from) : translateDefault(defaultClassroomPlan(), from);
-    const target = preset ? pythonClassroomPlan(preset.id, lang) : translateDefault(defaultClassroomPlan(), lang);
+    const original = preset ? pythonClassroomPlan(preset.id, from) : translateDefault(defaultClassroomPlan(from), from);
+    const target = preset ? pythonClassroomPlan(preset.id, lang) : translateDefault(defaultClassroomPlan(lang), lang);
     result = mergeTemplate(result, original, target) as ClassroomPlan;
   }
   if (planCache.size >= 24) planCache.clear(); planCache.set(key, structuredClone(result));

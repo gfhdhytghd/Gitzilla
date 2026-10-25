@@ -1,3 +1,24 @@
+DONE (task text) — 27 preset steps × en/zh/es/fr have a StepBrief, a new title and summary instructions, per-step starter TODO comments and a README; the default lesson is rewritten; check labels are cleaned up. Proposed rewrites for student copy owned by other agents are in docs/classroom-copy.md. Full suite 998 pass, tsc clean, take-edu's 108-case brief validation passes. No commits.
+
+## Task text: content mapping (for take-edu)
+- Checks/paths/evidence stay exactly as they are; only text changes.
+- `brief.doneWhen` = one entry per `step.checks`, same order:
+  `[file python/NN_x.py] + [one per evidence literal] + [README.md for steps 2–3]`. Each entry contains the
+  literal check text or path verbatim (e.g. "`elif ...:`" contains `elif `), so a substring test works.
+- Per-locale text is written by hand in `shared/classroom-preset-text/{en,zh,es,fr}.ts`, not the Gemini catalog,
+  so new wording never falls back to English.
+- Starter `.py` TODO comments avoid every evidence literal of the lesson (so a comment can't satisfy a check).
+- Default lesson: same 3 step ids/checks/rubric; title + instructions (goal + numbered checklist) hand-written in 4
+  locales. **No brief** on purpose: teachers edit these steps' instructions in the plan editor and "+ Add step" copies
+  step 0, so a brief would hide their edits.
+- Starter `.py` header no longer carries the lesson title/summary ("for and range", "if / elif / else" satisfied the
+  `for `/`if ` checks from a comment). Check labels are hand-written per locale (`ui.checkFile/checkCode/checkRecord`)
+  and still contain the literal, so server advice still names it.
+- For claude-ui / claude-edu / server owners: docs/classroom-copy.md has the proposed student-copy rewrites, plus one UI
+  nit: the scored list repeats the literal (`label · text`). These strings are catalog keys, so apply them as a batch and
+  regenerate i18n.
+- Not verified in a browser: how the task card renders this text on a phone (claude-edu owns that check).
+
 DONE (pitch video v2) — video/out/gitzilla-pitch.mp4 re-rendered (2:16): every join link/QR now says gitzilla.wilflin.me, and the class attack shows the boss taking a hit. Watched and re-sampled.
 
 DONE (pitch video) — video/out/gitzilla-pitch.mp4 (2:16, 1080p30, -14 LUFS) rendered and watched end to end; review frames in video/out/frames/; storyboard + rebuild steps in video/STORYBOARD.md.

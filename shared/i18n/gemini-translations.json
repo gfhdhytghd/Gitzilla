@@ -18434,5 +18434,33 @@
     "zh": "已编译 {0} 个仓库 · 属性来自仓库战力",
     "es": "{0} repositorios compilados · stats según el poder del repo",
     "fr": "{0} dépôts compilés · stats selon la puissance du dépôt"
+  },
+  {
+    "id": "7bb5113348244406",
+    "en": "repo power {0}, AI handicap {1}",
+    "zh": "仓库战力 {0}，AI 削弱 {1}",
+    "es": "poder del repo {0}, desventaja de IA {1}",
+    "fr": "puissance du dépôt {0}, handicap IA {1}"
+  },
+  {
+    "id": "57f4eb2e69ccc815",
+    "en": "· AI {0}",
+    "zh": "· AI {0}",
+    "es": "· IA {0}",
+    "fr": "· IA {0}"
+  },
+  {
+    "id": "cfd09e95c215cbc8",
+    "en": "AI {0}",
+    "zh": "AI {0}",
+    "es": "IA {0}",
+    "fr": "IA {0}"
+  },
+  {
+    "id": "f5ead2c7faa5bdb4",
+    "en": "{0} · AI {1}",
+    "zh": "{0} · AI {1}",
+    "es": "{0} · IA {1}",
+    "fr": "{0} · IA {1}"
   }
 ]

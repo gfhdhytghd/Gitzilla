@@ -10958,5 +10958,25 @@
     "id": "a5d960becaef3d1b",
     "source": "{0} repositories compiled · stats from repo power",
     "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "7bb5113348244406",
+    "source": "repo power {0}, AI handicap {1}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "57f4eb2e69ccc815",
+    "source": "· AI {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "cfd09e95c215cbc8",
+    "source": "AI {0}",
+    "context": "client/app (claude-ui, hand-translated)"
+  },
+  {
+    "id": "f5ead2c7faa5bdb4",
+    "source": "{0} · AI {1}",
+    "context": "client/app (claude-ui, hand-translated)"
   }
 ]
