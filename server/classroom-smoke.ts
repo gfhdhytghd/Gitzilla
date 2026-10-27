@@ -137,7 +137,7 @@ try {
     await until(() => teacher.lobby?.players.length === students - i - 1, 'student slot removed');
   }
   await teacher.leave();
-  assert.deepEqual(await (await fetch(base + '/api/room/' + room)).json(), { exists: false, players: 0, phase: null });
+  assert.deepEqual(await (await fetch(base + '/api/room/' + room)).json(), { exists: false, players: 0, phase: null, mode: null });
   console.log(`PASS classroom DEV 5175 room=${room}; teacher + ${students} students; 3-step HP=${hpCurve.join(' -> ')}; rubric/brief/static grading/private source, raid/kick/resume ban/frozen exports, leave/deletion OK`);
 } finally {
   for (const socket of sockets) socket.terminate();

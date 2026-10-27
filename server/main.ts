@@ -16,7 +16,7 @@ import { analyzeFiles, analyzeRepo, listFallbackRepos, offlineProfile } from '..
 import { playerKitFromProfile, bossKitFromProfile, createMatch, qualityFromRubric } from '../sim/index.ts';
 import { designHero, designBoss, fallbackHero, fallbackBoss, applyHeroDesign, applyBossDesign } from '../design/index.ts';
 import { recordMatch, top } from '../hall/index.ts';
-import { handleAuthRoute, getSession, getGithubToken } from '../auth/index.ts';
+import { handleAuthRoute, getSession, getGithubToken, signInRequired } from '../auth/index.ts';
 import { createBot } from '../sim/bots.ts';
 import { buildGenesis } from '../genesis/index.ts';
 import { RoomServer } from './rooms.ts';
@@ -93,7 +93,7 @@ const rooms = new RoomServer(wss, {
   },
   async enhanceHeroKit(profile, kit) { return applyHeroDesign(kit, await designHero(profile, kit)); },
   async enhanceBossKit(profile, kit) { return applyBossDesign(kit, await designBoss(profile, kit)); },
-}, { persistenceFile: process.env.ROOMS_FILE || resolve(root, '.cache/rooms.json') });
+}, { persistenceFile: process.env.ROOMS_FILE || resolve(root, '.cache/rooms.json'), requireGithub: signInRequired() });
 const vite = production ? null : await (await import('vite')).createServer({
   root,
   // Vite's fallback target uses server.port. Leave the browser port/protocol inferred

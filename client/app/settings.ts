@@ -2,6 +2,7 @@ import { languageNames, LOCALES, locale, onLocaleChange, setLanguage, t, type Lo
 import { isLocale } from '../../shared/i18n/locale';
 import { getMotionPermissionState, loadMotionProfile, saveMotionProfile, subscribeMotionPermission, requestMotionPermission } from '../input';
 import { createControlsCard } from './controls';
+import { fetchMe, login } from './github';
 import { controlsTrained, openControlTraining } from './training';
 import { h, store } from './util';
 import { usesLocalControls } from './device';
@@ -89,7 +90,7 @@ function render() {
   // View: [ 2D | 3D ] segmented switch (the fight in the three.js stage); a ?view=… link pins it
   const view = context.classroom || onboarding ? null : h('section.settings-section', null, h('h3', { id: 'settings-view-label' }, 'View'),
     viewSwitch(), view25dPinned() ? h('p.settings-status', null, 'Set by this link.') : null);
-  const children: (HTMLElement | null)[] = [title, intro, language, sound, view];
+  const children: (HTMLElement | null)[] = [title, intro, language, sound, view, onboarding && !context.spectator ? githubSection() : null];
   if (!context.classroom && !context.spectator && usesLocalControls()) {
     if (getMotionPermissionState().mobile) {
       const controls = createControlsCard(practice);
@@ -106,6 +107,20 @@ function render() {
   children.push(h('div.settings-actions', null,
     h('button.btn.btn-primary', { 'data-testid': 'settings-close', onclick: close }, needsSetup ? 'Continue without practice' : onboarding ? 'Continue' : 'Close')));
   dialog.replaceChildren(...children.filter((x): x is HTMLElement => !!x));
+}
+/** First-run GitHub row: signing in here means the join gate later only asks for a handle. Hidden while auth is off. */
+function githubSection(): HTMLElement {
+  const section = h('section.settings-section', { hidden: true }, h('h3', null, 'GitHub'));
+  void fetchMe().then(me => {
+    if (!me.enabled) return;
+    section.hidden = false;
+    section.append(me.user
+      ? h('p.settings-status', { 'data-testid': 'onboarding-github' }, `✓ signed in as @${me.user.login}`)
+      : h('div.settings-gh', null,
+        h('p.settings-status', null, me.required ? 'Players and teachers sign in with GitHub before joining. Big screens don\'t need to.' : 'Optional: sign in to fight with your own repos.'),
+        h('button.btn.btn-gh', { 'data-testid': 'onboarding-github', onclick: () => { close(); login(); } }, h('span.gh-mark', null, '◉'), ' Continue with GitHub')));
+  });
+  return section;
 }
 /** [ 2D | 3D ] with a sliding thumb: role=radiogroup, roving tabindex, ←/→ (and Home/End) select, disabled when pinned. */
 function viewSwitch(): HTMLElement {

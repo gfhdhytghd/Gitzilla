@@ -1059,11 +1059,11 @@ describe('room protocol over real WebSockets', () => {
       const error = await until(() => messages.find(m => m.t === 'error'));
       socket.close(); await once(socket, 'close'); return error.message;
     }
-    expect(test.rooms.roomInfo('LOST')).toEqual({ exists: false, players: 0, phase: null });
+    expect(test.rooms.roomInfo('LOST')).toEqual({ exists: false, players: 0, phase: null, mode: null });
     expect(await helloError('LOST')).toMatch(/room not found/i);
-    expect(test.rooms.roomInfo('LOST')).toEqual({ exists: false, players: 0, phase: null });
+    expect(test.rooms.roomInfo('LOST')).toEqual({ exists: false, players: 0, phase: null, mode: null });
     expect(await helloError('AB12')).toMatch(/no digits/i);
-    expect(test.rooms.roomInfo(test.room)).toEqual({ exists: true, players: 0, phase: 'lobby' });
+    expect(test.rooms.roomInfo(test.room)).toEqual({ exists: true, players: 0, phase: 'lobby', mode: 'battle' });
     await test.connect();
     expect(test.rooms.roomInfo(test.room).players).toBe(1);
   });
@@ -2220,4 +2220,40 @@ it('persists the host-selected classroom language across server restarts', async
   await until(()=>teacher.lobby()?.locale==='zh');await test.close();
   const restored=await setup(999,{}, {persistenceFile:file},test.room,'edu');
   const resumed=await restored.connect('screen',teacher.welcome.token);expect(resumed.welcome.lobby.locale).toBe('zh');
+});
+
+describe('GitHub sign-in gate (requireGithub)', () => {
+  const signedIn = { getSession: async (req: http.IncomingMessage) => req.headers.cookie === 'alice' ? { userId: 'github|1', login: 'alice' } : null };
+  async function refused(f: Awaited<ReturnType<typeof setup>>, role: 'player' | 'screen', resume?: string) {
+    const socket = new WebSocket(f.wsUrl), messages: ServerMsg[] = [];
+    socket.on('message', raw => messages.push(JSON.parse(raw.toString())));
+    await once(socket, 'open');
+    socket.send(JSON.stringify({ t: 'hello', room: f.room, role, name: 'Anon', resume }));
+    const error = await until(() => messages.find(m => m.t === 'error'));
+    expect(messages.some(m => m.t === 'welcome')).toBe(false);
+    socket.close();
+    return error.t === 'error' ? error.message : '';
+  }
+  it('refuses anonymous players but keeps big screens open', async () => {
+    const f = await setup(999, signedIn, { requireGithub: true });
+    expect(await refused(f, 'player')).toMatch(/Sign in with GitHub to play/);
+    const screen = await f.connect('screen');
+    const alice = await f.connect('player', undefined, 'Alice', 'alice');
+    expect(alice.lobby()?.players.map(p => p.name)).toEqual(['Alice']);
+    expect(screen.welcome.t).toBe('welcome');
+  });
+  it('makes only a signed-in screen the classroom teacher', async () => {
+    const f = await setup(999, signedIn, { requireGithub: true }, undefined, 'edu');
+    const projector = await f.connect('screen');
+    expect(projector.welcome.t === 'welcome' && projector.welcome.lobby.ownerId).not.toBe(projector.welcome.t === 'welcome' && projector.welcome.you);
+    const teacher = await f.connect('screen', undefined, 'Teacher', 'alice');
+    expect(teacher.welcome.t === 'welcome' && teacher.welcome.lobby.ownerId).toBe(teacher.welcome.t === 'welcome' && teacher.welcome.you);
+    teacher.socket.close(); await once(teacher.socket, 'close');
+    expect(await refused(f, 'screen', teacher.welcome.t === 'welcome' ? teacher.welcome.token : undefined)).toMatch(/run this classroom/);
+    expect(await refused(f, 'player')).toMatch(/Sign in with GitHub to play/);
+  });
+  it('stays anonymous-friendly when the gate is off', async () => {
+    const f = await setup(999, signedIn);
+    expect((await f.connect('player')).welcome.t).toBe('welcome');
+  });
 });

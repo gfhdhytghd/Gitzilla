@@ -52,6 +52,7 @@ export interface RoomServerOptions {
   allowLegacyEdu?: boolean; // Explicit compatibility harness only; never enabled by production.
   persistenceFile?: string; // Main supplies .cache/rooms.json; tests can use isolated files.
   debounceMs?: number;
+  requireGithub?: boolean; // Players and the classroom teacher must hold a GitHub session; spectator screens stay open.
 }
 interface Member {
   id: string;
@@ -128,6 +129,8 @@ const INPUT_TIMEOUT_MS = 300; // Nine missing 30 Hz frames before releasing stal
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const removedMessage = 'You were removed from this room by the host.';
 const controllerSignIn = 'Sign in with GitHub on both devices to use your phone as the controller.';
+const signInRequired = 'Sign in with GitHub to play. Reload the page to sign in.';
+const teacherSignInRequired = 'Sign in with GitHub to run this classroom. Reload the page to sign in.';
 const controllerNoSeat = 'Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.';
 const online = (member: Member) => !!(member.socket || member.controllerSocket);
 const seatControlsReady = (member: Member) => !!member.lobby.bot || (member.needsController
@@ -282,9 +285,9 @@ export class RoomServer {
     return { room: code, hostToken: token };
   }
 
-  roomInfo(code: string): { exists: boolean; players: number; phase: LobbyState['phase'] | null } {
+  roomInfo(code: string): { exists: boolean; players: number; phase: LobbyState['phase'] | null; mode: GameMode | null } {
     const room = this.rooms.get(code.toUpperCase());
-    return room ? { exists: true, players: squad(room).length, phase: room.phase } : { exists: false, players: 0, phase: null };
+    return room ? { exists: true, players: squad(room).length, phase: room.phase, mode: room.mode } : { exists: false, players: 0, phase: null, mode: null };
   }
 
   private async clientIdentity(request?: IncomingMessage) {
@@ -805,6 +808,8 @@ export class RoomServer {
       catch { /* Anonymous play works if session resolution is unavailable. */ }
     }
     if (this.closing || socket.readyState !== WebSocket.OPEN) return;
+    const signedIn = !this.options.requireGithub || !!githubIdentity;
+    if (!signedIn && msg.role === 'player') throw new Error(signInRequired);
     if ((typeof msg.resume === 'string' && room.bans.tokens.has(tokenHash(msg.resume))) || (identity && room.bans.identities.has(identity)) || (githubIdentity && room.bans.identities.has(githubIdentity))) { this.rejectBan(socket); return; }
     if (typeof msg.resume === 'string' && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'left'); return; }
     if (this.rooms.get(code) !== room) throw new Error('Room not found. Check the room code and try again.');
@@ -812,6 +817,7 @@ export class RoomServer {
     if (msg.resume && [...room.members.values()].some(m => m.controllerToken === msg.resume)) throw new Error('This token resumes a controller, not a player display.');
     let member = msg.resume ? [...room.members.values()].find(m => m.token === msg.resume && m.role === msg.role) : undefined;
     if ((member?.identities ?? []).some(key => room.bans.identities.has(key))) { this.rejectBan(socket); return; }
+    if (!signedIn && member && member.id === room.teacherId) throw new Error(teacherSignInRequired);
     if (!member) {
       if (msg.role === 'player' && room.phase !== 'lobby') throw new Error('A match is in progress. Join as a screen or wait for the lobby.');
       if (msg.role === 'player' && room.classroom && room.classroom.state.rows.length >= 30) throw new Error('This lesson already has 30 students; reconnect with your existing session');
@@ -852,9 +858,9 @@ export class RoomServer {
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
     const owner = room.members.get(room.ownerId);
-    if (!room.classroom && (member.role === 'player' || room.mode === 'edu' || member.id === room.ownerId)
+    if (!room.classroom && (member.role === 'player' || (room.mode === 'edu' && signedIn) || member.id === room.ownerId)
         && (!owner || (!owner.socket && !owner.screenHostPending))) room.ownerId = member.id;
-    if (!room.classroom && room.mode === 'edu' && member.role === 'screen' && (!room.teacherId || room.teacherId === member.id || room.ownerId === member.id)) {
+    if (!room.classroom && room.mode === 'edu' && member.role === 'screen' && signedIn && (!room.teacherId || room.teacherId === member.id || room.ownerId === member.id)) {
       room.teacherId = member.id; room.ownerId = member.id;
     }
     if (!room.classroom && member.role === 'player' && member.lobby.repo && (member.lobby.status === 'analyzing' ||

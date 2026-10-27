@@ -80,7 +80,7 @@ try {
   const { room } = await response.json() as { room: string };
   assert.match(room, /^[A-Z]{4}$/);
   const roomInfo = await (await fetch(new URL(`/api/room/${room}`, base))).json() as { exists: boolean; players: number; phase: string };
-  assert.deepEqual(roomInfo, { exists: true, players: 0, phase: 'lobby' });
+  assert.deepEqual(roomInfo, { exists: true, players: 0, phase: 'lobby', mode: 'battle' });
   assert.equal((await fetch(new URL('/api/room/AB12', base))).status, 400, 'Digit room codes have a clear validation error');
   const fallbacks = await (await fetch(new URL('/api/fallbacks', base))).json() as string[];
   assert.ok(fallbacks.length >= 1, 'At least one fallback repo is required');
@@ -177,7 +177,7 @@ try {
     }, 'departed fighter removed while teammates continue');
   }
   for (let i = 1; i < humanCount; i++) await leave(i);
-  assert.deepEqual(await (await fetch(new URL(`/api/room/${room}`, base))).json(), { exists: false, players: 0, phase: null });
+  assert.deepEqual(await (await fetch(new URL(`/api/room/${room}`, base))).json(), { exists: false, players: 0, phase: null, mode: null });
   const url = new URL('/ws', base); url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   const stale = new WebSocket(url); sockets.push(stale);
   await new Promise<void>((resolve, reject) => { stale.once('open', resolve); stale.once('error', reject); });

@@ -57,6 +57,7 @@
 - **Fallbacks:** touch-only (drag / tap / double-tap / hold), a seated profile, and keyboard + mouse on desktop.
 - **Phone as gamepad:** sign in with the same GitHub account on your phone and on a big screen or Vision Pro. The phone becomes the controller for that seat.
 - **Big screen:** `?screen=1` gives a spectator display with a join QR code.
+- **Sign-in gate:** every player, classroom student and classroom teacher signs in with GitHub before joining (the server refuses anonymous players and never makes an unsigned screen the teacher). Big screens and the projector window never need it. `GITZILLA_OPEN_PLAY=1` turns the gate off for local playtest servers.
 
 ## 2D, 3D and Apple Vision Pro
 

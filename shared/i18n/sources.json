@@ -14113,5 +14113,125 @@
     "id": "12dafdfd0547c3c7",
     "source": "{0} entries",
     "context": "client/app (claude-board, hand-translated)"
+  },
+  {
+    "id": "d42cd66dce8bf137",
+    "source": "Every fighter in a raid is a real GitHub account.",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "d59fff0727364d30",
+    "source": "Every fighter in the royale is a real GitHub account.",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "c6474aaa29a18219",
+    "source": "Students sign in so every submission belongs to a real account.",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "5b81d6f7f078b995",
+    "source": "Teachers sign in before running a classroom. The projector window doesn't need it.",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "ec91fdd9256cb75a",
+    "source": "optional",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "d0a3630555bbec7f",
+    "source": "required",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "32fc6fa51856bf6e",
+    "source": "signed in with GitHub",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "4aa5dd8becd6db40",
+    "source": "switch account",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "5a81f922f0896545",
+    "source": "sign in with GitHub",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "973d7a63c7123cc7",
+    "source": " Continue with GitHub",
+    "context": "client/app/join-gate.ts, client/app/settings.ts"
+  },
+  {
+    "id": "7f8ae62123e5f9d4",
+    "source": "Your GitHub token stays on our server. It never reaches this page or other players.",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "d6eaabd501df988d",
+    "source": "pick your handle",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "199fa3a1e427b2cc",
+    "source": "unlocks after you sign in",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "cd4cfee9d0752430",
+    "source": "just watching? ",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "fdb363ad22c35e6b",
+    "source": "open the big-screen view",
+    "context": "client/app/join-gate.ts"
+  },
+  {
+    "id": "613b3f41627adac2",
+    "source": "◉ sign in with GitHub",
+    "context": "client/app/landing.ts"
+  },
+  {
+    "id": "6b29c34215d3e0dd",
+    "source": " needed to play or teach",
+    "context": "client/app/landing.ts"
+  },
+  {
+    "id": "d422020daac9cea7",
+    "source": " optional",
+    "context": "client/app/landing.ts"
+  },
+  {
+    "id": "f911e414cf6bdfc5",
+    "source": "GitHub",
+    "context": "client/app/pair.ts, client/app/settings.ts"
+  },
+  {
+    "id": "99ba8652227b93a1",
+    "source": "✓ signed in as @{0}",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "c37b3b8f6f30abd2",
+    "source": "Players and teachers sign in with GitHub before joining. Big screens don't need to.",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "8a083d58a039e9fa",
+    "source": "Optional: sign in to fight with your own repos.",
+    "context": "client/app/settings.ts"
+  },
+  {
+    "id": "f715266fe2db7345",
+    "source": "Sign in with GitHub to play. Reload the page to sign in.",
+    "context": "server/rooms.ts"
+  },
+  {
+    "id": "9f4ce6b6e243fe1a",
+    "source": "Sign in with GitHub to run this classroom. Reload the page to sign in.",
+    "context": "server/rooms.ts"
   }
 ]

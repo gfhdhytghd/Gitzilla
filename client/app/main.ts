@@ -6,8 +6,9 @@ import type { LobbyState, Role, ServerMsg } from "../../shared/types";
 import { type AppCtx, type Screen, toast } from "./app";
 import { createAutopsy } from "./autopsy";
 import { createGame } from "./game";
-import { consumeAuthError } from "./github";
-import { createLanding, createWhoami, normalizeRoomCode } from "./landing";
+import { consumeAuthError, fetchMe } from "./github";
+import { createLanding, normalizeRoomCode } from "./landing";
+import { createJoinGate, fetchRoomMode, needsGate, type GateKind } from "./join-gate";
 import { createLobby } from "./lobby";
 import { createMockConn } from "./mock";
 import { KICKED_REJOIN, connect } from "./net";
@@ -82,51 +83,55 @@ function showLanding() {
 async function enterRoom(room: string) {
   const role: Role = params.get("screen") === "1" ? "screen" : "player";
   document.body.classList.toggle("bigscreen", role === "screen");
-  const stored = store.get("kaiju.name");
-  // Decide before opening any player socket, so accepting the offer never creates a second seat.
-  if (role === "player" && !mock && isPhone()) {
-    await modulesReady;
-    const showController = () => {
-      const link = createControllerLink({ room, name: stored ?? undefined });
-      const view = createControllerScreen({ room, link, onDisconnect: () => {
-        link.unlink(); view.destroy(); location.assign("/");
-      },
-      // end cards (taken over / unlinked / error): link again, or play on this phone as a normal player
-      relink: () => { link.close(); view.destroy(); showController(); },
-      playHere: () => { link.close(); view.destroy(); root.replaceChildren(); joinPlayer(); } });
-      root.replaceChildren(view.el);
-      placeSettingsButton(view.el);
-    };
-    if (store.get(controllerTokenKey(room))) return showController();
-    try {
-      const seat = await lookupControllerSeat(room);
-      if (seat) {
-        const offer = createControllerOffer({ room, seat,
-          onConnect: () => { offer.destroy(); showController(); },
-          onSkip: () => { offer.destroy(); joinPlayer(); },
-        });
-        root.replaceChildren(offer.el);
-        placeSettingsButton(offer.el);
-        return;
-      }
-    } catch {
-      // Controller discovery is optional. Older/offline services must not prevent a normal join.
-    }
+  const [me, mode] = await Promise.all([fetchMe(), mock ? Promise.resolve(null) : fetchRoomMode(room)]);
+  // A headset in a classroom watches from the projector seat, which never signs in.
+  if (role === "player" && mode === "edu" && isHeadset()) {
+    return location.replace(`/r/${room}?screen=1&view=projector`);
   }
-  joinPlayer();
-  function joinPlayer() {
-    if (role === "player" && !stored) {
-      const gate = createWhoami(room, (name) => {
-        store.set("kaiju.name", name);
-        gate.destroy();
-        modulesReady.finally(() => startRoom(room, role, name));
+  // Players sign in and pick a handle; the classroom teacher console only signs in; big screens and the projector pass.
+  const gate: GateKind | null = role === "player" ? "player" : mode === "edu" && params.get("view") !== "projector" ? "teacher" : null;
+  const pass = (then: () => void) => {
+    if (!needsGate(me, gate)) return then();
+    const view = createJoinGate({ room, kind: gate!, mode, me, done(name) {
+      if (gate === "player") store.set("kaiju.name", name);
+      view.destroy();
+      then();
+    } });
+    root.append(view.el);
+    placeSettingsButton(view.el);
+  };
+  const play = () => modulesReady.finally(() => startRoom(room, role, store.get("kaiju.name") ?? "screen"));
+  // Phones: decide controller vs player after sign-in (the seat lookup needs it), before opening any player socket,
+  // so accepting the offer never creates a second seat.
+  if (role !== "player" || mock || !isPhone() || (me.required && !me.user)) return pass(play);
+  await modulesReady;
+  const showController = () => {
+    const link = createControllerLink({ room, name: store.get("kaiju.name") ?? undefined });
+    const view = createControllerScreen({ room, link, onDisconnect: () => {
+      link.unlink(); view.destroy(); location.assign("/");
+    },
+    // end cards (taken over / unlinked / error): link again, or play on this phone as a normal player
+    relink: () => { link.close(); view.destroy(); showController(); },
+    playHere: () => { link.close(); view.destroy(); root.replaceChildren(); pass(play); } });
+    root.replaceChildren(view.el);
+    placeSettingsButton(view.el);
+  };
+  if (store.get(controllerTokenKey(room))) return showController();
+  try {
+    const seat = await lookupControllerSeat(room);
+    if (seat) {
+      const offer = createControllerOffer({ room, seat,
+        onConnect: () => { offer.destroy(); showController(); },
+        onSkip: () => { offer.destroy(); pass(play); },
       });
-      root.append(gate.el);
-      placeSettingsButton(gate.el);
+      root.replaceChildren(offer.el);
+      placeSettingsButton(offer.el);
       return;
     }
-    modulesReady.finally(() => startRoom(room, role, stored ?? "screen"));
+  } catch {
+    // Controller discovery is optional. Older/offline services must not prevent a normal join.
   }
+  pass(play);
 }
 
 function startRoom(room: string, role: Role, name: string) {

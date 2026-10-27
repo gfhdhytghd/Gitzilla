@@ -53,7 +53,7 @@ describe('auth helpers', () => {
 
 describe('auth routes', () => {
   it('reports signed-out state', async () => {
-    expect(await (await fetch(`${base}/api/me`)).json()).toEqual({ enabled: true, user: null });
+    expect(await (await fetch(`${base}/api/me`)).json()).toEqual({ enabled: true, required: true, user: null });
     expect((await fetch(`${base}/api/me/repos`)).status).toBe(401);
   });
 
@@ -100,7 +100,7 @@ describe('auth routes', () => {
     expect(cookie).toMatch(/^rk_session=/);
 
     const me = await (await fetch(`${base}/api/me`, { headers: { cookie } })).json();
-    expect(me).toEqual({ enabled: true, user: { userId: 'github|42', login: 'octocat', avatar: 'https://a/p.png' } });
+    expect(me).toEqual({ enabled: true, required: true, user: { userId: 'github|42', login: 'octocat', avatar: 'https://a/p.png' } });
     expect(await (await fetch(`${base}/token`, { headers: { cookie } })).text()).toBe('gho_secret');
     const repos = await (await fetch(`${base}/api/me/repos`, { headers: { cookie } })).json();
     // Sorted by stars: the 3-star repo comes before the newer 0-star one.

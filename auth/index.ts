@@ -62,6 +62,8 @@ function config() {
 }
 /** True when AUTH0_DOMAIN / AUTH0_CLIENT_ID / AUTH0_CLIENT_SECRET are configured. */
 export function authEnabled() { return !!config(); }
+/** Players and teachers must sign in once Auth0 is configured; GITZILLA_OPEN_PLAY=1 keeps local playtest servers anonymous. */
+export function signInRequired() { return authEnabled() && process.env.GITZILLA_OPEN_PLAY !== '1'; }
 
 // ---------- sealed cookies ----------
 
@@ -197,7 +199,7 @@ export async function handleAuthRoute(req: IncomingMessage, res: ServerResponse)
   const url = new URL(req.url || '/', 'http://localhost');
   const path = url.pathname;
   if (path === '/api/me' && req.method === 'GET') {
-    json(res, 200, { enabled: authEnabled(), user: await getSession(req) });
+    json(res, 200, { enabled: authEnabled(), required: signInRequired(), user: await getSession(req) });
     return true;
   }
   if (path === '/api/me/repos' && req.method === 'GET') {

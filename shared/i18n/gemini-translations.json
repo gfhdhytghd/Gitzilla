@@ -23465,5 +23465,221 @@
     "zh": "{0} 条记录",
     "es": "{0} entradas",
     "fr": "{0} entrées"
+  },
+  {
+    "id": "d42cd66dce8bf137",
+    "en": "Every fighter in a raid is a real GitHub account.",
+    "zh": "突袭中的每位战士都是真实的 GitHub 账号。",
+    "es": "Cada luchador en una incursión es una cuenta real de GitHub.",
+    "fr": "Chaque combattant d'un raid est un vrai compte GitHub.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d59fff0727364d30",
+    "en": "Every fighter in the royale is a real GitHub account.",
+    "zh": "大逃杀中的每位战士都是真实的 GitHub 账号。",
+    "es": "Cada luchador en la batalla real es una cuenta real de GitHub.",
+    "fr": "Chaque combattant de la royale est un vrai compte GitHub.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "c6474aaa29a18219",
+    "en": "Students sign in so every submission belongs to a real account.",
+    "zh": "学生登录后，每次提交都归属于真实账号。",
+    "es": "Los estudiantes inician sesión para que cada entrega pertenezca a una cuenta real.",
+    "fr": "Les élèves se connectent afin que chaque rendu appartienne à un vrai compte.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "5b81d6f7f078b995",
+    "en": "Teachers sign in before running a classroom. The projector window doesn't need it.",
+    "zh": "教师需在运行课堂前登录。投影窗口无需登录。",
+    "es": "Los profesores inician sesión antes de dirigir una clase. La ventana del proyector no lo necesita.",
+    "fr": "Les enseignants se connectent avant de lancer une classe. La fenêtre du projecteur n'en a pas besoin.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "ec91fdd9256cb75a",
+    "en": "optional",
+    "zh": "可选",
+    "es": "opcional",
+    "fr": "facultatif",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d0a3630555bbec7f",
+    "en": "required",
+    "zh": "必需",
+    "es": "obligatorio",
+    "fr": "obligatoire",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "32fc6fa51856bf6e",
+    "en": "signed in with GitHub",
+    "zh": "已使用 GitHub 登录",
+    "es": "sesión iniciada con GitHub",
+    "fr": "connecté avec GitHub",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "4aa5dd8becd6db40",
+    "en": "switch account",
+    "zh": "切换账号",
+    "es": "cambiar de cuenta",
+    "fr": "changer de compte",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "5a81f922f0896545",
+    "en": "sign in with GitHub",
+    "zh": "使用 GitHub 登录",
+    "es": "iniciar sesión con GitHub",
+    "fr": "se connecter avec GitHub",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "973d7a63c7123cc7",
+    "en": " Continue with GitHub",
+    "zh": " 使用 GitHub 继续",
+    "es": " Continuar con GitHub",
+    "fr": " Continuer avec GitHub",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "7f8ae62123e5f9d4",
+    "en": "Your GitHub token stays on our server. It never reaches this page or other players.",
+    "zh": "你的 GitHub 令牌保留在我们的服务器上。它绝不会到达此页面或其他玩家。",
+    "es": "Tu token de GitHub se queda en nuestro servidor. Nunca llega a esta página ni a otros jugadores.",
+    "fr": "Votre jeton GitHub reste sur notre serveur. Il n'atteint jamais cette page ni les autres joueurs.",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d6eaabd501df988d",
+    "en": "pick your handle",
+    "zh": "选择你的昵称",
+    "es": "elige tu alias",
+    "fr": "choisissez votre pseudo",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "199fa3a1e427b2cc",
+    "en": "unlocks after you sign in",
+    "zh": "登录后解锁",
+    "es": "se desbloquea al iniciar sesión",
+    "fr": "se débloque après connexion",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "cd4cfee9d0752430",
+    "en": "just watching? ",
+    "zh": "只是观看？ ",
+    "es": "¿solo mirando? ",
+    "fr": "juste en train de regarder ? ",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "fdb363ad22c35e6b",
+    "en": "open the big-screen view",
+    "zh": "打开大屏视图",
+    "es": "abrir la vista de pantalla grande",
+    "fr": "ouvrir la vue grand écran",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "613b3f41627adac2",
+    "en": "◉ sign in with GitHub",
+    "zh": "◉ 使用 GitHub 登录",
+    "es": "◉ iniciar sesión con GitHub",
+    "fr": "◉ se connecter avec GitHub",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "6b29c34215d3e0dd",
+    "en": " needed to play or teach",
+    "zh": " 游玩或教学所需",
+    "es": " necesario para jugar o enseñar",
+    "fr": " nécessaire pour jouer ou enseigner",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "d422020daac9cea7",
+    "en": " optional",
+    "zh": " 可选",
+    "es": " opcional",
+    "fr": " facultatif",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "f911e414cf6bdfc5",
+    "en": "GitHub",
+    "zh": "GitHub",
+    "es": "GitHub",
+    "fr": "GitHub",
+    "provider": "DeepSeek",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "99ba8652227b93a1",
+    "en": "✓ signed in as @{0}",
+    "zh": "✓ 已登录为 @{0}",
+    "es": "✓ sesión iniciada como @{0}",
+    "fr": "✓ connecté en tant que @{0}",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "c37b3b8f6f30abd2",
+    "en": "Players and teachers sign in with GitHub before joining. Big screens don't need to.",
+    "zh": "玩家和老师在加入前使用 GitHub 登录。大屏幕不需要。",
+    "es": "Los jugadores y profesores inician sesión con GitHub antes de unirse. Las pantallas grandes no necesitan hacerlo.",
+    "fr": "Les joueurs et les enseignants se connectent avec GitHub avant de rejoindre. Les grands écrans n'ont pas besoin de le faire.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "8a083d58a039e9fa",
+    "en": "Optional: sign in to fight with your own repos.",
+    "zh": "可选：登录以使用你自己的代码库进行战斗。",
+    "es": "Opcional: inicia sesión para luchar con tus propios repositorios.",
+    "fr": "Facultatif : connectez-vous pour combattre avec vos propres dépôts.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "f715266fe2db7345",
+    "en": "Sign in with GitHub to play. Reload the page to sign in.",
+    "zh": "登录 GitHub 即可开始游戏。重新加载页面以登录。",
+    "es": "Inicia sesión con GitHub para jugar. Recarga la página para iniciar sesión.",
+    "fr": "Connectez-vous avec GitHub pour jouer. Rechargez la page pour vous connecter.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
+  },
+  {
+    "id": "9f4ce6b6e243fe1a",
+    "en": "Sign in with GitHub to run this classroom. Reload the page to sign in.",
+    "zh": "登录 GitHub 以运行此课堂。重新加载页面以登录。",
+    "es": "Inicia sesión con GitHub para dirigir esta clase. Recarga la página para iniciar sesión.",
+    "fr": "Connectez-vous avec GitHub pour gérer cette classe. Rechargez la page pour vous connecter.",
+    "provider": "Gemini via AGY",
+    "model": "gemini-3.8-flash-high"
   }
 ]

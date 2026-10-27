@@ -18,12 +18,15 @@ const LANG_COL: Record<string, string> = {
 const mockOn = () => new URLSearchParams(location.search).has("mock");
 const mockSigned = () => new URLSearchParams(location.search).get("gh") === "1";
 
-let meCache: Promise<{ enabled: boolean; user: GhUser | null }> | null = null;
-export function fetchMe(): Promise<{ enabled: boolean; user: GhUser | null }> {
-  if (mockOn()) return Promise.resolve({ enabled: true, user: mockSigned() ? { userId: "gh|1", login: "octocat", avatar: "" } : null });
+/** required: players and classroom teachers must sign in before joining (?mock=1&gate=1 previews it). */
+export interface Me { enabled: boolean; required: boolean; user: GhUser | null }
+let meCache: Promise<Me> | null = null;
+export function fetchMe(): Promise<Me> {
+  if (mockOn()) return Promise.resolve({ enabled: true, required: new URLSearchParams(location.search).get("gate") === "1", user: mockSigned() ? { userId: "gh|1", login: "octocat", avatar: "" } : null });
   return (meCache ??= fetch("/api/me", { credentials: "same-origin" })
-    .then((r) => (r.ok ? r.json() : { enabled: false, user: null }))
-    .catch(() => ({ enabled: false, user: null })));
+    .then((r) => (r.ok ? r.json() : null))
+    .then((me: Partial<Me> | null) => ({ enabled: !!me?.enabled, required: !!me?.required, user: me?.user ?? null }))
+    .catch(() => ({ enabled: false, required: false, user: null })));
 }
 
 /** pvp: only repos you may fight with (?pvp=1 returns eligible rows only; anything not marked eligible is dropped too). */
@@ -60,8 +63,8 @@ function ago(iso: string): string {
 }
 
 const here = () => encodeURIComponent(location.pathname + location.search);
-const login = (sw = false) => location.assign(`/auth/login?${sw ? "switch=1&" : ""}returnTo=${here()}`);
-const logout = () => location.assign(`/auth/logout?returnTo=${encodeURIComponent(location.pathname)}`);
+export const login = (sw = false) => location.assign(`/auth/login?${sw ? "switch=1&" : ""}returnTo=${here()}`);
+export const logout = () => location.assign(`/auth/logout?returnTo=${encodeURIComponent(location.pathname)}`);
 
 /** Shows ?auth_error=… once as a toast and strips it from the URL. */
 export function consumeAuthError() {

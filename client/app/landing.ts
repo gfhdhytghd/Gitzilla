@@ -1,15 +1,14 @@
 import { onLocaleChange } from '../i18n';
 // Landing page (/): animated logo over a living arena backdrop, create room / big-screen room / join by code.
-// Also the "$ whoami" name gate shown before joining a room for the first time.
 import { toast } from "./app";
 import { createBackdrop } from "./backdrop";
-import { fetchMe } from "./github";
+import { fetchMe, login, logout } from "./github";
 import { createHallBoard } from "./hall";
 import { createMarkAnim } from "./logo";
 import { wordmark } from "./wordmark";
 import { demoBossKit, demoPlayerKit } from "./mock";
 import { audio } from "./sound";
-import { h, isTouchDevice, store, typeInto } from "./util";
+import { h, isTouchDevice, typeInto } from "./util";
 
 const TAGLINES = [
   "your codebase is a monster. now make it fight.",
@@ -133,6 +132,17 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
   };
   code.addEventListener("keydown", (e) => e.key === "Enter" && join());
 
+  // $ whoami: sign in up front (players and teachers need it once Auth0 is on; big screens never do)
+  const who = h("div.landing-who", { "data-testid": "landing-who" });
+  fetchMe().then(({ enabled, required, user }) => {
+    if (!enabled) return;
+    who.replaceChildren(...(user
+      ? [h("span.prompt", null, "$ whoami "), ...(user.avatar ? [h("img.gh-avatar", { src: user.avatar, alt: "", width: 16, height: 16 })] : []),
+        h("b", null, `@${user.login}`), h("button.btn-link", { onclick: logout }, "sign out")]
+      : [h("button.btn-link.landing-signin", { "data-testid": "landing-signin", onclick: () => login() }, "◉ sign in with GitHub"),
+        h("span.dim", null, required ? " needed to play or teach" : " optional")]));
+  });
+
   const el = h(
     "div.screen.landing",
     null,
@@ -160,6 +170,7 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
         h("button.btn.btn-ghost.host-big", { "data-testid": "create-classroom", onclick: () => create(true, "edu") }, "[ 🎓 classroom: code together, raid together ]"),
         h("button.btn.btn-ghost.hall-toggle", { onclick: toggleHall }, "[ hall of monsters ]"),
       ),
+      who,
       h(
         "ul.landing-facts",
         null,
@@ -179,52 +190,6 @@ export function createLanding(opts: { go(room: string, screen?: boolean): void; 
       document.removeEventListener("keydown", onKey);
       backdrop.destroy();
       logo.destroy();
-      el.remove();
-    },
-  };
-}
-
-/** First-visit name prompt, styled as a login shell. */
-export function createWhoami(room: string, done: (name: string) => void) {
-  const input = h("input.term-input", {
-    "data-testid": "player-name", maxlength: 16, autocomplete: "nickname", spellcheck: "false", placeholder: "your-handle", "aria-label": "your name",
-  }) as HTMLInputElement;
-  input.value = store.get("kaiju.name") ?? "";
-  const submit = () => {
-    const n = input.value.trim().replace(/\s+/g, "_").slice(0, 16) || `dev_${Math.floor(Math.random() * 0xffff).toString(16)}`;
-    done(n);
-  };
-  input.addEventListener("keydown", (e) => e.key === "Enter" && submit());
-  const backdrop = createBackdrop({ dim: 0.7, themeCycle: true });
-  const el = h(
-    "div.screen.whoami",
-    null,
-    backdrop.canvas,
-    h("div.crt"),
-    h(
-      "div.term-window",
-      null,
-      h("div.term-title", null, h("span.dots", null, "● ● ●"), ` kaiju@room-${room}`),
-      h(
-        "div.term-body",
-        null,
-        h("div.dim", null, `$ ssh kaiju@${location.host} -p ${room}`),
-        h("div.dim", null, "Connecting to arena... ", h("span.ok", null, "ok")),
-        h("div.dim", null, "WARNING: a boss kaiju has been sighted in this room."),
-        h("label.term-line", null, h("span.prompt", null, "login as: "), input),
-        h("button.btn.btn-primary", { "data-testid": "join-room", onclick: submit }, "$ join --room ", room),
-      ),
-    ),
-  );
-  setTimeout(() => input.focus(), 50);
-  // signed in with GitHub? default the handle to the login
-  fetchMe().then(({ user }) => {
-    if (user && !input.value) input.value = user.login;
-  });
-  return {
-    el,
-    destroy() {
-      backdrop.destroy();
       el.remove();
     },
   };

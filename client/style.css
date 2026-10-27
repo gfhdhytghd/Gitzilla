@@ -179,6 +179,39 @@ body:has(.screen.game) .link-status.open { display: none; }
 .term-body .btn { align-self: flex-start; margin-top: 10px; }
 .ok { color: var(--green); }
 
+/* ---------- join gate: 1 sign in with GitHub, 2 pick a handle ---------- */
+.join-gate .term-window { width: min(600px, 92vw); }
+.jg-steps { display: flex; flex-direction: column; margin-top: 10px; }
+.jg-step { position: relative; padding: 0 0 14px 34px; }
+.jg-step + .jg-step { padding-bottom: 0; }
+/* the rail joining step 1 to step 2 */
+.jg-step:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 24px; bottom: 2px; width: 2px; background: var(--line); }
+.jg-step.done:not(:last-child)::before { background: var(--green-d); }
+.jg-head { display: flex; align-items: center; gap: 10px; min-height: 24px; }
+.jg-num { position: absolute; left: 0; top: 0; width: 22px; height: 22px; display: grid; place-items: center; font-family: var(--small); font-size: 10px;
+  color: var(--dim); box-shadow: 0 0 0 2px var(--line); background: #03110a; }
+.jg-step.todo .jg-num { color: #04120a; background: var(--green); box-shadow: 0 0 0 2px var(--green), 0 0 12px rgba(57,255,136,.45); }
+.jg-step.done .jg-num { color: var(--green); box-shadow: 0 0 0 2px var(--green-d); }
+.jg-title { font-size: 22px; color: var(--text); }
+.jg-step.locked .jg-title, .jg-step.done .jg-title { color: var(--dim); }
+.jg-tag { margin-left: auto; font-family: var(--small); font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 6px;
+  color: var(--amber); box-shadow: 0 0 0 1px currentColor; }
+.jg-body { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
+.jg-body p { margin: 0; }
+.jg-why { font-size: 19px; color: var(--text); }
+.jg-fine { font-size: 16px; }
+.jg-body .btn { margin-top: 4px; }
+.jg-gh { font-size: 12px; padding: 12px 18px; }
+.jg-who { font-size: 20px; flex-wrap: wrap; }
+.jg-who .gh-avatar { width: 20px; height: 20px; }
+.jg-step.locked .jg-body { opacity: .45; }
+.jg-watch { margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 17px; }
+.jg-watch .btn-link { font-size: 17px; }
+.landing-who { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 22px; font-size: 18px; color: var(--dim); }
+.landing-who b { font-weight: normal; color: var(--yellow); }
+.landing-who .btn-link { font-size: 18px; }
+.landing-who .landing-signin { color: var(--text); }
+
 /* ---------- lobby ---------- */
 .lobby-scroll { position: relative; z-index: 2; height: 100%; overflow-y: auto; padding: 10px 14px 40px; -webkit-overflow-scrolling: touch; }
 .lobby-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 4px 8px 10px; }
@@ -1923,3 +1956,5 @@ body:has(.screen.game) .game-toolbar > .mute-btn { font-size: 12px; }
 .cb-note { margin: 8px 0 0; font-size: 14px; color: var(--dim); }
 @media (max-width: 420px) { .hall-tab { font-size: 9px; } .cb-best { display: none !important; } .cb-list { grid-template-columns: auto minmax(0, 1fr) repeat(3, auto) 1.1em auto; } }
 @media (pointer: coarse) { .hall-tab, .cb-tab { min-height: 44px; } .cb-verify { min-height: 40px; min-width: 52px; } }
+.settings-gh { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+.settings-gh p { margin:0; }
