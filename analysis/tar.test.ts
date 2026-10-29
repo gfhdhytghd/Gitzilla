@@ -38,6 +38,14 @@ describe('streaming tar/gzip source extraction', () => {
     const result = await extractTarGz(splitChunks(data));
     expect(result.map(f => f.path)).toEqual([longName.split('/').slice(1).join('/'), longName.split('/').slice(1).join('/')]);
   });
+  it('S4 requested evidence still obeys path safety and archive limits',async()=>{
+    const entries=[{path:'data.csv',text:'answer'},{path:'vendor/data.csv',text:'a'.repeat(100)},{path:'../escape.csv',text:'no'},{path:'/absolute.csv',text:'no'},{path:'dir/../traversal.csv',text:'no'}];
+    const paths=entries.map(f=>f.path);
+    expect(await extractTarGz(splitChunks(archive(entries)),{maxFileBytes:20},undefined,paths)).toEqual([entries[0]]);
+    expect(await extractTarGz(splitChunks(archive(entries)),{maxBytes:512},undefined,paths)).toEqual([]);
+    const unsafe=gzipSync(Buffer.concat([tarMember('../repo/data.csv','no'),tarMember('/repo/data.csv','no'),tarMember('C:/repo/data.csv','no'),tarMember('repo/data.csv','answer'),Buffer.alloc(1024)]));
+    expect(await extractTarGz(splitChunks(unsafe),{},undefined,['data.csv','repo/data.csv'])).toEqual([entries[0]]);
+  });
   it('rejects damaged gzip and incomplete tar instead of pretending the data is complete', async () => {
     await expect(extractTarGz(splitChunks(Buffer.from('not gzip')))).rejects.toThrow();
     await expect(extractTarGz(splitChunks(gzipSync(tarMember('repo/a.ts', 'abc').subarray(0, 513))))).rejects.toThrow('Truncated');

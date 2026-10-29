@@ -4,12 +4,13 @@ import { extractTarGz, ARCHIVE_LIMITS } from './tar.ts';
 import { cleanCommitSubjects } from './dna.ts';
 import { cloneProgress, notifyProgress, type ProgressCallback } from './progress.ts';
 import { enrichSocial } from './social.ts';
-import type { SourceFile } from './files.ts';
+import { shouldKeep, type SourceFile } from './files.ts';
 import { queryDeclaredVulns } from './vulns.ts';
 
 export interface GitHubOptions {
   token?: string;
   ref?: string; // immutable SHA for classroom submissions
+  checkPaths?: string[]; // Exact classroom evidence paths; excluded from source scoring.
   onFiles?: (files: SourceFile[]) => void;
   skipEnrichment?: boolean;
   onProgress?: ProgressCallback;
@@ -93,7 +94,7 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
         } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
       }
       const progress = cloneProgress(options.onProgress, ARCHIVE_LIMITS.maxBytes);
-      const files = await extractTarGz(chunks(), {}, progress.file);
+      const files = await extractTarGz(chunks(), {}, progress.file, options.checkPaths);
       progress.finish();
       return files;
     })();
@@ -110,7 +111,7 @@ export async function analyzeGitHubRepo(slug: string, options: GitHubOptions = {
       ageDays: raw?.created_at ? Math.max(0, Math.floor((Date.now() - Date.parse(raw.created_at)) / 86_400_000)) : previous?.ageDays ?? 0,
     };
     options.onFiles?.(files);
-    const profile = profileFromFiles(slug, files, metadata, options.onProgress);
+    const profile = profileFromFiles(slug, files.filter(file => shouldKeep(file.path)), metadata, options.onProgress);
     if (!profile.totalFiles) throw new Error('No supported source files in archive sample');
     await Promise.allSettled([
       ...(!options.skipEnrichment && meta ? [enrichSocial(profile, api, { fullContributorHistory: options.publicOnly })] : []),

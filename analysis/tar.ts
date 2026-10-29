@@ -38,7 +38,9 @@ function paxPath(buffer: Buffer): string | undefined {
 export async function extractTarGz(
   input: AsyncIterable<Uint8Array>, overrides: ArchiveLimits = {},
   onFile?: (path: string, files: number, expandedBytes: number) => void,
+  checkPaths: string[] = [],
 ): Promise<SourceFile[]> {
+  const requested = new Set(checkPaths);
   const limits = { ...ARCHIVE_LIMITS, ...overrides };
   const source = Readable.from(input);
   const gunzip = createGunzip();
@@ -72,8 +74,8 @@ export async function extractTarGz(
           // GitHub archives have one enclosing owner-revision directory.
           const relative = name.replace(/^\.\//, '').split('/').slice(1).join('/');
           const regular = type === '0';
-          const safe = relative !== '' && !relative.split('/').includes('..') && !relative.startsWith('/');
-          const keep = size <= limits.maxFileBytes && (type === 'x' || type === 'L' || (regular && safe && shouldKeep(relative)));
+          const safe = relative !== '' && !name.startsWith('/') && !/^[a-z]:/i.test(name) && !name.split('/').includes('..') && !relative.startsWith('/') && !name.includes('\\') && !relative.split('/').some(part => part === '..' || part === '.') && !relative.includes('\0');
+          const keep = size <= limits.maxFileBytes && (type === 'x' || type === 'L' || (regular && safe && (shouldKeep(relative) || requested.has(relative))));
           file = { name: relative, size, remaining: size, padding: (512 - size % 512) % 512, type, keep, chunks: [] };
         }
         if (file.remaining) {

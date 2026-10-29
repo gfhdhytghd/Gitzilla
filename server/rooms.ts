@@ -8,8 +8,8 @@ import { editorCommit, normalizeEditorFiles } from './in-app';
 import { asPvpAiKit } from '../sim/index';
 import { githubIdFromSession, type GithubIdentity, type GithubSession } from './github-identity';
 import type { IncomingMessage } from 'node:http';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { WebSocket, WebSocketServer } from 'ws';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import { RoomStore, type SavedRoom } from './room-store.ts';
 import { sanitizeInputFrame } from './input.ts';
 import { feedbackCsv, feedbackMarkdown, normalizeRubric } from './rubrics.ts';
@@ -26,7 +26,7 @@ export interface GameServices {
   recordReceipts?(input: FinishedReceiptMatch): Record<string,string>;
   analyzeFiles?(files: InAppFile[], name: string): RepoProfile;
   verifyPvpAccess?(repo: string, token: string): Promise<PvpAccess>;
-  analyzeClassroomSubmission?(repo: string, ref: string, token: string, needsChecks: boolean): Promise<ClassroomSource>;
+  analyzeClassroomSubmission?(repo: string, ref: string, token: string, needsChecks: boolean, checkPaths: string[]): Promise<ClassroomSource>;
   defaultRubric?(): Rubric;
   parseRubric?(text: string, filename?: string): Rubric;
   scoreRepo?(profile: RepoProfile, rubric: Rubric): CriterionResult[];
@@ -82,6 +82,7 @@ interface Member {
   botInput?: (state: MatchState, player: PlayerState) => InputFrame;
   input?: InputFrame;
   inputAt: number;
+  disconnectedAt?: number;
   controlsReady: boolean;
   controlsMode?: MotionProfile;
   preview?: { profile: RepoProfile; rubric: Rubric; results: CriterionResult[] };
@@ -132,6 +133,9 @@ const controllerSignIn = 'Sign in with GitHub on both devices to use your phone 
 const signInRequired = 'Sign in with GitHub to play. Reload the page to sign in.';
 const teacherSignInRequired = 'Sign in with GitHub to run this classroom. Reload the page to sign in.';
 const controllerNoSeat = 'Open this room on your big screen or Vision Pro first, signed in as the same GitHub account.';
+const reservedTeacher = (room: Room, member: Member) => member.role === 'screen' && member.id === room.teacherId && member.id === room.ownerId;
+const sameToken = (a: string, b: string) => { const x = Buffer.from(a), y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); };
+const studentLimit = 'This lesson already has 30 students; reconnect with your existing session';
 const online = (member: Member) => !!(member.socket || member.controllerSocket);
 const seatControlsReady = (member: Member) => !!member.lobby.bot || (member.needsController
   ? !!member.controllerSocket && member.controllerReady === true : member.controlsReady);
@@ -159,7 +163,7 @@ export class RoomServer {
   private onConnection = (socket: WebSocket, request: IncomingMessage) => {
     this.requests.set(socket, request);
     socket.on('message', bytes => {
-      void this.handle(socket, bytes.toString()).catch(error => {
+      void this.handle(socket, bytes).catch(error => {
         send(socket, { t: 'error', message: error instanceof Error ? error.message : 'Request failed' });
       });
     });
@@ -317,8 +321,9 @@ export class RoomServer {
     if (!room) return { status: 404, error: 'Room not found' };
     if (!token) return { status: 401, error: 'Provide the owner room token in X-Room-Token or Authorization: Bearer' };
     const owner = room.members.get(room.ownerId);
-    if (!owner || owner.lobby.bot || owner.token !== token) return { status: 403, error: 'Only the current room owner can do that' };
+    if (!owner || owner.lobby.bot || !sameToken(owner.token, token)) return { status: 403, error: 'Only the current room owner can do that' };
     if (room.mode !== 'edu') return { status: 409, error: 'Rubrics and feedback require classroom mode' };
+    if (!reservedTeacher(room, owner)) return { status: 403, error: 'Only the reserved classroom teacher can do that' };
     if (lobbyOnly && room.phase !== 'lobby') return { status: 409, error: 'Return to the lobby to upload a rubric' };
   }
 
@@ -336,11 +341,21 @@ export class RoomServer {
     return format === 'csv' ? feedbackCsv(room.matchRubric, room.feedback) : feedbackMarkdown(room.matchRubric, room.feedback);
   }
 
-  lobby(room: Room): LobbyState {
+  lobby(room: Room, viewer?: Member, controller = false): LobbyState {
     return { room: room.code, ownerId: room.ownerId, mode: room.mode, ...(room.mode === 'edu' ? { locale: room.locale ?? 'en' } : {}),
-      players: squad(room).map(m => ({ ...m.lobby, paired: !!m.controllerSocket, controlsReady: seatControlsReady(m), rubricPreview: this.rubricPreview(room, m) })), boss: { ...room.boss }, phase: room.phase,
+      players: squad(room).map(m => this.lobbyPlayer(room, m, viewer, controller)), boss: { ...room.boss }, phase: room.phase,
       ...(room.classroom ? { classroom: room.classroom.publicState() } : {}),
       ...(room.mode === 'edu' && room.rubric ? { rubric: room.rubric } : {}) };
+  }
+
+  private lobbyPlayer(room: Room, member: Member, viewer?: Member, controller = false): LobbyPlayer {
+    const privateView = !controller && !!viewer && (viewer.id === member.id || reservedTeacher(room, viewer));
+    const player = { ...member.lobby, paired: !!member.controllerSocket, controlsReady: seatControlsReady(member),
+      rubricPreview: privateView ? this.rubricPreview(room, member) : undefined };
+    if (room.mode !== 'edu' || privateView || member.lobby.bot) return player;
+    return { ...player, genesis: undefined,
+      progress: player.progress ? { stage: player.progress.stage, pct: player.progress.pct } : undefined,
+      kit: player.kit ? { ...player.kit, code: undefined, quality: player.kit.quality?.map(q => ({ ...q, signal: '', tip: '' })) } : null };
   }
 
   private rubricPreview(room: Room, member: Member): CriterionResult[] | undefined {
@@ -376,7 +391,10 @@ export class RoomServer {
     if (this.closing) return;
     if (persist) this.persist();
     room.lastProgressAt = Date.now();
-    this.broadcast(room, { t: 'lobby', lobby: this.lobby(room) });
+    for (const member of room.members.values()) {
+      send(member.socket, { t: 'lobby', lobby: this.lobby(room, member) });
+      send(member.controllerSocket ?? null, { t: 'lobby', lobby: this.lobby(room, member, true) });
+    }
   }
 
   private queueProgress(room: Room, key: string, valid: () => boolean, apply: (progress: GenesisProgress) => void, progress: GenesisProgress) {
@@ -413,15 +431,17 @@ export class RoomServer {
       value => { room.boss.progress = value; }, progress);
   }
 
-  private async handle(socket: WebSocket, raw: string) {
-    // JSON escaping can expand a 200 KiB text submission 6x; plans may hold 12 starters.
-    if (raw.length > 16 * 1024 * 1024) throw new Error('Room message is too large');
+  private async handle(socket: WebSocket, bytes: RawData) {
+    const size = Array.isArray(bytes) ? bytes.reduce((sum, part) => sum + part.byteLength, 0) : bytes.byteLength;
+    // UTF-8 wire bytes: JSON escaping can expand 200 KiB 6x; plans hold up to 12 starters.
+    if (size > (this.sessions.has(socket) ? 16 * 1024 * 1024 : 256 * 1024)) throw new Error('Room message is too large');
+    const raw = (Array.isArray(bytes) ? Buffer.concat(bytes) : Buffer.from(bytes as ArrayBuffer)).toString('utf8');
     let msg: ClientMsg;
     try { msg = JSON.parse(raw); } catch { throw new Error('Invalid JSON'); }
     if (!msg || typeof msg.t !== 'string') throw new Error('Invalid message');
     if (this.sessions.get(socket)?.controller && !['input', 'controls', 'leave', 'pairEnd'].includes(msg.t)) throw new Error('This phone is a controller');
     const limit = msg.t === 'classroomPlan' ? 16 * 1024 * 1024 : msg.t === 'classroomSubmitCode' ? 2 * 1024 * 1024 : 256 * 1024;
-    if (raw.length > limit) throw new Error('Room message is too large');
+    if (size > limit) throw new Error('Room message is too large');
     if (msg.t === 'hello') {
       if (this.joining.has(socket)) throw new Error('Already joining');
       const pending = this.hello(socket, msg);
@@ -445,7 +465,12 @@ export class RoomServer {
       if (msg.t === 'transferOwner' && room.phase === 'match') throw new Error('Hand over the room after the match.');
       if (typeof msg.playerId !== 'string') throw new Error('Choose a room member');
       const target = room.members.get(msg.playerId);
-      if (!target) throw new Error('That member is no longer in this room');
+      if (!target) {
+        if (msg.t === 'kick' && room.classroom?.state.rows.some(row => row.id === msg.playerId) && reservedTeacher(room, member)) {
+          room.classroom.kick(msg.playerId); this.publishClassroom(room); this.broadcastLobby(room); return;
+        }
+        throw new Error('That member is no longer in this room');
+      }
       if (target.id === member.id) throw new Error(msg.t === 'kick' ? "You can't kick yourself." : 'Choose someone else to host.');
       if (msg.t === 'kick') {
         this.kickMember(room, target, member.name);
@@ -724,6 +749,7 @@ export class RoomServer {
     if (room.mode === mode) return;
     if (mode === 'battle' && connectedPlayers(room).length > 8) throw new Error('Battle supports 8 players. Keep this class in edu mode or ask students to leave first.');
     if (mode === 'pvp' && connectedPlayers(room).length > 8) throw new Error('PvP supports up to eight players.');
+    if (mode === 'edu') this.trimClassroomSeats(room, 30);
     room.mode = mode;
     for (const member of room.members.values()) member.pvpAccess = undefined;
     if (mode === 'pvp') {
@@ -820,7 +846,7 @@ export class RoomServer {
     if (!signedIn && member && member.id === room.teacherId) throw new Error(teacherSignInRequired);
     if (!member) {
       if (msg.role === 'player' && room.phase !== 'lobby') throw new Error('A match is in progress. Join as a screen or wait for the lobby.');
-      if (msg.role === 'player' && room.classroom && room.classroom.state.rows.length >= 30) throw new Error('This lesson already has 30 students; reconnect with your existing session');
+      if (msg.role === 'player' && room.mode === 'edu') this.trimClassroomSeats(room, 29);
       if (msg.role === 'player' && connectedPlayers(room).length >= capacity(room)) throw new Error(`Room is full (${capacity(room)} players)`);
       if (msg.role === 'player') this.makeRoomForHuman(room);
       const id = randomUUID();
@@ -844,7 +870,7 @@ export class RoomServer {
     member.name = suppliedName || (!member.namedByUser && githubName?.slice(0, 32)) || member.name;
     if (suppliedName) member.namedByUser = true;
     member.lobby.name = member.name;
-    member.socket = socket; member.displaySeq = undefined;
+    member.socket = socket; member.disconnectedAt = undefined; member.displaySeq = undefined;
     member.screenHostPending = false;
     if (!member.controllerSocket) member.input = undefined;
     if (room.mode === 'pvp' && room.phase === 'lobby') {
@@ -858,9 +884,9 @@ export class RoomServer {
     clearTimeout(room.cleanupTimer);
     this.sessions.set(socket, { room, member });
     const owner = room.members.get(room.ownerId);
-    if (!room.classroom && (member.role === 'player' || (room.mode === 'edu' && signedIn) || member.id === room.ownerId)
+    if (!room.classroom && !(room.mode === 'edu' && room.teacherId && room.teacherId !== member.id) && (member.role === 'player' || (room.mode === 'edu' && signedIn) || member.id === room.ownerId)
         && (!owner || (!owner.socket && !owner.screenHostPending))) room.ownerId = member.id;
-    if (!room.classroom && room.mode === 'edu' && member.role === 'screen' && signedIn && (!room.teacherId || room.teacherId === member.id || room.ownerId === member.id)) {
+    if (!room.classroom && room.mode === 'edu' && member.role === 'screen' && signedIn && (!room.teacherId || room.teacherId === member.id)) {
       room.teacherId = member.id; room.ownerId = member.id;
     }
     if (!room.classroom && member.role === 'player' && member.lobby.repo && (member.lobby.status === 'analyzing' ||
@@ -869,7 +895,7 @@ export class RoomServer {
       void this.rebuildHero(room, member);
     }
     if (room.classroom) this.classroomRoster(room);
-    send(socket, { t: 'welcome', you: member.id, token: member.token, lobby: this.lobby(room) });
+    send(socket, { t: 'welcome', you: member.id, token: member.token, lobby: this.lobby(room, member) });
     this.pauseOwnershipChanged(room, previousOwner);
     this.broadcastLobby(room);
     if (room.classroom) this.publishClassroom(room);
@@ -891,10 +917,10 @@ export class RoomServer {
     this.sessions.delete(socket);
     const { room, member } = session;
     const previousOwner = room.ownerId;
-    member.socket = null; member.displayKeyboardReady = false;
+    member.socket = null; member.disconnectedAt = Date.now(); member.displayKeyboardReady = false;
     if (!member.controllerSocket || !member.inputFromController) member.input = undefined;
     if (!member.controllerSocket) member.controlsReady = false;
-    if (!room.classroom && room.ownerId === member.id) room.ownerId = connectedPlayers(room)[0]?.id ?? '';
+    if (!room.classroom && !(room.mode === 'edu' && room.teacherId) && room.ownerId === member.id) room.ownerId = connectedPlayers(room)[0]?.id ?? '';
     this.pauseOwnershipChanged(room, previousOwner);
     if (room.classroom) { this.classroomRoster(room); this.publishClassroom(room); }
     this.broadcastLobby(room);
@@ -929,7 +955,7 @@ export class RoomServer {
     member.identities = [...new Set([...(member.identities ?? []), github, ...(auth0 ? [auth0] : [])])];
     this.sessions.set(socket, { room, member, controller: true }); clearTimeout(room.cleanupTimer);
     this.classroomRoster(room);
-    send(socket, { t: 'welcome', you: member.id, token: member.controllerToken!, controller: true, lobby: this.lobby(room) });
+    send(socket, { t: 'welcome', you: member.id, token: member.controllerToken!, controller: true, lobby: this.lobby(room, member, true) });
     this.broadcastLobby(room); this.flushPersistence();
     if (room.state) send(socket, { t: 'snapshot', state: { ...room.state, paused: room.paused ?? null, events: [] }, ack: -1 });
     if (room.result) send(socket, { t: 'autopsy', result: this.receiptResult(member,room.result,true) });
@@ -938,7 +964,7 @@ export class RoomServer {
 
   private detachController(room: Room, member: Member, revoke: boolean) {
     const socket = member.controllerSocket;
-    member.controllerSocket = null; member.controllerSeq = undefined; member.controllerReady = false;
+    member.controllerSocket = null; if (!member.socket) member.disconnectedAt = Date.now(); member.controllerSeq = undefined; member.controllerReady = false;
     if (revoke && member.controllerToken) { this.revokedTokens.add(tokenHash(member.controllerToken)); member.controllerToken = undefined; }
     if (socket) { this.sessions.delete(socket); this.requests.delete(socket); if (revoke) socket.close(4002, 'unlinked'); }
     if (member.inputFromController) { member.input = undefined; member.inputAt = 0; }
@@ -1229,7 +1255,8 @@ export class RoomServer {
 
   private sendFeedback(room: Room, member: Member) {
     if (!room.feedback) return;
-    const items = member.role === 'screen' || room.ownerId === member.id ? room.feedback : room.feedback.filter(f => f.playerId === member.id);
+    const full = room.mode === 'edu' ? reservedTeacher(room, member) : member.role === 'screen' || room.ownerId === member.id;
+    const items = full ? room.feedback : room.feedback.filter(f => f.playerId === member.id);
     send(member.socket, { t: 'feedback', items });
   }
 
@@ -1247,21 +1274,39 @@ export class RoomServer {
     for (const m of room.members.values()) if (m.controllerSocket?.readyState === WebSocket.OPEN) m.controllerSocket.send(`{"t":"snapshot","state":${json},"ack":${m.controllerSeq ?? -1}}`);
   }
 
+  private trimClassroomSeats(room: Room, max: number, enforceLimit = true) {
+    const members = [...room.members.values()].filter(m => m.role === 'player' && !m.lobby.bot && m.id !== room.teacherId);
+    const rows = room.classroom?.state.rows ?? [];
+    const ids = new Set([...members.map(m => m.id), ...rows.map(r => r.id)]);
+    const candidates = [...ids].filter(id => {
+      const member = room.members.get(id), row = rows.find(r => r.id === id);
+      return !(member && online(member)) && !row?.connected && row?.score === undefined && !row?.attempts &&
+        !room.classroom?.state.rounds.some(round => round.attacks.some(attack => attack.id === id));
+    }).sort((a, b) => (room.members.get(a)?.disconnectedAt ?? 0) - (room.members.get(b)?.disconnectedAt ?? 0));
+    if (enforceLimit && ids.size - candidates.length > max) throw new Error(studentLimit);
+    while (ids.size > max && candidates.length) {
+      const id = candidates.shift()!, member = room.members.get(id);
+      if (member) { member.revision++; room.members.delete(id); room.pendingProgress?.delete(id); }
+      room.classroom?.kick(id); ids.delete(id);
+    }
+  }
   private classroomRoster(room: Room) {
+    // Legacy rooms may exceed the limit with contributions that must be retained.
+    if (room.mode === 'edu') this.trimClassroomSeats(room, 30, false);
     room.classroom?.roster([...room.members.values()].filter(m => m.role === 'player' && !m.lobby.bot && m.id !== room.teacherId).map(m => ({ id: m.id, name: m.name, connected: online(m) })));
   }
   private publishClassroom(room: Room, persist = true) {
     if (!room.classroom || this.closing) return;
     const state = { ...room.classroom.publicState(), paused: room.paused ?? null };
     for (const member of room.members.values()) send(member.socket, { t: 'classroom', state, ...room.classroom.privatePayload(member.id,
-      member.role === 'screen' && member.id === room.teacherId && member.id === room.ownerId) });
+      reservedTeacher(room, member)) });
     for (const member of room.members.values()) send(member.controllerSocket ?? null, { t: 'classroom', state, reports: {} });
     if (persist) this.persist();
   }
   private armClassroom(room: Room) {
     clearInterval(room.classroomTimer);
     room.classroomTimer = setInterval(() => {
-      if (this.pauseBlocks(room, Date.now())) { this.publishClassroom(room, false); return; }
+      if (this.pauseBlocks(room, Date.now())) return;
       if (room.classroom?.tick()) this.publishClassroom(room);
     }, 200);
     room.classroomTimer.unref();
@@ -1273,7 +1318,7 @@ export class RoomServer {
   }
   private async handleClassroom(room: Room, member: Member, msg: ClientMsg) {
     if (room.mode !== 'edu' || room.phase !== 'lobby') throw new Error('Open a classroom room first');
-    const teacher = member.role === 'screen' && room.teacherId === member.id && room.ownerId === member.id;
+    const teacher = reservedTeacher(room, member);
     if (msg.t === 'classroomLanguage') {
       if (!teacher) throw new Error('Only the teacher can change the classroom language');
       if (!isLocale(msg.locale)) throw new Error('Choose English, Chinese, Spanish or French');
@@ -1281,6 +1326,7 @@ export class RoomServer {
     }
     if (msg.t === 'classroomPlan') {
       if (!teacher) throw new Error('Only the teacher can edit the lesson');
+      this.trimClassroomSeats(room, 30);
       if (room.classroom) room.classroom.setPlan(msg.plan);
       else { room.classroom = new ClassroomSession(msg.plan); this.armClassroom(room); }
       this.classroomRoster(room); this.broadcastLobby(room); this.publishClassroom(room); return;
@@ -1319,7 +1365,8 @@ export class RoomServer {
       const token = request && this.services.getGithubToken ? await this.services.getGithubToken(request) ?? '' : '';
       await this.classroomSlot(async () => {
         if (this.closing || this.rooms.get(room.code) !== room || !room.members.has(member.id) || !classroom.valid(ticket)) return;
-        const source = await this.services.analyzeClassroomSubmission!(msg.repo, msg.ref || 'HEAD', token, classroom.state.plan.steps[classroom.state.stepIndex].checks.some(c => c.kind === 'ci'));
+        const checks = classroom.state.plan.steps[classroom.state.stepIndex].checks;
+        const source = await this.services.analyzeClassroomSubmission!(msg.repo, msg.ref || 'HEAD', token, checks.some(c => c.kind === 'ci'), checks.filter(c => c.kind !== 'ci').map(c => c.path));
         if (!this.closing && this.rooms.get(room.code) === room && room.members.has(member.id)) classroom.accept(ticket, source);
       });
     } catch {

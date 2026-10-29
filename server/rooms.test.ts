@@ -96,7 +96,10 @@ async function setup(endAt = 999, overrides: Partial<GameServices> = {}, options
   });
   const wss = new WebSocketServer({ server, path: '/ws' });
   const rooms = new RoomServer(wss, services, { allowLegacyEdu: true, ...options });
-  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const listenError = () => {}; // ws forwards listen errors before the server promise can reject.
+  wss.on('error', listenError);
+  try { server.listen(0, '127.0.0.1'); await once(server, 'listening'); }
+  finally { wss.off('error', listenError); }
   const port = (server.address() as { port: number }).port;
   let closed = false;
   const close = async () => {
@@ -479,7 +482,7 @@ describe('room protocol over real WebSockets', () => {
     teacher.send({ t: 'setRubric', rubric: defaultRubric() }); await until(() => teacher.messages.find(m => m.t === 'error'));
   });
 
-  it('delivers real feedback only to each student and all to teacher/screens; exports require the current owner', async () => {
+  it('delivers real feedback only to each student and the reserved teacher; exports reject legacy player owners', async () => {
     const file = persistenceFile();
     const test = await setup(0.2, rubricServices, { persistenceFile: file }, undefined, 'edu');
     const teacher = await test.connect('screen'), alice = await test.connect('player', undefined, '=Alice'), bob = await test.connect('player', undefined, 'Bob');
@@ -496,7 +499,7 @@ describe('room protocol over real WebSockets', () => {
     expect(row.results).toEqual(scoreRepo(offlineProfile('pallets/flask'), defaultRubric()));
     expect(row.match).toMatchObject({ rank: 1, kos: 1, damage: 42, roundWins: 1, quiz: '1 correct quiz answer' });
     expect(row.strengths.length).toBeGreaterThan(0); expect(row.improvements.length).toBeGreaterThan(0);
-    const projector = await test.connect('screen'); expect((await until(() => projector.messages.find(m => m.t === 'feedback'))).items).toHaveLength(2);
+    const projector = await test.connect('screen'); expect((await until(() => projector.messages.find(m => m.t === 'feedback'))).items).toHaveLength(0);
     alice.socket.close(); await once(alice.socket, 'close');
     const resumed = await test.connect('player', alice.welcome.token);
     expect((await until(() => resumed.messages.find(m => m.t === 'feedback'))).items.map(f => f.playerId)).toEqual([alice.welcome.you]);
@@ -512,7 +515,7 @@ describe('room protocol over real WebSockets', () => {
     const closed = once(teacher.socket, 'close'); teacher.send({ t: 'leave' }); await closed;
     await until(() => resumed.lobby()?.ownerId === resumed.welcome.you);
     expect((await fetch(csv, { headers: { 'X-Room-Token': teacher.welcome.token } })).status).toBe(403);
-    expect((await fetch(csv, { headers: { 'X-Room-Token': resumed.welcome.token } })).status).toBe(200);
+    expect((await fetch(csv, { headers: { 'X-Room-Token': resumed.welcome.token } })).status).toBe(403);
     await test.close(); expect(readFileSync(file, 'utf8')).not.toContain('"rubricScore"'); expect(readFileSync(file, 'utf8')).not.toContain('"strengths"');
   });
 
@@ -1377,11 +1380,15 @@ describe('room protocol over real WebSockets', () => {
     teacher.send({ t: 'setMode', mode: 'battle' });
     await until(() => teacher.messages.some(m => m.t === 'error' && m.message.includes('8 players')));
     expect(teacher.lobby()?.mode).toBe('edu');
+    const lobbyCount = first.messages.filter(m => m.t === 'lobby').length;
     teacher.socket.close(); await once(teacher.socket, 'close');
-    await until(() => first.lobby()?.ownerId === first.welcome.you);
+    await until(() => first.messages.filter(m => m.t === 'lobby').length > lobbyCount);
+    expect(first.lobby()?.ownerId).toBe(teacher.welcome.you);
+    expect(test.rooms['rooms'].get(test.room)?.teacherId).toBe(teacher.welcome.you);
     const returned = await test.connect('screen', teacher.welcome.token, 'Teacher');
     expect(returned.welcome.you).toBe(teacher.welcome.you);
     expect(returned.welcome.lobby.ownerId).toBe(teacher.welcome.you);
+    expect(test.rooms['rooms'].get(test.room)?.teacherId).toBe(teacher.welcome.you);
     expect(returned.welcome.lobby.players).toHaveLength(30);
   }, 10_000);
 

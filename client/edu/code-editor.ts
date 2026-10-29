@@ -44,7 +44,10 @@ export function tokenizeLine(line: string, inStr: string | null): { toks: Tok[];
     }
     const nm = rest.match(/^(?:0[xXoObB][\da-fA-F_]+|\d[\d_]*\.?\d*(?:[eE][+-]?\d+)?j?)/);
     if (nm && !/\w/.test(line[i - 1] ?? "")) { push("num", nm[0]); i += nm[0].length; prevWord = ""; continue; }
-    if (c === "@" && /^\s*$/.test(line.slice(0, i))) { const d = rest.match(/^@[\w.]+/)!; push("deco", d[0]); i += d[0].length; continue; }
+    if (c === "@" && /^\s*$/.test(line.slice(0, i))) {
+      const d = rest.match(/^@[\w.]+/);
+      if (d) { push("deco", d[0]); i += d[0].length; continue; }
+    }
     const wm = rest.match(/^[A-Za-z_À-￿][\wÀ-￿]*/);
     if (wm) {
       const w = wm[0];
@@ -286,8 +289,8 @@ export function createCodeEditor(opts: CodeEditorOpts): CodeEditor {
   const commit = () => {
     if (!files[active]) return;
     files[active].content = ta.value;
-    paint();
     save();
+    paint();
     opts.onChange?.(clone(files));
   };
 

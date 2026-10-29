@@ -57,7 +57,7 @@ function printRoomQr(room: string) {
   console.log(qrTerminal(url));
   console.log(`  Big screen: ${url}?screen=1\n`);
 }
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
 // Handle /ws ourselves: Vite also listens for upgrade events for its HMR socket.
 server.on('upgrade', (request, socket, head) => {
   if (new URL(request.url || '/', 'http://localhost').pathname === '/ws') {
@@ -73,7 +73,7 @@ const rooms = new RoomServer(wss, {
   },
   getGithubIdentity: (request, session) => resolveGithubIdentity(request, session, getGithubToken),
   analyzeFiles,
-  analyzeClassroomSubmission: (repo, ref, token, needsChecks) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks),
+  analyzeClassroomSubmission: (repo, ref, token, needsChecks, checkPaths) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks, checkPaths),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
   analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
   verifyPvpAccess, buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,

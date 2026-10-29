@@ -16,6 +16,37 @@ function lesson() {
   return {s, advance:(ms:number)=>{time+=ms;}, plan};
 }
 describe('staged classroom lesson',()=>{
+  it('S2 explicit leave removes the live row without changing locked HP or frozen exports', () => {
+    const {s}=lesson(); s.control('start'); s.accept(s.begin('a','demo/repo'),source); s.control('attack');
+    const rounds=structuredClone(s.state.rounds), csv=classroomExport(s.publicState(),'csv'), hp=s.state.bossHp, max=s.state.bossMaxHp;
+    s.remove('a'); expect(s.state.rows.some(r=>r.id==='a')).toBe(false);
+    expect(s.state.rounds).toEqual(rounds); expect(classroomExport(s.publicState(),'csv')).toBe(csv);
+    expect(s.state.bossHp).toBe(hp); expect(s.state.bossMaxHp).toBe(max);
+  });
+  it('S9 restores the prior commit, score and its review after a failed resubmission', () => {
+    const {s,advance}=lesson(); s.control('start'); s.accept(s.begin('a','demo/repo'),source);
+    s.review('a',80,'Reviewed this commit only'); const report=structuredClone(s.privatePayload('a',true).reports.a);
+    advance(5000); const ticket=s.begin('a','other/repo'); expect(s.state.rows[0].status).toBe('queued');
+    s.fail(ticket,'GitHub rate limit');
+    expect(s.state.rows[0]).toMatchObject({status:'submitted',repo:'demo/repo',commit:sha,score:80,attempts:2});
+    expect(s.privatePayload('a',true).reports.a).toEqual(report); expect(s.privatePayload('a',false).errors.a).toBe('GitHub rate limit');
+    s.control('attack'); expect(s.state.rounds[0].attacks[0]).toMatchObject({commit:sha,score:80}); expect(s.state.rounds[0].attacks[0].damage).toBeGreaterThan(0);
+  });
+  it('S9 replaces a prior reviewed result on a lower successful score', () => {
+    const {s,advance}=lesson(); s.control('start'); s.accept(s.begin('a','demo/repo'),source); s.review('a',90,'Old review');
+    advance(5000); s.accept(s.begin('a','demo/repo'),{...source,commit:'b'.repeat(40),files:[]});
+    expect(s.state.rows[0]).toMatchObject({status:'submitted',score:0,commit:'b'.repeat(40)});
+    expect(s.privatePayload('a',true).reports.a.teacherReview).toBeUndefined();
+  });
+  it('S9 restores graded state on lesson end and never resurrects a kicked pending row', () => {
+    const {s,advance}=lesson(); s.control('start');
+    for(const id of ['a','b']) { s.accept(s.begin(id,'demo/repo'),source); s.review(id,75,'Review belongs to old commit'); }
+    advance(5000); const a=s.begin('a','next/repo'),b=s.begin('b','next/repo'); s.kick('b'); s.end();
+    expect(s.valid(a)).toBe(false); expect(s.valid(b)).toBe(false); s.accept(a,source);s.accept(b,source);s.fail(a,'stale');
+    expect(s.state.rows).toHaveLength(1);expect(s.state.rows[0]).toMatchObject({id:'a',status:'submitted',score:75,commit:sha});
+    expect(s.privatePayload('a',true).reports.a.teacherReview?.score).toBe(75);
+    expect(s.privatePayload('a',true).reports.b).toBeUndefined(); expect(s.privatePayload('a',false).errors.a).toContain('ended');
+  });
   it('freezes roster and positional check totals from this round scored reports only', () => {
     const {s} = lesson(); s.roster([{ id:'a', name:'Alice', connected:true }, { id:'b', name:'Bob', connected:true }, { id:'c', name:'Missing', connected:true }, { id:'d', name:'Removed', connected:true }]);
     s.control('start'); s.accept(s.begin('a','demo/repo'),source);
@@ -42,7 +73,7 @@ describe('staged classroom lesson',()=>{
   it('preserves absent legacy aggregates and never guesses checks from restored scores', () => {
     const {s}=lesson(); s.control('start');s.accept(s.begin('a','demo/repo'),source);
     const coding=JSON.parse(JSON.stringify(s.save())); const restoredCoding=ClassroomSession.restore(coding);
-    restoredCoding.control('attack'); expect(restoredCoding.state.rounds[0].roster).toBe(2);
+    restoredCoding.control('attack'); expect(restoredCoding.state.rounds[0].roster).toBe(1);
     expect(restoredCoding.state.rounds[0]).not.toHaveProperty('checkStats');
     s.control('attack');const legacy=JSON.parse(JSON.stringify(s.save()));delete legacy.rounds[0].roster;delete legacy.rounds[0].checkStats;
     const restored=ClassroomSession.restore(legacy);expect(restored.state.rounds[0]).not.toHaveProperty('roster');expect(restored.state.rounds[0]).not.toHaveProperty('checkStats');
@@ -87,7 +118,7 @@ describe('staged classroom lesson',()=>{
     s.setPlan({...plan,steps:plan.steps.slice(0,2)}); expect(s.state.bossMaxHp).toBe(10);
     s.control('start'); s.accept(s.begin('a','demo/repo'),source);
     s.review('a',25,'Partial implementation'); s.control('attack');
-    const hp=s.state.bossHp; expect(hp).toBe(8.8);
+    const hp=s.state.bossHp; expect(hp).toBe(7.7);
     s.roster([{id:'c',name:'Late student',connected:true}]); s.remove('a');
     expect(s.state.bossHp).toBe(hp); expect(s.state.bossMaxHp).toBe(10);
     const restored=ClassroomSession.restore(s.save());

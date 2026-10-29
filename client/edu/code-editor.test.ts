@@ -1,10 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pythonClassroomPlan } from "../../shared/classroom-presets.ts";
-import { backspaceEdit, changedRange, highlight, newlineEdit, seeded, tabEdit, tokenizeLine } from "./code-editor.ts";
+import { backspaceEdit, changedRange, createCodeEditor, highlight, newlineEdit, savedDraft, seeded, tabEdit, tokenizeLine } from "./code-editor.ts";
+import { installTestDom, type TestNode } from "./test-dom.ts";
 
 const kinds = (line: string, inStr: string | null = null) => tokenizeLine(line, inStr).toks.filter((t) => t.t !== "txt").map((t) => `${t.t}:${t.s}`);
 
 describe("python tokenizer", () => {
+  it("keeps incomplete decorators as plain text", () => {
+    for (const src of ["@\n", "@ x", "@ ", "@(", "    @"]) {
+      expect(() => highlight(src, "python")).not.toThrow();
+      expect(highlight(src, "python")).toBe(src);
+    }
+  });
   it("colours keywords, builtins, strings, comments, numbers, def names, decorators", () => {
     expect(kinds('def greet(name):  # say hi')).toEqual(["kw:def", "def:greet", "op::", "com:# say hi"]);
     expect(kinds('print(f"hi {name}", 3.5, 0x1F)')).toEqual(["builtin:print", 'str:f"hi {name}"', "num:3.5", "num:0x1F"]);
@@ -35,6 +42,31 @@ describe("python tokenizer", () => {
 
   it("handles CJK comments and identifiers (Chinese presets)", () => {
     expect(kinds("名字 = 'Ada'  # 在下面完成")).toEqual(["op:=", "str:'Ada'", "com:# 在下面完成"]);
+  });
+});
+
+describe("editor draft autosave", () => {
+  beforeEach(() => { vi.useFakeTimers(); installTestDom(); });
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+  it("persists an input containing a lone decorator", () => {
+    const editor = createCodeEditor({ starter: [{ path: "main.py", content: "" }], language: "python", storageKey: "draft" });
+    const input = editor.el.querySelector("textarea") as unknown as TestNode;
+    input.value = "@";
+    input.dispatchEvent(new Event("input"));
+    vi.advanceTimersByTime(300);
+    expect(savedDraft("draft")).toEqual([{ path: "main.py", content: "@" }]);
+    editor.dispose();
+  });
+  it("schedules autosave before a highlight failure", () => {
+    const editor = createCodeEditor({ starter: [{ path: "main.py", content: "" }], language: "python", storageKey: "draft" });
+    const input = editor.el.querySelector("textarea") as unknown as TestNode;
+    const layer = editor.el.querySelector(".ce-hl") as unknown as TestNode;
+    vi.spyOn(layer, "innerHTML", "set").mockImplementation(() => { throw new Error("highlight failed"); });
+    input.value = "@";
+    expect(() => input.dispatchEvent(new Event("input"))).toThrow("highlight failed");
+    vi.advanceTimersByTime(300);
+    expect(savedDraft("draft")).toEqual([{ path: "main.py", content: "@" }]);
+    editor.dispose();
   });
 });
 

@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { ClassroomSession } from './classroom';
 import { defaultClassroomPlan } from '../shared/classroom-defaults';
 import { profileFromFiles } from '../analysis/graph';
@@ -42,6 +42,22 @@ describe('lesson-long classroom HP budget',()=>{
     f.feedback();f.session.control('retry');f.submit(20);f.session.control('attack');expect(f.session.state.bossHp).toBe(first.bossAfter);expect(f.session.state.rounds[1].attacks.every(a=>a.damage===0)).toBe(true);
     f.feedback();f.session.control('retry');f.submit(40);f.session.control('attack');const improved=f.session.state.rounds[2];
     expect(improved.bossBefore-improved.bossAfter).toBeCloseTo(damage);expect(improved.attacks.some(a=>a.damage>0)).toBe(true);
+  });
+  it('S7 excludes offline unsubmitted rows but counts disconnected submissions at attack time',()=>{
+    const f=fixture(3,4);f.submit(20,2);
+    f.session.roster(f.students.map((student,i)=>({...student,connected:i===0})));
+    f.session.control('attack');const round=f.session.state.rounds[0];
+    expect(round.roster).toBe(2);expect(round.attacks).toHaveLength(2);
+    expect(round.bossBefore-round.bossAfter).toBeCloseTo(7.4);
+    expect(round.attacks.reduce((sum,attack)=>sum+attack.damage,0)).toBeCloseTo(7.4);
+    expect(round.bossAfter).toBeGreaterThanOrEqual(40);
+    f.session.roster(f.students);f.session.remove('s1');expect(f.session.state.rounds[0]).toEqual(round);
+  });
+  it('S10 documents the slice formula, multiplier, attack-time roster and explicit leave rule',()=>{
+    const doc=readFileSync(new URL('../docs/design/classroom-raid.md',import.meta.url),'utf8');
+    expect(doc).toContain('slice / attack-time roster');expect(doc).toContain('/ 100 × 1.85');
+    expect(doc).toContain('connected or submitted for this round');expect(doc).toContain('An explicit leave removes the live classroom row');
+    expect(doc).not.toContain('positive score improvement / 4');
   });
   it('normalizes late joiners by attack-time roster and carries unspent earlier slices forward',()=>{
     const f=fixture(3,4),initialHp=f.session.state.bossMaxHp;

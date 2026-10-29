@@ -62,6 +62,7 @@ export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
 export class ClassroomSession {
   state: ClassroomState;
   private reports = new Map<string, ClassroomReport>();
+  private graded = new Map<string, { row: ClassroomRow; report?: ClassroomReport }>();
   private errors = new Map<string, string>();
   private generation = 0;
   private revisions = new Map<string, number>();
@@ -95,17 +96,22 @@ export class ClassroomSession {
   }
   remove(id: string) {
     this.revisions.set(id, (this.revisions.get(id) ?? 0) + 1);
-    const row = this.state.rows.find(r => r.id === id);
-    if (row) { row.connected = false; if (row.status === 'queued') row.status = 'error'; }
-    this.scaleBoss();
-    this.reports.delete(id); this.errors.delete(id);
-  }
-  kick(id: string) {
-    this.remove(id); // Invalidates queued grading before removing its live row.
+    this.restoreGrade(id);
     this.state.rows = this.state.rows.filter(row => row.id !== id);
     this.previous.delete(id); this.submittedAt.delete(id);
     for (const key of this.credited.keys()) if (key.endsWith(`:${id}`)) this.credited.delete(key);
-    this.scaleBoss(); // Frozen attack rounds and started-lesson HP stay unchanged.
+    this.reports.delete(id); this.errors.delete(id);
+    this.scaleBoss(); // Frozen rounds and started-lesson HP stay unchanged.
+  }
+  kick(id: string) { this.remove(id); }
+  private restoreGrade(id: string): boolean {
+    const saved = this.graded.get(id); this.graded.delete(id);
+    const row = this.state.rows.find(r => r.id === id);
+    if (!saved || !row) return false;
+    const { repo, commit, score, improvement } = saved.row;
+    Object.assign(row, { status: 'submitted', repo, commit, score, improvement });
+    if (saved.report) this.reports.set(id, saved.report);
+    return true;
   }
   privatePayload(id: string, teacher: boolean): { reports: Record<string, ClassroomReport>; errors: Record<string, string> } {
     const reports = [...this.reports].filter(([key]) => teacher || key === id).map(([key, report]) => {
@@ -127,12 +133,13 @@ export class ClassroomSession {
     if (row.attempts >= 20) throw new Error('Submission limit reached for this step; ask the teacher to retry the step');
     if (this.now() - (this.submittedAt.get(id) ?? -Infinity) < 5000) throw new Error('Wait 5 seconds before submitting again');
     this.submittedAt.set(id, this.now());
+    if (row.status === 'submitted') this.graded.set(id, structuredClone({ row, report: this.reports.get(id) }));
     row.status = 'queued'; row.repo = repo; delete row.score; delete row.commit; row.attempts++; this.errors.delete(id); this.reports.delete(id);
     const revision = (this.revisions.get(id) ?? 0) + 1; this.revisions.set(id, revision);
     return { id, generation: this.generation, revision };
   }
   valid(ticket: SubmissionTicket): boolean {
-    return ticket.generation === this.generation && this.revisions.get(ticket.id) === ticket.revision && ['coding', 'paused'].includes(this.state.phase) && this.row(ticket.id).status === 'queued';
+    return ticket.generation === this.generation && this.revisions.get(ticket.id) === ticket.revision && ['coding', 'paused'].includes(this.state.phase) && this.state.rows.some(row => row.id === ticket.id && row.status === 'queued');
   }
   accept(ticket: SubmissionTicket, source: ClassroomSource) {
     if (!this.valid(ticket)) return;
@@ -155,12 +162,14 @@ export class ClassroomSession {
     const repo = inApp ? 'in-app' : source.profile.slug;
     const report: ClassroomReport = { stepId: step.id, attempt: this.state.attempt, repo, commit: source.commit, source: inApp ? 'in-app' : 'github', submittedAt: this.now(), score, improvement, criteria, checks, advice,
       ...(inApp ? { files: source.files.map(f => ({ path: f.path, content: f.text })) } : {}) };
+    this.graded.delete(ticket.id);
     this.reports.set(ticket.id, report); this.errors.delete(ticket.id);
     Object.assign(this.row(ticket.id), { status: 'submitted', repo, commit: source.commit, score, improvement });
   }
   fail(ticket: SubmissionTicket, message: string) {
     if (!this.valid(ticket)) return;
-    this.row(ticket.id).status = 'error'; this.errors.set(ticket.id, message.slice(0, 400));
+    if (!this.restoreGrade(ticket.id)) this.row(ticket.id).status = 'error';
+    this.errors.set(ticket.id, message.slice(0, 400));
   }
   review(id: string, score: number, note: string) {
     if (!['coding', 'paused'].includes(this.state.phase)) throw new Error('Review scores before the class attacks');
@@ -193,7 +202,7 @@ export class ClassroomSession {
   }
   end() {
     this.generation++; this.state.phase = 'complete'; this.state.deadline = null; this.state.raidEndsAt = null;
-    for (const row of this.state.rows) if (row.status === 'queued') { row.status = 'error'; this.errors.set(row.id, 'The teacher ended this lesson before analysis completed.'); }
+    for (const row of this.state.rows) if (row.status === 'queued') { if (!this.restoreGrade(row.id)) row.status = 'error'; this.errors.set(row.id, 'The teacher ended this lesson before analysis completed.'); }
     this.state.notice = 'The teacher ended this lesson.';
   }
   save(): ClassroomState { return this.publicState(); } // aggregate scores only; never source/evidence/credentials
@@ -222,7 +231,7 @@ export class ClassroomSession {
   }
   private row(id: string): ClassroomRow { const row = this.state.rows.find(r => r.id === id); if (!row) throw new Error('Join as a student first'); return row; }
   private open(remember = true) {
-    const s = this.state; this.generation++; this.reports.clear(); this.errors.clear(); this.submittedAt.clear();
+    const s = this.state; this.generation++; this.graded.clear(); this.reports.clear(); this.errors.clear(); this.submittedAt.clear();
     for (const row of s.rows) { if (remember && row.score !== undefined) this.previous.set(row.id, row.score); row.status = 'empty'; delete row.score; row.damage = 0; row.improvement = 0; row.attempts = 0; }
     s.phase = 'coding'; s.notice = undefined; s.remainingMs = null; s.deadline = s.plan.steps[s.stepIndex].durationSec ? this.now() + s.plan.steps[s.stepIndex].durationSec * 1000 : null;
   }
@@ -237,7 +246,7 @@ export class ClassroomSession {
     // Aggregate-only restored submissions have no check evidence: leave stats unavailable.
     const checkStats = reports.length === submitted.length ? step.checks.map((check, index) => ({ label: check.label,
       passed: reports.filter(report => report.checks[index]?.passed === true).length, total: reports.length })) : undefined;
-    const roster = Math.max(1, s.rows.length), slice = s.bossMaxHp / s.plan.steps.length;
+    const roster = Math.max(1, s.rows.filter(row => row.connected || row.status === 'submitted').length), slice = s.bossMaxHp / s.plan.steps.length;
     const floor = s.stepIndex < s.plan.steps.length - 1 ? Math.max(1, round(s.bossMaxHp - slice * (s.stepIndex + 1))) : 0;
     const available = Math.max(0, s.bossHp - floor);
     const measured = submitted.map(r => {
@@ -260,7 +269,7 @@ export class ClassroomSession {
     });
     const bossBefore = s.bossHp; s.bossHp = Math.max(floor, round(s.bossHp - damageUnits / 10));
     // Freeze the enrolled roster and anonymous measurements; later joins/kicks/retries cannot rewrite them.
-    s.rounds.push({ stepId: step.id, attempt: s.attempt, at: this.now(), bossBefore, bossAfter: s.bossHp, attacks, roster: s.rows.length,
+    s.rounds.push({ stepId: step.id, attempt: s.attempt, at: this.now(), bossBefore, bossAfter: s.bossHp, attacks, roster,
       ...(checkStats !== undefined ? { checkStats } : {}) });
     s.phase = 'raid'; s.deadline = null; s.remainingMs = null; s.raidEndsAt = this.now() + 10000; this.generation++;
   }

@@ -18,7 +18,7 @@ describe("debriefMarkdown (teacher export)", () => {
     const md = debriefMarkdown("round", "Step 1 · Say hello", round);
     expect(md).toContain("## Round debrief: Step 1 · Say hello");
     expect(md).toContain("**2 of 3 submitted · class average 75 · boss −83%**");
-    expect(md).toContain("- Your code uses `print()`: 1/2 (50%)");
+    expect(md).toContain("- Your code uses \\`print()\\`: 1/2 (50%)");
     expect(md).toContain("### What to reteach");
     expect(md).toContain("- chloe: No submission in this round.");
     expect(md).toContain("### Shout-outs");
@@ -28,7 +28,7 @@ describe("debriefMarkdown (teacher export)", () => {
     const lesson: LessonDebrief = { ...round, steps: [{ stepId: "s1", title: "Say hello", attempt: 1, attempts: 2, avg: 75, median: 75, submitted: 2, roster: 3, weakestCheck: { text: "Your code uses `print()`", passed: 1, total: 2 } }] };
     const seen: string[] = [];
     const md = debriefMarkdown("lesson", "Python Basics", lesson, (s) => { seen.push(s); return s; });
-    expect(md).toContain("- Say hello: average 75 · 2/3 submitted · Hardest: Your code uses `print()` 1/2");
+    expect(md).toContain("- Say hello: average 75 · 2/3 submitted · Hardest: Your code uses \\`print()\\` 1/2");
     expect(seen).toEqual(expect.arrayContaining([round.headline, round.next, round.reteach[0], round.needHelp[0].why, "Lesson debrief"]));
   });
 
@@ -36,5 +36,26 @@ describe("debriefMarkdown (teacher export)", () => {
     const md = debriefMarkdown("round", "Step 1", { ...round, checks: [], reteach: [], needHelp: [], shoutouts: [] });
     expect(md).not.toContain("What the class got");
     expect(md).not.toContain("Need help");
+  });
+
+  it("escapes every authored field after translation and collapses newlines", () => {
+    const injected = "<img src=//evil.test/x> | # * _ { } [ ] ` \\\r\nnext";
+    const escaped = "\\<img src=//evil.test/x\\> \\| \\# \\* \\_ \\{ \\} \\[ \\] \\` \\\\ next";
+    const lesson: LessonDebrief = {
+      ...round, headline: injected, checks: [{ text: injected, passed: 0, total: 1 }], reteach: [injected], next: injected,
+      needHelp: [{ id: "a", name: injected, why: injected }], shoutouts: [{ id: "b", name: injected, why: injected }],
+      steps: [{ stepId: "s1", title: injected, attempt: 1, attempts: 1, avg: 0, median: 0, submitted: 1, roster: 1, weakestCheck: { text: injected, passed: 0, total: 1 } }],
+    };
+    const md = debriefMarkdown("lesson", injected, lesson, s => s === injected ? `${s} *translated*` : s);
+    expect(md).not.toContain(injected);
+    expect(md).not.toMatch(/(?<!\\)<img/);
+    expect(md).not.toContain("\r");
+    expect(md).toContain(`## Lesson debrief: ${escaped}\n`);
+    expect(md).toContain(`**${escaped} \\*translated\\***`);
+    expect(md).toContain(`- ${escaped}: average 0 · 1/1 submitted · Hardest: ${escaped} 0/1`);
+    expect(md).toContain(`- ${escaped}: 0/1 (0%)`);
+    expect(md).toContain(`### What to reteach\n\n- ${escaped} \\*translated\\*`);
+    expect(md).toContain(`### Next\n\n- ${escaped} \\*translated\\*`);
+    for (const label of ["Need help", "Shout-outs"]) expect(md).toContain(`### ${label}\n\n- ${escaped}: ${escaped} \\*translated\\*`);
   });
 });

@@ -280,7 +280,7 @@ export function createClassroom(app: AppCtx): Screen {
       const name = h('input', { value: step.title, maxlength: 120, 'data-testid': `step-title-${index}` }) as HTMLInputElement;
       name.oninput = () => { step.title = name.value; };
       const instructions = h('textarea', { rows: 4, maxlength: 8000, 'data-testid': `step-instructions-${index}` }, step.instructions) as HTMLTextAreaElement;
-      instructions.oninput = () => { step.instructions = instructions.value; };
+      instructions.oninput = () => { step.instructions = instructions.value; delete step.brief; };
       const duration = h('input', { type: 'number', min: 0, max: 120, value: step.durationSec / 60, 'data-testid': `step-minutes-${index}` }) as HTMLInputElement;
       duration.oninput = () => { step.durationSec = Math.round(Number(duration.value) * 60); };
       const checks = h('textarea', { rows: 3, spellcheck: 'false', placeholder: 'file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests', 'data-testid': `step-checks-${index}` }, rawChecks.get(step.id) ?? checkText(step)) as HTMLTextAreaElement;
@@ -392,10 +392,7 @@ export function createClassroom(app: AppCtx): Screen {
     if (!report) { review.replaceChildren(h('h2', null, teacher() ? 'Code review' : 'Your feedback'), h('p', null, error ?? (teacher() ? 'Select a student to inspect their commit, evidence and next steps.' : (currentStep()?.starter?.length ? 'Submit your code to receive measured feedback and a next step.' : 'Submit your GitHub version to receive measured feedback and a next step.')))); return; }
     const name = state?.rows.find(r => r.id === id)?.name ?? app.name;
     const localCheckDetail = (detail: string) => { const colon = detail.indexOf(': '); return colon < 0 ? t(detail) : detail.slice(0, colon + 2) + t(detail.slice(colon + 2)); };
-    const localAdvice = report.advice.filter(advice => !report.checks.some(c => advice === `Review ${c.label}: ${c.detail}.`)).map(advice => {
-      const check = report.checks.find(c => advice === `Review ${c.label}: ${c.detail}.`);
-      return check ? t(`Review ${t(check.label)}: ${localCheckDetail(check.detail)}.`) : t(PLAIN_ADVICE[advice] ?? advice);
-    });
+    const localAdvice = report.advice.filter(advice => !report.checks.some(c => advice === `Review ${c.label}: ${c.detail}.`)).map(advice => t(PLAIN_ADVICE[advice] ?? advice));
     const reportStep = state?.plan.steps.find(s => s.id === report.stepId);
     const rows = report.criteria.map(c => {
       const criterion = reportStep?.rubric.criteria.find(q => q.id === c.criterionId);
@@ -421,6 +418,7 @@ export function createClassroom(app: AppCtx): Screen {
         h('small', null, c.passed ? 'Found in your files' : 'Not found yet: add it and submit again')))) : document.createTextNode(''),
       localAdvice.length ? h('h3', null, 'What to work on next') : document.createTextNode(''),
       localAdvice.length ? h('ul.cr-advice', null, ...localAdvice.map(a => h('li', null, a))) : document.createTextNode(''),
+      !localAdvice.length && report.checks.some(c => !c.passed) ? h('p', null, t('Fix the missing checks above and submit again.')) : document.createTextNode(''),
       h('details.cr-measurements', null, h('summary', null, 'See the measured rubric evidence'), ...rows, ...rawChecks),
       report.teacherReview ? h('p.cr-teacher-note', null, `Teacher review: ${report.teacherReview.note}`) : document.createTextNode(''));
     if (teacher() && ['coding', 'paused'].includes(state?.phase ?? '')) {

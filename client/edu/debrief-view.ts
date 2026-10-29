@@ -5,6 +5,7 @@ import { h } from "../app/util.ts";
 import { locale, t } from "../i18n/index.ts";
 import type { Debrief, LessonDebrief } from "./debrief.ts";
 import { richText } from "./task-card.ts";
+import { md } from "./markdown.ts";
 import "./debrief-view.css";
 
 export interface DebriefView {
@@ -101,21 +102,21 @@ export function createDebriefCard(): DebriefCard {
 
 /** The debrief as Markdown for the teacher's export (names included: the export is the teacher's private record). */
 export function debriefMarkdown(kind: "round" | "lesson", title: string, d: Debrief | LessonDebrief, tr: (s: string) => string = (s) => s): string {
-  const out = [`## ${tr(kind === "round" ? "Round debrief" : "Lesson debrief")}: ${title}`, "", `**${tr(d.headline)}**`, ""];
+  const out = [`## ${tr(kind === "round" ? "Round debrief" : "Lesson debrief")}: ${md(title)}`, "", `**${md(tr(d.headline))}**`, ""];
   if (isLesson(d) && d.steps.length) {
     out.push(`### ${tr("Steps")}`, "");
-    for (const s of d.steps) out.push(`- ${s.title}: ${tr(`average ${Math.round(s.avg)}`)} · ${tr(`${s.submitted}/${s.roster} submitted`)}${s.weakestCheck ? ` · ${tr("Hardest:")} ${s.weakestCheck.text} ${s.weakestCheck.passed}/${s.weakestCheck.total}` : ""}`);
+    for (const s of d.steps) out.push(`- ${md(s.title)}: ${tr(`average ${Math.round(s.avg)}`)} · ${tr(`${s.submitted}/${s.roster} submitted`)}${s.weakestCheck ? ` · ${tr("Hardest:")} ${md(s.weakestCheck.text)} ${s.weakestCheck.passed}/${s.weakestCheck.total}` : ""}`);
     out.push("");
   }
   if (d.checks.length) {
     out.push(`### ${tr("What the class got")}`, "");
-    for (const c of d.checks) out.push(`- ${c.text}: ${c.passed}/${c.total} (${pct(c.passed, c.total)}%)`);
+    for (const c of d.checks) out.push(`- ${md(c.text)}: ${c.passed}/${c.total} (${pct(c.passed, c.total)}%)`);
     out.push("");
   }
-  const section = (name: string, items: string[]) => { if (items.length) out.push(`### ${tr(name)}`, "", ...items.map((s) => `- ${tr(s)}`), ""); };
+  const section = (name: string, items: string[]) => { if (items.length) out.push(`### ${tr(name)}`, "", ...items.map((s) => `- ${md(tr(s))}`), ""); };
   section("What to reteach", d.reteach);
   section("Next", [d.next]);
-  const named = (name: string, ps: { name: string; why: string }[]) => { if (ps.length) out.push(`### ${tr(name)}`, "", ...ps.map((p) => `- ${p.name}: ${tr(p.why)}`), ""); };
+  const named = (name: string, ps: { name: string; why: string }[]) => { if (ps.length) out.push(`### ${tr(name)}`, "", ...ps.map((p) => `- ${md(p.name)}: ${md(tr(p.why))}`), ""); };
   named("Need help", d.needHelp);
   named("Shout-outs", d.shoutouts);
   return out.join("\n");

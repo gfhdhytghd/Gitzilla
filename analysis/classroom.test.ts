@@ -19,6 +19,19 @@ describe('classroom GitHub boundary',()=>{
     expect(urls).toContain(`https://codeload.github.com/demo/repo/tar.gz/${sha}`); expect(result.checks.map(c=>c.name)).toEqual(['tests']);
     expect(result.profile.fallback).toBeUndefined();expect(urls.some(u=>u.includes('vulns')||u.includes('/issues'))).toBe(false);
   });
+  it('S4 retains exact non-source check paths without changing source scores',async()=>{
+    const evidence=[{path:'data.csv',text:'name,value\nanswer,42'},{path:'.github/workflows/ci.yml',text:'name: tests'},{path:'docs/notes.md',text:'# Notes: answer'},{path:'vendor/example.py',text:'answer=42'}];
+    const paths=evidence.map(f=>f.path), data=archive([{path:'main.py',text:'answer=42'},...evidence,{path:'other.csv',text:'unrequested'}]);
+    const fetcher=vi.fn(async(input:string|URL|Request)=>{
+      const url=String(input);if(url.endsWith('/commits/HEAD'))return json({sha});
+      if(url.includes('codeload'))return new Response(new Uint8Array(data));return json({});
+    }) as typeof fetch;
+    const baseline=await analyzeClassroomSubmission('demo/repo','HEAD','',fetcher,false);
+    const result=await analyzeClassroomSubmission('demo/repo','HEAD','',fetcher,false,paths);
+    expect(result.files.map(f=>f.path)).toEqual(['main.py',...paths]);
+    expect(result.files.filter(f=>paths.includes(f.path))).toEqual(evidence);
+    expect(result.profile).toEqual(baseline.profile);
+  });
   it('fails closed when commit resolution is forbidden without downloading fallback data',async()=>{
     const fetcher=vi.fn(async()=>new Response('',{status:403})) as typeof fetch;
     await expect(analyzeClassroomSubmission('demo/repo','main','',fetcher)).rejects.toThrow('403');expect(fetcher).toHaveBeenCalledTimes(1);
