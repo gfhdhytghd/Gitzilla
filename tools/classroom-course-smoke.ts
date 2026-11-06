@@ -1,7 +1,7 @@
 /** Loopback course-upload acceptance: real file extraction, mocked AI transport. */
 import http from 'node:http';
 import { once } from 'node:events';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -14,6 +14,28 @@ import { profileFromFiles } from '../analysis/graph';
 import { playerKitFromProfile, bossKitFromProfile, createMatch } from '../sim';
 import { defaultRubric, parseRubric } from '../rubric';
 import { pythonClassroomPlan } from '../shared/classroom-presets';
+
+/** A self-contained PDF fixture keeps acceptance runnable from a Git archive. */
+function coursePdf(): Buffer {
+  const content = 'BT /F1 12 Tf 40 200 Td (Teach Python variables with COURSE_PDF.) Tj ET';
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 300] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
+  ];
+  let pdf = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  for (const [index, object] of objects.entries()) {
+    offsets.push(Buffer.byteLength(pdf)); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  }
+  const xref = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  pdf += offsets.map(offset => `${String(offset).padStart(10, '0')} 00000 n \n`).join('');
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf);
+}
 
 const out = resolve('.cache/classroom-course-smoke');
 mkdirSync(out, { recursive: true });
@@ -75,7 +97,7 @@ try {
   const sources = [
     { name: 'course.md', mimeType: 'text/markdown', buffer: Buffer.from('# Python\nTeach variables with COURSE_MARKDOWN.') },
     { name: 'course.txt', mimeType: 'text/plain', buffer: Buffer.from('Teach print with COURSE_PLAINTEXT.') },
-    { name: 'course.pdf', mimeType: 'application/pdf', buffer: readFileSync(new URL('../../ideas-new.pdf', import.meta.url)) },
+    { name: 'course.pdf', mimeType: 'application/pdf', buffer: coursePdf() },
   ];
   for (const source of sources) {
     await page.getByTestId('course-file').setInputFiles(source);
@@ -83,7 +105,7 @@ try {
     await page.getByTestId('course-apply').waitFor();
     if (await page.getByTestId('lesson-title').inputValue() !== initialTitle) throw new Error('Generation replaced the draft before Apply.');
   }
-  if (!sourcePrompts[0].includes('COURSE_MARKDOWN') || !sourcePrompts[1].includes('COURSE_PLAINTEXT') || sourcePrompts[2].length < 10000) throw new Error('Document text did not reach the mocked provider.');
+  if (!sourcePrompts[0].includes('COURSE_MARKDOWN') || !sourcePrompts[1].includes('COURSE_PLAINTEXT') || !sourcePrompts[2].includes('COURSE_PDF')) throw new Error('Document text did not reach the mocked provider.');
   if (await page.evaluate(() => (window as any).coursePlanMessages) !== 0) throw new Error('Generation published a lesson.');
   await page.getByTestId('course-preview-title').fill('Teacher-edited generated lesson');
   await page.getByTestId('course-apply').click();
