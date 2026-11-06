@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ClassroomSession, normalizeClassroomPlan } from './classroom';
 import { defaultClassroomPlan } from '../shared/classroom-defaults';
 import { profileFromFiles } from '../analysis/graph';
-import { classroomExport } from './classroom-export';
+import { classroomExport, gradesExport } from './classroom-export';
 const sha = 'a'.repeat(40);
 const files = [{path:'src/main.ts',text:'export const answer = 42'}, {path:'README.md',text:'# Example'}];
 const source = {profile:profileFromFiles('demo/repo', files), commit:sha, files, checks:[]};
@@ -177,5 +177,87 @@ describe('staged classroom lesson',()=>{
     const {s}=lesson();s.roster([{id:'a',name:'=SUM(1,2)| <img>',connected:true}]);s.control('start');s.accept(s.begin('a','demo/repo'),source);s.control('attack');
     const csv=classroomExport(s.publicState(),'csv');expect(csv).toContain('"\'=SUM(1,2)| <img>"');expect(csv).toContain(sha);
     expect(classroomExport(s.publicState(),'md')).toContain('\\| \\<img\\>');
+  });
+});
+
+it('normalizes doctests and grades only supplied executed results', () => {
+  const { plan } = lesson();
+  plan.steps[0].checks = [{ id: 'd', kind: 'doctest', label: 'Python', path: 'main.py', text: '>>> answer\n42' }];
+  const normalized = normalizeClassroomPlan(plan); expect(normalized.steps[0].checks[0].text).toBe('>>> answer\n42');
+  let now = 1000;
+  const s = new ClassroomSession(plan, () => now); s.roster([{ id: 'a', name: 'Alice', connected: true }]); s.control('start');
+  s.accept(s.begin('a', 'demo/repo'), { ...source, doctests: { 'check-0': { passed: true, detail: '1/1 examples passed' } } });
+  expect(s.privatePayload('a', false).reports.a).toMatchObject({ score: 100, checks: [{ label: 'Python', passed: true, detail: '1/1 examples passed' }] });
+  now += 5000; s.accept(s.begin('a', 'demo/repo'), source);
+  expect(s.privatePayload('a', false).reports.a).toMatchObject({ score: 0, checks: [{ passed: false, detail: 'doctest runner unavailable on this server' }] });
+  plan.steps[0].checks[0].text = 'x'.repeat(4001); expect(() => normalizeClassroomPlan(plan)).toThrow('doctest');
+  plan.steps[0].checks[0].text = ''; expect(normalizeClassroomPlan(plan).steps[0].checks[0].text).toBe('');
+  delete plan.steps[0].checks[0].text; expect(normalizeClassroomPlan(plan).steps[0].checks[0].text).toBeUndefined();
+  plan.steps[0].checks[0].path = '../bad.py'; expect(() => normalizeClassroomPlan(plan)).toThrow('relative');
+});
+
+it('exports lesson grades only to the reserved teacher through the HTTP route', async () => {
+  const { EventEmitter } = await import('node:events');
+  const { WebSocketServer } = await import('ws');
+  const { RoomServer } = await import('./rooms');
+  const { handleEduRoute } = await import('./edu-http');
+  const wss = new WebSocketServer({ noServer: true });
+  const rooms = new RoomServer(wss, { listFallbackRepos: () => [] } as unknown as import('./rooms').GameServices, { allowLegacyEdu: true });
+  try {
+    const code = rooms.createRoom(undefined, 'edu');
+    const join = async (role: 'player' | 'screen') => {
+      const messages: import('../shared/types').ServerMsg[] = [];
+      const socket = Object.assign(new EventEmitter(), { readyState: 1, send: (raw: string) => messages.push(JSON.parse(raw)), close() {}, terminate() {} });
+      wss.emit('connection', socket, { headers: {} });
+      socket.emit('message', Buffer.from(JSON.stringify({ t: 'hello', room: code, role, name: role })));
+      for (let i = 0; i < 20; i++) await Promise.resolve();
+      return messages.find(m => m.t === 'welcome')! as Extract<import('../shared/types').ServerMsg, { t: 'welcome' }>;
+    };
+    const teacher = await join('screen'), student = await join('player');
+    rooms['rooms'].get(code)!.classroom = lesson().s;
+    const request = async (token: string, format: 'csv' | 'md') => {
+      const req = { method: 'GET', headers: { 'x-room-token': token }, resume() {} } as unknown as import('node:http').IncomingMessage;
+      const res = { status: 0, headers: {} as Record<string, string>, body: '', writeHead(status: number, headers: Record<string, string>) { this.status = status; this.headers = headers; }, end(body: string) { this.body = body; } };
+      expect(await handleEduRoute(req, res as unknown as import('node:http').ServerResponse, new URL(`http://fixture/api/room/${code}/grades.${format}`), rooms)).toBe(true);
+      return res;
+    };
+    expect((await request(student.token, 'csv')).status).toBe(403);
+    expect((await request('invalid', 'md')).status).toBe(403);
+    const csv = await request(teacher.token, 'csv'); expect(csv.status).toBe(200);
+    expect(csv.headers['Content-Disposition']).toContain(`gitzilla-${code}-grades.csv`);
+    expect(csv.body).toContain('"student_id","student"'); expect(csv.body).toContain('"a","Alice"');
+    const md = await request(teacher.token, 'md'); expect(md.status).toBe(200); expect(md.body).toContain('Unrecorded steps count 0');
+  } finally { rooms.close(); wss.close(); }
+});
+
+
+describe('classroom email grade matching', () => {
+  it('keeps emails private, survives restart, and exports with frozen scores after removal', () => {
+    const { s } = lesson();
+    s.setEmail('a', '  Alice@psu.edu  '); s.setEmail('b', 'bob@psu.edu');
+    expect(s.privatePayload('a', false).emails).toEqual({ a: 'Alice@psu.edu' });
+    expect(s.privatePayload('projector', false).emails).toEqual({});
+    expect(s.privatePayload('teacher', true).emails).toEqual({ a: 'Alice@psu.edu', b: 'bob@psu.edu' });
+    expect(JSON.stringify(s.publicState())).not.toContain('@psu.edu');
+    s.control('start'); s.accept(s.begin('a', 'demo/repo'), source); s.review('a', 87, 'Reviewed'); s.control('attack');
+    s.remove('a');
+    const restored = ClassroomSession.restore(JSON.parse(JSON.stringify(s.save())));
+    expect(JSON.stringify(restored.publicState())).not.toContain('@psu.edu');
+    for (const format of ['csv', 'md'] as const) {
+      const report = classroomExport(restored.publicState(), format, 'en', restored.exportEmails());
+      const grades = gradesExport(restored.publicState(), format, restored.exportEmails());
+      for (const text of [report, grades]) { expect(text).toContain('Alice@psu.edu'); expect(text).toContain('87'); }
+      expect(grades).toContain('bob@psu.edu');
+    }
+    expect(ClassroomSession.restore(s.publicState()).exportEmails()).toEqual({});
+  });
+  it('rejects malformed addresses and unknown students without changing the saved email', () => {
+    const { s } = lesson(); s.setEmail('a', 'alice@psu.edu');
+    for (const email of ['', 'alice', 'a@psu', 'a b@psu.edu', 'a@psu.edu\nb@psu.edu', '=evil@psu.edu', 'a'.repeat(255) + '@psu.edu', null]) {
+      expect(() => s.setEmail('a', email)).toThrow();
+    }
+    expect(() => s.setEmail('unknown', 'b@psu.edu')).toThrow('Join as a student first');
+    expect(s.exportEmails().a).toBe('alice@psu.edu');
+    s.setEmail('a', 'corrected@psu.edu'); expect(s.exportEmails().a).toBe('corrected@psu.edu');
   });
 });

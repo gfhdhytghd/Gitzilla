@@ -3,7 +3,7 @@
 // the projector never do. The server enforces the same rule, so this screen is the friendly half of it.
 import type { GameMode } from "../../shared/types";
 import { createBackdrop } from "./backdrop";
-import { login, logout, type Me } from "./github";
+import { login, emailLogin, logout, type Me } from "./github";
 import { h, store } from "./util";
 
 export type GateKind = "player" | "teacher";
@@ -19,9 +19,9 @@ export async function fetchRoomMode(room: string): Promise<GameMode | null> {
 }
 
 /** Does this visitor have to stop at the gate before connecting? */
-export function needsGate(me: Me, kind: GateKind | null): boolean {
+export function needsGate(me: Me, kind: GateKind | null, mode: GameMode | null = null): boolean {
   if (!kind) return false;
-  if (me.required && !me.user) return true;
+  if (me.required && (!me.user || (mode !== "edu" && me.user.userId.startsWith("email|")))) return true;
   return kind === "player" && !store.get("kaiju.name");
 }
 
@@ -35,7 +35,9 @@ const WHY: Record<string, string> = {
 export function createJoinGate(opts: { room: string; kind: GateKind; mode: GameMode | null; me: Me; done(name: string): void }) {
   const { room, kind, me } = opts;
   const user = me.user;
-  const signedIn = !!user;
+  const classroom = opts.mode === "edu" || kind === "teacher";
+  const emailUser = !!user?.userId.startsWith("email|");
+  const signedIn = !!user && (classroom || !emailUser);
   const optional = !me.required;
   const backdrop = createBackdrop({ dim: 0.7, themeCycle: true });
 
@@ -58,12 +60,14 @@ export function createJoinGate(opts: { room: string; kind: GateKind; mode: GameM
       h("div.jg-body", null, ...body));
 
   const signInStep = signedIn
-    ? step(1, "done", "signed in with GitHub",
+    ? step(1, "done", emailUser ? "signed in with email" : "signed in with GitHub",
       h("div.gh-who.jg-who", { "data-testid": "gate-signed-in" }, avatar(), h("b", null, `@${user!.login}`),
-        h("button.btn-link", { onclick: () => login(true) }, "switch account"),
+        h("button.btn-link", { onclick: () => emailUser ? emailLogin() : login(true) }, "switch account"),
         h("button.btn-link", { onclick: logout }, "sign out")))
-    : step(1, "todo", "sign in with GitHub",
+    : step(1, "todo", classroom ? "sign in to your classroom" : "sign in with GitHub",
       h("p.jg-why", null, WHY[kind === "teacher" ? "teacher" : opts.mode ?? "battle"]),
+      classroom ? h("button.btn.btn-primary", { "data-testid": "gate-email", onclick: emailLogin }, "Continue with email") : null,
+      classroom ? h("p.jg-fine.dim", null, "Enter your email, then enter the one-time code sent to your inbox. No password needed.") : null,
       h("button.btn.btn-gh.jg-gh", { "data-testid": "gate-github", onclick: () => login() }, h("span.gh-mark", null, "◉"), " Continue with GitHub"),
       h("p.jg-fine.dim", null, "Your GitHub token stays on our server. It never reaches this page or other players."));
 

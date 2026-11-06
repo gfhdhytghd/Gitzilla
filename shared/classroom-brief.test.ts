@@ -92,3 +92,12 @@ describe('localized beginner task briefs', () => {
     }
   });
 });
+
+it('describes doctest examples and realigns edited example text', async () => {
+  const { doneWhenFor, alignDoneWhen } = await import('../client/edu/task-brief');
+  const check = { id: 'd', kind: 'doctest' as const, path: 'main.py', label: 'Example', text: '>>> answer\n42' };
+  expect(doneWhenFor(check)).toBe('`answer` gives `42`');
+  expect(doneWhenFor({ ...check, text: '' })).toBe('the examples in `main.py` docstrings pass');
+  expect(alignDoneWhen({ checks: [check], doneWhen: ['Custom'] }, [check])).toEqual(['Custom']);
+  expect(alignDoneWhen({ checks: [check], doneWhen: ['Custom'] }, [{ ...check, text: '>>> answer\n43' }])).toEqual(['`answer` gives `43`']);
+});

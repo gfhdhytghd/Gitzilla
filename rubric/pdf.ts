@@ -1,16 +1,25 @@
 import { spawn } from 'node:child_process';
 
 const fallback = 'Please upload a .md or .txt file, or paste the rubric text.';
+export class PdfTextLimitError extends Error {}
 
 /** Node-only adapter; keep this import out of student browser bundles. */
-export async function extractRubricText(data: Uint8Array, filename = '', contentType = ''): Promise<string> {
+export async function extractRubricText(data: Uint8Array, filename = '', contentType = '', maxBytes = 1024 * 1024): Promise<string> {
   const isPdf = /\.pdf$/i.test(filename) || /application\/pdf/i.test(contentType) || new TextDecoder().decode(data.subarray(0, 5)) === '%PDF-';
   if (!isPdf) return new TextDecoder().decode(data);
   return new Promise<string>((resolve, reject) => {
     const child = spawn('pdftotext', ['-layout', '-', '-'], { stdio: ['pipe', 'pipe', 'pipe'] });
     const chunks: Buffer[] = [];
+    let bytes = 0, limited = false;
     const timeout = setTimeout(() => { child.kill(); reject(new Error(`PDF text extraction timed out. ${fallback}`)); }, 10_000);
-    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stdout.on('data', (chunk: Buffer) => {
+      if (limited) return;
+      bytes += chunk.length;
+      if (bytes > maxBytes) {
+        limited = true; chunks.length = 0; clearTimeout(timeout); child.kill();
+        reject(new PdfTextLimitError('Extracted PDF text exceeds the upload text limit.'));
+      } else chunks.push(chunk);
+    });
     // Consume diagnostics but do not echo arbitrary document content into server errors.
     child.stderr.resume();
     child.stdin.on('error', () => { /* A rejected PDF can close stdin before writing finishes. */ });

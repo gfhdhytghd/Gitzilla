@@ -35,6 +35,10 @@ export const hintKey = (room: string, stepId: string) => `kaiju.hints.${room}.${
 
 /** A plain "Done when" line for a check the teacher wrote themselves. */
 export function doneWhenFor(c: Pick<ClassroomCheck, "kind" | "path" | "text">): string {
+  if (c.kind === "doctest") {
+    const example = c.text?.match(/^\s*>>> (.*)\r?\n([^\r\n]*)/m);
+    return c.text?.trim() ? `\`${example?.[1] ?? ""}\` gives \`${example?.[2] ?? ""}\`` : `the examples in \`${c.path}\` docstrings pass`;
+  }
   return c.kind === "file" ? `\`${c.path}\` is in your submission`
     : c.kind === "contains" ? `\`${c.path}\` contains \`${c.text ?? ""}\``
     : `The GitHub check \`${c.path}\` passes`;

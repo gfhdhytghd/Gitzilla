@@ -3,7 +3,7 @@
  * i18n: plain English from exported DEBRIEF_TEXT templates with numbered {0} placeholders.
  * The UI passes returned sentences through t(); add these templates to its translation catalog.
  * Step titles and brief.doneWhen/check labels are already teacher-provided/localized values.
- * Names occur only in participation.missing, needHelp and shoutouts: keep those teacher-only.
+ * Names occur only in participation.missing, needHelp, shoutouts and grades: keep those teacher-only.
  *
  * Frozen attacks decide scores; frozen checkStats win over live reports. Legacy rounds use
  * only exact step+attempt reports belonging to their attacks, with each check's known denominator.
@@ -14,6 +14,7 @@
  */
 import type { ClassroomAttack, ClassroomReport, ClassroomRound, ClassroomState } from '../../shared/classroom';
 import { pythonClassroomPresets } from '../../shared/classroom-presets';
+import { lessonGrades, type LessonGrades } from '../../shared/classroom-grades';
 
 export interface DebriefCheck { text: string; passed: number; total: number }
 export interface Debrief {
@@ -36,6 +37,8 @@ export interface LessonDebrief extends Debrief {
   steps: LessonStepDebrief[];
   /** Navigation target when recommending the next official Python preset. */
   nextPresetId?: string;
+  /** The grade book (names!): one row per student, one column per plan step; null = no recorded score. */
+  grades: LessonGrades;
 }
 export type DebriefReports = Readonly<Record<string, ClassroomReport>>;
 
@@ -250,6 +253,6 @@ export function buildLessonDebrief(state: ClassroomState, reports: DebriefReport
   return {
     headline: rounds.length ? say(DEBRIEF_TEXT.lesson, rounds.length, submittedIds.size, scores.avg) : DEBRIEF_TEXT.emptyLesson,
     participation: { roster, submitted: submittedIds.size, missing: missing.map(row => row.name) }, scores, checks,
-    reteach, needHelp, shoutouts, next, steps, ...(nextPresetId ? { nextPresetId } : {}),
+    reteach, needHelp, shoutouts, next, steps, grades: lessonGrades(state), ...(nextPresetId ? { nextPresetId } : {}),
   };
 }

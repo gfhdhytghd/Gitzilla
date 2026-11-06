@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { parseRubric } from './index.ts';
-import { extractRubricText } from './pdf.ts';
+import { extractRubricText, PdfTextLimitError } from './pdf.ts';
 
 // A real, minimal PDF with selectable text, no additional npm tooling or assets.
 function tinyPdf(text?: string): Uint8Array {
@@ -40,6 +40,10 @@ describe('server-only rubric document extraction', () => {
   it.skipIf(!hasPdfToText)('asks for text when a PDF is malformed or has no selectable text', async () => {
     await expect(extractRubricText(Buffer.from('not a PDF'), 'class.pdf')).rejects.toThrow('paste the rubric text');
     await expect(extractRubricText(tinyPdf(), 'scan.pdf')).rejects.toThrow('no selectable text');
+  });
+  it.skipIf(!hasPdfToText)('rejects PDF extraction before retaining output beyond the configured byte limit', async () => {
+    await expect(extractRubricText(tinyPdf('Teach Python variables'), 'class.pdf', '', 8)).rejects.toBeInstanceOf(PdfTextLimitError);
+    expect(await extractRubricText(tinyPdf('Teach Python variables'), 'class.pdf', '', 100)).toBe('Teach Python variables');
   });
   it('asks for Markdown/text if pdftotext is unavailable', async () => {
     const originalPath = process.env.PATH;

@@ -22,6 +22,7 @@
     "iwer": "2.5.0"
   },
   "dependencies": {
+    "pyodide": "314.0.7",
     "@solana/kit": "^8.5.0",
     "@solana/wallet-standard-features": "^1.5.0",
     "@wallet-standard/app": "^1.1.1",

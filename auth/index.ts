@@ -7,9 +7,10 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeClassroomEmail } from '../shared/classroom-email';
 import { pvpRepoEligible, type PvpRepoMetadata } from '../server/pvp-access';
 
-export interface Session { userId: string; login: string; avatar: string }
+export interface Session { userId: string; login: string; avatar: string; email?: string; emailVerified?: boolean }
 export interface MyRepo {
   name: string; full_name: string; private: boolean; language: string | null; stars: number; pushed_at: string;
   fork: boolean; permission: 'admin' | 'maintain' | 'push' | 'read'; pvpEligible: boolean;
@@ -146,7 +147,7 @@ async function managementToken(cfg: NonNullable<ReturnType<typeof config>>): Pro
 /** The signed-in user's GitHub OAuth token (server-side only; never send it to a client or to Gemini). */
 export async function githubTokenForUser(userId: string): Promise<string | null> {
   const cfg = config();
-  if (!cfg) return null;
+  if (!cfg || userId.startsWith('email|')) return null;
   const cached = githubTokens.get(userId);
   if (cached) return cached;
   const r = await fetch(`https://${cfg.domain}/api/v2/users/${encodeURIComponent(userId)}?fields=identities&include_fields=true`, {
@@ -189,7 +190,7 @@ export async function listGithubRepos(token: string): Promise<MyRepo[]> {
 
 // ---------- routes ----------
 
-interface Tx { state: string; verifier: string; nonce: string; returnTo: string; redirectUri: string }
+interface Tx { state: string; verifier: string; nonce: string; returnTo: string; redirectUri: string; method?: 'email' }
 
 /**
  * Handles /auth/login, /auth/callback, /auth/logout, /auth/logged-out, GET /api/me, GET /api/me/repos.
@@ -228,13 +229,14 @@ export async function handleAuthRoute(req: IncomingMessage, res: ServerResponse)
     const tx: Tx = {
       state: b64url(randomBytes(16)), verifier: b64url(randomBytes(32)), nonce: b64url(randomBytes(16)),
       returnTo: safeReturnTo(url.searchParams.get('returnTo')), redirectUri: `${origin}/auth/callback`,
+      ...(url.searchParams.get('method') === 'email' ? { method: 'email' as const } : {}),
     };
     const authorize = new URL(`https://${cfg.domain}/authorize`);
     authorize.search = new URLSearchParams({
-      response_type: 'code', client_id: cfg.clientId, redirect_uri: tx.redirectUri, scope: 'openid profile',
-      connection: cfg.connection, state: tx.state, nonce: tx.nonce,
+      response_type: 'code', client_id: cfg.clientId, redirect_uri: tx.redirectUri, scope: tx.method === 'email' ? 'openid profile email' : 'openid profile',
+      connection: tx.method === 'email' ? 'email' : cfg.connection, state: tx.state, nonce: tx.nonce,
       code_challenge: b64url(createHash('sha256').update(tx.verifier).digest()), code_challenge_method: 'S256',
-      ...(url.searchParams.has('switch') ? { prompt: 'login' } : {}),
+      ...(url.searchParams.has('switch') || tx.method === 'email' ? { prompt: 'login' } : {}),
     }).toString();
     redirect(res, authorize.href, [cookie(req, TX_COOKIE, seal(tx, cfg.key, TX_TTL), TX_TTL)]);
     return true;
@@ -257,9 +259,23 @@ export async function handleAuthRoute(req: IncomingMessage, res: ServerResponse)
     // ID token comes straight from the token endpoint over TLS with our client secret, so its signature
     // needn't be re-verified (OIDC Core 3.1.3.7); still check issuer/audience/nonce.
     const { id_token } = await r.json() as { id_token: string };
-    const claims = JSON.parse(Buffer.from(id_token.split('.')[1], 'base64url').toString('utf8')) as Record<string, string>;
-    if (claims.iss !== `https://${cfg.domain}/` || claims.aud !== cfg.clientId || claims.nonce !== tx.nonce) { fail('Invalid ID token'); return true; }
-    const session: Session = { userId: claims.sub, login: claims.nickname || claims.name || claims.sub, avatar: claims.picture || '' };
+    let claims: Record<string, unknown>;
+    try { claims = JSON.parse(Buffer.from(id_token.split('.')[1], 'base64url').toString('utf8')); }
+    catch { fail('Invalid ID token'); return true; }
+    if (!claims || claims.iss !== `https://${cfg.domain}/` || claims.aud !== cfg.clientId || claims.nonce !== tx.nonce || typeof claims.sub !== 'string') { fail('Invalid ID token'); return true; }
+    let email: string | undefined;
+    if (claims.email_verified === true) {
+      try { email = normalizeClassroomEmail(claims.email).toLowerCase(); } catch { /* Only valid verified emails enter sessions. */ }
+    }
+    if (tx.method === 'email' && (!email || !claims.sub.startsWith('email|') || typeof claims.exp !== 'number' || claims.exp <= Date.now() / 1000)) {
+      fail('Email verification failed. Request a new code and try again.'); return true;
+    }
+    const session: Session = {
+      userId: claims.sub,
+      login: tx.method === 'email' ? email!.split('@')[0] : String(claims.nickname || claims.name || claims.sub),
+      avatar: typeof claims.picture === 'string' ? claims.picture : '',
+      ...(email ? { email, emailVerified: true } : {}),
+    };
     githubTokens.delete(session.userId);
     redirect(res, tx.returnTo, [clearTx, cookie(req, SESSION_COOKIE, seal(session, cfg.key, SESSION_TTL), SESSION_TTL)]);
     return true;

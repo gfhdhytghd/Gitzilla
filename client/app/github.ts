@@ -2,7 +2,7 @@
 import { toast } from "./app";
 import { h } from "./util";
 
-export interface GhUser { userId: string; login: string; avatar: string }
+export interface GhUser { userId: string; login: string; avatar: string; email?: string; emailVerified?: boolean }
 interface GhRepo {
   name: string; full_name: string; private: boolean; language: string | null; stars: number; pushed_at: string;
   // PvP eligibility (auth/): your own non-fork repo, or a public repo you maintain/administer
@@ -64,6 +64,7 @@ function ago(iso: string): string {
 
 const here = () => encodeURIComponent(location.pathname + location.search);
 export const login = (sw = false) => location.assign(`/auth/login?${sw ? "switch=1&" : ""}returnTo=${here()}`);
+export const emailLogin = () => location.assign(`/auth/login?method=email&returnTo=${here()}`);
 export const logout = () => location.assign(`/auth/logout?returnTo=${encodeURIComponent(location.pathname)}`);
 
 /** Shows ?auth_error=… once as a toast and strips it from the URL. */
@@ -71,7 +72,7 @@ export function consumeAuthError() {
   const p = new URLSearchParams(location.search);
   const err = p.get("auth_error");
   if (!err) return;
-  toast(`github sign-in failed: ${err}`, "err", 6000);
+  toast(`Sign-in failed: ${err}`, "err", 6000);
   p.delete("auth_error");
   const q = p.toString();
   history.replaceState(null, "", location.pathname + (q ? `?${q}` : ""));
@@ -100,7 +101,7 @@ export function createGithubPicker(onPick: (fullName: string) => void, opts: { k
   };
   fetchMe().then((me) => {
     enabled = me.enabled;
-    user = me.user;
+    user = me.user?.userId.startsWith("email|") ? null : me.user;
     show();
   });
 

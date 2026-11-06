@@ -91,7 +91,7 @@ async function enterRoom(room: string) {
   // Players sign in and pick a handle; the classroom teacher console only signs in; big screens and the projector pass.
   const gate: GateKind | null = role === "player" ? "player" : mode === "edu" && params.get("view") !== "projector" ? "teacher" : null;
   const pass = (then: () => void) => {
-    if (!needsGate(me, gate)) return then();
+    if (!needsGate(me, gate, mode)) return then();
     const view = createJoinGate({ room, kind: gate!, mode, me, done(name) {
       if (gate === "player") store.set("kaiju.name", name);
       view.destroy();
@@ -330,7 +330,7 @@ function startRoom(room: string, role: Role, name: string) {
       switch (m.t) {
         case "classroom":
           if (app.lobby) app.lobby.classroom = m.state;
-          app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {};
+          app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {}; app.classroomEmails = m.emails ?? {};
           break;
         case "welcome":
           // The room mode is known only after welcome; release the transient student slot before spectator entry.

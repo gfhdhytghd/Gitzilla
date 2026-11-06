@@ -1552,7 +1552,11 @@ describe('cooperative staged classroom protocol', () => {
     rejoined.send({t:'classroomControl',action:'attack'});await until(()=>latest(rejoined)?.state.phase==='raid');
     expect(latest(rejoined)!.state.rounds[0].attacks).toHaveLength(30);
     const denied=await fetch(`${test.base}/api/room/${test.room}/classroom.csv`,{headers:{'X-Room-Token':students[1].welcome.token}});expect(denied.status).toBe(403);
-    const exported=await fetch(`${test.base}/api/room/${test.room}/classroom.csv`,{headers:{'X-Room-Token':teacher.welcome.token}});expect(exported.status).toBe(200);expect((await exported.text()).split('\r\n')).toHaveLength(32);
+    const exported=await fetch(`${test.base}/api/room/${test.room}/classroom.csv`,{headers:{'X-Room-Token':teacher.welcome.token}});expect(exported.status).toBe(200);
+    const exportLines = (await exported.text()).split('\r\n');
+    expect(exportLines).toHaveLength(62); // Header, 30 attacks, 30 student summaries, trailing newline.
+    expect(exportLines.filter(line => line.includes(',"attack",'))).toHaveLength(30);
+    expect(exportLines.filter(line => line.includes(',"student_summary",'))).toHaveLength(30);
   });
 
   it('restores the reserved teacher and paused lesson without private evidence', async () => {
@@ -2026,7 +2030,20 @@ describe('host kick and transfer authority', () => {
     const before = await (await fetch(exportUrl, { headers })).text();
     await kick(teacher, a); await until(() => latest()?.state.rows.length === 1);
     expect(latest().reports[a.welcome.you]).toBeUndefined(); expect(latest().state.rows[0].id).toBe(b.welcome.you); expect(latest().state.rounds).toEqual(rounds);
-    expect(await (await fetch(exportUrl, { headers })).text()).toBe(before); expect(teacher.lobby()?.ownerId).toBe(teacher.welcome.you);
+    const after = await (await fetch(exportUrl, { headers })).text();
+    expect(after.split('\r\n').filter(line => line.includes(',"attack",'))).toEqual(before.split('\r\n').filter(line => line.includes(',"attack",')));
+    if (phase === 'setup' || phase === 'coding') {
+      // No attack recorded Alice's work: only her current-roster summary disappears.
+      const removedSummary = before.split('\r\n').find(line => line.includes(`"${a.welcome.you}"`) && line.includes(',"student_summary",'));
+      expect(removedSummary).toBeDefined();
+      expect(removedSummary).toContain(',"student_summary","0","0","100",');
+      expect(after).toBe(before.split('\r\n').filter(line => line !== removedSummary).join('\r\n'));
+    } else {
+      // Recorded attacks preserve both the departed student's scores and summary.
+      expect(after).toBe(before);
+      expect(after.split('\r\n').find(line => line.includes(`"${a.welcome.you}"`) && line.includes(',"student_summary",'))).toContain(',"student_summary","100","100","100",');
+    }
+    expect(teacher.lobby()?.ownerId).toBe(teacher.welcome.you);
     if (phase === 'coding') { teacher.send({ t: 'classroomControl', action: 'attack' }); await until(() => latest()?.state.phase === 'raid'); expect(latest().state.rounds[0].attacks.map(a => a.id)).toEqual([b.welcome.you]); }
     await denied(f, a.welcome.token);
   });
@@ -2257,10 +2274,92 @@ describe('GitHub sign-in gate (requireGithub)', () => {
     expect(teacher.welcome.t === 'welcome' && teacher.welcome.lobby.ownerId).toBe(teacher.welcome.t === 'welcome' && teacher.welcome.you);
     teacher.socket.close(); await once(teacher.socket, 'close');
     expect(await refused(f, 'screen', teacher.welcome.t === 'welcome' ? teacher.welcome.token : undefined)).toMatch(/run this classroom/);
-    expect(await refused(f, 'player')).toMatch(/Sign in with GitHub to play/);
+    expect(await refused(f, 'player')).toMatch(/Sign in with email or GitHub/);
   });
   it('stays anonymous-friendly when the gate is off', async () => {
     const f = await setup(999, signedIn);
     expect((await f.connect('player')).welcome.t).toBe('welcome');
+  });
+});
+
+
+describe('classroom Canvas email transport', () => {
+  it('restricts email updates to the sender and grade downloads to the teacher', async () => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const f = await setup(999, {}, { allowLegacyEdu: false }, undefined, 'edu');
+    const teacher = await f.connect('screen'), alice = await f.connect('player', undefined, 'Alice'), bob = await f.connect('player', undefined, 'Bob');
+    const latest = (client: typeof teacher) => client.messages.filter(m => m.t === 'classroom').at(-1);
+    teacher.send({ t: 'classroomPlan', plan: defaultClassroomPlan() });
+    await until(() => latest(alice));
+    alice.send({ t: 'classroomEmail', email: ' alice@psu.edu ' });
+    await until(() => latest(alice)?.emails?.[alice.welcome.you] === 'alice@psu.edu');
+    await until(() => latest(teacher)?.emails?.[alice.welcome.you] === 'alice@psu.edu');
+    bob.send({ t: 'classroomEmail', email: 'bob@psu.edu' });
+    await until(() => latest(bob)?.emails?.[bob.welcome.you] === 'bob@psu.edu');
+    expect(latest(bob)?.emails).toEqual({ [bob.welcome.you]: 'bob@psu.edu' });
+    expect(JSON.stringify(alice.lobby())).not.toContain('@psu.edu');
+    expect(JSON.stringify(latest(teacher)?.state)).not.toContain('@psu.edu');
+    for (const format of ['csv', 'md']) {
+      const path = `${f.base}/api/room/${f.room}/grades.${format}`;
+      expect((await fetch(path)).status).toBe(401);
+      expect((await fetch(path, { headers: { 'X-Room-Token': bob.welcome.token } })).status).toBe(403);
+      const response = await fetch(path, { headers: { 'X-Room-Token': teacher.welcome.token } });
+      expect(response.status).toBe(200);
+      const text = await response.text(); expect(text).toContain('alice@psu.edu'); expect(text).toContain('bob@psu.edu');
+    }
+    teacher.send({ t: 'classroomEmail', email: 'teacher@psu.edu' });
+    await until(() => teacher.messages.some(m => m.t === 'error' && m.message.includes('Join as a student')));
+  });
+});
+
+
+describe('verified email classroom access', () => {
+  it('lets email users teach and submit in classrooms, autofills private grade emails, and rejects email changes', async () => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const getSession = async (req: http.IncomingMessage) => req.headers.cookie ? {
+      userId: `email|${req.headers.cookie}`, login: req.headers.cookie, email: `${req.headers.cookie}@psu.edu`, emailVerified: true,
+    } : null;
+    const f = await setup(999, { getSession }, { requireGithub: true }, undefined, 'edu');
+    const teacher = await f.connect('screen', undefined, 'Teacher', 'teacher');
+    const alice = await f.connect('player', undefined, 'Alice', 'alice');
+    expect(teacher.lobby()?.ownerId).toBe(teacher.welcome.you);
+    teacher.send({ t: 'classroomPlan', plan: defaultClassroomPlan() });
+    const latest = () => alice.messages.filter(m => m.t === 'classroom').at(-1);
+    await until(() => latest()?.emails?.[alice.welcome.you] === 'alice@psu.edu');
+    expect(JSON.stringify(alice.lobby())).not.toContain('alice@psu.edu');
+    alice.send({ t: 'classroomEmail', email: 'someone-else@psu.edu' });
+    await until(() => alice.messages.some(m => m.t === 'error' && m.message.includes('verified address')));
+    const response = await fetch(`${f.base}/api/room/${f.room}/grades.csv`, { headers: { 'X-Room-Token': teacher.welcome.token } });
+    expect(await response.text()).toContain('alice@psu.edu');
+    const battle = await setup(999, { getSession }, { requireGithub: true });
+    const ws = new WebSocket(battle.wsUrl, { headers: { Cookie: 'alice' } }), messages: ServerMsg[] = [];
+    ws.on('message', raw => messages.push(JSON.parse(raw.toString()))); await once(ws, 'open');
+    ws.send(JSON.stringify({ t: 'hello', room: battle.room, role: 'player', name: 'Alice' }));
+    await until(() => messages.some(m => m.t === 'error' && m.message.includes('Sign in with GitHub')));
+    expect(messages.some(m => m.t === 'welcome')).toBe(false); ws.close();
+  });
+});
+
+describe('classroom AI review integration', () => {
+  it('routes editor source through review, isolates teacher concerns, and blends the teacher override', async () => {
+    const { defaultClassroomPlan } = await import('../shared/classroom-defaults');
+    const reviewer = vi.fn(async () => ({ status: 'complete' as const, items: [{ id: 0, verdict: 'partial' as const, reason: 'main.py needs a docstring' }], score: 99, summary: 'Add a docstring.', concerns: ['TEACHER_ONLY_REVIEW'] }));
+    const f = await setup(999, { analyzeFiles, reviewClassroomSubmission: reviewer }, {}, undefined, 'edu');
+    const teacher = await f.connect('screen'), student = await f.connect(), other = await f.connect(), spectator = await f.connect('screen');
+    const latest = (client: typeof student) => client.messages.filter(m => m.t === 'classroom').at(-1);
+    const plan = defaultClassroomPlan(); plan.grading = { automaticWeight: 50, checklist: ['Functions have docstrings'] };
+    plan.steps[0].checksWeight = 100; plan.steps[0].checks = [{ id: 'f', label: 'File', kind: 'file', path: 'main.py' }]; delete plan.steps[0].brief;
+    teacher.send({ t: 'classroomPlan', plan }); await until(() => latest(student));
+    teacher.send({ t: 'classroomControl', action: 'start' }); await until(() => latest(student)?.state.phase === 'coding');
+    student.send({ t: 'classroomSubmitCode', files: [{ path: 'main.py', content: 'answer = 42' }] });
+    const own = await until(() => latest(student)?.reports[student.welcome.you]);
+    expect(own).toMatchObject({ automaticScore: 100, score: 75, reviewPending: false });
+    expect(own.aiReview).not.toHaveProperty('concerns');
+    expect(reviewer).toHaveBeenCalledOnce(); expect(reviewer.mock.calls[0]).toMatchObject([{ files: [{ path: 'main.py', text: 'answer = 42' }], checks: [{ passed: true }] }]);
+    await until(() => latest(teacher)?.reports[student.welcome.you]);
+    expect(latest(teacher)?.reports[student.welcome.you].aiReview?.concerns).toEqual(['TEACHER_ONLY_REVIEW']);
+    expect(JSON.stringify(latest(other))).not.toContain('TEACHER_ONLY_REVIEW'); expect(latest(spectator)?.reports).toEqual({});
+    teacher.send({ t: 'classroomReview', playerId: student.welcome.you, score: 20, note: 'Teacher review replaces the AI half.' });
+    await until(() => latest(student)?.reports[student.welcome.you]?.score === 60);
   });
 });

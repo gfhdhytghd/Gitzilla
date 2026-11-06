@@ -1,3 +1,7 @@
+import { createCourseUpload, mergeCourseDraft } from './course-upload';
+import { normalizeClassroomEmail } from '../../shared/classroom-email';
+import { normalizeGuideUrl } from '../../shared/classroom-guide';
+import { defaultReviewChecklist, normalizeReviewSettings } from '../../shared/classroom-review';
 import { placeSettingsButton } from './settings';
 import { localizeClassroomPlan } from '../../shared/classroom-localize';
 import { locale, onLocaleChange, t, formatNumber } from '../i18n';
@@ -6,6 +10,7 @@ import { defaultClassroomPlan } from '../../shared/classroom-defaults';
 import { pythonClassroomPresets, getPythonClassroomPresets, pythonClassroomPlan, pythonStarter, pythonTeacherGuide } from '../../shared/classroom-presets';
 import { type AppCtx, type Screen, isOwner, joinUrl, toast } from './app';
 import { h, store } from './util';
+import { emailLogin, fetchMe } from './github';
 import { createGithubPicker } from './github';
 import { createRubricEditor } from '../edu/rubric';
 import { createBackdrop } from './backdrop';
@@ -15,6 +20,7 @@ import { createInAppPanel } from '../edu/inapp-panel';
 import { createCodeEditor } from '../edu/code-editor';
 import { createTaskCard, richText } from '../edu/task-card';
 import { createClassroomKicked } from '../edu/classroom-kicked';
+import { createClassroomGuideEditor, classroomGuideText } from '../edu/classroom-guide-editor';
 import { buildLessonDebrief, buildRoundDebrief, type Debrief, type LessonDebrief } from '../edu/debrief';
 import { createDebriefCard, debriefMarkdown } from '../edu/debrief-view';
 import { alignDoneWhen, doneWhenFor } from '../edu/task-brief';
@@ -33,15 +39,32 @@ const PLAIN_ADVICE: Record<string, string> = { 'The measured criteria look stron
 const field = (label: string, input: HTMLElement) => h('label.cr-field', null, h('span', null, label), input);
 const button = (label: string, test: string, run: () => void, cls = '') => h(`button.btn${cls ? '.' + cls : ''}`, { type: 'button', 'data-testid': test, onclick: run }, label);
 
-function checkText(step: ClassroomStep) { return step.checks.map(c => `${c.kind}: ${c.path}${c.kind === 'contains' ? ` :: ${c.text}` : ''}`).join('\n'); }
-function parseChecks(src: string): ClassroomCheck[] {
+/** The line editor ⇄ checks. A doctest check's text is doctest source (">>> expr\nexpected"); the editor shows one
+ *  "doctest: path :: expr => expected" line per example, with a line break in the expected output written as `\n`. */
+function checkLines(c: ClassroomCheck): string[] {
+  if (c.kind !== 'doctest') return [`${c.kind}: ${c.path}${c.kind === 'contains' ? ` :: ${c.text}` : ''}`];
+  const examples = (c.text ?? '').split(/^(?=>>> )/m).filter(s => s.trim());
+  return examples.length ? examples.map(example => {
+    const [expr, ...out] = example.replace(/^>>> /, '').trimEnd().split('\n');
+    return `doctest: ${c.path} :: ${expr}${out.length ? ` => ${out.join('\\n')}` : ''}`;
+  }) : [`doctest: ${c.path}`];
+}
+export function checkText(step: Pick<ClassroomStep, 'checks'>) { return step.checks.flatMap(checkLines).join('\n'); }
+export function parseChecks(src: string): ClassroomCheck[] {
   return src.split('\n').filter(s => s.trim()).map((line, i) => {
-    const match = line.match(/^\s*(file|contains|ci)\s*:\s*(.+?)\s*$/);
-    if (!match) throw new Error('Use file: path, contains: path :: text, or ci: check name');
+    const match = line.match(/^\s*(file|contains|ci|doctest)\s*:\s*(.+?)\s*$/);
+    if (!match) throw new Error('Use file: path, contains: path :: text, ci: check name, or doctest: path :: example => output');
     const [, kind, rest] = match;
     const [path, ...words] = rest.split(' :: ');
-    if (kind === 'contains' && !words.join(' :: ').trim()) throw new Error('A contains check needs :: followed by literal text');
-    return { id: `check-${i}`, kind: kind as ClassroomCheck['kind'], path: path.trim(), label: `${kind === 'ci' ? 'GitHub check' : kind === 'file' ? 'File exists' : 'Literal code evidence'}: ${path.trim()}`, ...(kind === 'contains' ? { text: words.join(' :: ').trim() } : {}) };
+    const text = words.join(' :: ').trim();
+    if (kind === 'contains' && !text) throw new Error('A contains check needs :: followed by literal text');
+    const base = { id: `check-${i}`, kind: kind as ClassroomCheck['kind'], path: path.trim() };
+    if (kind === 'doctest') {
+      if (!text) return { ...base, label: `Doctest: ${base.path} (docstring examples)` };
+      const [expr, ...out] = text.split(/ => ?/);
+      return { ...base, label: `Doctest: ${base.path} :: ${text}`, text: `>>> ${expr.trim()}\n${out.join(' => ').trim().replace(/\\n/g, '\n')}` };
+    }
+    return { ...base, label: `${kind === 'ci' ? 'GitHub check' : kind === 'file' ? 'File exists' : 'Literal code evidence'}: ${base.path}`, ...(kind === 'contains' ? { text } : {}) };
   });
 }
 
@@ -93,7 +116,11 @@ export function createClassroom(app: AppCtx): Screen {
   // structured brief (StepBrief) when the step has one; the free-text instructions are the fallback
   const card = createTaskCard();
   const withBrief = (st: ClassroomStep | undefined): st is ClassroomStep & { brief: StepBrief } => !!st?.brief?.goal;
-  const task = h('section.cr-task', null, stepRail, taskTitle, taskText, moreText, card.el, phoneNote, progress, progressBar, notice, teacherEntry);
+  const guideLink = h('a.btn', { target: '_blank', rel: 'noopener noreferrer', 'data-testid': 'classroom-guide-link' }, 'Open class guide ↗');
+  const guideResource = h('div.cr-guide-resource', { hidden: true }, guideLink, h('small', null, 'Your teacher’s instructions or course materials. Opens in a new tab.'));
+  const guideNotes = h('details.cr-guide-notes', { hidden: true, 'data-testid': 'classroom-guide-notes' });
+  let guideNotesSource: unknown;
+  const task = h('section.cr-task', null, stepRail, taskTitle, guideResource, guideNotes, taskText, moreText, card.el, phoneNote, progress, progressBar, notice, teacherEntry);
   // students: the step, its title and the timer stay pinned while they scroll down to the editor
   const headStep = h('b.cr-step-head-n'), headTitle = h('span.cr-step-head-title'), headClock = h('strong.cr-step-head-clock', { 'data-testid': 'classroom-step-clock' });
   const stepHead = h('div.cr-step-head', { 'data-testid': 'classroom-step-head' }, headStep, headTitle, headClock);
@@ -163,7 +190,7 @@ export function createClassroom(app: AppCtx): Screen {
     h('div.cr-boss-stage', null, volley, bossArt), bossMessage, attackTotal, attackNames);
   const review = h('section.cr-feedback', { 'data-testid': 'classroom-feedback' });
   const editor = h('section.cr-editor', { 'data-testid': 'classroom-plan-editor' });
-  const hostBoard = h('div.cr-host-board', null, roster, h('div.cr-host-main', null, boss, review));
+  const hostBoard = h('div.cr-host-board', null, roster, h('div.cr-host-main', null, review, boss));
 
   const repo = h('input', { 'data-testid': 'classroom-repo', placeholder: 'you/your-project', maxlength: 300, autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
   repo.value = store.get('kaiju.lastRepo') ?? '';
@@ -184,7 +211,24 @@ export function createClassroom(app: AppCtx): Screen {
     h('p.cr-flow', null, 'Push to GitHub → Submit → read your feedback → improve and submit again.'),
     h('p.cr-evidence-note', null, 'Each score is tied to an exact commit. Static evidence checks do not execute your code. GitHub checks report the CI result for that commit; your teacher can review functionality.'));
   const githubAlt = h('details.cr-github-alt', { 'data-testid': 'classroom-github-alt' }, h('summary', null, 'or submit a GitHub repo instead'));
-  const student = h('section.cr-student-work', null, studentTitle, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
+  const email = h('input', { type: 'email', autocomplete: 'email', maxlength: 254, placeholder: 'you@psu.edu', 'data-testid': 'classroom-email' }) as HTMLInputElement;
+  email.value = app.classroomEmails?.[app.you ?? ''] ?? '';
+  const emailStatus = h('p', { role: 'status', 'data-testid': 'classroom-email-status' });
+  const emailCard = h('section.cr-email', null, h('h3', null, 'Canvas grade matching'),
+    h('p', null, 'Enter the email shown in your Canvas account. Your teacher or TA can export it with your scores and enter grades in Canvas by hand. Use email code sign-in to verify the address. This does not connect to Canvas.'),
+    button('Sign in with email code', 'classroom-email-login', emailLogin),
+    field('Canvas email', email), button('Save email', 'classroom-email-save', () => {
+      try { app.conn.send({ t: 'classroomEmail', email: normalizeClassroomEmail(email.value) }); setText(emailStatus, t('Saving email…')); }
+      catch (error) { setText(emailStatus, error instanceof Error ? error.message : 'Enter a valid Canvas email address'); email.focus(); }
+    }), emailStatus,
+    h('small', null, 'Your email is included in teacher-only CSV and Markdown exports. It is hidden from classmates and the projector.'));
+  void fetchMe().then(me => {
+    if (me.user?.emailVerified && me.user.email) {
+      email.value = me.user.email; email.readOnly = true;
+      setText(emailStatus, t('Email verified. Sign in with another email to change it.'));
+    }
+  });
+  const student = h('section.cr-student-work', null, emailCard, studentTitle, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
   const studentBoard = h('div.cr-student-board', null, student, review);
   // Projector only: the lobby's animated pixel backdrop. Student phones keep the CSS-only grid (no render loop).
   const backdrop = app.role === 'screen' ? createBackdrop({ dim: 0.55, themeCycle: false }) : null;
@@ -270,10 +314,45 @@ export function createClassroom(app: AppCtx): Screen {
         button('Download the student starter file', 'classroom-preset-download', starterDownload)),
       h('small', null, 'Customize first only replaces the draft below; students get it when you publish. Put a downloaded .py file in the python/ folder shown. Every step can be edited.'),
       h('details', null, h('summary', null, 'Teacher notes: preparing and reviewing'), guide));
+    const courseUpload = createCourseUpload({ room: app.room!, token: app.token, onApply: plan => {
+      if (!validateGuide() || !syncReview()) {
+        toast('Finish loading the class instructions and fix the lesson settings before applying the course draft.', 'err');
+        return;
+      }
+      draft = mergeCourseDraft(draft, plan); rawChecks.clear(); buildPlanEditor();
+      toast('Generated draft applied. Review it, then Publish lesson to share it.', 'ok');
+    } });
+    disposables.push(() => courseUpload.dispose());
     const lessonTitle = h('input', { value: draft.title, maxlength: 120, 'data-testid': 'lesson-title' }) as HTMLInputElement;
     lessonTitle.oninput = () => { draft.title = lessonTitle.value; };
     const target = h('input', { value: draft.bossName, maxlength: 80, 'data-testid': 'lesson-boss-name' }) as HTMLInputElement;
     target.oninput = () => { draft.bossName = target.value; };
+    const guideEditor = createClassroomGuideEditor(draft);
+    disposables.push(() => guideEditor.dispose());
+    const guideField = guideEditor.el;
+    const validateGuide = guideEditor.validate;
+    const reviewMode = h('select', { 'data-testid': 'lesson-review-mode' },
+      h('option', { value: 'legacy' }, 'Automatic rubric and checks'),
+      h('option', { value: 'review' }, 'Automatic checks + AI / teacher review')) as HTMLSelectElement;
+    reviewMode.value = draft.grading ? 'review' : 'legacy';
+    const autoWeight = h('input', { type: 'number', min: 0, max: 100, value: draft.grading?.automaticWeight ?? 50, 'data-testid': 'lesson-auto-weight' }) as HTMLInputElement;
+    const checklist = h('textarea', { rows: 10, 'data-testid': 'lesson-review-checklist' }, (draft.grading?.checklist ?? defaultReviewChecklist).join('\n')) as HTMLTextAreaElement;
+    const reviewError = h('p.cr-form-error', { role: 'alert', 'data-testid': 'lesson-review-error' });
+    const reviewFields = h('div', null,
+      h('p', null, 'Default: automatic evidence counts 50%, AI or teacher review counts 50%. The automatic component uses each step’s checks and rubric settings. Teacher review replaces the AI component, not the whole grade.'),
+      field('Automatic component (%) · the rest is review', autoWeight), field('Review checklist · one item per line', checklist),
+      h('p', null, 'Enabling AI review sends in-app code and public, uncredentialed GitHub code to the configured Gemini / DeepSeek provider. Private or credentialed GitHub work needs teacher review. If AI is unavailable, scores stay provisional until reviewed.'), reviewError);
+    const syncReview = () => {
+      reviewFields.hidden = reviewMode.value !== 'review';
+      if (reviewFields.hidden) { delete draft.grading; reviewError.textContent = ''; return true; }
+      try {
+        if (!autoWeight.value.trim()) throw new Error('Enter an automatic weight from 0 to 100.');
+        draft.grading = normalizeReviewSettings({ automaticWeight: Number(autoWeight.value), checklist: checklist.value.split('\n').filter(s => s.trim()) });
+        reviewError.textContent = ''; return true;
+      } catch (error) { reviewError.textContent = (error as Error).message; return false; }
+    };
+    reviewMode.onchange = syncReview; autoWeight.oninput = syncReview; checklist.oninput = syncReview; syncReview();
+    const reviewSettings = h('section.cr-measurements', { 'data-testid': 'lesson-review-settings' }, h('h3', null, 'Grading and review'), field('Grading mode', reviewMode), reviewFields);
     const steps = h('div.cr-step-editors');
     const stepInputs: { step: ClassroomStep; name: HTMLInputElement; instructions: HTMLTextAreaElement; summary(): void }[] = [];
     for (const [index, step] of draft.steps.entries()) {
@@ -283,7 +362,7 @@ export function createClassroom(app: AppCtx): Screen {
       instructions.oninput = () => { step.instructions = instructions.value; delete step.brief; };
       const duration = h('input', { type: 'number', min: 0, max: 120, value: step.durationSec / 60, 'data-testid': `step-minutes-${index}` }) as HTMLInputElement;
       duration.oninput = () => { step.durationSec = Math.round(Number(duration.value) * 60); };
-      const checks = h('textarea', { rows: 3, spellcheck: 'false', placeholder: 'file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests', 'data-testid': `step-checks-${index}` }, rawChecks.get(step.id) ?? checkText(step)) as HTMLTextAreaElement;
+      const checks = h('textarea', { rows: 3, spellcheck: 'false', placeholder: 'file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests\ndoctest: src/main.py :: add(2, 3) => 5', 'data-testid': `step-checks-${index}` }, rawChecks.get(step.id) ?? checkText(step)) as HTMLTextAreaElement;
       const weight = h('input', { type: 'number', min: 0, max: 100, value: step.checksWeight, 'data-testid': `step-check-weight-${index}` }) as HTMLInputElement;
       weight.oninput = () => { step.checksWeight = Number(weight.value); };
       const checksWarning = h('small.cr-form-error');
@@ -312,14 +391,14 @@ export function createClassroom(app: AppCtx): Screen {
         h('div.cr-editor-numbers', null, field('Minutes (0: you decide when to stop)', duration), field('How much the automatic checks count (%) · the rest is the rubric', weight)),
         field('Automatic checks (optional), one per line', checks),
         h('div.cr-check-adders', null, h('small', null, 'Add a check:'),
-          ...([['file', 'File exists'], ['contains', 'File contains text'], ['ci', 'GitHub CI check']] as const).map(([kind, label]) =>
+          ...([['file', 'File exists'], ['contains', 'File contains text'], ['ci', 'GitHub CI check'], ['doctest', 'Doctest (runs the code)']] as const).map(([kind, label]) =>
             h('button.btn.btn-ghost', { type: 'button', 'data-testid': `step-add-check-${kind}-${index}`, onclick: () => {
               const main = step.starter?.find(f => /\.py$/.test(f.path))?.path ?? 'README.md';
-              const line = kind === 'file' ? `file: ${main}` : kind === 'contains' ? `contains: ${main} :: print(` : 'ci: unit-tests';
+              const line = kind === 'file' ? `file: ${main}` : kind === 'contains' ? `contains: ${main} :: print(` : kind === 'doctest' ? `doctest: ${main.endsWith('.py') ? main : 'main.py'} :: print_hello() => Hello` : 'ci: unit-tests';
               checks.value = checks.value.trim() ? `${checks.value.trimEnd()}\n${line}` : line; checks.dispatchEvent(new Event('input')); checks.focus();
             } }, `+ ${label}`))),
         checksWarning,
-        h('small.cr-evidence-note', null, 'Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed). You can always override a score with ✓ / ✗ during class.'),
+        h('small.cr-evidence-note', null, 'Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed) · “doctest: main.py :: add(2, 3) => 5” (runs the file in a sandbox and checks the example) · “doctest: main.py” (runs the examples in its docstrings). You can always override a score with ✓ / ✗ during class.'),
         rubricDetails, h('div.cr-step-buttons', null, button('Move up', `step-up-${index}`, () => move(-1)), button('Move down', `step-down-${index}`, () => move(1)), button('Remove', `step-remove-${index}`, () => { if (draft.steps.length > 1 && confirm(t(`Remove step ${index + 1} “${step.title}” and its instructions?`))) { draft.steps.splice(index, 1); buildPlanEditor(); } }))));
     }
     refreshEditorLocale = () => {
@@ -331,9 +410,10 @@ export function createClassroom(app: AppCtx): Screen {
     };
     editor.replaceChildren(h('div.cr-editor-intro', null, h('h2', null, 'Build the lesson'), h('p', null, 'Give the class a sequence of code challenges. Each task ends with one shared attack.'),
         button('👁 Preview as a student', 'classroom-preview', () => openPreview())),
-      library, h('div.cr-editor-numbers', null, field('Lesson title', lessonTitle), field('Name of the class monster', target)), steps,
+      library, courseUpload.el, h('div.cr-editor-numbers', null, field('Lesson title', lessonTitle), field('Name of the class monster', target)), guideField, reviewSettings, steps,
       h('div.cr-plan-buttons', null, button('+ Add step', 'classroom-add-step', () => { if (draft.steps.length < 12) { const step = localizeClassroomPlan(defaultClassroomPlan(), locale()).steps[0]; step.id = `step-${crypto.randomUUID()}`; step.title = t('New challenge'); draft.steps.push(step); buildPlanEditor(); } }),
         button('Publish lesson', 'classroom-save-plan', () => {
+          if (!validateGuide() || !syncReview()) return;
           if (editor.querySelector('.cr-form-error:not(:empty)')) return toast('Fix the evidence-check format before publishing.', 'err');
           app.conn.send({ t: 'classroomPlan', plan: structuredClone(draft) });
         }, 'btn-primary')));
@@ -409,30 +489,47 @@ export function createClassroom(app: AppCtx): Screen {
         ? h('p.cr-version', null, t(`in-app code · ${report.commit.replace(/^inapp:/, '')}`))
         : h('p.cr-version', null, h('a', { href: `https://github.com/${report.repo}/commit/${report.commit}`, target: '_blank', rel: 'noopener noreferrer' }, `${report.repo} @ ${report.commit.slice(0, 8)}`)),
       codeViewer(report),
-      !teacher() && !report.teacherReview && report.checks.length && !cardSaysIt
+      !teacher() && !report.teacherReview && report.checks.length && !cardSaysIt && !reportStep?.checks.some(c => c.kind === 'doctest' || c.kind === 'ci')
         ? h('p.cr-unreviewed', { 'data-testid': 'classroom-unreviewed-note' }, 'These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.')
         : document.createTextNode(''),
       report.improvement ? h('p', null, report.improvement > 0 ? `↑ +${int(report.improvement)} from your last submission round` : `${int(report.improvement)} from your last submission round`) : document.createTextNode(''),
       report.checks.length ? h('div.cr-checks', { 'data-testid': 'classroom-feedback-checks' }, ...report.checks.map((c, i) => h(`div.${c.passed ? 'passed' : 'missing'}`, null,
         h('b', null, `${c.passed ? '✓' : '✗'} `, ...richText(plainCheck(i))),
-        h('small', null, c.passed ? 'Found in your files' : 'Not found yet: add it and submit again')))) : document.createTextNode(''),
+        h('small', null, reportStep?.checks[i]?.kind === 'doctest' ? (c.passed ? 'Doctest examples passed' : 'Doctest failed: see the execution details below')
+          : reportStep?.checks[i]?.kind === 'ci' ? (c.passed ? 'GitHub check passed' : 'GitHub check has not passed')
+          : c.passed ? 'Found in your files' : 'Not found yet: add it and submit again')))) : document.createTextNode(''),
       localAdvice.length ? h('h3', null, 'What to work on next') : document.createTextNode(''),
       localAdvice.length ? h('ul.cr-advice', null, ...localAdvice.map(a => h('li', null, a))) : document.createTextNode(''),
       !localAdvice.length && report.checks.some(c => !c.passed) ? h('p', null, t('Fix the missing checks above and submit again.')) : document.createTextNode(''),
       h('details.cr-measurements', null, h('summary', null, 'See the measured rubric evidence'), ...rows, ...rawChecks),
       report.teacherReview ? h('p.cr-teacher-note', null, `Teacher review: ${report.teacherReview.note}`) : document.createTextNode(''));
+    if (report.automaticScore !== undefined) {
+      const ai = report.aiReview;
+      const settings = state?.plan.grading;
+      const reviewScore = report.teacherReview?.score ?? ai?.score;
+      review.append(h('section.cr-measurements', { 'data-testid': 'classroom-ai-review' },
+        h('h3', null, 'Score breakdown'),
+        h('p', null, `Automatic: ${report.automaticScore}/100 (${settings?.automaticWeight ?? 50}%). Review: ${reviewScore === undefined ? 'pending' : `${reviewScore}/100`} (${100 - (settings?.automaticWeight ?? 50)}%).${report.teacherReview ? ' Teacher review takes priority.' : ''}`),
+        report.reviewPending ? h('p', { role: 'status', 'data-testid': 'classroom-review-pending' }, 'Review pending · this is a provisional automatic score, not a final grade.') : document.createTextNode(''),
+        ai ? h('p', null, ai.summary) : document.createTextNode(''),
+        ...(ai?.items ?? []).map(item => h('div.cr-criterion', null, h('b', null, `${item.verdict} · ${settings?.checklist[item.id] ?? `Item ${item.id + 1}`}`), h('p', null, item.reason))),
+        ...(teacher() ? (ai?.concerns ?? []).map(concern => h('p.cr-teacher-note', null, `Teacher only: ${concern}`)) : [])));
+    }
     if (teacher() && ['coding', 'paused'].includes(state?.phase ?? '')) {
-      const score = h('input', { type: 'number', value: report.score, min: 0, max: 100, 'aria-label': 'Reviewed score', 'data-testid': 'classroom-review-score' }) as HTMLInputElement;
+      const score = h('input', { type: 'number', value: report.teacherReview?.score ?? report.aiReview?.score ?? report.score, min: 0, max: 100, 'aria-label': 'Reviewed score', 'data-testid': 'classroom-review-score' }) as HTMLInputElement;
       const note = h('input', { placeholder: 'Explain the functional review', maxlength: 2000, 'aria-label': 'Review note', 'data-testid': 'classroom-review-note' }) as HTMLInputElement;
-      review.append(h('div.cr-teacher-review', null, h('h3', null, 'Teacher functionality review'), score, note, button('Record review', 'classroom-review-submit', () => app.conn.send({ t: 'classroomReview', playerId: id!, score: Number(score.value), note: note.value }))));
+      review.append(h('div.cr-teacher-review', null, h('h3', null, report.automaticScore === undefined ? 'Teacher functionality review' : 'Teacher review component (0–100)'), score, note,
+        ...(report.aiReview?.status === 'complete' && report.aiReview.score !== undefined ? [button('Accept AI review', 'classroom-review-accept-ai', () => app.conn.send({ t: 'classroomReview', playerId: id!, score: report.aiReview!.score!, note: `Accepted AI review: ${report.aiReview!.summary}`.slice(0, 2000) }))] : []),
+        button('Record review', 'classroom-review-submit', () => app.conn.send({ t: 'classroomReview', playerId: id!, score: Number(score.value), note: note.value }))));
     }
   };
 
-  const download = async (format: 'csv' | 'md') => {
-    const response = await fetch(`/api/room/${app.room}/classroom.${format}`, { headers: { 'X-Room-Token': app.token ?? '' } });
+  // server exports: classroom.csv|md (the report) and grades.csv (the teacher-only grade book)
+  const download = async (format: 'csv' | 'md', name: 'classroom' | 'grades' = 'classroom') => {
+    const response = await fetch(`/api/room/${app.room}/${name}.${format}`, { headers: { 'X-Room-Token': app.token ?? '' } });
     if (!response.ok) return toast('The classroom report could not be exported.', 'err');
     let blob = await response.blob();
-    if (format === 'md' && state?.rounds.length) {
+    if (name === 'classroom' && format === 'md' && state?.rounds.length) {
       // the teacher's private record: lesson debrief (every reviewed step), plus this round's when it's open
       const reports = app.classroomReports ?? {}, parts = [await blob.text()];
       const round = state.phase === 'feedback' ? currentDebrief(state) : null;
@@ -440,7 +537,7 @@ export function createClassroom(app: AppCtx): Screen {
       parts.push(debriefMarkdown('lesson', state.plan.title, buildLessonDebrief(state, reports), t));
       blob = new Blob([parts.join('\n\n')], { type: 'text/markdown;charset=utf-8' });
     }
-    const url = URL.createObjectURL(blob), link = h('a', { href: url, download: `classroom-${app.room}.${format}` }); link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const url = URL.createObjectURL(blob), link = h('a', { href: url, download: `${name}-${app.room}.${format}` }); link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const controlHint = (s: ClassroomState | undefined): string => {
     if (!s) return 'Pick a Python preset and press “Use this lesson”, or write your own steps below and press “Publish lesson”.';
@@ -494,6 +591,9 @@ export function createClassroom(app: AppCtx): Screen {
         h('small', null, 'Results for your records'),
         button('⇩ Export CSV', 'classroom-export-csv', () => { void download('csv'); }),
         button('⇩ Export Markdown', 'classroom-export-md', () => { void download('md'); }),
+        button('⇩ Export grades CSV', 'classroom-grades-csv', () => { void download('csv', 'grades'); }),
+        button('⇩ Export grades Markdown', 'classroom-grades-md', () => { void download('md', 'grades'); }),
+        h('small', null, 'Exports include saved Canvas emails. Check each student against your Canvas roster before entering grades by hand.'),
         end)));
     controls.replaceChildren(...items);
   };
@@ -554,17 +654,21 @@ export function createClassroom(app: AppCtx): Screen {
     consoleBar.hidden = !owner;
     el.classList.toggle('cr-pv', projectorView);
     el.classList.toggle('cr-class-facing', classFacing);
+    el.classList.toggle('cr-teacher-console', owner);
     el.classList.toggle('cr-safe-on', owner && projectorSafe);
     el.classList.toggle('cr-raid-takeover', screen && state?.phase === 'raid');
     el.classList.toggle('cr-projector', screen); el.classList.toggle('cr-student-view', !screen);
     teacherEntry.hidden = !(app.role === 'player' && isOwner(app) && !state);
     editor.hidden = !owner || (!!state && state.phase !== 'setup'); hostBoard.hidden = !screen; studentBoard.hidden = screen;
     // A node belongs to one board at a time; roles are fixed for this page.
-    if (screen && review.parentElement !== hostBoard.lastElementChild) hostBoard.lastElementChild!.append(review);
+    if (screen && review.parentElement !== hostBoard.lastElementChild) hostBoard.lastElementChild!.replaceChildren(review, boss);
     else if (!screen && review.parentElement !== studentBoard) studentBoard.append(review);
     setText(title, state?.plan.title ?? t('Build. Review. Improve.')); setText(phase, state ? (state.phase === 'coding' && state.plan.steps[state.stepIndex]?.starter?.length ? 'Coding time' : phaseNames[state.phase]) : owner ? 'Prepare the lesson' : 'Waiting for your teacher');
     const step = state?.plan.steps[state.stepIndex];
     // steps with starter files open the in-app editor; GitHub moves into an "or submit a GitHub repo" fold
+    const savedEmail = app.classroomEmails?.[app.you ?? ''];
+    if (savedEmail && !email.readOnly) setText(emailStatus, t(savedEmail === email.value.trim() ? 'Email saved for grade exports.' : 'Edit your email and save it again.'));
+    emailCard.hidden = screen;
     const inAppStep = !screen && !!step?.starter?.length;
     inApp.el.hidden = !inAppStep;
     setText(studentTitle, inAppStep ? 'Your code' : 'Your GitHub version');
@@ -592,11 +696,22 @@ export function createClassroom(app: AppCtx): Screen {
         actions: db.kind === 'round'
           ? [{ label: 'Retry this step', testid: 'classroom-retry', run: () => command('retry') }, { label: last ? 'Complete lesson' : 'Next step', testid: 'classroom-next', primary: true, run: () => command('next') }]
           : [...(lesson?.nextPresetId ? [{ label: 'Start the next lesson in a new classroom', testid: 'classroom-debrief-next-lesson', primary: true, run: () => { void openNextLesson(lesson.nextPresetId!); } }] : []),
-             { label: '⇩ Export Markdown', testid: 'classroom-debrief-export', run: () => { void download('md'); } }] });
+             { label: '⇩ Export Markdown', testid: 'classroom-debrief-export', run: () => { void download('md'); } },
+             { label: '⇩ Export grades CSV', testid: 'classroom-grades-export', run: () => { void download('csv', 'grades'); } }] });
     }
     // projector during a debrief: the debrief replaces the task card
     card.el.hidden = !brief || (classFacing && !!db);
     if (brief) card.update({ step: brief, mode: classFacing ? 'projector' : owner ? 'teacher' : 'student', room: app.room, report: screen ? null : app.classroomReports?.[app.you ?? ''] });
+    let guideUrl: string | undefined;
+    try { guideUrl = normalizeGuideUrl(state?.plan.guideUrl); } catch { /* Ignore invalid links in older saved rooms. */ }
+    guideResource.hidden = !guideUrl;
+    if (guideUrl) guideLink.setAttribute('href', guideUrl); else guideLink.removeAttribute('href');
+    if (guideNotesSource !== state?.plan.guideText) {
+      guideNotesSource = state?.plan.guideText;
+      const content = classroomGuideText(guideNotesSource);
+      guideNotes.hidden = content.hidden;
+      guideNotes.replaceChildren(h('summary', null, 'Class instructions'), content);
+    }
     setText(taskText, step?.instructions ?? t('Work in your own editor, push to GitHub, and bring each new version back here. Your class will attack the Boss together.'));
     // long instructions: clamped on the teacher console ("show all"), a short summary on class-facing screens
     const longText = (step?.instructions ?? '').split('\n').length > 6 || (step?.instructions ?? '').length > 420;
@@ -649,7 +764,7 @@ export function createClassroom(app: AppCtx): Screen {
         const reviewed = rep?.teacherReview;
         const statusText = !row.connected ? 'offline' : row.status === 'queued' ? 'checking code…' : row.status === 'error' ? 'stuck: needs to resubmit'
           : row.status === 'submitted' ? (reviewed ? 'reviewed by you' : owner ? 'submitted · needs your review' : 'submitted') : 'writing code';
-        const pick = button('', `classroom-row-${row.id}`, () => { if (selected !== row.id) revealed = null; selected = row.id; detailsSig = ''; renderReport(selected); });
+        const pick = button('', `classroom-row-${row.id}`, () => { if (selected !== row.id) revealed = null; selected = row.id; detailsSig = ''; renderReport(selected); review.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
         pick.className = 'cr-row-pick';
         pick.append(h(`span.cr-status-dot.st-${row.connected ? row.status : 'offline'}`, { 'aria-hidden': 'true' }), h('span.cr-person', null, h('b', null, row.name), h('small', null, statusText)));
         // until the teacher has looked, "checks 2/2" (what was measured), not a /100 that reads as "correct"

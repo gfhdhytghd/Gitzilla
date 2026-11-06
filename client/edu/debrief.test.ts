@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ClassroomReport, ClassroomRound, ClassroomState } from '../../shared/classroom';
 import { pythonClassroomPlan } from '../../shared/classroom-presets';
 import { ClassroomSession } from '../../server/classroom';
 import { analyzeFiles } from '../../analysis/in-app';
 import { buildLessonDebrief, buildRoundDebrief, DEBRIEF_TEXT } from './debrief';
+
 
 function classroom(count = 3, preset = '08-functions'): ClassroomState {
   return {
@@ -279,9 +280,26 @@ describe('lesson teacher debrief', () => {
     const state = classroom();
     const model = buildLessonDebrief(state, {});
     expect(model.headline).toBe(DEBRIEF_TEXT.emptyLesson); expect(model.steps).toEqual([]);
+    expect(model.grades.steps.every(step => !step.recorded)).toBe(true);
+    expect(model.grades.students.every(student => student.steps.every(score => score === null) && student.total === 0)).toBe(true);
     expect(model.scores).toMatchObject({ avg: 0, median: 0 }); expect(model.checks).toEqual([]);
     expect(model.next).toBe(DEBRIEF_TEXT.startLesson);
     expect(JSON.stringify(model)).not.toMatch(/NaN|Infinity|undefined|\{\d\}/);
+  });
+
+  it('keeps a grade book with one column per plan step, null for missing work and names for the teacher only', () => {
+    const state = classroom(3, '01-hello'); attack(state, 0, 1, [80, 90, null]);
+    const final = attack(state, 1, 1, [60, null, 100]);
+    const model = buildLessonDebrief(state, final.reports), { grades } = model;
+    expect(grades.steps.map(step => step.stepId)).toEqual(state.plan.steps.map(step => step.id));
+    expect(grades.steps.map(step => step.recorded)).toEqual([true, true, false]);
+    expect(grades.steps.map(step => step.title)).toEqual(state.plan.steps.map(step => step.title));
+    const ada = grades.students.find(student => student.id === 's0')!, cam = grades.students.find(student => student.id === 's2')!;
+    expect(ada).toMatchObject({ name: 'Ada', steps: [80, 60, null], total: 140 });
+    expect(cam.steps[0]).toBeNull(); expect(cam.total).toBe(100);
+    expect(grades.students.every(student => student.steps.length === grades.steps.length && Number.isFinite(student.average) && student.max > 0)).toBe(true);
+    const anonymous = JSON.stringify({ headline: model.headline, scores: model.scores, checks: model.checks, reteach: model.reteach, next: model.next, steps: model.steps });
+    expect(anonymous).not.toMatch(/Ada|Ben|Cam/);
   });
 
   it('does not mutate input snapshots/reports and returns detached output objects', () => {

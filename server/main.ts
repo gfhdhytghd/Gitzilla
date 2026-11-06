@@ -5,6 +5,7 @@ import { createReceiptService, type ReceiptService } from './receipts/service';
 import { handleReceiptRoute } from './receipts/http';
 import { verifyPvpAccess } from './pvp-access.ts';
 import { analyzeClassroomSubmission } from '../analysis/classroom.ts';
+import { createClassroomReviewer } from './classroom-review';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import https from 'node:https';
 import { createReadStream } from 'node:fs';
@@ -23,6 +24,7 @@ import { RoomServer } from './rooms.ts';
 import { qrSvg, qrTerminal } from './qr.ts';
 import { lanAddresses, loadTls, urlHost } from './tls.ts';
 import { handleTraceRoute, TraceStore } from './traces.ts';
+import { handleCourseRoute } from './course-http';
 import { handleEduRoute } from './edu-http.ts';
 import { defaultRubric, parseRubric, scoreRepo, buildFeedback } from '../rubric/index.ts';
 import { RoyaleHall } from './royale-hall.ts';
@@ -74,6 +76,7 @@ const rooms = new RoomServer(wss, {
   getGithubIdentity: (request, session) => resolveGithubIdentity(request, session, getGithubToken),
   analyzeFiles,
   analyzeClassroomSubmission: (repo, ref, token, needsChecks, checkPaths) => analyzeClassroomSubmission(repo, ref, token, fetch, needsChecks, checkPaths),
+  reviewClassroomSubmission: createClassroomReviewer(),
   // Lookups must not inherit an ambient PAT; credentials come only from this WS owner/player.
   analyzeRepo: (repo, options) => analyzeRepo(repo, { ...options, token: options?.token ?? '' }),
   verifyPvpAccess, buildGenesis, listFallbackRepos, createMatch, createBot, botProfile: offlineProfile, recordMatch, getSession, getGithubToken,
@@ -143,6 +146,7 @@ server.on('request', (req, res) => {
     if (handleChainBoardRoute(req, res, url, chainBoard)) return;
     if (await handleReceiptRoute(req, res, url, receiptService)) return;
     if (await handleTraceRoute(req, res, url.pathname, traces)) return;
+    if (await handleCourseRoute(req, res, url, rooms)) return;
     if (await handleEduRoute(req, res, url, rooms)) return;
     if (handleRoomCreate(req, res, url, rooms, printRoomQr)) return;
     if (url.pathname.startsWith('/api/room/') && req.method === 'GET') {

@@ -13,6 +13,7 @@ export class TestNode {
   dataset: Record<string, string> = {};
   style = { width: '', setProperty() {} };
   oninput: (() => void) | null = null;
+  onchange: (() => void) | null = null;
   onclick: (() => void) | null = null;
   private text = '';
   private html = '';
@@ -36,6 +37,8 @@ export class TestNode {
     add: (name: string) => { this.classList.toggle(name, true); },
     remove: (name: string) => { this.classList.toggle(name, false); },
   };
+  getAttribute(key: string) { return this.attributes.get(key) ?? null; }
+  removeAttribute(key: string) { this.attributes.delete(key); }
   setAttribute(key: string, value: string) {
     this.attributes.set(key, value);
     if (key === 'value') this.value = value;
@@ -62,6 +65,7 @@ export class TestNode {
   }
   dispatchEvent(event: Event) {
     if (event.type === 'input') this.oninput?.();
+    if (event.type === 'change') this.onchange?.();
     if (event.type === 'click') this.onclick?.();
     for (const listener of this.listeners.get(event.type) ?? []) listener(event);
     return true;

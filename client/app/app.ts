@@ -14,6 +14,7 @@ export interface AppCtx {
   feedback?: StudentFeedback[];
   classroomReports?: Record<string, ClassroomReport>;
   classroomErrors?: Record<string, string>;
+  classroomEmails?: Record<string, string>;
   token?: string;
   conn: Conn;
   status: ConnStatus;

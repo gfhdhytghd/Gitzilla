@@ -171,3 +171,38 @@ describe('auth routes', () => {
     await expect(listGithubRepos('server-only-token')).rejects.toThrow('incomplete');
   });
 });
+
+
+describe('email OTP through Auth0 Universal Login', () => {
+  async function emailCallback(overrides: Record<string, unknown> = {}) {
+    const login = await fetch(`${base}/auth/login?method=email&returnTo=/r/MAIL`, { redirect: 'manual' });
+    const authorize = new URL(login.headers.get('location')!);
+    expect(authorize.searchParams.get('connection')).toBe('email');
+    expect(authorize.searchParams.get('scope')).toBe('openid profile email');
+    expect(authorize.searchParams.get('prompt')).toBe('login');
+    expect(authorize.searchParams.get('code_challenge_method')).toBe('S256');
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).startsWith(base)) return realFetch(input, init);
+      expect(String(input)).toBe(`https://${DOMAIN}/oauth/token`);
+      return Response.json({ id_token: jwt({ iss: `https://${DOMAIN}/`, aud: 'cid', nonce: authorize.searchParams.get('nonce'),
+        exp: Math.floor(Date.now() / 1000) + 300, sub: 'email|student123', email: 'Student@PSU.edu', email_verified: true, ...overrides }) });
+    }) as typeof fetch;
+    return fetch(`${base}/auth/callback?code=otp-code&state=${authorize.searchParams.get('state')}`, { headers: { Cookie: jar(login) }, redirect: 'manual' });
+  }
+  it('creates a sealed session only after verified email login and never fetches GitHub credentials', async () => {
+    const callback = await emailCallback();
+    expect(callback.headers.get('location')).toBe('/r/MAIL');
+    expect(callback.headers.getSetCookie().some(c => c.startsWith('rk_session=') && c.includes('HttpOnly'))).toBe(true);
+    const me = await (await fetch(`${base}/api/me`, { headers: { Cookie: jar(callback) } })).json();
+    expect(me.user).toEqual({ userId: 'email|student123', login: 'student', avatar: '', email: 'student@psu.edu', emailVerified: true });
+    expect(await (await fetch(`${base}/token`, { headers: { Cookie: jar(callback) } })).text()).toBe('null');
+  });
+  it.each([
+    { email_verified: false }, { email_verified: 'true' }, { email: 'invalid' },
+    { sub: 'github|42' }, { exp: 1 }, { nonce: 'wrong' }, { iss: 'https://attacker.test/' }, { aud: 'other-client' },
+  ])('rejects unverified or invalid email claims: %j', async overrides => {
+    const response = await emailCallback(overrides);
+    expect(response.headers.get('location')).toContain('auth_error=');
+    expect(response.headers.getSetCookie().some(c => c.startsWith('rk_session='))).toBe(false);
+  });
+});

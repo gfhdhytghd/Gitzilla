@@ -490,6 +490,7 @@ export interface LobbyState {
 }
 
 export type ClientMsg =
+  | { t: "classroomEmail"; email: string }
   | { t: "classroomLanguage"; locale: Locale }
   | { t: "classroomPlan"; plan: ClassroomPlan }
   | { t: "classroomControl"; action: ClassroomCommand }
@@ -513,7 +514,7 @@ export type ClientMsg =
   | { t: "rematch" };                       // owner only
 
 export type ServerMsg =
-  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string> }
+  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string>; emails?: Record<string, string> }
   | { t: "welcome"; you: string; token: string; lobby: LobbyState; controller?: boolean }  // controller: you = the seat this phone drives
   | { t: "lobby"; lobby: LobbyState }
   | { t: "snapshot"; state: MatchState; ack: number }

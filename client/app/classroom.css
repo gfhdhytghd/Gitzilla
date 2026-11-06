@@ -330,3 +330,54 @@ details.cr-step-editor:not([open]) { gap:0; }
 /* the sticky console bar is opaque and jumps (scrollIntoView) stop below it */
 .cr-console-bar { background:#040a08; }
 .classroom-screen { scroll-padding-top:calc(var(--cr-bar-h, 0px) + 8px); }
+
+.cr-guide-resource { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; }
+.cr-guide-resource small { color:var(--cr-text); }
+.cr-guide-notes { min-width:0; }
+.cr-guide-notes summary { cursor:pointer; color:var(--cr-cyan); }
+.cr-guide-notes [data-testid="classroom-guide-text"] { margin-top:10px; }
+[data-testid="lesson-guide-editor"] { display:grid; gap:10px; }
+[data-testid="lesson-guide-editor"] label { display:grid; gap:6px; min-width:0; }
+
+/* Teacher controls favor reading and scanning over the game's pixel typography. */
+.classroom-screen.cr-teacher-console {
+  --cr-read:system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --term:var(--cr-read); --pix:var(--cr-read); --small:var(--cr-read);
+  --cr-muted:#abc5b7; --dim:#abc5b7;
+  font:17px/1.6 var(--cr-read);
+}
+.cr-teacher-console :is(h1,h2,h3,button,summary,.cr-phase,.cr-field>span,.cr-steps>span) {
+  letter-spacing:normal; text-transform:none; text-shadow:none;
+}
+.cr-teacher-console h1 { font-size:28px; font-weight:700; line-height:1.3; }
+.cr-teacher-console h2 { font-size:23px; font-weight:650; line-height:1.4; }
+.cr-teacher-console h3 { font-size:19px; font-weight:650; line-height:1.4; }
+.cr-teacher-console :is(.btn,.cr-more>summary,.cr-score-toggle,.cr-score-auto) {
+  font:600 16px/1.4 var(--cr-read); min-height:44px; padding:10px 14px;
+}
+.cr-teacher-console :is(input,textarea,select) { font:16px/1.6 var(--cr-read); padding:10px 12px; }
+.cr-teacher-console :is(.cr-field>span,.cr-phase,.cr-steps>span,.cr-class-progress,.cr-room span,.cr-room-btn small,.cr-exports small,.cr-more-menu small) {
+  font:600 14px/1.5 var(--cr-read); letter-spacing:normal; text-transform:none;
+}
+.cr-teacher-console small { font-size:14px; line-height:1.55; }
+.cr-teacher-console :is(.cr-instructions,.cr-teacher-guide,.cr-controls-hint) { font-size:17px; line-height:1.65; max-width:78ch; }
+.cr-teacher-console :is(.cr-step-editor>summary,.cr-step-editor legend) { font:600 17px/1.5 var(--cr-read); }
+.cr-teacher-console .cr-field { gap:8px; }
+.cr-teacher-console .cr-person b { font-size:17px; font-weight:600; }
+.cr-teacher-console :is(.cr-person small,.cr-checks-chip,.cr-contribution,.cr-rank) { font-size:14px; line-height:1.5; }
+.cr-teacher-console .cr-points { font-size:18px; font-weight:650; font-variant-numeric:tabular-nums; }
+.cr-teacher-console .cr-clock { font-size:24px; font-weight:650; font-variant-numeric:tabular-nums; text-shadow:none; }
+.cr-teacher-console .cr-clock-text { font-size:14px; line-height:1.5; letter-spacing:normal; text-transform:none; }
+.cr-teacher-console .cr-dense .cr-person b { font-size:16px; }
+.cr-teacher-console .cr-dense .cr-row-pick { min-height:48px; }
+.cr-teacher-console :is(code,pre:not(.cr-teacher-guide),textarea[data-testid^="step-checks-"]) {
+  font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media(max-width:700px) {
+  .cr-teacher-console h1 { font-size:23px; }
+  .cr-teacher-console .cr-console-row { gap:12px; }
+}
+
+.cr-email { padding:16px; border:1px solid var(--cr-green); border-radius:8px; margin-bottom:16px; display:grid; gap:12px; overflow-wrap:anywhere; }
+.cr-email p,.cr-email small { line-height:1.5; }
+.cr-email input { width:100%; min-width:0; box-sizing:border-box; }

@@ -43,7 +43,7 @@
 - **Teacher debriefs** after each round and each lesson show participation, the hardest checks, what to reteach, who needs help, and shout-outs.
   - The projector shows class aggregates only, never struggling students' names.
   - Exports are CSV and Markdown.
-- **What checks inspect:** file and literal checks read the bounded source archive; they never execute student code on the server. CI checks require a successful GitHub check run for that exact commit.
+- **What checks inspect:** file and literal checks statically read the bounded source archive. Doctest checks run student Python in a Pyodide WebAssembly sandbox in a separate Node process with the permission model, no environment, no network objects, no JS bridge, and memory and time limits (256 MB Node heap, 20 seconds total). CI checks require a successful GitHub check run for that exact commit.
 
 ## Controls
 
@@ -146,3 +146,124 @@ Fifteen famous repos are pre-analyzed in `data/fallback/` for offline raids and 
 
 - **Mystery Stack:** our demonstration has at least four real people with their own phones, using motion controls in the same royale.
 - **Development workflow:** the team used Cursor and Grok Bot, alongside Claude Code and Codex, with Vitest and Playwright for verification.
+
+### Manual Canvas grade entry
+
+Students can enter the email shown in their Canvas account in **Canvas grade matching → Save email**.
+They can correct it and save again. Manually saved addresses are self-reported. Email code login verifies
+mailbox access and automatically uses that address; changing a verified address requires signing in again.
+Neither method proves Penn State enrollment or connects to Canvas SSO.
+Email entry is optional and does not block coding. Teachers should request it before exporting grades.
+Emails are private to the student and reserved teacher, and stored with the room for restart recovery;
+classmates and projector state do not receive them. Recorded students retain their email in exports after leaving.
+
+In the teacher console, open **⋯ → Export grades CSV / Export grades Markdown** for per-step grades,
+totals, averages and an `email` column. **Export CSV / Export Markdown** also include email with each
+recorded attack result. Missing emails stay blank. Launch the class attack to record step grades before
+ending the step. Exports use the latest saved email. The TA checks the address against the Canvas roster
+and enters grades by hand. These files are reference reports, not Canvas gradebook import templates.
+Existing teacher-token checks protect all downloads; share grade exports only with authorized course staff.
+
+### Email code login for classrooms
+
+Choose **Continue with email** at the classroom join screen (students and teachers), or choose
+**Sign in with email code** from the student's grade-matching card. Auth0 Universal Login asks for an email
+and sends a one-time code. Enter the code there to return to the same classroom. No password is stored by
+this application. A verified email is copied into the private classroom grade records and exports.
+GitHub login remains available; battle, PvP and phone-controller pairing still require GitHub.
+Email identities and GitHub identities are separate accounts; email login does not grant repository access.
+
+Tenant setup (uses your existing authenticated Auth0 CLI, never prints secrets):
+
+```sh
+auth0 login
+npx tsx auth/setup-email.ts
+```
+
+The setup enables the `email` passwordless connection for the existing **Repo Kaiju** app,
+selects modern Universal Login with identifier-first email entry for the tenant, and preserves other enabled applications.
+Pass the existing application's client ID as the first argument if multiple apps have that name.
+Existing callback and logout URLs stay intact. Auth0 owns code generation, expiry, retry limits and delivery.
+Configure a production email provider in **Auth0 Dashboard → Branding → Email Provider** before classroom
+rollout; Auth0's built-in sender is for tests. See
+[Auth0 email OTP documentation](https://auth0.com/docs/authenticate/passwordless/authentication-methods/email-otp).
+The code must receive a verified email claim for the requested email connection before creating an email session.
+Existing seven-day sealed HttpOnly session cookies, PKCE, state and nonce checks remain in use.
+
+### AI and teacher grading
+
+In the teacher's lesson editor, open **Grading and review** and select
+**Automatic checks + AI / teacher review**. The default is 50% automatic evidence
+and 50% review. Existing lessons keep their original grading mode until the
+teacher enables review. The automatic component uses each step's static rubric,
+file/literal checks, GitHub CI, and real server-side Python doctests according to
+the step's check weight. The lesson-level automatic weight is editable (0–100).
+
+The editable review checklist starts with all 39 items from the seven groups in
+`CMPSC/Homeworks/checklist.md`: readability, design, spec matching, correctness,
+mutation vs return, testing, and submission hygiene. Add the assignment's exact
+requirements to the step instructions; a Canvas link alone does not supply its
+contents to the reviewer.
+
+The model returns a verdict and reason for every checklist item. Code computes
+review credit: pass = 1, partial = 0.5, fail = 0; n/a is excluded. A model-provided
+numeric grade is ignored. The student's final score is
+`automatic × automaticWeight + review × (1 − automaticWeight)`.
+A teacher's 0–100 **review component** replaces the AI component. The teacher can
+accept the AI result or enter a different score and note. In the original grading
+mode, the teacher's review still replaces the whole score.
+
+The server reuses the existing Gemini configuration and DeepSeek fallback.
+`CLASSROOM_REVIEW_MODEL` optionally selects the Gemini model; otherwise the
+existing `GEMINI_MODEL` setting/default applies. Review tests mock both providers.
+Enabling review sends in-app source or public, uncredentialed GitHub source to
+these providers. Private or credentialed GitHub submissions stay on the manual
+review path. Submissions over 80,000 source/path characters also require manual
+review rather than a silently truncated AI assessment. No API key reaches the
+browser.
+
+If providers are unavailable, output is invalid, or every verdict is n/a, the UI
+marks the automatic score **provisional / review pending**. A teacher's review
+resolves it. New commits require a fresh review. The teacher sees checklist
+reasons, AI summary, and teacher-only concerns; the student receives the summary,
+verdicts, and score breakdown. Other students and the projector receive no private
+review. Scores frozen at a class attack feed the grade book and exports; pending
+reviews remain explicitly provisional there. Record the teacher review before
+launching the class attack when exporting final grades.
+
+Local browser acceptance (real doctest, mocked model, isolated loopback server):
+`npx tsx tools/classroom-review-smoke.ts`.
+
+### Course materials and class instructions
+
+In the teacher's lesson editor, upload a PDF with selectable text, a UTF-8 Markdown
+file (`.md`), or a plain text file (`.txt`) to generate a course draft. Files are
+limited to 1 MB; extracted text is limited to 80,000 UTF-8 bytes. PDF extraction
+requires `pdftotext` on the server. Generation reuses the configured Gemini provider
+and DeepSeek fallback. Uploaded course text is sent to that provider; API keys stay
+on the server. A provider failure leaves the existing draft intact.
+
+Review the generated preview and explicitly apply it to the draft. Edit the steps
+before publishing the lesson. Generation does not publish or start a lesson and
+is restricted to the room's teacher during setup.
+
+Class instructions accept a web link, pasted text, or a local `.md` file. The link
+and text can coexist. Markdown uploads replace the instruction text; they do not
+fetch the link or generate a course. Instruction text is limited to 32,000
+characters and Markdown files to 128,000 bytes. Students can expand **Class
+instructions** in every step. HTML remains inert text; inline code is displayed
+as code. Selecting a submission opens its review above the boss.
+
+### Overall scores in CSV exports
+
+The classroom CSV preserves the attack history and adds one `student_summary` row
+per student, including current students without recorded work. `row_type`
+distinguishes attack rows from summaries. `overall_total` sums each planned step's
+latest recorded score; retries replace the earlier score for that step.
+`overall_max` is 100 times the number of planned steps. `overall_score` is the
+0–100 average across all planned steps. Missing or unrecorded work counts as zero.
+`overall_status` marks a pending review as provisional. Scores are recorded when
+the teacher launches the class attack; an unrecorded submission is not included.
+
+The separate grades CSV continues to provide one row per student with step scores,
+total, maximum, and average. Both exports require the current teacher's room token.

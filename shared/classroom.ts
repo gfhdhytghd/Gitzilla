@@ -1,9 +1,10 @@
 import type { CriterionResult, Rubric } from './types';
+import type { AIReview, ReviewSettings } from './classroom-review';
 
 export interface ClassroomCheck {
   id: string;
   label: string;
-  kind: 'file' | 'contains' | 'ci';
+  kind: 'file' | 'contains' | 'doctest' | 'ci';
   path: string; // repository-relative file, or exact GitHub check name
   text?: string;
 }
@@ -20,7 +21,7 @@ export interface ClassroomStep {
   // Structured, student-facing task brief (preferred over the free-text `instructions` when present).
   brief?: StepBrief;
   starter?: InAppFile[];
-  language?: 'python';     // editor highlighting / optional in-browser run (Pyodide); grading stays static
+  language?: 'python';     // editor highlighting / optional in-browser run (Pyodide); doctests run in the server sandbox
 }
 export interface InAppFile { path: string; content: string }
 export interface StepBrief {
@@ -31,16 +32,18 @@ export interface StepBrief {
   hints?: string[];           // collapsed by default
   concepts?: string[];        // 1–4 tags shown as chips ("print()", "f-strings", "variables")
 }  // repo-relative path, UTF-8 text
-export interface ClassroomPlan { title: string; bossName: string; steps: ClassroomStep[] }
+export interface ClassroomPlan { title: string; bossName: string; guideUrl?: string; guideText?: string; grading?: ReviewSettings; steps: ClassroomStep[] }
 export type ClassroomPhase = 'setup' | 'coding' | 'paused' | 'raid' | 'feedback' | 'complete';
 export interface ClassroomRow {
   id: string; name: string; connected: boolean;
   status: 'empty' | 'queued' | 'submitted' | 'error';
   repo?: string; commit?: string; score?: number; improvement: number;
   damage: number; totalDamage: number; attempts: number;
+  reviewPending?: boolean;
 }
 export interface ClassroomAttack {
   id: string; name: string; score: number; improvement: number; damage: number; commit: string;
+  reviewPending?: boolean;
 }
 export interface ClassroomRound {
   stepId: string; attempt: number; at: number; bossBefore: number; bossAfter: number;
@@ -56,6 +59,9 @@ export interface ClassroomReport {
   score: number; improvement: number; checks: { label: string; passed: boolean; detail: string }[];
   criteria: CriterionResult[]; advice: string[];
   teacherReview?: { score: number; note: string };
+  automaticScore?: number;
+  aiReview?: AIReview;
+  reviewPending?: boolean;
 }
 export interface ClassroomState {
   plan: ClassroomPlan; phase: ClassroomPhase; stepIndex: number; attempt: number;

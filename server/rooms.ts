@@ -1,8 +1,12 @@
+import { normalizeClassroomEmail } from '../shared/classroom-email';
 import type { FinishedReceiptMatch } from './receipts/service';
 import type { PvpAccess } from './pvp-access';
 import { isLocale, type Locale } from '../shared/i18n/locale';
-import { ClassroomSession, type ClassroomSource } from './classroom';
-import { classroomExport } from './classroom-export';
+import { classroomChecks, ClassroomSession, type ClassroomSource } from './classroom';
+import { pendingReview, type ReviewInput } from './classroom-review';
+import type { AIReview } from '../shared/classroom-review';
+import { runDoctests } from './py-sandbox';
+import { classroomExport, gradesExport } from './classroom-export';
 import type { InAppFile } from '../shared/classroom';
 import { editorCommit, normalizeEditorFiles } from './in-app';
 import { asPvpAiKit } from '../sim/index';
@@ -27,13 +31,14 @@ export interface GameServices {
   analyzeFiles?(files: InAppFile[], name: string): RepoProfile;
   verifyPvpAccess?(repo: string, token: string): Promise<PvpAccess>;
   analyzeClassroomSubmission?(repo: string, ref: string, token: string, needsChecks: boolean, checkPaths: string[]): Promise<ClassroomSource>;
+  reviewClassroomSubmission?(input: ReviewInput): Promise<AIReview>;
   defaultRubric?(): Rubric;
   parseRubric?(text: string, filename?: string): Rubric;
   scoreRepo?(profile: RepoProfile, rubric: Rubric): CriterionResult[];
   feedbackForPlayer?(profile: RepoProfile, rubric: Rubric, stats: StudentFeedback['match'] & { playerId: string; name: string }): StudentFeedback;
   applyRubric?(profile: RepoProfile, kit: PlayerKit, rubric: Rubric): PlayerKit;
   analyzeRepo(repo: string, options?: { token?: string; onProgress?: (progress: GenesisProgress) => void }): Promise<RepoProfile>;
-  getSession?(request: IncomingMessage): Promise<{ login: string; userId?: string } | null>;
+  getSession?(request: IncomingMessage): Promise<{ login: string; userId?: string; email?: string; emailVerified?: boolean } | null>;
   getGithubIdentity?(request: IncomingMessage, session: GithubSession): Promise<GithubIdentity | null>;
   getGithubToken?(request: IncomingMessage): Promise<string | null>;
   buildGenesis?(profile: RepoProfile, kit: PlayerKit | BossKit, kind: 'hero' | 'boss'): Genesis;
@@ -52,7 +57,7 @@ export interface RoomServerOptions {
   allowLegacyEdu?: boolean; // Explicit compatibility harness only; never enabled by production.
   persistenceFile?: string; // Main supplies .cache/rooms.json; tests can use isolated files.
   debounceMs?: number;
-  requireGithub?: boolean; // Players and the classroom teacher must hold a GitHub session; spectator screens stay open.
+  requireGithub?: boolean; // Battle requires GitHub; classroom also accepts verified email. Spectator screens stay open.
 }
 interface Member {
   id: string;
@@ -64,6 +69,7 @@ interface Member {
   pvpAccess?: PvpAccess; // Memory-only; invalidated on reconnect and mode changes.
   identities?: string[];
   githubIdentity?: string;
+  verifiedEmail?: string;
   controllerToken?: string;
   controllerSocket?: WebSocket | null;
   controllerSeq?: number;
@@ -327,13 +333,24 @@ export class RoomServer {
     if (lobbyOnly && room.phase !== 'lobby') return { status: 409, error: 'Return to the lobby to upload a rubric' };
   }
 
+  courseGenerationError(code: string, token: string | undefined): { status: number; error: string } | undefined {
+    const denial = this.eduOwnerError(code, token, true);
+    if (denial) return denial;
+    const phase = this.rooms.get(code)?.classroom?.state.phase;
+    if (phase && phase !== 'setup') return { status: 409, error: 'The lesson is already running. Start a new room to generate a course.' };
+  }
+
   previewRubric(text: string, filename?: string): Rubric | undefined {
     return this.services.parseRubric?.(text, filename);
   }
 
   exportClassroom(code: string, format: 'csv' | 'md'): string | undefined {
     const room = this.rooms.get(code), classroom = room?.classroom;
-    return classroom ? classroomExport(classroom.publicState(), format, room?.locale ?? 'en') : undefined;
+    return classroom ? classroomExport(classroom.publicState(), format, room?.locale ?? 'en', classroom.exportEmails()) : undefined;
+  }
+  exportGrades(code: string, format: 'csv' | 'md'): string | undefined {
+    const classroom = this.rooms.get(code)?.classroom;
+    return classroom ? gradesExport(classroom.publicState(), format, classroom.exportEmails()) : undefined;
   }
   exportFeedback(code: string, format: 'csv' | 'md'): string | undefined {
     const room = this.rooms.get(code);
@@ -494,7 +511,7 @@ export class RoomServer {
       } else this.requestResume(room);
       return;
     }
-    if (['classroomLanguage', 'classroomPlan', 'classroomControl', 'classroomSubmit', 'classroomSubmitCode', 'classroomReview'].includes(msg.t)) {
+    if (['classroomEmail', 'classroomLanguage', 'classroomPlan', 'classroomControl', 'classroomSubmit', 'classroomSubmitCode', 'classroomReview'].includes(msg.t)) {
       await this.handleClassroom(room, member, msg); return;
     }
     if (room.classroom && !['controls', 'input'].includes(msg.t)) throw new Error('Use the classroom controls for this lesson');
@@ -747,6 +764,7 @@ export class RoomServer {
   private async setMode(room: Room, mode: GameMode) {
     if (mode !== 'battle' && mode !== 'edu' && mode !== 'pvp') throw new Error('Choose battle, classroom, or PvP mode');
     if (room.mode === mode) return;
+    if (mode !== 'edu' && this.options.requireGithub && connectedPlayers(room).some(m => !m.lobby.bot && !m.githubIdentity)) throw new Error('All players must sign in with GitHub before switching to battle or PvP');
     if (mode === 'battle' && connectedPlayers(room).length > 8) throw new Error('Battle supports 8 players. Keep this class in edu mode or ask students to leave first.');
     if (mode === 'pvp' && connectedPlayers(room).length > 8) throw new Error('PvP supports up to eight players.');
     if (mode === 'edu') this.trimClassroomSeats(room, 30);
@@ -823,19 +841,23 @@ export class RoomServer {
     let githubName: string | undefined;
     let identity: string | undefined;
     let githubIdentity: string | undefined;
+    let verifiedEmail: string | undefined;
     const request = this.requests.get(socket);
     if (request && this.services.getSession) {
       try {
         const { session, github } = await this.clientIdentity(request);
         githubName = msg.role === 'player' ? session?.login : undefined;
+        if (session?.emailVerified === true && session.email) {
+          try { verifiedEmail = normalizeClassroomEmail(session.email).toLowerCase(); } catch { /* Fail closed on invalid identity claims. */ }
+        }
         if (session?.userId) identity = tokenHash(`auth0:${session.userId}`);
         if (github) githubIdentity = tokenHash(`github:${github.id}`);
       }
       catch { /* Anonymous play works if session resolution is unavailable. */ }
     }
     if (this.closing || socket.readyState !== WebSocket.OPEN) return;
-    const signedIn = !this.options.requireGithub || !!githubIdentity;
-    if (!signedIn && msg.role === 'player') throw new Error(signInRequired);
+    const signedIn = !this.options.requireGithub || !!githubIdentity || (room.mode === 'edu' && !!identity && !!verifiedEmail);
+    if (!signedIn && msg.role === 'player') throw new Error(room.mode === 'edu' ? 'Sign in with email or GitHub to join this classroom. Reload the page to sign in.' : signInRequired);
     if ((typeof msg.resume === 'string' && room.bans.tokens.has(tokenHash(msg.resume))) || (identity && room.bans.identities.has(identity)) || (githubIdentity && room.bans.identities.has(githubIdentity))) { this.rejectBan(socket); return; }
     if (typeof msg.resume === 'string' && this.revokedTokens.has(tokenHash(msg.resume))) { socket.close(4002, 'left'); return; }
     if (this.rooms.get(code) !== room) throw new Error('Room not found. Check the room code and try again.');
@@ -862,6 +884,7 @@ export class RoomServer {
     if (identity) member.identities = [...new Set([...(member.identities ?? []), identity])];
     if (member.githubIdentity !== githubIdentity && member.controllerToken) this.detachController(room, member, true);
     member.githubIdentity = githubIdentity;
+    member.verifiedEmail = verifiedEmail;
     if (githubIdentity) {
       member.identities = [...new Set([...(member.identities ?? []), githubIdentity])];
     }
@@ -1294,6 +1317,7 @@ export class RoomServer {
     // Legacy rooms may exceed the limit with contributions that must be retained.
     if (room.mode === 'edu') this.trimClassroomSeats(room, 30, false);
     room.classroom?.roster([...room.members.values()].filter(m => m.role === 'player' && !m.lobby.bot && m.id !== room.teacherId).map(m => ({ id: m.id, name: m.name, connected: online(m) })));
+    for (const member of room.members.values()) if (member.verifiedEmail && room.classroom?.state.rows.some(r => r.id === member.id)) room.classroom.setEmail(member.id, member.verifiedEmail);
   }
   private publishClassroom(room: Room, persist = true) {
     if (!room.classroom || this.closing) return;
@@ -1340,6 +1364,11 @@ export class RoomServer {
       this.publishClassroom(room); return;
     }
     if (member.role !== 'player' || member.id === room.teacherId) throw new Error('Join as a student to submit code');
+    if (msg.t === 'classroomEmail') {
+      if (member.verifiedEmail && normalizeClassroomEmail(msg.email).toLowerCase() !== member.verifiedEmail) throw new Error('Sign in with the new email to change your verified address');
+      room.classroom.setEmail(member.id, member.verifiedEmail ?? msg.email);
+      this.publishClassroom(room); return;
+    }
     if (msg.t === 'classroomSubmitCode') {
       if (!this.services.analyzeFiles) throw new Error('In-app classroom analysis is unavailable');
       const files = normalizeEditorFiles(msg.files);
@@ -1349,9 +1378,13 @@ export class RoomServer {
         await this.classroomSlot(async () => {
           if (this.closing || this.rooms.get(room.code) !== room || !room.members.has(member.id) || !classroom.valid(ticket)) return;
           const profile = this.services.analyzeFiles!(files, 'in-app');
-          classroom.accept(ticket, { profile, commit: editorCommit(files), source: 'in-app', files: files.map(f => ({ path: f.path, text: f.content })), checks: [] });
+          const source: ClassroomSource = { profile, commit: editorCommit(files), source: 'in-app', files: files.map(f => ({ path: f.path, text: f.content })), checks: [] };
+          const checks = classroom.state.plan.steps[classroom.state.stepIndex].checks.filter(c => c.kind === 'doctest');
+          if (checks.length) source.doctests = await runDoctests(source.files, checks);
+          if (classroom.valid(ticket)) await this.reviewClassroomSource(classroom, source, false);
+          if (!this.closing && this.rooms.get(room.code) === room && room.members.has(member.id)) classroom.accept(ticket, source);
         });
-      } catch { classroom.fail(ticket, 'Could not grade these editor files. Check the files and retry. No code was executed.'); }
+      } catch { classroom.fail(ticket, 'Could not grade these editor files. Check the files and retry.'); }
       if (!this.closing && this.rooms.get(room.code) === room) this.publishClassroom(room);
       return;
     }
@@ -1367,12 +1400,25 @@ export class RoomServer {
         if (this.closing || this.rooms.get(room.code) !== room || !room.members.has(member.id) || !classroom.valid(ticket)) return;
         const checks = classroom.state.plan.steps[classroom.state.stepIndex].checks;
         const source = await this.services.analyzeClassroomSubmission!(msg.repo, msg.ref || 'HEAD', token, checks.some(c => c.kind === 'ci'), checks.filter(c => c.kind !== 'ci').map(c => c.path));
+        const doctests = checks.filter(c => c.kind === 'doctest');
+        if (doctests.length) source.doctests = await runDoctests(source.files, doctests);
+        if (classroom.valid(ticket)) await this.reviewClassroomSource(classroom, source, !!token || !!member.privateRepo);
         if (!this.closing && this.rooms.get(room.code) === room && room.members.has(member.id)) classroom.accept(ticket, source);
       });
     } catch {
       classroom.fail(ticket, 'Could not grade this GitHub commit. Check the repo/branch, connect GitHub for private repos or rate limits, and retry. No fallback data was graded.');
     }
     if (!this.closing && this.rooms.get(room.code) === room) this.publishClassroom(room);
+  }
+
+  private async reviewClassroomSource(classroom: ClassroomSession, source: ClassroomSource, credentialed: boolean) {
+    const settings = classroom.state.plan.grading;
+    if (!settings || settings.automaticWeight === 100) return;
+    const step = classroom.state.plan.steps[classroom.state.stepIndex];
+    try {
+      source.aiReview = credentialed ? pendingReview('Private or credentialed GitHub submissions need a teacher review; code was not sent to an AI provider.')
+        : await this.services.reviewClassroomSubmission?.({ settings, step, files: source.files, checks: classroomChecks(step, source), credentialed });
+    } catch { source.aiReview = pendingReview('AI review failed. Ask the teacher to record a review.'); }
   }
 
   private clearInputs(room: Room) {

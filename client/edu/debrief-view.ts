@@ -1,6 +1,7 @@
 // Teacher debrief card for the classroom (round: feedback phase; lesson: complete phase), from take-edu's model in
 // debrief.ts. Every model sentence is its own text node so the page translator can match its DEBRIEF_TEXT template.
 // Modes: teacher (everything; names only when allowed) and projector (headline + check bars, never names).
+// The lesson grade book (names, per-step scores) is teacher-only and follows the names rule: nothing while projecting.
 import { h } from "../app/util.ts";
 import { locale, t } from "../i18n/index.ts";
 import type { Debrief, LessonDebrief } from "./debrief.ts";
@@ -25,6 +26,8 @@ const pct = (passed: number, total: number) => (total ? Math.round((passed / tot
  *  translator must not touch the pieces afterwards, hence translate="no". */
 const sentence = (s: string) => h("span", { translate: "no" }, ...richText(t(s)));
 const isLesson = (d: Debrief | LessonDebrief): d is LessonDebrief => Array.isArray((d as LessonDebrief).steps);
+const score = (n: number) => String(Math.round(n));
+const UNRECORDED_NOTE = "Unrecorded steps count 0. Launch the class attack before finishing a step to record it.";
 
 export function createDebriefCard(): DebriefCard {
   const el = h("section.db", { "data-testid": "classroom-debrief" });
@@ -73,6 +76,20 @@ export function createDebriefCard(): DebriefCard {
           s.attempts > 1 ? " · " : null, s.attempts > 1 ? h("span", null, `${s.attempts} attempts`) : null),
         s.weakestCheck ? h("span.db-step-weak", null, h("span", null, "Hardest:"), " ", h("span", { translate: "no" }, ...richText(s.weakestCheck.text)), ` ${s.weakestCheck.passed}/${s.weakestCheck.total}`) : null))));
   }
+  // the grade book: a wide table that scrolls inside the card; teacher only, and only while names may show
+  function grades(v: DebriefView) {
+    const d = v.debrief;
+    if (!isLesson(d) || v.mode !== "teacher" || !v.namesVisible || !d.grades.students.length) return null;
+    const cell = (n: number | null) => h("td", { class: n === null ? "db-grade-none" : undefined }, n === null ? "—" : score(n));
+    return h("div.db-block.db-grades", { "data-testid": "classroom-grades" }, h("h3", null, "Grades"),
+      h("div.db-table-wrap", null, h("table.db-table", null,
+        h("thead", null, h("tr", null, h("th", null, "Student"),
+          ...d.grades.steps.map((s) => h("th", null, h("span", { translate: "no" }, s.title), s.recorded ? null : h("small.db-unrecorded", null, "not recorded"))),
+          h("th", null, "Total"), h("th", null, "Average"))),
+        h("tbody", null, ...d.grades.students.map((s) => h("tr", { "data-testid": `classroom-grade-${s.id}` },
+          h("th", { translate: "no" }, s.name), ...s.steps.map((n, i) => s.provisional?.[i] ? h('td', null, `${n === null ? '—' : score(n)} (review pending)`) : cell(n)), h("td", null, `${score(s.total)}/${score(s.max)}${s.provisional?.some(Boolean) ? ' (provisional)' : ''}`), h("td", null, score(s.average))))))),
+      d.grades.steps.some((s) => !s.recorded) ? h("p.db-note", null, UNRECORDED_NOTE) : null);
+  }
   function render(v: DebriefView) {
     const d = v.debrief, teacher = v.mode === "teacher";
     el.className = `db db-${v.mode} db-${v.kind}`;
@@ -80,6 +97,7 @@ export function createDebriefCard(): DebriefCard {
       h("p.db-kicker", null, h("span", null, v.kind === "round" ? "Round debrief" : "Lesson debrief"), " · ", h("span", { translate: "no" }, v.title)),
       h("p.db-headline", { "data-testid": "classroom-debrief-headline" }, sentence(d.headline)));
     if (!teacher) return el.replaceChildren(head, checks(d, v.kind === "lesson" ? 4 : 6, false) ?? h("p.db-note", null, sentence(d.next)));
+    const book = grades(v);
     el.replaceChildren(head,
       h("div.db-grid", null,
         h("div.db-col", null, isLesson(d) ? steps(d) ?? "" : "", checks(d, 5, true) ?? "", bands(d) ?? ""),
@@ -87,7 +105,8 @@ export function createDebriefCard(): DebriefCard {
           list("What to reteach", d.reteach, "classroom-debrief-reteach") ?? "",
           h("div.db-block.db-next", null, h("h3", null, "Next"), h("p", { "data-testid": "classroom-debrief-next" }, sentence(d.next)),
             v.actions?.length ? h("div.db-actions", null, ...v.actions.map((a) => h(`button.btn${a.primary ? ".btn-primary" : ""}`, { type: "button", "data-testid": a.testid, onclick: a.run }, a.label))) : null),
-          people(v) ?? "")));
+          people(v) ?? "")),
+      ...(book ? [book] : []));
   }
   return {
     el,
@@ -107,6 +126,14 @@ export function debriefMarkdown(kind: "round" | "lesson", title: string, d: Debr
     out.push(`### ${tr("Steps")}`, "");
     for (const s of d.steps) out.push(`- ${md(s.title)}: ${tr(`average ${Math.round(s.avg)}`)} · ${tr(`${s.submitted}/${s.roster} submitted`)}${s.weakestCheck ? ` · ${tr("Hardest:")} ${md(s.weakestCheck.text)} ${s.weakestCheck.passed}/${s.weakestCheck.total}` : ""}`);
     out.push("");
+  }
+  if (isLesson(d) && d.grades.students.length) {
+    const unrecorded = d.grades.steps.some((s) => !s.recorded);
+    out.push(`### ${tr("Grades")}`, "",
+      `| ${tr("Student")} | ${d.grades.steps.map((s) => `${md(s.title)}${s.recorded ? "" : ` (${tr("not recorded")})`}`).join(" | ")} | ${tr("Total")} | ${tr("Average")} |`,
+      `|${" --- |".repeat(d.grades.steps.length + 3)}`);
+    for (const s of d.grades.students) out.push(`| ${md(s.name)} | ${s.steps.map((n, i) => `${n === null ? "—" : score(n)}${s.provisional?.[i] ? ' (review pending)' : ''}`).join(" | ")} | ${score(s.total)}/${score(s.max)}${s.provisional?.some(Boolean) ? ' (provisional)' : ''} | ${score(s.average)} |`);
+    out.push("", ...(unrecorded ? [tr(UNRECORDED_NOTE), ""] : []));
   }
   if (d.checks.length) {
     out.push(`### ${tr("What the class got")}`, "");
