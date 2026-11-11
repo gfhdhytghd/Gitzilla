@@ -9,7 +9,7 @@ import { t } from '../i18n';
 
 // Keep classroom events and exports real; replace unrelated graphics and editor panels.
 vi.mock('./settings', () => ({ placeSettingsButton() {} }));
-vi.mock('./sound', () => ({ setClassroomAudio() {} }));
+vi.mock('./sound', () => ({ setClassroomAudio() {}, audio: { stopMusic() {}, onEvents() {} } }));
 vi.mock('./backdrop', () => ({ createBackdrop: () => ({ canvas: document.createElement('canvas'), setTheme() {}, destroy() {} }) }));
 vi.mock('../edu/class-boss', () => ({ createClassBoss: () => ({ el: document.createElement('div'), update() {}, destroy() {} }) }));
 vi.mock('./github', () => ({ createGithubPicker: () => document.createElement('div'), emailLogin: vi.fn(), fetchMe: async () => ({ enabled: true, required: true, user: null }) }));
@@ -348,5 +348,89 @@ describe('AI / teacher review setup and feedback', () => {
     const { get } = classroom(false, report);
     expect(get('classroom-review-pending').textContent).toContain('provisional');
     expect(get('classroom-ai-review').textContent).not.toContain('Private concern');
+  });
+});
+
+describe('class attack staged on the raid timeline', () => {
+  const raidRound = (state: ClassroomState, over: Partial<ClassroomRound> = {}): ClassroomRound => ({
+    stepId: state.plan.steps[0].id, attempt: 1, at: Date.now(), bossBefore: 180, bossAfter: 170, roster: 2,
+    attacks: [{ id: 'student', name: 'Ada', score: 80, improvement: 0, damage: 10, commit: 'abc123' }, { id: 'other', name: 'Bo', score: 0, improvement: 0, damage: 0, commit: 'def456' }], ...over });
+  const startRaid = (owner: boolean, over: Partial<ClassroomRound> = {}) => {
+    const c = classroom(owner);
+    const { state } = c;
+    state.phase = 'raid'; state.serverTime = Date.now(); state.raidEndsAt = Date.now() + 10_000;
+    state.rows = [{ id: 'student', name: 'Ada', connected: true, status: 'submitted', score: 80, improvement: 0, damage: 10, totalDamage: 25.5, attempts: 1 }];
+    state.rounds = [raidRound(state, over)]; state.bossHp = state.rounds[0].bossAfter;
+    const root = c.mount();
+    const text = (id: string) => root.querySelector(`[data-testid="${id}"]`)!.textContent;
+    return { ...c, root, text };
+  };
+
+  it('holds the final HP, impact and names back until the volleys land, then topples a killed boss near the end', () => {
+    const { text, root } = startRaid(true, { bossBefore: 30, bossAfter: 0 });
+    const hpText = () => root.querySelector('[data-testid="classroom-boss-hp"]')!.textContent;
+    const ko = () => root.querySelector('[data-testid="classroom-boss-ko"]')!.hidden;
+    expect(hpText()).toBe('30 / 180');
+    expect(text('classroom-damage')).toBe('The class attack is landing…');
+    expect(root.querySelector('.cr-attack-names')!.textContent).toBe('');
+    vi.advanceTimersByTime(3_600);   // 3 of 6 volleys
+    expect(hpText()).toBe('15 / 180');
+    expect(ko()).toBe(true);
+    vi.advanceTimersByTime(3_000);   // the killing blow (6.5 s)
+    expect(hpText()).toBe('0 / 180');
+    expect(text('classroom-damage')).toBe('The class attack is landing…');
+    vi.advanceTimersByTime(1_000);   // 7.6 s: impact revealed, still toppling
+    expect(text('classroom-damage')).toBe('Class impact: 30 damage');
+    expect(root.querySelector('.cr-attack-names')!.textContent).toBe('');
+    vi.advanceTimersByTime(1_000);   // 8.6 s: names, toppled
+    expect(root.querySelector('.cr-attack-names')!.textContent).toBe('2 students attacked. In a step’s first attack, every submitted score counts.');
+    expect(ko()).toBe(false);
+  });
+
+  it('freezes the staged HP while the host pauses the raid', () => {
+    const { state, app, root } = startRaid(true, { bossBefore: 120, bossAfter: 60 });
+    const hpText = () => root.querySelector('[data-testid="classroom-boss-hp"]')!.textContent;
+    vi.advanceTimersByTime(2_000);
+    expect(hpText()).toBe('110 / 180');
+    state.paused = { by: 'teacher', since: Date.now(), resumeAt: null };
+    screens.at(-1)!.update?.(app);
+    vi.advanceTimersByTime(5_000);
+    expect(hpText()).toBe('110 / 180');
+    expect(root.querySelector('[data-testid="classroom-damage"]')!.textContent).toBe('The class attack is landing…');
+  });
+
+  it('never prints 0 for a small hit or a living boss, and explains a retry that dealt no damage', () => {
+    const { state, app, root, text } = startRaid(true, { bossBefore: 0.5, bossAfter: 0.1 });
+    state.phase = 'feedback'; state.raidEndsAt = null;
+    screens.at(-1)!.update?.(app);
+    expect(root.querySelector('[data-testid="classroom-boss-hp"]')!.textContent).toBe('0.1 / 180');
+    expect(text('classroom-damage')).toBe('Class impact: 0.4 damage');
+    state.rounds = [raidRound(state, { attempt: 2, bossBefore: 150, bossAfter: 150 })]; state.bossHp = 150;
+    screens.at(-1)!.update?.(app);
+    expect(text('classroom-damage')).toBe('Class impact: 0 damage (no one beat their best score for this step)');
+    expect(root.querySelector('.cr-attack-names')!.textContent).toBe('2 students attacked. On a retry, only the gain over each student’s best score for this step counts.');
+  });
+
+  it('shows students their own damage once it lands on the projector, with the lesson total and a light HP bar', () => {
+    const { text, root } = startRaid(false, { bossBefore: 180, bossAfter: 170 });
+    expect(root.querySelector('[data-testid="classroom-my-raid"]')!.hidden).toBe(false);
+    expect(text('classroom-my-damage')).toBe('Your code is in this attack. Watch the big screen!');
+    expect(root.querySelector('[data-testid="classroom-my-total"]')!.hidden).toBe(true);
+    expect(text('classroom-my-boss-hp')).toBe('Boss HP 180 / 180');
+    vi.advanceTimersByTime(7_500);
+    expect(text('classroom-my-damage')).toBe('You dealt 10 damage in this attack.');
+    expect(text('classroom-my-total')).toBe('Lesson total: 25.5 damage');
+    expect(text('classroom-my-boss-hp')).toBe('Boss HP 170 / 180');
+    expect(root.querySelector('canvas')).toBeNull();
+  });
+
+  it('tells a student who did not submit, or whose submission dealt no damage, why', () => {
+    const absent = startRaid(false, { attacks: [{ id: 'other', name: 'Bo', score: 90, improvement: 0, damage: 10, commit: 'x' }] });
+    expect(absent.text('classroom-my-damage')).toContain('You didn’t submit for this attack');
+    const retry = startRaid(false, { attempt: 2, bossBefore: 150, bossAfter: 150, attacks: [{ id: 'student', name: 'Ada', score: 80, improvement: 0, damage: 0, commit: 'x' }] });
+    retry.state.phase = 'feedback'; retry.state.raidEndsAt = null;
+    screens.at(-1)!.update?.(retry.app);
+    expect(retry.text('classroom-my-damage')).toBe('Your code dealt no damage in this attack.');
+    expect(retry.root.querySelector('.cr-my-why')!.textContent).toContain('only the gain over your best score');
   });
 });

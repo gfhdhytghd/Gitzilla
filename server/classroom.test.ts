@@ -118,7 +118,7 @@ describe('staged classroom lesson',()=>{
     s.setPlan({...plan,steps:plan.steps.slice(0,2)}); expect(s.state.bossMaxHp).toBe(10);
     s.control('start'); s.accept(s.begin('a','demo/repo'),source);
     s.review('a',25,'Partial implementation'); s.control('attack');
-    const hp=s.state.bossHp; expect(hp).toBe(7.7);
+    const hp=s.state.bossHp; expect(hp).toBe(8.3);
     s.roster([{id:'c',name:'Late student',connected:true}]); s.remove('a');
     expect(s.state.bossHp).toBe(hp); expect(s.state.bossMaxHp).toBe(10);
     const restored=ClassroomSession.restore(s.save());

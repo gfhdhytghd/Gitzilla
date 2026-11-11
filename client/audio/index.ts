@@ -15,6 +15,8 @@ export interface KaijuAudio {
   onFire(weapon: WeaponKind): void;
   onDash(): void;
   music(theme: ArenaTheme | 'lobby' | 'victory' | 'defeat', phase?: 1 | 2 | 3, options?: { intro?: boolean }): void;
+  /** Deselect and fade the music loop (silent screens such as the classroom); `music()` selects again. */
+  stopMusic(): void;
   setMuted(muted: boolean): void;
   setVolume(volume: number): void;
   /** Optional UI helpers beyond the requested interface. */
@@ -221,6 +223,7 @@ export function createAudio(): KaijuAudio {
         && (!previous || !isArenaTheme(previous.theme) || previous.theme !== theme);
       startMusic();
     },
+    stopMusic() { desired = null; pendingIntro = false; if (!disposed) { fadeMusic(); publishStatus(); } },
     setMuted(value) {
       if (disposed || value === muted) return;
       muted = value;

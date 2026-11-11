@@ -19,7 +19,8 @@ export interface SubmissionTicket { id: string; generation: number; revision: nu
 const round = (n: number) => Math.round(n * 10) / 10;
 const REFERENCE_STUDENTS = 4;
 const BOSS_HP_PER_STEP = 20;
-const CLASS_ATTACK_MULTIPLIER = 1.85;
+const FULL_DAMAGE_AVERAGE = 75;
+const CLASS_ATTACK_MULTIPLIER = 100 / FULL_DAMAGE_AVERAGE;
 const bounded = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi;
 const text = (s: unknown, name: string, max: number, empty = false): string => {
   if (typeof s !== 'string' || s.length > max || (!empty && !s.trim())) throw new Error(`Invalid ${name}`);
@@ -290,6 +291,8 @@ export class ClassroomSession {
       return { row: r, score, raw: slice / roster * Math.max(0, score - before) / 100 * CLASS_ATTACK_MULTIPLIER };
     });
     const rawTotal = measured.reduce((sum, attack) => sum + attack.raw, 0);
+    // Round the class total to the nearest tenth before capping; floating-point
+    // error at a full slice must not truncate damage by 0.1 HP.
     const damageUnits = Math.min(Math.round(available * 10), Math.round(rawTotal * 10));
     let cumulative = 0, assigned = 0;
     const attacks = measured.map(({ row: r, score, raw }, index) => {

@@ -67,16 +67,28 @@
   background:repeating-linear-gradient(to bottom, rgba(0,0,0,.25) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 60%, rgba(255,51,85,.16), transparent 65%), #090509; }
 .cr-boss-heading>span { font:10px var(--small); letter-spacing:1px; text-transform:uppercase; color:var(--cr-muted); }.cr-boss-heading h2 { font:18px/1.4 var(--pix); color:var(--cr-red); margin-top:8px; overflow-wrap:anywhere; text-shadow:3px 3px 0 #000, 0 0 12px rgba(255,51,85,.5); }
 .cr-hp { display:flex; align-items:center; gap:14px; margin:18px 0 0; }.cr-hp>div { flex:1; height:16px; padding:3px; background:#2a0b14; box-shadow:0 0 0 2px #000, 0 0 0 4px var(--red-d); }
-.cr-hp i { display:block; height:100%; background:repeating-linear-gradient(90deg, var(--cr-red) 0 8px, #b51d3a 8px 10px); transition:width 2s steps(12); }.cr-hp strong { font:12px var(--pix); color:#ff8aa0; min-width:110px; text-align:right; }
+.cr-hp i { display:block; height:100%; background:repeating-linear-gradient(90deg, var(--cr-red) 0 8px, #b51d3a 8px 10px); transition:width .4s steps(6); }.cr-hp strong { font:12px var(--pix); color:#ff8aa0; min-width:110px; text-align:right; }
 .cr-boss-stage { height:270px; position:relative; display:grid; place-items:center; }
 .cr-boss-sprite { height:100%; width:100%; display:grid; place-items:center; }
 .cr-boss-canvas { height:100%; width:auto; max-width:100%; object-fit:contain; image-rendering:pixelated; image-rendering:crisp-edges; filter:drop-shadow(0 0 16px rgba(255,51,85,.35)); }
 .cr-defeated .cr-boss-canvas { filter:grayscale(1) brightness(.6); }.cr-boss-art { margin:0; font:19px/1.04 monospace; color:#ff5a78; text-shadow:3px 3px #3a0b18, 0 0 18px rgba(255,51,85,.45); user-select:none; }
 .cr-boss-message { color:var(--cr-muted); }.cr-attack-total { font:16px/1.4 var(--pix); color:var(--cr-amber); margin-top:10px; text-shadow:3px 3px 0 #000; }.cr-attack-names { color:var(--cr-muted); font-size:18px; margin-top:6px; }
 .cr-volley { position:absolute; inset:0; pointer-events:none; overflow:hidden; }.cr-volley>i { display:none; position:absolute; left:3%; top:calc(15% + var(--shot)*9%); color:var(--cr-green); font:16px var(--pix); font-style:normal; text-shadow:0 0 8px var(--cr-green); }
-.cr-attacking .cr-volley>i { display:block; animation:cr-shot 1s calc(var(--shot)*.3s) 5 both; }.cr-attacking .cr-boss-art { animation:cr-boss-hit .5s 2s 12; }.cr-defeated .cr-boss-art { color:#4a5a52; text-shadow:none; }
-@keyframes cr-shot { 0% { transform:translateX(0); opacity:0; } 15% { opacity:1; } 90% { opacity:1; } 100% { transform:translateX(38vw); opacity:0; } }
-@keyframes cr-boss-hit { 0%,100% { transform:translateX(0); filter:none; } 25% { transform:translateX(4px); filter:brightness(1.8); } 75% { transform:translateX(-3px); } }
+/* the raid timeline (client/edu/class-raid.ts): six volleys land at 1.5 … 6.5 s. --raid-t = seconds already played when
+   this screen joined the raid (negative delay), so a reload or a late projector lands on the same beat. */
+.cr-attacking .cr-volley>i { display:block; animation:cr-shot 1s linear calc(.8s + var(--shot)*.03s - var(--raid-t, 0s)) 6 both; }
+.cr-attacking.cr-raid-hits .cr-boss-art { animation:cr-boss-hit 1s calc(1.5s - var(--raid-t, 0s)) 6 both; }.cr-defeated .cr-boss-art { color:#4a5a52; text-shadow:none; }
+.cr-raid-paused .cr-boss, .cr-raid-paused .cr-boss * { animation-play-state:paused !important; }
+@keyframes cr-shot { 0% { transform:translateX(0); opacity:0; } 8% { opacity:1; } 60% { transform:translateX(38vw); opacity:1; } 64%,100% { transform:translateX(38vw); opacity:0; } }
+@keyframes cr-boss-hit { 0% { transform:translateX(4px); filter:brightness(1.8); } 12% { transform:translateX(-3px); filter:brightness(1.4); } 30%,100% { transform:translateX(0); filter:none; } }
+.cr-ko { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-6deg); font:clamp(22px, 3vw, 48px)/1 var(--pix); color:var(--cr-amber); text-shadow:4px 4px 0 #000, 0 0 18px rgba(255,210,61,.55); pointer-events:none; }
+.cr-ko[hidden] { display:none; }
+/* students: own result + a light boss HP bar (no canvas on phones) */
+.cr-my-raid { grid-column:1 / -1; display:grid; gap:8px; padding:16px 20px; margin:6px; background:var(--cr-panel); box-shadow:var(--cr-edge); }
+.cr-my-raid[hidden], .cr-my-raid [hidden] { display:none; }
+.cr-my-damage { font:16px/1.5 var(--pix); color:var(--cr-amber); text-shadow:2px 2px 0 #000; }.cr-my-why { color:var(--cr-muted); }.cr-my-total { color:var(--cr-green); }
+.cr-my-hp { display:flex; align-items:center; gap:12px; }.cr-my-hp>div { flex:1; height:12px; padding:2px; background:#2a0b14; box-shadow:0 0 0 2px #000, 0 0 0 4px var(--red-d); }
+.cr-my-hp i { display:block; height:100%; background:var(--cr-red); transition:width .4s steps(6); }.cr-my-hp small { font:11px var(--pix); color:#ff8aa0; white-space:nowrap; }
 .cr-feedback,.cr-student-work,.cr-editor { padding:20px; margin:6px; background:var(--cr-panel); box-shadow:var(--cr-edge); min-width:0; }
 .cr-feedback { display:grid; gap:14px; }.cr-feedback p { overflow-wrap:anywhere; }.cr-feedback-title { display:flex; flex-wrap:wrap; align-items:center; gap:10px 20px; justify-content:space-between; min-width:0; }.cr-score { font:28px/1 var(--pix); color:var(--cr-amber); white-space:nowrap; text-shadow:3px 3px 0 #000; }.cr-score small { font:10px var(--small); }
 .cr-version { font-size:17px; overflow-wrap:anywhere; }.cr-advice { margin:0; padding-left:22px; display:grid; gap:8px; }.cr-advice li::marker { color:var(--cr-amber); }

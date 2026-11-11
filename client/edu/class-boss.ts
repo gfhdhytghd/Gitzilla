@@ -2,9 +2,12 @@
 // The kit is derived deterministically from the lesson's boss name (same name → same archetype/look). Class HP
 // drives the look: phases (1 → 2 → 3 tint/glitch), limbs breaking off as HP drops, enrage below half, a stagger
 // volley while the class attacks, a roar now and then, and the death topple when the class wins.
+// During a class attack the poses and the HP drawn follow the shared raid timeline (class-raid.ts), so the staggers sit
+// on the volleys and a killing round topples near the end of the raid. A host pause freezes the time base.
 // Only animates while visible (the projector); student phones never show it, so no render loop runs there.
 import type { BossKit, BossPose, BossState } from "../../shared/types.ts";
 import { demoBossKit } from "../app/mock.ts";
+import { raidPose, raidStage, bossPhase } from "./class-raid.ts";
 
 type BossMod = {
   drawBoss(ctx: CanvasRenderingContext2D, b: BossState | null, time: number): void;
@@ -17,8 +20,10 @@ export interface ClassBossView {
   name: string;
   hp: number;
   maxHp: number;
-  /** changes whenever a new class attack starts (plays the hit volley) */
-  raidKey: string;
+  /** the running class attack: seconds into it (raid clock, see class-raid.ts) and the round's HP before/after */
+  raid?: { key: string; elapsed: number; bossBefore: number; bossAfter: number } | null;
+  /** host pause (also through the resume countdown): the time base stops, poses and idle motion hold still */
+  paused?: boolean;
 }
 
 export interface ClassBoss {
@@ -61,15 +66,20 @@ export function createClassBoss(): ClassBoss {
   let mod: BossMod | null = null;
   let frame = { logical: 176, bx: 88, by: 80 };
   let raf = 0, alive = true, lastDraw = 0;
-  let lastRaid = "", lastPhase = 1;
-  // scripted pose timeline (seconds, renderer time base)
-  let pose: { name: BossPose; start: number; total: number; dir: [number, number] } | null = null;
-  let queue: { name: BossPose; total: number }[] = [];
+  let lastPhase = 1, killed = false;
+  // pose outside a raid (seconds, virtual time base); inside a raid the pose comes from the raid timeline
+  let pose: { name: BossPose; start: number; total: number } | null = null;
   let nextRoar = 0;
-  const now = () => performance.now() / 1000;
+  // virtual clock: performance.now() minus the time spent paused
+  let base = 0, frozenAt: number | null = null, raidAnchor = 0;
+  const now = () => frozenAt ?? performance.now() / 1000 - base;
+  const freeze = (on: boolean) => {
+    if (on && frozenAt === null) frozenAt = now();
+    else if (!on && frozenAt !== null) { base = performance.now() / 1000 - frozenAt; frozenAt = null; }
+  };
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const play = (name: BossPose, total: number) => { pose = { name, start: now(), total, dir: [-1, 0] }; };
+  const play = (name: BossPose, total: number) => { pose = { name, start: now(), total }; };
 
   // crop window inside the portrait frame: the kaiju's real pixel bounds (measured once per kit) + room for poses
   let crop = { x: 0, y: 0, w: 176, h: 176 };
@@ -101,21 +111,30 @@ export function createClassBoss(): ClassBoss {
 
   const draw = () => {
     if (!kit || !mod || !view) return;
-    const t = now();
-    if (pose && t - pose.start >= pose.total) pose = queue.length ? (() => { const n = queue.shift()!; return { name: n.name, start: t, total: n.total, dir: [-1, 0] as [number, number] }; })() : pose.name === "death" ? pose : null;
-    const dead = view.hp <= 0;
-    if (!pose && !dead && !reduced && t > nextRoar) { play("roar", 1.1); nextRoar = t + 9 + Math.random() * 6; }
-    const p = pose ? { name: pose.name, t: Math.min(t - pose.start, pose.total), total: pose.total, dir: pose.dir } : { name: "idle" as BossPose, t: 0, total: 1, dir: [-1, 0] as [number, number] };
+    const t = now(), raid = view.raid;
+    const dir: [number, number] = [-1, 0];
+    let hp = view.hp, p: { name: BossPose; t: number; total: number } | null;
+    if (raid) {
+      const e = t - raidAnchor;
+      hp = raidStage(raid, e).hp;
+      p = raidPose(raid, view.maxHp, e);
+      if (hp <= 0) killed = true;
+    } else {
+      if (pose && t - pose.start >= pose.total && pose.name !== "death") pose = null;
+      if (!pose && hp > 0 && !reduced && t > nextRoar) { play("roar", 1.1); nextRoar = t + 9 + Math.random() * 6; }
+      p = pose ? { name: pose.name, t: Math.min(t - pose.start, pose.total), total: pose.total } : null;
+      if (hp <= 0 && !pose) p = { name: "death", t: 1.8, total: 1.8 }; // already toppled before this screen saw it fall
+    }
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, canvas.width, canvas.height);
-    if (dead && pose?.name === "death" && t - pose.start >= pose.total) return; // toppled: nothing left standing
+    if (p?.name === "death" && p.t >= p.total) return; // toppled: nothing left standing
     // floor shadow so the kaiju stands on the stage
     g.fillStyle = "rgba(0,0,0,.45)";
     g.beginPath();
     g.ellipse(canvas.width / 2, canvas.height - 9, canvas.width * 0.36, 4, 0, 0, Math.PI * 2);
     g.fill();
     g.setTransform(1, 0, 0, 1, -crop.x, -crop.y);
-    mod.drawBoss(g, classBossState(kit, view, frame, p), reduced ? 0.35 : t);
+    mod.drawBoss(g, classBossState(kit, { hp, maxHp: view.maxHp }, frame, { ...(p ?? { name: "idle", t: 0, total: 1 }), dir }), reduced ? 0.35 : t);
     g.setTransform(1, 0, 0, 1, 0, 0);
   };
 
@@ -140,18 +159,21 @@ export function createClassBoss(): ClassBoss {
       const prev = view;
       view = { ...v };
       if (!kit || (prev && prev.name !== v.name) || !prev) setKit(v.name);
-      const f = v.maxHp > 0 ? v.hp / v.maxHp : 1;
-      const phase = f > 0.66 ? 1 : f > 0.33 ? 2 : 3;
-      if (v.hp <= 0 && pose?.name !== "death") { queue = []; play("death", 1.8); }
-      else if (v.raidKey && v.raidKey !== lastRaid && prev) {
-        // the class volley lands: repeated staggers, then an enrage beat if the phase dropped
-        play("stagger", 0.55);
-        queue = Array.from({ length: 6 }, (): { name: BossPose; total: number } => ({ name: "stagger", total: 0.55 }));
-        if (phase > lastPhase) queue.push({ name: "enrage", total: 1.4 });
-        else queue.push({ name: "roar", total: 1 });
-      } else if (phase > lastPhase && prev) play("enrage", 1.4);
-      lastRaid = v.raidKey;
-      lastPhase = phase;
+      freeze(!!v.paused);
+      if (v.raid) {
+        // re-anchor on every update: the raid clock (server time) stays the authority, this clock only interpolates
+        raidAnchor = now() - v.raid.elapsed;
+        pose = null;
+        const stage = raidStage(v.raid, v.raid.elapsed);
+        lastPhase = bossPhase(stage.hp, v.maxHp);
+        if (stage.dead) killed = true;
+      } else {
+        const phase = bossPhase(v.hp, v.maxHp);
+        if (v.hp > 0) killed = false;
+        else if (!killed) { killed = true; if (prev) play("death", 1.8); } // fell outside a raid this screen played
+        if (v.hp > 0 && phase > lastPhase && prev) play("enrage", 1.4);
+        lastPhase = phase;
+      }
       if (reduced) draw();
     },
     destroy() {

@@ -26,13 +26,18 @@ import { createDebriefCard, debriefMarkdown } from '../edu/debrief-view';
 import { alignDoneWhen, doneWhenFor } from '../edu/task-brief';
 import type { InAppFile } from '../../shared/classroom';
 import './classroom.css';
-import { setClassroomAudio } from './sound';
+import { audio, setClassroomAudio } from './sound';
+import { amountParts, HITS, myRound, raidElapsed, raidStage, stepFloor, bossPhase, RAID_SEC } from '../edu/class-raid';
+import type { GameEvent } from '../../shared/types';
 import { createPauseOverlay } from './pause';
 import { wordmark } from './wordmark';
 
 const setText = (el: HTMLElement, s: string) => { if (el.textContent !== s) el.textContent = s; };
 /** Scores, HP and damage read as whole numbers ("100", not "100.0"). */
 const int = (n: number) => formatNumber(Math.round(n), 0);
+/** Damage and HP: whole when whole, else one decimal; never "0" for a non-zero value (class-raid.ts amountParts). */
+const num = (n: number) => { const a = amountParts(n); return formatNumber(a.value, a.digits); };
+const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const phaseNames = { setup: 'Prepare the lesson', coding: 'Build your next commit', paused: 'Coding paused', raid: 'Class attack', feedback: 'Review & improve', complete: 'Lesson complete' };
 // the grader's all-clear advice (server text), said the way a student would
 const PLAIN_ADVICE: Record<string, string> = { 'The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.': 'Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.' };
@@ -69,7 +74,9 @@ export function parseChecks(src: string): ClassroomCheck[] {
 }
 
 export function createClassroom(app: AppCtx): Screen {
-  setClassroomAudio(true);
+  // phones stay silent; a big screen opens the audio gate only while its class attack plays (renderBoss)
+  setClassroomAudio(app.role === 'screen' ? 'screen' : 'phone');
+  audio.stopMusic();
   document.body.classList.add('classroom-active');
   let state = app.lobby?.classroom;
   let clockOffset = state ? state.serverTime - Date.now() : 0;
@@ -174,12 +181,13 @@ export function createClassroom(app: AppCtx): Screen {
       : 'Visible: the class sees the projector window, not this screen.');
   };
   const roster = h('aside.cr-roster', null, h('div.cr-roster-heading', null, h('h2', null, 'Submissions'), h('small', null, 'Who needs help first · tap a name to review'), scoreBox), rosterList);
-  const bossHpFill = h('i'), bossHpText = h('strong');
+  const bossHpFill = h('i'), bossHpText = h('strong', { 'data-testid': 'classroom-boss-hp' });
   const bossName = h('h2', { translate: 'no' });
   // the game's real kaiju renderer; HP drives phase tint, broken limbs, staggers during the class attack, death
   // (projector only: student phones never show the boss panel, so they never start its animation loop)
   const classBoss = app.role === 'screen' ? createClassBoss() : null;
   const bossArt = classBoss?.el ?? h('div.cr-boss-art');
+  const bossKo = h('b.cr-ko', { hidden: true, 'data-testid': 'classroom-boss-ko' }, 'Defeated!');
   const volley = h('div.cr-volley', { 'aria-hidden': 'true' }, ...Array.from({ length: 8 }, (_, i) => h('i', { style: `--shot:${i}` }, '◆')));
   const bossMessage = h('p.cr-boss-message');
   const attackTotal = h('div.cr-attack-total', { 'data-testid': 'classroom-damage' });
@@ -187,7 +195,12 @@ export function createClassroom(app: AppCtx): Screen {
   const boss = h('section.cr-boss', { 'data-testid': 'classroom-boss' },
     h('div.cr-boss-heading', null, h('span', null, 'One class. One target.'), bossName),
     h('div.cr-hp', null, h('div', null, bossHpFill), bossHpText),
-    h('div.cr-boss-stage', null, volley, bossArt), bossMessage, attackTotal, attackNames);
+    h('div.cr-boss-stage', null, volley, bossArt, bossKo), bossMessage, attackTotal, attackNames);
+  // students: their own part in the class attack + a light boss HP bar (plain DOM; phones never mount the canvas)
+  const myLine = h('p.cr-my-damage', { 'data-testid': 'classroom-my-damage' }), myWhy = h('p.cr-my-why'), myTotal = h('p.cr-my-total', { 'data-testid': 'classroom-my-total' });
+  const myHpFill = h('i'), myHpText = h('small', { 'data-testid': 'classroom-my-boss-hp' });
+  const myRaid = h('section.cr-my-raid', { 'data-testid': 'classroom-my-raid', hidden: true }, h('h3', null, 'Your part in the class attack'), myLine, myWhy, myTotal,
+    h('div.cr-my-hp', null, h('div', { 'aria-hidden': 'true' }, myHpFill), myHpText));
   const review = h('section.cr-feedback', { 'data-testid': 'classroom-feedback' });
   const editor = h('section.cr-editor', { 'data-testid': 'classroom-plan-editor' });
   const hostBoard = h('div.cr-host-board', null, roster, h('div.cr-host-main', null, review, boss));
@@ -229,7 +242,7 @@ export function createClassroom(app: AppCtx): Screen {
     }
   });
   const student = h('section.cr-student-work', null, emailCard, studentTitle, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
-  const studentBoard = h('div.cr-student-board', null, student, review);
+  const studentBoard = h('div.cr-student-board', null, myRaid, student, review);
   // Projector only: the lobby's animated pixel backdrop. Student phones keep the CSS-only grid (no render loop).
   const backdrop = app.role === 'screen' ? createBackdrop({ dim: 0.55, themeCycle: false }) : null;
   backdrop?.setTheme('terminal');
@@ -278,7 +291,7 @@ export function createClassroom(app: AppCtx): Screen {
     else if (state.paused.resumeAt === null) sendPause(false);
   };
   addEventListener('keydown', onKey);
-  const pauseTimer = setInterval(() => pause.tick(), 100);
+  const pauseTimer = setInterval(() => { pause.tick(); if (state?.phase === 'raid') renderBoss(); }, 100);
   let sentToTeacher = false;
 
   // destructive teacher actions ask first (a mis-tap in front of the class must be undoable)
@@ -492,7 +505,7 @@ export function createClassroom(app: AppCtx): Screen {
       !teacher() && !report.teacherReview && report.checks.length && !cardSaysIt && !reportStep?.checks.some(c => c.kind === 'doctest' || c.kind === 'ci')
         ? h('p.cr-unreviewed', { 'data-testid': 'classroom-unreviewed-note' }, 'These checks look at your files, not at what your program prints. Your teacher will confirm that it does the task.')
         : document.createTextNode(''),
-      report.improvement ? h('p', null, report.improvement > 0 ? `↑ +${int(report.improvement)} from your last submission round` : `${int(report.improvement)} from your last submission round`) : document.createTextNode(''),
+      report.improvement ? h('p', null, report.improvement > 0 ? `↑ +${num(report.improvement)} from your last submission round` : `${num(report.improvement)} from your last submission round`) : document.createTextNode(''),
       report.checks.length ? h('div.cr-checks', { 'data-testid': 'classroom-feedback-checks' }, ...report.checks.map((c, i) => h(`div.${c.passed ? 'passed' : 'missing'}`, null,
         h('b', null, `${c.passed ? '✓' : '✗'} `, ...richText(plainCheck(i))),
         h('small', null, reportStep?.checks[i]?.kind === 'doctest' ? (c.passed ? 'Doctest examples passed' : 'Doctest failed: see the execution details below')
@@ -631,6 +644,92 @@ export function createClassroom(app: AppCtx): Screen {
     chip.addEventListener('click', (e) => e.stopPropagation());
     chip.addEventListener('contextmenu', (e) => e.preventDefault());   // long-press on phones peeks, no menu
     return chip;
+  };
+  // The boss panel (big screen) and the student's own result, staged on the raid timeline (client/edu/class-raid.ts):
+  // HP steps down as the volleys land, the kill topples near the end, impact and names are revealed late. Runs on every
+  // render and at 10 Hz during a raid; outside a raid (or with reduced motion) it shows the real values.
+  let sfx = { key: '', landed: 0, dead: false }, audioGate = false;
+  const renderBoss = () => {
+    const s = state, screen = app.role === 'screen', last = s?.rounds.at(-1);
+    const max = s?.bossMaxHp ?? 180;
+    const elapsed = s && last && !reducedMotion ? raidElapsed(s, Date.now() + clockOffset) : null;
+    const key = s?.phase === 'raid' && last ? `${last.stepId}:${last.attempt}:${last.at}` : '';
+    const stage = key && last ? raidStage(last, elapsed) : null;   // null: not in a raid, show everything
+    const hp = stage ? stage.hp : s?.bossHp ?? 180;
+    if (!screen) return renderMine(hp, max, stage);
+    setText(bossName, s?.plan.bossName ?? draft.bossName);
+    bossHpFill.style.width = `${max > 0 ? Math.max(0, hp) / max * 100 : 0}%`; setText(bossHpText, `${num(hp)} / ${num(max)}`);
+    if (key && raidKey !== key) {
+      // CSS volleys start at the raid clock (negative delay), so a late-opened projector joins mid-volley
+      raidKey = key; boss.style.setProperty('--raid-t', `${elapsed ?? RAID_SEC}s`);
+      boss.classList.remove('cr-attacking'); void boss.offsetWidth; boss.classList.add('cr-attacking');
+    }
+    if (!key) boss.classList.remove('cr-attacking');
+    boss.classList.toggle('cr-raid-hits', !!key && !!last && last.bossBefore > last.bossAfter);
+    const paused = !!s?.paused && s.phase === 'raid';
+    classBoss?.update({ name: s?.plan.bossName ?? draft.bossName, hp: s?.bossHp ?? 180, maxHp: max, paused,
+      raid: key && last && elapsed !== null ? { key, elapsed, bossBefore: last.bossBefore, bossAfter: last.bossAfter } : null });
+    boss.classList.toggle('cr-defeated', hp <= 0);
+    bossKo.hidden = !(hp <= 0 && (!stage || stage.toppled));
+    setText(bossMessage, s?.phase === 'raid' ? hp <= 0 ? 'Boss defeated. Keep building.' : 'Your code is making the attack. No controller needed.' : s?.phase === 'feedback' ? 'Review the evidence. Improve your next commit.' : s?.phase === 'complete' ? hp <= 0 ? 'Boss defeated. Keep building.' : 'Lesson complete. Every improvement moved the class forward.' : 'Push a better version. Bring the whole class closer.');
+    const impact = last ? Math.max(0, last.bossBefore - last.bossAfter) : 0;
+    setText(attackTotal, !last ? 'The first class attack is waiting.'
+      : stage && !stage.impact ? 'The class attack is landing…'
+      : impact > 0 ? `Class impact: ${num(impact)} damage`
+      : last.bossBefore <= 0 ? 'Class impact: 0 damage (the boss was already defeated)'
+      // the server caps each step at its share of the boss HP
+      : last.bossAfter <= stepFloor(s!, last) + 0.05 ? 'Class impact: 0 damage (this step’s share of the boss is used up; the next step unlocks more)'
+      : last.attempt > 1 ? 'Class impact: 0 damage (no one beat their best score for this step)'
+      : 'Class impact: 0 damage (every submitted score was 0)');
+    // first attack of a step: every submitted score counts; a retry counts only the gain over each best credited score
+    const top = last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement).slice(0, 3) ?? [];
+    const n = last?.attacks.length ?? 0;
+    setText(attackNames, stage && !stage.names ? ''
+      : top.length ? `Big improvements: ${top.map(a => `${a.name} +${num(a.improvement)}`).join(' · ')}`
+      : !last ? 'Every submitted score counts in a step’s first attack. On a retry, only gains over your best score count.'
+      : last.attempt > 1 ? (n === 1 ? '1 student attacked. On a retry, only the gain over their best score for this step counts.' : `${n} students attacked. On a retry, only the gain over each student’s best score for this step counts.`)
+      : n === 1 ? '1 student attacked. In a step’s first attack, every submitted score counts.' : `${n} students attacked. In a step’s first attack, every submitted score counts.`);
+    // sound: hit / phase / kill cues from the audio engine as the volleys land. Only this big screen, only live (a
+    // late-opened screen stays quiet for volleys already past), not while paused, and the console defers to its projector.
+    const gate = !!stage && !paused && !(teacher() && !projectorView && projectorOpen());
+    setClassroomAudio('screen', gate);
+    if (audioGate && !gate) audio.stopMusic();   // the kill's victory loop ends with the raid
+    audioGate = gate;
+    if (!stage || !last) { sfx = { key: '', landed: 0, dead: false }; return; }
+    if (sfx.key === key && gate) {
+      const events: GameEvent[] = [];
+      if (stage.landed > sfx.landed) {
+        events.push({ type: 'hit', target: 'boss', amount: 1, x: 0, y: 0, crit: stage.landed === HITS.length });
+        const before = bossPhase(raidStage(last, HITS[sfx.landed] - 0.01).hp, max), after = bossPhase(stage.hp, max);
+        if (after > before && stage.hp > 0) events.push({ type: 'phase', phase: after as 1 | 2 | 3 });
+      }
+      if (stage.dead && !sfx.dead) events.push({ type: 'limbBroken', limb: 'core', by: '' }, { type: 'victory' });
+      if (events.length) audio.onEvents(events, '');
+    }
+    sfx = { key, landed: stage.landed, dead: stage.dead };
+  };
+  const renderMine = (hp: number, max: number, stage: ReturnType<typeof raidStage> | null) => {
+    const s = state;
+    myRaid.hidden = !s || !['raid', 'feedback', 'complete'].includes(s.phase);
+    if (!s || myRaid.hidden) return;
+    const me = myRound(s, app.you ?? undefined), waiting = !!stage && !stage.impact;
+    const row = s.rows.find(r => r.id === app.you);
+    setText(myLine, me.kind === 'none' ? 'No class attack yet.'
+      : me.kind === 'absent' ? 'You didn’t submit for this attack, so you dealt no damage this time. That’s okay: submit on the next step and your code joins in.'
+      : waiting ? 'Your code is in this attack. Watch the big screen!'
+      : me.kind === 'hit' ? `You dealt ${num(me.damage)} damage in this attack.`
+      : 'Your code dealt no damage in this attack.');
+    setText(myWhy, waiting || me.kind !== 'zero' ? ''
+      : me.why === 'defeated' ? 'The boss was already defeated.'
+      : me.why === 'capped' ? 'This step’s share of the boss HP was already used up. The next step brings more.'
+      : me.why === 'score0' ? 'Your submission scored 0. Fix the missing checks and your next version will hit.'
+      : 'On a retry, only the gain over your best score already credited for this step deals damage. Beat that score to hit again.');
+    myWhy.hidden = !myWhy.textContent;
+    // the lesson total includes this attack: revealed with it
+    setText(myTotal, waiting ? '' : `Lesson total: ${num(row?.totalDamage ?? 0)} damage`);
+    myTotal.hidden = waiting;
+    myHpFill.style.width = `${max > 0 ? Math.max(0, hp) / max * 100 : 0}%`;
+    setText(myHpText, hp <= 0 ? 'Boss defeated!' : `Boss HP ${num(hp)} / ${num(max)}`);
   };
   const render = () => {
     if (kickedOut) return;
@@ -804,25 +903,7 @@ export function createClassroom(app: AppCtx): Screen {
       }));
       if (!s?.rows.length) rosterList.append(h('p.cr-empty', null, `Students: open ${location.origin} and join ${app.room}.`));
     }
-    setText(bossName, s?.plan.bossName ?? draft.bossName);
-    const hp = s?.bossHp ?? 180, max = s?.bossMaxHp ?? 180;
-    bossHpFill.style.width = `${hp / max * 100}%`; setText(bossHpText, `${int(hp)} / ${int(max)}`);
-    const last = s?.rounds.at(-1);
-    const newRaid = s?.phase === 'raid' && last ? `${last.stepId}:${last.attempt}:${last.at}` : '';
-    if (newRaid && raidKey !== newRaid) { raidKey = newRaid; boss.classList.remove('cr-attacking'); void boss.offsetWidth; boss.classList.add('cr-attacking'); }
-    classBoss?.update({ name: s?.plan.bossName ?? draft.bossName, hp, maxHp: max, raidKey: newRaid ? raidKey : '' });
-    if (s?.phase !== 'raid') boss.classList.remove('cr-attacking');
-    boss.classList.toggle('cr-defeated', hp <= 0);
-    setText(bossMessage, s?.phase === 'raid' ? 'Your code is making the attack. No controller needed.' : s?.phase === 'feedback' ? 'Review the evidence. Improve your next commit.' : s?.phase === 'complete' ? hp <= 0 ? 'Boss defeated. Keep building.' : 'Lesson complete. Every improvement moved the class forward.' : 'Push a better version. Bring the whole class closer.');
-    const impact = last ? Math.round(last.bossBefore - last.bossAfter) : 0;
-    setText(attackTotal, !last ? 'The first class attack is waiting.'
-      : impact > 0 ? `Class impact: ${int(impact)} damage`
-      : last.bossBefore <= 0 ? 'Class impact: 0 damage (the boss was already defeated)'
-      // improved work but no damage: the server caps each step at its share of the boss HP
-      : last.attacks.some(a => a.improvement > 0) ? 'Class impact: 0 damage (this step’s share of the boss is used up; the next step unlocks more)'
-      : 'Class impact: 0 damage (no improvement since the last round)');
-    const top = last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement).slice(0, 3) ?? [];
-    setText(attackNames, top.length ? `Big improvements: ${top.map(a => `${a.name} +${int(a.improvement)}`).join(' · ')}` : last ? (last.attacks.length === 1 ? '1 student contributed. Only improvements add extra damage.' : `${last.attacks.length} students contributed. Only improvements add extra damage.`) : 'All submitted code contributes. Improvements unlock extra impact.');
+    renderBoss();
     const mine = s?.rows.find(r => r.id === app.you);
     const canSubmit = s?.phase === 'coding' && mine?.status !== 'queued' && app.status === 'open';
     const mineInApp = !!mine?.commit?.startsWith('inapp:');
@@ -849,5 +930,5 @@ export function createClassroom(app: AppCtx): Screen {
   if (projectorChannel && !projectorView) projectorChannel.onmessage = (e) => { if (e.data === 'projector') projectorSeen = Date.now(); else if (e.data === 'projector-closed') projectorSeen = 0; };
   const announceClose = () => { if (projectorView) projectorChannel?.postMessage('projector-closed'); };
   addEventListener('pagehide', announceClose);
-  return { el, update: render, onMsg(m) { if (m.t === 'kicked' && !teacher()) showKicked(m.by); }, destroy() { barSize?.disconnect(); for (const t of removing.values()) clearTimeout(t); announceClose(); removeEventListener('pagehide', announceClose); projectorChannel?.close(); backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio(false); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, onMsg(m) { if (m.t === 'kicked' && !teacher()) showKicked(m.by); }, destroy() { barSize?.disconnect(); for (const t of removing.values()) clearTimeout(t); announceClose(); removeEventListener('pagehide', announceClose); projectorChannel?.close(); backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio('off'); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
 }

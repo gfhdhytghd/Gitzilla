@@ -316,14 +316,22 @@ async function viewClassBoss() {
       h("div.cr-boss-heading", null, h("span", null, `${kit.archetype} · ${Math.round((hp / max) * 100)}% HP`), h("h2", null, name)),
       h("div.cr-hp", null, h("div", null, h("i", { style: `width:${(hp / max) * 100}%` })), h("strong", null, `${hp} / ${max}`)),
       h("div.cr-boss-stage", null, b.el)));
-    b.update({ name, hp, maxHp: max, raidKey: "" });
+    b.update({ name, hp, maxHp: max });
     return { b, name, hp, max };
   });
   app.append(h("div.classroom-screen.demo-cb-wrap", null, grid));
-  // ?raid=<i>: that boss takes a class attack 300ms after load (stagger volley); ?kill=<i>: HP → 0 (death topple)
-  if (raidAt >= 0) setTimeout(() => { const x = bosses[raidAt]; x.b.update({ name: x.name, hp: Math.max(0, x.hp - 40), maxHp: x.max, raidKey: "r1" }); }, 300);
+  // ?raid=<i>: that boss takes a 10 s class attack (40 damage) on the raid timeline; ?kill=<i>: a killing raid (topple)
+  const raid = (i: number, after: (hp: number) => number, key: string) => {
+    const x = bosses[i], start = performance.now(), bossAfter = after(x.hp);
+    const tick = setInterval(() => {
+      const elapsed = (performance.now() - start) / 1000;
+      x.b.update({ name: x.name, hp: bossAfter, maxHp: x.max, raid: elapsed < 10 ? { key, elapsed, bossBefore: x.hp, bossAfter } : null });
+      if (elapsed >= 10) clearInterval(tick);
+    }, 100);
+  };
+  if (raidAt >= 0) setTimeout(() => raid(raidAt, hp => Math.max(0, hp - 40), "r1"), 300);
   const kill = Number(params.get("kill") ?? -1);
-  if (kill >= 0) setTimeout(() => { const x = bosses[kill]; x.b.update({ name: x.name, hp: 0, maxHp: x.max, raidKey: "r2" }); }, 300);
+  if (kill >= 0) setTimeout(() => raid(kill, () => 0, "r2"), 300);
 }
 
 function viewIndex() {
