@@ -238,7 +238,7 @@ Local browser acceptance (real doctest, mocked model, isolated loopback server):
 
 In the teacher's lesson editor, upload a PDF with selectable text, a UTF-8 Markdown
 file (`.md`), or a plain text file (`.txt`) to generate a course draft. Files are
-limited to 1 MB; extracted text is limited to 80,000 UTF-8 bytes. PDF extraction
+limited to 8 MB; extracted text is limited to 80,000 UTF-8 bytes. PDF extraction
 requires `pdftotext` on the server. Generation reuses the configured Gemini provider
 and DeepSeek fallback. Uploaded course text is sent to that provider; API keys stay
 on the server. A provider failure leaves the existing draft intact.

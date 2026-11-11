@@ -30,7 +30,7 @@ describe('course upload component', () => {
   });
   it('rejects invalid file sizes and extensions before sending a request', async () => {
     const f = fixture();
-    for (const file of [new File(['x'], 'a.exe'), new File([], 'a.md'), new File(['x'.repeat(1024 * 1024 + 1)], 'a.txt')]) {
+    for (const file of [new File(['x'], 'a.exe'), new File([], 'a.md'), new File(['x'.repeat(8 * 1024 * 1024 + 1)], 'a.txt')]) {
       Object.assign(f.get('course-file'), { files: [file] }); f.get('course-generate').click(); await tick();
     }
     expect(f.fetcher).not.toHaveBeenCalled(); expect(f.apply).not.toHaveBeenCalled();

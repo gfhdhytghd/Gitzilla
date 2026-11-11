@@ -1,7 +1,7 @@
 import type { ClassroomPlan } from '../../shared/classroom';
 import { h } from './util';
 
-const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
 /** Apply only course content; keep the teacher's guidance and review settings. */
 export function mergeCourseDraft(current: ClassroomPlan, generated: ClassroomPlan): ClassroomPlan {
   return { ...structuredClone(current), title: generated.title, bossName: generated.bossName, steps: structuredClone(generated.steps) };
@@ -20,7 +20,7 @@ export function createCourseUpload(options: { room: string; token?: string; onAp
     clear(); const ticket = generation;
     const selected = file.files?.[0];
     if (!selected || !/\.(pdf|md|txt)$/i.test(selected.name)) { status.textContent = 'Choose a .pdf, .md or .txt file.'; return; }
-    if (!selected.size || selected.size > MAX_FILE_BYTES) { status.textContent = 'Choose a non-empty file up to 1 MB.'; return; }
+    if (!selected.size || selected.size > MAX_FILE_BYTES) { status.textContent = 'Choose a non-empty file up to 8 MB.'; return; }
     if (!options.token) { status.textContent = 'Reconnect as the classroom owner before generating a course.'; return; }
     generate.disabled = true; status.textContent = 'Generating course preview…';
     try {
@@ -54,6 +54,6 @@ export function createCourseUpload(options: { room: string; token?: string; onAp
     } finally { if (!disposed) generate.disabled = false; }
   };
   const el = h('section.cr-measurements', { 'data-testid': 'course-upload' }, h('h3', null, 'Generate a course from a file'),
-    h('p', null, 'Upload a PDF with selectable text, Markdown (.md), or plain text (.txt). Up to 1 MB; extracted text up to 80000 UTF-8 bytes. The document is sent to the configured AI provider. Generation only creates a preview.'), file, generate, status, preview);
+    h('p', null, 'Upload a PDF with selectable text, Markdown (.md), or plain text (.txt). Up to 8 MB; extracted text up to 80000 UTF-8 bytes. The document is sent to the configured AI provider. Generation only creates a preview.'), file, generate, status, preview);
   return { el, dispose() { disposed = true; generation++; controller.abort(); } };
 }

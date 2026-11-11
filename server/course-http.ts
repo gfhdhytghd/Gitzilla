@@ -3,7 +3,7 @@ import { extractRubricText, PdfTextLimitError } from '../rubric/pdf';
 import type { RoomServer } from './rooms';
 import { createCourseGenerator, MAX_COURSE_TEXT_BYTES, validateGeneratedCourse } from './course-generation';
 
-export const MAX_COURSE_FILE_BYTES = 1024 * 1024;
+export const MAX_COURSE_FILE_BYTES = 8 * 1024 * 1024;
 const generateCourse = createCourseGenerator();
 class CourseError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 const reply = (res: ServerResponse, status: number, body: unknown) => {
@@ -26,13 +26,13 @@ export async function handleCourseRoute(req: IncomingMessage, res: ServerRespons
     if (filename.length > 255 || !/\.(pdf|md|txt)$/i.test(filename)) throw new CourseError(415, 'Upload a .pdf, .md or .txt file');
     const mime = (req.headers['content-type'] ?? 'application/octet-stream').split(';')[0].trim().toLowerCase();
     if (!['application/pdf', 'text/plain', 'text/markdown', 'text/x-markdown', 'application/octet-stream'].includes(mime)) throw new CourseError(415, 'Unsupported course file type');
-    if (Number(req.headers['content-length']) > MAX_COURSE_FILE_BYTES) throw new CourseError(413, 'Course file exceeds 1 MB');
+    if (Number(req.headers['content-length']) > MAX_COURSE_FILE_BYTES) throw new CourseError(413, 'Course file exceeds 8 MB');
     const body = await new Promise<Buffer>((resolve, reject) => {
       let bytes = 0, failed = false; const chunks: Buffer[] = [];
       req.on('data', (chunk: Buffer) => {
         if (failed) return;
         bytes += chunk.length;
-        if (bytes > MAX_COURSE_FILE_BYTES) { failed = true; chunks.length = 0; reject(new CourseError(413, 'Course file exceeds 1 MB')); }
+        if (bytes > MAX_COURSE_FILE_BYTES) { failed = true; chunks.length = 0; reject(new CourseError(413, 'Course file exceeds 8 MB')); }
         else chunks.push(chunk);
       });
       req.once('end', () => { if (!failed) resolve(Buffer.concat(chunks)); });
