@@ -100,6 +100,6 @@ await Promise.all(Array.from({length:6},()=>worker()));
 const active=entries.flatMap(e=>{const row=completed.get(e.id);return row?[[row.en,row.zh,row.es,row.fr]]:[];});
 const bundled=active.filter(row=>row.some(value=>value!==row[0]));
 writeFileSync(join(dir,'messages.generated.json'),JSON.stringify(bundled)+'\n');
-const providers=Object.fromEntries(['Gemini via AGY','DeepSeek'].map(p=>[p,entries.filter(e=>completed.has(e.id)&&(completed.get(e.id)?.provider??'Gemini via AGY')===p).length]));
+const providers:Record<string,number>={};for(const e of entries)if(completed.has(e.id)){const p=completed.get(e.id)?.provider??'Gemini via AGY';providers[p]=(providers[p]??0)+1;}
 writeFileSync(join(dir,'generation.json'),JSON.stringify({provider:'Gemini via AGY with DeepSeek fallback',model,providers,entries:entries.length,translated:active.length,bundled:bundled.length,failed,generatedAt:new Date().toISOString()},null,2)+'\n');
 if(failed)process.exitCode=1;

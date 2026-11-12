@@ -3,11 +3,11 @@
   "model": "gemini-3.8-flash-high",
   "providers": {
     "Gemini via AGY": 2749,
-    "DeepSeek": 335
+    "Claude Opus": 335
   },
   "entries": 3084,
   "translated": 3084,
-  "bundled": 2575,
+  "bundled": 2552,
   "failed": 0,
-  "generatedAt": "2026-11-11T22:06:06.085Z"
+  "generatedAt": "2026-11-12T03:39:22.217Z"
 }

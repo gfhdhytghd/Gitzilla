@@ -38,3 +38,12 @@ describe('four-language localization primitives', () => {
     for (const lang of ['en','zh','es','fr'] as const) expect(contract(localizeClassroomPlan(plan, lang))).toEqual(contract(plan));
   });
 });
+
+it('prefers the most specific template over a generic one, whatever the catalog order', () => {
+  const translate = createTranslator([
+    ['{0} from {1}', '来自 {1} 的 {0}', '{0} de {1}', '{0} de {1}'],
+    ['{0} removed you from this classroom.', '{0} 已将你移出本课堂。', '{0} te ha quitado de esta clase.', '{0} vous a retiré de cette classe.'],
+  ]);
+  expect(translate('Ms Lee removed you from this classroom.', 'fr')).toBe('Ms Lee vous a retiré de cette classe.');
+  expect(translate('flask from pallets', 'fr')).toBe('flask de pallets');
+});

@@ -8867,38 +8867,38 @@
   {
     "id": "0f9a0ef1c1c4e7e5",
     "en": "the heart is the module everyone imports. rip it out.",
-    "zh": "核心模块就是所有人都会导入的那个模块。把它拆掉。",
+    "zh": "心脏就是人人都要 import 的那个模块。把它挖出来。",
     "es": "el corazón es el módulo que todos importan. arráncalo.",
-    "fr": "le cœur est le module que tout le monde importe. arrache-le.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "le cœur, c'est le module que tout le monde importe. arrachez-le.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "8f666142c46911f9",
     "en": "tech debt has entered the arena.",
-    "zh": "技术债已进入竞技场。",
+    "zh": "技术债务进场了。",
     "es": "la deuda técnica ha entrado en la arena.",
-    "fr": "la dette technique est entrée dans l'arène.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "la dette technique entre dans l'arène.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5c8aabe5f40ec26c",
     "en": "your repo",
     "zh": "你的仓库",
     "es": "tu repositorio",
-    "fr": "ton dépôt",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "votre dépôt",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "44b0eb101f1a9442",
     "en": "a repo looks like owner/name — e.g. pallets/flask",
-    "zh": "仓库格式为 owner/name —— 例如 pallets/flask",
-    "es": "un repositorio tiene la forma owner/name — p. ej. pallets/flask",
-    "fr": "un dépôt s'écrit owner/name — par ex. pallets/flask",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "仓库格式为 owner/name，例如 pallets/flask",
+    "es": "un repositorio tiene el formato owner/name, p. ej. pallets/flask",
+    "fr": "un dépôt s'écrit owner/name, par ex. pallets/flask",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "262121c5372be8af",
@@ -8906,8 +8906,8 @@
     "zh": "编辑",
     "es": "editar",
     "fr": "modifier",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f640fd4f2108b228",
@@ -8915,8 +8915,8 @@
     "zh": "▶ 召唤英雄",
     "es": "▶ invocar héroe",
     "fr": "▶ invoquer un héros",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "789a57efe96dadac",
@@ -8924,8 +8924,8 @@
     "zh": "$ git clone ",
     "es": "$ git clone ",
     "fr": "$ git clone ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d761eb0cfa6f81ad",
@@ -8933,8 +8933,8 @@
     "zh": "player-repo-change",
     "es": "player-repo-change",
     "fr": "player-repo-change",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "12ea12eace7d655f",
@@ -8942,8 +8942,8 @@
     "zh": "更换",
     "es": "cambiar",
     "fr": "changer",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "92adc62e603177a3",
@@ -8951,17 +8951,17 @@
     "zh": "$ whoami ",
     "es": "$ whoami ",
     "fr": "$ whoami ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7b9dda242bdb512c",
     "en": "▶ watch your repo compile into your hero · tap to replay",
-    "zh": "▶ 看着你的仓库编译成你的英雄 · 点按回放",
+    "zh": "▶ 看你的仓库编译成英雄 · 点按重播",
     "es": "▶ mira cómo tu repositorio se compila en tu héroe · toca para repetir",
-    "fr": "▶ regarde ton dépôt se compiler en héros · touche pour rejouer",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "▶ regardez votre dépôt se compiler en héros · touchez pour revoir",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "bbaa4f404e046079",
@@ -8969,17 +8969,17 @@
     "zh": "首领仓库",
     "es": "repositorio del jefe",
     "fr": "dépôt du boss",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "30bc7f01be08cb1e",
     "en": "a repo looks like owner/name — e.g. lodash/lodash",
-    "zh": "仓库格式为 owner/name —— 例如 lodash/lodash",
-    "es": "un repositorio tiene la forma owner/name — p. ej. lodash/lodash",
-    "fr": "un dépôt s'écrit owner/name — par ex. lodash/lodash",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "仓库格式为 owner/name，例如 lodash/lodash",
+    "es": "un repositorio tiene el formato owner/name, p. ej. lodash/lodash",
+    "fr": "un dépôt s'écrit owner/name, par ex. lodash/lodash",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c99736a2bab92869",
@@ -8987,8 +8987,8 @@
     "zh": "$ summon-boss ",
     "es": "$ summon-boss ",
     "fr": "$ summon-boss ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "bf23f9af7bbdf5a0",
@@ -8996,8 +8996,8 @@
     "zh": "boss-repo-submit",
     "es": "boss-repo-submit",
     "fr": "boss-repo-submit",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "eaf5ac1b31384177",
@@ -9005,8 +9005,8 @@
     "zh": "☠ 召唤首领",
     "es": "☠ invocar jefe",
     "fr": "☠ invoquer le boss",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a5e7c002443743c5",
@@ -9014,35 +9014,35 @@
     "zh": "首领",
     "es": "jefe",
     "fr": "boss",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c25045678a4c93b6",
     "en": "BOSS KAIJU",
-    "zh": "首领巨兽",
-    "es": "KAJU DEL JEFE",
-    "fr": "KAIJU DU BOSS",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "首领怪兽",
+    "es": "KAIJU JEFE",
+    "fr": "KAIJU BOSS",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "585eadf7a63342c2",
     "en": "The whole class attacks one shared Boss. Submit code, review feedback, improve, and contribute together.",
-    "zh": "全班共同攻击同一个首领。提交代码、查看反馈、不断改进，一起贡献。",
-    "es": "Toda la clase ataca a un mismo Jefe. Envía código, revisa comentarios, mejora y contribuye en equipo.",
-    "fr": "Toute la classe attaque un même Boss. Soumettez du code, lisez les retours, améliorez et contribuez ensemble.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "全班一起攻击同一个首领。提交代码，查看反馈，改进代码，共同出力。",
+    "es": "Toda la clase ataca a un mismo jefe. Envía código, revisa los comentarios, mejora y contribuye en equipo.",
+    "fr": "Toute la classe attaque un même boss. Soumettez du code, lisez les retours, améliorez-vous et contribuez ensemble.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c286a8d636f7b147",
     "en": "Teachers set multi-step coding tasks. Each submitted GitHub commit is scored before the automatic class attack.",
-    "zh": "教师布置多步骤编程任务。每次提交的 GitHub commit 都会在自动班级攻击前评分。",
-    "es": "El profesor propone tareas de código por pasos. Cada commit de GitHub enviado se puntúa antes del ataque automático de la clase.",
-    "fr": "L'enseignant définit des tâches de code en plusieurs étapes. Chaque commit GitHub soumis est noté avant l'attaque automatique de la classe.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "老师布置多步骤编程任务。每次提交的 GitHub commit 都会先评分，再自动发起全班攻击。",
+    "es": "El profesor plantea tareas de programación en varios pasos. Cada commit de GitHub entregado se puntúa antes del ataque automático de la clase.",
+    "fr": "L'enseignant fixe des exercices de code en plusieurs étapes. Chaque commit GitHub soumis est noté avant l'attaque automatique de la classe.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f5b27dffb927ad4d",
@@ -9050,17 +9050,17 @@
     "zh": "⟲ 更换首领",
     "es": "⟲ cambiar jefe",
     "fr": "⟲ changer de boss",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6621b70886371c17",
     "en": "{0} still cloning… press again to start anyway",
-    "zh": "{0} 仍在克隆… 再按一次即可直接开始",
-    "es": "{0} aún clonando… pulsa de nuevo para empezar de todos modos",
-    "fr": "{0} clonage en cours… appuie à nouveau pour démarrer quand même",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "{0} 仍在克隆… 再按一次强制开始",
+    "es": "{0} aún se está clonando… pulsa otra vez para empezar de todos modos",
+    "fr": "{0} encore en cours de clonage… appuyez à nouveau pour lancer quand même",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "209a6eb65d5a0cba",
@@ -9068,8 +9068,8 @@
     "zh": "$ ./fight.sh",
     "es": "$ ./fight.sh",
     "fr": "$ ./fight.sh",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "32962284a80451b7",
@@ -9077,8 +9077,8 @@
     "zh": "AI 队友： ",
     "es": "Compañeros IA: ",
     "fr": "Coéquipiers IA : ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c27660ed44962c33",
@@ -9086,8 +9086,8 @@
     "zh": "bots-minus",
     "es": "bots-minus",
     "fr": "bots-minus",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "fd6baef632bbcced",
@@ -9095,35 +9095,35 @@
     "zh": "bots-plus",
     "es": "bots-plus",
     "fr": "bots-plus",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1e46e78b624bfe0c",
     "en": "SQUAD ",
     "zh": "小队 ",
     "es": "ESCUADRÓN ",
-    "fr": "ÉQUIPE ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "ESCOUADE ",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e4145deca4c3b067",
     "en": "join link copied",
-    "zh": "加入链接已复制",
-    "es": "enlace de acceso copiado",
-    "fr": "lien d'accès copié",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "已复制加入链接",
+    "es": "enlace para unirse copiado",
+    "fr": "lien d'invitation copié",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3394a50b5eb4f180",
     "en": "join link",
     "zh": "加入链接",
-    "es": "enlace de acceso",
-    "fr": "lien d'accès",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "es": "enlace para unirse",
+    "fr": "lien d'invitation",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1b0ebf24a0f0a4b0",
@@ -9131,26 +9131,26 @@
     "zh": "复制链接",
     "es": "copiar enlace",
     "fr": "copier le lien",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3988b500abe1c2e5",
     "en": "Could not create a classroom",
     "zh": "无法创建课堂",
-    "es": "No se pudo crear un aula",
-    "fr": "Impossible de créer une salle de classe",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "es": "No se pudo crear el aula",
+    "fr": "Impossible de créer la classe",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "192ff7faaf2a1cd2",
     "en": "Could not open the teacher classroom. Please try again.",
-    "zh": "无法打开教师课堂。请重试。",
+    "zh": "无法打开教师课堂，请重试。",
     "es": "No se pudo abrir el aula del profesor. Inténtalo de nuevo.",
-    "fr": "Impossible d'ouvrir la salle de classe de l'enseignant. Réessaie.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Impossible d'ouvrir la classe de l'enseignant. Veuillez réessayer.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f1dac3553057462c",
@@ -9158,35 +9158,35 @@
     "zh": "游戏模式",
     "es": "modo de juego",
     "fr": "mode de jeu",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "37a1ed943ac79dc7",
     "en": "classroom: code together and attack one shared Boss",
-    "zh": "课堂：一起编程，共同攻击同一个首领",
-    "es": "aula: programa en equipo y ataca a un mismo Jefe",
-    "fr": "classe : codez ensemble et attaquez un même Boss",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "课堂：一起写代码，合力攻击同一个首领",
+    "es": "aula: programad juntos y atacad a un mismo jefe",
+    "fr": "classe : codez ensemble et attaquez un même boss",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "16f5e2322d05ddf5",
     "en": "battle",
-    "zh": "对战",
-    "es": "batalla",
-    "fr": "combat",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "battle",
+    "es": "battle",
+    "fr": "battle",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "439b1bc9d2930fb3",
     "en": "⚔ boss raid",
     "zh": "⚔ 首领突袭",
-    "es": "⚔ incursión del jefe",
-    "fr": "⚔ assaut du boss",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "es": "⚔ incursión contra el jefe",
+    "fr": "⚔ raid contre le boss",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e613bb442bf089c0",
@@ -9194,8 +9194,8 @@
     "zh": "edu",
     "es": "edu",
     "fr": "edu",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "362114ee3477f813",
@@ -9203,35 +9203,35 @@
     "zh": "🎓 课堂",
     "es": "🎓 aula",
     "fr": "🎓 classe",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b2d2e1865cb3c940",
     "en": "you own this room — ownership passes to {0}. tap again to leave",
-    "zh": "你是这个房间的所有者 —— 所有权将转给 {0}。再点一次即可离开",
-    "es": "eres el dueño de esta sala — la propiedad pasará a {0}. toca de nuevo para salir",
-    "fr": "tu possèdes cette salle — la propriété passera à {0}. appuie à nouveau pour quitter",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "你是这个房间的房主，离开后将转交给 {0}。再点一次即可离开",
+    "es": "eres el anfitrión de esta sala; pasará a {0}. toca otra vez para salir",
+    "fr": "vous êtes l'hôte de ce salon ; il passera à {0}. touchez à nouveau pour partir",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "8addfedbb8fc7e46",
     "en": "⏏ confirm leave",
     "zh": "⏏ 确认离开",
     "es": "⏏ confirmar salida",
-    "fr": "⏏ confirmer la sortie",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "⏏ confirmer le départ",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "2437d61f39226b6b",
     "en": "⏏ leave room",
     "zh": "⏏ 离开房间",
     "es": "⏏ salir de la sala",
-    "fr": "⏏ quitter la salle",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "⏏ quitter le salon",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "2340e967fbbf3053",
@@ -9239,35 +9239,35 @@
     "zh": "new-room",
     "es": "new-room",
     "fr": "new-room",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "839fa445d0d49ea6",
     "en": "ROOM ",
     "zh": "房间 ",
     "es": "SALA ",
-    "fr": "SALLE ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "SALON ",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7556da37273badf9",
     "en": "scan with your phone (hold it upright)",
-    "zh": "用手机扫描（竖屏持握）",
-    "es": "escanea con tu teléfono (en vertical)",
-    "fr": "scanne avec ton téléphone (à la verticale)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "用手机扫码（竖着拿）",
+    "es": "escanea con tu móvil (en vertical)",
+    "fr": "scannez avec votre téléphone (tenu à la verticale)",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b3b14e7ae1a849a9",
     "en": "★ the first phone to join is the host",
-    "zh": "★ 第一个加入的手机是主持人",
-    "es": "★ el primer teléfono en unirse es el anfitrión",
-    "fr": "★ le premier téléphone à rejoindre est l'hôte",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "★ 第一台加入的手机担任房主",
+    "es": "★ el primer móvil en unirse será el anfitrión",
+    "fr": "★ le premier téléphone qui rejoint devient l'hôte",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "59b92367d379fdbe",
@@ -13727,11 +13727,11 @@
   {
     "id": "32e39f9a3bec15be",
     "en": "% COMPLETE",
-    "zh": "% COMPLETE",
-    "es": "% COMPLETE",
-    "fr": "% COMPLETE",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "% 完成",
+    "es": "% COMPLETADO",
+    "fr": "% TERMINÉ",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5e2490cd7a2a107c",
@@ -13739,8 +13739,8 @@
     "zh": "KERNEL PANIC",
     "es": "KERNEL PANIC",
     "fr": "KERNEL PANIC",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ecddcc9acd99a913",
@@ -13748,8 +13748,8 @@
     "zh": "NOT SYNCING: ATTEMPTED TO KILL INIT! EXITCODE=0X00000009",
     "es": "NOT SYNCING: ATTEMPTED TO KILL INIT! EXITCODE=0X00000009",
     "fr": "NOT SYNCING: ATTEMPTED TO KILL INIT! EXITCODE=0X00000009",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "79b2818e6bc912bc",
@@ -13757,8 +13757,8 @@
     "zh": "CALL TRACE:",
     "es": "CALL TRACE:",
     "fr": "CALL TRACE:",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d6ddcae9072e9772",
@@ -13766,8 +13766,8 @@
     "zh": " <SQUAD_WIPE+0X1F/0X40>",
     "es": " <SQUAD_WIPE+0X1F/0X40>",
     "fr": " <SQUAD_WIPE+0X1F/0X40>",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cbc5df2a845ffff3",
@@ -13775,8 +13775,8 @@
     "zh": " <BOSS_GLOAT+0X2A/0X80>",
     "es": " <BOSS_GLOAT+0X2A/0X80>",
     "fr": " <BOSS_GLOAT+0X2A/0X80>",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "702b77f60b6f4f2e",
@@ -13784,8 +13784,8 @@
     "zh": " <DO_EXIT+0X99/0XA0>",
     "es": " <DO_EXIT+0X99/0XA0>",
     "fr": " <DO_EXIT+0X99/0XA0>",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "397a502d7d6e0b71",
@@ -13793,53 +13793,53 @@
     "zh": "RM ",
     "es": "RM ",
     "fr": "RM ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "efe2333236eb6b15",
     "en": "QUIZ: PICK AN ANSWER T-",
-    "zh": "QUIZ: PICK AN ANSWER T-",
-    "es": "QUIZ: PICK AN ANSWER T-",
-    "fr": "QUIZ: PICK AN ANSWER T-",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "随堂测验：选一个答案 T-",
+    "es": "QUIZ: ELIGE UNA RESPUESTA T-",
+    "fr": "QUIZ : CHOISISSEZ UNE RÉPONSE T-",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a8bf0f113c65652b",
     "en": "CODE REVIEW T-",
-    "zh": "CODE REVIEW T-",
-    "es": "CODE REVIEW T-",
-    "fr": "CODE REVIEW T-",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "代码审查 T-",
+    "es": "REVISIÓN DE CÓDIGO T-",
+    "fr": "REVUE DE CODE T-",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "da884a049b14bb6a",
     "en": "ANSWER ",
-    "zh": "ANSWER ",
-    "es": "ANSWER ",
-    "fr": "ANSWER ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "答案 ",
+    "es": "RESPUESTA ",
+    "fr": "RÉPONSE ",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "23cef6420214f8a3",
     "en": "✓ RIGHT",
-    "zh": "✓ RIGHT",
-    "es": "✓ RIGHT",
-    "fr": "✓ RIGHT",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "✓ 正确",
+    "es": "✓ CORRECTO",
+    "fr": "✓ JUSTE",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c177bf8cd51c061e",
     "en": "✗ WRONG",
-    "zh": "✗ WRONG",
-    "es": "✗ WRONG",
-    "fr": "✗ WRONG",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "✗ 错误",
+    "es": "✗ INCORRECTO",
+    "fr": "✗ FAUX",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "18cf559bc03086aa",
@@ -13847,8 +13847,8 @@
     "zh": "if (err != nil) { return err }",
     "es": "if (err != nil) { return err }",
     "fr": "if (err != nil) { return err }",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "89ae559984dea74a",
@@ -13856,8 +13856,8 @@
     "zh": "while(1) fork();",
     "es": "while(1) fork();",
     "fr": "while(1) fork();",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d1ec24bdafb79996",
@@ -13865,8 +13865,8 @@
     "zh": "SELECT * FROM users;",
     "es": "SELECT * FROM users;",
     "fr": "SELECT * FROM users;",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "032954705813742b",
@@ -13874,8 +13874,8 @@
     "zh": "git rebase -i HEAD~3",
     "es": "git rebase -i HEAD~3",
     "fr": "git rebase -i HEAD~3",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "33938284a146aaea",
@@ -13883,8 +13883,8 @@
     "zh": "sudo rm -rf node_modules",
     "es": "sudo rm -rf node_modules",
     "fr": "sudo rm -rf node_modules",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "70809f3aec2f7aaf",
@@ -13892,8 +13892,8 @@
     "zh": "fn main() -> Result<()> {",
     "es": "fn main() -> Result<()> {",
     "fr": "fn main() -> Result<()> {",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1e839e32685d525d",
@@ -13901,8 +13901,8 @@
     "zh": "#include <stdio.h>",
     "es": "#include <stdio.h>",
     "fr": "#include <stdio.h>",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "220b14abc8ec6395",
@@ -13910,8 +13910,8 @@
     "zh": "def __init__(self):",
     "es": "def __init__(self):",
     "fr": "def __init__(self):",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "14b07afb111d144a",
@@ -13919,8 +13919,8 @@
     "zh": "for (;;) { /* TODO */ }",
     "es": "for (;;) { /* TODO */ }",
     "fr": "for (;;) { /* TODO */ }",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0890e40ebdd84be3",
@@ -13928,8 +13928,8 @@
     "zh": "throw new Error('nope');",
     "es": "throw new Error('nope');",
     "fr": "throw new Error('nope');",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "515f4de509afaf49",
@@ -13937,8 +13937,8 @@
     "zh": "goto fail;",
     "es": "goto fail;",
     "fr": "goto fail;",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "212140bbda6312a3",
@@ -13946,8 +13946,8 @@
     "zh": "let x = undefined ?? null;",
     "es": "let x = undefined ?? null;",
     "fr": "let x = undefined ?? null;",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "339c541d303e9c0c",
@@ -13955,8 +13955,8 @@
     "zh": "import * as everything",
     "es": "import * as everything",
     "fr": "import * as everything",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "dd6fd499a6e4b561",
@@ -13964,8 +13964,8 @@
     "zh": "while (true) {}",
     "es": "while (true) {}",
     "fr": "while (true) {}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4fcaceacb8e18ae6",
@@ -13973,8 +13973,8 @@
     "zh": "segfault (core dumped)",
     "es": "segfault (core dumped)",
     "fr": "segfault (core dumped)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "94e06735ee568352",
@@ -13982,8 +13982,8 @@
     "zh": "kill -9 $(pgrep boss)",
     "es": "kill -9 $(pgrep boss)",
     "fr": "kill -9 $(pgrep boss)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4a17c9513928e7a1",
@@ -13991,8 +13991,8 @@
     "zh": "chmod 777 /",
     "es": "chmod 777 /",
     "fr": "chmod 777 /",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f51fa122f8f62b08",
@@ -14000,8 +14000,8 @@
     "zh": "return -1; // fixme",
     "es": "return -1; // fixme",
     "fr": "return -1; // fixme",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3b44fa28c9c22dd3",
@@ -14009,8 +14009,8 @@
     "zh": "npm audit fix --force",
     "es": "npm audit fix --force",
     "fr": "npm audit fix --force",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3bd533ba374be48c",
@@ -14018,8 +14018,8 @@
     "zh": "ERROR: 418 I'M A TEAPOT",
     "es": "ERROR: 418 I'M A TEAPOT",
     "fr": "ERROR: 418 I'M A TEAPOT",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c3197c9281f7f037",
@@ -14027,17 +14027,17 @@
     "zh": "if else elif for while do return def fn func function class struct enum impl trait match case switch break continue const let var mut pub use import from export package module type interface extends implements new delete try catch except finally throw raise async await yield lambda public private protected static void int float bool string char true false null none nil self this super go defer select range in is not and or with as unsafe where loop",
     "es": "if else elif for while do return def fn func function class struct enum impl trait match case switch break continue const let var mut pub use import from export package module type interface extends implements new delete try catch except finally throw raise async await yield lambda public private protected static void int float bool string char true false null none nil self this super go defer select range in is not and or with as unsafe where loop",
     "fr": "if else elif for while do return def fn func function class struct enum impl trait match case switch break continue const let var mut pub use import from export package module type interface extends implements new delete try catch except finally throw raise async await yield lambda public private protected static void int float bool string char true false null none nil self this super go defer select range in is not and or with as unsafe where loop",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cb964d38c7fa0d5c",
     "en": "Q3 SYNERGY",
-    "zh": "Q3 SYNERGY",
-    "es": "Q3 SYNERGY",
-    "fr": "Q3 SYNERGY",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "Q3 协同效应",
+    "es": "SINERGIA Q3",
+    "fr": "SYNERGIE Q3",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4bf55dd77e1f6864",
@@ -14045,8 +14045,8 @@
     "zh": "CLASS HERO:",
     "es": "CLASS HERO:",
     "fr": "CLASS HERO:",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "956043f6f0647e29",
@@ -14054,8 +14054,8 @@
     "zh": "DEF FIGHT(SELF):",
     "es": "DEF FIGHT(SELF):",
     "fr": "DEF FIGHT(SELF):",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "112a7297fe2dcde8",
@@ -14063,8 +14063,8 @@
     "zh": "RETURN SKILL",
     "es": "RETURN SKILL",
     "fr": "RETURN SKILL",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "32e589c7f97b5c31",
@@ -14072,17 +14072,17 @@
     "zh": "# TODO: WRITE TESTS!",
     "es": "# TODO: WRITE TESTS!",
     "fr": "# TODO: WRITE TESTS!",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9785077553e1700a",
     "en": "QUIZ: WHAT IS COUPLING?",
-    "zh": "QUIZ: WHAT IS COUPLING?",
-    "es": "QUIZ: WHAT IS COUPLING?",
-    "fr": "QUIZ: WHAT IS COUPLING?",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "测验：什么是耦合？",
+    "es": "QUIZ: ¿QUÉ ES EL ACOPLAMIENTO?",
+    "fr": "QUIZ : QU'EST-CE QUE LE COUPLAGE ?",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7ed1aff509d81417",
@@ -14090,8 +14090,8 @@
     "zh": "O(N LOG N)",
     "es": "O(N LOG N)",
     "fr": "O(N LOG N)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "604ab089d134fdf1",
@@ -14099,35 +14099,35 @@
     "zh": "A -> B -> A ?!",
     "es": "A -> B -> A ?!",
     "fr": "A -> B -> A ?!",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3e4e6c0e5874b19e",
     "en": "[source omitted]",
-    "zh": "[source omitted]",
-    "es": "[source omitted]",
-    "fr": "[source omitted]",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "[源码已省略]",
+    "es": "[código omitido]",
+    "fr": "[source omise]",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d2d0b76f26a831f1",
     "en": "Improve {0} · {1}",
-    "zh": "Improve {0} · {1}",
-    "es": "Improve {0} · {1}",
-    "fr": "Improve {0} · {1}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "提升 {0} · {1}",
+    "es": "Mejora {0} · {1}",
+    "fr": "Améliorer {0} · {1}",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c3e34890a1de6849",
     "en": "{0} modules · {1} cycles",
-    "zh": "{0} modules · {1} cycles",
-    "es": "{0} modules · {1} cycles",
+    "zh": "{0} 个模块 · {1} 个循环",
+    "es": "{0} módulos · {1} ciclos",
     "fr": "{0} modules · {1} cycles",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ffa6d15604af20ac",
@@ -19929,8 +19929,8 @@
     "zh": "notyet",
     "es": "notyet",
     "fr": "notyet",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ee256ea1b8d8a75f",
@@ -19942,11 +19942,11 @@
   {
     "id": "608ca7f89534a95b",
     "en": "Not yet: compare your output with the task.",
-    "zh": "尚未完成：请将你的输出与任务要求进行对比。",
-    "es": "Aún no: compara tu salida con la tarea.",
-    "fr": "Pas encore : comparez votre sortie avec la tâche.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "还没通过：对照任务检查你的输出。",
+    "es": "Todavía no: compara tu salida con la tarea.",
+    "fr": "Pas encore : comparez votre sortie avec la consigne.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "2f2fc7f2e9ce13b0",
@@ -19954,8 +19954,8 @@
     "zh": "ask",
     "es": "ask",
     "fr": "ask",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d2baf0cfd36b619e",
@@ -19967,11 +19967,11 @@
   {
     "id": "8f59367aaa1efae7",
     "en": "Ask me about this one.",
-    "zh": "问我关于这一个的问题。",
-    "es": "Pregúntame sobre este.",
-    "fr": "Demande-moi à propos de celui-ci.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "这个来问我吧。",
+    "es": "Pregúntame sobre esto.",
+    "fr": "Venez m'en parler.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "51aecbb1840eb3c2",
@@ -20021,8 +20021,8 @@
     "zh": "120px",
     "es": "120px",
     "fr": "120px",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "84ee257fbb97502b",
@@ -20030,8 +20030,8 @@
     "zh": "$ make royale ROOM={0}",
     "es": "$ make royale ROOM={0}",
     "fr": "$ make royale ROOM={0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9908adbb4b6f533e",
@@ -20039,8 +20039,8 @@
     "zh": "$ ./royale --last-one-standing",
     "es": "$ ./royale --last-one-standing",
     "fr": "$ ./royale --last-one-standing",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "abb7c17238b90e16",
@@ -20048,8 +20048,8 @@
     "zh": "countdown-touch-only",
     "es": "countdown-touch-only",
     "fr": "countdown-touch-only",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f0a560ea7d1aff68",
@@ -20057,8 +20057,8 @@
     "zh": "$ ./royale ",
     "es": "$ ./royale ",
     "fr": "$ ./royale ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "11fb682be0a0233d",
@@ -20066,8 +20066,8 @@
     "zh": "AI",
     "es": "AI",
     "fr": "AI",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "fb39cc75f7baa1b6",
@@ -20075,8 +20075,8 @@
     "zh": "min(86vw, 420px)",
     "es": "min(86vw, 420px)",
     "fr": "min(86vw, 420px)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b94cc1bd818a8e7f",
@@ -20084,8 +20084,8 @@
     "zh": "min(56vw, 600px)",
     "es": "min(56vw, 600px)",
     "fr": "min(56vw, 600px)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a106104d27c90adb",
@@ -20093,8 +20093,8 @@
     "zh": "min(100%, 300px)",
     "es": "min(100%, 300px)",
     "fr": "min(100%, 300px)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "302d0a2e645f67da",
@@ -20102,8 +20102,8 @@
     "zh": "strongest-repo",
     "es": "strongest-repo",
     "fr": "strongest-repo",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9f41b90c55a3b21c",
@@ -20111,8 +20111,8 @@
     "zh": "b.zone-word",
     "es": "b.zone-word",
     "fr": "b.zone-word",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "272615fb1adef68b",
@@ -20127,8 +20127,8 @@
     "zh": "resume-match",
     "es": "resume-match",
     "fr": "resume-match",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "556ee8e0e3078fef",
@@ -20143,8 +20143,8 @@
     "zh": "pause-leave",
     "es": "pause-leave",
     "fr": "pause-leave",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d4d8e1651621346c",
@@ -20152,8 +20152,8 @@
     "zh": "pause-new-room",
     "es": "pause-new-room",
     "fr": "pause-new-room",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9bbd830d2cb86334",
@@ -20161,8 +20161,8 @@
     "zh": " gitzilla",
     "es": " gitzilla",
     "fr": " gitzilla",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a038e3fb2ec9153b",
@@ -20177,8 +20177,8 @@
     "zh": "kill -STOP gitzilla",
     "es": "kill -STOP gitzilla",
     "fr": "kill -STOP gitzilla",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "25c28a4a09c9ad8b",
@@ -20186,8 +20186,8 @@
     "zh": "^Z",
     "es": "^Z",
     "fr": "^Z",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "158b1421d459d2c6",
@@ -20209,8 +20209,8 @@
     "zh": "$ fg %1   {0}",
     "es": "$ fg %1   {0}",
     "fr": "$ fg %1   {0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c09332a3e73c0df7",
@@ -20218,8 +20218,8 @@
     "zh": "$ fg %1",
     "es": "$ fg %1",
     "fr": "$ fg %1",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9ae816716fdd5670",
@@ -20227,8 +20227,8 @@
     "zh": "GC",
     "es": "GC",
     "fr": "GC",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "bc79d47e6871823a",
@@ -20236,8 +20236,8 @@
     "zh": "spectate-prev",
     "es": "spectate-prev",
     "fr": "spectate-prev",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3e650d6cd6535a83",
@@ -20245,17 +20245,17 @@
     "zh": "spectate-next",
     "es": "spectate-next",
     "fr": "spectate-next",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "edc00d4db80ddc3e",
     "en": "'s",
-    "zh": "'s",
-    "es": "'s",
-    "fr": "'s",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "的",
+    "es": ":",
+    "fr": ":",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7d6cf12b9c60391a",
@@ -20263,8 +20263,8 @@
     "zh": "pvp-ai-why",
     "es": "pvp-ai-why",
     "fr": "pvp-ai-why",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "db98b598d8b324ec",
@@ -20272,8 +20272,8 @@
     "zh": "b.pw-part-v",
     "es": "b.pw-part-v",
     "fr": "b.pw-part-v",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7a5b98dfbfc43695",
@@ -20281,8 +20281,8 @@
     "zh": "b.pw-num",
     "es": "b.pw-num",
     "fr": "b.pw-num",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d9812bf618216f95",
@@ -20290,8 +20290,8 @@
     "zh": "pvp-ai-handicap",
     "es": "pvp-ai-handicap",
     "fr": "pvp-ai-handicap",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6fe9eb8f468b5843",
@@ -20299,8 +20299,8 @@
     "zh": "checkbox",
     "es": "checkbox",
     "fr": "checkbox",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "2e8a5c6e4c2bcba6",
@@ -20308,8 +20308,8 @@
     "zh": "settings-sound",
     "es": "settings-sound",
     "fr": "settings-sound",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "12d942acfa6900c7",
@@ -20317,8 +20317,8 @@
     "zh": ".lobby-scroll, .ap-scroll",
     "es": ".lobby-scroll, .ap-scroll",
     "fr": ".lobby-scroll, .ap-scroll",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0a808b75b0412b29",
@@ -20326,8 +20326,8 @@
     "zh": "cr-boss-art cr-boss-sprite",
     "es": "cr-boss-art cr-boss-sprite",
     "fr": "cr-boss-art cr-boss-sprite",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e0b469e88b4cb358",
@@ -20335,8 +20335,8 @@
     "zh": "stagger",
     "es": "stagger",
     "fr": "stagger",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0b3092a30b0f3f16",
@@ -20344,8 +20344,8 @@
     "zh": "enrage",
     "es": "enrage",
     "fr": "enrage",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c2b644a1f2f11fd8",
@@ -20353,8 +20353,8 @@
     "zh": "roar",
     "es": "roar",
     "fr": "roar",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5ca1b735ed825f72",
@@ -20362,8 +20362,8 @@
     "zh": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
     "es": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
     "fr": "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7017de5ace6a361b",
@@ -20371,8 +20371,8 @@
     "zh": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
     "es": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
     "fr": "print input len range int float str bool list dict set tuple enumerate zip sorted sum min max abs round open type isinstance map filter any all reversed format",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e4f8e3e03d442a4d",
@@ -20380,8 +20380,8 @@
     "zh": " ce-ro",
     "es": " ce-ro",
     "fr": " ce-ro",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "64390236910fb5c5",
@@ -20393,11 +20393,11 @@
   {
     "id": "582bfe13a7480822",
     "en": " on",
-    "zh": " 开启",
-    "es": " activado",
-    "fr": " activé",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": " on",
+    "es": " on",
+    "fr": " on",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4d19f436842e9bda",
@@ -20482,8 +20482,8 @@
     "zh": "{0} · {1} ms",
     "es": "{0} · {1} ms",
     "fr": "{0} · {1} ms",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5684fc83d71ec7a8",
@@ -20505,8 +20505,8 @@
     "zh": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
     "es": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
     "fr": "\nlet py = null;\nconst out = [], err = [];\nself.onmessage = async (e) => {\n  const m = e.data;\n  if (m.t === \"load\") {\n    try {\n      importScripts(m.url + \"pyodide.js\");\n      py = await loadPyodide({ indexURL: m.url });\n      py.setStdout({ batched: (s) => out.push(s) });\n      py.setStderr({ batched: (s) => err.push(s) });\n      self.postMessage({ t: \"ready\" });\n    } catch (x) { self.postMessage({ t: \"fail\", error: String(x && x.message || x) }); }\n    return;\n  }\n  if (m.t === \"run\") {\n    out.length = 0; err.length = 0;\n    const lines = (m.stdin || \"\").split(\"\\n\");\n    py.setStdin({ stdin: () => (lines.length ? lines.shift() : null), autoEOF: true });\n    const t0 = performance.now();\n    try {\n      // fresh working dir per run with the student's files; the entry runs as __main__\n      const root = \"/home/pyodide/run\" + m.id;\n      for (const f of m.files) {\n        const parts = (root + \"/\" + f.path).split(\"/\"); parts.pop();\n        let d = \"\"; for (const p of parts) { if (!p) continue; d += \"/\" + p; try { py.FS.mkdir(d); } catch (_) {} }\n        py.FS.writeFile(root + \"/\" + f.path, f.content);\n      }\n      py.runPython(\"import os, sys\\nos.chdir(\" + JSON.stringify(root) + \")\\nsys.path.insert(0, \" + JSON.stringify(root) + \")\\nimport runpy\\n__g = None\");\n      py.globals.set(\"__entry\", m.entry);\n      py.runPython(\"import runpy, traceback, sys\\ntry:\\n    runpy.run_path(__entry, run_name='__main__')\\nexcept SystemExit:\\n    pass\\nexcept BaseException:\\n    tb = traceback.format_exc().splitlines()\\n    tb = [l for l in tb if 'runpy' not in l and '<frozen' not in l]\\n    print('\\\\n'.join(tb), file=sys.stderr)\\nfinally:\\n    sys.path.pop(0)\");\n    } catch (x) { err.push(String(x && x.message || x)); }\n    self.postMessage({ t: \"done\", id: m.id, stdout: out.join(\"\\n\"), stderr: err.join(\"\\n\"), ms: performance.now() - t0 });\n  }\n};",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cdd1ee34d2f39df5",
@@ -20554,10 +20554,10 @@
     "id": "57c94ebf8986981a",
     "en": "`{0}` is in your submission",
     "zh": "你的提交中包含 `{0}`",
-    "es": "`{0}` está en tu envío",
+    "es": "`{0}` está en tu entrega",
     "fr": "`{0}` figure dans votre soumission",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7dc744e69d13a30e",
@@ -20565,8 +20565,8 @@
     "zh": "`{0}` 包含 `{1}`",
     "es": "`{0}` contiene `{1}`",
     "fr": "`{0}` contient `{1}`",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "675dc08056179386",
@@ -20574,8 +20574,8 @@
     "zh": "GitHub 检查 `{0}` 通过",
     "es": "La comprobación de GitHub `{0}` pasa",
     "fr": "La vérification GitHub `{0}` réussit",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d516f3bd7df25807",
@@ -20608,11 +20608,11 @@
   {
     "id": "1aca80e8b55c802f",
     "en": "label",
-    "zh": "标签",
-    "es": "etiqueta",
-    "fr": "étiquette",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "label",
+    "es": "label",
+    "fr": "label",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "100ec1bc78a4cc83",
@@ -20627,8 +20627,8 @@
     "zh": "ol.tc-todo",
     "es": "ol.tc-todo",
     "fr": "ol.tc-todo",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "83f873f14955cf06",
@@ -20640,11 +20640,11 @@
   {
     "id": "d5ef11a819843d84",
     "en": "From your last submission: {0} still missing. Fix {1} and submit again.",
-    "zh": "根据你上次的提交：仍缺少 {0}。修正 {1} 后再次提交。",
-    "es": "Según tu último envío: aún faltan {0}. Corrige {1} y envía de nuevo.",
-    "fr": "D'après votre dernière soumission : {0} manque(nt) encore. Corrigez {1} et soumettez à nouveau.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "根据你上次的提交：仍缺少 {0}。修正 {1} 后重新提交。",
+    "es": "Según tu última entrega, aún falta: {0}. Corrige {1} y vuelve a entregar.",
+    "fr": "D'après votre dernière soumission, il manque encore : {0}. Corrigez {1} et soumettez à nouveau.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "88504f75accabbd1",
@@ -23469,38 +23469,38 @@
   {
     "id": "d42cd66dce8bf137",
     "en": "Every fighter in a raid is a real GitHub account.",
-    "zh": "突袭中的每位战士都是真实的 GitHub 账号。",
-    "es": "Cada luchador en una incursión es una cuenta real de GitHub.",
+    "zh": "突袭中的每名战士都对应一个真实的 GitHub 账号。",
+    "es": "Cada luchador de una incursión es una cuenta real de GitHub.",
     "fr": "Chaque combattant d'un raid est un vrai compte GitHub.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d59fff0727364d30",
     "en": "Every fighter in the royale is a real GitHub account.",
-    "zh": "大逃杀中的每位战士都是真实的 GitHub 账号。",
-    "es": "Cada luchador en la batalla real es una cuenta real de GitHub.",
-    "fr": "Chaque combattant de la royale est un vrai compte GitHub.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "大逃杀中的每名战士都对应一个真实的 GitHub 账号。",
+    "es": "Cada luchador del royale es una cuenta real de GitHub.",
+    "fr": "Chaque combattant du royale est un vrai compte GitHub.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c6474aaa29a18219",
     "en": "Students sign in so every submission belongs to a real account.",
-    "zh": "学生登录后，每次提交都归属于真实账号。",
+    "zh": "学生需要登录，确保每份提交都对应真实账号。",
     "es": "Los estudiantes inician sesión para que cada entrega pertenezca a una cuenta real.",
-    "fr": "Les élèves se connectent afin que chaque rendu appartienne à un vrai compte.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Les élèves se connectent pour que chaque soumission appartienne à un vrai compte.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5b81d6f7f078b995",
     "en": "Teachers sign in before running a classroom. The projector window doesn't need it.",
-    "zh": "教师需在运行课堂前登录。投影窗口无需登录。",
-    "es": "Los profesores inician sesión antes de dirigir una clase. La ventana del proyector no lo necesita.",
-    "fr": "Les enseignants se connectent avant de lancer une classe. La fenêtre du projecteur n'en a pas besoin.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "老师需先登录才能开课。投影窗口无需登录。",
+    "es": "Los profesores inician sesión antes de dirigir un aula. La ventana del proyector no lo necesita.",
+    "fr": "Les enseignants se connectent avant d'animer une classe. La fenêtre du projecteur n'en a pas besoin.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ec91fdd9256cb75a",
@@ -23508,8 +23508,8 @@
     "zh": "可选",
     "es": "opcional",
     "fr": "facultatif",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d0a3630555bbec7f",
@@ -23517,17 +23517,17 @@
     "zh": "必需",
     "es": "obligatorio",
     "fr": "obligatoire",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "32fc6fa51856bf6e",
     "en": "signed in with GitHub",
-    "zh": "已使用 GitHub 登录",
+    "zh": "已用 GitHub 登录",
     "es": "sesión iniciada con GitHub",
     "fr": "connecté avec GitHub",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4aa5dd8becd6db40",
@@ -23535,17 +23535,17 @@
     "zh": "切换账号",
     "es": "cambiar de cuenta",
     "fr": "changer de compte",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5a81f922f0896545",
     "en": "sign in with GitHub",
-    "zh": "使用 GitHub 登录",
+    "zh": "用 GitHub 登录",
     "es": "iniciar sesión con GitHub",
     "fr": "se connecter avec GitHub",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "973d7a63c7123cc7",
@@ -23553,17 +23553,17 @@
     "zh": " 使用 GitHub 继续",
     "es": " Continuar con GitHub",
     "fr": " Continuer avec GitHub",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7f8ae62123e5f9d4",
     "en": "Your GitHub token stays on our server. It never reaches this page or other players.",
-    "zh": "你的 GitHub 令牌保留在我们的服务器上。它绝不会到达此页面或其他玩家。",
+    "zh": "你的 GitHub 令牌只保存在我们的服务器上，不会发送到此页面或其他玩家。",
     "es": "Tu token de GitHub se queda en nuestro servidor. Nunca llega a esta página ni a otros jugadores.",
     "fr": "Votre jeton GitHub reste sur notre serveur. Il n'atteint jamais cette page ni les autres joueurs.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d6eaabd501df988d",
@@ -23571,53 +23571,53 @@
     "zh": "选择你的昵称",
     "es": "elige tu alias",
     "fr": "choisissez votre pseudo",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "199fa3a1e427b2cc",
     "en": "unlocks after you sign in",
     "zh": "登录后解锁",
     "es": "se desbloquea al iniciar sesión",
-    "fr": "se débloque après connexion",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "disponible après connexion",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cd4cfee9d0752430",
     "en": "just watching? ",
-    "zh": "只是观看？ ",
-    "es": "¿solo mirando? ",
-    "fr": "juste en train de regarder ? ",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "只想观战？ ",
+    "es": "¿solo vienes a mirar? ",
+    "fr": "vous regardez seulement ? ",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "fdb363ad22c35e6b",
     "en": "open the big-screen view",
-    "zh": "打开大屏视图",
-    "es": "abrir la vista de pantalla grande",
-    "fr": "ouvrir la vue grand écran",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "打开大屏幕视图",
+    "es": "abre la vista de pantalla grande",
+    "fr": "ouvrez la vue grand écran",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "613b3f41627adac2",
     "en": "◉ sign in with GitHub",
-    "zh": "◉ 使用 GitHub 登录",
+    "zh": "◉ 用 GitHub 登录",
     "es": "◉ iniciar sesión con GitHub",
     "fr": "◉ se connecter avec GitHub",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6b29c34215d3e0dd",
     "en": " needed to play or teach",
-    "zh": " 游玩或教学所需",
+    "zh": " 游戏或授课都需要",
     "es": " necesario para jugar o enseñar",
-    "fr": " nécessaire pour jouer ou enseigner",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": " requis pour jouer ou enseigner",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d422020daac9cea7",
@@ -23625,8 +23625,8 @@
     "zh": " 可选",
     "es": " opcional",
     "fr": " facultatif",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f911e414cf6bdfc5",
@@ -23634,8 +23634,8 @@
     "zh": "GitHub",
     "es": "GitHub",
     "fr": "GitHub",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "99ba8652227b93a1",
@@ -25306,10 +25306,10 @@
     "id": "d77ff0549438802f",
     "en": "Class instructions",
     "zh": "课堂说明",
-    "es": "Instrucciones de la clase",
-    "fr": "Instructions de classe",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "es": "Instrucciones de clase",
+    "fr": "Consignes de la classe",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "84c9e182ca169835",
@@ -25317,8 +25317,8 @@
     "zh": "classroom-remove-yes-{0}",
     "es": "classroom-remove-yes-{0}",
     "fr": "classroom-remove-yes-{0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d7e3c564b87c9247",
@@ -25326,53 +25326,53 @@
     "zh": "classroom-remove-cancel-{0}",
     "es": "classroom-remove-cancel-{0}",
     "fr": "classroom-remove-cancel-{0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b733a18d4b1f3c06",
     "en": "Another phone took over the controls",
-    "zh": "另一部手机已接管控制",
-    "es": "Otro teléfono tomó el control",
-    "fr": "Un autre téléphone a pris le contrôle",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "另一台手机接管了操控",
+    "es": "Otro móvil tomó el control",
+    "fr": "Un autre téléphone a pris les commandes",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "990ea79384d4af7e",
     "en": "This connection was not accepted as a controller.",
-    "zh": "此连接未被接受为控制器。",
-    "es": "Esta conexión no fue aceptada como controlador.",
+    "zh": "此连接未被接受为手柄。",
+    "es": "Esta conexión no se aceptó como mando.",
     "fr": "Cette connexion n'a pas été acceptée comme manette.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "189b33be6da2c49e",
     "en": "This phone is a controller",
-    "zh": "此手机是控制器",
-    "es": "Este teléfono es un controlador",
+    "zh": "这台手机是手柄",
+    "es": "Este móvil es un mando",
     "fr": "Ce téléphone est une manette",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9dee449489ab6ec3",
     "en": "Course source file",
     "zh": "课程源文件",
-    "es": "Archivo de origen del curso",
+    "es": "Archivo fuente del curso",
     "fr": "Fichier source du cours",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9b159b8e5bce65db",
     "en": "Generate course preview",
     "zh": "生成课程预览",
     "es": "Generar vista previa del curso",
-    "fr": "Générer un aperçu du cours",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Générer l'aperçu du cours",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "00dbb8396e270435",
@@ -25380,8 +25380,8 @@
     "zh": "请选择 .pdf、.md 或 .txt 文件。",
     "es": "Elige un archivo .pdf, .md o .txt.",
     "fr": "Choisissez un fichier .pdf, .md ou .txt.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ec5cef1ee55963f3",
@@ -25389,17 +25389,17 @@
     "zh": "请选择不超过 8 MB 的非空文件。",
     "es": "Elige un archivo no vacío de hasta 8 MB.",
     "fr": "Choisissez un fichier non vide de 8 Mo maximum.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "526ed883b921f951",
     "en": "Reconnect as the classroom owner before generating a course.",
-    "zh": "生成课程前，请以课堂所有者身份重新连接。",
-    "es": "Vuelve a conectarte como propietario de la clase antes de generar un curso.",
+    "zh": "请以课堂创建者身份重新连接后再生成课程。",
+    "es": "Vuelve a conectarte como propietario del aula antes de generar un curso.",
     "fr": "Reconnectez-vous en tant que propriétaire de la classe avant de générer un cours.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "53230fb3180d72c7",
@@ -25407,35 +25407,35 @@
     "zh": "正在生成课程预览…",
     "es": "Generando vista previa del curso…",
     "fr": "Génération de l'aperçu du cours…",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5e834e81acf91f8f",
     "en": "AI course generation failed. Retry the upload.",
-    "zh": "AI 课程生成失败。请重新上传。",
-    "es": "La generación del curso con IA falló. Vuelve a subir el archivo.",
-    "fr": "La génération du cours par IA a échoué. Réessayez le téléversement.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "AI 课程生成失败，请重新上传。",
+    "es": "Falló la generación del curso con IA. Vuelve a subir el archivo.",
+    "fr": "La génération du cours par IA a échoué. Relancez le téléversement.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b9c95f1f92b9f242",
     "en": "AI returned an invalid course preview. Retry the upload.",
-    "zh": "AI 返回了无效的课程预览。请重新上传。",
+    "zh": "AI 返回的课程预览无效，请重新上传。",
     "es": "La IA devolvió una vista previa del curso no válida. Vuelve a subir el archivo.",
-    "fr": "L'IA a renvoyé un aperçu de cours non valide. Réessayez le téléversement.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "L'IA a renvoyé un aperçu de cours invalide. Relancez le téléversement.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3e930960d7c12c0f",
     "en": "Generated lesson title",
     "zh": "生成的课程标题",
-    "es": "Título de la lección generado",
-    "fr": "Titre de leçon généré",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "es": "Título de la lección generada",
+    "fr": "Titre de la leçon générée",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cec35382af5469c7",
@@ -25443,26 +25443,26 @@
     "zh": "生成的首领名称",
     "es": "Nombre del jefe generado",
     "fr": "Nom du boss généré",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f1220f38e52392f1",
     "en": "Generated step {0} title",
-    "zh": "生成的步骤 {0} 标题",
+    "zh": "生成的第 {0} 步标题",
     "es": "Título generado del paso {0}",
     "fr": "Titre généré de l'étape {0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e6460470d492436b",
     "en": "Generated step {0} instructions",
-    "zh": "生成的步骤 {0} 说明",
+    "zh": "生成的第 {0} 步说明",
     "es": "Instrucciones generadas del paso {0}",
-    "fr": "Instructions générées de l'étape {0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Consignes générées de l'étape {0}",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c7dbaaba5787d558",
@@ -25470,26 +25470,26 @@
     "zh": "应用草稿",
     "es": "Aplicar borrador",
     "fr": "Appliquer le brouillon",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e471e7773a90a9b1",
     "en": "Enter a title, boss name, and instructions for every step.",
-    "zh": "请为每个步骤输入标题、首领名称和说明。",
-    "es": "Introduce un título, el nombre del jefe e instrucciones para cada paso.",
-    "fr": "Saisissez un titre, le nom du boss et des instructions pour chaque étape.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "请填写标题、首领名称，以及每个步骤的说明。",
+    "es": "Escribe un título, un nombre de jefe e instrucciones para cada paso.",
+    "fr": "Saisissez un titre, un nom de boss et des consignes pour chaque étape.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a5db70ed653c3a60",
     "en": "AI preview ready. Review and edit it, then Apply draft. Publish lesson separately to share it with students.",
-    "zh": "AI 预览已就绪。请检查并编辑，然后应用草稿。请单独发布课程以与学生分享。",
-    "es": "Vista previa de la IA lista. Revísala y edítala, luego aplica el borrador. Publica la lección por separado para compartirla con los estudiantes.",
-    "fr": "Aperçu de l'IA prêt. Vérifiez-le et modifiez-le, puis appliquez le brouillon. Publiez la leçon séparément pour la partager avec les élèves.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "AI 预览已生成。请检查并修改，然后点击“应用草稿”。之后还需单独点击“发布课程”，学生才能看到。",
+    "es": "Vista previa de IA lista. Revísala y edítala, y luego pulsa «Aplicar borrador». Usa «Publicar lección» por separado para compartirla con los estudiantes.",
+    "fr": "Aperçu IA prêt. Relisez-le et modifiez-le, puis cliquez sur « Appliquer le brouillon ». Utilisez ensuite « Publier la leçon » pour la partager avec les élèves.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "8c4028be31fa717c",
@@ -25497,26 +25497,26 @@
     "zh": "从文件生成课程",
     "es": "Generar un curso a partir de un archivo",
     "fr": "Générer un cours à partir d'un fichier",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ad0769a1adf71ce3",
     "en": "Upload a PDF with selectable text, Markdown (.md), or plain text (.txt). Up to 8 MB; extracted text up to 80000 UTF-8 bytes. The document is sent to the configured AI provider. Generation only creates a preview.",
-    "zh": "上传带有可选文本的 PDF、Markdown（.md）或纯文本（.txt）。文件最大 8 MB；提取的文本最多 80000 个 UTF-8 字节。文档会发送至所配置的 AI 提供商。生成操作仅创建预览。",
-    "es": "Sube un PDF con texto seleccionable, Markdown (.md) o texto plano (.txt). Hasta 8 MB; texto extraído hasta 80000 bytes UTF-8. El documento se envía al proveedor de IA configurado. La generación solo crea una vista previa.",
-    "fr": "Téléversez un PDF avec texte sélectionnable, Markdown (.md) ou texte brut (.txt). Jusqu'à 8 Mo ; texte extrait jusqu'à 80000 octets UTF-8. Le document est envoyé au fournisseur d'IA configuré. La génération crée uniquement un aperçu.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "上传含可选中文本的 PDF、Markdown (.md) 或纯文本 (.txt)。文件不超过 8 MB，提取出的文本不超过 80000 个 UTF-8 字节。文档会发送给已配置的 AI 服务商。生成只会创建预览。",
+    "es": "Sube un PDF con texto seleccionable, Markdown (.md) o texto plano (.txt). Hasta 8 MB; el texto extraído, hasta 80000 bytes UTF-8. El documento se envía al proveedor de IA configurado. La generación solo crea una vista previa.",
+    "fr": "Téléversez un PDF au texte sélectionnable, du Markdown (.md) ou du texte brut (.txt). 8 Mo maximum ; texte extrait limité à 80000 octets UTF-8. Le document est envoyé au fournisseur d'IA configuré. La génération ne crée qu'un aperçu.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5fdfe4f0d9a1ec5e",
     "en": "menu (Esc)",
-    "zh": "菜单（Esc）",
+    "zh": "菜单 (Esc)",
     "es": "menú (Esc)",
     "fr": "menu (Échap)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c0479b3113b1f258",
@@ -25524,26 +25524,26 @@
     "zh": "游戏控制",
     "es": "controles del juego",
     "fr": "commandes du jeu",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0d4fc4a78d3706ed",
     "en": "table",
-    "zh": "表格",
-    "es": "tabla",
-    "fr": "tableau",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "table",
+    "es": "table",
+    "fr": "table",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "63bd7065ef1e165a",
     "en": "life",
-    "zh": "生命",
-    "es": "vida",
-    "fr": "vie",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "life",
+    "es": "life",
+    "fr": "life",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5858a4a7477376ee",
@@ -25551,8 +25551,8 @@
     "zh": "bsod-continue",
     "es": "bsod-continue",
     "fr": "bsod-continue",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "744c59b16ef27e9d",
@@ -25560,8 +25560,8 @@
     "zh": "radial-gradient(ellipse at center, rgba({0},0) 45%, rgba({1},{2}) 100%)",
     "es": "radial-gradient(ellipse at center, rgba({0},0) 45%, rgba({1},{2}) 100%)",
     "fr": "radial-gradient(ellipse at center, rgba({0},0) 45%, rgba({1},{2}) 100%)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "2c5b0d1c8542e9d4",
@@ -25569,8 +25569,8 @@
     "zh": "登录失败：{0}",
     "es": "Error al iniciar sesión: {0}",
     "fr": "Échec de la connexion : {0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cd3a6cfa33737826",
@@ -25578,62 +25578,62 @@
     "zh": "tablist",
     "es": "tablist",
     "fr": "tablist",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a4c3ed04a95a3da1",
     "en": "done",
-    "zh": "完成",
-    "es": "hecho",
-    "fr": "terminé",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "done",
+    "es": "done",
+    "fr": "done",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7047d1cbb4cdc060",
     "en": "signed in with email",
-    "zh": "已通过电子邮件登录",
-    "es": "sesión iniciada con correo electrónico",
+    "zh": "已用邮箱登录",
+    "es": "sesión iniciada con correo",
     "fr": "connecté par e-mail",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6d62e0499f6703e1",
     "en": "sign in to your classroom",
     "zh": "登录你的课堂",
-    "es": "inicia sesión en tu clase",
+    "es": "inicia sesión en tu aula",
     "fr": "connectez-vous à votre classe",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1057a9604e04b274",
     "en": "teacher",
-    "zh": "教师",
-    "es": "docente",
-    "fr": "enseignant",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "teacher",
+    "es": "teacher",
+    "fr": "teacher",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "8c99a08652d20738",
     "en": "Continue with email",
-    "zh": "使用电子邮件继续",
+    "zh": "使用邮箱继续",
     "es": "Continuar con correo electrónico",
-    "fr": "Continuer par e-mail",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Continuer avec l'e-mail",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "46c161455284ac1e",
     "en": "Enter your email, then enter the one-time code sent to your inbox. No password needed.",
-    "zh": "输入你的电子邮件，然后输入发送到收件箱的一次性验证码。无需密码。",
-    "es": "Introduce tu correo electrónico y luego el código de un solo uso enviado a tu bandeja de entrada. No se necesita contraseña.",
+    "zh": "输入邮箱，再输入发送到收件箱的一次性验证码。无需密码。",
+    "es": "Escribe tu correo y luego el código de un solo uso que llegará a tu bandeja de entrada. No necesitas contraseña.",
     "fr": "Saisissez votre e-mail, puis le code à usage unique envoyé dans votre boîte de réception. Aucun mot de passe requis.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a542b0e3a1e16bcc",
@@ -25641,8 +25641,8 @@
     "zh": "gate-spectate",
     "es": "gate-spectate",
     "fr": "gate-spectate",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e88d700368f49e4c",
@@ -25650,8 +25650,8 @@
     "zh": " classroom@room-{0}",
     "es": " classroom@room-{0}",
     "fr": " classroom@room-{0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e2c4a230bf233267",
@@ -25659,8 +25659,8 @@
     "zh": "大屏幕",
     "es": "la pantalla grande",
     "fr": "le grand écran",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1d3effb0048dcc35",
@@ -25668,8 +25668,8 @@
     "zh": "member-make-host",
     "es": "member-make-host",
     "fr": "member-make-host",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0c5179e158280b64",
@@ -25677,8 +25677,8 @@
     "zh": "member-remove",
     "es": "member-remove",
     "fr": "member-remove",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1885a66104092e44",
@@ -25686,8 +25686,8 @@
     "zh": "member-kick",
     "es": "member-kick",
     "fr": "member-kick",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4b3edc6c30933387",
@@ -25695,8 +25695,8 @@
     "zh": "member-kick-confirm",
     "es": "member-kick-confirm",
     "fr": "member-kick-confirm",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4686355ca4dbd1be",
@@ -25704,8 +25704,8 @@
     "zh": "member-host-confirm",
     "es": "member-host-confirm",
     "fr": "member-host-confirm",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e010fd1ce1acc173",
@@ -25713,8 +25713,8 @@
     "zh": "grace",
     "es": "grace",
     "fr": "grace",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3b147b673ba028db",
@@ -25722,8 +25722,8 @@
     "zh": "wilf",
     "es": "wilf",
     "fr": "wilf",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "634768dae1474506",
@@ -25731,8 +25731,8 @@
     "zh": "row",
     "es": "row",
     "fr": "row",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "adb0e4b720cbd1db",
@@ -25740,8 +25740,8 @@
     "zh": "columnheader",
     "es": "columnheader",
     "fr": "columnheader",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "31ad7e9f3e4c8253",
@@ -25749,8 +25749,8 @@
     "zh": "cb-result dim",
     "es": "cb-result dim",
     "fr": "cb-result dim",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a28a5e20184ae29a",
@@ -25758,8 +25758,8 @@
     "zh": "cb-result ok",
     "es": "cb-result ok",
     "fr": "cb-result ok",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "07b035e01ac9be9d",
@@ -25767,8 +25767,8 @@
     "zh": "cb-result bad",
     "es": "cb-result bad",
     "fr": "cb-result bad",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3af7a13f8ddd5db5",
@@ -25776,8 +25776,8 @@
     "zh": "doctest: {0} :: {1}{2}",
     "es": "doctest: {0} :: {1}{2}",
     "fr": "doctest: {0} :: {1}{2}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "136de5a9b6bcffa3",
@@ -25785,53 +25785,53 @@
     "zh": "doctest: {0}",
     "es": "doctest: {0}",
     "fr": "doctest: {0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3da33b01dd0db3c2",
     "en": "Use file: path, contains: path :: text, ci: check name, or doctest: path :: example => output",
-    "zh": "使用 file: path、contains: path :: text、ci: check name 或 doctest: path :: example => output",
-    "es": "Usa file: path, contains: path :: text, ci: check name o doctest: path :: example => output",
-    "fr": "Utilisez file: path, contains: path :: text, ci: check name ou doctest: path :: example => output",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "可用格式：file: 路径、contains: 路径 :: 文本、ci: 检查名称，或 doctest: 路径 :: 示例 => 输出",
+    "es": "Usa file: ruta, contains: ruta :: texto, ci: nombre de la comprobación o doctest: ruta :: ejemplo => salida",
+    "fr": "Utilisez file: chemin, contains: chemin :: texte, ci: nom de la vérification, ou doctest: chemin :: exemple => sortie",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cda536990e1248c0",
     "en": "Doctest: {0} (docstring examples)",
-    "zh": "Doctest: {0}（docstring 示例）",
-    "es": "Doctest: {0} (ejemplos en docstring)",
-    "fr": "Doctest : {0} (exemples de docstring)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "Doctest：{0}（docstring 示例）",
+    "es": "Doctest: {0} (ejemplos del docstring)",
+    "fr": "Doctest : {0} (exemples de la docstring)",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c620cd3dbdc23893",
     "en": "Doctest: {0} :: {1}",
-    "zh": "Doctest: {0} :: {1}",
+    "zh": "Doctest：{0} :: {1}",
     "es": "Doctest: {0} :: {1}",
     "fr": "Doctest : {0} :: {1}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3bc05b475528de2e",
     "en": "Open class guide ↗",
-    "zh": "打开课程指南 ↗",
+    "zh": "打开课堂指南 ↗",
     "es": "Abrir guía de la clase ↗",
-    "fr": "Ouvrir le guide du cours ↗",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Ouvrir le guide de la classe ↗",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a6e4a27b6cfcb500",
     "en": "Your teacher’s instructions or course materials. Opens in a new tab.",
-    "zh": "你的老师的说明或课程材料。将在新标签页中打开。",
-    "es": "Las instrucciones de tu profesor o los materiales del curso. Se abre en una pestaña nueva.",
-    "fr": "Les instructions de votre enseignant ou les supports de cours. S’ouvre dans un nouvel onglet.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "老师提供的说明或课程资料，在新标签页中打开。",
+    "es": "Las instrucciones o materiales del curso de tu profesor. Se abre en una pestaña nueva.",
+    "fr": "Les consignes ou supports de cours de votre enseignant. S'ouvre dans un nouvel onglet.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "653d3dd936bd7ff8",
@@ -25839,17 +25839,17 @@
     "zh": "已击败！",
     "es": "¡Derrotado!",
     "fr": "Vaincu !",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "bd5eb68807b0ef56",
     "en": "Your part in the class attack",
-    "zh": "你在班级攻势中的部分",
-    "es": "Tu parte en el ataque de la clase",
-    "fr": "Votre part dans l’attaque de la classe",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "你在全班攻击中的贡献",
+    "es": "Tu contribución al ataque de la clase",
+    "fr": "Votre contribution à l'attaque de la classe",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "946e65e46b9f3be2",
@@ -25857,35 +25857,35 @@
     "zh": "you@psu.edu",
     "es": "you@psu.edu",
     "fr": "you@psu.edu",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a45581e00a83c5cd",
     "en": "Canvas grade matching",
     "zh": "Canvas 成绩匹配",
-    "es": "Coincidencia de calificaciones de Canvas",
+    "es": "Vinculación de notas con Canvas",
     "fr": "Correspondance des notes Canvas",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "52bc4608700ed734",
     "en": "Enter the email shown in your Canvas account. Your teacher or TA can export it with your scores and enter grades in Canvas by hand. Use email code sign-in to verify the address. This does not connect to Canvas.",
-    "zh": "输入你的 Canvas 账户中显示的电子邮箱。你的老师或助教可以将其与你的分数一起导出，并手动在 Canvas 中录入成绩。使用电子邮件验证码登录来验证该地址。这不会连接到 Canvas。",
-    "es": "Introduce el correo electrónico que aparece en tu cuenta de Canvas. Tu profesor o ayudante puede exportarlo con tus puntuaciones e introducir las calificaciones en Canvas manualmente. Usa el inicio de sesión con código por correo para verificar la dirección. Esto no se conecta a Canvas.",
-    "fr": "Saisissez l’adresse e-mail indiquée dans votre compte Canvas. Votre enseignant ou votre assistant peut l’exporter avec vos scores et saisir les notes dans Canvas manuellement. Utilisez la connexion par code e-mail pour vérifier l’adresse. Cela ne se connecte pas à Canvas.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "请输入你 Canvas 账号中显示的邮箱。老师或助教可以将它和你的分数一起导出，再手动在 Canvas 中录入成绩。请用邮箱验证码登录来验证该地址。此功能不会连接 Canvas。",
+    "es": "Escribe el correo que aparece en tu cuenta de Canvas. Tu profesor o asistente puede exportarlo con tus puntuaciones e introducir las notas en Canvas a mano. Inicia sesión con un código por correo para verificar la dirección. Esto no se conecta a Canvas.",
+    "fr": "Saisissez l'adresse e-mail affichée dans votre compte Canvas. Votre enseignant ou assistant peut l'exporter avec vos scores et saisir les notes dans Canvas à la main. Connectez-vous avec un code par e-mail pour vérifier l'adresse. Aucune connexion à Canvas n'est établie.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "011df49b32feb227",
     "en": "Sign in with email code",
-    "zh": "使用电子邮件验证码登录",
+    "zh": "用邮箱验证码登录",
     "es": "Iniciar sesión con código por correo",
-    "fr": "Se connecter par code e-mail",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Se connecter avec un code par e-mail",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "80f9bd709644d202",
@@ -25893,26 +25893,26 @@
     "zh": "classroom-email-login",
     "es": "classroom-email-login",
     "fr": "classroom-email-login",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "92c831e2b5474061",
     "en": "Canvas email",
-    "zh": "Canvas 电子邮件",
+    "zh": "Canvas 邮箱",
     "es": "Correo de Canvas",
     "fr": "E-mail Canvas",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "99583e152ccf6a58",
     "en": "Save email",
-    "zh": "保存电子邮件",
+    "zh": "保存邮箱",
     "es": "Guardar correo",
-    "fr": "Enregistrer l’e-mail",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Enregistrer l'e-mail",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ae44b28bb90b9656",
@@ -25920,62 +25920,62 @@
     "zh": "classroom-email-save",
     "es": "classroom-email-save",
     "fr": "classroom-email-save",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "76728495f3b9c99b",
     "en": "Saving email…",
-    "zh": "正在保存电子邮件…",
+    "zh": "正在保存邮箱…",
     "es": "Guardando correo…",
-    "fr": "Enregistrement de l’e-mail…",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Enregistrement de l'e-mail…",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6941804f11fcde26",
     "en": "Enter a valid Canvas email address",
-    "zh": "请输入有效的 Canvas 电子邮件地址",
-    "es": "Introduce una dirección de correo de Canvas válida",
+    "zh": "请输入有效的 Canvas 邮箱地址",
+    "es": "Introduce un correo de Canvas válido",
     "fr": "Saisissez une adresse e-mail Canvas valide",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "85e48a607ffa7143",
     "en": "Your email is included in teacher-only CSV and Markdown exports. It is hidden from classmates and the projector.",
-    "zh": "你的电子邮件会包含在仅限老师查看的 CSV 和 Markdown 导出文件中。它不会向同学和投影显示。",
-    "es": "Tu correo se incluye en las exportaciones CSV y Markdown solo para el profesor. Está oculto para tus compañeros y el proyector.",
-    "fr": "Votre e-mail est inclus dans les exports CSV et Markdown réservés à l’enseignant. Il est masqué pour les camarades et le projecteur.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "你的邮箱会出现在仅教师可见的 CSV 和 Markdown 导出中，不会显示给同学，也不会出现在投影上。",
+    "es": "Tu correo se incluye en las exportaciones CSV y Markdown que solo ve el profesor. Tus compañeros y el proyector no lo ven.",
+    "fr": "Votre e-mail figure dans les exports CSV et Markdown réservés à l'enseignant. Il est masqué pour vos camarades et sur le projecteur.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4bc6aa74e8a3200d",
     "en": "Email verified. Sign in with another email to change it.",
-    "zh": "电子邮件已验证。使用另一个电子邮件登录即可更改。",
-    "es": "Correo verificado. Inicia sesión con otro correo para cambiarlo.",
-    "fr": "E-mail vérifié. Connectez-vous avec un autre e-mail pour le modifier.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "邮箱已验证。如需更改，请用其他邮箱登录。",
+    "es": "Correo verificado. Para cambiarlo, inicia sesión con otro correo.",
+    "fr": "E-mail vérifié. Pour le changer, connectez-vous avec une autre adresse.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6022e5010056793a",
     "en": "Finish loading the class instructions and fix the lesson settings before applying the course draft.",
-    "zh": "在应用课程草稿之前，请完成课程说明的加载并修正课程设置。",
-    "es": "Termina de cargar las instrucciones de la clase y corrige la configuración de la lección antes de aplicar el borrador del curso.",
-    "fr": "Terminez le chargement des instructions du cours et corrigez les paramètres de la leçon avant d’appliquer le brouillon du cours.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "请等课堂说明加载完成并修正课程设置，再应用课程草稿。",
+    "es": "Espera a que terminen de cargarse las instrucciones de clase y corrige la configuración de la lección antes de aplicar el borrador del curso.",
+    "fr": "Attendez la fin du chargement des consignes et corrigez les réglages de la leçon avant d'appliquer le brouillon du cours.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "982613ff75e93cda",
     "en": "Generated draft applied. Review it, then Publish lesson to share it.",
-    "zh": "已应用生成的草稿。请先查看，然后发布课程以分享。",
-    "es": "Borrador generado aplicado. Revísalo y luego pulsa Publicar lección para compartirlo.",
-    "fr": "Brouillon généré appliqué. Vérifiez-le, puis cliquez sur Publier la leçon pour le partager.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "已应用生成的草稿。检查无误后，点击“发布课程”即可分享。",
+    "es": "Borrador generado aplicado. Revísalo y pulsa «Publicar lección» para compartirlo.",
+    "fr": "Brouillon généré appliqué. Relisez-le, puis cliquez sur « Publier la leçon » pour le partager.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c49fea7425fa7f86",
@@ -25983,17 +25983,17 @@
     "zh": "legacy",
     "es": "legacy",
     "fr": "legacy",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6b86849c5f55e042",
     "en": "Automatic rubric and checks",
     "zh": "自动评分标准和检查",
     "es": "Rúbrica y comprobaciones automáticas",
-    "fr": "Grille et vérifications automatiques",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Grille d'évaluation et vérifications automatiques",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c97ace4c8fef2cee",
@@ -26001,35 +26001,35 @@
     "zh": "review",
     "es": "review",
     "fr": "review",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c4b26c49b35b3a31",
     "en": "Automatic checks + AI / teacher review",
-    "zh": "自动检查 + AI / 老师评审",
-    "es": "Comprobaciones automáticas + revisión de IA / profesor",
+    "zh": "自动检查 + AI / 教师评审",
+    "es": "Comprobaciones automáticas + revisión de IA / del profesor",
     "fr": "Vérifications automatiques + révision IA / enseignant",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "bb4f1737044c5f49",
     "en": "Default: automatic evidence counts 50%, AI or teacher review counts 50%. The automatic component uses each step’s checks and rubric settings. Teacher review replaces the AI component, not the whole grade.",
-    "zh": "默认：自动依据占 50%，AI 或老师评审占 50%。自动部分使用每个步骤的检查和评分标准设置。老师评审只替换 AI 部分，而非整个成绩。",
-    "es": "Predeterminado: la evidencia automática cuenta un 50%, y la revisión de IA o del profesor un 50%. El componente automático usa las comprobaciones y la configuración de rúbrica de cada paso. La revisión del profesor sustituye al componente de IA, no a la calificación completa.",
-    "fr": "Par défaut : les éléments automatiques comptent pour 50 %, la révision IA ou enseignant pour 50 %. La composante automatique utilise les vérifications et les paramètres de grille de chaque étape. La révision de l’enseignant remplace la composante IA, pas la note entière.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "默认：自动证据占 50%，AI 或教师评审占 50%。自动部分采用每个步骤的检查和评分标准设置。教师评审替代的是 AI 部分，而不是整个成绩。",
+    "es": "Por defecto: la evidencia automática cuenta un 50 % y la revisión de IA o del profesor, otro 50 %. La parte automática usa las comprobaciones y la rúbrica de cada paso. La revisión del profesor sustituye a la parte de IA, no a toda la nota.",
+    "fr": "Par défaut : les éléments automatiques comptent pour 50 %, la révision IA ou enseignant pour 50 %. La part automatique utilise les vérifications et la grille d'évaluation de chaque étape. La révision de l'enseignant remplace la part IA, pas la note entière.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e345a2a27de22bf9",
     "en": "Automatic component (%) · the rest is review",
-    "zh": "自动部分（%）· 其余为评审",
-    "es": "Componente automático (%) · el resto es revisión",
-    "fr": "Composante automatique (%) · le reste est révision",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "自动部分 (%) · 其余为评审",
+    "es": "Parte automática (%) · el resto es revisión",
+    "fr": "Part automatique (%) · le reste relève de la révision",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c1270014a63aa7f8",
@@ -26037,26 +26037,26 @@
     "zh": "评审清单 · 每行一项",
     "es": "Lista de revisión · un elemento por línea",
     "fr": "Liste de révision · un élément par ligne",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "8c1d753b04b8fbf1",
     "en": "Enabling AI review sends in-app code and public, uncredentialed GitHub code to the configured Gemini / DeepSeek provider. Private or credentialed GitHub work needs teacher review. If AI is unavailable, scores stay provisional until reviewed.",
-    "zh": "启用 AI 评审会将应用内代码和公开、无凭据的 GitHub 代码发送到已配置的 Gemini / DeepSeek 提供商。私有或需要凭据的 GitHub 作业需要老师评审。如果 AI 不可用，分数在评审前保持暂定。",
-    "es": "Activar la revisión de IA envía el código de la aplicación y el código público de GitHub sin credenciales al proveedor de Gemini / DeepSeek configurado. El trabajo privado o con credenciales de GitHub necesita revisión del profesor. Si la IA no está disponible, las puntuaciones quedan provisionales hasta su revisión.",
-    "fr": "Activer la révision IA envoie le code de l’application et le code GitHub public sans identifiants au fournisseur Gemini / DeepSeek configuré. Le travail GitHub privé ou avec identifiants nécessite une révision de l’enseignant. Si l’IA est indisponible, les scores restent provisoires jusqu’à révision.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "启用 AI 评审后，应用内代码以及公开、无需凭据的 GitHub 代码会发送给已配置的 Gemini / DeepSeek 服务商。私有或需要凭据的 GitHub 作业需要教师评审。AI 不可用时，分数在评审前保持暂定。",
+    "es": "Al activar la revisión de IA, el código de la app y el código público de GitHub sin credenciales se envían al proveedor Gemini / DeepSeek configurado. El trabajo privado o con credenciales en GitHub necesita revisión del profesor. Si la IA no está disponible, las puntuaciones son provisionales hasta la revisión.",
+    "fr": "Activer la révision IA envoie le code de l'application et le code GitHub public sans identifiants au fournisseur Gemini / DeepSeek configuré. Un travail GitHub privé ou protégé par des identifiants nécessite une révision de l'enseignant. Si l'IA est indisponible, les scores restent provisoires jusqu'à la révision.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4ce9acfc750a784b",
     "en": "Enter an automatic weight from 0 to 100.",
-    "zh": "请输入 0 到 100 之间的自动权重。",
+    "zh": "请输入 0 到 100 之间的自动部分权重。",
     "es": "Introduce un peso automático de 0 a 100.",
-    "fr": "Saisissez un poids automatique de 0 à 100.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Saisissez une pondération automatique entre 0 et 100.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "118b3c6a31004eca",
@@ -26064,8 +26064,8 @@
     "zh": "评分与评审",
     "es": "Calificación y revisión",
     "fr": "Notation et révision",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ad2aa9d6f9a9ff4c",
@@ -26073,8 +26073,8 @@
     "zh": "评分模式",
     "es": "Modo de calificación",
     "fr": "Mode de notation",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f6d11c6717440680",
@@ -26082,17 +26082,17 @@
     "zh": "file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests\ndoctest: src/main.py :: add(2, 3) => 5",
     "es": "file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests\ndoctest: src/main.py :: add(2, 3) => 5",
     "fr": "file: README.md\ncontains: src/main.py :: def calculate\nci: unit-tests\ndoctest: src/main.py :: add(2, 3) => 5",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "45158d0b74bc7d83",
     "en": "Doctest (runs the code)",
-    "zh": "Doctest（运行代码）",
+    "zh": "Doctest（会运行代码）",
     "es": "Doctest (ejecuta el código)",
     "fr": "Doctest (exécute le code)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "66e7c80bd111d2ee",
@@ -26100,17 +26100,17 @@
     "zh": "doctest: {0} :: print_hello() => Hello",
     "es": "doctest: {0} :: print_hello() => Hello",
     "fr": "doctest: {0} :: print_hello() => Hello",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "77765005eb210807",
     "en": "Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed) · “doctest: main.py :: add(2, 3) => 5” (runs the file in a sandbox and checks the example) · “doctest: main.py” (runs the examples in its docstrings). You can always override a score with ✓ / ✗ during class.",
-    "zh": "示例：“file: python/01_hello.py”（该文件存在）·“contains: python/01_hello.py :: Hello, Python!”（该文件包含此确切文本；代码不会运行）·“ci: unit-tests”（该名称的 GitHub 检查已通过）·“doctest: main.py :: add(2, 3) => 5”（在沙箱中运行该文件并检查示例）·“doctest: main.py”（运行其 docstring 中的示例）。课堂上你始终可以用 ✓ / ✗ 覆盖分数。",
-    "es": "Ejemplos: “file: python/01_hello.py” (el archivo existe) · “contains: python/01_hello.py :: Hello, Python!” (el archivo contiene este texto exacto; el código nunca se ejecuta) · “ci: unit-tests” (una comprobación de GitHub con ese nombre ha pasado) · “doctest: main.py :: add(2, 3) => 5” (ejecuta el archivo en un entorno aislado y comprueba el ejemplo) · “doctest: main.py” (ejecuta los ejemplos de sus docstrings). Siempre puedes sobrescribir una puntuación con ✓ / ✗ durante la clase.",
-    "fr": "Exemples : « file: python/01_hello.py » (le fichier existe) · « contains: python/01_hello.py :: Hello, Python! » (le fichier contient ce texte exact ; le code n’est jamais exécuté) · « ci: unit-tests » (une vérification GitHub de ce nom a réussi) · « doctest: main.py :: add(2, 3) => 5 » (exécute le fichier dans un bac à sable et vérifie l’exemple) · « doctest: main.py » (exécute les exemples de ses docstrings). Vous pouvez toujours remplacer un score par ✓ / ✗ pendant le cours.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "示例：“file: python/01_hello.py”（该文件存在）·“contains: python/01_hello.py :: Hello, Python!”（文件包含这段原文；代码不会运行）·“ci: unit-tests”（同名 GitHub 检查已通过）·“doctest: main.py :: add(2, 3) => 5”（在沙箱中运行该文件并核对示例）·“doctest: main.py”（运行其 docstring 中的示例）。上课时你随时可以用 ✓ / ✗ 覆盖分数。",
+    "es": "Ejemplos: «file: python/01_hello.py» (el archivo existe) · «contains: python/01_hello.py :: Hello, Python!» (el archivo contiene este texto exacto; el código nunca se ejecuta) · «ci: unit-tests» (pasó una comprobación de GitHub con ese nombre) · «doctest: main.py :: add(2, 3) => 5» (ejecuta el archivo en un sandbox y verifica el ejemplo) · «doctest: main.py» (ejecuta los ejemplos de sus docstrings). Durante la clase siempre puedes cambiar una puntuación con ✓ / ✗.",
+    "fr": "Exemples : « file: python/01_hello.py » (le fichier existe) · « contains: python/01_hello.py :: Hello, Python! » (le fichier contient ce texte exact ; le code n'est jamais exécuté) · « ci: unit-tests » (une vérification GitHub de ce nom a réussi) · « doctest: main.py :: add(2, 3) => 5 » (exécute le fichier dans un bac à sable et vérifie l'exemple) · « doctest: main.py » (exécute les exemples de ses docstrings). Pendant le cours, vous pouvez toujours remplacer un score avec ✓ / ✗.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0ba958a142ea95e4",
@@ -27006,56 +27006,56 @@
   {
     "id": "a1e927d98968cb0d",
     "en": "📱 Phone connected ✓ · ready to battle",
-    "zh": "📱 手机已连接 ✓ · 准备战斗",
+    "zh": "📱 手机已连接 ✓ · 准备开战",
     "es": "📱 Móvil conectado ✓ · listo para pelear",
     "fr": "📱 Téléphone connecté ✓ · prêt au combat",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f4c9e9d991a4d409",
     "en": "📱 Móvil conectado ✓ · listo para pelear",
-    "zh": "📱 手机已连接 ✓ · 准备战斗",
+    "zh": "📱 手机已连接 ✓ · 准备开战",
     "es": "📱 Móvil conectado ✓ · listo para pelear",
     "fr": "📱 Téléphone connecté ✓ · prêt au combat",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "73f0efdbe07834cc",
     "en": "📱 Téléphone connecté ✓ · prêt au combat",
-    "zh": "📱 手机已连接 ✓ · 准备战斗",
+    "zh": "📱 手机已连接 ✓ · 准备开战",
     "es": "📱 Móvil conectado ✓ · listo para pelear",
     "fr": "📱 Téléphone connecté ✓ · prêt au combat",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "12a7bd86e0a43032",
     "en": "connected",
-    "zh": "已连接",
-    "es": "conectado",
-    "fr": "connecté",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "connected",
+    "es": "connected",
+    "fr": "connected",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a8a07eff4d1f92cf",
     "en": "connectedSub",
-    "zh": "你的手机已连接。",
-    "es": "Tu móvil está conectado.",
-    "fr": "Votre téléphone est connecté.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "connectedSub",
+    "es": "connectedSub",
+    "fr": "connectedSub",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4f935a0f03deea2f",
     "en": "disconnect",
-    "zh": "断开连接",
-    "es": "desconectar",
-    "fr": "déconnecter",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "disconnect",
+    "es": "disconnect",
+    "fr": "disconnect",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9b80ca8cac350f42",
@@ -27063,26 +27063,26 @@
     "zh": "useTitle",
     "es": "useTitle",
     "fr": "useTitle",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "96c61e4602f2f1b2",
     "en": "signInBoth",
-    "zh": "在两台设备上登录",
-    "es": "Inicia sesión en ambos dispositivos",
-    "fr": "Connectez-vous sur les deux appareils",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "signInBoth",
+    "es": "signInBoth",
+    "fr": "signInBoth",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5a638a128ca67348",
     "en": "connect",
-    "zh": "连接",
-    "es": "conectar",
-    "fr": "connecter",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "connect",
+    "es": "connect",
+    "fr": "connect",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "64fdf1d1236b5331",
@@ -27090,8 +27090,8 @@
     "zh": "{0}/r/{1}",
     "es": "{0}/r/{1}",
     "fr": "{0}/r/{1}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c0f83332056608e9",
@@ -27099,17 +27099,17 @@
     "zh": "pair-room-code",
     "es": "pair-room-code",
     "fr": "pair-room-code",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1f1c5b2fad778434",
     "en": "room",
-    "zh": "房间",
-    "es": "sala",
-    "fr": "salle",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "room",
+    "es": "room",
+    "fr": "room",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "53ae382151bc31e4",
@@ -27117,26 +27117,26 @@
     "zh": "pair-copy-link",
     "es": "pair-copy-link",
     "fr": "pair-copy-link",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "fb30593ca32df57a",
     "en": "copied",
-    "zh": "已复制",
-    "es": "copiado",
-    "fr": "copié",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "copied",
+    "es": "copied",
+    "fr": "copied",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6f5a6034e770acbf",
     "en": "copy",
-    "zh": "复制",
-    "es": "copiar",
-    "fr": "copier",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "copy",
+    "es": "copy",
+    "fr": "copy",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ab90b11836e7dd58",
@@ -27144,53 +27144,53 @@
     "zh": "stays",
     "es": "stays",
     "fr": "stays",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "76968573d80b6319",
     "en": "reqHead",
-    "zh": "连接你的手机",
-    "es": "Conecta tu móvil",
-    "fr": "Connectez votre téléphone",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "reqHead",
+    "es": "reqHead",
+    "fr": "reqHead",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "37cb65d11ca65764",
     "en": "reqWhy",
-    "zh": "用你的手机作为控制器在这里游玩。",
-    "es": "Usa tu móvil como mando para jugar aquí.",
-    "fr": "Utilisez votre téléphone comme manette pour jouer ici.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "reqWhy",
+    "es": "reqWhy",
+    "fr": "reqWhy",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7c3bdf812d49d5a5",
     "en": "step1Done",
-    "zh": "已登录 ✓",
-    "es": "Sesión iniciada ✓",
-    "fr": "Connecté ✓",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "step1Done",
+    "es": "step1Done",
+    "fr": "step1Done",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "97f9e3b0ab388674",
     "en": "step1",
-    "zh": "在手机上打开此链接：",
-    "es": "Abre este enlace en tu móvil:",
-    "fr": "Ouvrez ce lien sur votre téléphone :",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "step1",
+    "es": "step1",
+    "fr": "step1",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "99cb29fd2d2e3f41",
     "en": "step2",
-    "zh": "扫描二维码或将链接分享到你的手机。",
-    "es": "Escanea el código QR o comparte el enlace con tu móvil.",
-    "fr": "Scannez le QR code ou partagez le lien avec votre téléphone.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "step2",
+    "es": "step2",
+    "fr": "step2",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1bbba7fddb5d0cb3",
@@ -27198,26 +27198,26 @@
     "zh": "pair-room-url",
     "es": "pair-room-url",
     "fr": "pair-room-url",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b32524b5ba12385f",
     "en": "step3",
-    "zh": "在两台设备上加入房间。",
-    "es": "Únete a la sala en ambos dispositivos.",
-    "fr": "Rejoignez la salle sur les deux appareils.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "step3",
+    "es": "step3",
+    "fr": "step3",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5ec863e2414f3525",
     "en": "offerUse",
-    "zh": "用作控制器",
-    "es": "Usar como mando",
-    "fr": "Utiliser comme manette",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "offerUse",
+    "es": "offerUse",
+    "fr": "offerUse",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "40cc907eb03efa3c",
@@ -27225,17 +27225,17 @@
     "zh": " gitzilla@room-{0}",
     "es": " gitzilla@room-{0}",
     "fr": " gitzilla@room-{0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "34b0ef04afacdce4",
     "en": "offerTitle",
-    "zh": "将手机用作控制器？",
-    "es": "¿Usar el móvil como mando?",
-    "fr": "Utiliser le téléphone comme manette ?",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "offerTitle",
+    "es": "offerTitle",
+    "fr": "offerTitle",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "57a650b50ee3b7db",
@@ -27243,35 +27243,35 @@
     "zh": "img.co-avatar",
     "es": "img.co-avatar",
     "fr": "img.co-avatar",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0d8623d418e2b17c",
     "en": "offerSeat",
-    "zh": "就座",
-    "es": "Tomar asiento",
-    "fr": "Prendre place",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "offerSeat",
+    "es": "offerSeat",
+    "fr": "offerSeat",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "33f4dcdc481665a2",
     "en": "offerSignIn",
-    "zh": "登录",
-    "es": "Iniciar sesión",
-    "fr": "Se connecter",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "offerSignIn",
+    "es": "offerSignIn",
+    "fr": "offerSignIn",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "99b713418ff2d79f",
     "en": "offerTakeover",
-    "zh": "接管",
-    "es": "Tomar el control",
-    "fr": "Prendre le contrôle",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "offerTakeover",
+    "es": "offerTakeover",
+    "fr": "offerTakeover",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "df905058dd67a409",
@@ -27279,17 +27279,17 @@
     "zh": "alert",
     "es": "alert",
     "fr": "alert",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6f4cf1bab567b5d5",
     "en": "controller-offer-error",
-    "zh": "无法连接为控制器。",
-    "es": "No se pudo conectar como mando.",
-    "fr": "Impossible de se connecter comme manette.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "controller-offer-error",
+    "es": "controller-offer-error",
+    "fr": "controller-offer-error",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "00ea1e75e13d0abb",
@@ -27297,26 +27297,26 @@
     "zh": "controller-use",
     "es": "controller-use",
     "fr": "controller-use",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9332530775a12895",
     "en": "linking",
-    "zh": "正在链接",
-    "es": "vinculando",
-    "fr": "liaison en cours",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "linking",
+    "es": "linking",
+    "fr": "linking",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6633e00bd4d734e0",
     "en": "tryAgain",
-    "zh": "重试",
-    "es": "Reintentar",
-    "fr": "Réessayer",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "tryAgain",
+    "es": "tryAgain",
+    "fr": "tryAgain",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "1bdde32da2890b6e",
@@ -27324,8 +27324,8 @@
     "zh": "controller-connect-github",
     "es": "controller-connect-github",
     "fr": "controller-connect-github",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "db9eb70959370a02",
@@ -27333,17 +27333,17 @@
     "zh": "controller-play-here",
     "es": "controller-play-here",
     "fr": "controller-play-here",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "829afc86cc9ced1b",
     "en": "offerPlayHere",
-    "zh": "在此游玩",
-    "es": "Jugar aquí",
-    "fr": "Jouer ici",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "offerPlayHere",
+    "es": "offerPlayHere",
+    "fr": "offerPlayHere",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f94e281577271d43",
@@ -27351,17 +27351,17 @@
     "zh": "{0} {1}s",
     "es": "{0} {1}s",
     "fr": "{0} {1}s",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "b24d6d33736ecd56",
     "en": "ready",
-    "zh": "就绪",
-    "es": "listo",
-    "fr": "prêt",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "ready",
+    "es": "ready",
+    "fr": "ready",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "dc63baa2d2b0a0e5",
@@ -27369,44 +27369,44 @@
     "zh": "controller-end-{0}",
     "es": "controller-end-{0}",
     "fr": "controller-end-{0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "66f80586707b1adf",
     "en": "kicked",
-    "zh": "已被移出",
-    "es": "expulsado",
-    "fr": "exclu",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "kicked",
+    "es": "kicked",
+    "fr": "kicked",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4b37c83f08584ca9",
     "en": "controller-relink",
-    "zh": "重新链接",
-    "es": "Volver a vincular",
-    "fr": "Relier",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "controller-relink",
+    "es": "controller-relink",
+    "fr": "controller-relink",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "aea4b39a5c819972",
     "en": "relink",
-    "zh": "重新链接",
-    "es": "volver a vincular",
-    "fr": "relier",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "relink",
+    "es": "relink",
+    "fr": "relink",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4ea140588150773c",
     "en": "home",
-    "zh": "主页",
-    "es": "inicio",
-    "fr": "accueil",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "home",
+    "es": "home",
+    "fr": "home",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9771b0253421e196",
@@ -27414,8 +27414,8 @@
     "zh": "pause-kick",
     "es": "pause-kick",
     "fr": "pause-kick",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6ee5c5f4f8a45ea5",
@@ -27423,8 +27423,8 @@
     "zh": "pause-kick-confirm",
     "es": "pause-kick-confirm",
     "fr": "pause-kick-confirm",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a14c89fb4bdf6964",
@@ -27432,8 +27432,8 @@
     "zh": "pause-remove-bot",
     "es": "pause-remove-bot",
     "fr": "pause-remove-bot",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9c296baf347d3b19",
@@ -27441,8 +27441,8 @@
     "zh": "pause-kick-player",
     "es": "pause-kick-player",
     "fr": "pause-kick-player",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "ae05dc74e38bb48f",
@@ -27450,8 +27450,8 @@
     "zh": "settings-view-label",
     "es": "settings-view-label",
     "fr": "settings-view-label",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9220f3b480a265bb",
@@ -27459,53 +27459,53 @@
     "zh": "onboarding-github",
     "es": "onboarding-github",
     "fr": "onboarding-github",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "25c237dd6dd1151d",
     "en": "An extremely fast Python package and project manager, written in Rust.",
-    "zh": "一个用 Rust 编写的极快的 Python 包和项目管理器。",
+    "zh": "一个用 Rust 编写的极速 Python 包和项目管理器。",
     "es": "Un gestor de paquetes y proyectos de Python extremadamente rápido, escrito en Rust.",
-    "fr": "Un gestionnaire de paquets et de projets Python extrêmement rapide, écrit en Rust.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Un gestionnaire de paquets et de projets Python ultra-rapide, écrit en Rust.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "3a399e62b74b030e",
     "en": "Lightweight coding agent that runs in your terminal.",
-    "zh": "在终端中运行的轻量级编码代理。",
+    "zh": "在终端里运行的轻量级编程智能体。",
     "es": "Agente de programación ligero que se ejecuta en tu terminal.",
-    "fr": "Agent de codage léger qui s'exécute dans votre terminal.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Agent de programmation léger qui s'exécute dans votre terminal.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "33e48db1a03540ce",
     "en": "You like pytorch? You like micrograd? You love tinygrad!",
-    "zh": "你喜欢 pytorch？你喜欢 micrograd？你会爱上 tinygrad！",
+    "zh": "喜欢 pytorch？喜欢 micrograd？那你一定会爱上 tinygrad！",
     "es": "¿Te gusta pytorch? ¿Te gusta micrograd? ¡Te encantará tinygrad!",
-    "fr": "Vous aimez pytorch ? Vous aimez micrograd ? Vous adorerez tinygrad !",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Vous aimez pytorch ? Vous aimez micrograd ? Vous allez adorer tinygrad !",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "cdda431469e8751e",
     "en": "A Zig language server supporting Zig developers with features like autocomplete and goto definition.",
-    "zh": "一个 Zig 语言服务器，为 Zig 开发者提供自动补全和跳转到定义等功能。",
-    "es": "Un servidor de lenguaje Zig que admite a los desarrolladores de Zig con funciones como autocompletado e ir a definición.",
-    "fr": "Un serveur de langage Zig prenant en charge les développeurs Zig avec des fonctionnalités comme l'autocomplétion et la navigation vers la définition.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "为 Zig 开发者提供自动补全、跳转到定义等功能的 Zig 语言服务器。",
+    "es": "Un servidor de lenguaje para Zig que ofrece a sus desarrolladores funciones como autocompletado e ir a la definición.",
+    "fr": "Un serveur de langage Zig qui offre aux développeurs Zig l'autocomplétion, l'accès à la définition et plus encore.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f6939c9992ef2117",
     "en": "The library for web and native user interfaces.",
-    "zh": "用于 Web 和原生用户界面的库。",
+    "zh": "用于构建 Web 和原生用户界面的库。",
     "es": "La biblioteca para interfaces de usuario web y nativas.",
     "fr": "La bibliothèque pour les interfaces utilisateur web et natives.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "752b5fa34d15e533",
@@ -27513,53 +27513,53 @@
     "zh": "Linux 内核源码树",
     "es": "Árbol de código fuente del kernel de Linux",
     "fr": "Arborescence des sources du noyau Linux",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "da2eea28bd5d6498",
     "en": "The Python micro framework for building web applications.",
-    "zh": "用于构建 Web 应用程序的 Python 微框架。",
+    "zh": "用于构建 Web 应用的 Python 微框架。",
     "es": "El microframework de Python para crear aplicaciones web.",
     "fr": "Le micro-framework Python pour créer des applications web.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4b7083c3fd2f9d63",
     "en": "Empowering everyone to build reliable and efficient software.",
-    "zh": "赋能每个人构建可靠且高效的软件。",
-    "es": "Empoderando a todos para crear software confiable y eficiente.",
+    "zh": "让每个人都能构建可靠、高效的软件。",
+    "es": "Capacita a todos para crear software fiable y eficiente.",
     "fr": "Permettre à chacun de créer des logiciels fiables et efficaces.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a61edeb0e3007434",
     "en": "A modern JavaScript utility library delivering modularity, performance, & extras.",
-    "zh": "一个现代 JavaScript 实用工具库，提供模块化、高性能以及额外功能。",
-    "es": "Una biblioteca de utilidades de JavaScript moderna que ofrece modularidad, rendimiento y extras.",
-    "fr": "Une bibliothèque d'utilitaires JavaScript moderne offrant modularité, performance et extras.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "一个现代 JavaScript 工具库，提供模块化、高性能及更多功能。",
+    "es": "Una biblioteca moderna de utilidades de JavaScript que ofrece modularidad, rendimiento y extras.",
+    "fr": "Une bibliothèque utilitaire JavaScript moderne, modulaire, performante et riche en extras.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "907d60baf4316824",
     "en": "The Web framework for perfectionists with deadlines.",
-    "zh": "为有截止日期的完美主义者打造的 Web 框架。",
-    "es": "El framework web para perfeccionistas con plazos.",
-    "fr": "Le framework web pour les perfectionnistes pressés.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "为赶工期的完美主义者打造的 Web 框架。",
+    "es": "El framework web para perfeccionistas con fechas de entrega.",
+    "fr": "Le framework web pour les perfectionnistes pressés par les délais.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e6e28be9aa313959",
     "en": "🖖 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.",
-    "zh": "🖖 Vue.js 是一个渐进式、可逐步采用的 JavaScript 框架，用于构建 Web 用户界面。",
-    "es": "🖖 Vue.js es un framework de JavaScript progresivo y de adopción incremental para crear interfaces de usuario en la web.",
-    "fr": "🖖 Vue.js est un framework JavaScript progressif et adoptable de manière incrémentielle pour créer des interfaces utilisateur sur le web.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "🖖 Vue.js 是一个渐进式、可逐步采用的 JavaScript 框架，用于在 Web 上构建 UI。",
+    "es": "🖖 Vue.js es un framework de JavaScript progresivo y de adopción gradual para crear interfaces web.",
+    "fr": "🖖 Vue.js est un framework JavaScript progressif, adoptable pas à pas, pour créer des interfaces web.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d48ae0da1cba0139",
@@ -27567,8 +27567,8 @@
     "zh": "Go 编程语言",
     "es": "El lenguaje de programación Go",
     "fr": "Le langage de programmation Go",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "850295c54925bf5a",
@@ -27576,8 +27576,8 @@
     "zh": "i.lang-dot",
     "es": "i.lang-dot",
     "fr": "i.lang-dot",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "2272b170260297a3",
@@ -27585,8 +27585,8 @@
     "zh": "background:{0}",
     "es": "background:{0}",
     "fr": "background:{0}",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "e5b00078095d4986",
@@ -27594,8 +27594,8 @@
     "zh": "trending",
     "es": "trending",
     "fr": "trending",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "d9037fdb0f3ea868",
@@ -27603,35 +27603,35 @@
     "zh": "suggestion-new",
     "es": "suggestion-new",
     "fr": "suggestion-new",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "54f7c99997d932f9",
     "en": "[kaiju] {0} training: input module unavailable, touch alternative only",
-    "zh": "[kaiju] {0} 训练：输入模块不可用，仅使用触摸替代方案",
+    "zh": "[kaiju] {0} 训练：输入模块不可用，仅支持触控替代方式",
     "es": "[kaiju] entrenamiento {0}: módulo de entrada no disponible, solo alternativa táctil",
     "fr": "[kaiju] entraînement {0} : module d'entrée indisponible, alternative tactile uniquement",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "6c8216cd5e76da3c",
     "en": "3D view unavailable, using 2D",
-    "zh": "3D 视图不可用，使用 2D",
-    "es": "Vista 3D no disponible, usando 2D",
-    "fr": "Vue 3D indisponible, utilisation de la 2D",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "3D 视图不可用，已改用 2D",
+    "es": "Vista 3D no disponible; se usa 2D",
+    "fr": "Vue 3D indisponible, passage en 2D",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "90f81d9c4e5c3e96",
     "en": "3D stage failed to start, using 2D",
-    "zh": "3D 舞台启动失败，使用 2D",
-    "es": "El escenario 3D no se pudo iniciar, usando 2D",
-    "fr": "Le scénario 3D n'a pas pu démarrer, utilisation de la 2D",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "3D 场景启动失败，已改用 2D",
+    "es": "No se pudo iniciar el escenario 3D; se usa 2D",
+    "fr": "Échec du démarrage de la scène 3D, passage en 2D",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "52c8e02987ccb1b0",
@@ -27639,8 +27639,8 @@
     "zh": "death",
     "es": "death",
     "fr": "death",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "97d2343481603de8",
@@ -27648,8 +27648,8 @@
     "zh": "lesson-guide-help lesson-guide-error",
     "es": "lesson-guide-help lesson-guide-error",
     "fr": "lesson-guide-help lesson-guide-error",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "89aef1dc2faf69c8",
@@ -27657,8 +27657,8 @@
     "zh": "lesson-guide-text-help lesson-guide-text-error",
     "es": "lesson-guide-text-help lesson-guide-text-error",
     "fr": "lesson-guide-text-help lesson-guide-text-error",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "03898261b426fee0",
@@ -27666,8 +27666,8 @@
     "zh": "正在读取 Markdown 文件…",
     "es": "Leyendo archivo Markdown…",
     "fr": "Lecture du fichier Markdown…",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "9f86854548ea1bc2",
@@ -27675,17 +27675,17 @@
     "zh": "Markdown 文件为空。",
     "es": "El archivo Markdown está vacío.",
     "fr": "Le fichier Markdown est vide.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "c052d2063f11fe7f",
     "en": "Markdown instructions loaded.",
-    "zh": "Markdown 说明已加载。",
-    "es": "Instrucciones de Markdown cargadas.",
-    "fr": "Instructions Markdown chargées.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "已载入 Markdown 说明。",
+    "es": "Instrucciones en Markdown cargadas.",
+    "fr": "Consignes Markdown chargées.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0337b27c00ab0bd3",
@@ -27693,17 +27693,17 @@
     "zh": "无法读取 Markdown 文件。",
     "es": "No se pudo leer el archivo Markdown.",
     "fr": "Impossible de lire le fichier Markdown.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "61c469e052f989f7",
     "en": "Class guide link (optional)",
-    "zh": "班级指南链接（可选）",
+    "zh": "课堂指南链接（可选）",
     "es": "Enlace a la guía de la clase (opcional)",
-    "fr": "Lien du guide de classe (facultatif)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "fr": "Lien vers le guide de la classe (facultatif)",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "4c2659afd2e95c37",
@@ -27711,26 +27711,26 @@
     "zh": "lesson-guide-help",
     "es": "lesson-guide-help",
     "fr": "lesson-guide-help",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "957d638c787665de",
     "en": "Link to Canvas, an assignment, or your class instructions. Students see this link in every step. They may need to sign in.",
-    "zh": "链接到 Canvas、作业或班级说明。学生会在每个步骤中看到此链接。他们可能需要登录。",
-    "es": "Enlace a Canvas, una tarea o las instrucciones de tu clase. Los estudiantes ven este enlace en cada paso. Es posible que necesiten iniciar sesión.",
-    "fr": "Lien vers Canvas, un devoir ou les instructions de votre classe. Les élèves voient ce lien à chaque étape. Ils devront peut-être se connecter.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "链接到 Canvas、作业或你的课堂说明。学生在每个步骤中都能看到此链接，可能需要登录才能访问。",
+    "es": "Enlace a Canvas, a una tarea o a tus instrucciones de clase. Los estudiantes lo ven en cada paso. Puede que tengan que iniciar sesión.",
+    "fr": "Lien vers Canvas, un devoir ou vos consignes de classe. Les élèves voient ce lien à chaque étape. Ils devront peut-être se connecter.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "8118a3d3d13e0955",
     "en": "Class instructions (optional)",
-    "zh": "班级说明（可选）",
-    "es": "Instrucciones de la clase (opcional)",
-    "fr": "Instructions de classe (facultatif)",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "课堂说明（可选）",
+    "es": "Instrucciones de clase (opcional)",
+    "fr": "Consignes de la classe (facultatif)",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7b200107a60670b0",
@@ -27738,26 +27738,26 @@
     "zh": "lesson-guide-text-help",
     "es": "lesson-guide-text-help",
     "fr": "lesson-guide-text-help",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "f589b34dbef334ad",
     "en": "Paste plain text or Markdown, or load a local .md file (maximum {0} characters). Link and text can be used together. Loading a file replaces the text.",
-    "zh": "粘贴纯文本或 Markdown，或加载本地 .md 文件（最多 {0} 个字符）。链接和文本可以同时使用。加载文件会替换文本。",
-    "es": "Pega texto sin formato o Markdown, o carga un archivo .md local (máximo {0} caracteres). El enlace y el texto se pueden usar juntos. Cargar un archivo reemplaza el texto.",
-    "fr": "Collez du texte brut ou du Markdown, ou chargez un fichier .md local (maximum {0} caractères). Le lien et le texte peuvent être utilisés ensemble. Le chargement d'un fichier remplace le texte.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "粘贴纯文本或 Markdown，或载入本地 .md 文件（最多 {0} 个字符）。链接和文本可同时使用。载入文件会替换现有文本。",
+    "es": "Pega texto plano o Markdown, o carga un archivo .md local (máximo {0} caracteres). Puedes usar el enlace y el texto a la vez. Cargar un archivo reemplaza el texto.",
+    "fr": "Collez du texte brut ou du Markdown, ou chargez un fichier .md local ({0} caractères maximum). Le lien et le texte peuvent être utilisés ensemble. Charger un fichier remplace le texte.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "5e9df773a1469b0a",
     "en": "Load Markdown instructions",
-    "zh": "加载 Markdown 说明",
-    "es": "Cargar instrucciones de Markdown",
-    "fr": "Charger les instructions Markdown",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "载入 Markdown 说明",
+    "es": "Cargar instrucciones en Markdown",
+    "fr": "Charger des consignes Markdown",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "0091074a5267cb32",
@@ -27765,8 +27765,8 @@
     "zh": "white-space: pre-wrap; overflow-wrap: anywhere",
     "es": "white-space: pre-wrap; overflow-wrap: anywhere",
     "fr": "white-space: pre-wrap; overflow-wrap: anywhere",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "676f11f64b47e192",
@@ -27774,8 +27774,8 @@
     "zh": "code.txt",
     "es": "code.txt",
     "fr": "code.txt",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "05190fdd0400c089",
@@ -27783,8 +27783,8 @@
     "zh": "classroom-{0}-code.txt",
     "es": "classroom-{0}-code.txt",
     "fr": "classroom-{0}-code.txt",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "7eb2ab82bd64b452",
@@ -27792,8 +27792,8 @@
     "zh": "classroom-kicked-download",
     "es": "classroom-kicked-download",
     "fr": "classroom-kicked-download",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "63944e3540567702",
@@ -27801,17 +27801,17 @@
     "zh": "classroom-kicked-home",
     "es": "classroom-kicked-home",
     "fr": "classroom-kicked-home",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "a76558ecc54c498a",
     "en": "Unrecorded steps count 0. Launch the class attack before finishing a step to record it.",
-    "zh": "未记录的步骤计为 0。在完成步骤前发动班级攻击以记录该步骤。",
-    "es": "Los pasos no registrados cuentan 0. Lanza el ataque de clase antes de finalizar un paso para registrarlo.",
-    "fr": "Les étapes non enregistrées comptent 0. Lancez l'attaque de classe avant de terminer une étape pour l'enregistrer.",
-    "provider": "DeepSeek",
-    "model": "deepseek-flash"
+    "zh": "未记录的步骤计 0 分。请在结束步骤前发起全班攻击，才能记录成绩。",
+    "es": "Los pasos sin registrar cuentan 0. Lanza el ataque de la clase antes de terminar un paso para registrarlo.",
+    "fr": "Les étapes non enregistrées comptent 0. Lancez l'attaque de la classe avant de terminer une étape pour l'enregistrer.",
+    "provider": "Claude Opus",
+    "model": "claude-opus"
   },
   {
     "id": "33cc5d0fefa8a631",

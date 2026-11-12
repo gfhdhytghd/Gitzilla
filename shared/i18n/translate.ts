@@ -3,7 +3,7 @@ import { LOCALES, type Locale, type Message } from './locale';
 export function createTranslator(messages: readonly Message[]) {
 const cache = new Map<string, string>();
 const exact = new Map<string, readonly string[]>();
-const patterns: { re: RegExp; row: readonly string[] }[] = [];
+const patterns: { re: RegExp; row: readonly string[]; literal: number }[] = [];
 for (const row of messages) {
   for (const source of row) if (source) exact.set(source, row);
   if (row[0].includes('{') && /[A-Za-z\u3400-\u9fff]{2}/.test(row[0].replace(/\{\d+\}/g, ''))) for (const source of row) {
@@ -12,9 +12,11 @@ for (const row of messages) {
       const m = /^\{(\d+)\}$/.exec(part); if (m) { names.push(Number(m[1])); return '([\\s\\S]*?)'; }
       return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     });
-    if (names.length) patterns.push({ re: new RegExp('^' + pieces.join('') + '$'), row: Object.assign([...row], { names }) });
+    if (names.length) patterns.push({ re: new RegExp('^' + pieces.join('') + '$'), row: Object.assign([...row], { names }), literal: source.replace(/\{\d+\}/g, '').length });
   }
 }
+// Most literal text first: a generic template ("{0} from {1}") must not shadow a specific sentence.
+patterns.sort((x, y) => y.literal - x.literal);
 /** Catalog lookup only: unknown/user-authored content is returned verbatim. */
 function translate(source: string, lang: Locale): string {
   const index = LOCALES.indexOf(lang), row = exact.get(source); if (row) return row[index];
