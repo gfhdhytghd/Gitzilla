@@ -140,6 +140,31 @@ try {
   await tid(teacher, 'blank-numeric-0-2-0').check();
   await tid(teacher, 'blank-accept-0-2-1').fill('int\nqs-secret-accept');
   await tid(teacher, 'question-explain-0-2').fill('Floor division drops the remainder; the result is an int.');
+  // QS-E2E-01: blank answer fields follow the question on the same event (button, typing, paste); a scratch question
+  {
+    const fieldsNow = () => teacher!.evaluate(() => document.querySelectorAll('[data-testid^="blank-accept-0-3-"]').length);
+    await tid(teacher, 'step-add-question-blank-0').click();
+    const q = tid(teacher, 'question-prompt-0-3');
+    await q.fill('First {{1}}.');
+    await q.press('End');
+    await tid(teacher, 'question-insert-blank-0-3').click();
+    assert.equal(await q.inputValue(), 'First {{1}}.{{2}}');
+    assert.equal(await fieldsNow(), 2, '+ Insert blank: second answer field at once');
+    await q.fill('A {{1}}');
+    await q.press('End');
+    await q.pressSequentially(' B {{2}}');
+    assert.equal(await fieldsNow(), 2, 'typing {{2}}: second answer field at once');
+    await q.fill('Start');
+    await teacher.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
+    await teacher.evaluate(() => navigator.clipboard.writeText('x is {{1}}, y is {{2}}, z is {{3}}.'));
+    await q.press('Control+A');
+    await q.press('Control+V');
+    assert.equal(await q.inputValue(), 'x is {{1}}, y is {{2}}, z is {{3}}.', 'clipboard paste reached the question');
+    assert.equal(await fieldsNow(), 3, 'paste with new markers: all answer fields at once');
+    assert.ok(!/in order/.test(await tid(teacher, 'step-question-errors-0').textContent() ?? ''), 'no blank-order error after the paste');
+    await tid(teacher, 'question-delete-0-3').click();
+    checks.push('QS-E2E-01: blank answer fields follow + Insert blank, typing and a clipboard paste on the same event.');
+  }
   // invalid state blocks publishing: an empty option
   await tid(teacher, 'option-text-0-0-2').fill('');
   await teacher.waitForFunction(() => /option 3 is empty/.test(document.querySelector('[data-testid="step-question-errors-0"]')?.textContent ?? ''));

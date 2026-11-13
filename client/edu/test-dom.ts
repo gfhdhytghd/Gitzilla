@@ -12,9 +12,18 @@ export class TestNode {
   readOnly = false;
   dataset: Record<string, string> = {};
   style = { width: '', setProperty() {} };
-  oninput: (() => void) | null = null;
-  onchange: (() => void) | null = null;
-  onclick: (() => void) | null = null;
+  // on<event> properties run in listener order from their first assignment, like a browser's event handler attributes
+  private handlers: Record<string, (() => void) | null> = {};
+  private setHandler(type: string, run: (() => void) | null) {
+    if (run && !(type in this.handlers)) this.addEventListener(type, () => this.handlers[type]?.());
+    if (run || type in this.handlers) this.handlers[type] = run;
+  }
+  get oninput() { return this.handlers.input ?? null; }
+  set oninput(run: (() => void) | null) { this.setHandler('input', run); }
+  get onchange() { return this.handlers.change ?? null; }
+  set onchange(run: (() => void) | null) { this.setHandler('change', run); }
+  get onclick() { return this.handlers.click ?? null; }
+  set onclick(run: (() => void) | null) { this.setHandler('click', run); }
   private text = '';
   private html = '';
   constructor(readonly tag = 'div') {}
@@ -72,9 +81,6 @@ export class TestNode {
     this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
   }
   dispatchEvent(event: Event) {
-    if (event.type === 'input') this.oninput?.();
-    if (event.type === 'change') this.onchange?.();
-    if (event.type === 'click') this.onclick?.();
     for (const listener of this.listeners.get(event.type) ?? []) listener(event);
     return true;
   }

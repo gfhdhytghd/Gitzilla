@@ -126,11 +126,14 @@ export function createQuestionEditor(step: ClassroomStep, index: number, hooks: 
     const explain = h('textarea', { rows: 2, maxlength: QUESTION_LIMITS.explain, 'data-testid': `question-explain-${index}-${i}`, placeholder: 'Shown with the correct answer when answers are revealed.' }, q.explain ?? '') as HTMLTextAreaElement;
     explain.oninput = () => { if (explain.value.trim()) q.explain = explain.value; else delete q.explain; changed(); };
     let specific: HTMLElement;
+    // blank questions: one spec per {{n}} marker, refitted inside the prompt's own input handler (after q.prompt is
+    // updated) so typing, pasting or "+ Insert blank" show the new answer fields on the same event
+    let fitBlanks = () => {};
     if (q.kind === 'blank') {
       const blanks = h('div.qe-blanks');
       const paintBlanks = () => blanks.replaceChildren(...q.blanks.map((b, j) => blankEditor(q, b, j)));
       // keep one spec per {{n}} marker: typing {{3}} adds a blank, deleting one removes its spec
-      const fit = () => {
+      fitBlanks = () => {
         const n = Math.min(6, Math.max(...markers(q.prompt), 0));
         if (n !== q.blanks.length && n >= 1) { while (q.blanks.length < n) q.blanks.push({ accept: [''] }); q.blanks.length = n; paintBlanks(); }
       };
@@ -142,7 +145,6 @@ export function createQuestionEditor(step: ClassroomStep, index: number, hooks: 
         prompt.value = `${prompt.value.slice(0, at)}${marker}${prompt.value.slice(prompt.selectionEnd ?? at)}`;
         prompt.dispatchEvent(new Event('input')); prompt.focus(); prompt.selectionStart = prompt.selectionEnd = at + marker.length;
       }, 'btn-ghost');
-      prompt.addEventListener('input', fit);
       paintBlanks();
       specific = h('div.qe-specific', null, h('div.qe-row', null, insert, h('small', null, 'Write {{1}}, {{2}} … where students type. Put code in ``` fences.')), blanks);
     } else {
@@ -215,7 +217,7 @@ export function createQuestionEditor(step: ClassroomStep, index: number, hooks: 
       preview.replaceChildren(h('small.qe-preview-label', null, 'Students see'), renderPrompt(q.prompt || '…', blanksIn),
         ...(q.kind !== 'blank' ? [h('ul.qe-preview-options', { 'data-i18n-skip': '' }, ...q.options.map(o => h('li', null, o.text || '…')))] : []));
     };
-    prompt.oninput = () => { q.prompt = prompt.value; paintSummary(); renderPreview(); changed(); };
+    prompt.oninput = () => { q.prompt = prompt.value; fitBlanks(); paintSummary(); renderPreview(); changed(); };
     paintSummary(); renderPreview();
     const card = h('details.qe-question', { open: open.has(q.id) || undefined, 'data-testid': `question-editor-${index}-${i}` }, summary,
       h('div.qe-question-body', null,

@@ -59,6 +59,18 @@ New files
   chars); blanks become ____. Example: the blank question now reads "`x` is ____ and its type is ____.".
   Tests: `questions.test.ts` (excerpt cases), `classroom.test.ts` (live bars contain no "[code]"); the browser check
   asserts no "[code]" in the live bars and the projector board (coding and after the attack).
+- QS-E2E-01 fix (`docs/tasks/question-sets-e2e-report.md`, Confirmed defect): the blank-count fit ran as a separate
+  `input` listener registered before `prompt.oninput`, so it read the old `q.prompt`; "+ Insert blank" or one input
+  event with new markers (paste) left the new accepted-answer fields missing until the next input. Now
+  `question-editor.ts` refits the blank specs inside `prompt.oninput`, right after `q.prompt = prompt.value` and before
+  validation, so the button, typing and paste all show the fields on the same event.
+  `client/edu/test-dom.ts` now runs `on<event>` properties in listener order from their first assignment (as browsers
+  do); before, it ran them first, which hid this ordering bug from unit tests. Tests: `question-editor.test.ts` +3
+  ("+ Insert blank", typing a marker and deleting it, a paste with two new markers in one input event); all three
+  fail on the old editor and pass now. Browser check: a scratch blank question on the 1440 editor — "+ Insert blank"
+  at the caret, `pressSequentially(' B {{2}}')`, and a real clipboard paste (Control+V) of three markers — the fields
+  appear at once and no "in order" error shows. With the old editor restored temporarily, the browser check failed at
+  "+ Insert blank: second answer field at once" (1 !== 2); with the fix it passes.
 - `client/edu/questions.css`: all question styles, the mixed-step tabs, and the course settings block.
 - `client/edu/questions.test.ts`: limits, prompt parsing, answer comparison, keys, kind conversion, verdicts, the
   `immediate` + `never` rule.
@@ -102,7 +114,7 @@ Changed files
 ## Commands and results
 
 - `capmem 8G npx tsc --noEmit -p .` — exit 0.
-- `capmem 8G npx vitest run client/` — 112 files, 1327 tests passed (1310 before this change). Covers `questionContext`
+- `capmem 8G npx vitest run client/` — 112 files, 1330 tests passed (1310 before this change). Covers `questionContext`
   (validation limit; editor textarea; the student panel shows it once with its code block).
 - `capmem 8G npx vitest run` (full, final) — 282 files (273 passed, 9 skipped), 3562 tests passed, 19 skipped,
   0 failed.
@@ -158,6 +170,13 @@ Changed files
   `teacher-course-settings-393.png`, `teacher-course-difficulty-393.png`, `teacher-course-preview-1440.png`.
 
 ## Not done / limits
+
+- Gap (not built, per instructions): the lesson editor cannot author starter files (`ClassroomStep.starter`). The
+  step editor (`client/app/classroom.ts`, `buildPlanEditor`) has title, instructions, minutes, the question editor,
+  checks and rubric, but no starter field; `starter` reaches a step only from a preset lesson or an AI-generated course,
+  and it is kept when such a step is edited. A step that a teacher adds or writes by hand (also a mixed step) therefore
+  has no in-app editor, and students get only the GitHub flow — this matches the tester's report. The "Preview as a
+  student" overlay already says so ("This step has no starter files: students submit a GitHub repository.").
 
 - WebKit: Playwright's WebKit (`webkit-2370`) cannot start on this machine: `MiniBrowser: error while loading shared
   libraries: libicudata.so.74` (the system has ICU 76/78). The script falls back to Chromium for that phone and says

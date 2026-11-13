@@ -43,6 +43,43 @@ describe('question editor', () => {
     box.value = '  '; box.dispatchEvent(new Event('input'));
     expect(st.questionContext).toBeUndefined();
   });
+  describe('blank answer fields follow the question on the same event (QS-E2E-01)', () => {
+    const blankEditor = () => {
+      const st: ClassroomStep = { ...step(), answerFeedback: undefined, questions: [{ id: 'q1', kind: 'blank', prompt: 'First {{1}}.', blanks: [{ accept: ['a'] }] }] };
+      const ed = createQuestionEditor(st, 0, { onMode() {}, onChange() {} });
+      const root = ed.el as unknown as TestNode;
+      const prompt = root.querySelector('[data-testid="question-prompt-0-0"]')!;
+      const fields = () => [0, 1, 2, 3, 4, 5].filter(j => root.querySelector(`[data-testid="blank-accept-0-0-${j}"]`)).length;
+      const errors = () => root.querySelector('[data-testid="step-question-errors-0"]')!.textContent;
+      return { st, root, prompt, fields, errors };
+    };
+    it('+ Insert blank adds the second answer field at once', () => {
+      const { st, root, fields, errors } = blankEditor();
+      expect(fields()).toBe(1);
+      root.querySelector('[data-testid="question-insert-blank-0-0"]')!.click();
+      expect(st.questions![0].prompt).toBe('First {{1}}.{{2}}');
+      expect(fields()).toBe(2);
+      expect(errors()).not.toMatch(/in order/);
+    });
+    it('typing a marker adds its field, deleting it removes the field', () => {
+      const { st, prompt, fields, errors } = blankEditor();
+      prompt.value = 'First {{1}} then {{2'; prompt.dispatchEvent(new Event('input'));
+      expect(fields()).toBe(1);
+      prompt.value = 'First {{1}} then {{2}}'; prompt.dispatchEvent(new Event('input'));
+      expect(fields()).toBe(2);
+      expect(errors()).not.toMatch(/in order/);
+      prompt.value = 'First {{1}}.'; prompt.dispatchEvent(new Event('input'));
+      expect(fields()).toBe(1);
+      expect((st.questions![0] as { blanks: unknown[] }).blanks).toHaveLength(1);
+    });
+    it('a paste with two new markers adds both fields in one input event', () => {
+      const { prompt, fields, errors } = blankEditor();
+      prompt.value = '`x` is {{1}}, `y` is {{2}} and `z` is {{3}}.';
+      prompt.dispatchEvent(new Event('paste')); prompt.dispatchEvent(Object.assign(new Event('input'), { inputType: 'insertFromPaste' }));
+      expect(fields()).toBe(3);
+      expect(errors()).not.toMatch(/in order/);
+    });
+  });
   it('normalizes a stored immediate + never step when the editor opens', () => {
     const st = { ...step(), revealAnswers: 'never' as const };
     createQuestionEditor(st, 0, { onMode() {}, onChange() {} });
