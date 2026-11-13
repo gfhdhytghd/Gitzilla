@@ -22,6 +22,64 @@ export interface ClassroomStep {
   brief?: StepBrief;
   starter?: InAppFile[];
   language?: 'python';     // editor highlighting / optional in-browser run (Pyodide); doctests run in the server sandbox
+  // Question sets (TopHat/Pearson style). A step holds a code task, a question set, or both.
+  // Absent `mode` = 'code' (every plan saved before questions existed).
+  mode?: StepMode;
+  questions?: ClassroomQuestion[];   // 'questions' | 'mixed': 1..30, ids unique within the step
+  questionsWeight?: number;          // 'mixed' only, 0..100: share of the step score from questions (default 50)
+  answerFeedback?: AnswerFeedback;   // default 'after-close'
+  revealAnswers?: 'after-raid' | 'never';  // default 'after-raid': keys + explanations reach students in feedback/complete
+}
+export type StepMode = 'code' | 'questions' | 'mixed';
+// 'after-close': answers are editable until submissions close; correctness is hidden until reveal.
+// 'immediate': every save is graded at once (Pearson style); each question allows `maxAttempts` checks,
+//              after which (or when correct) that question locks for the student.
+export type AnswerFeedback = 'after-close' | 'immediate';
+
+interface QuestionBase {
+  id: string;            // [a-z0-9-]{1,32}, unique within the step
+  prompt: string;        // ≤ 2000 chars, Markdown-lite (inline `code`, fenced code blocks)
+  points?: number;       // 1..100, default 1; weight inside the question set
+  explain?: string;      // ≤ 1000 chars; shown with the key on reveal
+  maxAttempts?: number;  // 'immediate' only, 1..10, default 3
+}
+export interface ChoiceOption { id: string; text: string }   // id [a-z0-9-]{1,16}; text ≤ 300 chars; 2..8 options
+export interface SingleChoiceQuestion extends QuestionBase { kind: 'single'; options: ChoiceOption[]; answer: string }
+export interface MultiChoiceQuestion extends QuestionBase {
+  kind: 'multi'; options: ChoiceOption[]; answer: string[];   // ≥ 1 correct option
+  scoring?: 'exact' | 'partial';  // default 'partial': max(0, (rightPicked − wrongPicked) / answer.length)
+}
+// Fill in the blank: the prompt marks blanks as {{1}}, {{2}} … in order; blanks[i] grades {{i+1}}. 1..6 blanks.
+export interface BlankSpec {
+  accept: string[];        // 1..10 accepted answers, each ≤ 200 chars; compared after trim + whitespace collapse
+  caseSensitive?: boolean; // default false
+  numeric?: { value: number; tolerance: number };  // when set, a number within ±tolerance is correct (accept is display text)
+}
+export interface BlankQuestion extends QuestionBase { kind: 'blank'; blanks: BlankSpec[] }
+export type ClassroomQuestion = SingleChoiceQuestion | MultiChoiceQuestion | BlankQuestion;
+
+// What a student may see before reveal: no keys, no explanations.
+export type StudentQuestion =
+  | (Omit<SingleChoiceQuestion, 'answer' | 'explain'>)
+  | (Omit<MultiChoiceQuestion, 'answer' | 'explain'>)
+  | (Omit<BlankQuestion, 'blanks' | 'explain'> & { blankCount: number });
+
+export type QuestionAnswer = { choice: string } | { choices: string[] } | { blanks: string[] };
+export interface QuestionResult {
+  answer: QuestionAnswer;
+  attempts: number;        // graded saves of this question
+  locked?: boolean;        // 'immediate': correct or out of attempts
+  // Present for the teacher always; for the student only when feedback is 'immediate' or answers are revealed.
+  correct?: boolean;
+  score?: number;          // 0..1 of this question's points
+  blankCorrect?: boolean[];
+  key?: QuestionAnswer;    // revealed key ('immediate' after lock, or reveal)
+  explain?: string;
+}
+// Anonymous per-question aggregates (safe for the projector once frozen in a round).
+export interface QuestionStat {
+  id: string; answered: number; correct: number; total: number;   // total = students on the roster
+  options?: { id: string; count: number }[];   // single/multi: picks per option
 }
 export interface InAppFile { path: string; content: string }
 export interface StepBrief {
@@ -51,6 +109,7 @@ export interface ClassroomRound {
   // Anonymous class-level aggregates frozen at attack time (safe for the projector; no names).
   roster?: number;                 // students in the room when the attack ran
   checkStats?: { label: string; passed: number; total: number }[];   // one per step check, same order; total = scored submissions
+  questionStats?: QuestionStat[];  // one per step question, same order
 }
 export interface ClassroomReport {
   stepId: string; attempt: number; repo: string; commit: string; submittedAt: number;
@@ -62,6 +121,10 @@ export interface ClassroomReport {
   automaticScore?: number;
   aiReview?: AIReview;
   reviewPending?: boolean;
+  // Question sets: per-question results; codeScore/questionScore are the 0..100 parts blended into `score`.
+  answers?: Record<string, QuestionResult>;
+  questionScore?: number;
+  codeScore?: number;
 }
 export interface ClassroomState {
   plan: ClassroomPlan; phase: ClassroomPhase; stepIndex: number; attempt: number;

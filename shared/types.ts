@@ -1,5 +1,5 @@
 import type { Locale } from './i18n/locale';
-import type { ClassroomPlan, ClassroomState, ClassroomReport, ClassroomCommand, InAppFile } from "./classroom";
+import type { ClassroomPlan, ClassroomState, ClassroomReport, ClassroomCommand, InAppFile, QuestionAnswer, QuestionStat } from "./classroom";
 // Shared contracts. Every module imports from here; change only via the coordinator (Claude, pane wQ:p9).
 
 // ---------- Repo analysis (analysis/ produces, sim/ + render/ consume) ----------
@@ -496,6 +496,7 @@ export type ClientMsg =
   | { t: "classroomControl"; action: ClassroomCommand }
   | { t: "classroomSubmit"; repo: string; ref?: string }
   | { t: "classroomSubmitCode"; files: InAppFile[] }   // in-app editor submission (≤ 20 files, ≤ 200 KB total)
+  | { t: "classroomAnswers"; stepId: string; attempt: number; answers: Record<string, QuestionAnswer> }  // question set save (partial allowed)
   | { t: "classroomReview"; playerId: string; score: number; note: string }
   | { t: "hello"; room: string; role: Role; name: string; resume?: string }  // controller: needs a GitHub session that already owns a seat in `room`
   | { t: "setRepo"; repo: string }
@@ -514,7 +515,7 @@ export type ClientMsg =
   | { t: "rematch" };                       // owner only
 
 export type ServerMsg =
-  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string>; emails?: Record<string, string> }
+  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string>; emails?: Record<string, string>; questionLive?: QuestionStat[] }  // questionLive: teacher only, current step
   | { t: "welcome"; you: string; token: string; lobby: LobbyState; controller?: boolean }  // controller: you = the seat this phone drives
   | { t: "lobby"; lobby: LobbyState }
   | { t: "snapshot"; state: MatchState; ack: number }
