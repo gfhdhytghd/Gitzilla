@@ -8,19 +8,21 @@ import { DEEPSEEK_MODEL } from '../design/provider';
 import { COURSE_PRESETS, normalizeTeacherPrompt } from '../server/course-presets';
 import { courseEvaluationSummary } from '../server/course-evaluation';
 import { extractRubricText } from '../rubric/pdf';
+import { validateCoursePdf, type CourseSource } from '../server/course-source';
 
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.log('Manual only: npx tsx tools/course-gen-eval.ts --real --file <pdf|md|txt> --out <new-directory> [--provider auto|gemini|deepseek] [--seed 123] [--timeout-ms 180000] [--teacher-prompt "Exactly 5 questions in Simplified Chinese."]');
+    console.log('Manual only: npx tsx tools/course-gen-eval.ts --real --file <pdf|md|txt> --out <new-directory> [--native-pdf] [--cases quiz-easy,exam-extreme] [--provider auto|gemini|deepseek] [--seed 123] [--timeout-ms 180000] [--teacher-prompt "Exactly 5 questions in Simplified Chinese."]');
     return;
   }
   if (!args.includes('--real')) throw new Error('Refusing provider calls: run by hand with --real. Use --help for usage.');
+  const nativePdf = args.includes('--native-pdf');
   const values = new Map<string, string>();
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--real') continue;
+    if (args[i] === '--real' || args[i] === '--native-pdf') continue;
     const equal = args[i].indexOf('='), name = equal < 0 ? args[i] : args[i].slice(0, equal);
-    if (!['--file', '--out', '--seed', '--timeout-ms', '--teacher-prompt', '--provider'].includes(name)) throw new Error(`Unknown argument: ${name}`);
+    if (!['--file', '--out', '--seed', '--timeout-ms', '--teacher-prompt', '--provider', '--cases'].includes(name)) throw new Error(`Unknown argument: ${name}`);
     const value = equal < 0 ? args[++i] : args[i].slice(equal + 1);
     if (value === undefined || value.startsWith('--')) throw new Error(`Missing value for ${name}`);
     values.set(name, value);
@@ -37,18 +39,27 @@ async function main() {
   if (!size || size > 8 * 1024 * 1024) throw new Error('Input file must contain 1 byte through 8 MiB');
   const bytes = await readFile(file), extension = extname(file).toLowerCase();
   if (!['.pdf', '.md', '.txt'].includes(extension)) throw new Error('Use a .pdf, .md or .txt file');
-  const text = extension === '.pdf' || bytes.subarray(0, 5).toString() === '%PDF-'
+  const isPdf = extension === '.pdf' || bytes.subarray(0, 5).toString() === '%PDF-';
+  if (nativePdf && !isPdf) throw new Error('--native-pdf requires a PDF');
+  const pages = nativePdf ? await validateCoursePdf(bytes) : undefined;
+  const text = nativePdf ? undefined : isPdf
     ? await extractRubricText(bytes, file, 'application/pdf', MAX_COURSE_TEXT_BYTES)
     : new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-  if (!text.trim() || Buffer.byteLength(text) > MAX_COURSE_TEXT_BYTES) throw new Error('Extracted text must contain 1..80000 UTF-8 bytes');
+  if (text !== undefined && (!text.trim() || Buffer.byteLength(text) > MAX_COURSE_TEXT_BYTES)) throw new Error('Extracted text must contain 1..80000 UTF-8 bytes');
+  const source: CourseSource = nativePdf ? { kind: 'pdf', data: bytes } : text!;
   const geminiModel = courseGeminiModel();
   const models = { gemini: geminiModel, deepseek: DEEPSEEK_MODEL };
-  const cases = COURSE_PRESETS.flatMap(preset => (['easy', 'extreme'] as const).map(difficulty => ({ name: `${preset}-${difficulty}`, preset, difficulty: difficulty as CourseDifficulty, teacherPrompt: '' })));
+  let cases = COURSE_PRESETS.flatMap(preset => (['easy', 'extreme'] as const).map(difficulty => ({ name: `${preset}-${difficulty}`, preset, difficulty: difficulty as CourseDifficulty, teacherPrompt: '' })));
   cases.push({ name: 'quiz-medium-teacher', preset: 'quiz', difficulty: 'medium', teacherPrompt });
+  if (values.has('--cases')) {
+    const selected = values.get('--cases')!.split(',');
+    if (selected.some(name => !cases.some(c => c.name === name))) throw new Error('Unknown --cases name');
+    cases = cases.filter(c => selected.includes(c.name));
+  } else if (nativePdf) cases = cases.filter(c => ['quiz', 'exam', 'lesson'].includes(c.preset) && c.difficulty !== 'medium');
   await mkdir(out, { recursive: true });
   if ((await readdir(out)).length) throw new Error('Use a new empty output directory');
   // Exclusive manifest creation prevents overwriting another run or paying for a run with conflicting outputs.
-  await writeFile(join(out, 'manifest.json'), JSON.stringify({ createdAt: new Date().toISOString(), file, sha256: createHash('sha256').update(bytes).digest('hex'), textBytes: Buffer.byteLength(text), provider: providerChoice, models, seed, timeoutMs, cases }, null, 2) + '\n', { flag: 'wx' });
+  await writeFile(join(out, 'manifest.json'), JSON.stringify({ createdAt: new Date().toISOString(), file, sha256: createHash('sha256').update(bytes).digest('hex'), nativePdf, pages, textBytes: text === undefined ? undefined : Buffer.byteLength(text), provider: providerChoice, models, seed, timeoutMs, cases }, null, 2) + '\n', { flag: 'wx' });
   console.log(JSON.stringify({ event: 'evaluation-start', provider: providerChoice, models, timeoutMs }));
   const summaries: object[] = [];
   let failed = 0;
@@ -62,7 +73,7 @@ async function main() {
       writeFileSync(join(out, filename + '.meta.json'), JSON.stringify({ provider: response.provider, model: response.model, repair: response.repair, finishReason: response.finishReason, characters: response.content.length }, null, 2) + '\n', { flag: 'wx' });
     } });
     try {
-      const result = await generate(text, test.difficulty, test.preset, test.teacherPrompt);
+      const result = await generate(source, test.difficulty, test.preset, test.teacherPrompt);
       const summary = courseEvaluationSummary(test.name, performance.now() - started, result);
       summaries.push(summary); console.log(JSON.stringify(summary));
       await writeFile(join(out, `${test.name}.json`), JSON.stringify({ ...summary, ...result }, null, 2) + '\n', { flag: 'wx' });

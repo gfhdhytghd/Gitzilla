@@ -45,6 +45,7 @@ async function geminiErrorMessage(response: Response, apiKey: string): Promise<s
 /** Plain REST, no conversation state. Errors include only a bounded, redacted provider message. */
 export async function geminiJson(prompt: string, schema: object, options: {
   apiKey: string; model: string; api: GeminiApi; timeoutMs?: number; maxOutputTokens?: number; thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'XHIGH'; fetch?: typeof globalThis.fetch;
+  inlineData?: { mime_type: 'application/pdf'; data: string };
   parseJson?: (text: string) => unknown;
   onContent?: (text: string, finishReason?: string) => void;
 }): Promise<unknown> {
@@ -61,7 +62,7 @@ export async function geminiJson(prompt: string, schema: object, options: {
         response_format: { type: 'text', mime_type: 'application/json', schema },
         generation_config: { max_output_tokens: 4096 },
       } : {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: [{ role: 'user', parts: [{ text: prompt }, ...(options.inlineData ? [{ inline_data: options.inlineData }] : [])] }],
         generationConfig: { responseMimeType: 'application/json', responseJsonSchema: schema,
           ...(options.maxOutputTokens !== undefined ? { maxOutputTokens: options.maxOutputTokens } : {}),
           ...(options.thinkingLevel ? { thinkingConfig: { thinkingLevel: options.thinkingLevel } } : {}) },

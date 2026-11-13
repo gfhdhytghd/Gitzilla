@@ -1,11 +1,11 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { extractRubricText, PdfTextLimitError } from '../rubric/pdf';
+import { COURSE_TEXT_ERROR, CourseSourceError, validateCoursePdf, MAX_COURSE_FILE_BYTES, type CourseSource } from './course-source';
+export { MAX_COURSE_FILE_BYTES } from './course-source';
 import type { RoomServer } from './rooms';
 import { createCourseGenerator, MAX_COURSE_TEXT_BYTES, normalizeCourseDifficulty, validateGeneratedCourse } from './course-generation';
 import { assertGeneratedQuestionCounts } from './course-quality';
 import { normalizeCoursePreset, normalizeTeacherPrompt } from './course-presets';
 
-export const MAX_COURSE_FILE_BYTES = 8 * 1024 * 1024;
 const generateCourse = createCourseGenerator();
 class CourseError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 const reply = (res: ServerResponse, status: number, body: unknown) => {
@@ -52,24 +52,26 @@ export async function handleCourseRoute(req: IncomingMessage, res: ServerRespons
       req.once('aborted', () => reject(new CourseError(400, 'Incomplete course upload')));
     });
     if (!body.length) throw new CourseError(400, 'The course document is empty');
-    let text: string;
-    try {
-      const pdf = /\.pdf$/i.test(filename) || mime === 'application/pdf' || body.subarray(0, 5).toString() === '%PDF-';
-      text = pdf ? await extractRubricText(body, filename, 'application/pdf', MAX_COURSE_TEXT_BYTES) : new TextDecoder('utf-8', { fatal: true }).decode(body);
-    } catch (error) {
-      if (error instanceof PdfTextLimitError) throw new CourseError(413, 'Extracted course text exceeds 80000 UTF-8 bytes');
-      throw new CourseError(422, 'Could not extract readable text. Use a PDF with selectable text, or a UTF-8 .md/.txt file.'); }
-    if (!text.trim()) throw new CourseError(400, 'The course document is empty');
-    if (Buffer.byteLength(text) > MAX_COURSE_TEXT_BYTES) throw new CourseError(413, 'Extracted course text exceeds 80000 UTF-8 bytes');
+    let source: CourseSource;
+    const pdf = /\.pdf$/i.test(filename) || mime === 'application/pdf' || body.subarray(0, 5).toString() === '%PDF-';
+    if (pdf) {
+      await validateCoursePdf(body);
+      source = { kind: 'pdf', data: body };
+    } else {
+      try { source = new TextDecoder('utf-8', { fatal: true }).decode(body); }
+      catch { throw new CourseError(422, COURSE_TEXT_ERROR); }
+      if (!source.trim()) throw new CourseError(400, 'The course document is empty');
+      if (Buffer.byteLength(source) > MAX_COURSE_TEXT_BYTES) throw new CourseError(413, 'Extracted course text exceeds 80000 UTF-8 bytes');
+    }
     authorize();
     let result;
-    try { result = await generate(text, difficulty, preset, teacherPrompt); result = { ...result, plan: validateGeneratedCourse(result.plan, preset, teacherPrompt) }; assertGeneratedQuestionCounts(result.plan, preset, teacherPrompt); }
-    catch { throw new CourseError(503, 'AI course generation failed. Retry or edit the lesson manually. No draft was applied.'); }
+    try { result = await generate(source, difficulty, preset, teacherPrompt); result = { ...result, plan: validateGeneratedCourse(result.plan, preset, teacherPrompt) }; assertGeneratedQuestionCounts(result.plan, preset, teacherPrompt); }
+    catch (error) { if (error instanceof CourseSourceError) throw error; throw new CourseError(503, 'AI course generation failed. Retry or edit the lesson manually. No draft was applied.'); }
     authorize(); // Ownership or lesson phase can change while the provider runs.
     reply(res, 200, { ...result, difficulty, preset, preview: true });
   } catch (error) {
     req.resume();
-    reply(res, error instanceof CourseError ? error.status : 400, { error: error instanceof CourseError ? error.message : 'Course upload failed. Retry the upload.' });
+    reply(res, (error instanceof CourseError || error instanceof CourseSourceError) ? error.status : 400, { error: (error instanceof CourseError || error instanceof CourseSourceError) ? error.message : 'Course upload failed. Retry the upload.' });
   }
   return true;
 }

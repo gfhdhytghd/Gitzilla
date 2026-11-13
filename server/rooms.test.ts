@@ -1361,7 +1361,7 @@ describe('room protocol over real WebSockets', () => {
     expect(owner.lobby()?.players.every(p => p.kit?.maxArmor === 4)).toBe(true);
   });
 
-  it('supports a non-playing teacher, 30 student slots, human priority and teacher-token recovery', async () => {
+  it('supports a non-playing teacher, 200 student slots, human priority and teacher-token recovery', async () => {
     const test = await setup(999, {}, {}, undefined, 'edu');
     const first = await test.connect('player', undefined, 'Early student');
     const teacher = await test.connect('screen', undefined, 'Teacher');
@@ -1369,14 +1369,14 @@ describe('room protocol over real WebSockets', () => {
     expect(teacher.welcome.lobby.players).toHaveLength(1);
     teacher.send({ t: 'setBots', count: 7 });
     await until(() => teacher.lobby()?.players.filter(p => p.bot).length === 7);
-    for (let i = 1; i < 30; i++) await test.connect('player', undefined, `Student ${i}`);
-    expect(test.rooms.roomInfo(test.room).players).toBe(30);
+    for (let i = 1; i < 200; i++) await test.connect('player', undefined, `Student ${i}`);
+    expect(test.rooms.roomInfo(test.room).players).toBe(200);
     expect(teacher.lobby()?.players.filter(p => p.bot)).toHaveLength(0);
     const extra = new WebSocket(test.wsUrl); const errors: ServerMsg[] = [];
     extra.on('message', raw => errors.push(JSON.parse(raw.toString()))); await once(extra, 'open');
-    extra.send(JSON.stringify({ t: 'hello', room: test.room, role: 'player', name: '31st student' }));
+    extra.send(JSON.stringify({ t: 'hello', room: test.room, role: 'player', name: '201st student' }));
     const full = await until(() => errors.find(m => m.t === 'error'));
-    expect(full.message).toContain('30'); extra.close(); await once(extra, 'close');
+    expect(full.message).toContain('200'); extra.close(); await once(extra, 'close');
     teacher.send({ t: 'setMode', mode: 'battle' });
     await until(() => teacher.messages.some(m => m.t === 'error' && m.message.includes('8 players')));
     expect(teacher.lobby()?.mode).toBe('edu');
@@ -1389,7 +1389,7 @@ describe('room protocol over real WebSockets', () => {
     expect(returned.welcome.you).toBe(teacher.welcome.you);
     expect(returned.welcome.lobby.ownerId).toBe(teacher.welcome.you);
     expect(test.rooms['rooms'].get(test.room)?.teacherId).toBe(teacher.welcome.you);
-    expect(returned.welcome.lobby.players).toHaveLength(30);
+    expect(returned.welcome.lobby.players).toHaveLength(200);
   }, 10_000);
 
   it('persists classroom mode and the teacher screen identity across process-style restart', async () => {

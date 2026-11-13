@@ -1,0 +1,244 @@
+npm notice run npx
+npm notice run 'vitest' run server/classroom-200.test.ts
+
+ RUN  v5.0.5 /home/wilf/data/Hackathon/HackPSU/repo-kaiju
+
+ ❯ server/classroom-200.test.ts (4 tests | 4 failed) 75ms
+   ❯ 200-seat classroom delivery (4)
+     × admits 200 students, refuses the 201st, and resumes a retained seat at capacity 65ms
+     × keeps the own row on every wire path and aggregates peers without identity leakage 3ms
+     × coalesces peer updates, acknowledges own saves immediately, and flushes phase changes 2ms
+     × debounces answer persistence, bounds continuous traffic and flushes on shutdown 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  server/classroom-200.test.ts > 200-seat classroom delivery > admits 200 students, refuses the 201st, and resumes a retained seat at capacity
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ server/classroom-200.test.ts:56:46
+     54|     const students = [];
+     55|     for (let i = 0; i < 200; i++) students.push(await f.join('player')…
+     56|     expect(students.every(s => !!s.welcome)).toBe(true);
+       |                                              ^
+     57|     expect(f.room.classroom!.state.rows).toHaveLength(200);
+     58|     const extra = await f.join('player'); expect(extra.welcome).toBeUn…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  server/classroom-200.test.ts > 200-seat classroom delivery > keeps the own row on every wire path and aggregates peers without identity leakage
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "e7eb6574-4ec8-4096-9e8f-d4ccb732bf58",
++   "1825bdaf-392f-42b5-b1b7-349387f8abc7",
+  ]
+
+ ❯ server/classroom-200.test.ts:71:39
+     69|     await f.send(alice.s, {t:'classroomAnswers',stepId:'questions',att…
+     70|     const state = alice.s.latest().state;
+     71|     expect(state.rows.map(r => r.id)).toEqual([alice.welcome!.you]);
+       |                                       ^
+     72|     expect((state as any).summary).toEqual({roster:2,submitted:1,conne…
+     73|     expect(state.rows[0]).not.toHaveProperty('score');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  server/classroom-200.test.ts > 200-seat classroom delivery > coalesces peer updates, acknowledges own saves immediately, and flushes phase changes
+AssertionError: expected 4 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 4
+
+ ❯ server/classroom-200.test.ts:90:34
+     88|     expect(alice.s.latest().reports[alice.welcome!.you].answers!.q).to…
+     89|     await f.send(bob.s, {t:'classroomAnswers',stepId:'questions',attem…
+     90|     expect(teacher.s.classrooms).toBe(before);
+       |                                  ^
+     91|     await vi.advanceTimersByTimeAsync(249); expect(teacher.s.classroom…
+     92|     await vi.advanceTimersByTimeAsync(1); expect(teacher.s.classrooms)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  server/classroom-200.test.ts > 200-seat classroom delivery > debounces answer persistence, bounds continuous traffic and flushes on shutdown
+AssertionError: expected "save" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st save call:
+
+    Array [
+      Array [
+        Object {
+          "bans": Object {
+            "identities": Array [],
+            "tokens": Array [],
+          },
+          "boss": Object {
+            "kit": null,
+            "repo": null,
+            "status": "empty",
+          },
+          "bossProfile": undefined,
+          "classroom": Object {
+            "attempt": 1,
+            "bossHp": 5,
+            "bossMaxHp": 5,
+            "deadline": null,
+            "emails": Object {},
+            "notice": undefined,
+            "phase": "coding",
+            "plan": Object {
+              "bossName": "THE RELEASE BLOCKER",
+              "steps": Array [
+                Object {
+                  "answerFeedback": "after-close",
+                  "checks": Array [],
+                  "checksWeight": 0,
+                  "durationSec": 0,
+                  "id": "questions",
+                  "instructions": "Build the feature your teacher assigned, so that it runs.
+    
+    1. Read the task your teacher gives you.
+    2. Write the code in your repository.
+    3. Run it once and check it does what was asked.
+    4. Commit, push to GitHub, and submit your branch here.
+    5. Read your feedback before the class attack.",
+                  "mode": "questions",
+                  "questions": Array [
+                    Object {
+                      "answer": "yes",
+                      "id": "q",
+                      "kind": "single",
+                      "maxAttempts": 3,
+                      "options": Array [
+                        [Object],
+                        [Object],
+                      ],
+                      "points": 1,
+                      "prompt": "Pick",
+                    },
+                  ],
+                  "revealAnswers": "after-raid",
+                  "rubric": Object {
+                    "criteria": Array [],
+                    "source": "default",
+                    "title": "Questions",
+                  },
+                  "title": "Make it work",
+                },
+              ],
+              "title": "Build. Review. Improve.",
+            },
+            "questionAnswered": Array [
+              1,
+            ],
+            "raidEndsAt": null,
+            "remainingMs": null,
+            "rounds": Array [],
+            "rows": Array [
+              Object {
+                "attempts": 0,
+                "commit": "questions",
+                "connected": true,
+                "damage": 0,
+                "id": "30bc411b-e4a8-4a59-9ec1-2b25c8f57108",
+                "improvement": 0,
+                "name": "player",
+                "repo": "questions",
+                "score": 100,
+                "status": "submitted",
+                "totalDamage": 0,
+              },
+            ],
+            "serverTime": 1794592839303,
+            "stepIndex": 0,
+          },
+          "code": "LXYA",
+          "locale": undefined,
+          "mode": "edu",
+          "ownerId": "5de5ab57-df93-4929-9d80-46ba3bc13a1b",
+          "phase": "lobby",
+          "players": Array [
+            Object {
+              "botSeed": undefined,
+              "controllerToken": undefined,
+              "githubIdentity": undefined,
+              "id": "5de5ab57-df93-4929-9d80-46ba3bc13a1b",
+              "identities": undefined,
+              "lobby": Object {
+                "id": "5de5ab57-df93-4929-9d80-46ba3bc13a1b",
+                "kit": null,
+                "name": "screen",
+                "repo": null,
+                "status": "empty",
+              },
+              "name": "screen",
+              "namedByUser": true,
+              "needsController": undefined,
+              "privateRepo": undefined,
+              "role": "screen",
+              "screenHostPending": false,
+              "token": "<redacted-test-token>",
+            },
+            Object {
+              "botSeed": undefined,
+              "controllerToken": undefined,
+              "githubIdentity": undefined,
+              "id": "30bc411b-e4a8-4a59-9ec1-2b25c8f57108",
+              "identities": undefined,
+              "lobby": Object {
+                "id": "30bc411b-e4a8-4a59-9ec1-2b25c8f57108",
+                "kit": null,
+                "name": "player",
+                "repo": null,
+                "status": "empty",
+              },
+              "name": "player",
+              "namedByUser": true,
+              "needsController": undefined,
+              "privateRepo": undefined,
+              "role": "player",
+              "screenHostPending": false,
+              "token": "<redacted-test-token>",
+            },
+          ],
+          "privateBoss": undefined,
+          "restartNotice": undefined,
+          "rubric": undefined,
+          "teacherId": "5de5ab57-df93-4929-9d80-46ba3bc13a1b",
+        },
+      ],
+      Array [],
+    ]
+
+
+Number of calls: 1
+
+ ❯ server/classroom-200.test.ts:110:62
+    108|     const save = vi.spyOn(RoomStore.prototype, 'save');
+    109|     await f.send(student.s,{t:'classroomAnswers',stepId:'questions',at…
+    110|     await vi.advanceTimersByTimeAsync(250); expect(save).not.toHaveBee…
+       |                                                              ^
+    111|     await vi.advanceTimersByTimeAsync(750); expect(save).toHaveBeenCal…
+    112|     for (let i = 0; i < 15; i++) { f.rooms['persist'](1000); await vi.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  13:00:37
+   Duration  431ms (transform 51%, import 27%, tests 21%, worker 1%)
+

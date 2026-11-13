@@ -3,21 +3,23 @@ import { once } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defaultClassroomPlan } from '../shared/classroom-defaults';
 import { handleCourseRoute, MAX_COURSE_FILE_BYTES } from './course-http';
+import * as pdfText from '../rubric/pdf';
+import { type CourseSource } from './course-source';
 import { createCourseGenerator } from './course-generation';
 import { COURSE_REQUEST_MAX_HEADER_BYTES } from './course-presets';
 const servers: http.Server[] = [];
-afterEach(async () => { await Promise.all(servers.splice(0).map(s => new Promise<void>(r => { s.closeAllConnections(); s.close(() => r()); }))); });
+afterEach(async () => { vi.restoreAllMocks(); vi.unstubAllEnvs(); await Promise.all(servers.splice(0).map(s => new Promise<void>(r => { s.closeAllConnections(); s.close(() => r()); }))); });
 async function fixture(generator?: Parameters<typeof handleCourseRoute>[4]) {
   const guard = vi.fn((_code: string, token?: string): { status: number; error: string } | undefined => token === 'owner' ? undefined : { status: token ? 403 : 401, error: 'Owner only' });
-  const generate = vi.fn(async (_text: string) => ({ plan: defaultClassroomPlan(), provider: 'mock' }));
+  const generate = vi.fn(async (_text: CourseSource) => ({ plan: defaultClassroomPlan(), provider: 'mock' }));
   const server = http.createServer({ maxHeaderSize: COURSE_REQUEST_MAX_HEADER_BYTES }, (req, res) => { void handleCourseRoute(req, res, new URL(req.url!, 'http://localhost'), { courseGenerationError: guard }, generator ?? generate).then(handled => { if (!handled) { res.writeHead(404); res.end(); } }); });
   servers.push(server); server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const base = `http://127.0.0.1:${(server.address() as import('node:net').AddressInfo).port}`;
   const upload = (body: BodyInit = '# Teach Python', filename = 'lesson.md', headers: Record<string, string> = {}, method = 'POST', difficulty?: string, preset?: string) => fetch(`${base}/api/course/generate?room=abcd&filename=${encodeURIComponent(filename)}${difficulty === undefined ? '' : `&difficulty=${encodeURIComponent(difficulty)}`}${preset === undefined ? '' : `&preset=${encodeURIComponent(preset)}`}`, { method, headers: { 'X-Room-Token': 'owner', ...headers }, ...(method !== 'GET' ? { body } : {}) });
   return { guard, generate, upload, base };
 }
-function tinyPdf(text?: string, pages = 1): Uint8Array {
-  const content = text ? `BT /F1 12 Tf 40 200 Td (${text}) Tj ET` : '';
+function tinyPdf(text?: string, pages = 1): Uint8Array<ArrayBuffer> {
+  const content = text ? `BT /F1 ${text.length > 100 ? 0.1 : 12} Tf 40 200 Td (${text}) Tj ET` : '';
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     `<< /Type /Pages /Kids [${Array.from({ length: pages }, (_, i) => `${i ? i + 5 : 3} 0 R`).join(' ')}] /Count ${pages} >>`,
@@ -33,23 +35,23 @@ function tinyPdf(text?: string, pages = 1): Uint8Array {
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   pdf += offsets.slice(1).map(offset => `${String(offset).padStart(10, '0')} 00000 n \n`).join('');
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return Buffer.from(pdf);
+  return Uint8Array.from(Buffer.from(pdf));
 }
 
 describe('course upload HTTP route', () => {
-  it('extracts selectable text from a real PDF before AI generation', async () => {
+  it('forwards a real PDF without extracting its text', async () => {
     const f = await fixture();
     const response = await f.upload(new Uint8Array(tinyPdf('Teach Python variables')), 'lesson.pdf');
     expect(response.status).toBe(200);
-    expect(f.generate).toHaveBeenCalledWith('Teach Python variables', 'medium', 'lesson', '');
+    expect(f.generate).toHaveBeenCalledWith({ kind: 'pdf', data: expect.any(Uint8Array) }, 'medium', 'lesson', '');
   });
-  it('returns 413 when real PDF extraction exceeds the course limit', async () => {
+  it('returns 413 when a PDF exceeds the server page limit', async () => {
     const f = await fixture();
     const pdf = new Uint8Array(tinyPdf('Teach Python variables and print student names', 2000));
     expect(pdf.byteLength).toBeLessThan(MAX_COURSE_FILE_BYTES);
     const response = await f.upload(pdf, 'large-text.pdf');
     expect(response.status).toBe(413);
-    expect(await response.json()).toEqual({ error: 'Extracted course text exceeds 80000 UTF-8 bytes' });
+    expect(await response.json()).toEqual({ error: 'Course PDF exceeds 100 pages' });
     expect(f.generate).not.toHaveBeenCalled();
   });
   it('extracts real Markdown and UTF-8 text and returns only a preview', async () => {
@@ -218,4 +220,96 @@ it('enforces preset minimums on injected generation results but honors an exact 
   const f = await fixture(async () => ({ plan: practicePlan(), provider: 'mock' }));
   expect((await f.upload('Reference', 'lesson.txt', {}, 'POST', 'medium', 'quiz')).status).toBe(503);
   expect((await f.upload('Reference', 'lesson.txt', { 'X-Course-Prompt': encodeURIComponent('Exactly 1 question.') }, 'POST', 'medium', 'quiz')).status).toBe(200);
+});
+
+
+describe('native PDF provider integration', () => {
+  const gemini = (plan: unknown) => new Response(JSON.stringify({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(plan) }] } }] }));
+  it('includes inline PDF in generation and repair without extraction, retaining teacher and difficulty rules', async () => {
+    const extraction = vi.spyOn(pdfText, 'extractRubricText');
+    const provider = vi.fn().mockResolvedValueOnce(gemini({ steps: [] })).mockResolvedValueOnce(gemini(defaultClassroomPlan()));
+    const bytes = tinyPdf(); // Image-only/blank PDFs do not require selectable text on this path.
+    const result = await createCourseGenerator({ apiKey: 'mock', deepseekApiKey: '', fetch: provider, seed: 42 })({ kind: 'pdf', data: bytes }, 'extreme', 'lesson', 'Write in Chinese.');
+    expect(result.provider).toBe('gemini:gemini-4-hydrogen:pdf');
+    expect(result.diagnostics?.repairRounds).toBe(1);
+    expect(extraction).not.toHaveBeenCalled();
+    for (const [, init] of provider.mock.calls) {
+      const body = JSON.parse(init.body), parts = body.contents[0].parts;
+      expect(parts).toHaveLength(2);
+      expect(parts[1]).toEqual({ inline_data: { mime_type: 'application/pdf', data: Buffer.from(bytes).toString('base64') } });
+      expect(parts[0].text).toContain('Requested difficulty: extreme.');
+      expect(parts[0].text).toContain('Generation preset: lesson.');
+      expect(parts[0].text).toContain('Write in Chinese.');
+      expect(parts[0].text).toContain('untrusted reference data');
+      expect(parts[0].text).not.toContain('UNSUPPORTED SORTING TOPICS');
+      expect(body.generationConfig.responseJsonSchema).toBeDefined();
+    }
+  });
+  it('keeps execution verification while allowing sorting taught by PDF images', async () => {
+    const code = 'def bubble_sort(xs):\n    xs = xs[:]\n    for end in range(len(xs) - 1, 0, -1):\n        for i in range(end):\n            if xs[i] > xs[i + 1]:\n                xs[i], xs[i + 1] = xs[i + 1], xs[i]\n    return xs';
+    const plan = { title: 'Sorting', bossName: 'Sort boss', steps: [{ id: 'sort', title: 'Bubble sort', instructions: 'Trace bubble sort.', durationSec: 120, mode: 'questions', questions: [{ id: 'trace', kind: 'blank', prompt: 'What does bubble_sort([3, 1, 2]) return? {{1}}\n```python\n' + code + '\n```', blanks: [{ accept: ['[1, 2, 3]'] }], explain: 'Adjacent swaps order the list.', verification: { code, expression: '[bubble_sort([3, 1, 2])]' } }] }] };
+    const provider = vi.fn(async () => gemini(plan));
+    const generate = createCourseGenerator({ apiKey: 'mock', deepseekApiKey: '', fetch: provider });
+    const source = { kind: 'pdf' as const, data: tinyPdf('Bubble Sort - Sample Solution') };
+    const result = await generate(source, 'easy', 'quiz', 'Exactly 1 question.');
+    expect(result.plan.steps[0].questions).toHaveLength(1);
+    expect(result.diagnostics?.keyVerification).toContainEqual(expect.objectContaining({ status: 'passed' }));
+    plan.steps[0].questions[0].blanks[0].accept = ['[3, 1, 2]'];
+    await expect(generate(source, 'easy', 'quiz', 'Exactly 1 question.')).rejects.toThrow('invalid lesson');
+  }, 60_000);
+  it.each([true, false])('extracts only for DeepSeek fallback (Gemini configured: %s)', async configured => {
+    const extraction = vi.spyOn(pdfText, 'extractRubricText');
+    const provider = vi.fn(async (url: string | URL | Request, init: any) => {
+      if (String(url).includes('googleapis')) return new Response('{}', { status: 503 });
+      const request = JSON.parse(init.body);
+      expect(JSON.stringify(request)).not.toContain('inline_data');
+      expect(JSON.stringify(request)).toContain('Teach Python variables');
+      expect(JSON.stringify(request)).toContain('UNSUPPORTED SORTING TOPICS');
+      expect(JSON.stringify(request)).toContain('Requested difficulty: hard.');
+      expect(JSON.stringify(request)).toContain('Use Chinese.');
+      return new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(defaultClassroomPlan()) } }] }));
+    });
+    const result = await createCourseGenerator({ apiKey: configured ? 'mock' : '', deepseekApiKey: 'mock', fetch: provider })({ kind: 'pdf', data: tinyPdf('Teach Python variables') }, 'hard', 'lesson', 'Use Chinese.');
+    expect(result.provider).toBe('deepseek');
+    expect(extraction).toHaveBeenCalledTimes(1);
+    expect(provider).toHaveBeenCalledTimes(configured ? 2 : 1);
+  });
+  it('returns the existing 422 message for image-only fallback and 413 for excess extracted text', async () => {
+    const f = await fixture(createCourseGenerator({ apiKey: '', deepseekApiKey: 'mock', fetch: vi.fn() }));
+    expect(await (await f.upload(tinyPdf(), 'scan.pdf')).json()).toEqual({ error: 'Could not extract readable text. Use a PDF with selectable text, or a UTF-8 .md/.txt file.' });
+    expect((await f.upload(tinyPdf(), 'scan.pdf')).status).toBe(422);
+    const large = tinyPdf('x'.repeat(2000), 50);
+    expect((await f.upload(large, 'text.pdf')).status).toBe(413);
+  });
+  it('accepts native PDF text beyond 80000 bytes and enforces configured server pages', async () => {
+    const f = await fixture(createCourseGenerator({ apiKey: 'mock', deepseekApiKey: '', fetch: vi.fn(async () => gemini(defaultClassroomPlan())) }));
+    expect((await f.upload(tinyPdf('x'.repeat(2000), 50), 'text.pdf')).status).toBe(200);
+    vi.stubEnv('COURSE_PDF_MAX_PAGES', '2');
+    expect((await f.upload(tinyPdf('ok', 2), 'two.pdf')).status).toBe(200);
+    const response = await f.upload(tinyPdf('ok', 3), 'three.pdf', { 'X-Pdf-Pages': '1' });
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: 'Course PDF exceeds 2 pages' });
+  });
+  it.each(['lesson', 'quiz', 'exercise', 'warmup', 'exam'] as const)('retains preset %s on the native path', async preset => {
+    const count = preset === 'quiz' ? 8 : preset === 'exam' ? 10 : preset === 'warmup' ? 6 : preset === 'exercise' ? 2 : 1;
+    const generate = createCourseGenerator({ apiKey: 'mock', deepseekApiKey: '', fetch: vi.fn(async () => gemini(practicePlan(count))) });
+    const result = await generate({ kind: 'pdf', data: tinyPdf() }, 'easy', preset);
+    const step = result.plan.steps[0];
+    expect(result.provider).toBe('gemini:gemini-4-hydrogen:pdf');
+    if (preset === 'lesson' || preset === 'exercise') expect(step.rubric).toBeDefined();
+    if (preset === 'quiz' || preset === 'warmup') expect(step.mode).toBe('questions');
+    if (preset === 'exercise') {
+      expect(step.mode).toBe('mixed'); expect(step.answerFeedback).toBe('immediate');
+      expect(step.brief?.hints?.length).toBeGreaterThan(0);
+    }
+    if (preset === 'exam') {
+      expect(step.revealAnswers).toBe('never'); expect(step.starter).toBeUndefined();
+      expect(step.brief?.hints).toBeUndefined(); expect(step.brief?.example).toBeUndefined();
+    }
+  });
+  it('retains the source-aware sorting restriction on the fallback path', async () => {
+    const plan = { title: 'Sorting', bossName: 'Sort', steps: [{ id: 's', title: 'Bubble sort', instructions: 'Describe bubble sort.', durationSec: 60, mode: 'questions', questions: [{ id: 'q', kind: 'single', prompt: 'What is the purpose of bubble sort?', options: [{ id: 'a', text: 'Order values' }, { id: 'b', text: 'Delete values' }], answer: 'a', explain: 'Sorting orders values.' }] }] };
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(plan) } }] })));
+    await expect(createCourseGenerator({ apiKey: '', deepseekApiKey: 'mock', fetch: fetcher })({ kind: 'pdf', data: tinyPdf('Bubble Sort - Sample Solution') }, 'easy', 'quiz', 'Exactly 1 question.')).rejects.toThrow('invalid lesson');
+  });
 });

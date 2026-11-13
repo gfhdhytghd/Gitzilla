@@ -498,7 +498,7 @@ export type ClientMsg =
   | { t: "classroomSubmitCode"; files: InAppFile[] }   // in-app editor submission (≤ 20 files, ≤ 200 KB total)
   | { t: "classroomAnswers"; stepId: string; attempt: number; answers: Record<string, QuestionAnswer> }  // question set save (partial allowed)
   | { t: "classroomReview"; playerId: string; score: number; note: string }
-  | { t: "hello"; room: string; role: Role; name: string; resume?: string }  // controller: needs a GitHub session that already owns a seat in `room`
+  | { t: "hello"; room: string; role: Role; name: string; resume?: string; classroomDelta?: boolean }  // classroomDelta: opt-in plan/history reuse + report patches; merge before UI. Controller needs an existing signed-in seat.
   | { t: "setRepo"; repo: string }
   | { t: "setBoss"; repo: string }          // owner only
   | { t: "setBots"; count: number }         // owner only: AI teammates to fill the squad (0..7)
@@ -515,7 +515,7 @@ export type ClientMsg =
   | { t: "rematch" };                       // owner only
 
 export type ServerMsg =
-  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string>; emails?: Record<string, string>; questionLive?: QuestionStat[] }  // questionLive: teacher only, current step
+  | { t: "classroom"; state: ClassroomState; reports: Record<string, ClassroomReport>; errors?: Record<string, string>; emails?: Record<string, string>; questionLive?: QuestionStat[]; delta?: { planUnchanged?: true; roundsUnchanged?: true; reports: true; removedReports: string[] } }  // questionLive: teacher only. delta requires shared/classroom-delta before consuming state/reports.
   | { t: "welcome"; you: string; token: string; lobby: LobbyState; controller?: boolean }  // controller: you = the seat this phone drives
   | { t: "lobby"; lobby: LobbyState }
   | { t: "snapshot"; state: MatchState; ack: number }

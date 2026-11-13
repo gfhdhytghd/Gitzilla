@@ -143,6 +143,11 @@ export class ClassroomSession {
   publicState(audience: 'teacher' | 'student'): ClassroomState {
     if (audience !== 'teacher' && audience !== 'student') throw new Error('Choose a classroom state audience: teacher or student');
     const state = structuredClone({ ...this.state, serverTime: this.hostPausedAt ?? this.now(), rows: [...this.state.rows].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.improvement - a.improvement || a.name.localeCompare(b.name)) });
+    state.summary = { roster: state.rows.length,
+      submitted: state.rows.filter(row => row.status === 'submitted').length,
+      connected: state.rows.filter(row => row.connected).length,
+      queued: state.rows.filter(row => row.status === 'queued').length,
+      away: state.rows.filter(row => !row.connected && row.status === 'empty').length };
     // Counts describe memory-only answers, not persisted grades or per-question correctness.
     delete state.questionAnswered;
     if (state.phase === 'coding' || state.phase === 'paused') state.questionAnswered = this.questionLive().map(q => q.answered);

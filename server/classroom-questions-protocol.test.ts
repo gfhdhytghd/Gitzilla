@@ -27,6 +27,8 @@ async function fixture(immediate = false, never = false) {
   const code = rooms.createRoom(undefined, 'edu'), room = rooms['rooms'].get(code)!;
   const send = async (s: Socket, msg: ClientMsg) => {
     s.emit('message', Buffer.from(JSON.stringify(msg))); for (let i = 0; i < 20; i++) await Promise.resolve();
+    // These assertions inspect a delivered batch; coalescing timing has dedicated tests.
+    if (room.classroomPublishTimer) rooms['publishClassroom'](room, false);
   };
   const join = async (role: 'screen' | 'player', resume?: string) => {
     const s = new Socket(); wss.emit('connection', s, { headers: {} } as IncomingMessage);
@@ -166,7 +168,8 @@ it.each([false, true])('serializes only code scores for mixed after-close views 
       const state = packet.t === 'classroom' ? packet.state : packet.t === 'lobby' ? packet.lobby.classroom! : null;
       if (!state) continue;
       const beforeReveal = !['feedback', 'complete'].includes(phase);
-      expect(state.rows.find(r => r.id === id)?.score).toBe(beforeReveal ? 80 : 65);
+      if (viewer === f.alice || viewer === f.controller) expect(state.rows.find(r => r.id === id)?.score).toBe(beforeReveal ? 80 : 65);
+      else expect(state.rows.some(r => r.id === id)).toBe(false);
       if (packet.t === 'classroom' && packet.reports[id]) {
         const report = packet.reports[id];
         expect(report.score).toBe(beforeReveal ? 80 : 65);

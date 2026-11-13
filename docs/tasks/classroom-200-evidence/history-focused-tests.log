@@ -1,0 +1,11 @@
+npm notice run npx
+npm notice run 'vitest' run shared/classroom-delta.test.ts server/classroom-200.test.ts
+
+ RUN  v5.0.5 /home/wilf/data/Hackathon/HackPSU/repo-kaiju
+
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  13:09:41
+   Duration  332ms (transform 39%, import 30%, tests 29%, worker 2%)
+

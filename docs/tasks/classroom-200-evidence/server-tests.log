@@ -1,0 +1,11 @@
+npm notice run npx
+npm notice run 'vitest' run server --exclude server/course-*.test.ts
+
+ RUN  v5.0.5 /home/wilf/data/Hackathon/HackPSU/repo-kaiju
+
+
+ Test Files  40 passed | 6 skipped (46)
+      Tests  792 passed | 6 skipped (798)
+   Start at  13:03:31
+   Duration  43.71s (tests 96%, import 3%, transform 1%)
+

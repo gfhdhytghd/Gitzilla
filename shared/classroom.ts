@@ -104,9 +104,15 @@ export interface ClassroomAttack {
   id: string; name: string; score: number; improvement: number; damage: number; commit: string;
   reviewPending?: boolean;
 }
+export interface ClassroomTotals {
+  submitted: number; damage: number; score: number; improvement: number;
+  average: number; median: number; bands: [number, number, number]; // <50, 50..79.9, >=80
+}
 export interface ClassroomRound {
   stepId: string; attempt: number; at: number; bossBefore: number; bossAfter: number;
   attacks: ClassroomAttack[];
+  // Non-teacher projections contain only the viewer's own attack, plus anonymous totals.
+  totals?: ClassroomTotals;
   // Anonymous class-level aggregates frozen at attack time (safe for the projector; no names).
   roster?: number;                 // students in the room when the attack ran
   checkStats?: { label: string; passed: number; total: number }[];   // one per step check, same order; total = scored submissions
@@ -132,6 +138,10 @@ export interface ClassroomState {
   deadline: number | null; remainingMs: number | null; serverTime: number;
   raidEndsAt: number | null; bossHp: number; bossMaxHp: number;
   rows: ClassroomRow[]; rounds: ClassroomRound[];
+  // Latest attempt per step; participants counts distinct students across all attempts.
+  lessonTotals?: ClassroomTotals & { participants: number };
+  // Optional for old clients/stored rooms. Non-teachers receive only their own row.
+  summary?: { roster: number; submitted: number; connected: number; queued: number; away: number };
   notice?: string;
   // Host pause (same shape as MatchState.paused): the raid clock freezes; resumeAt = 3s resume countdown target.
   paused?: { by: string; since: number; resumeAt: number | null } | null;

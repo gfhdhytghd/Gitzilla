@@ -54,23 +54,23 @@ describe('classroom production boundaries', () => {
     await f.send(teacher, {t:'leave'}); expect(f.room.teacherId).toBeUndefined();
     const replacement = await f.join('screen'); expect(f.room.ownerId).toBe(replacement.welcome().you);
   });
-  it('S2 releases an explicit leave at thirty students but retains a disconnected seat', async () => {
+  it('S2 releases an explicit leave at two hundred students but retains a disconnected seat', async () => {
     const f = fixture(), teacher = await f.join('screen'), students: Socket[] = [];
-    for (let i = 0; i < 30; i++) students.push(await f.join());
-    const session = await f.plan(teacher); expect(session.state.rows).toHaveLength(30);
-    students[1].close(); expect(session.state.rows).toHaveLength(30);
-    await f.send(students[0], {t:'leave'}); expect(session.state.rows).toHaveLength(29);
-    const replacement = await f.join(); expect(session.state.rows).toHaveLength(30);
+    for (let i = 0; i < 200; i++) students.push(await f.join());
+    const session = await f.plan(teacher); expect(session.state.rows).toHaveLength(200);
+    students[1].close(); expect(session.state.rows).toHaveLength(200);
+    await f.send(students[0], {t:'leave'}); expect(session.state.rows).toHaveLength(199);
+    const replacement = await f.join(); expect(session.state.rows).toHaveLength(200);
     expect(session.state.rows.some(r => r.id === replacement.welcome().you)).toBe(true);
-    await f.join('player', students[1].welcome().token); expect(session.state.rows).toHaveLength(30);
+    await f.join('player', students[1].welcome().token); expect(session.state.rows).toHaveLength(200);
   });
-  it('S2 evicts the longest-offline ungraded identity before publishing at most thirty rows', async () => {
+  it('S2 evicts the longest-offline ungraded identity before publishing at most two hundred rows', async () => {
     vi.useFakeTimers();
     const f = fixture(), teacher = await f.join('screen'), ids: string[] = [];
-    for (let i = 0; i < 31; i++) { const s = await f.join(); ids.push(s.welcome().you); s.close(); vi.advanceTimersByTime(1); }
+    for (let i = 0; i < 201; i++) { const s = await f.join(); ids.push(s.welcome().you); s.close(); vi.advanceTimersByTime(1); }
     expect(f.room.members.has(ids[0])).toBe(false); expect(f.room.members.has(ids[1])).toBe(true);
-    expect([...f.room.members.values()].filter(m => m.role === 'player')).toHaveLength(30);
-    const session = await f.plan(teacher); expect(session.state.rows).toHaveLength(30);
+    expect([...f.room.members.values()].filter(m => m.role === 'player')).toHaveLength(200);
+    const session = await f.plan(teacher); expect(session.state.rows).toHaveLength(200);
     const returning = await f.join('player', f.room.members.get(ids[1])!.token); returning.close(); vi.advanceTimersByTime(1);
     const next = await f.join(); next.close();
     expect(f.room.members.has(ids[1])).toBe(true); expect(f.room.members.has(ids[2])).toBe(false);
@@ -78,33 +78,34 @@ describe('classroom production boundaries', () => {
     f.room.classroom = undefined;
     const member = {...f.room.members.get(ids[1])!, id:'legacy', disconnectedAt:-1};
     member.lobby = {...member.lobby,id:'legacy'}; f.room.members.set('legacy', member);
-    await f.plan(teacher); expect(f.room.classroom!.state.rows).toHaveLength(30); expect(f.room.members.has('legacy')).toBe(false);
+    await f.plan(teacher); expect(f.room.classroom!.state.rows).toHaveLength(200); expect(f.room.members.has('legacy')).toBe(false);
   });
-  it('S2 rejects a new identity when thirty offline seats have submission attempts', async () => {
+  it('S2 rejects a new identity when two hundred offline seats have submission attempts', async () => {
     const f = fixture(), teacher = await f.join('screen'), students: Socket[] = [];
-    for (let i = 0; i < 30; i++) students.push(await f.join());
+    for (let i = 0; i < 200; i++) students.push(await f.join());
     const session = await f.plan(teacher); session.control('start');
     for (const student of students) { const ticket = session.begin(student.welcome().you, 'demo/repo'); session.fail(ticket, 'Retry later'); student.close(); }
     const extra = f.socket(); await f.send(extra, {t:'hello',room:f.code,role:'player',name:'Extra'});
-    expect(extra.messages).toContainEqual({t:'error',message:'This lesson already has 30 students; reconnect with your existing session'});
-    expect(session.state.rows).toHaveLength(30);
+    expect(extra.messages).toContainEqual({t:'error',message:'This lesson already has 200 students; reconnect with your existing session'});
+    expect(session.state.rows).toHaveLength(200);
   });
-  it('F1 publishes the roster on disconnect with thirty-one contributing legacy rows', async () => {
+  it('F1 publishes the roster on disconnect with two-hundred-and-one contributing legacy rows', async () => {
     const f = fixture(), teacher = await f.join('screen'), student = await f.join();
     const session = await f.plan(teacher), id = student.welcome().you;
     // Reproduce an over-capacity classroom saved before the admission limit.
     session.roster([{id,name:'Student',connected:true},
-      ...Array.from({length:30}, (_, i) => ({id:`legacy-${i}`,name:`Legacy ${i}`,connected:false}))]);
+      ...Array.from({length:200}, (_, i) => ({id:`legacy-${i}`,name:`Legacy ${i}`,connected:false}))]);
     session.control('start');
     for (const row of session.state.rows) session.fail(session.begin(row.id, 'demo/repo'), 'Retry later');
-    expect(session.state.rows).toHaveLength(31);
+    expect(session.state.rows).toHaveLength(201);
     expect(session.state.rows.every(row => row.attempts > 0)).toBe(true);
     const published = teacher.messages.filter(m => m.t === 'classroom').length;
     expect(() => student.close()).not.toThrow();
+    f.rooms['publishClassroom'](f.room, false);
     expect(teacher.messages.filter(m => m.t === 'classroom')).toHaveLength(published + 1);
-    expect(teacher.latest().state.rows).toHaveLength(31);
+    expect(teacher.latest().state.rows).toHaveLength(201);
     expect(teacher.latest().state.rows.find(row => row.id === id)?.connected).toBe(false);
-    expect(teacher.messages.filter(m => m.t === 'lobby').at(-1)!.lobby.classroom?.rows).toHaveLength(31);
+    expect(teacher.messages.filter(m => m.t === 'lobby').at(-1)!.lobby.classroom?.rows).toHaveLength(201);
   });
   it('S2 kicks orphan classroom rows without banning another identity', async () => {
     const f = fixture(), teacher = await f.join('screen'); await f.join(); const session = await f.plan(teacher);

@@ -1,0 +1,60 @@
+npm notice run npx
+npm notice run 'vitest' run server/classroom-200.test.ts
+
+ RUN  v5.0.5 /home/wilf/data/Hackathon/HackPSU/repo-kaiju
+
+ ❯ server/classroom-200.test.ts (6 tests | 2 failed) 88ms
+   ❯ 200-seat classroom delivery (6)
+     × sends only own frozen attacks and anonymous totals on every non-teacher wire path 4ms
+     × sends opt-in teacher history only on change, resets on reconnect, and preserves legacy snapshots 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  server/classroom-200.test.ts > 200-seat classroom delivery > sends only own frozen attacks and anonymous totals on every non-teacher wire path
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "4bff0044-09c3-4a58-a9b5-0def194cc9fd",
++   "a834ff94-b870-4874-9d3e-b724b86359c8",
+  ]
+
+ ❯ server/classroom-200.test.ts:134:42
+    132|     for (const [peer, id] of [[alice.s,alice.welcome!.you],[bob.s,bob.…
+    133|       const round = peer.latest().state.rounds[0];
+    134|       expect(round.attacks.map(a=>a.id)).toEqual(id ? [id] : []);
+       |                                          ^
+    135|       expect((round as any).totals).toMatchObject({submitted:2,damage:…
+    136|       const other = id === bob.welcome!.you ? 'ALICE_PRIVATE' : 'BOB_P…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  server/classroom-200.test.ts > 200-seat classroom delivery > sends opt-in teacher history only on change, resets on reconnect, and preserves legacy snapshots
+AssertionError: expected undefined to match object { roundsUnchanged: true }
+
+- Expected:
+{
+  "roundsUnchanged": true,
+}
+
++ Received:
+undefined
+
+ ❯ server/classroom-200.test.ts:151:47
+    149|     const f = fixture(), teacher = await f.join('screen',undefined,tru…
+    150|     f.rooms['publishClassroom'](f.room, false);
+    151|     expect((teacher.s.latest() as any).delta).toMatchObject({roundsUnc…
+       |                                               ^
+    152|     const round = {stepId:'questions',attempt:1,at:1,bossBefore:10,bos…
+    153|     f.room.classroom!.state.rounds.push(round);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  13:07:37
+   Duration  341ms (transform 38%, tests 33%, import 29%, worker 1%)
+
