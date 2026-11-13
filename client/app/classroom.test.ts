@@ -434,3 +434,77 @@ describe('class attack staged on the raid timeline', () => {
     expect(retry.root.querySelector('.cr-my-why')!.textContent).toContain('only the gain over your best score');
   });
 });
+
+describe('classroom question sets', () => {
+  // students get the redacted plan (no keys); the teacher gets the full one
+  const questionsStep = (state: ClassroomState, full = false) => {
+    const step = state.plan.steps[0];
+    Object.assign(step, { mode: 'questions', questions: full ? [
+      { id: 'q1', kind: 'single', prompt: 'Pick `b`', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], answer: 'b' },
+      { id: 'q2', kind: 'blank', prompt: 'x = {{1}}', blanks: [{ accept: ['1'], numeric: { value: 1, tolerance: 0 } }] },
+    ] : [
+      { id: 'q1', kind: 'single', prompt: 'Pick `b`', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }] },
+      { id: 'q2', kind: 'blank', prompt: 'x = {{1}}', blankCount: 1, blankNumeric: [true] },
+    ] });
+    return step;
+  };
+  it('shows the question set instead of the code task and autosaves a pick', () => {
+    const { state, app, mount, sent } = classroom(false);
+    const step = questionsStep(state);
+    step.questionContext = 'Use this code:\n```python\ndef f(x):\n    return x + 1\n```';
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    expect(root.querySelector('[data-testid="question-set"]')!.hidden).toBe(false);
+    // the shared code is shown once, above the questions
+    expect(root.querySelectorAll('[data-testid="question-context"]').length).toBe(1);
+    expect(root.querySelector('[data-testid="question-context"]')!.querySelector('.qs-code')!.textContent).toContain('return x + 1');
+    expect(root.querySelector('[data-testid="question-card-q1"]')).not.toBeNull();
+    expect(root.querySelector('.cr-github')!.hidden).toBe(true);
+    const pick = root.querySelector('[data-testid="question-option-q1-b"]')! as unknown as { checked: boolean; dispatchEvent(e: Event): void };
+    pick.checked = true; pick.dispatchEvent(new Event('change'));
+    vi.advanceTimersByTime(2000);
+    const save = sent.find(m => m.t === 'classroomAnswers');
+    expect(save).toEqual({ t: 'classroomAnswers', stepId: step.id, attempt: 1, answers: { q1: { choice: 'b' } } });
+  });
+  it('hides the question score from a student until the reveal', () => {
+    const { state, app, mount } = classroom(false);
+    const step = questionsStep(state);
+    app.classroomReports = { student: { stepId: step.id, attempt: 1, repo: 'questions', commit: 'questions', submittedAt: 0, score: 50, improvement: 0, checks: [], criteria: [], advice: [],
+      answers: { q1: { answer: { choice: 'a' }, attempts: 1 } }, questionScore: 50 } };
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    const review = root.querySelector('[data-testid="classroom-feedback"]')!;
+    expect(review.textContent).toContain('Your answers are saved');
+    expect(review.textContent).not.toContain('50');
+    state.phase = 'feedback';
+    screens.at(-1)!.update?.(app);
+    expect(review.textContent).toContain('50');
+  });
+  it("shows only the score when the step keeps answers private ('never')", () => {
+    const { state, app, mount } = classroom(false);
+    const step = questionsStep(state); step.revealAnswers = 'never'; state.phase = 'feedback';
+    app.classroomReports = { student: { stepId: step.id, attempt: 1, repo: 'questions', commit: 'questions', submittedAt: 0, score: 50, improvement: 0, checks: [], criteria: [], advice: [],
+      answers: { q1: { answer: { choice: 'a' }, attempts: 1 } }, questionScore: 50 } };
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    const set = root.querySelector('[data-testid="question-set"]')!;
+    expect(root.querySelector('[data-testid="question-score"]')!.textContent).toContain('50');
+    expect(set.textContent).toContain('keeps the answers to this quiz private');
+    expect(root.querySelector('[data-testid="question-review-q1"]')).toBeNull();
+  });
+  it('puts the live question bars above the review panel on the teacher console', () => {
+    const { state, app, mount } = classroom(true);
+    questionsStep(state, true); state.phase = 'coding';
+    app.classroomQuestionLive = [{ id: 'q1', answered: 2, correct: 1, total: 3, options: [{ id: 'a', count: 1 }, { id: 'b', count: 1 }] }, { id: 'q2', answered: 0, correct: 0, total: 3 }];
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    const live = root.querySelector('[data-testid="question-live"]')!;
+    const review = root.querySelector('[data-testid="classroom-feedback"]')!;
+    expect(live.hidden).toBe(false);
+    expect(live.parentElement).toBe(review.parentElement);
+    expect(live.parentElement!.children.indexOf(live)).toBeLessThan(live.parentElement!.children.indexOf(review));
+    // the console may be on the projector: answered counts only until the teacher asks for details
+    expect(live.textContent).toContain('2 of 3 answered');
+    expect(live.textContent).not.toContain('% correct');
+  });
+});

@@ -18,9 +18,9 @@ function lesson() {
 describe('staged classroom lesson',()=>{
   it('S2 explicit leave removes the live row without changing locked HP or frozen exports', () => {
     const {s}=lesson(); s.control('start'); s.accept(s.begin('a','demo/repo'),source); s.control('attack');
-    const rounds=structuredClone(s.state.rounds), csv=classroomExport(s.publicState(),'csv'), hp=s.state.bossHp, max=s.state.bossMaxHp;
+    const rounds=structuredClone(s.state.rounds), csv=classroomExport(s.publicState('teacher'),'csv'), hp=s.state.bossHp, max=s.state.bossMaxHp;
     s.remove('a'); expect(s.state.rows.some(r=>r.id==='a')).toBe(false);
-    expect(s.state.rounds).toEqual(rounds); expect(classroomExport(s.publicState(),'csv')).toBe(csv);
+    expect(s.state.rounds).toEqual(rounds); expect(classroomExport(s.publicState('teacher'),'csv')).toBe(csv);
     expect(s.state.bossHp).toBe(hp); expect(s.state.bossMaxHp).toBe(max);
   });
   it('S9 restores the prior commit, score and its review after a failed resubmission', () => {
@@ -84,18 +84,18 @@ describe('staged classroom lesson',()=>{
     const pending = s.begin('a', 'demo/repo'); s.accept(s.begin('b', 'demo/repo'), source);
     s.kick('a'); expect(s.valid(pending)).toBe(false); s.accept(pending, source);
     expect(s.state.rows.map(r => r.id)).toEqual(['b']); expect(s.privatePayload('a', true).reports.a).toBeUndefined();
-    s.control('attack'); const rounds = structuredClone(s.state.rounds), exported = classroomExport(s.publicState(), 'csv');
+    s.control('attack'); const rounds = structuredClone(s.state.rounds), exported = classroomExport(s.publicState('teacher'), 'csv');
     s.kick('b'); expect(s.state.rows).toEqual([]); expect(s.state.rounds).toEqual(rounds);
-    expect(classroomExport(s.publicState(), 'csv')).toBe(exported); expect(s.privatePayload('teacher', true).reports).toEqual({});
+    expect(classroomExport(s.publicState('teacher'), 'csv')).toBe(exported); expect(s.privatePayload('teacher', true).reports).toEqual({});
   });
   it('freezes the host raid clock and shifts its deadline without replaying attacks', () => {
     const {s, advance} = lesson();
     s.control('start'); s.accept(s.begin('a','demo/repo'), source); s.control('attack');
-    const before = s.publicState(), remaining = before.raidEndsAt! - before.serverTime;
+    const before = s.publicState('teacher'), remaining = before.raidEndsAt! - before.serverTime;
     s.pauseHostClock(); advance(20_000); s.pauseHostClock();
-    expect(s.tick()).toBe(false); expect(s.publicState()).toEqual(before);
+    expect(s.tick()).toBe(false); expect(s.publicState('teacher')).toEqual(before);
     s.resumeHostClock(); s.resumeHostClock();
-    expect(s.state.raidEndsAt! - s.publicState().serverTime).toBe(remaining);
+    expect(s.state.raidEndsAt! - s.publicState('teacher').serverTime).toBe(remaining);
     expect(s.state.rounds).toEqual(before.rounds); expect(s.state.bossHp).toBe(before.bossHp);
     advance(remaining - 1); expect(s.tick()).toBe(false);
     advance(1); expect(s.tick()).toBe(true); expect(s.state.phase).toBe('feedback');
@@ -175,8 +175,8 @@ describe('staged classroom lesson',()=>{
   });
   it('exports frozen round history and escapes spreadsheet and Markdown injection',()=>{
     const {s}=lesson();s.roster([{id:'a',name:'=SUM(1,2)| <img>',connected:true}]);s.control('start');s.accept(s.begin('a','demo/repo'),source);s.control('attack');
-    const csv=classroomExport(s.publicState(),'csv');expect(csv).toContain('"\'=SUM(1,2)| <img>"');expect(csv).toContain(sha);
-    expect(classroomExport(s.publicState(),'md')).toContain('\\| \\<img\\>');
+    const csv=classroomExport(s.publicState('teacher'),'csv');expect(csv).toContain('"\'=SUM(1,2)| <img>"');expect(csv).toContain(sha);
+    expect(classroomExport(s.publicState('teacher'),'md')).toContain('\\| \\<img\\>');
   });
 });
 
@@ -238,18 +238,18 @@ describe('classroom email grade matching', () => {
     expect(s.privatePayload('a', false).emails).toEqual({ a: 'Alice@psu.edu' });
     expect(s.privatePayload('projector', false).emails).toEqual({});
     expect(s.privatePayload('teacher', true).emails).toEqual({ a: 'Alice@psu.edu', b: 'bob@psu.edu' });
-    expect(JSON.stringify(s.publicState())).not.toContain('@psu.edu');
+    expect(JSON.stringify(s.publicState('teacher'))).not.toContain('@psu.edu');
     s.control('start'); s.accept(s.begin('a', 'demo/repo'), source); s.review('a', 87, 'Reviewed'); s.control('attack');
     s.remove('a');
     const restored = ClassroomSession.restore(JSON.parse(JSON.stringify(s.save())));
-    expect(JSON.stringify(restored.publicState())).not.toContain('@psu.edu');
+    expect(JSON.stringify(restored.publicState('teacher'))).not.toContain('@psu.edu');
     for (const format of ['csv', 'md'] as const) {
-      const report = classroomExport(restored.publicState(), format, 'en', restored.exportEmails());
-      const grades = gradesExport(restored.publicState(), format, restored.exportEmails());
+      const report = classroomExport(restored.publicState('teacher'), format, 'en', restored.exportEmails());
+      const grades = gradesExport(restored.publicState('teacher'), format, restored.exportEmails());
       for (const text of [report, grades]) { expect(text).toContain('Alice@psu.edu'); expect(text).toContain('87'); }
       expect(grades).toContain('bob@psu.edu');
     }
-    expect(ClassroomSession.restore(s.publicState()).exportEmails()).toEqual({});
+    expect(ClassroomSession.restore(s.publicState('teacher')).exportEmails()).toEqual({});
   });
   it('rejects malformed addresses and unknown students without changing the saved email', () => {
     const { s } = lesson(); s.setEmail('a', 'alice@psu.edu');

@@ -1,4 +1,4 @@
-import type { ClassroomReport } from '../../shared/classroom';
+import type { ClassroomReport, QuestionStat } from '../../shared/classroom';
 // Shared app context passed to every screen.
 import type { Autopsy, LobbyState, Role, ServerMsg, StudentFeedback } from "../../shared/types";
 import type { Conn, ConnStatus } from "./net";
@@ -15,6 +15,8 @@ export interface AppCtx {
   classroomReports?: Record<string, ClassroomReport>;
   classroomErrors?: Record<string, string>;
   classroomEmails?: Record<string, string>;
+  /** Teacher only: live per-question aggregates for the current step (ServerMsg classroom.questionLive). */
+  classroomQuestionLive?: QuestionStat[];
   token?: string;
   conn: Conn;
   status: ConnStatus;

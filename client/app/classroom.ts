@@ -31,6 +31,11 @@ import { amountParts, HITS, myRound, raidElapsed, raidStage, stepFloor, bossPhas
 import type { GameEvent } from '../../shared/types';
 import { createPauseOverlay } from './pause';
 import { wordmark } from './wordmark';
+import { createQuestionSet } from '../edu/question-set';
+import { createQuestionEditor, MODE_LABEL } from '../edu/question-editor';
+import { createQuestionLive, createQuestionBoard } from '../edu/question-stats';
+import { questionContextView, questionPreview, reviewCard } from '../edu/question-view';
+import { feedbackMode, hasCode, hasQuestions, questionsWeight, revealMode, stepMode } from '../edu/questions';
 
 const setText = (el: HTMLElement, s: string) => { if (el.textContent !== s) el.textContent = s; };
 /** Scores, HP and damage read as whole numbers ("100", not "100.0"). */
@@ -38,6 +43,7 @@ const int = (n: number) => formatNumber(Math.round(n), 0);
 /** Damage and HP: whole when whole, else one decimal; never "0" for a non-zero value (class-raid.ts amountParts). */
 const num = (n: number) => { const a = amountParts(n); return formatNumber(a.value, a.digits); };
 const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const phaseNamesQuestions = { questions: 'Answer the questions', mixed: 'Code and answer' } as const;
 const phaseNames = { setup: 'Prepare the lesson', coding: 'Build your next commit', paused: 'Coding paused', raid: 'Class attack', feedback: 'Review & improve', complete: 'Lesson complete' };
 // the grader's all-clear advice (server text), said the way a student would
 const PLAIN_ADVICE: Record<string, string> = { 'The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.': 'Everything the checks look for is in your files. Run it, compare with the expected output, and be ready to explain it to your teacher.' };
@@ -203,7 +209,11 @@ export function createClassroom(app: AppCtx): Screen {
     h('div.cr-my-hp', null, h('div', { 'aria-hidden': 'true' }, myHpFill), myHpText));
   const review = h('section.cr-feedback', { 'data-testid': 'classroom-feedback' });
   const editor = h('section.cr-editor', { 'data-testid': 'classroom-plan-editor' });
-  const hostBoard = h('div.cr-host-board', null, roster, h('div.cr-host-main', null, review, boss));
+  // teacher console: live per-question bars; projector: answered counts, then frozen distributions after the attack
+  let questionPeek = '';   // step:attempt whose correct rates the teacher chose to show while projecting
+  const qlive = createQuestionLive({ onReveal: () => { questionPeek = `${state?.plan.steps[state.stepIndex]?.id}:${state?.attempt}`; render(); } });
+  const qboard = createQuestionBoard();
+  const hostBoard = h('div.cr-host-board', null, roster, h('div.cr-host-main', null, qlive.el, review, boss));
 
   const repo = h('input', { 'data-testid': 'classroom-repo', placeholder: 'you/your-project', maxlength: 300, autocomplete: 'off', spellcheck: 'false' }) as HTMLInputElement;
   repo.value = store.get('kaiju.lastRepo') ?? '';
@@ -241,7 +251,14 @@ export function createClassroom(app: AppCtx): Screen {
       setText(emailStatus, t('Email verified. Sign in with another email to change it.'));
     }
   });
-  const student = h('section.cr-student-work', null, emailCard, studentTitle, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
+  // Question sets: the student's answer cards (autosave / immediate checks / reveal). Mixed steps switch between the
+  // code task and the questions with two tabs that say how far each part is.
+  const qset = createQuestionSet({ room: app.room, send: (stepId, attempt, answers) => app.conn.send({ t: 'classroomAnswers', stepId, attempt, answers }) });
+  let part: 'code' | 'questions' = 'code';
+  const partTab = (which: 'code' | 'questions', label: string) => h('button.qs-part', { type: 'button', role: 'tab', 'data-testid': `classroom-part-${which}`, onclick: () => { part = which; render(); if (which === 'questions') qset.el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, h('span', null, label), h('small'));
+  const codeTab = partTab('code', 'Code'), questionsTab = partTab('questions', 'Questions');
+  const parts = h('div.qs-parts', { role: 'tablist', 'aria-label': 'Parts of this step', 'data-testid': 'classroom-parts', hidden: true }, codeTab, questionsTab);
+  const student = h('section.cr-student-work', null, emailCard, studentTitle, parts, qset.el, expectations, inApp.el, githubAlt, githubFields, submissionStatus);
   const studentBoard = h('div.cr-student-board', null, myRaid, student, review);
   // Projector only: the lobby's animated pixel backdrop. Student phones keep the CSS-only grid (no render loop).
   const backdrop = app.role === 'screen' ? createBackdrop({ dim: 0.55, themeCycle: false }) : null;
@@ -368,6 +385,7 @@ export function createClassroom(app: AppCtx): Screen {
     const reviewSettings = h('section.cr-measurements', { 'data-testid': 'lesson-review-settings' }, h('h3', null, 'Grading and review'), field('Grading mode', reviewMode), reviewFields);
     const steps = h('div.cr-step-editors');
     const stepInputs: { step: ClassroomStep; name: HTMLInputElement; instructions: HTMLTextAreaElement; summary(): void }[] = [];
+    const questionValidators: (() => boolean)[] = [];
     for (const [index, step] of draft.steps.entries()) {
       const name = h('input', { value: step.title, maxlength: 120, 'data-testid': `step-title-${index}` }) as HTMLInputElement;
       name.oninput = () => { step.title = name.value; };
@@ -396,12 +414,24 @@ export function createClassroom(app: AppCtx): Screen {
       });
       const move = (delta: number) => { const to = index + delta; if (to < 0 || to >= draft.steps.length) return; [draft.steps[index], draft.steps[to]] = [draft.steps[to], draft.steps[index]]; buildPlanEditor(); };
       const stepSummary = () => [t(`Step ${index + 1}`), step.title || t('untitled'), step.durationSec ? t(`${Math.round(step.durationSec / 60)} min`) : t('teacher paced'),
-        t(step.checks.length === 1 ? '1 check' : `${step.checks.length} checks`), ...(step.starter?.length ? [t('in-app editor')] : [])].join(' · ');
+        ...(hasCode(step) ? [t(step.checks.length === 1 ? '1 check' : `${step.checks.length} checks`), ...(step.starter?.length ? [t('in-app editor')] : [])] : []),
+        ...(stepMode(step) !== 'code' ? [t((step.questions?.length ?? 0) === 1 ? '1 question' : `${step.questions?.length ?? 0} questions`)] : [])].join(' · ');
       const summaryLine = h('summary', null, stepSummary());
       for (const input of [name, duration, checks]) input.addEventListener('input', () => { summaryLine.textContent = stepSummary(); });
       stepInputs.push({ step, name, instructions, summary: () => { summaryLine.textContent = stepSummary(); } });
-      steps.append(h('details.cr-step-editor', { open: index === 0 || undefined }, summaryLine, field('Task title', name), field('Student instructions', instructions),
-        h('div.cr-editor-numbers', null, field('Minutes (0: you decide when to stop)', duration), field('How much the automatic checks count (%) · the rest is the rubric', weight)),
+      // question set (mode, settings, questions); a questions-only step hides the code task's checks and rubric
+      const weightField = field('How much the automatic checks count (%) · the rest is the rubric', weight);
+      const codeOnly = h('div.cr-code-only');
+      const questionEditor = createQuestionEditor(step, index, {
+        onMode: mode => { codeOnly.hidden = mode === 'questions'; weightField.hidden = mode === 'questions'; },
+        onChange: () => { summaryLine.textContent = stepSummary(); },
+      });
+      questionValidators.push(questionEditor.validate);
+      steps.append(h('details.cr-step-editor', { open: index === 0 || undefined, 'data-testid': `step-editor-${index}` }, summaryLine, field('Task title', name), field('Student instructions', instructions),
+        h('div.cr-editor-numbers', null, field('Minutes (0: you decide when to stop)', duration), weightField),
+        questionEditor.el,
+        codeOnly, h('div.cr-step-buttons', null, button('Move up', `step-up-${index}`, () => move(-1)), button('Move down', `step-down-${index}`, () => move(1)), button('Remove', `step-remove-${index}`, () => { if (draft.steps.length > 1 && confirm(t(`Remove step ${index + 1} “${step.title}” and its instructions?`))) { draft.steps.splice(index, 1); buildPlanEditor(); } }))));
+      codeOnly.append(
         field('Automatic checks (optional), one per line', checks),
         h('div.cr-check-adders', null, h('small', null, 'Add a check:'),
           ...([['file', 'File exists'], ['contains', 'File contains text'], ['ci', 'GitHub CI check'], ['doctest', 'Doctest (runs the code)']] as const).map(([kind, label]) =>
@@ -412,7 +442,8 @@ export function createClassroom(app: AppCtx): Screen {
             } }, `+ ${label}`))),
         checksWarning,
         h('small.cr-evidence-note', null, 'Examples: “file: python/01_hello.py” (the file exists) · “contains: python/01_hello.py :: Hello, Python!” (the file contains this exact text; the code is never run) · “ci: unit-tests” (a GitHub check by that name passed) · “doctest: main.py :: add(2, 3) => 5” (runs the file in a sandbox and checks the example) · “doctest: main.py” (runs the examples in its docstrings). You can always override a score with ✓ / ✗ during class.'),
-        rubricDetails, h('div.cr-step-buttons', null, button('Move up', `step-up-${index}`, () => move(-1)), button('Move down', `step-down-${index}`, () => move(1)), button('Remove', `step-remove-${index}`, () => { if (draft.steps.length > 1 && confirm(t(`Remove step ${index + 1} “${step.title}” and its instructions?`))) { draft.steps.splice(index, 1); buildPlanEditor(); } }))));
+        rubricDetails);
+      codeOnly.hidden = stepMode(step) === 'questions'; weightField.hidden = stepMode(step) === 'questions';
     }
     refreshEditorLocale = () => {
       lessonTitle.value = draft.title; target.value = draft.bossName;
@@ -427,7 +458,14 @@ export function createClassroom(app: AppCtx): Screen {
       h('div.cr-plan-buttons', null, button('+ Add step', 'classroom-add-step', () => { if (draft.steps.length < 12) { const step = localizeClassroomPlan(defaultClassroomPlan(), locale()).steps[0]; step.id = `step-${crypto.randomUUID()}`; step.title = t('New challenge'); draft.steps.push(step); buildPlanEditor(); } }),
         button('Publish lesson', 'classroom-save-plan', () => {
           if (!validateGuide() || !syncReview()) return;
-          if (editor.querySelector('.cr-form-error:not(:empty)')) return toast('Fix the evidence-check format before publishing.', 'err');
+          const questionsOk = questionValidators.map(v => v()).every(Boolean);
+          // errors inside a hidden part (a questions-only step's unused checks) do not block publishing
+          const firstError = [...editor.querySelectorAll<HTMLElement>('.cr-form-error')].find(e => e.textContent && !e.closest('[hidden]'));
+          if (firstError) {
+            const holder = firstError.closest('details'); if (holder) (holder as HTMLDetailsElement).open = true;
+            firstError.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            return toast(questionsOk ? 'Fix the evidence-check format before publishing.' : 'Fix the question errors marked in red before publishing.', 'err');
+          }
           app.conn.send({ t: 'classroomPlan', plan: structuredClone(draft) });
         }, 'btn-primary')));
   };
@@ -445,6 +483,11 @@ export function createClassroom(app: AppCtx): Screen {
     return h('details.cr-code-view', { 'data-testid': 'classroom-code-view' }, h('summary', null, files.length === 1 ? 'View submitted code (1 file)' : `View submitted code (${files.length} files)`), ce.el);
   };
   const currentStep = () => state?.plan.steps[state.stepIndex];
+  const questionRules = (st: ClassroomStep) => [
+    feedbackMode(st) === 'immediate' ? t('Students see right away whether each answer is correct, with limited attempts.') : t('Students see “saved” until the class attack, never correctness.'),
+    revealMode(st) === 'never' ? t('Answers stay private: students only see their score.') : t('Answers and explanations are revealed after the class attack.'),
+    ...(stepMode(st) === 'mixed' ? [t(`Questions count ${questionsWeight(st)}% of the step score, the code task ${100 - questionsWeight(st)}%.`)] : []),
+  ].join(' ');
   // What students will see for each (unpublished) step: title, instructions, starter files, how it's scored.
   const openPreview = () => {
     let at = 0, ce: { dispose(): void } | null = null;
@@ -458,9 +501,11 @@ export function createClassroom(app: AppCtx): Screen {
         h('div.cr-preview-nav', null, button('◀', 'classroom-preview-prev', () => { at = Math.max(0, at - 1); show(); }), h('b', null, `Step ${at + 1} of ${draft.steps.length}`), button('▶', 'classroom-preview-next', () => { at = Math.min(draft.steps.length - 1, at + 1); show(); })),
         h('h2', null, `${at + 1}. ${st.title}`),
         withBrief(st) ? (() => { const c = createTaskCard(); c.update({ step: st, mode: 'preview' }); return c.el; })() : h('p.cr-instructions', null, st.instructions),
-        h('h3', null, 'Starter code'), editorEl,
-        h('h3', null, 'How this task is scored'),
-        h('ul', null, ...st.checks.map(c => h('li', null, `${c.label}${c.text ? ` · ${c.text}` : ''}`)), ...st.rubric.criteria.map(c => h('li', null, c.name))));
+        ...(hasCode(st) ? [h('h3', null, 'Starter code'), editorEl,
+          h('h3', null, 'How this task is scored'),
+          h('ul', null, ...st.checks.map(c => h('li', null, `${c.label}${c.text ? ` · ${c.text}` : ''}`)), ...st.rubric.criteria.map(c => h('li', null, c.name)))] : []),
+        ...(hasQuestions(st) ? [h('h3', null, st.questions!.length === 1 ? 'Question (answer key)' : `Questions (${st.questions!.length}, answer key)`),
+          h('p.cr-evidence-note', null, questionRules(st)), questionPreview(st.questions!, 'classroom-preview-questions', st.questionContext)] : []));
     };
     const close = () => { ce?.dispose(); ov.remove(); };
     const ov = h('div.cr-join-overlay.cr-preview', { 'data-testid': 'classroom-preview-overlay', onclick: (e: Event) => { if (e.target === ov) close(); } },
@@ -482,11 +527,48 @@ export function createClassroom(app: AppCtx): Screen {
     }
     // teacher picked a student with nothing to review yet (e.g. from the debrief's "need help")
     if (!report && !error && teacher() && id) { review.replaceChildren(h('h2', null, `${state?.rows.find(r => r.id === id)?.name ?? ''} · review`), h('p', null, 'No submission yet for this step.')); return; }
-    if (!report) { review.replaceChildren(h('h2', null, teacher() ? 'Code review' : 'Your feedback'), h('p', null, error ?? (teacher() ? 'Select a student to inspect their commit, evidence and next steps.' : (currentStep()?.starter?.length ? 'Submit your code to receive measured feedback and a next step.' : 'Submit your GitHub version to receive measured feedback and a next step.')))); return; }
+    if (!report) {
+      const cur = currentStep(), onlyQ = stepMode(cur) === 'questions';
+      review.replaceChildren(h('h2', null, teacher() ? (onlyQ ? 'Student answers' : 'Code review') : 'Your feedback'), h('p', null, error ?? (teacher() ? (onlyQ ? 'Select a student to see their answers.' : 'Select a student to inspect their commit, evidence and next steps.')
+        : onlyQ ? (feedbackMode(cur) === 'immediate' ? 'Check your answers above. Your score builds as you go.' : 'Answer the questions above. Your score appears after the class attack.')
+        : (cur?.starter?.length ? 'Submit your code to receive measured feedback and a next step.' : 'Submit your GitHub version to receive measured feedback and a next step.'))));
+      return;
+    }
     const name = state?.rows.find(r => r.id === id)?.name ?? app.name;
     const localCheckDetail = (detail: string) => { const colon = detail.indexOf(': '); return colon < 0 ? t(detail) : detail.slice(0, colon + 2) + t(detail.slice(colon + 2)); };
     const localAdvice = report.advice.filter(advice => !report.checks.some(c => advice === `Review ${c.label}: ${c.detail}.`)).map(advice => t(PLAIN_ADVICE[advice] ?? advice));
     const reportStep = state?.plan.steps.find(s => s.id === report.stepId);
+    // Question sets: before the reveal a student sees "saved", never a score built from correctness
+    const qStep = reportStep && hasQuestions(reportStep) ? reportStep : null;
+    const isReveal = ['feedback', 'complete'].includes(state?.phase ?? '');
+    const hideQ = !teacher() && !!qStep && feedbackMode(qStep) !== 'immediate' && !isReveal;
+    const answersView = qStep && teacher() ? (() => {
+      const res = report.answers ?? {}, qs = qStep.questions!;
+      const right = qs.filter(q => res[q.id]?.correct).length, done = qs.filter(q => res[q.id]).length;
+      return h('details.cr-measurements.cr-answers', { open: true, 'data-testid': 'classroom-student-answers' },
+        h('summary', null, `Answers · ${right} of ${qs.length} correct · ${done} answered`),
+        h('div.qs-preview', null, questionContextView(qStep.questionContext, 'classroom-answers-context'), ...qs.map((q, i) => reviewCard(q, i, { result: res[q.id], showKey: true, showAnswer: true, testid: `classroom-answer-${q.id}` }))));
+    })() : null;
+    const breakdown = qStep && stepMode(qStep) === 'mixed' ? h('p.cr-version', { 'data-testid': 'classroom-score-parts' },
+      `${t('Code')} ${report.codeScore === undefined ? '—' : int(report.codeScore)}/100 (${100 - questionsWeight(qStep)}%) · ${t('Questions')} ${hideQ ? t('after the class attack') : report.questionScore === undefined ? '—' : `${int(report.questionScore)}/100`} (${questionsWeight(qStep)}%)`) : null;
+    if (qStep && stepMode(qStep) === 'questions') {
+      const name = state?.rows.find(r => r.id === id)?.name ?? app.name;
+      review.replaceChildren(h('div.cr-feedback-title', null, h('h2', null, teacher() ? `${name} · answers` : 'Your feedback'),
+          hideQ ? h('strong.cr-score.cr-score-saved', { 'data-testid': 'classroom-own-score' }, '✓', h('small', null, ` ${t('saved')}`)) : h('strong.cr-score', { 'data-testid': 'classroom-own-score' }, int(report.questionScore ?? report.score), h('small', null, ' /100'))),
+        hideQ ? h('p', null, 'Your answers are saved. Your score and the correct answers appear after the class attack.')
+          : !teacher() && revealMode(qStep) === 'never' && isReveal ? h('p', null, 'This is your score for the questions. Your teacher keeps the answers private.')
+          : !teacher() ? h('p', null, isReveal ? 'Your answers, the correct answers and explanations are with the questions.' : 'Your score so far, from the answers you checked.') : document.createTextNode(''),
+        report.improvement && !hideQ ? h('p', null, report.improvement > 0 ? `↑ +${num(report.improvement)} from your last submission round` : `${num(report.improvement)} from your last submission round`) : document.createTextNode(''),
+        answersView ?? document.createTextNode(''),
+        report.teacherReview ? h('p.cr-teacher-note', null, `Teacher review: ${report.teacherReview.note}`) : document.createTextNode(''));
+      if (teacher() && ['coding', 'paused'].includes(state?.phase ?? '')) {
+        const score = h('input', { type: 'number', value: report.teacherReview?.score ?? report.score, min: 0, max: 100, 'aria-label': 'Reviewed score', 'data-testid': 'classroom-review-score' }) as HTMLInputElement;
+        const note = h('input', { placeholder: 'Explain the score change', maxlength: 2000, 'aria-label': 'Review note', 'data-testid': 'classroom-review-note' }) as HTMLInputElement;
+        review.append(h('div.cr-teacher-review', null, h('h3', null, 'Override the score (optional)'), score, note,
+          button('Record review', 'classroom-review-submit', () => app.conn.send({ t: 'classroomReview', playerId: id!, score: Number(score.value), note: note.value }))));
+      }
+      return;
+    }
     const rows = report.criteria.map(c => {
       const criterion = reportStep?.rubric.criteria.find(q => q.id === c.criterionId);
       return h('div.cr-criterion', null, h('div', null, h('b', null, criterion?.name ?? c.criterionId), h('span', null, `${Math.round(c.score * 100)}%`)), h('p', null, c.evidence));
@@ -497,8 +579,12 @@ export function createClassroom(app: AppCtx): Screen {
     const rawChecks = report.checks.map(c => h('div.cr-criterion', null, h('div', null, h('b', null, t(c.label)), h('span', null, c.passed ? '✓' : '✗')), h('p', null, localCheckDetail(c.detail))));
     // the task card already tells students that checks read files, not output
     const cardSaysIt = !teacher() && !!reportStep?.brief?.doneWhen.length;
-    review.replaceChildren(h('div.cr-feedback-title', null, h('h2', null, teacher() ? `${name} · review` : 'Your feedback'), h('strong.cr-score', { 'data-testid': 'classroom-own-score' }, int(report.score), h('small', null, ' /100'))),
-      report.source === 'in-app'
+    // mixed step before the reveal: the student's headline is the code part only (the blend would leak correctness)
+    const headline = hideQ ? report.codeScore : report.score;
+    review.replaceChildren(h('div.cr-feedback-title', null, h('h2', null, teacher() ? `${name} · review` : 'Your feedback'), h('strong.cr-score', { 'data-testid': 'classroom-own-score' }, headline === undefined ? '—' : int(headline), h('small', null, ' /100'))),
+      breakdown ?? document.createTextNode(''),
+      !report.commit || report.commit === 'questions' || (qStep && report.codeScore === undefined) ? document.createTextNode('')
+      : report.source === 'in-app'
         ? h('p.cr-version', null, t(`in-app code · ${report.commit.replace(/^inapp:/, '')}`))
         : h('p.cr-version', null, h('a', { href: `https://github.com/${report.repo}/commit/${report.commit}`, target: '_blank', rel: 'noopener noreferrer' }, `${report.repo} @ ${report.commit.slice(0, 8)}`)),
       codeViewer(report),
@@ -515,7 +601,8 @@ export function createClassroom(app: AppCtx): Screen {
       localAdvice.length ? h('ul.cr-advice', null, ...localAdvice.map(a => h('li', null, a))) : document.createTextNode(''),
       !localAdvice.length && report.checks.some(c => !c.passed) ? h('p', null, t('Fix the missing checks above and submit again.')) : document.createTextNode(''),
       h('details.cr-measurements', null, h('summary', null, 'See the measured rubric evidence'), ...rows, ...rawChecks),
-      report.teacherReview ? h('p.cr-teacher-note', null, `Teacher review: ${report.teacherReview.note}`) : document.createTextNode(''));
+      report.teacherReview ? h('p.cr-teacher-note', null, `Teacher review: ${report.teacherReview.note}`) : document.createTextNode(''),
+      answersView ?? document.createTextNode(''));
     if (report.automaticScore !== undefined) {
       const ai = report.aiReview;
       const settings = state?.plan.grading;
@@ -760,9 +847,10 @@ export function createClassroom(app: AppCtx): Screen {
     teacherEntry.hidden = !(app.role === 'player' && isOwner(app) && !state);
     editor.hidden = !owner || (!!state && state.phase !== 'setup'); hostBoard.hidden = !screen; studentBoard.hidden = screen;
     // A node belongs to one board at a time; roles are fixed for this page.
-    if (screen && review.parentElement !== hostBoard.lastElementChild) hostBoard.lastElementChild!.replaceChildren(review, boss);
+    if (screen && review.parentElement !== hostBoard.lastElementChild) hostBoard.lastElementChild!.replaceChildren(qlive.el, review, boss);
     else if (!screen && review.parentElement !== studentBoard) studentBoard.append(review);
-    setText(title, state?.plan.title ?? t('Build. Review. Improve.')); setText(phase, state ? (state.phase === 'coding' && state.plan.steps[state.stepIndex]?.starter?.length ? 'Coding time' : phaseNames[state.phase]) : owner ? 'Prepare the lesson' : 'Waiting for your teacher');
+    const curMode = stepMode(state?.plan.steps[state.stepIndex]);
+    setText(title, state?.plan.title ?? t('Build. Review. Improve.')); setText(phase, state ? (state.phase === 'coding' && curMode !== 'code' ? phaseNamesQuestions[curMode] : state.phase === 'coding' && state.plan.steps[state.stepIndex]?.starter?.length ? 'Coding time' : phaseNames[state.phase]) : owner ? 'Prepare the lesson' : 'Waiting for your teacher');
     const step = state?.plan.steps[state.stepIndex];
     // steps with starter files open the in-app editor; GitHub moves into an "or submit a GitHub repo" fold
     const savedEmail = app.classroomEmails?.[app.you ?? ''];
@@ -776,6 +864,30 @@ export function createClassroom(app: AppCtx): Screen {
     else if (!inAppStep && githubFields.parentElement !== student) githubAlt.after(githubFields);
     githubAlt.hidden = !inAppStep;
     studentBoard.classList.toggle('cr-coding', inAppStep);
+    // question sets: questions-only steps hide the code task; mixed steps switch parts with the two tabs
+    const qMode = stepMode(step);
+    const withQ = !screen && !!step && !!state && hasQuestions(step) && state.phase !== 'setup';
+    const codeShown = !withQ || qMode === 'code' || (qMode === 'mixed' && part === 'code');
+    const myReport = app.classroomReports?.[app.you ?? ''];
+    if (withQ) qset.update({ step: step!, attempt: state!.attempt, phase: state!.phase, report: myReport, error: app.classroomErrors?.[app.you ?? ''], canSave: app.status === 'open' });
+    qset.el.hidden = !withQ || (qMode === 'mixed' && part !== 'questions');
+    parts.hidden = !withQ || qMode !== 'mixed';
+    if (withQ && qMode === 'mixed') {
+      const mineNow = myReport && myReport.stepId === step!.id && myReport.attempt === state!.attempt ? myReport : null;
+      // the server files answers-only reports as repo/commit "questions": only a code score means the code part exists
+      const codeDone = !!mineNow && mineNow.codeScore !== undefined;
+      const allAnswered = qset.total > 0 && qset.answeredCount === qset.total;
+      codeTab.setAttribute('aria-selected', String(part === 'code')); questionsTab.setAttribute('aria-selected', String(part === 'questions'));
+      codeTab.classList.toggle('qs-part-done', codeDone); questionsTab.classList.toggle('qs-part-done', allAnswered);
+      setText(codeTab.lastElementChild as HTMLElement, codeDone ? '✓ submitted' : 'not submitted yet');
+      setText(questionsTab.lastElementChild as HTMLElement, `${allAnswered ? '✓ ' : ''}${t(`${qset.answeredCount} of ${qset.total} answered`)}`);
+    }
+    if (withQ && (qMode === 'questions' || part === 'questions')) setText(studentTitle, 'Questions');
+    // phones: a question step puts the answers first; the Canvas email card moves below them
+    if (withQ ? emailCard !== student.lastElementChild : emailCard !== student.firstElementChild) { if (withQ) student.append(emailCard); else student.prepend(emailCard); }
+    inApp.el.hidden = inApp.el.hidden || !codeShown;
+    githubFields.hidden = !codeShown; githubAlt.hidden = githubAlt.hidden || !codeShown; submissionStatus.hidden = !codeShown;
+    expectations.hidden = !codeShown;
     setText(taskTitle, step ? `${state!.stepIndex + 1}. ${step.title}` : t(owner ? 'A classroom built around real code' : 'Your teacher is preparing the first task'));
     // students: sticky "Step 1/3 · title · 4:32" replaces the rail + heading
     stepHead.hidden = screen || !step;
@@ -862,7 +974,7 @@ export function createClassroom(app: AppCtx): Screen {
         const rep = reports?.[row.id];
         const reviewed = rep?.teacherReview;
         const statusText = !row.connected ? 'offline' : row.status === 'queued' ? 'checking code…' : row.status === 'error' ? 'stuck: needs to resubmit'
-          : row.status === 'submitted' ? (reviewed ? 'reviewed by you' : owner ? 'submitted · needs your review' : 'submitted') : 'writing code';
+          : row.status === 'submitted' ? (reviewed ? 'reviewed by you' : stepMode(s?.plan.steps[s.stepIndex]) === 'questions' ? 'answered' : owner ? 'submitted · needs your review' : 'submitted') : stepMode(s?.plan.steps[s.stepIndex]) === 'questions' ? 'answering' : 'writing code';
         const pick = button('', `classroom-row-${row.id}`, () => { if (selected !== row.id) revealed = null; selected = row.id; detailsSig = ''; renderReport(selected); review.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
         pick.className = 'cr-row-pick';
         pick.append(h(`span.cr-status-dot.st-${row.connected ? row.status : 'offline'}`, { 'aria-hidden': 'true' }), h('span.cr-person', null, h('b', null, row.name), h('small', null, statusText)));
@@ -875,7 +987,8 @@ export function createClassroom(app: AppCtx): Screen {
         const result = shown && projectorSafe && !shown.classList.contains('cr-none') ? hiddenChip(shown, row.name) : shown;
         const verdict = (label: string, test: string, title: string, score: (s: number) => number, note: string) =>
           h('button.cr-verdict', { type: 'button', 'data-testid': `classroom-verdict-${test}-${row.id}`, title, onclick: (e: Event) => { e.stopPropagation(); app.conn.send({ t: 'classroomReview', playerId: row.id, score: score(rep!.score), note }); } }, label);
-        const verdicts = canReview && row.status === 'submitted' && rep && !reviewed
+        // ✓ / ✗ / ? judge whether code works: not for a questions-only step (the score override sits in the review panel)
+        const verdicts = canReview && row.status === 'submitted' && rep && !reviewed && stepMode(s?.plan.steps[s.stepIndex]) !== 'questions'
           ? h('span.cr-verdicts', null,
               verdict('✓', 'works', 'Works: it does the task (100)', () => 100, 'Works ✓'),
               verdict('✗', 'notyet', 'Not yet: it doesn’t do the task yet (max 40)', sc => Math.min(sc, 40), 'Not yet: compare your output with the task.'),
@@ -903,6 +1016,16 @@ export function createClassroom(app: AppCtx): Screen {
       }));
       if (!s?.rows.length) rosterList.append(h('p.cr-empty', null, `Students: open ${location.origin} and join ${app.room}.`));
     }
+    // questions: projector board (class-facing screens) and the teacher's live bars
+    if (qboard.el.parentElement !== task) card.el.after(qboard.el);
+    const qRound = s?.rounds.at(-1)?.stepId === step?.id && s?.rounds.at(-1)?.attempt === s?.attempt ? s?.rounds.at(-1) : undefined;
+    if (classFacing && step && hasQuestions(step)) qboard.update({ step, phase: s!.phase, answered: s!.rows.filter(r => r.status === 'submitted').length, total, stats: qRound?.questionStats, mixed: stepMode(step) === 'mixed', answeredPer: s!.questionAnswered });
+    else qboard.el.hidden = true;
+    if (owner && step && hasQuestions(step) && s && s.phase !== 'setup') {
+      const peekKey = `${step.id}:${s.attempt}`;
+      const live = app.classroomQuestionLive?.length ? app.classroomQuestionLive : qRound?.questionStats;
+      qlive.update({ step, stats: live, hidden: projectorSafe && questionPeek !== peekKey, frozen: !app.classroomQuestionLive?.length && !!qRound?.questionStats });
+    } else qlive.el.hidden = true;
     renderBoss();
     const mine = s?.rows.find(r => r.id === app.you);
     const canSubmit = s?.phase === 'coding' && mine?.status !== 'queued' && app.status === 'open';
@@ -928,7 +1051,7 @@ export function createClassroom(app: AppCtx): Screen {
     else if (teacher() && scoreMode === 'auto' && projectorSafe !== hideScores()) { rowsSig = detailsSig = ''; render(); }
   }, 1000);
   if (projectorChannel && !projectorView) projectorChannel.onmessage = (e) => { if (e.data === 'projector') projectorSeen = Date.now(); else if (e.data === 'projector-closed') projectorSeen = 0; };
-  const announceClose = () => { if (projectorView) projectorChannel?.postMessage('projector-closed'); };
+  const announceClose = () => { qset.flush(); if (projectorView) projectorChannel?.postMessage('projector-closed'); };
   addEventListener('pagehide', announceClose);
-  return { el, update: render, onMsg(m) { if (m.t === 'kicked' && !teacher()) showKicked(m.by); }, destroy() { barSize?.disconnect(); for (const t of removing.values()) clearTimeout(t); announceClose(); removeEventListener('pagehide', announceClose); projectorChannel?.close(); backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio('off'); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
+  return { el, update: render, onMsg(m) { if (m.t === 'kicked' && !teacher()) showKicked(m.by); }, destroy() { barSize?.disconnect(); for (const t of removing.values()) clearTimeout(t); announceClose(); removeEventListener('pagehide', announceClose); projectorChannel?.close(); backdrop?.destroy(); classBoss?.destroy(); inApp.dispose(); qset.dispose(); viewer?.dispose(); placeSettingsButton(); stopLanguage(); setClassroomAudio('off'); document.body.classList.remove('classroom-active'); clearInterval(timer); clearInterval(pauseTimer); removeEventListener('keydown', onKey); pause.dispose(); for (const dispose of disposables) dispose(); el.remove(); } };
 }

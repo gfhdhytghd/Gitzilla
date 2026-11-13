@@ -18,11 +18,12 @@ export function doctestAvailable(): boolean {
     return available = !probe.error && probe.status === 0 && probe.stdout.trim() === '{"ready":true}';
   } catch { return available = false; }
 }
-export async function runDoctests(files: { path: string; text: string }[], checks: { id: string; path: string; text?: string }[]): Promise<Record<string, { passed: boolean; detail: string }>> {
-  const results: Record<string, { passed: boolean; detail: string }> = Object.create(null);
+export interface DoctestResult { passed: boolean; detail: string; examples?: { passed: number; total: number } }
+export async function runDoctests(files: { path: string; text: string }[], checks: { id: string; path: string; text?: string }[], options: { exampleCounts?: boolean } = {}): Promise<Record<string, DoctestResult>> {
+  const results: Record<string, DoctestResult> = Object.create(null);
   if (!checks.length) return results;
   if (!doctestAvailable()) { for (const c of checks) results[c.id] = { passed: false, detail: unavailable }; return results; }
-  try { return await new Promise<Record<string, { passed: boolean; detail: string }>>(resolve => {
+  try { return await new Promise<Record<string, DoctestResult>>(resolve => {
     const child = spawn(process.execPath, args(), { env: {}, stdio: ['pipe', 'pipe', 'pipe'] });
     let pending = '', bytes = 0, stderr = '', timedOut = false;
     const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, 20000);
@@ -37,7 +38,8 @@ export async function runDoctests(files: { path: string; text: string }[], check
         const line = pending.slice(0, end); pending = pending.slice(end + 1);
         try {
           const r = JSON.parse(line);
-          if (checks.some(c => c.id === r.id) && typeof r.passed === 'boolean' && typeof r.detail === 'string') results[r.id] = { passed: r.passed, detail: r.detail.slice(0, 300) };
+          if (checks.some(c => c.id === r.id) && typeof r.passed === 'boolean' && typeof r.detail === 'string') results[r.id] = { passed: r.passed, detail: r.detail.slice(0, 300),
+            ...(options.exampleCounts && Number.isInteger(r.examples?.passed) && Number.isInteger(r.examples?.total) && r.examples.total > 0 && r.examples.passed >= 0 && r.examples.passed <= r.examples.total ? { examples: { passed: r.examples.passed, total: r.examples.total } } : {}) };
         } catch { /* Startup diagnostics are not check results. */ }
       }
     });
@@ -48,7 +50,7 @@ export async function runDoctests(files: { path: string; text: string }[], check
       resolve(results);
     };
     child.once('error', finish); child.once('close', finish);
-    child.stdin.on('error', () => {}); child.stdin.end(JSON.stringify({ files, checks }));
+    child.stdin.on('error', () => {}); child.stdin.end(JSON.stringify({ files, checks, exampleCounts: options.exampleCounts === true }));
   }); } catch {
     for (const c of checks) if (!results[c.id]) results[c.id] = { passed: false, detail: unavailable };
     return results;

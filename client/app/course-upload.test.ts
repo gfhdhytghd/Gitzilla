@@ -21,6 +21,28 @@ describe('course upload component', () => {
     f.get('course-apply').click(); expect(f.apply).toHaveBeenCalledWith(expect.objectContaining({ title: 'Edited lesson' }));
     expect(f.fetcher).toHaveBeenCalledWith(expect.stringContaining('room=ABCD'), expect.objectContaining({ headers: expect.objectContaining({ 'X-Room-Token': 'owner' }) }));
   });
+  it('sends the difficulty (default medium) and names the level on the slider', async () => {
+    const f = fixture();
+    expect(f.get('course-difficulty-level').textContent).toBe('Medium');
+    expect(f.get('course-difficulty').getAttribute('aria-valuetext')).toBe('Medium');
+    f.get('course-generate').click(); await tick();
+    expect(f.fetcher).toHaveBeenLastCalledWith(expect.stringContaining('&difficulty=medium'), expect.anything());
+    f.get('course-difficulty').value = '4'; f.get('course-difficulty').dispatchEvent(new Event('input'));
+    expect(f.get('course-difficulty-level').textContent).toBe('Extreme');
+    f.get('course-generate').click(); await tick();
+    expect(f.fetcher).toHaveBeenLastCalledWith(expect.stringContaining('&difficulty=extreme'), expect.anything());
+  });
+  it('sends the session preset and the extra AI instructions (header only when not empty)', async () => {
+    const f = fixture();
+    f.get('course-generate').click(); await tick();
+    expect(f.fetcher).toHaveBeenLastCalledWith(expect.stringContaining('&preset=lesson'), expect.objectContaining({ headers: expect.not.objectContaining({ 'X-Course-Prompt': expect.anything() }) }));
+    const quiz = f.get('course-preset-quiz') as unknown as { checked: boolean; dispatchEvent(e: Event): void }; quiz.checked = true; quiz.dispatchEvent(new Event('change'));
+    f.get('course-prompt').value = 'Focus on binary search; 8 questions'; f.get('course-prompt').dispatchEvent(new Event('input'));
+    expect(f.get('course-prompt-count').textContent).toBe('35 / 2000');
+    f.get('course-generate').click(); await tick();
+    expect(f.fetcher).toHaveBeenLastCalledWith(expect.stringContaining('&preset=quiz'),
+      expect.objectContaining({ headers: expect.objectContaining({ 'X-Course-Prompt': encodeURIComponent('Focus on binary search; 8 questions') }) }));
+  });
   it('retains guide text, guide link and grading without retaining old steps', () => {
     const current = { ...defaultClassroomPlan(), guideUrl: 'https://example.com/guide', guideText: 'Teacher notes', grading: { automaticWeight: 50, checklist: ['Works'] } };
     const generated = { ...defaultClassroomPlan(), title: 'New title', steps: defaultClassroomPlan().steps.slice(0, 1) };

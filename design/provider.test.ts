@@ -37,6 +37,20 @@ describe('Gemini Interactions wire format', () => {
     await expect(geminiJson('Public', schema, { ...options, fetch: fetcher })).rejects.toMatchObject({ status: 404, message: 'Gemini HTTP 404' });
     expect(new GeminiHttpError(429).message).not.toContain('test-secret');
   });
+  it('includes only the structured Gemini error message, redacts credentials and bounds its size', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { message: 'Invalid argument: test-secret\n' + 'x'.repeat(3000), details: ['PRIVATE_DETAILS'] }, body: 'PRIVATE_BODY' }), { status: 400 }));
+    const error = await geminiJson('Public', schema, { ...options, fetch: fetcher }).catch(e => e);
+    expect(error).toBeInstanceOf(GeminiHttpError);
+    if (!(error instanceof GeminiHttpError)) throw error;
+    expect(error.status).toBe(400);
+    expect(error.message).toContain('Gemini HTTP 400: Invalid argument: [REDACTED] ');
+    expect(error.message).not.toMatch(/test-secret|PRIVATE_DETAILS|PRIVATE_BODY|\n/);
+    expect(error.message.length).toBeLessThanOrEqual(2020);
+  });
+  it.each([{ error: { message: 123 } }, { message: 'PRIVATE_BODY' }, { error: { details: ['PRIVATE_DETAILS'] } }])('keeps a status-only error if no structured message is available: %j', async body => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 400 }));
+    await expect(geminiJson('Public', schema, { ...options, fetch: fetcher })).rejects.toMatchObject({ message: 'Gemini HTTP 400' });
+  });
   it('retains legacy schema generation and excludes reasoning parts', async () => {
     const fetcher = vi.fn().mockResolvedValue(payload({ candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'ignore' }, { text: '{"title":"Legacy"}' }] } }] }));
     expect(await geminiJson('Public', schema, { ...options, api: 'generateContent', fetch: fetcher })).toEqual({ title: 'Legacy' });

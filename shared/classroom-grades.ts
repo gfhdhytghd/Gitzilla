@@ -1,17 +1,28 @@
-import type { ClassroomState } from './classroom';
+import type { ClassroomState, ClassroomAttack } from './classroom';
 
-export interface StudentGrade { id: string; name: string; steps: (number | null)[]; total: number; max: number; average: number; provisional?: boolean[] }
+/** Frozen numeric evidence used by teacher exports; never includes answers or keys. */
+export type QuestionAttack = ClassroomAttack & { codeScore?: number; questionScore?: number; questionScores?: Record<string, number> };
+export interface StepParts { code: number | null; questions: number | null }
+export interface StudentGrade { id: string; name: string; steps: (number | null)[]; total: number; max: number; average: number; provisional?: boolean[]; parts?: StepParts[] }
 export interface LessonGrades { steps: { stepId: string; title: string; recorded: boolean }[]; students: StudentGrade[] }
 export function lessonGrades(state: ClassroomState): LessonGrades {
   const steps = state.plan.steps.map(s => ({ stepId: s.id, title: s.title, recorded: state.rounds.some(r => r.stepId === s.id) }));
+  const hasQuestions = state.plan.steps.some(s => s.mode === 'questions' || s.mode === 'mixed');
   const students = new Map<string, StudentGrade>();
   const student = (id: string, name: string) => {
-    if (!students.has(id)) students.set(id, { id, name, steps: steps.map(() => null), total: 0, max: 100 * steps.length, average: 0, ...(state.plan.grading ? { provisional: steps.map(() => false) } : {}) });
+    if (!students.has(id)) students.set(id, { id, name, steps: steps.map(() => null), total: 0, max: 100 * steps.length, average: 0, ...(hasQuestions ? { parts: steps.map(() => ({ code: null, questions: null })) } : {}), ...(state.plan.grading ? { provisional: steps.map(() => false) } : {}) });
     const s = students.get(id)!; s.name = name; return s;
   };
   for (const r of [...state.rounds].sort((a, b) => a.at - b.at)) for (const a of r.attacks) {
     const s = student(a.id, a.name), i = steps.findIndex(s => s.stepId === r.stepId);
-    if (i >= 0) { s.steps[i] = a.score; if (s.provisional) s.provisional[i] = a.reviewPending === true; }
+    if (i >= 0) {
+      s.steps[i] = a.score;
+      if (s.parts) {
+        const attack = a as QuestionAttack, mode = state.plan.steps[i].mode ?? 'code';
+        s.parts[i] = { code: attack.codeScore ?? (mode === 'code' ? a.score : null), questions: attack.questionScore ?? null };
+      }
+      if (s.provisional) s.provisional[i] = a.reviewPending === true;
+    }
   }
   for (const row of state.rows) student(row.id, row.name);
   for (const s of students.values()) {

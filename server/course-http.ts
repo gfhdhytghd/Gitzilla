@@ -1,7 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extractRubricText, PdfTextLimitError } from '../rubric/pdf';
 import type { RoomServer } from './rooms';
-import { createCourseGenerator, MAX_COURSE_TEXT_BYTES, validateGeneratedCourse } from './course-generation';
+import { createCourseGenerator, MAX_COURSE_TEXT_BYTES, normalizeCourseDifficulty, validateGeneratedCourse } from './course-generation';
+import { assertGeneratedQuestionCounts } from './course-quality';
+import { normalizeCoursePreset, normalizeTeacherPrompt } from './course-presets';
 
 export const MAX_COURSE_FILE_BYTES = 8 * 1024 * 1024;
 const generateCourse = createCourseGenerator();
@@ -22,6 +24,16 @@ export async function handleCourseRoute(req: IncomingMessage, res: ServerRespons
   try {
     authorize();
     if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); throw new CourseError(405, 'Method not allowed'); }
+    let difficulty, preset, teacherPrompt;
+    try {
+      difficulty = normalizeCourseDifficulty(url.searchParams.get('difficulty') ?? undefined);
+      preset = normalizeCoursePreset(url.searchParams.get('preset') ?? undefined);
+      const encoded = req.headers['x-course-prompt'];
+      if (encoded !== undefined && typeof encoded !== 'string') throw new Error('Invalid teacher prompt header');
+      try { teacherPrompt = decodeURIComponent(encoded ?? ''); } catch { throw new Error('Invalid URI encoding in teacher prompt header'); }
+      teacherPrompt = normalizeTeacherPrompt(teacherPrompt);
+    }
+    catch (error) { throw new CourseError(400, (error as Error).message); }
     const filename = url.searchParams.get('filename') ?? '';
     if (filename.length > 255 || !/\.(pdf|md|txt)$/i.test(filename)) throw new CourseError(415, 'Upload a .pdf, .md or .txt file');
     const mime = (req.headers['content-type'] ?? 'application/octet-stream').split(';')[0].trim().toLowerCase();
@@ -51,10 +63,10 @@ export async function handleCourseRoute(req: IncomingMessage, res: ServerRespons
     if (Buffer.byteLength(text) > MAX_COURSE_TEXT_BYTES) throw new CourseError(413, 'Extracted course text exceeds 80000 UTF-8 bytes');
     authorize();
     let result;
-    try { result = await generate(text); result = { ...result, plan: validateGeneratedCourse(result.plan) }; }
+    try { result = await generate(text, difficulty, preset, teacherPrompt); result = { ...result, plan: validateGeneratedCourse(result.plan, preset, teacherPrompt) }; assertGeneratedQuestionCounts(result.plan, preset, teacherPrompt); }
     catch { throw new CourseError(503, 'AI course generation failed. Retry or edit the lesson manually. No draft was applied.'); }
     authorize(); // Ownership or lesson phase can change while the provider runs.
-    reply(res, 200, { ...result, preview: true });
+    reply(res, 200, { ...result, difficulty, preset, preview: true });
   } catch (error) {
     req.resume();
     reply(res, error instanceof CourseError ? error.status : 400, { error: error instanceof CourseError ? error.message : 'Course upload failed. Retry the upload.' });

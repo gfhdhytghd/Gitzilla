@@ -1,7 +1,10 @@
+import { normalizeQuestions, normalizeQuestionAnswer, gradeQuestion, questionKey, questionSetScore, stepScore, studentPlan } from './classroom-questions';
+export { studentPlan } from './classroom-questions';
+import type { QuestionAttack } from '../shared/classroom-grades';
 import { normalizeClassroomEmail } from '../shared/classroom-email';
 import { normalizeGuideText, normalizeGuideUrl } from '../shared/classroom-guide';
 import type { RepoProfile } from '../shared/types';
-import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand, StepBrief } from '../shared/classroom';
+import type { ClassroomPlan, ClassroomState, ClassroomRow, ClassroomReport, ClassroomCommand, StepBrief, QuestionAnswer, QuestionResult, QuestionStat } from '../shared/classroom';
 import { normalizeRubric } from './rubrics';
 import { scoreRepo, weightedScore } from '../rubric';
 import { normalizeEditorFiles } from './in-app';
@@ -50,9 +53,18 @@ export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
   const guideText = normalizeGuideText(value.guideText);
   const ids = new Set<string>();
   return { ...(guideUrl ? { guideUrl } : {}), ...(guideText ? { guideText } : {}), ...(value.grading !== undefined ? { grading: normalizeReviewSettings(value.grading) } : {}), title: text(value.title, 'lesson title', 120), bossName: text(value.bossName, 'boss name', 80), steps: value.steps.map(s => {
+    if (!s || typeof s !== 'object') throw new Error('Invalid step');
+    const mode = s.mode === undefined ? 'code' : s.mode;
+    if (!['code', 'questions', 'mixed'].includes(mode)) throw new Error('Invalid step mode');
+    const requestedFeedback = s.answerFeedback === undefined ? 'after-close' : s.answerFeedback, reveal = s.revealAnswers === undefined ? 'after-raid' : s.revealAnswers;
+    if (!['after-close', 'immediate'].includes(requestedFeedback) || !['after-raid', 'never'].includes(reveal)) throw new Error('Invalid answer feedback or reveal mode');
+    const feedback = reveal === 'never' ? 'after-close' : requestedFeedback;
+    if (s.questionsWeight !== undefined && !bounded(s.questionsWeight, 0, 100)) throw new Error('Invalid questions weight');
+    const questions = mode === 'code' ? undefined : normalizeQuestions(s.questions);
+    const code = mode !== 'questions';
     const id = text(s.id, 'step id', 60); if (ids.has(id)) throw new Error('Step ids must be unique'); ids.add(id);
-    if (!bounded(s.durationSec, 0, 7200) || !Number.isInteger(s.durationSec) || !bounded(s.checksWeight, 0, 100) || !Array.isArray(s.checks) || s.checks.length > 30) throw new Error('Invalid step duration, checks or weights');
-    const checks = s.checks.map((c, i) => {
+    if (!bounded(s.durationSec, 0, 7200) || !Number.isInteger(s.durationSec) || (code && (!bounded(s.checksWeight, 0, 100) || !Array.isArray(s.checks) || s.checks.length > 30))) throw new Error('Invalid step duration, checks or weights');
+    const checks = (code ? s.checks : []).map((c, i) => {
       if (!c || !['file', 'contains', 'doctest', 'ci'].includes(c.kind)) throw new Error('Choose a file, literal text, doctest or GitHub check');
       const path = text(c.path, 'check path/name', 240);
       if (c.kind !== 'ci' && (path.startsWith('/') || path.split(/[\\/]/).includes('..'))) throw new Error('Use a repository-relative path');
@@ -62,10 +74,14 @@ export function normalizeClassroomPlan(value: ClassroomPlan): ClassroomPlan {
         ...(c.kind === 'contains' ? { text: text(c.text, 'required literal text', 500) } : {}) };
     });
     if (s.language !== undefined && s.language !== 'python') throw new Error('Choose Python for the editor language');
-    return { id, title: text(s.title, 'step title', 120), instructions: text(s.instructions, 'instructions', 8000), durationSec: s.durationSec, rubric: normalizeRubric(s.rubric), checks, checksWeight: s.checksWeight,
+    return { id, title: text(s.title, 'step title', 120), instructions: text(s.instructions, 'instructions', 8000), durationSec: s.durationSec, rubric: code ? normalizeRubric(s.rubric) : { title: 'Questions', source: 'default', criteria: [] }, checks, checksWeight: code ? s.checksWeight : 0,
+      ...(s.mode !== undefined || questions ? { mode } : {}),
+      ...(s.questionContext !== undefined ? { questionContext: text(s.questionContext, 'question context', 4000, true) } : {}),
+      ...(questions ? { questions, ...(mode === 'mixed' ? { questionsWeight: s.questionsWeight ?? 50 } : {}) } : {}),
+      ...(questions || s.answerFeedback !== undefined || s.revealAnswers !== undefined ? { answerFeedback: feedback, revealAnswers: reveal } : {}),
       ...(s.brief !== undefined ? { brief: normalizeBrief(s.brief, checks.length) } : {}),
       ...(s.language !== undefined ? { language: s.language } : {}),
-      ...(s.starter !== undefined ? { starter: normalizeEditorFiles(s.starter) } : {}) };
+      ...(code && s.starter !== undefined ? { starter: normalizeEditorFiles(s.starter) } : {}) };
   }) };
 }
 
@@ -90,6 +106,7 @@ export class ClassroomSession {
   exportEmails(): Record<string, string> { return { ...this.emails }; }
   state: ClassroomState;
   private reports = new Map<string, ClassroomReport>();
+  private pendingCode = new Set<string>();
   private graded = new Map<string, { row: ClassroomRow; report?: ClassroomReport }>();
   private errors = new Map<string, string>();
   private generation = 0;
@@ -98,6 +115,18 @@ export class ClassroomSession {
   private credited = new Map<string, number>();
   private submittedAt = new Map<string, number>();
   private hostPausedAt?: number;
+  private answerSaves = new Map<string, { at: number; count: number }>();
+  private revealedStep(): number | null {
+    return ['feedback', 'complete'].includes(this.state.phase) ? this.state.stepIndex : null;
+  }
+  private questionGradeHidden(): boolean {
+    const step = this.state.plan.steps[this.state.stepIndex];
+    return !!step.questions?.length && step.answerFeedback !== 'immediate' && !['feedback', 'complete'].includes(this.state.phase);
+  }
+  private questionFeedback(stepIndex = this.state.stepIndex): boolean {
+    const step = this.state.plan.steps[stepIndex];
+    return step.revealAnswers !== 'never' && (this.revealedStep() === stepIndex || step.answerFeedback === 'immediate');
+  }
   constructor(plan: ClassroomPlan, private now: () => number = Date.now) {
     this.state = { plan: normalizeClassroomPlan(plan), phase: 'setup', stepIndex: 0, attempt: 1, deadline: null, remainingMs: null, serverTime: now(), raidEndsAt: null, bossHp: plan.steps.length * BOSS_HP_PER_STEP, bossMaxHp: plan.steps.length * BOSS_HP_PER_STEP, rows: [], rounds: [] };
   }
@@ -111,8 +140,39 @@ export class ClassroomSession {
     for (const row of this.state.rows) if (!ids.has(row.id)) row.connected = false;
     this.scaleBoss();
   }
-  publicState(): ClassroomState {
-    return structuredClone({ ...this.state, serverTime: this.hostPausedAt ?? this.now(), rows: [...this.state.rows].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.improvement - a.improvement || a.name.localeCompare(b.name)) });
+  publicState(audience: 'teacher' | 'student'): ClassroomState {
+    if (audience !== 'teacher' && audience !== 'student') throw new Error('Choose a classroom state audience: teacher or student');
+    const state = structuredClone({ ...this.state, serverTime: this.hostPausedAt ?? this.now(), rows: [...this.state.rows].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || b.improvement - a.improvement || a.name.localeCompare(b.name)) });
+    // Counts describe memory-only answers, not persisted grades or per-question correctness.
+    delete state.questionAnswered;
+    if (state.phase === 'coding' || state.phase === 'paused') state.questionAnswered = this.questionLive().map(q => q.answered);
+    if (audience === 'student') {
+      state.plan = studentPlan(state.plan, this.revealedStep());
+      if (this.questionGradeHidden()) {
+        for (const row of state.rows) {
+          const codeScore = this.reports.get(row.id)?.codeScore;
+          if (codeScore === undefined) delete row.score; else row.score = codeScore;
+          row.improvement = 0;
+          delete (row as ClassroomRow & { questionScore?: number }).questionScore;
+        }
+        state.rows.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || a.name.localeCompare(b.name));
+      }
+      for (const r of state.rounds) {
+        const i = state.plan.steps.findIndex(step => step.id === r.stepId);
+        const revealed = i === this.revealedStep() && state.plan.steps[i]?.revealAnswers !== 'never';
+        for (const a of r.attacks as QuestionAttack[]) {
+          const codeScore = a.codeScore;
+          delete a.questionScores;
+          if (!revealed) {
+            delete a.questionScore; delete a.codeScore;
+            const step = state.plan.steps[i];
+            if (i === state.stepIndex && r.attempt === state.attempt && step?.questions?.length && step.answerFeedback !== 'immediate' && this.questionGradeHidden()) { a.score = codeScore ?? 0; a.improvement = 0; }
+          }
+        }
+        if (!revealed && r.questionStats) r.questionStats = r.questionStats.map(q => ({ id: q.id, answered: q.answered, correct: 0, total: q.total }));
+      }
+    }
+    return state;
   }
   pauseHostClock() { this.hostPausedAt ??= this.now(); }
   resumeHostClock() {
@@ -126,9 +186,9 @@ export class ClassroomSession {
     this.revisions.set(id, (this.revisions.get(id) ?? 0) + 1);
     this.restoreGrade(id);
     this.state.rows = this.state.rows.filter(row => row.id !== id);
-    this.previous.delete(id); this.submittedAt.delete(id);
+    this.previous.delete(id); this.submittedAt.delete(id); this.pendingCode.delete(id);
     for (const key of this.credited.keys()) if (key.endsWith(`:${id}`)) this.credited.delete(key);
-    this.reports.delete(id); this.errors.delete(id);
+    this.reports.delete(id); this.errors.delete(id); this.answerSaves.delete(id);
     this.scaleBoss(); // Frozen rounds and started-lesson HP stay unchanged.
   }
   kick(id: string) { this.remove(id); }
@@ -138,17 +198,82 @@ export class ClassroomSession {
     if (!saved || !row) return false;
     const { repo, commit, score, improvement, reviewPending } = saved.row;
     Object.assign(row, { status: 'submitted', repo, commit, score, improvement, reviewPending });
-    if (saved.report) this.reports.set(id, saved.report);
+    if (saved.report) {
+      const live = this.reports.get(id);
+      if (live?.answers && this.state.plan.steps[this.state.stepIndex].mode === 'mixed') {
+        saved.report.answers = live.answers; saved.report.questionScore = live.questionScore;
+        saved.report.score = stepScore(this.state.plan.steps[this.state.stepIndex], saved.report.codeScore, live.questionScore);
+        saved.report.improvement = round(saved.report.score - (this.previous.get(id) ?? saved.report.score));
+        row.score = saved.report.score; row.improvement = saved.report.improvement;
+      }
+      this.reports.set(id, saved.report);
+    }
     return true;
   }
   privatePayload(id: string, teacher: boolean): { reports: Record<string, ClassroomReport>; errors: Record<string, string>; emails: Record<string, string> } {
     const reports = [...this.reports].filter(([key]) => teacher || key === id).map(([key, report]) => {
-      if (teacher) return [key, report] as const;
+      if (teacher) return [key, structuredClone(report)] as const;
       const { files: _files, ...feedback } = report;
+      if (this.state.plan.steps[this.state.stepIndex].questions?.length) {
+        const step = this.state.plan.steps[this.state.stepIndex];
+        const visible = this.questionFeedback(), reveal = this.revealedStep() === this.state.stepIndex && step.revealAnswers !== 'never';
+        feedback.answers = Object.fromEntries(Object.entries(feedback.answers ?? {}).map(([qid, result]) => {
+          const q = step.questions?.find(q => q.id === qid);
+          const { key: _key, explain: _explain, correct: _correct, score: _score, blankCorrect: _blankCorrect, ...saved } = result;
+          if (step.revealAnswers === 'never') delete saved.locked;
+          return [qid, { ...saved, ...(visible ? { correct: result.correct, score: result.score, ...(result.blankCorrect ? { blankCorrect: result.blankCorrect } : {}) } : {}),
+            ...(q && step.revealAnswers !== 'never' && (reveal || (step.answerFeedback === 'immediate' && result.locked)) ? { key: questionKey(q), ...(q.explain !== undefined ? { explain: q.explain } : {}) } : {}) }];
+        }));
+        if (this.questionGradeHidden()) {
+          delete feedback.questionScore;
+          if (feedback.codeScore !== undefined) feedback.score = feedback.codeScore;
+          // The committed report type models teacher grades; student projections omit unavailable grades.
+          else delete (feedback as Partial<ClassroomReport>).score;
+          feedback.improvement = 0;
+        }
+      }
       if (feedback.aiReview) { const { concerns: _concerns, ...studentReview } = feedback.aiReview; feedback.aiReview = studentReview; }
       return [key, feedback] as const;
     });
     return { emails: Object.fromEntries(Object.entries(this.emails).filter(([key]) => teacher || key === id)), reports: Object.fromEntries(reports), errors: Object.fromEntries([...this.errors].filter(([key]) => teacher || key === id)) };
+  }
+  questionLive(): QuestionStat[] {
+    return (this.state.plan.steps[this.state.stepIndex].questions ?? []).map(q => {
+      const results = [...this.reports.values()].flatMap(r => r.stepId === this.state.plan.steps[this.state.stepIndex].id && r.attempt === this.state.attempt && r.answers?.[q.id] ? [r.answers[q.id]] : []);
+      return { id: q.id, answered: results.length, correct: results.filter(r => r.correct).length, total: this.state.rows.length,
+        ...(q.kind !== 'blank' ? { options: q.options.map(o => ({ id: o.id, count: results.filter(r => 'choice' in r.answer ? r.answer.choice === o.id : 'choices' in r.answer && r.answer.choices.includes(o.id)).length })) } : {}) };
+    });
+  }
+  saveAnswers(id: string, stepId: string, attempt: number, value: Record<string, QuestionAnswer>) {
+    this.tick();
+    const step = this.state.plan.steps[this.state.stepIndex];
+    if (stepId !== step.id || attempt !== this.state.attempt) throw new Error('Stale question save: stepId or attempt no longer matches the current step');
+    if (this.state.phase !== 'coding') throw new Error('Answers are open only during coding');
+    if (!step.questions?.length || step.mode === 'code') throw new Error('This step has no question set');
+    const row = this.row(id);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid question answers');
+    const prior = this.reports.get(id), answers = { ...prior?.answers };
+    // Validate the entire save before consuming a rate-limit slot or changing any result.
+    for (const [qid, valueAnswer] of Object.entries(value)) {
+      const q = step.questions.find(q => q.id === qid);
+      if (!q) throw new Error('Unknown question id');
+      if (answers[qid]?.locked) continue;
+      const answer = normalizeQuestionAnswer(q, valueAnswer);
+      if (!answer) { if (step.answerFeedback !== 'immediate') delete answers[qid]; continue; }
+      const result = gradeQuestion(q, answer), attempts = (answers[qid]?.attempts ?? 0) + 1;
+      answers[qid] = { answer, attempts, ...result, ...(step.answerFeedback === 'immediate' ? { locked: result.correct || attempts >= (q.maxAttempts ?? 3) } : {}) };
+    }
+    const saved = this.answerSaves.get(id);
+    if (saved && this.now() - saved.at < 1000) throw new Error('Wait 1 second before saving answers again');
+    if ((saved?.count ?? 0) >= 200) throw new Error('Answer save limit reached for this step attempt');
+    this.answerSaves.set(id, { at: this.now(), count: (saved?.count ?? 0) + 1 });
+    if (!Object.keys(answers).length && !prior) return;
+    const questionScore = questionSetScore(step, answers), score = stepScore(step, prior?.codeScore, questionScore);
+    const improvement = round(score - (this.previous.get(id) ?? score));
+    const report: ClassroomReport = { stepId, attempt, repo: 'questions', commit: 'questions', submittedAt: this.now(), checks: [], criteria: [], advice: [], ...prior, answers, questionScore, score, improvement };
+    this.reports.set(id, report); this.errors.delete(id);
+    // Submission status describes saved work; pendingCode independently fences the raid.
+    Object.assign(row, { status: 'submitted', repo: report.repo, commit: report.commit, score, improvement });
   }
   setPlan(plan: ClassroomPlan) {
     if (this.state.phase !== 'setup') throw new Error('The lesson is already running; start a new room to change its plan');
@@ -157,18 +282,25 @@ export class ClassroomSession {
   begin(id: string, repo: string): SubmissionTicket {
     this.tick();
     if (this.state.phase !== 'coding') throw new Error('Submissions are open only during coding');
+    if (this.state.plan.steps[this.state.stepIndex].mode === 'questions') throw new Error('This step accepts question answers only');
     const row = this.row(id);
-    if (row.status === 'queued') throw new Error('Your submission is already being checked');
+    if (this.pendingCode.has(id) || row.status === 'queued') throw new Error('Your submission is already being checked');
     if (row.attempts >= 20) throw new Error('Submission limit reached for this step; ask the teacher to retry the step');
     if (this.now() - (this.submittedAt.get(id) ?? -Infinity) < 5000) throw new Error('Wait 5 seconds before submitting again');
     this.submittedAt.set(id, this.now());
     if (row.status === 'submitted') this.graded.set(id, structuredClone({ row, report: this.reports.get(id) }));
-    row.status = 'queued'; row.repo = repo; delete row.score; delete row.commit; row.attempts++; this.errors.delete(id); this.reports.delete(id);
+    const mixed = this.state.plan.steps[this.state.stepIndex].mode === 'mixed';
+    const hasPart = mixed && this.reports.has(id);
+    this.pendingCode.add(id);
+    row.status = hasPart ? 'submitted' : 'queued'; row.repo = repo;
+    if (!hasPart) { delete row.score; delete row.commit; }
+    row.attempts++; this.errors.delete(id);
+    if (this.state.plan.steps[this.state.stepIndex].mode !== 'mixed') this.reports.delete(id);
     const revision = (this.revisions.get(id) ?? 0) + 1; this.revisions.set(id, revision);
     return { id, generation: this.generation, revision };
   }
   valid(ticket: SubmissionTicket): boolean {
-    return ticket.generation === this.generation && this.revisions.get(ticket.id) === ticket.revision && ['coding', 'paused'].includes(this.state.phase) && this.state.rows.some(row => row.id === ticket.id && row.status === 'queued');
+    return ticket.generation === this.generation && this.revisions.get(ticket.id) === ticket.revision && ['coding', 'paused'].includes(this.state.phase) && this.pendingCode.has(ticket.id) && this.state.rows.some(row => row.id === ticket.id);
   }
   accept(ticket: SubmissionTicket, source: ClassroomSource) {
     if (!this.valid(ticket)) return;
@@ -183,30 +315,38 @@ export class ClassroomSession {
     const aiReview = grading ? source.aiReview ?? { status: 'pending' as const, items: [], summary: 'AI review unavailable. Ask the teacher to record a review.' } : undefined;
     const reviewedScore = aiReview?.status === 'complete' ? reviewScore(aiReview.items) : undefined;
     if (aiReview) aiReview.score = reviewedScore;
-    const score = grading ? blendedScore(automaticScore, reviewedScore, grading) : automaticScore;
+    const codeScore = grading ? blendedScore(automaticScore, reviewedScore, grading) : automaticScore;
+    const answers = this.reports.get(ticket.id)?.answers;
+    const questionScore = step.questions ? questionSetScore(step, answers ?? {}) : undefined;
+    const score = stepScore(step, codeScore, questionScore);
     const improvement = round(score - (this.previous.get(ticket.id) ?? score));
     const advice = [...checks.filter(c => !c.passed).map(c => `Review ${c.label}: ${c.detail}.`), ...criteria.filter(c => c.score < 0.8 && c.tip).sort((a, b) => a.score - b.score).map(c => c.tip!)].slice(0, 3);
     if (!advice.length) advice.push('The measured criteria look strong. Check the task instructions and explain your implementation to your teacher.');
     const repo = inApp ? 'in-app' : source.profile.slug;
-    const report: ClassroomReport = { stepId: step.id, attempt: this.state.attempt, repo, commit: source.commit, source: inApp ? 'in-app' : 'github', submittedAt: this.now(), score, improvement, criteria, checks, advice,
+    const report: ClassroomReport = { ...(step.questions ? { codeScore, questionScore, ...(answers ? { answers } : {}) } : {}), stepId: step.id, attempt: this.state.attempt, repo, commit: source.commit, source: inApp ? 'in-app' : 'github', submittedAt: this.now(), score, improvement, criteria, checks, advice,
       ...(grading ? { automaticScore, aiReview, reviewPending: reviewedScore === undefined && grading.automaticWeight < 100 } : {}),
       ...(inApp ? { files: source.files.map(f => ({ path: f.path, content: f.text })) } : {}) };
-    this.graded.delete(ticket.id);
+    this.pendingCode.delete(ticket.id); this.graded.delete(ticket.id);
     this.reports.set(ticket.id, report); this.errors.delete(ticket.id);
     Object.assign(this.row(ticket.id), { status: 'submitted', repo, commit: source.commit, score, improvement, ...(grading ? { reviewPending: report.reviewPending } : {}) });
   }
   fail(ticket: SubmissionTicket, message: string) {
     if (!this.valid(ticket)) return;
-    if (!this.restoreGrade(ticket.id)) this.row(ticket.id).status = 'error';
+    this.pendingCode.delete(ticket.id);
+    if (!this.restoreGrade(ticket.id)) this.row(ticket.id).status = this.reports.get(ticket.id)?.answers ? 'submitted' : 'error';
     this.errors.set(ticket.id, message.slice(0, 400));
   }
   review(id: string, score: number, note: string) {
     if (!['coding', 'paused'].includes(this.state.phase)) throw new Error('Review scores before the class attacks');
     const report = this.reports.get(id);
-    if (!report || this.row(id).status !== 'submitted') throw new Error('Wait for this student to submit a commit');
+    if (!report || this.pendingCode.has(id) || this.row(id).status !== 'submitted') throw new Error('Wait for this student to submit a commit');
     if (!bounded(score, 0, 100)) throw new Error('Review score must be 0–100');
     const reviewNote = text(note, 'review note', 2000);
-    report.score = this.state.plan.grading && report.automaticScore !== undefined ? blendedScore(report.automaticScore, score, this.state.plan.grading) : round(score);
+    const step = this.state.plan.steps[this.state.stepIndex];
+    if (step.mode === 'questions' || (step.mode === 'mixed' && report.codeScore === undefined)) throw new Error('Submit code before reviewing the code part');
+    const codeScore = this.state.plan.grading && report.automaticScore !== undefined ? blendedScore(report.automaticScore, score, this.state.plan.grading) : round(score);
+    if (step.questions) report.codeScore = codeScore;
+    report.score = stepScore(step, codeScore, report.questionScore);
     report.improvement = round(report.score - (this.previous.get(id) ?? report.score)); report.teacherReview = { score: round(score), note: reviewNote };
     if (this.state.plan.grading) report.reviewPending = false;
     Object.assign(this.row(id), { score: report.score, improvement: report.improvement, ...(this.state.plan.grading ? { reviewPending: false } : {}) });
@@ -221,7 +361,7 @@ export class ClassroomSession {
     if (action === 'attack' && ['coding', 'paused'].includes(s.phase)) { this.attack(); return; }
     if (action === 'next' && s.phase === 'feedback') { if (s.stepIndex + 1 >= s.plan.steps.length) { s.phase = 'complete'; return; } s.stepIndex++; s.attempt = 1; this.previous.clear(); this.open(false); return; }
     if (action === 'retry' && s.phase === 'feedback') { if (s.attempt >= 10) throw new Error('Maximum 10 attempts per step'); s.attempt++; this.open(); return; }
-    if (action === 'finish' && ['coding', 'paused', 'feedback'].includes(s.phase)) { if (s.rows.some(r => r.status === 'queued')) throw new Error('Wait for queued submissions'); s.phase = 'complete'; s.deadline = null; this.generation++; return; }
+    if (action === 'finish' && ['coding', 'paused', 'feedback'].includes(s.phase)) { if (this.pendingCode.size || s.rows.some(r => r.status === 'queued')) throw new Error('Wait for queued submissions'); s.phase = 'complete'; s.deadline = null; this.generation++; return; }
     throw new Error('That control is not available in this phase');
   }
   tick(): boolean {
@@ -233,10 +373,11 @@ export class ClassroomSession {
   }
   end() {
     this.generation++; this.state.phase = 'complete'; this.state.deadline = null; this.state.raidEndsAt = null;
-    for (const row of this.state.rows) if (row.status === 'queued') { if (!this.restoreGrade(row.id)) row.status = 'error'; this.errors.set(row.id, 'The teacher ended this lesson before analysis completed.'); }
+    for (const row of this.state.rows) if (row.status === 'queued' || this.pendingCode.has(row.id)) { if (!this.restoreGrade(row.id)) row.status = this.reports.get(row.id)?.answers ? 'submitted' : 'error'; this.errors.set(row.id, 'The teacher ended this lesson before analysis completed.'); }
+    this.pendingCode.clear();
     this.state.notice = 'The teacher ended this lesson.';
   }
-  save(): ClassroomState & { emails: Record<string, string> } { return { ...this.publicState(), emails: this.exportEmails() }; } // Private persistence; never broadcast email addresses.
+  save(): ClassroomState & { emails: Record<string, string> } { return { ...this.publicState('teacher'), emails: this.exportEmails() }; } // Private persistence; never broadcast email addresses.
   static restore(value: ClassroomState & { emails?: Record<string, string> }, now: () => number = Date.now): ClassroomSession {
     const session = new ClassroomSession(value.plan, now);
     const { emails, ...publicValue } = value;
@@ -266,13 +407,13 @@ export class ClassroomSession {
   }
   private row(id: string): ClassroomRow { const row = this.state.rows.find(r => r.id === id); if (!row) throw new Error('Join as a student first'); return row; }
   private open(remember = true) {
-    const s = this.state; this.generation++; this.graded.clear(); this.reports.clear(); this.errors.clear(); this.submittedAt.clear();
+    const s = this.state; this.generation++; this.pendingCode.clear(); this.graded.clear(); this.reports.clear(); this.errors.clear(); this.submittedAt.clear(); this.answerSaves.clear();
     for (const row of s.rows) { if (remember && row.score !== undefined) this.previous.set(row.id, row.score); row.status = 'empty'; delete row.score; delete row.reviewPending; row.damage = 0; row.improvement = 0; row.attempts = 0; }
     s.phase = 'coding'; s.notice = undefined; s.remainingMs = null; s.deadline = s.plan.steps[s.stepIndex].durationSec ? this.now() + s.plan.steps[s.stepIndex].durationSec * 1000 : null;
   }
   private attack() {
     const s = this.state;
-    if (s.rows.some(r => r.status === 'queued')) throw new Error('Wait for queued submissions before launching the raid');
+    if (this.pendingCode.size || s.rows.some(r => r.status === 'queued')) throw new Error('Wait for queued submissions before launching the raid');
     const submitted = s.rows.filter(r => r.status === 'submitted');
     if (!submitted.length) throw new Error('At least one student must submit this step');
     const step = s.plan.steps[s.stepIndex];
@@ -302,12 +443,14 @@ export class ClassroomSession {
       const next = index === measured.length - 1 ? damageUnits : rawTotal > 0 ? Math.round(damageUnits * cumulative / rawTotal) : 0;
       const damage = (next - assigned) / 10; assigned = next;
       r.damage = damage; r.totalDamage = round(r.totalDamage + damage);
-      return { id: r.id, name: r.name, score, improvement: r.improvement, damage, commit: r.commit!, ...(s.plan.grading ? { reviewPending: r.reviewPending === true } : {}) };
+      const report = this.reports.get(r.id);
+      return { ...(step.questions && report ? { ...(step.mode === 'mixed' ? { codeScore: report.codeScore ?? 0 } : {}), questionScore: report.questionScore ?? 0,
+        questionScores: Object.fromEntries(Object.entries(report.answers ?? {}).map(([id, answer]) => [id, answer.score ?? 0])) } : {}), id: r.id, name: r.name, score, improvement: r.improvement, damage, commit: r.commit!, ...(s.plan.grading ? { reviewPending: r.reviewPending === true } : {}) };
     });
     const bossBefore = s.bossHp; s.bossHp = Math.max(floor, round(s.bossHp - damageUnits / 10));
     // Freeze the enrolled roster and anonymous measurements; later joins/kicks/retries cannot rewrite them.
     s.rounds.push({ stepId: step.id, attempt: s.attempt, at: this.now(), bossBefore, bossAfter: s.bossHp, attacks, roster,
-      ...(checkStats !== undefined ? { checkStats } : {}) });
+      ...(checkStats !== undefined ? { checkStats } : {}), ...(step.questions && reports.length === submitted.length ? { questionStats: this.questionLive() } : {}) });
     s.phase = 'raid'; s.deadline = null; s.remainingMs = null; s.raidEndsAt = this.now() + 10000; this.generation++;
   }
 }

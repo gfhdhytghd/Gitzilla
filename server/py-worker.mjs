@@ -111,9 +111,10 @@ def _run_check(check):
             return {'passed': False, 'detail': 'student output exceeded 8 KB limit'}
         if result.attempted == 0:
             return {'passed': False, 'detail': 'no doctest examples found'}
+        counts = {'examples': {'passed': result.attempted - result.failed, 'total': result.attempted}} if _job.get('exampleCounts') else {}
         if result.failed == 0:
-            return {'passed': True, 'detail': f'{result.attempted}/{result.attempted} examples passed'}
-        return {'passed': False, 'detail': ' '.join(detail.split())[:300]}
+            return {'passed': True, 'detail': f'{result.attempted}/{result.attempted} examples passed', **counts}
+        return {'passed': False, 'detail': ' '.join(detail.split())[:300], **counts}
     except BaseException as error:
         return {'passed': False, 'detail': ' '.join((type(error).__name__ + ': ' + str(error)).split())[:300]}
 `);

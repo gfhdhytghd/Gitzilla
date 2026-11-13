@@ -330,7 +330,7 @@ function startRoom(room: string, role: Role, name: string) {
       switch (m.t) {
         case "classroom":
           if (app.lobby) app.lobby.classroom = m.state;
-          app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {}; app.classroomEmails = m.emails ?? {};
+          app.classroomReports = m.reports; app.classroomErrors = m.errors ?? {}; app.classroomEmails = m.emails ?? {}; app.classroomQuestionLive = m.questionLive;
           break;
         case "welcome":
           // The room mode is known only after welcome; release the transient student slot before spectator entry.

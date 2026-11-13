@@ -115,7 +115,7 @@ describe('round teacher debrief', () => {
         session.review(row.id, 100, 'Teacher checked the example output.');
       }
       session.control('attack');
-      const state = session.publicState(), round = state.rounds.at(-1)!;
+      const state = session.publicState('teacher'), round = state.rounds.at(-1)!;
       return { state, round, model: buildRoundDebrief(state, session.privatePayload('teacher', true).reports, round) };
     };
     const first = submit(), before = JSON.stringify(first.round);

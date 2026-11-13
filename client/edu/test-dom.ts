@@ -47,6 +47,14 @@ export class TestNode {
   append(...nodes: TestNode[]) {
     for (const node of nodes) { node.remove(); node.parentElement = this; this.children.push(node); }
   }
+  prepend(...nodes: TestNode[]) {
+    for (const node of [...nodes].reverse()) { node.remove(); node.parentElement = this; this.children.unshift(node); }
+  }
+  get firstElementChild(): TestNode | null { return this.children[0] ?? null; }
+  closest(selector: string): TestNode | null {
+    for (let node: TestNode | null = this; node; node = node.parentElement) if (node.parentElement?.querySelectorAll(selector).includes(node)) return node;
+    return null;
+  }
   replaceChildren(...nodes: TestNode[]) {
     for (const node of this.children) node.parentElement = null;
     this.children = []; this.text = ''; this.append(...nodes);

@@ -66,7 +66,7 @@ describe('50/50 classroom grading', () => {
     expect(session.state.rows[0]).toMatchObject({ score: 60, reviewPending: false });
     session.control('attack');
     expect(session.state.rounds[0].attacks[0].score).toBe(60);
-    expect(gradesExport(session.publicState(), 'csv')).toContain('"reviewed"');
+    expect(gradesExport(session.publicState('teacher'), 'csv')).toContain('"reviewed"');
   });
   it('keeps missing review provisional in feedback, saved rounds, and grade exports', () => {
     const { session, source } = lesson();
@@ -75,7 +75,7 @@ describe('50/50 classroom grading', () => {
     session.control('attack');
     const restored = ClassroomSession.restore(JSON.parse(JSON.stringify(session.save())));
     expect(restored.state.rounds[0].attacks[0].reviewPending).toBe(true);
-    expect(gradesExport(restored.publicState(), 'csv')).toContain('provisional: review pending');
+    expect(gradesExport(restored.publicState('teacher'), 'csv')).toContain('provisional: review pending');
   });
   it('honors nondefault weights, rejects invalid settings, and isolates reviews across commits', () => {
     const { session, source, advance } = lesson();

@@ -346,11 +346,11 @@ export class RoomServer {
 
   exportClassroom(code: string, format: 'csv' | 'md'): string | undefined {
     const room = this.rooms.get(code), classroom = room?.classroom;
-    return classroom ? classroomExport(classroom.publicState(), format, room?.locale ?? 'en', classroom.exportEmails()) : undefined;
+    return classroom ? classroomExport(classroom.publicState('teacher'), format, room?.locale ?? 'en', classroom.exportEmails()) : undefined;
   }
   exportGrades(code: string, format: 'csv' | 'md'): string | undefined {
     const classroom = this.rooms.get(code)?.classroom;
-    return classroom ? gradesExport(classroom.publicState(), format, classroom.exportEmails()) : undefined;
+    return classroom ? gradesExport(classroom.publicState('teacher'), format, classroom.exportEmails()) : undefined;
   }
   exportFeedback(code: string, format: 'csv' | 'md'): string | undefined {
     const room = this.rooms.get(code);
@@ -361,7 +361,7 @@ export class RoomServer {
   lobby(room: Room, viewer?: Member, controller = false): LobbyState {
     return { room: room.code, ownerId: room.ownerId, mode: room.mode, ...(room.mode === 'edu' ? { locale: room.locale ?? 'en' } : {}),
       players: squad(room).map(m => this.lobbyPlayer(room, m, viewer, controller)), boss: { ...room.boss }, phase: room.phase,
-      ...(room.classroom ? { classroom: room.classroom.publicState() } : {}),
+      ...(room.classroom ? { classroom: room.classroom.publicState(!controller && !!viewer && reservedTeacher(room, viewer) ? 'teacher' : 'student') } : {}),
       ...(room.mode === 'edu' && room.rubric ? { rubric: room.rubric } : {}) };
   }
 
@@ -511,7 +511,7 @@ export class RoomServer {
       } else this.requestResume(room);
       return;
     }
-    if (['classroomEmail', 'classroomLanguage', 'classroomPlan', 'classroomControl', 'classroomSubmit', 'classroomSubmitCode', 'classroomReview'].includes(msg.t)) {
+    if (['classroomEmail', 'classroomLanguage', 'classroomPlan', 'classroomControl', 'classroomSubmit', 'classroomSubmitCode', 'classroomAnswers', 'classroomReview'].includes(msg.t)) {
       await this.handleClassroom(room, member, msg); return;
     }
     if (room.classroom && !['controls', 'input'].includes(msg.t)) throw new Error('Use the classroom controls for this lesson');
@@ -1321,10 +1321,14 @@ export class RoomServer {
   }
   private publishClassroom(room: Room, persist = true) {
     if (!room.classroom || this.closing) return;
-    const state = { ...room.classroom.publicState(), paused: room.paused ?? null };
-    for (const member of room.members.values()) send(member.socket, { t: 'classroom', state, ...room.classroom.privatePayload(member.id,
-      reservedTeacher(room, member)) });
-    for (const member of room.members.values()) send(member.controllerSocket ?? null, { t: 'classroom', state, reports: {} });
+    const session = room.classroom;
+    const publicState = { ...session.publicState('student'), paused: room.paused ?? null };
+    const teacherState = { ...session.publicState('teacher'), paused: room.paused ?? null };
+    for (const member of room.members.values()) {
+      const teacher = reservedTeacher(room, member);
+      send(member.socket, { t: 'classroom', state: teacher ? teacherState : publicState, ...session.privatePayload(member.id, teacher), ...(teacher ? { questionLive: session.questionLive() } : {}) });
+      send(member.controllerSocket ?? null, { t: 'classroom', state: publicState, reports: {} });
+    }
     if (persist) this.persist();
   }
   private armClassroom(room: Room) {
@@ -1367,6 +1371,10 @@ export class RoomServer {
     if (msg.t === 'classroomEmail') {
       if (member.verifiedEmail && normalizeClassroomEmail(msg.email).toLowerCase() !== member.verifiedEmail) throw new Error('Sign in with the new email to change your verified address');
       room.classroom.setEmail(member.id, member.verifiedEmail ?? msg.email);
+      this.publishClassroom(room); return;
+    }
+    if (msg.t === 'classroomAnswers') {
+      room.classroom.saveAnswers(member.id, msg.stepId, msg.attempt, msg.answers);
       this.publishClassroom(room); return;
     }
     if (msg.t === 'classroomSubmitCode') {

@@ -8,8 +8,8 @@ describe('class guide links', () => {
     const plan = defaultClassroomPlan();
     plan.guideUrl = ' https://canvas.example.edu/courses/42?module=1#guide ';
     const session = new ClassroomSession(plan);
-    expect(session.publicState().plan.guideUrl).toBe(plan.guideUrl.trim());
-    expect(ClassroomSession.restore(JSON.parse(JSON.stringify(session.save()))).publicState().plan.guideUrl).toBe(plan.guideUrl.trim());
+    expect(session.publicState('teacher').plan.guideUrl).toBe(plan.guideUrl.trim());
+    expect(ClassroomSession.restore(JSON.parse(JSON.stringify(session.save()))).publicState('teacher').plan.guideUrl).toBe(plan.guideUrl.trim());
   });
   it.each(['javascript:alert(1)', 'data:text/html,hello', '/guide', 'https://user:pass@example.com', 'not a URL', 'https://' + 'x'.repeat(2048), 123, null])('rejects invalid guide %s', guideUrl => {
     expect(() => normalizeGuideUrl(guideUrl)).toThrow();
@@ -27,9 +27,9 @@ describe('class guide instructions', () => {
   it('normalizes newlines and retains Markdown, link, public state and restored content', () => {
     const plan = { ...defaultClassroomPlan(), guideUrl: 'https://example.com', guideText: '  # Guide\r\n\r\nUse `print()`\rNext  ' };
     const session = new ClassroomSession(plan);
-    expect(session.publicState().plan.guideText).toBe('# Guide\n\nUse `print()`\nNext');
-    expect(ClassroomSession.restore(JSON.parse(JSON.stringify(session.save()))).publicState().plan).toEqual(session.publicState().plan);
-    expect(session.publicState().plan.guideUrl).toBe('https://example.com/');
+    expect(session.publicState('teacher').plan.guideText).toBe('# Guide\n\nUse `print()`\nNext');
+    expect(ClassroomSession.restore(JSON.parse(JSON.stringify(session.save()))).publicState('teacher').plan).toEqual(session.publicState('teacher').plan);
+    expect(session.publicState('teacher').plan.guideUrl).toBe('https://example.com/');
   });
   it('supports old plans and clearing optional text', () => {
     expect(normalizeClassroomPlan(defaultClassroomPlan()).guideText).toBeUndefined();

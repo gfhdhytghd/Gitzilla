@@ -23,9 +23,9 @@ describe('classroom brief normalization and positional check feedback', () => {
     plan.steps[0].brief!.todo[0] = 'Changed after publication'; plan.steps[0].brief!.example!.output = 'Changed';
     expect(normalized.steps[0].brief).toEqual(expected);
     const session = new ClassroomSession(normalized);
-    expect(session.publicState().plan.steps[0].brief).toEqual(expected);
+    expect(session.publicState('teacher').plan.steps[0].brief).toEqual(expected);
     const restored = ClassroomSession.restore(JSON.parse(JSON.stringify(session.save())));
-    expect(restored.publicState().plan.steps[0].brief).toEqual(expected);
+    expect(restored.publicState('teacher').plan.steps[0].brief).toEqual(expected);
     expect(restored.state.plan.steps[0].brief!.example!.output).toBe('  42\n');
   });
   it('accepts exact maxima and optional empty lists/output, preserving doneWhen order', () => {
@@ -61,7 +61,7 @@ describe('classroom brief normalization and positional check feedback', () => {
     const student = session.privatePayload('student', false).reports.student;
     expect(student.checks.map(check => check.label)).toEqual(['Documentation', 'Answer', 'Tests']);
     expect(student.checks.map(check => check.passed)).toEqual([false, true, true]);
-    expect(session.publicState().plan.steps[0].brief!.doneWhen.map((text, i) => [text, student.checks[i].passed])).toEqual([
+    expect(session.publicState('teacher').plan.steps[0].brief!.doneWhen.map((text, i) => [text, student.checks[i].passed])).toEqual([
       ['A README exists.', false], ['Your file assigns 42.', true], ['The tests pass.', true],
     ]);
     expect(session.privatePayload('teacher', true).reports.student.checks).toEqual(student.checks);
