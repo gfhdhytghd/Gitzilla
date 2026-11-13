@@ -19,7 +19,7 @@ export function doctestAvailable(): boolean {
   } catch { return available = false; }
 }
 export interface DoctestResult { passed: boolean; detail: string; examples?: { passed: number; total: number } }
-export async function runDoctests(files: { path: string; text: string }[], checks: { id: string; path: string; text?: string }[], options: { exampleCounts?: boolean } = {}): Promise<Record<string, DoctestResult>> {
+export async function runDoctests(files: { path: string; text: string }[], checks: { id: string; path: string; text?: string }[], options: { exampleCounts?: boolean; excludeConstantExamples?: boolean } = {}): Promise<Record<string, DoctestResult>> {
   const results: Record<string, DoctestResult> = Object.create(null);
   if (!checks.length) return results;
   if (!doctestAvailable()) { for (const c of checks) results[c.id] = { passed: false, detail: unavailable }; return results; }
@@ -39,7 +39,7 @@ export async function runDoctests(files: { path: string; text: string }[], check
         try {
           const r = JSON.parse(line);
           if (checks.some(c => c.id === r.id) && typeof r.passed === 'boolean' && typeof r.detail === 'string') results[r.id] = { passed: r.passed, detail: r.detail.slice(0, 300),
-            ...(options.exampleCounts && Number.isInteger(r.examples?.passed) && Number.isInteger(r.examples?.total) && r.examples.total > 0 && r.examples.passed >= 0 && r.examples.passed <= r.examples.total ? { examples: { passed: r.examples.passed, total: r.examples.total } } : {}) };
+            ...(options.exampleCounts && Number.isInteger(r.examples?.passed) && Number.isInteger(r.examples?.total) && (r.examples.total > 0 || (options.excludeConstantExamples && r.examples.total === 0)) && r.examples.passed >= 0 && r.examples.passed <= r.examples.total ? { examples: { passed: r.examples.passed, total: r.examples.total } } : {}) };
         } catch { /* Startup diagnostics are not check results. */ }
       }
     });
@@ -50,7 +50,7 @@ export async function runDoctests(files: { path: string; text: string }[], check
       resolve(results);
     };
     child.once('error', finish); child.once('close', finish);
-    child.stdin.on('error', () => {}); child.stdin.end(JSON.stringify({ files, checks, exampleCounts: options.exampleCounts === true }));
+    child.stdin.on('error', () => {}); child.stdin.end(JSON.stringify({ files, checks, exampleCounts: options.exampleCounts === true, excludeConstantExamples: options.excludeConstantExamples === true }));
   }); } catch {
     for (const c of checks) if (!results[c.id]) results[c.id] = { passed: false, detail: unavailable };
     return results;

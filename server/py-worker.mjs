@@ -20,7 +20,7 @@ py.setStdout({ write: buffer => buffer.length }); py.setStderr({ write: buffer =
 for (const key of ['fetch', 'WebSocket', 'XMLHttpRequest', 'process']) delete globalThis[key];
 py.globals.set('_job_json', JSON.stringify(job));
 py.runPython(`
-import sys, os, json, io, doctest, importlib.util, importlib.abc
+import sys, os, json, io, doctest, importlib.util, importlib.abc, ast, types, copy
 _job = json.loads(_job_json)
 _root = '/student'
 os.mkdir(_root)
@@ -76,12 +76,50 @@ class _Runner(doctest.DocTestRunner):
         super().__init__(*args, **kwargs)
         _last_runner = self
         self._fakeout = _BoundedOutput()
+        self.failed_examples = set()
     def report_failure(self, out, test, example, got):
+        self.failed_examples.add(id(example))
         if not self.first:
             self.first = 'source: ' + example.source + ' expected: ' + example.want + ' got: ' + got
     def report_unexpected_exception(self, out, test, example, exc_info):
+        self.failed_examples.add(id(example))
         if not self.first:
             self.first = 'source: ' + example.source + ' expected: ' + example.want + ' got: ' + exc_info[0].__name__ + ': ' + str(exc_info[1])
+def _constant_baseline(test, code):
+    # Baselines use common empty/missing sentinels and the candidate's literal return values.
+    # Pick ONE best constant stub; unioning every output would excuse any lookup-table solution.
+    constants = [None, False, True, -1, 0, '', [], {}]
+    try:
+        for node in ast.walk(ast.parse(code)):
+            if isinstance(node, ast.Return) and node.value is not None:
+                try:
+                    value = ast.literal_eval(node.value)
+                    if len(repr(value)) <= 200: constants.append(value)
+                except (ValueError, TypeError): pass
+    except SyntaxError: pass
+    names = {node.func.id for ex in test.examples for node in ast.walk(ast.parse(ex.source))
+             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+             and isinstance(test.globs.get(node.func.id), types.FunctionType)}
+    if not names: return set()
+    best = set()
+    seen = set()
+    for value in constants[:40]:
+        signature = repr((type(value).__name__, value))
+        if signature in seen: continue
+        seen.add(signature)
+        ns = dict(test.globs)
+        for name, item in list(ns.items()):
+            if isinstance(item, (list, dict, set, tuple)):
+                try: ns[name] = copy.deepcopy(item)
+                except BaseException: pass
+        for name in names:
+            ns[name] = lambda *args, _value=value, **kwargs: copy.deepcopy(_value)
+        baseline = doctest.DocTest(test.examples, ns, test.name, test.filename, test.lineno, test.docstring)
+        runner = _Runner()
+        runner.run(baseline, out=lambda text: None)
+        passed = {id(ex) for ex in test.examples} - runner.failed_examples
+        if len(passed) > len(best): best = passed
+    return best
 def _run_check(check):
     try:
         overflow = _Capture.overflow
@@ -96,6 +134,7 @@ def _run_check(check):
         runner = _Runner()
         if check.get('text', '').strip():
             test = doctest.DocTestParser().get_doctest(check['text'], module.__dict__, name, path, 0)
+            excluded = _constant_baseline(test, next(f['text'] for f in _job['files'] if f['path'] == path)) if _job.get('excludeConstantExamples') else set()
             result = runner.run(test, out=lambda value: None)
             detail = runner.first
         else:
@@ -111,7 +150,11 @@ def _run_check(check):
             return {'passed': False, 'detail': 'student output exceeded 8 KB limit'}
         if result.attempted == 0:
             return {'passed': False, 'detail': 'no doctest examples found'}
-        counts = {'examples': {'passed': result.attempted - result.failed, 'total': result.attempted}} if _job.get('exampleCounts') else {}
+        if _job.get('excludeConstantExamples') and check.get('text', '').strip():
+            informative = {id(ex) for ex in test.examples} - excluded
+            counts = {'examples': {'passed': len(informative - runner.failed_examples), 'total': len(informative)}}
+        else:
+            counts = {'examples': {'passed': result.attempted - result.failed, 'total': result.attempted}} if _job.get('exampleCounts') else {}
         if result.failed == 0:
             return {'passed': True, 'detail': f'{result.attempted}/{result.attempted} examples passed', **counts}
         return {'passed': False, 'detail': ' '.join(detail.split())[:300], **counts}

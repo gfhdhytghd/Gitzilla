@@ -30,7 +30,8 @@ describe('round-3 execution and leakage boundaries', () => {
   it.each([[3, true], [2, false]] as const)('uses strict MORE THAN HALF of examples: %s/4 rejected=%s, including renamed functions', async (passing, rejected) => {
     const p = task(); p.steps[0].questionContext = '```python\ndef renamed(x):\n    return x + 1 if x < ' + passing + ' else -1\n```';
     const result = await verify(p); expect(!!result.error).toBe(rejected);
-    if (rejected) expect(result.diagnostics.droppedItems[0].reason).toContain('3/4');
+    // doctest accepts constant True for expected 1; that example is excluded from the leak ratio.
+    if (rejected) expect(result.diagnostics.droppedItems[0].reason).toContain('2/3');
   }, 60000);
   it('rejects a starter that passes even one example before student edits', async () => {
     const p = task(); p.steps[0].starter[0].content = 'def f(x):\n    return 1\n';

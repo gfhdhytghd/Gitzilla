@@ -2,7 +2,7 @@ import type { ClassroomPlan, ClassroomQuestion } from '../shared/classroom';
 import { runDoctests } from './py-sandbox';
 import { CourseValidationError, reconcileQuestionInstructions, type CourseValidationDiagnostics } from './course-output';
 import type { CoursePreset } from './course-presets';
-import { asksConcreteExecution, fencedPython, questionContentError, unsupportedSortingError, stepQuestionSeconds, exactFixHint, missingLineAnswer } from './course-question-policy';
+import { asksConcreteExecution, fencedPython, questionContentError, unsupportedSortingError, stepQuestionSeconds, exactFixHint, missingLineAnswer, nameBlankError, conventionError } from './course-question-policy';
 
 export interface KeyVerification { path: string; status: 'passed' | 'failed' | 'missing' | 'not-required'; detail: string; provider?: string; attempt?: number }
 export interface QualityDiagnostics extends CourseValidationDiagnostics { keyVerification?: KeyVerification[] }
@@ -49,6 +49,15 @@ export function courseConstraintErrors(plan: ClassroomPlan, preset: CoursePreset
   for (const [i, s] of plan.steps.entries()) {
     if (preset === 'lesson' && s.mode === 'questions') errors.push(`steps[${i}]: lesson requires a code task on every step (mode code or mixed), including rubric, checks and checksWeight; questions are optional checkpoints in mixed steps`);
     if (preset === 'exercise' && (!s.brief?.hints?.length || !s.starter?.length || s.language !== 'python')) errors.push(`steps[${i}]: exercise requires a per-step brief with hints, nonempty starter files, and language python`);
+    for (const [qi, q] of (s.questions ?? []).entries()) {
+      const convention = conventionError(q, s.questionContext);
+      if (convention) errors.push(`steps[${i}].questions[${qi}]: ${convention}`);
+      const naming = nameBlankError(q, s.questionContext);
+      if (naming) errors.push(`steps[${i}].questions[${qi}]: ${naming}`);
+      if (q.kind !== 'blank') for (const [oi, option] of q.options.entries()) {
+        if (option.text.length > 120) errors.push(`steps[${i}].questions[${qi}].options[${oi}]: generated options must be at most 120 characters; shorten without losing the claim`);
+      }
+    }
     const prose = [s.instructions, s.brief?.goal ?? '', ...(s.brief?.todo ?? []), ...(s.brief?.doneWhen ?? []), ...(s.brief?.hints ?? [])].join('\n');
     for (const [j, c] of s.checks.entries()) if (c.kind === 'contains') {
       const names = [...new Set(c.text?.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) ?? [])].filter(name => !pythonWords.has(name));
@@ -210,7 +219,7 @@ async function publicCodeRatios(step: ClassroomPlan['steps'][number], quoted: st
     }
     groups.push(ids);
   }
-  const results = await run(files, checks, { exampleCounts: true });
+  const results = await run(files, checks, { exampleCounts: true, excludeConstantExamples: true });
   return groups.map(ids => {
     let passed = 0, total = 0;
     for (const id of ids) {

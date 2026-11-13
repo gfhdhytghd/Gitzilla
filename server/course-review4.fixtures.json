@@ -1,0 +1,164 @@
+{
+  "quiz-extreme": {
+    "question": {
+      "id": "q9",
+      "kind": "multi",
+      "prompt": "Suppose `merged = merge(lst1, lst2)` is passed to a recursive `binarySearch(merged, 0, len(merged) - 1, item)` that returns `middle` when `merged[middle] == item` and `-1` when `start > end`. Which TWO statements hold across all inputs (including empty lists and duplicates)?",
+      "explain": "When one list is empty, the main while loop does not run and the tail loop copies the non-empty list intact. When both lists are ascending, merged has size len(lst1) + len(lst2) and satisfies binarySearch's sortedness requirement. Binary search returns whichever matching midpoint it hits first, and an unsorted lst1 stays unsorted even if max(lst1) <= min(lst2).",
+      "points": 15,
+      "maxAttempts": 2,
+      "options": [
+        {
+          "id": "a",
+          "text": "If one input list is empty (e.g., lst1 = []), the main while loop executes zero times and the corresponding tail while loop copies the non-empty list in sorted order."
+        },
+        {
+          "id": "b",
+          "text": "If item appears in both lst1 and lst2, binarySearch on merged is guaranteed to return the smallest index where item occurs because merge places lst1's duplicate first."
+        },
+        {
+          "id": "c",
+          "text": "Whenever lst1 and lst2 are both sorted in ascending order, merged has length len(lst1) + len(lst2) and satisfies the sortedness precondition required by binarySearch."
+        },
+        {
+          "id": "d",
+          "text": "If lst1 is unsorted while lst2 is sorted, merge's two tail loops still guarantee that merged is sorted as long as max(lst1) <= min(lst2)."
+        }
+      ],
+      "answer": [
+        "a",
+        "c"
+      ],
+      "verification": null,
+      "scoring": "partial"
+    },
+    "context": "```python\ndef merge(lst1, lst2):\n    return lst1 + lst2\n```"
+  },
+  "exam-easy": {
+    "question": {
+      "id": "q11-shell-gaps",
+      "kind": "single",
+      "prompt": "In a Shell sort trace on an 8-element list, what sequence of gap sizes is used to sort sublists before the list is completely sorted?",
+      "explain": "Starting from `8 // 2 = 4`, Shell sort halves the gap each stage: `4`, then `2`, then `1` (insertion sort on the entire list).",
+      "points": 10,
+      "maxAttempts": 1,
+      "options": [
+        {
+          "id": "a",
+          "text": "`4`, then `2`, then `1`"
+        },
+        {
+          "id": "b",
+          "text": "`8`, then `4`, then `2`"
+        },
+        {
+          "id": "c",
+          "text": "`3`, then `2`, then `1`"
+        },
+        {
+          "id": "d",
+          "text": "`1`, then `2`, then `4`"
+        }
+      ],
+      "answer": "a",
+      "verification": null
+    },
+    "context": "```python\ndef merge(lst1, lst2):\n    return lst1 + lst2\n```"
+  },
+  "leakStep": {
+    "id": "search-bounds-invariants",
+    "title": "Search Bounds, Early-Exit, and Duplicate Boundaries",
+    "instructions": "Implement first_in_window(numList, start, end, item) in main.py for a sorted ascending list numList that may contain duplicates or negative numbers. Search only within the clamped inclusive bounds max(0, start) through min(len(numList) - 1, end). If the list is empty, the clamped window is empty (lo > hi), or item falls outside the sorted endpoint range [numList[lo], numList[hi]], return -1 immediately. Otherwise use binary search in O(log n) time to return the smallest index inside [lo, hi] where numList[idx] == item, or -1 if absent. Complete the 2 checkpoint questions to analyze off-by-one termination, early-exit vs binary search iteration counts, and search invariants.",
+    "durationSec": 1200,
+    "rubric": {
+      "title": "Code evidence",
+      "source": "default",
+      "criteria": [
+        {
+          "id": "tests",
+          "name": "Testing",
+          "description": "Doctests pass across duplicate, clamped-bound, and empty-window edge cases.",
+          "signal": "tests",
+          "weight": 1
+        }
+      ]
+    },
+    "checks": [
+      {
+        "id": "check-0",
+        "kind": "doctest",
+        "label": "First occurrence in bounded sorted window",
+        "path": "main.py",
+        "text": ">>> first_in_window([-101, -80, -40, -40, -25, 58, 66], 0, 6, -40)\n2\n>>> first_in_window([-78, -45, -41, -34, -24, 18, 57, 85], 2, 10, -78)\n-1\n>>> first_in_window([-67, -13, 22, 33, 60], -3, 3, -13)\n1\n>>> first_in_window([-67, -13, 22, 33, 60], 1, 0, 22)\n-1\n>>> first_in_window([], 0, 0, 71)\n-1"
+      }
+    ],
+    "checksWeight": 50,
+    "mode": "mixed",
+    "questions": [
+      {
+        "id": "q1-bsearch-boundary",
+        "kind": "single",
+        "prompt": "The recursive function below alters the standard binary search base case from `start > end` to `start >= end`. All four choices search `[-67, -13, 22, 33, 60]`. Which call is the ONLY one that returns an incorrect result?\n\n```python\ndef buggy_bsearch(numList, start, end, item):\n    if start >= end:\n        return -1\n    middle = (end + start) // 2\n    if numList[middle] == item:\n        return middle\n    elif numList[middle] > item:\n        return buggy_bsearch(numList, start, middle - 1, item)\n    else:\n        return buggy_bsearch(numList, middle + 1, end, item)\n```",
+        "explain": "When searching for -13, middle=2 (22) branches left to (0, 1), where middle=0 (-67) branches right to (1, 1); because start >= end triggers at start == end, index 1 is skipped and -1 is returned instead of 1. The other three calls either hit the target at an earlier midpoint (-67 at 0, 22 at 2) or correctly return -1 for absent 71.",
+        "points": 2,
+        "maxAttempts": 3,
+        "options": [
+          {
+            "id": "a",
+            "text": "buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, -67) (expected 0)"
+          },
+          {
+            "id": "b",
+            "text": "buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, -13) (expected 1)"
+          },
+          {
+            "id": "c",
+            "text": "buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, 22) (expected 2)"
+          },
+          {
+            "id": "d",
+            "text": "buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, 71) (expected -1)"
+          }
+        ],
+        "answer": "b",
+        "verification": {
+          "code": "def buggy_bsearch(numList, start, end, item):\n    if start >= end:\n        return -1\n    middle = (end + start) // 2\n    if numList[middle] == item:\n        return middle\n    elif numList[middle] > item:\n        return buggy_bsearch(numList, start, middle - 1, item)\n    else:\n        return buggy_bsearch(numList, middle + 1, end, item)\n",
+          "expression": "{'a': buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, -67) != 0, 'b': buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, -13) != 1, 'c': buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, 22) != 2, 'd': buggy_bsearch([-67, -13, 22, 33, 60], 0, 4, 71) != -1}"
+        }
+      }
+    ],
+    "questionsWeight": 50,
+    "answerFeedback": "after-close",
+    "revealAnswers": "after-raid",
+    "brief": {
+      "goal": "Implement O(log n) first-occurrence binary search inside clamped inclusive bounds with sorted endpoint early-exit.",
+      "todo": [
+        "Clamp start and end to valid list indices and reject empty windows or out-of-range targets.",
+        "Track the earliest matched index while narrowing the search window leftward on matches.",
+        "Verify all doctest cases for duplicates, clamped bounds, empty windows, and empty lists."
+      ],
+      "doneWhen": [
+        "first_in_window passes all doctests for duplicates, clamped windows, empty lists, and early-exit misses."
+      ],
+      "hints": [
+        "Compute the intersection of the requested window and the valid index range of the list before indexing any element.",
+        "Remember that sortedness lets you check the two boundary elements of a nonempty window before entering the loop.",
+        "When the middle element equals the target, record that index as a candidate and continue narrowing strictly to the left half."
+      ],
+      "concepts": [
+        "Binary search window invariants",
+        "Sorted early-exit",
+        "Leftmost duplicate boundary",
+        "Bounds clamping"
+      ]
+    },
+    "language": "python",
+    "starter": [
+      {
+        "path": "main.py",
+        "content": "def first_in_window(numList, start, end, item):\n    raise NotImplementedError\n"
+      }
+    ]
+  },
+  "pdf": "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMDAgMTAwXSA+PgplbmRvYmoKeHJlZgowIDQKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDQgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjE4NgolJUVPRgo="
+}

@@ -67,3 +67,68 @@ API reference checked: [Google Gemini document processing](https://aistudio.goog
 Final `git diff --check`: passed. Base HEAD remains `c959bdd`. All work remains uncommitted; no push or deployment.
 
 STATUS: DONE
+
+
+## Round-4 review follow-up
+
+STATUS: WORKING
+
+Scope: five requested review fixes; no client/, rooms.ts or classroom.ts edits. Mocked-provider regression tests precede one real native run containing quiz-easy and lesson-extreme.
+
+### Changes
+
+- Review source: `/tmp/claude-1000/gen-eval-native/REVIEW.md`. Its historical finding is 0 wrong keys and 15 sorting questions consistent with the images. This follow-up does not re-label those earlier outputs as failures.
+- Name-recall blanks: prompt prefers single choice. If used, generated name blanks need at least four distinct accepted aliases after the same whitespace/lowercase normalization as grading; case-only duplicates do not count and case-sensitive name grading is rejected. The prompt requests space/underscore/parenthesis variants where meaningful. Teacher-authored grading code is unchanged.
+- Leak rule: the existing isolated worker now optionally measures informative examples. For each candidate, it runs bounded constant-return baselines (common empty/missing sentinel values and literal return values in the candidate), picks ONE best baseline, excludes the examples it passes, and applies the original strict >half threshold to the remainder. It does not union all possible constants, which would erase evidence for real lookup-table solutions. Zero remaining examples mean no evidence of a solution leak. Direct expression checks without a replaceable function retain their evidence. The starter-must-fail-all rule and key execution checks use ordinary counts, unchanged.
+- Concept detection: a function mention, a stated return contract, or unrelated shared code no longer makes a concept an execution question. Both exact dropped review items (merge/search invariant and Shell gap sequence) survive without executable verification. Concrete call values and concrete true/false claims still require execution.
+- Prompt: image/lecture conventions must appear in the stem or displayed shared context, not only the answer/explanation. Explicit examples are first-element pivot, min-heap with deleteMin, and source-specific gaps 4, 2, 1; these are not imposed as universal definitions.
+- Generated options are limited to 120 characters in both the Gemini schema and server constraint validation. Overlong options trigger normal repair; no option or key is silently truncated. Timers account for all stem/option prose, own code, and shared code once, preserving existing execution floors.
+
+### Mocked-provider and local verification
+
+- Baseline red: 7 failures / 1 pass before implementation, including the exact dropped concept items and false-positive binary-search checkpoint. Preserved at `qa/artifacts/course-pdf-native-review4-checks/baseline.log`.
+- Shared course regression: 246 passed across 12 files. Final focused review suite: 10 passed (one additional boundary test plus final refinements). Existing Pyodide isolation suite: 6 passed. Provider calls in all automated suites are mocked; real sandbox execution is local.
+- The old >half regression still rejects an actual renamed solution. Its diagnostic is now 2/3 informative examples instead of 3/4 total examples because Python doctest accepts constant True for expected 1; the test now asserts the refined denominator.
+- The exact wrongly dropped `q1-bsearch-boundary` survives, and a complete renamed solution is still rejected. Name aliases are tested through the actual `gradeQuestion`; narrow/case-duplicate lists and 121-character options are rejected. Long conceptual rounds receive a larger timer.
+- `npx tsc --noEmit`: passed. `git diff --check`: passed. Evidence lives in `qa/artifacts/course-pdf-native-review4-checks/`.
+- No `client/`, `server/rooms.ts`, or `server/classroom.ts` file was edited in this follow-up. Concurrent changes in those paths remain untouched.
+
+### Single authorized real native rerun
+
+```sh
+npx tsx tools/course-gen-eval.ts --real --native-pdf --provider gemini --seed 20261114 --cases quiz-easy,lesson-extreme --file '/home/wilf/Downloads/Module 7 Practice Exercises_ CMPSC 132 Fall 2026.pdf' --out qa/artifacts/course-pdf-native-review4-rerun
+```
+
+Exactly one evaluator invocation was started, containing only the two requested cases. The seed offset preserves their original per-case seeds (lesson-extreme 20261114, quiz-easy 20261115). Normal in-pipeline repair remains enabled. Results pending.
+
+Result: **2/2 PASS**, both `gemini:gemini-4-hydrogen:pdf`, no repair requests. Only this one paid evaluator invocation ran.
+
+| Case | Result | Seconds | Repairs | Questions | Dropped | Max option chars | Final-attempt verification: passed / failed / missing |
+|---|---|---:|---:|---:|---:|---:|---|
+| lesson-extreme | PASS | 138.5 | 0 | 7 | 1 | 104 | 2 / 0 / 0 |
+| quiz-easy | PASS | 51.2 | 0 | 10 | 0 | 54 | 3 / 0 / 0 |
+
+- `lesson-extreme`: 7 returned questions; a new `q3-recursive-invariants` checkpoint was removed for passing 2/3 informative code-task examples, not for missing executable verification. The old review's `q1-bsearch-boundary` is separately covered by the exact frozen regression and is retained. This does not disable the real solution-leak gate.
+- `quiz-easy`: 10 returned questions, no drops. Step timers are 206, 120 and 235 seconds. Its Shell-gap blank is numeric and self-contained; all blanks in both new outputs are numeric, so name-variant behavior is established by the mocked tests and actual grading checks, not by a generated naming blank in this paid run.
+- Both outputs stay below the 120-character option cap. No final-attempt verification record failed or was missing. The diagnostics include not-required concepts and removed candidates; these are not an independent exhaustive correctness proof for every generated claim.
+- **Remaining model compliance issue observed:** quiz-easy `q7-sorting-multi` still states the min-heap/deleteMin convention only in a correct option/explanation, not the stem, despite the new explicit prompt instruction. Its key matches the source, but the convention-explicitness issue is not fully eliminated in stochastic output. The Quick-sort and Shell-gap stems, and lesson-extreme's sorting stem, do state their conventions. No second paid rerun was performed because the user authorized exactly one. The requested prompt change is implemented; this remaining output limitation is retained for review.
+- Per-case plans, raw attempts, manifest, summary and run log: `qa/artifacts/course-pdf-native-review4-rerun/`. No classroom draft was applied, and no commit, push or deploy command was run.
+
+STATUS: DONE
+
+
+### Post-rerun convention repair gate
+
+STATUS: WORKING
+
+The single authorized real run exposed the residual convention issue above. A narrow server constraint is being added so keyed heap, pivot and explicit Shell-gap conventions missing from the stem/context request normal provider repair instead of silently publishing. This final gate will receive mocked coverage only; no further paid run is authorized.
+
+Final follow-up result:
+
+- Added a generated-course constraint for keyed variant-dependent statements: min-/max-heap deletion conventions, first-/last-element pivot conventions, and explicit Shell gap sequences must appear in the question stem or displayed context. Only keyed claims are checked, so an incorrect distractor cannot impose its convention on a question. Missing conventions raise a repair error rather than silently rewriting a key or deleting the item.
+- The exact pattern exposed by quiz-easy `q7-sorting-multi` is rejected by the new constraint. A mocked native-PDF provider test proves the same pipeline requests repair and accepts a corrected stem. Separate tests cover visible pivot and Shell-gap conventions and wrong distractors.
+- Final regression run: **249 passed across 12 files**. Final focused review run: **14 passed** (including two additional convention cases). Existing isolation suite: **6 passed**. `npx tsc --noEmit` and `git diff --check`: passed. Final evidence files: `final-gate-tests.log`, `final-gate-focused.log`, `final-gate-types.log` under `qa/artifacts/course-pdf-native-review4-checks/`.
+- Validation boundary: the **one** real native evaluation above passed both requested cases before this final convention guard was added. Its raw and final artifacts remain unchanged for honest review. The final guard is verified with mocks only. No second real run was made.
+- The requested five code changes are complete. No client files, `server/rooms.ts` or `server/classroom.ts` were edited by this follow-up. No commit, push or deployment command was run.
+
+STATUS: DONE

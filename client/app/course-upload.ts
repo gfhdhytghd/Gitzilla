@@ -107,6 +107,6 @@ export function createCourseUpload(options: { room: string; token?: string; onAp
     } finally { if (!disposed) generate.disabled = false; }
   };
   const el = h('section.cr-measurements', { 'data-testid': 'course-upload' }, h('h3', null, 'Generate a course from a file'),
-    h('p', null, 'Upload a PDF with selectable text, Markdown (.md), or plain text (.txt). Up to 8 MB; extracted text up to 80000 UTF-8 bytes. The document is sent to the configured AI provider. Generation only creates a preview.'), file, settings, generate, status, preview);
+    h('p', null, 'Upload a PDF (including scans, images and charts), Markdown (.md), or plain text (.txt). Up to 8 MB. PDFs: 100 pages by default (server-configurable), sent directly to Gemini. Text files and the DeepSeek PDF fallback: up to 80000 UTF-8 bytes; fallback requires selectable text. Generation only creates a preview.'), file, settings, generate, status, preview);
   return { el, dispose() { disposed = true; generation++; controller.abort(); } };
 }

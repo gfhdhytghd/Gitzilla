@@ -9,12 +9,16 @@ export function asksConcreteExecution(prompt: string, context = ''): boolean {
   const call = /\b\w+\(\s*\)|\b\w+\([^\n)]*(?:\b\d|\[|["']|\b(?:True|False|None)\b)[^\n)]*\)/.test(text);
   if (/\b(?:purpose|keyword|definition|define|return statement|print statement|why|which statement)\b|(?:关键字|语句的作用|区别|定义|为什么)/i.test(text)) return false;
   if (!call && /\btrue or false\b|判断对错/i.test(text)) return false;
+  if (!call && /\b(?:which\s+(?:(?:two|three|four)\s+)?statements?|invariants?|preconditions?|properties)\b|不变量|前置条件/i.test(text)) return false;
   const value = /\b(?:what|which)\b[\s\S]{0,100}\b(?:return(?:s|ed)?|outputs?|values?|results?|prints?|indices|sequences?|traces?)\b|\b(?:compute|calculate|evaluate|trace)\b|\b(?:how many|number of|count of)\b[\s\S]{0,70}\b(?:iterations?|comparisons?|loops?|calls?|steps?)\b|\b(?:result|value)\s*(?:is\s*)?\{\{|(?:返回什么|返回值|输出什么|运行结果|计算|多少次|几次|结果.*\{\{)/i.test(text);
   const code = [...fencedPython(prompt), ...fencedPython(context)].join('\n');
   const name = /\bwhat\s+(?:is|are)\s+(?:the\s+)?(?:value\s+of\s+)?([a-z_]\w*)(?:\s+(?:in|after|when|given)\b[^?]{0,100})?\s*\?/i.exec(text)?.[1];
   const variable = !!name && new RegExp('(?:^|\\n)\\s*' + name + '\\s*=').test(code);
-  const shownCode = !!code;
-  return ((value || variable) && (call || shownCode)) || (call && /\b(?:returns?|outputs?|prints?|results?|values?)\b|返回|输出/.test(text));
+  const ownCode = fencedPython(prompt).length > 0;
+  const sharedReference = /\b(?:code above|code below|given code|using the code|shared code|this code)\b|上述代码|上面的代码|给定代码/i.test(text);
+  // Mentioning a function that returns a value is not itself a request to compute it.
+  const concreteClaim = call && /\b(?:true or false|does|will)\b|判断对错/i.test(text) && /\b(?:returns?|outputs?|prints?)\b|返回|输出/i.test(text);
+  return variable || (value && (call || ownCode || sharedReference)) || concreteClaim;
 }
 
 const sorting = ['bubble', 'insertion', 'selection', 'merge', 'quick', 'heap', 'shell', 'radix', 'counting'] as const;
@@ -50,6 +54,35 @@ export function questionContentError(q: ClassroomQuestion, reference?: string): 
   if (q.kind === 'multi' && (q.options.length - q.answer.length < 2 || q.answer.length > Math.floor(q.options.length / 2))) return 'Multi-select requires at least two plausible wrong options and no more than half its options correct; rewrite claims, do not guess distractors';
 }
 
+/** Require variant-dependent keyed claims to have a visible convention, not an unseen lecture default. */
+export function conventionError(q: ClassroomQuestion, context = ''): string | undefined {
+  if (q.kind === 'blank') return;
+  const keys = q.kind === 'single' ? [q.answer] : q.answer;
+  const claims = q.options.filter(o => keys.includes(o.id)).map(o => o.text).join(' ');
+  const visible = (q.prompt + ' ' + context).replace(/[`*_]/g, '').toLowerCase();
+  const text = claims.replace(/[`*_]/g, '').toLowerCase();
+  if (/heap\s*sort/.test(visible + ' ' + text)) {
+    if (/min[- ]?heap|deletemin/.test(text) && !/min[- ]?heap|delete[_ ]?min/.test(visible)) return 'State the min-heap/deleteMin convention in the question stem or displayed context';
+    if (/max[- ]?heap|deletemax/.test(text) && !/max[- ]?heap|delete[_ ]?max/.test(visible)) return 'State the max-heap/deleteMax convention in the question stem or displayed context';
+  }
+  for (const position of ['first', 'last']) {
+    const pivot = new RegExp('(?:' + position + ' (?:element|item|value)[^.!?]{0,35}pivot|pivot[^.!?]{0,35}' + position + ' (?:element|item|value))');
+    if (pivot.test(text) && !pivot.test(visible)) return 'State the ' + position + '-element pivot convention in the question stem or displayed context';
+  }
+  if (/shell\s*sort/.test(visible + ' ' + text) && /4\D{0,12}2\D{0,12}1/.test(text) && !/4\D{0,12}2\D{0,12}1|halv(?:e|es|ing)|half|\/\/\s*2/.test(visible)) return 'State the Shell gap sequence or halving rule in the question stem or displayed context';
+}
+
+/** Only generated recall blanks are constrained; numeric/executable values keep their existing grading. */
+export function nameBlankError(q: ClassroomQuestion, context = ''): string | undefined {
+  if (q.kind !== 'blank' || asksConcreteExecution(q.prompt, context) || !/\b(?:names?|named|called|calls?|keyword|algorithm|function|method|operation|heap)\b|名称|名字|调用|函数名|算法名|堆类型/i.test(q.prompt)) return;
+  for (const blank of q.blanks) {
+    if (blank.numeric || blank.accept.every(a => /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(a.trim()))) continue;
+    if (blank.caseSensitive) return 'Name-recall blanks must ignore letter case; use caseSensitive: false or single choice';
+    const aliases = new Set(blank.accept.map(a => a.replace(/\s+/gu, ' ').trim().toLowerCase()));
+    if (aliases.size < 4) return 'Name-recall blanks need at least 4 distinct grading-normalized accepted variants (spaces, underscores, trailing ()); prefer single choice';
+  }
+}
+
 /** Conservative reading/trace budget, independent of a model's timer estimate. */
 export function questionWorkSeconds(q: ClassroomQuestion, context = ''): number {
   if (!q || typeof q.prompt !== 'string') return 0;
@@ -65,11 +98,15 @@ export function questionWorkSeconds(q: ClassroomQuestion, context = ''): number 
     seconds = multiple ? Math.max(90, options.length * Math.min(functions, 3) * 15) : 45;
     seconds += Math.max(0, length - 5) * 5 + Math.min(4, loops) * 5 + Math.max(0, own.split('\n').length - 8) * 2;
   }
-  return seconds;
+  const prose = [q.prompt.replace(/```[\s\S]*?```/g, ''), ...options].join(' ');
+  // About 144 English words/minute or 5 CJK characters/second, plus response time.
+  const cjk = (prose.match(/[\u3400-\u9fff]/g) ?? []).length;
+  const reading = Math.ceil((prose.length - cjk) / 12 + cjk / 5 + own.length / 20);
+  return Math.max(seconds, reading + 10);
 }
 export function stepQuestionSeconds(step: Pick<ClassroomStep, 'questions' | 'questionContext'>): number {
   const context = fencedPython(step.questionContext ?? '').join('\n');
-  return (Array.isArray(step.questions) ? step.questions : []).reduce((n, q) => n + questionWorkSeconds(q, context), 0) + (context ? Math.ceil(context.split('\n').length * 1.5) : 0);
+  return (Array.isArray(step.questions) ? step.questions : []).reduce((n, q) => n + questionWorkSeconds(q, context), 0) + (context ? Math.max(Math.ceil(context.split('\n').length * 1.5), Math.ceil(context.length / 20)) : 0);
 }
 
 /** Hints may name variables, but must not give executable replacement code. */
