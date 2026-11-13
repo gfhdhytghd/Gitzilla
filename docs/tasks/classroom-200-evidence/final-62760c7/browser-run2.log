@@ -1,0 +1,54 @@
+TEACHER EDITOR READY
+PASS starter authored with editor indentation
+PASS published starter matches editor
+BROWSER STUDENTS READY; JOINING 197 BOTS
+PASS setup: student 1 displayed counts
+PASS setup: student 2 displayed counts
+PASS setup: student 3 displayed counts
+PASS setup: projector displayed counts
+PASS browser student received authored starter
+PASS browser student received authored starter
+PASS browser student received authored starter
+PASS submitted: student 1 displayed counts
+PASS submitted: student 2 displayed counts
+PASS submitted: student 3 displayed counts
+PASS submitted: projector displayed counts
+PASS all 200 mixed submissions grade to 100
+PASS raid: student 1 displayed counts
+PASS raid: student 2 displayed counts
+PASS raid: student 3 displayed counts
+PASS raid: projector displayed counts
+PASS reveal: student 1 displayed counts
+PASS reveal: student 2 displayed counts
+PASS reveal: student 3 displayed counts
+PASS reveal: projector displayed counts
+PASS student answer revealed
+PASS student answer revealed
+PASS student answer revealed
+PASS projector visible text has no peer names
+PASS next: student 1 displayed counts
+PASS next: student 2 displayed counts
+PASS next: student 3 displayed counts
+PASS next: projector displayed counts
+PASS finish: student 1 displayed counts
+PASS finish: student 2 displayed counts
+PASS finish: student 3 displayed counts
+PASS finish: projector displayed counts
+PASS QA_TEACHER: real client negotiated delta
+PASS QA_TEACHER: delta frames consumed
+PASS QA_ADA: real client negotiated delta
+PASS QA_ADA: delta frames consumed
+PASS QA_ADA: no peer names/scores in row, attack or report frames
+PASS QA_BEN: real client negotiated delta
+PASS QA_BEN: delta frames consumed
+PASS QA_BEN: no peer names/scores in row, attack or report frames
+PASS QA_CAI: real client negotiated delta
+PASS QA_CAI: delta frames consumed
+PASS QA_CAI: no peer names/scores in row, attack or report frames
+PASS QA_PROJECTOR: real client negotiated delta
+PASS QA_PROJECTOR: delta frames consumed
+PASS QA_PROJECTOR: no peer names/scores in row, attack or report frames
+PASS no browser page errors
+PASS no protocol/socket errors
+PASS all 197 bot frames retain only own identity
+{"checks":51,"defects":[],"pageErrors":[],"privacyViolations":0}

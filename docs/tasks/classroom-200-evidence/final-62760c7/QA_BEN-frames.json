@@ -1,0 +1,3206 @@
+[
+  {
+    "t": "welcome",
+    "you": "794a52e4-a47c-47ac-8741-811203d528b6",
+    "token": "<redacted>",
+    "lobby": {
+      "room": "KZLI",
+      "ownerId": "d7d1030a-c81c-4b4d-aa66-c88fdb64d7d8",
+      "mode": "edu",
+      "locale": "en",
+      "players": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "repo": null,
+          "status": "empty",
+          "kit": null,
+          "paired": false,
+          "controlsReady": true
+        }
+      ],
+      "boss": {
+        "repo": null,
+        "status": "empty",
+        "kit": null
+      },
+      "phase": "lobby",
+      "classroom": {
+        "plan": {
+          "title": "Build. Review. Improve.",
+          "bossName": "THE RELEASE BLOCKER",
+          "steps": [
+            {
+              "id": "build",
+              "title": "Acceptance: code and question",
+              "instructions": "Make answer() return 42, submit your code, and answer the question.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [
+                {
+                  "id": "check-0",
+                  "kind": "contains",
+                  "label": "Literal code evidence: main.py",
+                  "path": "main.py",
+                  "text": "return 42"
+                }
+              ],
+              "checksWeight": 100,
+              "mode": "mixed",
+              "questions": [
+                {
+                  "id": "q1",
+                  "prompt": "What should answer() return?",
+                  "points": 1,
+                  "maxAttempts": 3,
+                  "kind": "single",
+                  "options": [
+                    {
+                      "id": "a",
+                      "text": "42"
+                    },
+                    {
+                      "id": "b",
+                      "text": "0"
+                    },
+                    {
+                      "id": "c",
+                      "text": "Option C"
+                    }
+                  ]
+                }
+              ],
+              "questionsWeight": 50,
+              "answerFeedback": "after-close",
+              "revealAnswers": "after-raid",
+              "language": "python",
+              "starter": [
+                {
+                  "path": "main.py",
+                  "content": "def answer():\n    return 0"
+                }
+              ]
+            },
+            {
+              "id": "test",
+              "title": "Acceptance wrap-up",
+              "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [],
+              "checksWeight": 70
+            }
+          ]
+        },
+        "phase": "setup",
+        "stepIndex": 0,
+        "attempt": 1,
+        "deadline": null,
+        "remainingMs": null,
+        "serverTime": 1794594483224,
+        "raidEndsAt": null,
+        "bossHp": 20,
+        "bossMaxHp": 20,
+        "rows": [
+          {
+            "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+            "name": "QA_BEN",
+            "connected": true,
+            "status": "empty",
+            "improvement": 0,
+            "damage": 0,
+            "totalDamage": 0,
+            "attempts": 0
+          }
+        ],
+        "rounds": [],
+        "summary": {
+          "roster": 2,
+          "submitted": 0,
+          "connected": 2,
+          "queued": 0,
+          "away": 0
+        },
+        "paused": null,
+        "lessonTotals": {
+          "submitted": 0,
+          "damage": 0,
+          "score": 0,
+          "improvement": 0,
+          "average": 0,
+          "median": 0,
+          "bands": [
+            0,
+            0,
+            0
+          ],
+          "participants": 0
+        }
+      },
+      "rubric": {
+        "title": "Code quality classroom rubric",
+        "source": "default",
+        "criteria": [
+          {
+            "id": "tests",
+            "name": "Testing",
+            "signal": "tests",
+            "weight": 0.25,
+            "target": 0.3,
+            "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage."
+          },
+          {
+            "id": "modularity",
+            "name": "Modularity",
+            "signal": "modularity",
+            "weight": 0.2,
+            "description": "Low component fan-out and shorter dependency chains support your speed."
+          },
+          {
+            "id": "cohesion",
+            "name": "Focused functions",
+            "signal": "cohesion",
+            "weight": 0.2,
+            "description": "Focused functions and a healthy number of definitions per file support your damage."
+          },
+          {
+            "id": "documentation",
+            "name": "Documentation",
+            "signal": "documentation",
+            "weight": 0.2,
+            "description": "Useful comments and README examples support energy and regeneration."
+          },
+          {
+            "id": "size",
+            "name": "Project foundation",
+            "signal": "size",
+            "weight": 0.05,
+            "description": "Capped logarithmic source size and README presence support HP."
+          },
+          {
+            "id": "cycles",
+            "name": "Acyclic dependencies",
+            "signal": "cycles",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Fewer circular dependencies reduce your weakness."
+          },
+          {
+            "id": "tech-debt",
+            "name": "Manage technical debt",
+            "signal": "tech-debt",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "Build. Review. Improve.",
+        "bossName": "THE RELEASE BLOCKER",
+        "steps": [
+          {
+            "id": "build",
+            "title": "Acceptance: code and question",
+            "instructions": "Make answer() return 42, submit your code, and answer the question.",
+            "durationSec": 0,
+            "rubric": {
+              "title": "Code quality classroom rubric",
+              "source": "default",
+              "criteria": [
+                {
+                  "id": "tests",
+                  "name": "Testing",
+                  "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                  "signal": "tests",
+                  "weight": 0.24999999999999994,
+                  "target": 0.3
+                },
+                {
+                  "id": "modularity",
+                  "name": "Modularity",
+                  "description": "Low component fan-out and shorter dependency chains support your speed.",
+                  "signal": "modularity",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "cohesion",
+                  "name": "Focused functions",
+                  "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                  "signal": "cohesion",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "documentation",
+                  "name": "Documentation",
+                  "description": "Useful comments and README examples support energy and regeneration.",
+                  "signal": "documentation",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "size",
+                  "name": "Project foundation",
+                  "description": "Capped logarithmic source size and README presence support HP.",
+                  "signal": "size",
+                  "weight": 0.04999999999999999
+                },
+                {
+                  "id": "cycles",
+                  "name": "Acyclic dependencies",
+                  "description": "Fewer circular dependencies reduce your weakness.",
+                  "signal": "cycles",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                },
+                {
+                  "id": "tech-debt",
+                  "name": "Manage technical debt",
+                  "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                  "signal": "tech-debt",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                }
+              ]
+            },
+            "checks": [
+              {
+                "id": "check-0",
+                "kind": "contains",
+                "label": "Literal code evidence: main.py",
+                "path": "main.py",
+                "text": "return 42"
+              }
+            ],
+            "checksWeight": 100,
+            "mode": "mixed",
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "What should answer() return?",
+                "points": 1,
+                "maxAttempts": 3,
+                "kind": "single",
+                "options": [
+                  {
+                    "id": "a",
+                    "text": "42"
+                  },
+                  {
+                    "id": "b",
+                    "text": "0"
+                  },
+                  {
+                    "id": "c",
+                    "text": "Option C"
+                  }
+                ]
+              }
+            ],
+            "questionsWeight": 50,
+            "answerFeedback": "after-close",
+            "revealAnswers": "after-raid",
+            "language": "python",
+            "starter": [
+              {
+                "path": "main.py",
+                "content": "def answer():\n    return 0"
+              }
+            ]
+          },
+          {
+            "id": "test",
+            "title": "Acceptance wrap-up",
+            "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+            "durationSec": 0,
+            "rubric": {
+              "title": "Code quality classroom rubric",
+              "source": "default",
+              "criteria": [
+                {
+                  "id": "tests",
+                  "name": "Testing",
+                  "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                  "signal": "tests",
+                  "weight": 0.24999999999999994,
+                  "target": 0.3
+                },
+                {
+                  "id": "modularity",
+                  "name": "Modularity",
+                  "description": "Low component fan-out and shorter dependency chains support your speed.",
+                  "signal": "modularity",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "cohesion",
+                  "name": "Focused functions",
+                  "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                  "signal": "cohesion",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "documentation",
+                  "name": "Documentation",
+                  "description": "Useful comments and README examples support energy and regeneration.",
+                  "signal": "documentation",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "size",
+                  "name": "Project foundation",
+                  "description": "Capped logarithmic source size and README presence support HP.",
+                  "signal": "size",
+                  "weight": 0.04999999999999999
+                },
+                {
+                  "id": "cycles",
+                  "name": "Acyclic dependencies",
+                  "description": "Fewer circular dependencies reduce your weakness.",
+                  "signal": "cycles",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                },
+                {
+                  "id": "tech-debt",
+                  "name": "Manage technical debt",
+                  "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                  "signal": "tech-debt",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                }
+              ]
+            },
+            "checks": [],
+            "checksWeight": 70
+          }
+        ]
+      },
+      "phase": "setup",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594483225,
+      "raidEndsAt": null,
+      "bossHp": 20,
+      "bossMaxHp": 20,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 0
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 2,
+        "submitted": 0,
+        "connected": 2,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {}
+  },
+  {
+    "t": "lobby",
+    "lobby": {
+      "room": "KZLI",
+      "ownerId": "d7d1030a-c81c-4b4d-aa66-c88fdb64d7d8",
+      "mode": "edu",
+      "locale": "en",
+      "players": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "repo": null,
+          "status": "empty",
+          "kit": null,
+          "paired": false,
+          "controlsReady": true
+        }
+      ],
+      "boss": {
+        "repo": null,
+        "status": "empty",
+        "kit": null
+      },
+      "phase": "lobby",
+      "classroom": {
+        "plan": {
+          "title": "Build. Review. Improve.",
+          "bossName": "THE RELEASE BLOCKER",
+          "steps": [
+            {
+              "id": "build",
+              "title": "Acceptance: code and question",
+              "instructions": "Make answer() return 42, submit your code, and answer the question.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [
+                {
+                  "id": "check-0",
+                  "kind": "contains",
+                  "label": "Literal code evidence: main.py",
+                  "path": "main.py",
+                  "text": "return 42"
+                }
+              ],
+              "checksWeight": 100,
+              "mode": "mixed",
+              "questions": [
+                {
+                  "id": "q1",
+                  "prompt": "What should answer() return?",
+                  "points": 1,
+                  "maxAttempts": 3,
+                  "kind": "single",
+                  "options": [
+                    {
+                      "id": "a",
+                      "text": "42"
+                    },
+                    {
+                      "id": "b",
+                      "text": "0"
+                    },
+                    {
+                      "id": "c",
+                      "text": "Option C"
+                    }
+                  ]
+                }
+              ],
+              "questionsWeight": 50,
+              "answerFeedback": "after-close",
+              "revealAnswers": "after-raid",
+              "language": "python",
+              "starter": [
+                {
+                  "path": "main.py",
+                  "content": "def answer():\n    return 0"
+                }
+              ]
+            },
+            {
+              "id": "test",
+              "title": "Acceptance wrap-up",
+              "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [],
+              "checksWeight": 70
+            }
+          ]
+        },
+        "phase": "setup",
+        "stepIndex": 0,
+        "attempt": 1,
+        "deadline": null,
+        "remainingMs": null,
+        "serverTime": 1794594483253,
+        "raidEndsAt": null,
+        "bossHp": 20,
+        "bossMaxHp": 20,
+        "rows": [
+          {
+            "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+            "name": "QA_BEN",
+            "connected": true,
+            "status": "empty",
+            "improvement": 0,
+            "damage": 0,
+            "totalDamage": 0,
+            "attempts": 0
+          }
+        ],
+        "rounds": [],
+        "summary": {
+          "roster": 2,
+          "submitted": 0,
+          "connected": 2,
+          "queued": 0,
+          "away": 0
+        },
+        "paused": null,
+        "lessonTotals": {
+          "submitted": 0,
+          "damage": 0,
+          "score": 0,
+          "improvement": 0,
+          "average": 0,
+          "median": 0,
+          "bands": [
+            0,
+            0,
+            0
+          ],
+          "participants": 0
+        }
+      },
+      "rubric": {
+        "title": "Code quality classroom rubric",
+        "source": "default",
+        "criteria": [
+          {
+            "id": "tests",
+            "name": "Testing",
+            "signal": "tests",
+            "weight": 0.25,
+            "target": 0.3,
+            "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage."
+          },
+          {
+            "id": "modularity",
+            "name": "Modularity",
+            "signal": "modularity",
+            "weight": 0.2,
+            "description": "Low component fan-out and shorter dependency chains support your speed."
+          },
+          {
+            "id": "cohesion",
+            "name": "Focused functions",
+            "signal": "cohesion",
+            "weight": 0.2,
+            "description": "Focused functions and a healthy number of definitions per file support your damage."
+          },
+          {
+            "id": "documentation",
+            "name": "Documentation",
+            "signal": "documentation",
+            "weight": 0.2,
+            "description": "Useful comments and README examples support energy and regeneration."
+          },
+          {
+            "id": "size",
+            "name": "Project foundation",
+            "signal": "size",
+            "weight": 0.05,
+            "description": "Capped logarithmic source size and README presence support HP."
+          },
+          {
+            "id": "cycles",
+            "name": "Acyclic dependencies",
+            "signal": "cycles",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Fewer circular dependencies reduce your weakness."
+          },
+          {
+            "id": "tech-debt",
+            "name": "Manage technical debt",
+            "signal": "tech-debt",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "setup",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594483253,
+      "raidEndsAt": null,
+      "bossHp": 20,
+      "bossMaxHp": 20,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 0
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 2,
+        "submitted": 0,
+        "connected": 2,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "lobby",
+    "lobby": {
+      "room": "KZLI",
+      "ownerId": "d7d1030a-c81c-4b4d-aa66-c88fdb64d7d8",
+      "mode": "edu",
+      "locale": "en",
+      "players": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "repo": null,
+          "status": "empty",
+          "kit": null,
+          "paired": false,
+          "controlsReady": true
+        }
+      ],
+      "boss": {
+        "repo": null,
+        "status": "empty",
+        "kit": null
+      },
+      "phase": "lobby",
+      "classroom": {
+        "plan": {
+          "title": "Build. Review. Improve.",
+          "bossName": "THE RELEASE BLOCKER",
+          "steps": [
+            {
+              "id": "build",
+              "title": "Acceptance: code and question",
+              "instructions": "Make answer() return 42, submit your code, and answer the question.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [
+                {
+                  "id": "check-0",
+                  "kind": "contains",
+                  "label": "Literal code evidence: main.py",
+                  "path": "main.py",
+                  "text": "return 42"
+                }
+              ],
+              "checksWeight": 100,
+              "mode": "mixed",
+              "questions": [
+                {
+                  "id": "q1",
+                  "prompt": "What should answer() return?",
+                  "points": 1,
+                  "maxAttempts": 3,
+                  "kind": "single",
+                  "options": [
+                    {
+                      "id": "a",
+                      "text": "42"
+                    },
+                    {
+                      "id": "b",
+                      "text": "0"
+                    },
+                    {
+                      "id": "c",
+                      "text": "Option C"
+                    }
+                  ]
+                }
+              ],
+              "questionsWeight": 50,
+              "answerFeedback": "after-close",
+              "revealAnswers": "after-raid",
+              "language": "python",
+              "starter": [
+                {
+                  "path": "main.py",
+                  "content": "def answer():\n    return 0"
+                }
+              ]
+            },
+            {
+              "id": "test",
+              "title": "Acceptance wrap-up",
+              "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [],
+              "checksWeight": 70
+            }
+          ]
+        },
+        "phase": "setup",
+        "stepIndex": 0,
+        "attempt": 1,
+        "deadline": null,
+        "remainingMs": null,
+        "serverTime": 1794594483675,
+        "raidEndsAt": null,
+        "bossHp": 30,
+        "bossMaxHp": 30,
+        "rows": [
+          {
+            "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+            "name": "QA_BEN",
+            "connected": true,
+            "status": "empty",
+            "improvement": 0,
+            "damage": 0,
+            "totalDamage": 0,
+            "attempts": 0
+          }
+        ],
+        "rounds": [],
+        "summary": {
+          "roster": 3,
+          "submitted": 0,
+          "connected": 3,
+          "queued": 0,
+          "away": 0
+        },
+        "paused": null,
+        "lessonTotals": {
+          "submitted": 0,
+          "damage": 0,
+          "score": 0,
+          "improvement": 0,
+          "average": 0,
+          "median": 0,
+          "bands": [
+            0,
+            0,
+            0
+          ],
+          "participants": 0
+        }
+      },
+      "rubric": {
+        "title": "Code quality classroom rubric",
+        "source": "default",
+        "criteria": [
+          {
+            "id": "tests",
+            "name": "Testing",
+            "signal": "tests",
+            "weight": 0.25,
+            "target": 0.3,
+            "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage."
+          },
+          {
+            "id": "modularity",
+            "name": "Modularity",
+            "signal": "modularity",
+            "weight": 0.2,
+            "description": "Low component fan-out and shorter dependency chains support your speed."
+          },
+          {
+            "id": "cohesion",
+            "name": "Focused functions",
+            "signal": "cohesion",
+            "weight": 0.2,
+            "description": "Focused functions and a healthy number of definitions per file support your damage."
+          },
+          {
+            "id": "documentation",
+            "name": "Documentation",
+            "signal": "documentation",
+            "weight": 0.2,
+            "description": "Useful comments and README examples support energy and regeneration."
+          },
+          {
+            "id": "size",
+            "name": "Project foundation",
+            "signal": "size",
+            "weight": 0.05,
+            "description": "Capped logarithmic source size and README presence support HP."
+          },
+          {
+            "id": "cycles",
+            "name": "Acyclic dependencies",
+            "signal": "cycles",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Fewer circular dependencies reduce your weakness."
+          },
+          {
+            "id": "tech-debt",
+            "name": "Manage technical debt",
+            "signal": "tech-debt",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "setup",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594483676,
+      "raidEndsAt": null,
+      "bossHp": 30,
+      "bossMaxHp": 30,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 0
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 3,
+        "submitted": 0,
+        "connected": 3,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "lobby",
+    "lobby": {
+      "room": "KZLI",
+      "ownerId": "d7d1030a-c81c-4b4d-aa66-c88fdb64d7d8",
+      "mode": "edu",
+      "locale": "en",
+      "players": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "repo": null,
+          "status": "empty",
+          "kit": null,
+          "paired": false,
+          "controlsReady": true
+        }
+      ],
+      "boss": {
+        "repo": null,
+        "status": "empty",
+        "kit": null
+      },
+      "phase": "lobby",
+      "classroom": {
+        "plan": {
+          "title": "Build. Review. Improve.",
+          "bossName": "THE RELEASE BLOCKER",
+          "steps": [
+            {
+              "id": "build",
+              "title": "Acceptance: code and question",
+              "instructions": "Make answer() return 42, submit your code, and answer the question.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [
+                {
+                  "id": "check-0",
+                  "kind": "contains",
+                  "label": "Literal code evidence: main.py",
+                  "path": "main.py",
+                  "text": "return 42"
+                }
+              ],
+              "checksWeight": 100,
+              "mode": "mixed",
+              "questions": [
+                {
+                  "id": "q1",
+                  "prompt": "What should answer() return?",
+                  "points": 1,
+                  "maxAttempts": 3,
+                  "kind": "single",
+                  "options": [
+                    {
+                      "id": "a",
+                      "text": "42"
+                    },
+                    {
+                      "id": "b",
+                      "text": "0"
+                    },
+                    {
+                      "id": "c",
+                      "text": "Option C"
+                    }
+                  ]
+                }
+              ],
+              "questionsWeight": 50,
+              "answerFeedback": "after-close",
+              "revealAnswers": "after-raid",
+              "language": "python",
+              "starter": [
+                {
+                  "path": "main.py",
+                  "content": "def answer():\n    return 0"
+                }
+              ]
+            },
+            {
+              "id": "test",
+              "title": "Acceptance wrap-up",
+              "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+              "durationSec": 0,
+              "rubric": {
+                "title": "Code quality classroom rubric",
+                "source": "default",
+                "criteria": [
+                  {
+                    "id": "tests",
+                    "name": "Testing",
+                    "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                    "signal": "tests",
+                    "weight": 0.24999999999999994,
+                    "target": 0.3
+                  },
+                  {
+                    "id": "modularity",
+                    "name": "Modularity",
+                    "description": "Low component fan-out and shorter dependency chains support your speed.",
+                    "signal": "modularity",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "cohesion",
+                    "name": "Focused functions",
+                    "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                    "signal": "cohesion",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "documentation",
+                    "name": "Documentation",
+                    "description": "Useful comments and README examples support energy and regeneration.",
+                    "signal": "documentation",
+                    "weight": 0.19999999999999996
+                  },
+                  {
+                    "id": "size",
+                    "name": "Project foundation",
+                    "description": "Capped logarithmic source size and README presence support HP.",
+                    "signal": "size",
+                    "weight": 0.04999999999999999
+                  },
+                  {
+                    "id": "cycles",
+                    "name": "Acyclic dependencies",
+                    "description": "Fewer circular dependencies reduce your weakness.",
+                    "signal": "cycles",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  },
+                  {
+                    "id": "tech-debt",
+                    "name": "Manage technical debt",
+                    "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                    "signal": "tech-debt",
+                    "weight": 0.04999999999999999,
+                    "target": 0
+                  }
+                ]
+              },
+              "checks": [],
+              "checksWeight": 70
+            }
+          ]
+        },
+        "phase": "setup",
+        "stepIndex": 0,
+        "attempt": 1,
+        "deadline": null,
+        "remainingMs": null,
+        "serverTime": 1794594483957,
+        "raidEndsAt": null,
+        "bossHp": 2000,
+        "bossMaxHp": 2000,
+        "rows": [
+          {
+            "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+            "name": "QA_BEN",
+            "connected": true,
+            "status": "empty",
+            "improvement": 0,
+            "damage": 0,
+            "totalDamage": 0,
+            "attempts": 0
+          }
+        ],
+        "rounds": [],
+        "summary": {
+          "roster": 200,
+          "submitted": 0,
+          "connected": 200,
+          "queued": 0,
+          "away": 0
+        },
+        "paused": null,
+        "lessonTotals": {
+          "submitted": 0,
+          "damage": 0,
+          "score": 0,
+          "improvement": 0,
+          "average": 0,
+          "median": 0,
+          "bands": [
+            0,
+            0,
+            0
+          ],
+          "participants": 0
+        }
+      },
+      "rubric": {
+        "title": "Code quality classroom rubric",
+        "source": "default",
+        "criteria": [
+          {
+            "id": "tests",
+            "name": "Testing",
+            "signal": "tests",
+            "weight": 0.25,
+            "target": 0.3,
+            "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage."
+          },
+          {
+            "id": "modularity",
+            "name": "Modularity",
+            "signal": "modularity",
+            "weight": 0.2,
+            "description": "Low component fan-out and shorter dependency chains support your speed."
+          },
+          {
+            "id": "cohesion",
+            "name": "Focused functions",
+            "signal": "cohesion",
+            "weight": 0.2,
+            "description": "Focused functions and a healthy number of definitions per file support your damage."
+          },
+          {
+            "id": "documentation",
+            "name": "Documentation",
+            "signal": "documentation",
+            "weight": 0.2,
+            "description": "Useful comments and README examples support energy and regeneration."
+          },
+          {
+            "id": "size",
+            "name": "Project foundation",
+            "signal": "size",
+            "weight": 0.05,
+            "description": "Capped logarithmic source size and README presence support HP."
+          },
+          {
+            "id": "cycles",
+            "name": "Acyclic dependencies",
+            "signal": "cycles",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Fewer circular dependencies reduce your weakness."
+          },
+          {
+            "id": "tech-debt",
+            "name": "Manage technical debt",
+            "signal": "tech-debt",
+            "weight": 0.05,
+            "target": 0,
+            "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "setup",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594483963,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 0
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 0,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594484263,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 0
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 0,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        0
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594484615,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 0
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 1,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        0
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594484908,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "queued",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 1,
+          "repo": "in-app"
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 1,
+        "connected": 200,
+        "queued": 1,
+        "away": 0
+      },
+      "questionAnswered": [
+        1
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594484910,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 2,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        1
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {
+      "794a52e4-a47c-47ac-8741-811203d528b6": {
+        "codeScore": 100,
+        "stepId": "build",
+        "attempt": 1,
+        "repo": "in-app",
+        "commit": "inapp:2be161e1",
+        "source": "in-app",
+        "submittedAt": 1794594484910,
+        "score": 100,
+        "improvement": 0,
+        "criteria": [
+          {
+            "criterionId": "tests",
+            "score": 0,
+            "evidence": "Test files: approximately 0 of 1 analyzed files (0.0%); target 30.0%. Test-file presence is not execution or coverage.",
+            "tip": "Add focused behavior tests for main.py; aim for 30.0% test files and run them locally."
+          },
+          {
+            "criterionId": "modularity",
+            "score": 1,
+            "evidence": "Average component fan-out 0.0; dependency depth 0.",
+            "tip": "Reduce dependencies around main.py; extract a shared interface to shorten import chains."
+          },
+          {
+            "criterionId": "cohesion",
+            "score": 1,
+            "evidence": "1.0 function definitions/file; average measured function 2.0 lines; longest 2 in main.py.",
+            "tip": "Give each function one clear responsibility; start by reviewing main.py."
+          },
+          {
+            "criterionId": "documentation",
+            "score": 0,
+            "evidence": "Comment/source LOC ratio 0.0%; README 0 analyzed characters.",
+            "tip": "Document an example and a tricky decision in main.py; explain why rather than adding filler comments."
+          },
+          {
+            "criterionId": "size",
+            "score": 0,
+            "evidence": "2 analyzed LOC across 1 files; README not found in the sample; size bonus capped logarithmically.",
+            "tip": "Keep main.py focused and document a complete, runnable project; extra code alone is not better engineering."
+          },
+          {
+            "criterionId": "cycles",
+            "score": 1,
+            "evidence": "0 dependency cycles; target ≤ 0; analyzed component graph is acyclic.",
+            "tip": "Keep new imports one-directional as you add features."
+          },
+          {
+            "criterionId": "tech-debt",
+            "score": 1,
+            "evidence": "0 TODO/FIXME/HACK markers (0.0 per kLOC); target ≤ 0 per kLOC. Markers invite review; they do not prove bugs.",
+            "tip": "Review main.py and resolve or explain stale TODO/FIXME/HACK markers."
+          }
+        ],
+        "checks": [
+          {
+            "label": "Literal code evidence: main.py",
+            "passed": true,
+            "detail": "main.py: static evidence found"
+          }
+        ],
+        "advice": [
+          "Add focused behavior tests for main.py; aim for 30.0% test files and run them locally.",
+          "Document an example and a tricky decision in main.py; explain why rather than adding filler comments.",
+          "Keep main.py focused and document a complete, runnable project; extra code alone is not better engineering."
+        ],
+        "answers": {}
+      }
+    },
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594485087,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 2,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        1
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594485379,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 2,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        2
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {
+      "794a52e4-a47c-47ac-8741-811203d528b6": {
+        "stepId": "build",
+        "attempt": 1,
+        "repo": "in-app",
+        "commit": "inapp:2be161e1",
+        "submittedAt": 1794594484910,
+        "checks": [
+          {
+            "label": "Literal code evidence: main.py",
+            "passed": true,
+            "detail": "main.py: static evidence found"
+          }
+        ],
+        "criteria": [
+          {
+            "criterionId": "tests",
+            "score": 0,
+            "evidence": "Test files: approximately 0 of 1 analyzed files (0.0%); target 30.0%. Test-file presence is not execution or coverage.",
+            "tip": "Add focused behavior tests for main.py; aim for 30.0% test files and run them locally."
+          },
+          {
+            "criterionId": "modularity",
+            "score": 1,
+            "evidence": "Average component fan-out 0.0; dependency depth 0.",
+            "tip": "Reduce dependencies around main.py; extract a shared interface to shorten import chains."
+          },
+          {
+            "criterionId": "cohesion",
+            "score": 1,
+            "evidence": "1.0 function definitions/file; average measured function 2.0 lines; longest 2 in main.py.",
+            "tip": "Give each function one clear responsibility; start by reviewing main.py."
+          },
+          {
+            "criterionId": "documentation",
+            "score": 0,
+            "evidence": "Comment/source LOC ratio 0.0%; README 0 analyzed characters.",
+            "tip": "Document an example and a tricky decision in main.py; explain why rather than adding filler comments."
+          },
+          {
+            "criterionId": "size",
+            "score": 0,
+            "evidence": "2 analyzed LOC across 1 files; README not found in the sample; size bonus capped logarithmically.",
+            "tip": "Keep main.py focused and document a complete, runnable project; extra code alone is not better engineering."
+          },
+          {
+            "criterionId": "cycles",
+            "score": 1,
+            "evidence": "0 dependency cycles; target ≤ 0; analyzed component graph is acyclic.",
+            "tip": "Keep new imports one-directional as you add features."
+          },
+          {
+            "criterionId": "tech-debt",
+            "score": 1,
+            "evidence": "0 TODO/FIXME/HACK markers (0.0 per kLOC); target ≤ 0 per kLOC. Markers invite review; they do not prove bugs.",
+            "tip": "Review main.py and resolve or explain stale TODO/FIXME/HACK markers."
+          }
+        ],
+        "advice": [
+          "Add focused behavior tests for main.py; aim for 30.0% test files and run them locally.",
+          "Document an example and a tricky decision in main.py; explain why rather than adding filler comments.",
+          "Keep main.py focused and document a complete, runnable project; extra code alone is not better engineering."
+        ],
+        "codeScore": 100,
+        "source": "in-app",
+        "score": 100,
+        "improvement": 0,
+        "answers": {
+          "q1": {
+            "answer": {
+              "choice": "a"
+            },
+            "attempts": 1
+          }
+        }
+      }
+    },
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594485630,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 3,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        2
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "coding",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594486207,
+      "raidEndsAt": null,
+      "bossHp": 2000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 0,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 200,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [
+        200
+      ],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 0,
+        "damage": 0,
+        "score": 0,
+        "improvement": 0,
+        "average": 0,
+        "median": 0,
+        "bands": [
+          0,
+          0,
+          0
+        ],
+        "participants": 0
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "raid",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594486564,
+      "raidEndsAt": 1794594496564,
+      "bossHp": 1000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 5,
+          "totalDamage": 5,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [
+        {
+          "stepId": "build",
+          "attempt": 1,
+          "at": 1794594486564,
+          "bossBefore": 2000,
+          "bossAfter": 1000,
+          "roster": 200,
+          "checkStats": [
+            {
+              "label": "Literal code evidence: main.py",
+              "passed": 200,
+              "total": 200
+            }
+          ],
+          "questionStats": [
+            {
+              "id": "q1",
+              "answered": 200,
+              "correct": 0,
+              "total": 200
+            }
+          ],
+          "attacks": [
+            {
+              "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+              "name": "QA_BEN",
+              "score": 100,
+              "improvement": 0,
+              "damage": 5,
+              "commit": "inapp:2be161e1"
+            }
+          ],
+          "totals": {
+            "submitted": 200,
+            "damage": 1000,
+            "score": 20000,
+            "improvement": 0,
+            "average": 100,
+            "median": 100,
+            "bands": [
+              0,
+              0,
+              200
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "roster": 200,
+        "submitted": 200,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 200,
+        "damage": 1000,
+        "score": 20000,
+        "improvement": 0,
+        "average": 100,
+        "median": 100,
+        "bands": [
+          0,
+          0,
+          200
+        ],
+        "participants": 200
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "Build. Review. Improve.",
+        "bossName": "THE RELEASE BLOCKER",
+        "steps": [
+          {
+            "id": "build",
+            "title": "Acceptance: code and question",
+            "instructions": "Make answer() return 42, submit your code, and answer the question.",
+            "durationSec": 0,
+            "rubric": {
+              "title": "Code quality classroom rubric",
+              "source": "default",
+              "criteria": [
+                {
+                  "id": "tests",
+                  "name": "Testing",
+                  "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                  "signal": "tests",
+                  "weight": 0.24999999999999994,
+                  "target": 0.3
+                },
+                {
+                  "id": "modularity",
+                  "name": "Modularity",
+                  "description": "Low component fan-out and shorter dependency chains support your speed.",
+                  "signal": "modularity",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "cohesion",
+                  "name": "Focused functions",
+                  "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                  "signal": "cohesion",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "documentation",
+                  "name": "Documentation",
+                  "description": "Useful comments and README examples support energy and regeneration.",
+                  "signal": "documentation",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "size",
+                  "name": "Project foundation",
+                  "description": "Capped logarithmic source size and README presence support HP.",
+                  "signal": "size",
+                  "weight": 0.04999999999999999
+                },
+                {
+                  "id": "cycles",
+                  "name": "Acyclic dependencies",
+                  "description": "Fewer circular dependencies reduce your weakness.",
+                  "signal": "cycles",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                },
+                {
+                  "id": "tech-debt",
+                  "name": "Manage technical debt",
+                  "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                  "signal": "tech-debt",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                }
+              ]
+            },
+            "checks": [
+              {
+                "id": "check-0",
+                "kind": "contains",
+                "label": "Literal code evidence: main.py",
+                "path": "main.py",
+                "text": "return 42"
+              }
+            ],
+            "checksWeight": 100,
+            "mode": "mixed",
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "What should answer() return?",
+                "points": 1,
+                "maxAttempts": 3,
+                "explain": "The required answer is 42.",
+                "kind": "single",
+                "options": [
+                  {
+                    "id": "a",
+                    "text": "42"
+                  },
+                  {
+                    "id": "b",
+                    "text": "0"
+                  },
+                  {
+                    "id": "c",
+                    "text": "Option C"
+                  }
+                ],
+                "answer": "a"
+              }
+            ],
+            "questionsWeight": 50,
+            "answerFeedback": "after-close",
+            "revealAnswers": "after-raid",
+            "language": "python",
+            "starter": [
+              {
+                "path": "main.py",
+                "content": "def answer():\n    return 0"
+              }
+            ]
+          },
+          {
+            "id": "test",
+            "title": "Acceptance wrap-up",
+            "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+            "durationSec": 0,
+            "rubric": {
+              "title": "Code quality classroom rubric",
+              "source": "default",
+              "criteria": [
+                {
+                  "id": "tests",
+                  "name": "Testing",
+                  "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                  "signal": "tests",
+                  "weight": 0.24999999999999994,
+                  "target": 0.3
+                },
+                {
+                  "id": "modularity",
+                  "name": "Modularity",
+                  "description": "Low component fan-out and shorter dependency chains support your speed.",
+                  "signal": "modularity",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "cohesion",
+                  "name": "Focused functions",
+                  "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                  "signal": "cohesion",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "documentation",
+                  "name": "Documentation",
+                  "description": "Useful comments and README examples support energy and regeneration.",
+                  "signal": "documentation",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "size",
+                  "name": "Project foundation",
+                  "description": "Capped logarithmic source size and README presence support HP.",
+                  "signal": "size",
+                  "weight": 0.04999999999999999
+                },
+                {
+                  "id": "cycles",
+                  "name": "Acyclic dependencies",
+                  "description": "Fewer circular dependencies reduce your weakness.",
+                  "signal": "cycles",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                },
+                {
+                  "id": "tech-debt",
+                  "name": "Manage technical debt",
+                  "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                  "signal": "tech-debt",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                }
+              ]
+            },
+            "checks": [],
+            "checksWeight": 70
+          }
+        ]
+      },
+      "phase": "feedback",
+      "stepIndex": 0,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594496737,
+      "raidEndsAt": null,
+      "bossHp": 1000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "submitted",
+          "improvement": 0,
+          "damage": 5,
+          "totalDamage": 5,
+          "attempts": 1,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1",
+          "score": 100
+        }
+      ],
+      "rounds": [
+        {
+          "stepId": "build",
+          "attempt": 1,
+          "at": 1794594486564,
+          "bossBefore": 2000,
+          "bossAfter": 1000,
+          "roster": 200,
+          "checkStats": [
+            {
+              "label": "Literal code evidence: main.py",
+              "passed": 200,
+              "total": 200
+            }
+          ],
+          "questionStats": [
+            {
+              "id": "q1",
+              "answered": 200,
+              "correct": 200,
+              "total": 200,
+              "options": [
+                {
+                  "id": "a",
+                  "count": 200
+                },
+                {
+                  "id": "b",
+                  "count": 0
+                },
+                {
+                  "id": "c",
+                  "count": 0
+                }
+              ]
+            }
+          ],
+          "attacks": [
+            {
+              "codeScore": 100,
+              "questionScore": 100,
+              "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+              "name": "QA_BEN",
+              "score": 100,
+              "improvement": 0,
+              "damage": 5,
+              "commit": "inapp:2be161e1"
+            }
+          ],
+          "totals": {
+            "submitted": 200,
+            "damage": 1000,
+            "score": 20000,
+            "improvement": 0,
+            "average": 100,
+            "median": 100,
+            "bands": [
+              0,
+              0,
+              200
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "roster": 200,
+        "submitted": 200,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 200,
+        "damage": 1000,
+        "score": 20000,
+        "improvement": 0,
+        "average": 100,
+        "median": 100,
+        "bands": [
+          0,
+          0,
+          200
+        ],
+        "participants": 200
+      }
+    },
+    "emails": {},
+    "reports": {
+      "794a52e4-a47c-47ac-8741-811203d528b6": {
+        "stepId": "build",
+        "attempt": 1,
+        "repo": "in-app",
+        "commit": "inapp:2be161e1",
+        "submittedAt": 1794594484910,
+        "checks": [
+          {
+            "label": "Literal code evidence: main.py",
+            "passed": true,
+            "detail": "main.py: static evidence found"
+          }
+        ],
+        "criteria": [
+          {
+            "criterionId": "tests",
+            "score": 0,
+            "evidence": "Test files: approximately 0 of 1 analyzed files (0.0%); target 30.0%. Test-file presence is not execution or coverage.",
+            "tip": "Add focused behavior tests for main.py; aim for 30.0% test files and run them locally."
+          },
+          {
+            "criterionId": "modularity",
+            "score": 1,
+            "evidence": "Average component fan-out 0.0; dependency depth 0.",
+            "tip": "Reduce dependencies around main.py; extract a shared interface to shorten import chains."
+          },
+          {
+            "criterionId": "cohesion",
+            "score": 1,
+            "evidence": "1.0 function definitions/file; average measured function 2.0 lines; longest 2 in main.py.",
+            "tip": "Give each function one clear responsibility; start by reviewing main.py."
+          },
+          {
+            "criterionId": "documentation",
+            "score": 0,
+            "evidence": "Comment/source LOC ratio 0.0%; README 0 analyzed characters.",
+            "tip": "Document an example and a tricky decision in main.py; explain why rather than adding filler comments."
+          },
+          {
+            "criterionId": "size",
+            "score": 0,
+            "evidence": "2 analyzed LOC across 1 files; README not found in the sample; size bonus capped logarithmically.",
+            "tip": "Keep main.py focused and document a complete, runnable project; extra code alone is not better engineering."
+          },
+          {
+            "criterionId": "cycles",
+            "score": 1,
+            "evidence": "0 dependency cycles; target ≤ 0; analyzed component graph is acyclic.",
+            "tip": "Keep new imports one-directional as you add features."
+          },
+          {
+            "criterionId": "tech-debt",
+            "score": 1,
+            "evidence": "0 TODO/FIXME/HACK markers (0.0 per kLOC); target ≤ 0 per kLOC. Markers invite review; they do not prove bugs.",
+            "tip": "Review main.py and resolve or explain stale TODO/FIXME/HACK markers."
+          }
+        ],
+        "advice": [
+          "Add focused behavior tests for main.py; aim for 30.0% test files and run them locally.",
+          "Document an example and a tricky decision in main.py; explain why rather than adding filler comments.",
+          "Keep main.py focused and document a complete, runnable project; extra code alone is not better engineering."
+        ],
+        "codeScore": 100,
+        "questionScore": 100,
+        "source": "in-app",
+        "score": 100,
+        "improvement": 0,
+        "answers": {
+          "q1": {
+            "answer": {
+              "choice": "a"
+            },
+            "attempts": 1,
+            "correct": true,
+            "score": 1,
+            "key": {
+              "choice": "a"
+            },
+            "explain": "The required answer is 42."
+          }
+        }
+      }
+    },
+    "errors": {},
+    "delta": {
+      "reports": true,
+      "removedReports": []
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "Build. Review. Improve.",
+        "bossName": "THE RELEASE BLOCKER",
+        "steps": [
+          {
+            "id": "build",
+            "title": "Acceptance: code and question",
+            "instructions": "Make answer() return 42, submit your code, and answer the question.",
+            "durationSec": 0,
+            "rubric": {
+              "title": "Code quality classroom rubric",
+              "source": "default",
+              "criteria": [
+                {
+                  "id": "tests",
+                  "name": "Testing",
+                  "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                  "signal": "tests",
+                  "weight": 0.24999999999999994,
+                  "target": 0.3
+                },
+                {
+                  "id": "modularity",
+                  "name": "Modularity",
+                  "description": "Low component fan-out and shorter dependency chains support your speed.",
+                  "signal": "modularity",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "cohesion",
+                  "name": "Focused functions",
+                  "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                  "signal": "cohesion",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "documentation",
+                  "name": "Documentation",
+                  "description": "Useful comments and README examples support energy and regeneration.",
+                  "signal": "documentation",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "size",
+                  "name": "Project foundation",
+                  "description": "Capped logarithmic source size and README presence support HP.",
+                  "signal": "size",
+                  "weight": 0.04999999999999999
+                },
+                {
+                  "id": "cycles",
+                  "name": "Acyclic dependencies",
+                  "description": "Fewer circular dependencies reduce your weakness.",
+                  "signal": "cycles",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                },
+                {
+                  "id": "tech-debt",
+                  "name": "Manage technical debt",
+                  "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                  "signal": "tech-debt",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                }
+              ]
+            },
+            "checks": [
+              {
+                "id": "check-0",
+                "kind": "contains",
+                "label": "Literal code evidence: main.py",
+                "path": "main.py",
+                "text": "return 42"
+              }
+            ],
+            "checksWeight": 100,
+            "mode": "mixed",
+            "questions": [
+              {
+                "id": "q1",
+                "prompt": "What should answer() return?",
+                "points": 1,
+                "maxAttempts": 3,
+                "kind": "single",
+                "options": [
+                  {
+                    "id": "a",
+                    "text": "42"
+                  },
+                  {
+                    "id": "b",
+                    "text": "0"
+                  },
+                  {
+                    "id": "c",
+                    "text": "Option C"
+                  }
+                ]
+              }
+            ],
+            "questionsWeight": 50,
+            "answerFeedback": "after-close",
+            "revealAnswers": "after-raid",
+            "language": "python",
+            "starter": [
+              {
+                "path": "main.py",
+                "content": "def answer():\n    return 0"
+              }
+            ]
+          },
+          {
+            "id": "test",
+            "title": "Acceptance wrap-up",
+            "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+            "durationSec": 0,
+            "rubric": {
+              "title": "Code quality classroom rubric",
+              "source": "default",
+              "criteria": [
+                {
+                  "id": "tests",
+                  "name": "Testing",
+                  "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+                  "signal": "tests",
+                  "weight": 0.24999999999999994,
+                  "target": 0.3
+                },
+                {
+                  "id": "modularity",
+                  "name": "Modularity",
+                  "description": "Low component fan-out and shorter dependency chains support your speed.",
+                  "signal": "modularity",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "cohesion",
+                  "name": "Focused functions",
+                  "description": "Focused functions and a healthy number of definitions per file support your damage.",
+                  "signal": "cohesion",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "documentation",
+                  "name": "Documentation",
+                  "description": "Useful comments and README examples support energy and regeneration.",
+                  "signal": "documentation",
+                  "weight": 0.19999999999999996
+                },
+                {
+                  "id": "size",
+                  "name": "Project foundation",
+                  "description": "Capped logarithmic source size and README presence support HP.",
+                  "signal": "size",
+                  "weight": 0.04999999999999999
+                },
+                {
+                  "id": "cycles",
+                  "name": "Acyclic dependencies",
+                  "description": "Fewer circular dependencies reduce your weakness.",
+                  "signal": "cycles",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                },
+                {
+                  "id": "tech-debt",
+                  "name": "Manage technical debt",
+                  "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+                  "signal": "tech-debt",
+                  "weight": 0.04999999999999999,
+                  "target": 0
+                }
+              ]
+            },
+            "checks": [],
+            "checksWeight": 70
+          }
+        ]
+      },
+      "phase": "coding",
+      "stepIndex": 1,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594497644,
+      "raidEndsAt": null,
+      "bossHp": 1000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 5,
+          "attempts": 0,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1"
+        }
+      ],
+      "rounds": [
+        {
+          "stepId": "build",
+          "attempt": 1,
+          "at": 1794594486564,
+          "bossBefore": 2000,
+          "bossAfter": 1000,
+          "roster": 200,
+          "checkStats": [
+            {
+              "label": "Literal code evidence: main.py",
+              "passed": 200,
+              "total": 200
+            }
+          ],
+          "questionStats": [
+            {
+              "id": "q1",
+              "answered": 200,
+              "correct": 0,
+              "total": 200
+            }
+          ],
+          "attacks": [
+            {
+              "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+              "name": "QA_BEN",
+              "score": 100,
+              "improvement": 0,
+              "damage": 5,
+              "commit": "inapp:2be161e1"
+            }
+          ],
+          "totals": {
+            "submitted": 200,
+            "damage": 1000,
+            "score": 20000,
+            "improvement": 0,
+            "average": 100,
+            "median": 100,
+            "bands": [
+              0,
+              0,
+              200
+            ]
+          }
+        }
+      ],
+      "summary": {
+        "roster": 200,
+        "submitted": 0,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "questionAnswered": [],
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 200,
+        "damage": 1000,
+        "score": 20000,
+        "improvement": 0,
+        "average": 100,
+        "median": 100,
+        "bands": [
+          0,
+          0,
+          200
+        ],
+        "participants": 200
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "reports": true,
+      "removedReports": [
+        "794a52e4-a47c-47ac-8741-811203d528b6"
+      ]
+    }
+  },
+  {
+    "t": "classroom",
+    "state": {
+      "plan": {
+        "title": "",
+        "bossName": "",
+        "steps": []
+      },
+      "phase": "complete",
+      "stepIndex": 1,
+      "attempt": 1,
+      "deadline": null,
+      "remainingMs": null,
+      "serverTime": 1794594497769,
+      "raidEndsAt": null,
+      "bossHp": 1000,
+      "bossMaxHp": 2000,
+      "rows": [
+        {
+          "id": "794a52e4-a47c-47ac-8741-811203d528b6",
+          "name": "QA_BEN",
+          "connected": true,
+          "status": "empty",
+          "improvement": 0,
+          "damage": 0,
+          "totalDamage": 5,
+          "attempts": 0,
+          "repo": "in-app",
+          "commit": "inapp:2be161e1"
+        }
+      ],
+      "rounds": [],
+      "summary": {
+        "roster": 200,
+        "submitted": 0,
+        "connected": 200,
+        "queued": 0,
+        "away": 0
+      },
+      "paused": null,
+      "lessonTotals": {
+        "submitted": 200,
+        "damage": 1000,
+        "score": 20000,
+        "improvement": 0,
+        "average": 100,
+        "median": 100,
+        "bands": [
+          0,
+          0,
+          200
+        ],
+        "participants": 200
+      }
+    },
+    "emails": {},
+    "reports": {},
+    "errors": {},
+    "delta": {
+      "planUnchanged": true,
+      "roundsUnchanged": true,
+      "reports": true,
+      "removedReports": []
+    }
+  }
+]

@@ -137,3 +137,60 @@ The first follow-up attempt removed peer history and enabled teacher deltas but 
 No production or deployed-session acceptance. No physical/browser UI acceptance. GitHub analysis, AI review latency and provider quotas are outside the local static-analysis load run. Compact history grows with the number of rounds, not peer count; full teacher history is transmitted only when changed on the negotiated path. The bandwidth target depends on UI delta integration as described above. The report and its evidence are local artifacts; no commit/push/deploy was performed.
 
 STATUS: DONE
+
+## Final acceptance
+
+STATUS: WORKING
+
+### Scope and verdict
+
+**No product defects found in the requested final-acceptance scope.** No fixes, implementation edits, commits, pushes or deployments were performed.
+
+Revision: `62760c734a8cc1a55b5347938e6eaac8d1df8564`. Both tests ran from an isolated `git archive` of that revision at `/tmp/classroom-final-ii48wwik/repo`, sharing only the installed dependencies. This avoids incorporating the active, uncommitted `course-*` and Python-worker edits in the main checkout. The requested report append and evidence are the only changes from this acceptance task.
+
+### 200-client load table
+
+Command: `GITZILLA_OPEN_PLAY=1 capmem 8G node --import tsx tools/classroom-load.ts --bots=200 --output=/tmp/classroom-final-ii48wwik/load-200.json`.
+
+**PASS, exit 0.** The unmodified tool creates its own server on a free ephemeral localhost port. No 5173 or production target was used. [Raw per-client measurements](classroom-200-evidence/final-62760c7/load-200.json), [command output](classroom-200-evidence/final-62760c7/load-200.log).
+
+| Traffic metric | Final acceptance |
+| --- | ---: |
+| Student average bytes/s, p50 across 200 clients | 3,339.52 |
+| Student average bytes/s, p95 across 200 clients | 3,757.32 |
+| Student average bytes/s, maximum client | 4,057.51 |
+| Projector average bytes/s | 2,319.88 |
+| Teacher average bytes/s | 110,641.87 |
+| Total server egress bytes/s | 786,756.83 |
+
+Every student and the projector remain below **5,000 bytes/s average**. The teacher remains below the harness's 150,000 bytes/s guard. These are raw transmitted application-frame bytes, measured before delta merging. The table therefore confirms the wire savings with the merged client/delta implementation present at the accepted revision.
+
+| Latency | p50 (ms) | p95 (ms) | p99 (ms) | Budget |
+| --- | ---: | ---: | ---: | --- |
+| Save to own result | 2.69 | 68.10 | 103.78 | p95 < 300: PASS |
+| Save to teacher | 181.78 | 259.81 | 304.18 | p95 < 1,000: PASS |
+| Server event-loop lag | 10.07 | 10.66 | 17.99 | p99 < 100: PASS |
+
+200-student join time: **310.76 ms**. Duration: **31.46 s**. Own/teacher latency samples: **1260 each**. Reconnects: **10**; refresh-style reconnects: **5**. Unexpected drops: **0**; errors: **0**. Server-only CPU: **2,886.92 ms**, **9.18% of one core**. Final/peak RSS: **190.86 / 191.19 MiB**. Maximum event-loop lag: **91.88 ms**.
+
+### Real-browser pass
+
+**PASS: 51 checks; no product defects.** [Result and audits](classroom-200-evidence/final-62760c7/result.json), [browser log](classroom-200-evidence/final-62760c7/browser-run2.log), [read-only acceptance script](classroom-200-evidence/final-62760c7/browser-acceptance.ts).
+
+- Real `server/main.ts` + Vite on **http://127.0.0.1:60815**, with `GITZILLA_OPEN_PLAY=1`, `capmem 8G`, `PUBLIC_URL` set to that localhost origin, and isolated temporary room/storage files. Receipt publication was disabled. [Local server log](classroom-200-evidence/final-62760c7/server.log).
+- Chromium, separate browser contexts: teacher **1440×1000**, three students **393×852**, projector **1440×1000**. The browser runner also used `capmem 8G`. No physical-device or Safari claim.
+- Room **KZLI** contained exactly **200 students: 3 real browser students + 197 WebSocket students**, plus teacher and projector.
+- The teacher used the actual lesson editor to author a mixed step, a question with the answer 42, an evidence check, and `main.py` starter code. Enter preserved the function-body indentation. No course-generation route mock, direct room-state mutation, or plan injection was used.
+- Each browser student received the authored starter, edited it through the in-app editor, submitted the code and answered the question through the UI. Bots submitted corresponding code and answers. All 200 received a mixed score of 100.
+- Teacher actions through the UI: **start → attack → reveal → next → finish**. The three student views and projector each displayed correct **0/200**, **200/200**, and next-step **0/200** counts at the relevant stages. The projector's revealed question board and debrief also displayed 200 students and anonymous aggregate scores.
+- The real client sent `classroomDelta: true` in all five browser contexts and rendered updates after receiving deltas. The passive WebSocket audit observer did not alter incoming frames or the application's decoder.
+- **0 browser `pageerror` events; 0 protocol/socket errors; 0 privacy violations.** Raw non-teacher welcome/lobby/classroom frames contain only the viewer's roster/attack/report entries. An additional raw-text scan of all four browser non-teacher captures found no other student's test name. The projector's visible text contained no peer names. All 197 WebSocket students also passed the own-identity frame audit.
+- External HTTP requests were deliberately blocked by the browser harness to keep the pass local. This produced one font-resource `net::ERR_FAILED` console entry per page, corresponding to the external font stylesheet in `index.html`; these are test isolation effects, not JavaScript page errors. The full console entries are retained in the result file.
+
+Visual evidence inspected: [authored starter, teacher 1440](classroom-200-evidence/final-62760c7/teacher-authored-1440.png), [student 393 after submission](classroom-200-evidence/final-62760c7/student-submitted-393.png), [anonymous projector reveal](classroom-200-evidence/final-62760c7/projector-reveal-200.png), [teacher reveal](classroom-200-evidence/final-62760c7/teacher-reveal-1440.png), [projector completion](classroom-200-evidence/final-62760c7/projector-complete-200.png). Raw browser frames are stored alongside these images; welcome tokens are redacted.
+
+### Defects
+
+**None found within this acceptance scope.** No implementation fixes were made. The task-owned local server is shut down after evidence collection.
+
+STATUS: DONE

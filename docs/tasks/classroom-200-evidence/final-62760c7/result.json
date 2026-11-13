@@ -1,0 +1,456 @@
+{
+  "head": "62760c7",
+  "base": "http://127.0.0.1:60815",
+  "started": "2026-11-13T18:28:01.459Z",
+  "checks": [
+    {
+      "name": "starter authored with editor indentation"
+    },
+    {
+      "name": "published starter matches editor"
+    },
+    {
+      "name": "setup: student 1 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "setup: student 2 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "setup: student 3 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "setup: projector displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "browser student received authored starter"
+    },
+    {
+      "name": "browser student received authored starter"
+    },
+    {
+      "name": "browser student received authored starter"
+    },
+    {
+      "name": "submitted: student 1 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "submitted: student 2 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "submitted: student 3 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "submitted: projector displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "all 200 mixed submissions grade to 100",
+      "details": []
+    },
+    {
+      "name": "raid: student 1 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "raid: student 2 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "raid: student 3 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "raid: projector displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "reveal: student 1 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "reveal: student 2 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "reveal: student 3 displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "reveal: projector displayed counts",
+      "details": "200 of 200 submitted"
+    },
+    {
+      "name": "student answer revealed"
+    },
+    {
+      "name": "student answer revealed"
+    },
+    {
+      "name": "student answer revealed"
+    },
+    {
+      "name": "projector visible text has no peer names"
+    },
+    {
+      "name": "next: student 1 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "next: student 2 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "next: student 3 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "next: projector displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "finish: student 1 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "finish: student 2 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "finish: student 3 displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "finish: projector displayed counts",
+      "details": "0 of 200 submitted"
+    },
+    {
+      "name": "QA_TEACHER: real client negotiated delta"
+    },
+    {
+      "name": "QA_TEACHER: delta frames consumed",
+      "details": {
+        "frames": 19,
+        "deltas": 12,
+        "bytes": 997029
+      }
+    },
+    {
+      "name": "QA_ADA: real client negotiated delta"
+    },
+    {
+      "name": "QA_ADA: delta frames consumed",
+      "details": {
+        "frames": 20,
+        "deltas": 15,
+        "bytes": 57974
+      }
+    },
+    {
+      "name": "QA_ADA: no peer names/scores in row, attack or report frames"
+    },
+    {
+      "name": "QA_BEN: real client negotiated delta"
+    },
+    {
+      "name": "QA_BEN: delta frames consumed",
+      "details": {
+        "frames": 20,
+        "deltas": 15,
+        "bytes": 57916
+      }
+    },
+    {
+      "name": "QA_BEN: no peer names/scores in row, attack or report frames"
+    },
+    {
+      "name": "QA_CAI: real client negotiated delta"
+    },
+    {
+      "name": "QA_CAI: delta frames consumed",
+      "details": {
+        "frames": 18,
+        "deltas": 14,
+        "bytes": 50920
+      }
+    },
+    {
+      "name": "QA_CAI: no peer names/scores in row, attack or report frames"
+    },
+    {
+      "name": "QA_PROJECTOR: real client negotiated delta"
+    },
+    {
+      "name": "QA_PROJECTOR: delta frames consumed",
+      "details": {
+        "frames": 15,
+        "deltas": 11,
+        "bytes": 38158
+      }
+    },
+    {
+      "name": "QA_PROJECTOR: no peer names/scores in row, attack or report frames"
+    },
+    {
+      "name": "no browser page errors",
+      "details": []
+    },
+    {
+      "name": "no protocol/socket errors",
+      "details": []
+    },
+    {
+      "name": "all 197 bot frames retain only own identity",
+      "details": []
+    }
+  ],
+  "defects": [],
+  "pageErrors": [],
+  "consoleErrors": [
+    {
+      "name": "QA_TEACHER",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "name": "QA_ADA",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "name": "QA_BEN",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "name": "QA_CAI",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "name": "QA_PROJECTOR",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    }
+  ],
+  "protocolErrors": [],
+  "privacyViolations": [],
+  "snapshots": [
+    "teacher-authored-1440",
+    "projector-setup-200",
+    "student-submitted-393",
+    "projector-submitted-200",
+    "projector-raid-200",
+    "teacher-reveal-1440",
+    "projector-reveal-200",
+    "projector-complete-200"
+  ],
+  "notes": [],
+  "room": "KZLI",
+  "authoredPlan": {
+    "title": "Build. Review. Improve.",
+    "bossName": "THE RELEASE BLOCKER",
+    "steps": [
+      {
+        "id": "build",
+        "title": "Acceptance: code and question",
+        "instructions": "Make answer() return 42, submit your code, and answer the question.",
+        "durationSec": 0,
+        "rubric": {
+          "title": "Code quality classroom rubric",
+          "source": "default",
+          "criteria": [
+            {
+              "id": "tests",
+              "name": "Testing",
+              "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+              "signal": "tests",
+              "weight": 0.24999999999999994,
+              "target": 0.3
+            },
+            {
+              "id": "modularity",
+              "name": "Modularity",
+              "description": "Low component fan-out and shorter dependency chains support your speed.",
+              "signal": "modularity",
+              "weight": 0.19999999999999996
+            },
+            {
+              "id": "cohesion",
+              "name": "Focused functions",
+              "description": "Focused functions and a healthy number of definitions per file support your damage.",
+              "signal": "cohesion",
+              "weight": 0.19999999999999996
+            },
+            {
+              "id": "documentation",
+              "name": "Documentation",
+              "description": "Useful comments and README examples support energy and regeneration.",
+              "signal": "documentation",
+              "weight": 0.19999999999999996
+            },
+            {
+              "id": "size",
+              "name": "Project foundation",
+              "description": "Capped logarithmic source size and README presence support HP.",
+              "signal": "size",
+              "weight": 0.04999999999999999
+            },
+            {
+              "id": "cycles",
+              "name": "Acyclic dependencies",
+              "description": "Fewer circular dependencies reduce your weakness.",
+              "signal": "cycles",
+              "weight": 0.04999999999999999,
+              "target": 0
+            },
+            {
+              "id": "tech-debt",
+              "name": "Manage technical debt",
+              "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+              "signal": "tech-debt",
+              "weight": 0.04999999999999999,
+              "target": 0
+            }
+          ]
+        },
+        "checks": [
+          {
+            "id": "check-0",
+            "kind": "contains",
+            "label": "Literal code evidence: main.py",
+            "path": "main.py",
+            "text": "return 42"
+          }
+        ],
+        "checksWeight": 100,
+        "mode": "mixed",
+        "questions": [
+          {
+            "id": "q1",
+            "prompt": "What should answer() return?",
+            "points": 1,
+            "maxAttempts": 3,
+            "explain": "The required answer is 42.",
+            "kind": "single",
+            "options": [
+              {
+                "id": "a",
+                "text": "42"
+              },
+              {
+                "id": "b",
+                "text": "0"
+              },
+              {
+                "id": "c",
+                "text": "Option C"
+              }
+            ],
+            "answer": "a"
+          }
+        ],
+        "questionsWeight": 50,
+        "answerFeedback": "after-close",
+        "revealAnswers": "after-raid",
+        "language": "python",
+        "starter": [
+          {
+            "path": "main.py",
+            "content": "def answer():\n    return 0"
+          }
+        ]
+      },
+      {
+        "id": "test",
+        "title": "Acceptance wrap-up",
+        "instructions": "Add tests that prove your code handles normal, wrong and edge-case input.\n\n1. Write a test for a normal input.\n2. Write a test for a wrong input, such as empty text.\n3. Write a test for a boundary, such as 0 or the largest allowed value.\n4. Run the tests locally or in GitHub Actions and fix what fails.\n5. Submit the improved version.",
+        "durationSec": 0,
+        "rubric": {
+          "title": "Code quality classroom rubric",
+          "source": "default",
+          "criteria": [
+            {
+              "id": "tests",
+              "name": "Testing",
+              "description": "Test-file ratio and a test directory support your armor; this measures presence, not passing tests or coverage.",
+              "signal": "tests",
+              "weight": 0.24999999999999994,
+              "target": 0.3
+            },
+            {
+              "id": "modularity",
+              "name": "Modularity",
+              "description": "Low component fan-out and shorter dependency chains support your speed.",
+              "signal": "modularity",
+              "weight": 0.19999999999999996
+            },
+            {
+              "id": "cohesion",
+              "name": "Focused functions",
+              "description": "Focused functions and a healthy number of definitions per file support your damage.",
+              "signal": "cohesion",
+              "weight": 0.19999999999999996
+            },
+            {
+              "id": "documentation",
+              "name": "Documentation",
+              "description": "Useful comments and README examples support energy and regeneration.",
+              "signal": "documentation",
+              "weight": 0.19999999999999996
+            },
+            {
+              "id": "size",
+              "name": "Project foundation",
+              "description": "Capped logarithmic source size and README presence support HP.",
+              "signal": "size",
+              "weight": 0.04999999999999999
+            },
+            {
+              "id": "cycles",
+              "name": "Acyclic dependencies",
+              "description": "Fewer circular dependencies reduce your weakness.",
+              "signal": "cycles",
+              "weight": 0.04999999999999999,
+              "target": 0
+            },
+            {
+              "id": "tech-debt",
+              "name": "Manage technical debt",
+              "description": "Review TODO/FIXME/HACK density; comments are prompts for review, not proof of defects.",
+              "signal": "tech-debt",
+              "weight": 0.04999999999999999,
+              "target": 0
+            }
+          ]
+        },
+        "checks": [],
+        "checksWeight": 70
+      }
+    ]
+  },
+  "finished": "2026-11-13T18:28:18.415Z",
+  "postCaptureRawNameAudit": [
+    {
+      "viewer": "QA_ADA",
+      "frames": 20,
+      "peerNameMatches": []
+    },
+    {
+      "viewer": "QA_BEN",
+      "frames": 20,
+      "peerNameMatches": []
+    },
+    {
+      "viewer": "QA_CAI",
+      "frames": 18,
+      "peerNameMatches": []
+    },
+    {
+      "viewer": "QA_PROJECTOR",
+      "frames": 15,
+      "peerNameMatches": []
+    }
+  ]
+}
