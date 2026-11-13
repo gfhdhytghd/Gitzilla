@@ -26,6 +26,7 @@ export interface ClassroomStep {
   // Absent `mode` = 'code' (every plan saved before questions existed).
   mode?: StepMode;
   questions?: ClassroomQuestion[];   // 'questions' | 'mixed': 1..30, ids unique within the step
+  questionContext?: string;          // ≤ 4000 chars, Markdown-lite: shared code/reading shown once above the step's questions
   questionsWeight?: number;          // 'mixed' only, 0..100: share of the step score from questions (default 50)
   answerFeedback?: AnswerFeedback;   // default 'after-close'
   revealAnswers?: 'after-raid' | 'never';  // default 'after-raid': keys + explanations reach students in feedback/complete
