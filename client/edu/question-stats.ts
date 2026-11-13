@@ -3,12 +3,11 @@
 // the correct option marked unless the step keeps answers private). Anonymous: never names.
 import type { ClassroomStep, QuestionStat } from '../../shared/classroom';
 import { h } from '../app/util';
-import { keyFor, revealMode, type AnyQuestion } from './questions';
+import { excerpt, keyFor, revealMode, type AnyQuestion } from './questions';
 import { KIND_LABEL, LETTERS, questionContextView } from './question-view';
 import { richText } from './task-card';
 import './questions.css';
 
-const excerpt = (s: string, n = 110) => { const one = s.replace(/```[\s\S]*?```/g, ' [code] ').replace(/\{\{(\d+)\}\}/g, '____').replace(/\s+/g, ' ').trim(); return one.length > n ? `${one.slice(0, n - 1)}…` : one; };
 const pct = (a: number, b: number) => b > 0 ? Math.round(a / b * 100) : 0;
 const meter = (value: number, cls: string, label: string) => h(`div.ql-meter.${cls}`, { role: 'meter', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(value), 'aria-label': label }, h('i', { style: `width:${Math.max(0, Math.min(100, value))}%` }));
 

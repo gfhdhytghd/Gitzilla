@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ClassroomQuestion, ClassroomStep } from '../../shared/classroom';
-import { answerText, blankCount, convertQuestion, isAnswered, keyFor, markers, newQuestion, promptParts, sameAnswer, validateQuestions, verdict } from './questions';
+import { answerText, blankCount, convertQuestion, excerpt, isAnswered, keyFor, markers, newQuestion, promptParts, sameAnswer, validateQuestions, verdict } from './questions';
 
 const step = (questions: ClassroomQuestion[], extra: Partial<ClassroomStep> = {}): ClassroomStep => ({
   id: 's1', title: 'Quiz', instructions: '', durationSec: 0, rubric: { title: 'r', criteria: [] } as unknown as ClassroomStep['rubric'], checks: [], checksWeight: 0,
@@ -64,6 +64,15 @@ describe('question helpers', () => {
     const b = convertQuestion(single, 'blank');
     expect(b.kind === 'blank' && b.prompt).toBe('Pick {{1}}');
     expect(validateQuestions(step([newQuestion('blank', []), { ...newQuestion('single', ['q1']), prompt: 'Q' }]))).toEqual([]);
+  });
+  it('makes one-line labels without a code placeholder', () => {
+    const blankWithCode = '```python\nx = 7 // 2\n```\n`x` is {{1}} and its type is {{2}}.';
+    expect(excerpt(blankWithCode)).toBe('`x` is ____ and its type is ____.');
+    expect(excerpt(blankWithCode)).not.toMatch(/\[code\]/);
+    expect(excerpt('```python\n\nprint({{1}})\nmore()\n```')).toBe('`print(____)`');
+    expect(excerpt('```\nunclosed fence')).toBe('`unclosed fence`');
+    expect(excerpt('Plain   text\nprompt')).toBe('Plain text prompt');
+    expect(excerpt('x'.repeat(200), 20)).toHaveLength(20);
   });
   it('derives a verdict only from graded results', () => {
     expect(verdict({ answer: { choice: 'a' }, attempts: 1 })).toBeNull();

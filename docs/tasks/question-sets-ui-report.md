@@ -53,6 +53,12 @@ New files
   the teacher's per-student answers, the lesson "Preview as a student" overlay and the course upload preview. Lesson
   editor: an optional "Shared code or reading for these questions" textarea per question step (monospace, live
   `n / 4000` counter, live "Students see" preview); empty text removes the field; `validateQuestions` rejects > 4000.
+- Visual review fix (on top of b8c7864): question labels in the teacher live bars, the projector board and the editor's
+  collapsed question summary no longer show a "[code]" placeholder. `excerpt` (now in `questions.ts`) drops fenced
+  code when the prompt has other text; a prompt that is only code shows its first code line as inline code (≤ 60
+  chars); blanks become ____. Example: the blank question now reads "`x` is ____ and its type is ____.".
+  Tests: `questions.test.ts` (excerpt cases), `classroom.test.ts` (live bars contain no "[code]"); the browser check
+  asserts no "[code]" in the live bars and the projector board (coding and after the attack).
 - `client/edu/questions.css`: all question styles, the mixed-step tabs, and the course settings block.
 - `client/edu/questions.test.ts`: limits, prompt parsing, answer comparison, keys, kind conversion, verdicts, the
   `immediate` + `never` rule.
@@ -96,7 +102,7 @@ Changed files
 ## Commands and results
 
 - `capmem 8G npx tsc --noEmit -p .` — exit 0.
-- `capmem 8G npx vitest run client/` — 112 files, 1326 tests passed (1310 before this change). Covers `questionContext`
+- `capmem 8G npx vitest run client/` — 112 files, 1327 tests passed (1310 before this change). Covers `questionContext`
   (validation limit; editor textarea; the student panel shows it once with its code block).
 - `capmem 8G npx vitest run` (full, final) — 282 files (273 passed, 9 skipped), 3562 tests passed, 19 skipped,
   0 failed.

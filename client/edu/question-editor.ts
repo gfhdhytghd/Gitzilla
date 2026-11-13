@@ -3,7 +3,7 @@
 // Edits write straight into `step` (the draft); validation mirrors the server limits (questions.ts).
 import type { BlankSpec, ClassroomQuestion, ClassroomStep, StepMode } from '../../shared/classroom';
 import { h } from '../app/util';
-import { convertQuestion, markers, newQuestion, nextOptionId, stepMode, validateQuestions, QUESTION_LIMITS } from './questions';
+import { convertQuestion, excerpt, markers, newQuestion, nextOptionId, stepMode, validateQuestions, QUESTION_LIMITS } from './questions';
 import { KIND_LABEL, questionContextView, renderPrompt } from './question-view';
 import './questions.css';
 
@@ -110,7 +110,7 @@ export function createQuestionEditor(step: ClassroomStep, index: number, hooks: 
     const replace = (next: ClassroomQuestion) => { step.questions![i] = next; rebuild(); };
     const summary = h('summary', null);
     const paintSummary = () => {
-      const text = q.prompt.replace(/\s+/g, ' ').trim();
+      const text = excerpt(q.prompt, 200);
       summary.replaceChildren(h('b', null, `Q${i + 1}`), h('span.qe-sum-kind', null, KIND_LABEL[q.kind]), h('span.qe-sum-sep', { 'aria-hidden': 'true' }, '·'), h('span.qe-sum-text', { 'data-i18n-skip': '' }, text.length > 70 ? `${text.slice(0, 69)}…` : text || '…'));
     };
     const kind = h('select', { 'data-testid': `question-kind-${index}-${i}`, 'aria-label': 'Question type' }, ...(['single', 'multi', 'blank'] as const).map(k => h('option', { value: k }, KIND_LABEL[k]))) as HTMLSelectElement;

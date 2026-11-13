@@ -244,6 +244,7 @@ try {
   const boardText = await tid(projector, 'question-board').textContent();
   assert.ok(!/correct/i.test(boardText ?? ''), 'projector shows no correctness during coding');
   assert.match(await tid(projector, 'question-board-context').textContent() ?? '', /nums = \[1, 2, 3\]/, 'projector shows the shared code');
+  assert.ok(!/\[code\]/.test(await tid(projector, 'question-board').textContent() ?? ''), 'question-board: no [code] placeholder in labels');
   await shot(projector, 'projector-coding-1440');
   // teacher live bars: hidden while projecting is possible (no projector window in this browser) → Show details
   await tid(teacher, 'question-live').waitFor();
@@ -252,6 +253,7 @@ try {
   await teacher.waitForFunction(() => /% correct/.test(document.querySelector('[data-testid="question-live"]')?.textContent ?? ''));
   const liveOrder = await teacher.locator('[data-testid^="question-live-q"]').evaluateAll(rows => rows.map(r => (r as HTMLElement).dataset.q));
   assert.equal(liveOrder[0], 'q2', 'weakest question first (q2: 0 of 1 correct; q1 1 of 2; q3 2 of 2)');
+  assert.ok(!/\[code\]/.test(await tid(teacher, 'question-live').textContent() ?? ''), 'question-live: no [code] placeholder in labels');
   await shot(teacher, 'teacher-live-1440');
   // per-student answers in the review panel
   await teacher.locator('[data-testid^="classroom-row-"]').filter({ hasText: 'Ben' }).click();
@@ -283,6 +285,7 @@ try {
   checks.push('Numeric blank accepts 3 and 3.0; text blank is case-insensitive.');
   await shot(ben, 'student-reveal-webkit-393');
   await projector.waitForFunction(() => /How the class answered/.test(document.querySelector('[data-testid="question-board"]')?.textContent ?? ''), null, { timeout: 15000 });
+  assert.ok(!/\[code\]/.test(await tid(projector, 'question-board').textContent() ?? ''), 'question-board: no [code] placeholder in labels');
   await shot(projector, 'projector-after-raid-1440');
   assert.equal(await projector.locator('[data-testid="question-board-context"]').count(), 1, 'projector keeps the shared code after the attack');
   checks.push('Reveal: students see answer, key, correctness, explanation; projector shows frozen distributions; the shared code stays on top.');

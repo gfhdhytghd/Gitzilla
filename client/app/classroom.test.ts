@@ -494,7 +494,8 @@ describe('classroom question sets', () => {
   });
   it('puts the live question bars above the review panel on the teacher console', () => {
     const { state, app, mount } = classroom(true);
-    questionsStep(state, true); state.phase = 'coding';
+    const step = questionsStep(state, true); state.phase = 'coding';
+    step.questions![1].prompt = '```python\nx = 7 // 2\n```\n`x` is {{1}}.';
     app.classroomQuestionLive = [{ id: 'q1', answered: 2, correct: 1, total: 3, options: [{ id: 'a', count: 1 }, { id: 'b', count: 1 }] }, { id: 'q2', answered: 0, correct: 0, total: 3 }];
     const root = mount();
     screens.at(-1)!.update?.(app);
@@ -506,5 +507,8 @@ describe('classroom question sets', () => {
     // the console may be on the projector: answered counts only until the teacher asks for details
     expect(live.textContent).toContain('2 of 3 answered');
     expect(live.textContent).not.toContain('% correct');
+    // a blank with a code block: the label drops the code, never a "[code]" placeholder
+    expect(live.textContent).not.toContain('[code]');
+    expect(live.textContent).toContain('is ____.');
   });
 });

@@ -173,3 +173,19 @@ export function answerText(q: AnyQuestion, answer: QuestionAnswer | undefined): 
   if ('choices' in answer) return q.kind !== 'blank' ? answer.choices.map(c => q.options.find(o => o.id === c)?.text ?? c).join(' · ') : answer.choices.join(' · ');
   return answer.blanks.map(b => b.trim() || '—').join(' · ');
 }
+
+/**
+ * One-line label for a question prompt (bars, projector). Fenced code is dropped when the prompt has other text;
+ * a prompt that is only code shows its first code line as inline code. Blanks become ____.
+ */
+export function excerpt(prompt: string, n = 110): string {
+  const blanks = (t: string) => t.replace(/\{\{(\d+)\}\}/g, '____');
+  const flat = (t: string) => t.replace(/\s+/g, ' ').trim();
+  let one = flat(blanks(prompt.replace(/```[^\n]*\n?([\s\S]*?)(```|$)/g, ' ')));
+  if (!one) {
+    const line = blanks(/```[^\n]*\n?([\s\S]*?)(```|$)/.exec(prompt)?.[1] ?? '').split('\n').map(l => l.trim()).find(Boolean) ?? '';
+    const code = line.length > 60 ? `${line.slice(0, 59)}…` : line;
+    one = code ? `\`${code.replace(/`/g, "'")}\`` : '';
+  }
+  return one.length > n ? `${one.slice(0, n - 1)}…` : one;
+}
