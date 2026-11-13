@@ -12,9 +12,10 @@
  * We cannot prove repeated individual check failures or a later first-ever full pass: reports
  * retain only the latest attempt. Repeated difficulties below are explicitly class-wide.
  */
-import type { ClassroomAttack, ClassroomReport, ClassroomRound, ClassroomState } from '../../shared/classroom';
+import type { ClassroomAttack, ClassroomReport, ClassroomRound, ClassroomState, ClassroomTotals } from '../../shared/classroom';
 import { pythonClassroomPresets } from '../../shared/classroom-presets';
 import { lessonGrades, type LessonGrades } from '../../shared/classroom-grades';
+import { classCounts, isCompact, roundSubmitted } from './class-counts';
 
 export interface DebriefCheck { text: string; passed: number; total: number }
 export interface Debrief {
@@ -46,6 +47,9 @@ export const DEBRIEF_TEXT = {
   round: '{0} of {1} submitted · class average {2} · boss −{3}%',
   legacyRound: '{0} submissions · average {1} · boss −{2}% · past class size unavailable',
   emptyRound: 'No submissions to review yet.',
+  publicRound: '{0} of {1} submitted · boss −{2}%',
+  publicRoundUnknown: 'Class attack · boss −{0}%',
+  publicLesson: 'Steps reviewed: {0} · boss −{1}%',
   lesson: 'Steps reviewed: {0} · students with submissions: {1} · class average {2}',
   emptyLesson: 'No class rounds have been reviewed yet.',
   lowBand: 'Below 50', middleBand: '50 to under 80', highBand: '80–100',
@@ -92,7 +96,8 @@ const matchingReports = (reports: DebriefReports, round: ClassroomRound) => roun
   const report = reports[attack.id];
   return report?.stepId === round.stepId && report.attempt === round.attempt ? [{ id: attack.id, report }] : [];
 });
-const rosterFor = (state: ClassroomState, round: ClassroomRound) => round.roster ?? Math.max(state.rows.length, round.attacks.length);
+// class size from counts, not rows: students and the projector may hold only their own row (compact state)
+const rosterFor = (state: ClassroomState, round: ClassroomRound) => round.roster ?? Math.max(classCounts(state).total, round.attacks.length);
 const isCurrent = (state: ClassroomState, round: ClassroomRound) => state.plan.steps[state.stepIndex]?.id === round.stepId && state.attempt === round.attempt;
 
 function scoresFor(attacks: readonly ClassroomAttack[]): Debrief['scores'] {
@@ -139,7 +144,7 @@ function roundReteach(state: ClassroomState, round: ClassroomRound, checks: Retu
 function helpersFor(state: ClassroomState, reports: DebriefReports, round: ClassroomRound): Debrief['needHelp'] {
   const submitted = new Set(round.attacks.map(attack => attack.id)), step = stepFor(state, round);
   // Historical membership IDs were not recorded; only name missing students for the current step/attempt.
-  const stableRoster = round.roster === undefined || round.roster === state.rows.length;
+  const stableRoster = round.roster === undefined || round.roster === classCounts(state).total;
   const missing = isCurrent(state, round) && stableRoster ? state.rows.filter(row => !submitted.has(row.id)).map(row => ({
     id: row.id, name: row.name, why: DEBRIEF_TEXT.noSubmission,
   })) : [];
@@ -180,10 +185,15 @@ function nextFor(state: ClassroomState, reports: DebriefReports, round: Classroo
   return index >= 0 && next ? say(DEBRIEF_TEXT.nextStep, index + 2, next.title) : DEBRIEF_TEXT.finish;
 }
 
-export function buildRoundDebrief(state: ClassroomState, reports: DebriefReports, round: ClassroomRound): Debrief {
+/**
+ * audience 'public' = a student's or the projector's view. With the compact state (only the viewer's own attack in
+ * each round) the headline and next step use anonymous aggregates only: counts, boss loss and check stats, no average.
+ */
+export function buildRoundDebrief(state: ClassroomState, reports: DebriefReports, round: ClassroomRound, audience: 'teacher' | 'public' = 'teacher'): Debrief {
+  if (isCompact(state, audience === 'teacher')) return publicRoundDebrief(state, round);
   const submitted = round.attacks.length, roster = rosterFor(state, round), scores = scoresFor(round.attacks);
   const checks = checksFor(state, reports, round), needHelp = helpersFor(state, reports, round);
-  const bossLoss = round.bossBefore > 0 ? Math.round(Math.max(0, round.bossBefore - round.bossAfter) / round.bossBefore * 100) : 0;
+  const bossLoss = bossLossOf(round);
   return {
     headline: !submitted ? DEBRIEF_TEXT.emptyRound : round.roster === undefined
       ? say(DEBRIEF_TEXT.legacyRound, submitted, scores.avg, bossLoss)
@@ -194,21 +204,53 @@ export function buildRoundDebrief(state: ClassroomState, reports: DebriefReports
   };
 }
 
+const bossLossOf = (round: ClassroomRound) => round.bossBefore > 0 ? Math.round(Math.max(0, round.bossBefore - round.bossAfter) / round.bossBefore * 100) : 0;
+/** Score distribution from the server's anonymous totals (same rounding and bands as scoresFor). */
+const scoresFromTotals = (t: ClassroomTotals): Debrief['scores'] => ({
+  avg: rounded(t.average), median: rounded(t.median),
+  bands: [{ label: DEBRIEF_TEXT.lowBand, count: t.bands[0] }, { label: DEBRIEF_TEXT.middleBand, count: t.bands[1] }, { label: DEBRIEF_TEXT.highBand, count: t.bands[2] }],
+});
+/**
+ * A student's or the projector's debrief from anonymous aggregates only (frozen `round.totals`, `roster`, check stats,
+ * boss HP): the same headline, score bands and check bars as the teacher's, never names or per-person advice.
+ */
+function publicRoundDebrief(state: ClassroomState, round: ClassroomRound): Debrief {
+  const submitted = roundSubmitted(state, round, false), roster = round.roster ?? Math.max(classCounts(state).total, submitted ?? 0);
+  const checks = checksFor(state, {}, round), bossLoss = bossLossOf(round);
+  const scores = round.totals ? scoresFromTotals(round.totals) : scoresFor([]);
+  const index = state.plan.steps.findIndex(item => item.id === round.stepId), nextStep = state.plan.steps[index + 1];
+  const next = submitted === 0 ? DEBRIEF_TEXT.submitFirst
+    : submitted !== null && roster - submitted > submitted ? DEBRIEF_TEXT.waitForClass
+    : submitted !== null && checks.some(check => check.total < submitted) ? DEBRIEF_TEXT.reviewFirst
+    : (round.totals && scores.avg < 60) || (checks[0] && rate(checks[0]) < 0.6) ? DEBRIEF_TEXT.retry
+    : !checks.length && stepFor(state, round)?.checks.length ? DEBRIEF_TEXT.reviewFirst
+    : index >= 0 && nextStep ? say(DEBRIEF_TEXT.nextStep, index + 2, nextStep.title) : DEBRIEF_TEXT.finish;
+  return {
+    headline: submitted === 0 ? DEBRIEF_TEXT.emptyRound
+      : submitted === null ? say(DEBRIEF_TEXT.publicRoundUnknown, bossLoss)
+      : round.totals ? (round.roster === undefined ? say(DEBRIEF_TEXT.legacyRound, submitted, scores.avg, bossLoss) : say(DEBRIEF_TEXT.round, submitted, roster, scores.avg, bossLoss))
+      : say(DEBRIEF_TEXT.publicRound, submitted, roster, bossLoss),
+    participation: { roster, submitted: submitted ?? 0, missing: [] },
+    scores, checks: checks.map(publicCheck), reteach: [], needHelp: [], shoutouts: [], next,
+  };
+}
+
 /** Latest settled attempt per reviewed step; retries never add another lesson-score row.
  * Overall scores weight each latest submitted student-step equally. Participation counts distinct
  * students across all recorded attempts; missing a retry does not erase earlier participation.
  * Roster is the largest known class size (never below known submitters).
  */
-export function buildLessonDebrief(state: ClassroomState, reports: DebriefReports): LessonDebrief {
+export function buildLessonDebrief(state: ClassroomState, reports: DebriefReports, audience: 'teacher' | 'public' = 'teacher'): LessonDebrief {
+  const compact = isCompact(state, audience === 'teacher');
   const latest = new Map<string, ClassroomRound>();
   for (const round of state.rounds) latest.set(round.stepId, round);
   const rounds = state.plan.steps.flatMap(step => latest.has(step.id) ? [latest.get(step.id)!] : []);
-  const models = rounds.map(round => buildRoundDebrief(state, reports, round));
+  const models = rounds.map(round => buildRoundDebrief(state, reports, round, audience));
   const reviewedIds = new Set(rounds.map(round => round.stepId));
   const recorded = state.rounds.filter(round => reviewedIds.has(round.stepId));
   const attacks = rounds.flatMap(round => round.attacks);
   const submittedIds = new Set(recorded.flatMap(round => round.attacks.map(attack => attack.id)));
-  const roster = Math.max(state.rows.length, submittedIds.size, 0, ...rounds.map(round => rosterFor(state, round)));
+  const roster = Math.max(classCounts(state).total, submittedIds.size, 0, ...rounds.map(round => rosterFor(state, round)));
   const missing = state.rows.filter(row => !submittedIds.has(row.id)), scores = scoresFor(attacks);
   const checks = models.flatMap((model, i) => model.checks.map(check => ({ ...check, text: say(DEBRIEF_TEXT.stepCheck, stepFor(state, rounds[i])!.title, check.text) })))
     .sort((a, b) => rate(a) - rate(b));
@@ -242,7 +284,8 @@ export function buildLessonDebrief(state: ClassroomState, reports: DebriefReport
   let next: string = DEBRIEF_TEXT.startLesson, nextPresetId: string | undefined;
   const unfinished = state.plan.steps.findIndex(step => !latest.has(step.id));
   const revisit = [...steps].sort((a, b) => a.avg - b.avg).find(step => step.avg < 60 || (step.weakestCheck && rate(step.weakestCheck) < 0.6));
-  if (revisit) next = say(DEBRIEF_TEXT.reviewStep, revisit.title);
+  // compact state: per-step averages come from the viewer's own attack only, so do not pick a step to revisit
+  if (revisit && !compact) next = say(DEBRIEF_TEXT.reviewStep, revisit.title);
   else if (rounds.length && unfinished >= 0) next = say(DEBRIEF_TEXT.returnStep, unfinished + 1, state.plan.steps[unfinished].title);
   else if (rounds.length) {
     const preset = pythonClassroomPresets.findIndex(item => state.plan.steps.some(step => step.id.startsWith(`${item.id}-`)));
@@ -251,7 +294,10 @@ export function buildLessonDebrief(state: ClassroomState, reports: DebriefReport
     next = following ? say(DEBRIEF_TEXT.nextPython, following.id.split('-')[0]) : preset >= 0 ? DEBRIEF_TEXT.project : DEBRIEF_TEXT.nextLesson;
   }
   return {
-    headline: rounds.length ? say(DEBRIEF_TEXT.lesson, rounds.length, submittedIds.size, scores.avg) : DEBRIEF_TEXT.emptyLesson,
+    headline: !rounds.length ? DEBRIEF_TEXT.emptyLesson
+      : compact && state.lessonTotals ? say(DEBRIEF_TEXT.lesson, rounds.length, state.lessonTotals.participants, rounded(state.lessonTotals.average))
+      : compact ? say(DEBRIEF_TEXT.publicLesson, rounds.length, state.bossMaxHp > 0 ? Math.round(Math.max(0, state.bossMaxHp - state.bossHp) / state.bossMaxHp * 100) : 0)
+      : say(DEBRIEF_TEXT.lesson, rounds.length, submittedIds.size, scores.avg),
     participation: { roster, submitted: submittedIds.size, missing: missing.map(row => row.name) }, scores, checks,
     reteach, needHelp, shoutouts, next, steps, grades: lessonGrades(state), ...(nextPresetId ? { nextPresetId } : {}),
   };

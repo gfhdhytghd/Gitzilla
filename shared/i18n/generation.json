@@ -2,12 +2,12 @@
   "provider": "Gemini via AGY with DeepSeek fallback",
   "model": "gemini-3.8-flash-high",
   "providers": {
-    "Gemini via AGY": 3033,
-    "Claude Opus": 401
+    "Gemini via AGY": 3134,
+    "Claude Opus": 400
   },
-  "entries": 3434,
-  "translated": 3434,
-  "bundled": 2861,
+  "entries": 3534,
+  "translated": 3534,
+  "bundled": 2956,
   "failed": 0,
-  "generatedAt": "2026-11-13T07:31:07.084Z"
+  "generatedAt": "2026-11-13T18:22:51.812Z"
 }

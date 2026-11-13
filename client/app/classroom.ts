@@ -32,6 +32,8 @@ import type { GameEvent } from '../../shared/types';
 import { createPauseOverlay } from './pause';
 import { wordmark } from './wordmark';
 import { createQuestionSet } from '../edu/question-set';
+import { createStarterEditor } from '../edu/starter-editor';
+import { classCounts, isCompact, roundSubmitted } from '../edu/class-counts';
 import { createQuestionEditor, MODE_LABEL } from '../edu/question-editor';
 import { createQuestionLive, createQuestionBoard } from '../edu/question-stats';
 import { questionContextView, questionPreview, reviewCard } from '../edu/question-view';
@@ -283,12 +285,13 @@ export function createClassroom(app: AppCtx): Screen {
   let debriefNames = '';   // round key whose names the teacher chose to show while projecting
   const currentDebrief = (s: ClassroomState): { kind: 'round' | 'lesson'; title: string; key: string; d: Debrief | LessonDebrief } | null => {
     const reports = teacher() ? app.classroomReports ?? {} : {};
-    if (s.phase === 'complete') return { kind: 'lesson', title: s.plan.title, key: 'lesson', d: buildLessonDebrief(s, reports) };
+    const audience = teacher() ? 'teacher' : 'public';
+    if (s.phase === 'complete') return { kind: 'lesson', title: s.plan.title, key: 'lesson', d: buildLessonDebrief(s, reports, audience) };
     const round = s.rounds.at(-1);
     if (s.phase !== 'feedback' || !round) return null;
     const at = s.plan.steps.findIndex(st => st.id === round.stepId);
     const title = `${t(`Step ${at + 1}`)} · ${s.plan.steps[at]?.title ?? ''}${round.attempt > 1 ? ` · ${t(`attempt ${round.attempt}`)}` : ''}`;
-    return { kind: 'round', title, key: `${round.stepId}:${round.attempt}:${round.at}`, d: buildRoundDebrief(s, reports, round) };
+    return { kind: 'round', title, key: `${round.stepId}:${round.attempt}:${round.at}`, d: buildRoundDebrief(s, reports, round, audience) };
   };
   const openNextLesson = async (presetId: string) => {
     const res = await fetch('/api/room?mode=edu', { method: 'POST' });
@@ -427,11 +430,15 @@ export function createClassroom(app: AppCtx): Screen {
         onChange: () => { summaryLine.textContent = stepSummary(); },
       });
       questionValidators.push(questionEditor.validate);
+      // starter files (code and mixed steps): give students the in-app editor; AI or preset starters stay editable
+      const starterEditor = createStarterEditor(step, index, { onChange: () => { summaryLine.textContent = stepSummary(); } });
+      questionValidators.push(() => stepMode(step) === 'questions' || starterEditor.validate());
       steps.append(h('details.cr-step-editor', { open: index === 0 || undefined, 'data-testid': `step-editor-${index}` }, summaryLine, field('Task title', name), field('Student instructions', instructions),
         h('div.cr-editor-numbers', null, field('Minutes (0: you decide when to stop)', duration), weightField),
         questionEditor.el,
         codeOnly, h('div.cr-step-buttons', null, button('Move up', `step-up-${index}`, () => move(-1)), button('Move down', `step-down-${index}`, () => move(1)), button('Remove', `step-remove-${index}`, () => { if (draft.steps.length > 1 && confirm(t(`Remove step ${index + 1} “${step.title}” and its instructions?`))) { draft.steps.splice(index, 1); buildPlanEditor(); } }))));
       codeOnly.append(
+        starterEditor.el,
         field('Automatic checks (optional), one per line', checks),
         h('div.cr-check-adders', null, h('small', null, 'Add a check:'),
           ...([['file', 'File exists'], ['contains', 'File contains text'], ['ci', 'GitHub CI check'], ['doctest', 'Doctest (runs the code)']] as const).map(([kind, label]) =>
@@ -464,7 +471,7 @@ export function createClassroom(app: AppCtx): Screen {
           if (firstError) {
             const holder = firstError.closest('details'); if (holder) (holder as HTMLDetailsElement).open = true;
             firstError.scrollIntoView({ block: 'center', behavior: 'smooth' });
-            return toast(questionsOk ? 'Fix the evidence-check format before publishing.' : 'Fix the question errors marked in red before publishing.', 'err');
+            return toast(questionsOk ? 'Fix the evidence-check format before publishing.' : 'Fix the errors marked in red before publishing.', 'err');
           }
           app.conn.send({ t: 'classroomPlan', plan: structuredClone(draft) });
         }, 'btn-primary')));
@@ -769,11 +776,14 @@ export function createClassroom(app: AppCtx): Screen {
       : last.attempt > 1 ? 'Class impact: 0 damage (no one beat their best score for this step)'
       : 'Class impact: 0 damage (every submitted score was 0)');
     // first attack of a step: every submitted score counts; a retry counts only the gain over each best credited score
-    const top = last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement).slice(0, 3) ?? [];
-    const n = last?.attacks.length ?? 0;
+    // compact state (students, projector): only the viewer's own attack is in the round, so no names and an anonymous count
+    const compact = !!s && isCompact(s, teacher());
+    const top = compact ? [] : last?.attacks.filter(a => a.improvement > 0).sort((a, b) => b.improvement - a.improvement).slice(0, 3) ?? [];
+    const n = last && s ? roundSubmitted(s, last, teacher()) : 0;
     setText(attackNames, stage && !stage.names ? ''
       : top.length ? `Big improvements: ${top.map(a => `${a.name} +${num(a.improvement)}`).join(' · ')}`
       : !last ? 'Every submitted score counts in a step’s first attack. On a retry, only gains over your best score count.'
+      : n === null ? 'Every submitted score counts in a step’s first attack. On a retry, only gains over your best score count.'
       : last.attempt > 1 ? (n === 1 ? '1 student attacked. On a retry, only the gain over their best score for this step counts.' : `${n} students attacked. On a retry, only the gain over each student’s best score for this step counts.`)
       : n === 1 ? '1 student attacked. In a step’s first attack, every submitted score counts.' : `${n} students attacked. In a step’s first attack, every submitted score counts.`);
     // sound: hit / phase / kill cues from the audio engine as the volleys land. Only this big screen, only live (a
@@ -836,7 +846,7 @@ export function createClassroom(app: AppCtx): Screen {
     // class-facing = the projector window, or any big screen that isn't the teacher's console: no names with scores
     const classFacing = screen && !owner;
     notTeacher.hidden = projectorView || !(screen && app.lobby && app.you && !isOwner(app));
-    joinCard.hidden = !screen || !!(state && state.phase !== 'setup' && state.rows.some(r => r.connected));
+    joinCard.hidden = !screen || !!(state && state.phase !== 'setup' && classCounts(state).connected > 0);
     consoleBar.hidden = !owner;
     el.classList.toggle('cr-pv', projectorView);
     el.classList.toggle('cr-class-facing', classFacing);
@@ -947,13 +957,13 @@ export function createClassroom(app: AppCtx): Screen {
         h('ul', null, ...(step?.checks ?? []).map(c => h('li', null, `${c.label}${c.text ? ` · ${c.text}` : ''}`))),
         h('ul', null, ...(step?.rubric.criteria ?? []).map(c => h('li', null, c.name))));
     }
-    const submitted = s?.rows.filter(r => r.status === 'submitted').length ?? 0;
-    const queued = s?.rows.filter(r => r.status === 'queued').length ?? 0;
-    const away = s?.rows.filter(r => !r.connected && r.status === 'empty').length ?? 0;
-    const total = (s?.rows.length ?? app.lobby?.players.length ?? 0) - away;
+    // counts, not rows: students and the projector may receive only their own row plus an anonymous summary
+    const counts = classCounts(s, app.lobby?.players.length ?? 0);
+    const { submitted, queued, away } = counts;
+    const total = counts.total - away;
     setText(progress, `${t(`${submitted} of ${total} submitted`)}${queued ? t(` · ${queued} checking`) : ''}${away ? t(` · ${away} offline`) : ''}${s && s.attempt > 1 ? t(` · attempt ${s.attempt}`) : ''}`);
     progressFill.style.width = `${total ? (submitted / total) * 100 : 0}%`; progressBar.hidden = !screen || !s;
-    const key = JSON.stringify([s?.phase, s?.stepIndex, s?.rows.map(r => [r.status, r.connected]), owner, s?.paused ?? null]);
+    const key = JSON.stringify([s?.phase, s?.stepIndex, counts, s?.rows.map(r => [r.status, r.connected]), owner, s?.paused ?? null]);
     const p = s?.phase === 'raid' ? s.paused : null;
     const byName = !p ? '' : p.by === app.you ? 'you' : app.lobby?.players.find(x => x.id === p.by)?.name ?? 'the teacher';
     pause.apply(p, byName, owner);
@@ -963,7 +973,7 @@ export function createClassroom(app: AppCtx): Screen {
     for (const id of [...removing.keys()]) if (!s?.rows.some(r => r.id === id)) removing.delete(id);
     if (confirmRemove && !s?.rows.some(r => r.id === confirmRemove)) confirmRemove = null;
     if (selected && s && !s.rows.some(r => r.id === selected)) { selected = null; detailsSig = ''; }
-    const rs = JSON.stringify([s?.rows, owner && s?.rows.map(r => [reports?.[r.id]?.teacherReview, reports?.[r.id]?.checks.length]), s?.phase, projectorSafe, confirmRemove, [...removing.keys()]]);
+    const rs = JSON.stringify([s?.rows, s?.summary, owner && s?.rows.map(r => [reports?.[r.id]?.teacherReview, reports?.[r.id]?.checks.length]), s?.phase, projectorSafe, confirmRemove, [...removing.keys()]]);
     if (rs !== rowsSig) {
       rowsSig = rs; roster.classList.toggle('cr-dense', (s?.rows.length ?? 0) > 15);
       // who needs help first: stuck → not submitted → checking → submitted (then by name). Never ranked by score.
@@ -1014,12 +1024,16 @@ export function createClassroom(app: AppCtx): Screen {
           : null;
         return h(`div.cr-student${row.id === app.you ? '.cr-you' : ''}${ask ? '.cr-removing' : ''}`, { 'data-row': row.id }, pick, result, verdicts, more, ask);
       }));
-      if (!s?.rows.length) rosterList.append(h('p.cr-empty', null, `Students: open ${location.origin} and join ${app.room}.`));
+      // compact state (projector: no rows; a student: only their own): an anonymous count, never "no one joined"
+      const peers = classCounts(s);
+      if (s && !owner && s.summary && peers.total > s.rows.length) rosterList.append(h('p.cr-empty', { 'data-testid': 'classroom-roster-summary' },
+        t(`${peers.connected} of ${peers.total} students connected · ${peers.submitted} submitted`)));
+      else if (!s?.rows.length) rosterList.append(h('p.cr-empty', null, `Students: open ${location.origin} and join ${app.room}.`));
     }
     // questions: projector board (class-facing screens) and the teacher's live bars
     if (qboard.el.parentElement !== task) card.el.after(qboard.el);
     const qRound = s?.rounds.at(-1)?.stepId === step?.id && s?.rounds.at(-1)?.attempt === s?.attempt ? s?.rounds.at(-1) : undefined;
-    if (classFacing && step && hasQuestions(step)) qboard.update({ step, phase: s!.phase, answered: s!.rows.filter(r => r.status === 'submitted').length, total, stats: qRound?.questionStats, mixed: stepMode(step) === 'mixed', answeredPer: s!.questionAnswered });
+    if (classFacing && step && hasQuestions(step)) qboard.update({ step, phase: s!.phase, answered: submitted, total, stats: qRound?.questionStats, mixed: stepMode(step) === 'mixed', answeredPer: s!.questionAnswered });
     else qboard.el.hidden = true;
     if (owner && step && hasQuestions(step) && s && s.phase !== 'setup') {
       const peekKey = `${step.id}:${s.attempt}`;

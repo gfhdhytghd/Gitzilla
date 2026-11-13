@@ -1,0 +1,38 @@
+/* Lesson editor: starter files for the in-app editor. Matches the question editor (questions.css). */
+.se {
+  --se-line: var(--line, #1d3b2b); --se-green: var(--green, #39ff88); --se-dim: var(--dim, #8fb8a3);
+  --se-red: var(--red, #ff5a5a); --se-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Noto Sans Mono", monospace;
+  --se-read: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  display: grid; gap: 12px; padding: 12px; border: 1px solid var(--se-line); border-radius: 8px; min-width: 0;
+}
+.se > *, .se-files > *, .se-file > * { min-width: 0; max-width: 100%; }
+.se-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.se-head h4 { margin: 0; font: 700 14px/1.2 var(--se-read); letter-spacing: .06em; text-transform: uppercase; color: var(--se-green); }
+.se-usage { font: 13px/1.3 var(--se-read); color: var(--se-dim); }
+.se-usage-full { color: var(--se-red); }
+.se-mode { margin: 0; font: 14px/1.5 var(--se-read); color: var(--se-dim); }
+.se-check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font: 15px/1.3 var(--se-read); }
+.se-check input { width: 20px; height: 20px; margin: 0; accent-color: var(--se-green); }
+.se-files { display: grid; gap: 10px; }
+.se-file { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--se-line); border-left: 3px solid var(--se-green); border-radius: 8px; background: rgba(4, 12, 8, .6); }
+.se-file-head { display: flex; align-items: center; gap: 8px; }
+.se-path { flex: 1 1 auto; min-width: 0; min-height: 44px; font: 15px/1.3 var(--se-mono); }
+.se-path[aria-invalid="true"] { border-color: var(--se-red); }
+.se-size { flex: none; font: 12px/1.2 var(--se-read); color: var(--se-dim); white-space: nowrap; }
+.se-remove { flex: none; min-height: 44px; }
+.se-path-error { color: var(--se-red); font: 13px/1.4 var(--se-read); }
+.se-path-error:empty { display: none; }
+.se-code {
+  width: 100%; box-sizing: border-box; min-height: 9em; resize: vertical; tab-size: 4; -moz-tab-size: 4;
+  font: 14px/1.55 var(--se-mono); white-space: pre; overflow-x: auto; overflow-wrap: normal;
+  color: #d9ffe9; background: #020805; border: 1px solid var(--se-line); border-radius: 6px; padding: 10px 12px;
+}
+.se-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.se-foot small { color: var(--se-dim); font: 13px/1.4 var(--se-read); }
+.se-errors:empty { display: none; }
+@media (max-width: 520px) {
+  .se-file-head { flex-wrap: wrap; }
+  .se-path { flex-basis: 100%; }
+  .se-size { margin-right: auto; }
+  .se-code { font-size: 13px; }
+}

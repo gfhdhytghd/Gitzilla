@@ -1,6 +1,7 @@
 // WebSocket client: same-origin /ws, hello with a stored resume token, auto-reconnect.
 import type { ClientMsg, Role, ServerMsg } from "../../shared/types";
 import { store } from "./util";
+import { mergeClassroomPacket, type ClassroomPacket } from "../../shared/classroom-delta";
 
 /** "displaced" = the server resumed this player in another tab (close 4001); we stop reconnecting until reclaim().
  *  "kicked" = the host removed us (`{t:"kicked"}` then close 4003, or a refused rejoin): never reconnect. */
@@ -63,10 +64,13 @@ export function connect(opts: ConnOpts): Conn {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const sock = new WebSocket(`${proto}//${location.host}/ws`);
     ws = sock;
+    // classroom deltas: the last merged classroom packet of THIS socket (a new socket starts from a full packet)
+    let classroom: ClassroomPacket | undefined;
     sock.onopen = () => {
       retry = 0;
       const resume = store.get(tokenKey(opts.room, opts.role)) ?? undefined;
-      sock.send(JSON.stringify({ t: "hello", room: opts.room, role: opts.role, name, resume } satisfies ClientMsg));
+      // classroomDelta: this socket merges classroom deltas (onmessage below) before any listener sees them
+      sock.send(JSON.stringify({ t: "hello", room: opts.room, role: opts.role, name, resume, classroomDelta: true } satisfies ClientMsg));
       setStatus("open");
       while (queue.length) sock.send(JSON.stringify(queue.shift()));
     };
@@ -76,6 +80,16 @@ export function connect(opts: ConnOpts): Conn {
         m = JSON.parse(typeof ev.data === "string" ? ev.data : "");
       } catch {
         return;
+      }
+      if (m.t === "classroom") {
+        try {
+          m = classroom = mergeClassroomPacket(classroom, m);
+        } catch {
+          // a delta without its base: never show half a state; reconnect for a full snapshot
+          classroom = undefined;
+          sock.close();
+          return;
+        }
       }
       if (m.t === "welcome" && m.token) store.set(tokenKey(opts.room, opts.role), m.token);
       if (m.t === "kicked" || (m.t === "error" && m.message === KICKED_REJOIN)) kick();

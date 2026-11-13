@@ -29,20 +29,37 @@ async function context(engine: 'chromium' | 'webkit', width: number, height: num
   await ctx.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/, r => r.abort());
   await ctx.addInitScript((who: string) => {
     try { localStorage.setItem('gitzilla.onboarding.v1', '1'); localStorage.setItem('kaiju.name', who); localStorage.setItem('gitzilla.locale', 'en'); } catch { /* */ }
-    (window as any).qsCheck = { received: [] as unknown[], sent: [] as unknown[] };
+    (window as any).qsCheck = { received: [] as unknown[], sent: [] as unknown[], deltas: 0 };
     const Original = window.WebSocket;
     window.WebSocket = class extends Original {
       constructor(url: string | URL, protocols?: string | string[]) {
         super(url, protocols);
-        this.addEventListener('message', e => { try { const m = JSON.parse(String(e.data)); if (m.t === 'classroom' || m.t === 'lobby' || m.t === 'welcome') (window as any).qsCheck.received.push(m); } catch { /* */ } });
+        // record what the app sees: classroom deltas merged per socket like client/app/net.ts (shared/classroom-delta.ts)
+        let prev: any;
+        this.addEventListener('message', e => { try {
+          let m = JSON.parse(String(e.data));
+          if (m.t === 'classroom') {
+            (window as any).qsCheck.deltas += m.delta ? 1 : 0;
+            if (m.delta) {
+              const { delta, ...next } = m; const reports = { ...prev.reports, ...m.reports };
+              for (const id of delta.removedReports) delete reports[id];
+              m = { ...next, state: { ...m.state, ...(delta.planUnchanged ? { plan: prev.state.plan } : {}), ...(delta.roundsUnchanged ? { rounds: prev.state.rounds } : {}) }, reports };
+            }
+            prev = m;
+          }
+          if (m.t === 'classroom' || m.t === 'lobby' || m.t === 'welcome' ) (window as any).qsCheck.received.push(m);
+        } catch { /* */ } });
       }
       send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
         // qsCheck.blockAnswers: answers never leave this page (a dead connection, for the draft-restore check)
         if (typeof data === 'string' && (window as any).qsCheck.blockAnswers && data.includes('"classroomAnswers"')) return;
+        // QS_DELTA=0: this page does not opt in to classroom deltas (full snapshots), to compare both paths
+        if (typeof data === 'string' && (window as any).qsNoDelta && data.includes('"t":"hello"')) data = data.replace(',"classroomDelta":true', '');
         if (typeof data === 'string') try { (window as any).qsCheck.sent.push(JSON.parse(data)); } catch { /* */ } super.send(data);
       }
     } as typeof WebSocket;
   }, name);
+  if (process.env.QS_DELTA === '0') await ctx.addInitScript(() => { (window as any).qsNoDelta = true; });
   ctx.on('page', p => { p.on('pageerror', e => errors.push(`${name}: ${e.message}`)); });
   return ctx;
 }
@@ -400,8 +417,15 @@ try {
   }
   checks.push("'never' reveal: students see only their score; no key or correctness reaches students or the projector.");
 
+  // classroom deltas: negotiated by default (merged before the UI), off with QS_DELTA=0; the same checks pass either way
+  const deltaFrames = await teacher!.evaluate(() => (window as any).qsCheck.deltas as number);
+  if (process.env.QS_DELTA === '0') assert.equal(deltaFrames, 0, 'QS_DELTA=0: no delta frames'); else assert.ok(deltaFrames > 0, 'the teacher received classroom deltas');
+  checks.push(`Classroom deltas ${process.env.QS_DELTA === '0' ? 'off (full snapshots)' : `on (${deltaFrames} delta frames to the teacher, merged before the UI)`}.`);
+  // visible text of each view at the end (clock digits and room code removed), for the with/without-delta comparison
+  const text = (p: Page) => p.evaluate(() => (document.querySelector('[data-testid="classroom-screen"]') as HTMLElement).innerText.replace(/\d+:\d\d/g, 'T').replace(/\b[A-Z]{4}\b/g, 'ROOM'));
+  const snapshots = { teacher: await text(teacher), ana: await text(ana), ben: await text(ben), projector: await text(projector) };
   assert.deepEqual(errors, []);
-  writeFileSync(`${out}/result.json`, JSON.stringify({ passed: true, room, checks, notes, shots, errors }, null, 2) + '\n');
+  writeFileSync(`${out}/result.json`, JSON.stringify({ passed: true, room, checks, notes, shots, errors, snapshots }, null, 2) + '\n');
   console.log(JSON.stringify({ passed: true, checks, notes, shots: shots.length, maxOverflow: Math.max(...shots.map(s => s.overflow)), errors }, null, 2));
 } catch (error) {
   await teacher?.screenshot({ path: `${out}/teacher-failure.png`, fullPage: true }).catch(() => {});

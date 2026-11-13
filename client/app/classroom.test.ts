@@ -512,3 +512,57 @@ describe('classroom question sets', () => {
     expect(live.textContent).toContain('is ____.');
   });
 });
+
+describe('compact non-teacher state (200-student server)', () => {
+  // the projector: a big screen that is not the teacher's; the server sends no rows, only the anonymous summary
+  const projector = () => {
+    const { state, app, mount } = classroom(false);
+    (app as unknown as { role: string }).role = 'screen'; (app as unknown as { you: string }).you = 'projector';
+    state.rows = []; state.phase = 'coding';
+    state.summary = { roster: 30, connected: 28, submitted: 12, queued: 1, away: 2 };
+    return { state, app, mount };
+  };
+  it('projector: progress, join card and roster come from the summary, not from rows', () => {
+    const { app, mount } = projector();
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    const progress = root.querySelector('[data-testid="classroom-progress"]')!.textContent;
+    expect(progress).toContain('12 of 28 submitted');
+    expect(progress).toContain('1 checking');
+    expect(progress).toContain('2 offline');
+    expect(root.querySelector('[data-testid="classroom-join-card"]')!.hidden).toBe(true);
+    expect(root.querySelector('[data-testid="classroom-roster-summary"]')!.textContent).toBe('28 of 30 students connected · 12 submitted');
+    expect(root.querySelector('[data-testid="classroom-roster"]')!.textContent).not.toContain('join ABCD');
+  });
+  it('projector after an attack: no names from a compact round, count from the summary', () => {
+    const { state, app, mount } = projector();
+    state.phase = 'feedback';
+    state.rounds = [{ stepId: state.plan.steps[0].id, attempt: 1, at: 1, bossBefore: 180, bossAfter: 150, attacks: [], roster: 30 }];
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    const names = root.querySelector('.cr-attack-names')!.textContent;
+    expect(names).toContain('12 students attacked');
+    expect(names).not.toContain('Big improvements');
+    expect(root.querySelector('[data-testid="classroom-debrief-headline"]')!.textContent).toContain('12 of 30 submitted');
+  });
+  it('student: own row only; the class progress still counts the whole class', () => {
+    const { state, app, mount } = classroom(false);
+    state.rows = [{ id: 'student', name: 'Student', connected: true, status: 'submitted', score: 70, improvement: 0, damage: 0, totalDamage: 0, attempts: 1 }];
+    state.summary = { roster: 200, connected: 190, submitted: 120, queued: 0, away: 10 };
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    expect(root.querySelector('[data-testid="classroom-progress"]')!.textContent).toContain('120 of 190 submitted');
+  });
+  it('teacher: the full roster is still listed even when a summary is present', () => {
+    const { state, app, mount } = classroom(true);
+    state.phase = 'coding';
+    state.rows = [{ id: 'a', name: 'Ada', connected: true, status: 'submitted', score: 70, improvement: 0, damage: 0, totalDamage: 0, attempts: 1 },
+      { id: 'b', name: 'Ben', connected: true, status: 'empty', improvement: 0, damage: 0, totalDamage: 0, attempts: 0 }];
+    state.summary = { roster: 2, connected: 2, submitted: 1, queued: 0, away: 0 };
+    const root = mount();
+    screens.at(-1)!.update?.(app);
+    expect(root.querySelector('[data-testid="classroom-row-a"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="classroom-row-b"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="classroom-roster-summary"]')).toBeNull();
+  });
+});

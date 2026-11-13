@@ -312,3 +312,84 @@ describe('lesson teacher debrief', () => {
     expect(buildLessonDebrief(state, reports).steps[0].weakestCheck!.text).not.toBe('changed');
   });
 });
+
+/** The compact state a student or the projector receives (200-student server): own row only (projector: none), an
+ * anonymous summary, and only the viewer's own attack in each round. */
+function compact(state: ClassroomState, viewer: string | null): ClassroomState {
+  const rows = state.rows;
+  const summary = { roster: rows.length, connected: rows.filter(r => r.connected).length, submitted: rows.filter(r => r.status === 'submitted').length,
+    queued: rows.filter(r => r.status === 'queued').length, away: rows.filter(r => !r.connected && r.status === 'empty').length };
+  return { ...structuredClone(state), rows: rows.filter(r => r.id === viewer), summary,
+    rounds: state.rounds.map(round => ({ ...structuredClone(round), attacks: round.attacks.filter(a => a.id === viewer) })) };
+}
+
+describe('debrief with full (teacher) and compact (student / projector) states', () => {
+  it('teacher state with a summary still uses every attack and name', () => {
+    const state = classroom(), { round, reports } = attack(state, 0, 1, [90, 70, null]);
+    state.summary = { roster: 3, connected: 2, submitted: 2, queued: 0, away: 1 };
+    const model = buildRoundDebrief(state, reports, round, 'teacher');
+    expect(model.headline).toBe('2 of 3 submitted · class average 80 · boss −1%');
+    expect(model.participation.missing).toEqual(['Cam']);
+  });
+  it('projector (no rows, no attacks): counts from the summary, no average, no names', () => {
+    const full = classroom(); attack(full, 0, 1, [90, 70, null]);
+    const state = compact(full, null), round = state.rounds.at(-1)!;
+    const model = buildRoundDebrief(state, {}, round, 'public');
+    expect(model.headline).toBe('2 of 3 submitted · boss −1%');
+    expect(model.headline).not.toMatch(/average/);
+    expect(model.participation).toEqual({ roster: 3, submitted: 2, missing: [] });
+    expect(model.needHelp).toEqual([]); expect(model.shoutouts).toEqual([]);
+    expect(model.checks.length).toBe(full.plan.steps[0].checks.length);
+  });
+  it('a student (own row and own attack only) gets the same anonymous headline, not "1 of 1"', () => {
+    const full = classroom(); attack(full, 0, 1, [90, 70, null]);
+    const state = compact(full, 's0');
+    expect(state.rounds.at(-1)!.attacks).toHaveLength(1);
+    expect(buildRoundDebrief(state, {}, state.rounds.at(-1)!, 'public').headline).toBe('2 of 3 submitted · boss −1%');
+  });
+  it('an older compact round has no anonymous count: the headline says only the boss loss', () => {
+    const full = classroom(); const first = attack(full, 0, 1, [90, 70, null]).round; attack(full, 1, 1, [60, 60, 60]);
+    const state = compact(full, null);
+    expect(buildRoundDebrief(state, {}, state.rounds[0], 'public').headline).toBe(`Class attack · boss −${Math.round((first.bossBefore - first.bossAfter) / first.bossBefore * 100)}%`);
+  });
+  it('lesson: compact headline from rounds and boss HP, never an average from one attack', () => {
+    const full = classroom(); attack(full, 0, 1, [90, 70, null]); attack(full, 1, 1, [60, 40, 20]); full.phase = 'complete';
+    const state = compact(full, 's1');
+    const lesson = buildLessonDebrief(state, {}, 'public');
+    expect(lesson.headline).toMatch(/^Steps reviewed: 2 · boss −\d+%$/);
+    const teacher = buildLessonDebrief(full, {}, 'teacher');
+    expect(teacher.headline).toMatch(/class average/);
+  });
+});
+
+describe('debrief from the server totals (compact rounds)', () => {
+  const totalsOf = (scores: number[]) => {
+    const v = [...scores].sort((a, b) => a - b), n = v.length;
+    return { submitted: n, damage: 0, score: v.reduce((a, b) => a + b, 0), improvement: 0, average: v.reduce((a, b) => a + b, 0) / n,
+      median: n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2, bands: [v.filter(s => s < 50).length, v.filter(s => s >= 50 && s < 80).length, v.filter(s => s >= 80).length] as [number, number, number] };
+  };
+  it('projector and student headlines and score bands match the teacher\'s', () => {
+    const full = classroom(), { round, reports } = attack(full, 0, 1, [90, 70, null]);
+    round.totals = totalsOf([90, 70]);
+    const teacher = buildRoundDebrief(full, reports, round, 'teacher');
+    for (const viewer of [null, 's0']) {
+      const state = compact(full, viewer), pub = buildRoundDebrief(state, {}, state.rounds.at(-1)!, 'public');
+      expect(pub.headline).toBe(teacher.headline);
+      expect(pub.scores).toEqual(teacher.scores);
+      expect(pub.checks).toEqual(teacher.checks);
+      expect(pub.needHelp).toEqual([]); expect(pub.shoutouts).toEqual([]);
+    }
+  });
+  it('an older round keeps its frozen totals after the next step (not the current summary)', () => {
+    const full = classroom(); const first = attack(full, 0, 1, [90, 70, null]).round; first.totals = totalsOf([90, 70]);
+    attack(full, 1, 1, [60, 60, 60]).round.totals = totalsOf([60, 60, 60]);
+    const state = compact(full, null);
+    expect(buildRoundDebrief(state, {}, state.rounds[0], 'public').headline).toBe('2 of 3 submitted · class average 80 · boss −1%');
+  });
+  it('lesson headline from state.lessonTotals', () => {
+    const full = classroom(); attack(full, 0, 1, [90, 70, null]); attack(full, 1, 1, [60, 40, 20]); full.phase = 'complete';
+    const state = compact(full, 's1');
+    state.lessonTotals = { ...totalsOf([90, 70, 60, 40, 20]), participants: 3 };
+    expect(buildLessonDebrief(state, {}, 'public').headline).toBe(buildLessonDebrief(full, {}, 'teacher').headline);
+  });
+});
