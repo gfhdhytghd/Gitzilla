@@ -39,7 +39,7 @@ export type AnswerFeedback = 'after-close' | 'immediate';
 interface QuestionBase {
   id: string;            // [a-z0-9-]{1,32}, unique within the step
   prompt: string;        // ≤ 2000 chars, Markdown-lite (inline `code`, fenced code blocks)
-  points?: number;       // 1..100, default 1; weight inside the question set
+  points?: number;       // integer 1..100, default 1; weight inside the question set
   explain?: string;      // ≤ 1000 chars; shown with the key on reveal
   maxAttempts?: number;  // 'immediate' only, 1..10, default 3
 }
@@ -62,7 +62,7 @@ export type ClassroomQuestion = SingleChoiceQuestion | MultiChoiceQuestion | Bla
 export type StudentQuestion =
   | (Omit<SingleChoiceQuestion, 'answer' | 'explain'>)
   | (Omit<MultiChoiceQuestion, 'answer' | 'explain'>)
-  | (Omit<BlankQuestion, 'blanks' | 'explain'> & { blankCount: number });
+  | (Omit<BlankQuestion, 'blanks' | 'explain'> & { blankCount: number; blankNumeric?: boolean[] });  // blankNumeric[i]: blank i takes a number (input hint only)
 
 export type QuestionAnswer = { choice: string } | { choices: string[] } | { blanks: string[] };
 export interface QuestionResult {
@@ -134,5 +134,7 @@ export interface ClassroomState {
   notice?: string;
   // Host pause (same shape as MatchState.paused): the raid clock freezes; resumeAt = 3s resume countdown target.
   paused?: { by: string; since: number; resumeAt: number | null } | null;
+  // Current step, coding/paused only: students who saved an answer, per question (same order). Anonymous; no correctness.
+  questionAnswered?: number[];
 }
 export type ClassroomCommand = 'start' | 'pause' | 'resume' | 'attack' | 'next' | 'retry' | 'finish' | 'extend';
